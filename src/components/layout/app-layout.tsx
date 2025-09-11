@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageSquare, User, Settings } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -23,6 +23,7 @@ import { getCurrentUser } from "@/lib/mock-data";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/rooms", label: "Rooms", icon: Compass },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

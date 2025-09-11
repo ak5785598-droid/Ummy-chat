@@ -25,7 +25,7 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <h2 className="font-headline text-2xl font-semibold">Popular Rooms</h2>
           <Button variant="link" asChild>
-            <Link href="#">
+            <Link href="/rooms">
               See All <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
