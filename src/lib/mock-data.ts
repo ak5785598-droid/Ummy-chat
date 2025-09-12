@@ -7,6 +7,11 @@ const users: User[] = [
   { id: 'u3', name: 'Chloe', avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-3')?.imageUrl!, isOnline: false },
   { id: 'u4', name: 'David', avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-4')?.imageUrl!, isOnline: true },
   { id: 'u5', name: 'Eva', avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-5')?.imageUrl!, isOnline: false },
+  { id: 'u6', name: 'Frank', avatarUrl: 'https://picsum.photos/seed/user6/200/200', isOnline: true },
+  { id: 'u7', name: 'Grace', avatarUrl: 'https://picsum.photos/seed/user7/200/200', isOnline: false },
+  { id: 'u8', name: 'Henry', avatarUrl: 'https://picsum.photos/seed/user8/200/200', isOnline: true },
+  { id: 'u9', name: 'Ivy', avatarUrl: 'https://picsum.photos/seed/user9/200/200', isOnline: true },
+  { id: 'u10', name: 'Jack', avatarUrl: 'https://picsum.photos/seed/user10/200/200', isOnline: false },
 ];
 
 const messages: Message[] = [
@@ -66,6 +71,10 @@ const rooms: Room[] = [
 
 export const getPopularRooms = (): Room[] => {
     return rooms.slice(0, 4);
+}
+
+export const getPopularUsers = (): User[] => {
+    return users.slice(0, 10);
 }
 
 export const getRoomBySlug = (slug: string): Room | undefined => {

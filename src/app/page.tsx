@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { ChatRoomCard } from '@/components/chat-room-card';
+import { UserCard } from '@/components/user-card';
 import { RecommendationsForm } from '@/components/recommendations-form';
-import { getPopularRooms } from '@/lib/mock-data';
+import { getPopularUsers, getPopularRooms } from '@/lib/mock-data';
+import { ChatRoomCard } from '@/components/chat-room-card';
 
 export default function Home() {
+  const popularUsers = getPopularUsers();
   const popularRooms = getPopularRooms();
 
   return (
@@ -19,6 +21,17 @@ export default function Home() {
           Tell us what you're into, and our AI will suggest the perfect chat rooms for you to join. Start connecting with your community today!
         </p>
         <RecommendationsForm />
+      </section>
+      
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-headline text-2xl font-semibold">Popular Anchors</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {popularUsers.map((user) => (
+            <UserCard key={user.id} user={user} />
+          ))}
+        </div>
       </section>
 
       <section className="space-y-4">
