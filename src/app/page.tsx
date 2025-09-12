@@ -1,16 +1,18 @@
 import { AppLayout } from '@/components/layout/app-layout';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Swords } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { UserCard } from '@/components/user-card';
 import { RecommendationsForm } from '@/components/recommendations-form';
-import { getPopularUsers, getPopularRooms } from '@/lib/mock-data';
+import { getPopularUsers, getPopularRooms, getPkBattles } from '@/lib/mock-data';
 import { ChatRoomCard } from '@/components/chat-room-card';
+import { PkBattleCard } from '@/components/pk-battle-card';
 
 export default function Home() {
   const popularUsers = getPopularUsers();
   const popularRooms = getPopularRooms();
+  const pkBattles = getPkBattles();
 
   return (
     <AppLayout>
@@ -24,6 +26,22 @@ export default function Home() {
           </p>
           <RecommendationsForm />
         </section>
+
+        {pkBattles.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-headline text-2xl font-semibold flex items-center gap-2">
+                <Swords className="text-destructive"/>
+                Live PK Battles
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {pkBattles.map((battle) => (
+                <PkBattleCard key={battle.id} battle={battle} />
+              ))}
+            </div>
+          </section>
+        )}
         
         <section className="space-y-4">
           <div className="flex items-center justify-between">

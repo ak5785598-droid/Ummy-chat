@@ -58,3 +58,11 @@ export type Contribution = {
     user: User;
     amount: number;
 }
+
+export type PkBattle = {
+  id: string;
+  room1: Room;
+  room2: Room;
+  score1: number;
+  score2: number;
+};
