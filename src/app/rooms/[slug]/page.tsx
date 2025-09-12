@@ -17,6 +17,10 @@ import {
   Crown,
   Cake,
   Swords,
+  Lock,
+  UserPlus,
+  ShieldX,
+  VolumeX,
 } from 'lucide-react';
 import { getRoomBySlug } from '@/lib/mock-data';
 import type { User } from '@/lib/types';
@@ -130,9 +134,18 @@ export default function RoomPage({ params }: { params: { slug: string } }) {
            <CardHeader className="flex-row items-center justify-between">
             <div>
               <CardTitle className="font-headline text-2xl">{room.title}</CardTitle>
-              <Badge variant="secondary" className="mt-1">{room.topic}</Badge>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary">{room.topic}</Badge>
+                <Badge variant="outline">Seats: {room.participants.length}/20</Badge>
+              </div>
             </div>
             <div className="flex items-center gap-2">
+               <Button size="icon" variant="outline">
+                <Lock className="h-5 w-5" />
+              </Button>
+               <Button size="icon" variant="outline">
+                <UserPlus className="h-5 w-5" />
+              </Button>
               <Button size="icon" variant="outline" onClick={() => setIsPkBattle(p => !p)}>
                 <Swords className="h-5 w-5 text-destructive" />
               </Button>
@@ -177,29 +190,39 @@ export default function RoomPage({ params }: { params: { slug: string } }) {
         ) : (
           <Card className="flex-1">
             <CardContent className="p-4 h-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div className="relative aspect-video bg-muted rounded-md flex items-center justify-center">
-                  <video ref={videoRef} className={cn("w-full aspect-video rounded-md", isCameraOn && hasCameraPermission ? "block" : "hidden")} autoPlay muted />
+              <ScrollArea className="h-full">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="relative group aspect-square bg-muted rounded-md flex items-center justify-center">
+                  <video ref={videoRef} className={cn("w-full h-full object-cover rounded-md", isCameraOn && hasCameraPermission ? "block" : "hidden")} autoPlay muted />
                   {(!isCameraOn || !hasCameraPermission) && (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <VideoOff className="h-10 w-10"/>
-                      <span>{ !hasCameraPermission ? "Camera permission denied" : "Camera is off" }</span>
+                      <span>{ !hasCameraPermission ? "Camera off" : "Camera off" }</span>
                     </div>
                   )}
                 </div>
                 {room.participants.map((p) => (
-                  <div key={p.id} className="relative aspect-video flex flex-col items-center justify-center gap-2 bg-muted rounded-md">
+                  <div key={p.id} className="relative group aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-md">
                     <Avatar className={cn(
-                      "h-24 w-24 border-4 border-transparent transition-all",
+                      "h-20 w-20 border-4 border-transparent transition-all",
                       speakingId === p.id && "border-primary shadow-lg"
                     )}>
                       <AvatarImage src={p.avatarUrl} alt={p.name} data-ai-hint="person portrait" />
                       <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold text-center">{p.name}</span>
+                    <span className="font-semibold text-center text-sm truncate w-full px-2">{p.name}</span>
+                    <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="icon" variant="destructive" className="h-7 w-7">
+                        <ShieldX className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="secondary" className="h-7 w-7">
+                        <VolumeX className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         )}
@@ -266,5 +289,3 @@ export default function RoomPage({ params }: { params: { slug: string } }) {
     </div>
   );
 }
-
-    
