@@ -1,3 +1,4 @@
+
 import type { User, Room, Message, Game, CoinPackage, Contribution, PkBattle } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -136,12 +137,12 @@ const games: Game[] = [
 ];
 
 const coinPackages: CoinPackage[] = [
-  { id: 'cp1', amount: 100, price: 80, bonus: 10 },
-  { id: 'cp2', amount: 500, price: 400, bonus: 75 },
-  { id: 'cp3', amount: 1000, price: 800, bonus: 200 },
-  { id: 'cp4', amount: 2500, price: 2000, bonus: 625 },
-  { id: 'cp5', amount: 5000, price: 4000, bonus: 1500 },
-  { id: 'cp6', amount: 10000, price: 8000, bonus: 3500 },
+  { id: 'cp1', amount: 50000, price: 100, bonus: 5000 },
+  { id: 'cp2', amount: 250000, price: 500, bonus: 30000 },
+  { id: 'cp3', amount: 500000, price: 1000, bonus: 75000 },
+  { id: 'cp4', amount: 1250000, price: 2500, bonus: 200000 },
+  { id: 'cp5', amount: 2500000, price: 5000, bonus: 500000 },
+  { id: 'cp6', amount: 5000000, price: 10000, bonus: 1200000 },
 ];
 
 const contributions: Contribution[] = [
