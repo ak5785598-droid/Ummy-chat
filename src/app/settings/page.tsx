@@ -206,7 +206,7 @@ export default function SettingsPage() {
                 <CardHeader>
                     <CardTitle className="font-headline">Buy Coins</CardTitle>
                     <CardDescription>Purchase coins to send gifts and play premium games.</CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                     {coinPackages.map((pkg, index) => (
                         <Card key={pkg.id} className="relative flex flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
