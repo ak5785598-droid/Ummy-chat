@@ -55,7 +55,9 @@ const users: User[] = [
   { id: 'u9', name: 'Ivy', avatarUrl: 'https://picsum.photos/seed/user9/200/200', isOnline: true, stats: { followers: 45, fans: 30 } },
   { id: 'u10', name: 'Jack', avatarUrl: 'https://picsum.photos/seed/user10/200/200', isOnline: false, stats: { followers: 78, fans: 60 } },
   { id: 'u11', name: 'Support Bot', avatarUrl: 'https://picsum.photos/seed/support/200/200', isOnline: true, stats: { followers: 999, fans: 999 } },
-
+  { id: 'u12', name: 'Karen', avatarUrl: 'https://picsum.photos/seed/user12/200/200', isOnline: false, stats: { followers: 23, fans: 11 } },
+  { id: 'u13', name: 'Leo', avatarUrl: 'https://picsum.photos/seed/user13/200/200', isOnline: true, stats: { followers: 89, fans: 54 } },
+  { id: 'u14', name: 'Mia', avatarUrl: 'https://picsum.photos/seed/user14/200/200', isOnline: true, stats: { followers: 150, fans: 110 } },
 ];
 
 const messages: Message[] = [
@@ -242,4 +244,8 @@ export const getDailyTasks = (): Task[] => {
 
 export const getAchievementTasks = (): Task[] => {
     return achievementTasks;
+}
+
+export const getProfileVisitors = (): User[] => {
+    return users.slice(7, 14);
 }

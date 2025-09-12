@@ -3,16 +3,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getCurrentUser, getFriends, getUserById, getTopContributors } from '@/lib/mock-data';
+import { getCurrentUser, getFriends, getUserById, getTopContributors, getProfileVisitors } from '@/lib/mock-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound } from 'next/navigation';
-import { User, Cake, MapPin, Briefcase, Smile } from 'lucide-react';
+import { User, Cake, MapPin, Briefcase, Smile, Eye } from 'lucide-react';
 import { TopContributorsCard } from '@/components/top-contributors-card';
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const user = getUserById(params.id);
   const friends = getFriends();
   const topContributors = getTopContributors();
+  const visitors = getProfileVisitors();
   const profileHeaderImage = PlaceHolderImages.find(
     (img) => img.id === 'profile-header'
   );
@@ -101,6 +102,28 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                 <Cake className="h-5 w-5 text-muted-foreground" />
                 <span>Personality signature: {user.details?.personalitySignature || 'Happy every day'}</span>
             </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Eye className="h-5 w-5 text-muted-foreground" />
+            Recent Visitors ({visitors.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
+            {visitors.map((visitor) => (
+              <Link href={`/profile/${visitor.id}`} key={visitor.id} className="flex flex-col items-center gap-2 text-center group">
+                <Avatar className="h-16 w-16 transition-transform group-hover:scale-105">
+                  <AvatarImage src={visitor.avatarUrl} alt={visitor.name} data-ai-hint="person portrait" />
+                  <AvatarFallback>{visitor.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-xs truncate">{visitor.name}</span>
+              </Link>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
