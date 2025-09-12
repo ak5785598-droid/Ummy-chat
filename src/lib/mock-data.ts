@@ -54,6 +54,8 @@ const users: User[] = [
   { id: 'u8', name: 'Henry', avatarUrl: 'https://picsum.photos/seed/user8/200/200', isOnline: true, stats: { followers: 123, fans: 99 } },
   { id: 'u9', name: 'Ivy', avatarUrl: 'https://picsum.photos/seed/user9/200/200', isOnline: true, stats: { followers: 45, fans: 30 } },
   { id: 'u10', name: 'Jack', avatarUrl: 'https://picsum.photos/seed/user10/200/200', isOnline: false, stats: { followers: 78, fans: 60 } },
+  { id: 'u11', name: 'Support Bot', avatarUrl: 'https://picsum.photos/seed/support/200/200', isOnline: true, stats: { followers: 999, fans: 999 } },
+
 ];
 
 const messages: Message[] = [
@@ -108,6 +110,15 @@ const rooms: Room[] = [
     coverUrl: PlaceHolderImages.find(i => i.id === 'room-cover-5')?.imageUrl!,
     participants: [users[1], users[3], users[4]],
     messages: [],
+  },
+  {
+    id: 'r6',
+    slug: 'official-help-room',
+    title: 'Official Help Room',
+    topic: 'Support',
+    coverUrl: 'https://picsum.photos/seed/support-room/400/225',
+    participants: [users[10], users[0]],
+    messages: [{ id: 'm5', text: 'Welcome! How can I help you today?', user: users[10], timestamp: '11:00 AM' }],
   }
 ];
 

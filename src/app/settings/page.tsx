@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, User, Shield, CreditCard, Gem, Star } from 'lucide-react';
+import { Bell, User, Shield, CreditCard, Gem, Star, LifeBuoy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getCurrentUser, getCoinPackages } from '@/lib/mock-data';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const currentUser = getCurrentUser();
@@ -79,6 +80,25 @@ export default function SettingsPage() {
               <Button>Save Changes</Button>
             </CardContent>
           </Card>
+           <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="font-headline">Support</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Link href="/help-center" className="flex items-center justify-between rounded-lg border p-4 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-3">
+                        <LifeBuoy className="h-6 w-6 text-primary" />
+                        <div>
+                            <h3 className="font-semibold">Help Center</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Find answers to common questions.
+                            </p>
+                        </div>
+                    </div>
+                     <Button variant="outline">Visit</Button>
+                </Link>
+            </CardContent>
+           </Card>
            <Card className="mt-6">
             <CardHeader>
               <CardTitle className="font-headline text-destructive">Danger Zone</CardTitle>
@@ -186,7 +206,7 @@ export default function SettingsPage() {
                 <CardHeader>
                     <CardTitle className="font-headline">Buy Coins</CardTitle>
                     <CardDescription>Purchase coins to send gifts and play premium games.</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                     {coinPackages.map((pkg, index) => (
                         <Card key={pkg.id} className="relative flex flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
