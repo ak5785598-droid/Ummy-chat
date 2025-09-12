@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { AppLayout } from '@/components/layout/app-layout';
 
 export const metadata: Metadata = {
   title: 'Dilsey - Find Your Vibe',
@@ -24,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AppLayout>{children}</AppLayout>
+        {children}
         <Toaster />
       </body>
     </html>
