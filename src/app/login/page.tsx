@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { DilseyLogoIcon } from '@/components/icons';
+import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
 import { Phone } from 'lucide-react';
@@ -9,8 +9,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-[#4c00ff] to-[#0d0029] p-4 text-white">
       <div className="flex flex-col items-center text-center">
-        <DilseyLogoIcon className="h-24 w-24 text-white" />
-        <h1 className="mt-4 font-headline text-6xl font-bold">Dilsey</h1>
+        <UmmyLogoIcon className="h-24 w-24 text-white" />
+        <h1 className="mt-4 font-headline text-6xl font-bold">Ummy</h1>
         <p className="mt-2 text-lg text-gray-300">connect with your vibe...</p>
       </div>
 
