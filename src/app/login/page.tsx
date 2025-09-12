@@ -10,8 +10,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-[#4c00ff] to-[#0d0029] p-4 text-white">
       <div className="flex flex-col items-center text-center">
         <DilseyLogoIcon className="h-24 w-24 text-white" />
-        <h1 className="mt-4 font-headline text-6xl font-bold">Dilsey</h1>
-        <p className="mt-2 text-lg text-gray-300">connect raho dilsey...</p>
+        <h1 className="mt-4 font-headline text-6xl font-bold">Vibe</h1>
+        <p className="mt-2 text-lg text-gray-300">connect with your vibe...</p>
       </div>
 
       <div className="mt-16 w-full max-w-sm space-y-4">

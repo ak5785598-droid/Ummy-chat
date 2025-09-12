@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Dilsey - Find Your Vibe',
+  title: 'Vibe - Find Your Vibe',
   description: 'A voice chat app to connect with people and build communities.',
 };
 
