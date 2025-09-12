@@ -127,6 +127,7 @@ const games: Game[] = [
   { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://picsum.photos/seed/carrom/300/200', cost: 0, imageHint: 'carrom board' },
   { id: 'g3', title: 'Chess Masters', coverUrl: 'https://picsum.photos/seed/chess/300/200', cost: 0, imageHint: 'chess game' },
   { id: 'g4', title: 'Bubble Shooter', coverUrl: 'https://picsum.photos/seed/bubble/300/200', cost: 0, imageHint: 'colorful bubbles' },
+  { id: 'g9', title: 'Crazy Alpaca', coverUrl: 'https://picsum.photos/seed/alpaca/300/200', cost: 0, imageHint: 'funny alpaca' },
   { id: 'g5', title: 'Rummy Riches', coverUrl: 'https://picsum.photos/seed/rummy/300/200', cost: 100, imageHint: 'playing cards' },
   { id: 'g6', title: 'Poker Pro', coverUrl: 'https://picsum.photos/seed/poker/300/200', cost: 500, imageHint: 'poker chips' },
   { id: 'g7', title: 'Teen Patti Gold', coverUrl: 'https://picsum.photos/seed/teenpatti/300/200', cost: 200, imageHint: 'card game' },
