@@ -11,12 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, User, Shield, CreditCard, LogOut } from 'lucide-react';
+import { Bell, User, Shield, CreditCard, Gem, Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getCurrentUser } from '@/lib/mock-data';
+import { getCurrentUser, getCoinPackages } from '@/lib/mock-data';
 
 export default function SettingsPage() {
   const currentUser = getCurrentUser();
+  const coinPackages = getCoinPackages();
 
   return (
     <div className="space-y-6">
@@ -25,9 +26,13 @@ export default function SettingsPage() {
           <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
           <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold font-headline">{currentUser.name}</h1>
           <p className="text-sm text-muted-foreground">ID: {currentUser.id}</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
+            <Gem className="h-5 w-5 text-primary" />
+            <span className="font-bold text-lg">{currentUser.wallet?.coins.toLocaleString() || 0}</span>
         </div>
       </header>
       <Separator />
@@ -179,14 +184,25 @@ export default function SettingsPage() {
          <TabsContent value="billing">
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Billing & Subscriptions</CardTitle>
-                    <CardDescription>Manage your payment methods and subscriptions.</CardDescription>
+                    <CardTitle className="font-headline">Buy Coins</CardTitle>
+                    <CardDescription>Purchase coins to send gifts and play premium games.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="p-6 text-center border rounded-lg">
-                        <p className="text-muted-foreground">No active subscriptions.</p>
-                        <Button className="mt-4">Explore VIP Plans</Button>
-                    </div>
+                <CardContent className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {coinPackages.map((pkg, index) => (
+                        <Card key={pkg.id} className="relative flex flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
+                            {index === coinPackages.length - 1 && (
+                               <div className="absolute -top-3 inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground">
+                                   <Star className="h-3 w-3" /> Best Value
+                               </div>
+                            )}
+                            <div className="flex items-center gap-2 text-2xl font-bold text-primary">
+                                <Gem />
+                                <span>{pkg.amount.toLocaleString()}</span>
+                            </div>
+                            {pkg.bonus && <p className="text-xs text-green-500 font-semibold"> + {pkg.bonus.toLocaleString()} Bonus!</p>}
+                            <Button className="mt-4 w-full">${pkg.price.toFixed(2)}</Button>
+                        </Card>
+                    ))}
                 </CardContent>
             </Card>
         </TabsContent>

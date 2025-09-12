@@ -1,4 +1,4 @@
-import type { User, Room, Message } from './types';
+import type { User, Room, Message, Game, CoinPackage } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const users: User[] = [
@@ -16,6 +16,9 @@ const users: User[] = [
       occupation: 'Anchor',
       hometown: 'Beijing',
       personalitySignature: 'Happy every day'
+    },
+    wallet: {
+      coins: 1250
     }
   },
   { 
@@ -108,6 +111,26 @@ const rooms: Room[] = [
   }
 ];
 
+const games: Game[] = [
+  { id: 'g1', title: 'Ludo Party', coverUrl: 'https://picsum.photos/seed/ludo/300/200', cost: 0, imageHint: 'ludo board' },
+  { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://picsum.photos/seed/carrom/300/200', cost: 0, imageHint: 'carrom board' },
+  { id: 'g3', title: 'Chess Masters', coverUrl: 'https://picsum.photos/seed/chess/300/200', cost: 0, imageHint: 'chess game' },
+  { id: 'g4', title: 'Bubble Shooter', coverUrl: 'https://picsum.photos/seed/bubble/300/200', cost: 0, imageHint: 'colorful bubbles' },
+  { id: 'g5', title: 'Rummy Riches', coverUrl: 'https://picsum.photos/seed/rummy/300/200', cost: 100, imageHint: 'playing cards' },
+  { id: 'g6', title: 'Poker Pro', coverUrl: 'https://picsum.photos/seed/poker/300/200', cost: 500, imageHint: 'poker chips' },
+  { id: 'g7', title: 'Teen Patti Gold', coverUrl: 'https://picsum.photos/seed/teenpatti/300/200', cost: 200, imageHint: 'card game' },
+  { id: 'g8', title: '8 Ball Pool', coverUrl: 'https://picsum.photos/seed/pool/300/200', cost: 50, imageHint: 'billiards table' },
+];
+
+const coinPackages: CoinPackage[] = [
+  { id: 'cp1', amount: 100, price: 0.99, bonus: 10 },
+  { id: 'cp2', amount: 500, price: 4.99, bonus: 75 },
+  { id: 'cp3', amount: 1000, price: 9.99, bonus: 200 },
+  { id: 'cp4', amount: 2500, price: 24.99, bonus: 625 },
+  { id: 'cp5', amount: 5000, price: 49.99, bonus: 1500 },
+  { id: 'cp6', amount: 10000, price: 99.99, bonus: 3500 },
+];
+
 export const getPopularRooms = (): Room[] => {
     return rooms.slice(0, 4);
 }
@@ -134,4 +157,16 @@ export const getUserById = (id: string): User | undefined => {
 
 export const getFriends = (): User[] => {
     return users.slice(1, 7);
+}
+
+export const getFreeGames = (): Game[] => {
+  return games.filter(g => g.cost === 0);
+}
+
+export const getPremiumGames = (): Game[] => {
+  return games.filter(g => g.cost > 0);
+}
+
+export const getCoinPackages = (): CoinPackage[] => {
+  return coinPackages;
 }

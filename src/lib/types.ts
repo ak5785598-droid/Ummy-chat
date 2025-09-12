@@ -17,6 +17,9 @@ export type User = {
     hometown?: string;
     personalitySignature?: string;
   };
+  wallet?: {
+    coins: number;
+  };
 };
 
 export type Message = {
@@ -34,4 +37,19 @@ export type Room = {
   coverUrl: string;
   participants: User[];
   messages: Message[];
+};
+
+export type Game = {
+  id: string;
+  title: string;
+  coverUrl: string;
+  cost: number; // 0 for free games
+  imageHint: string;
+};
+
+export type CoinPackage = {
+  id: string;
+  amount: number;
+  price: number;
+  bonus?: number;
 };

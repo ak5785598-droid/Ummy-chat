@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageSquare, User, Settings, Compass } from "lucide-react";
+import { Home, Compass, User, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,18 +18,18 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/logo";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { getCurrentUser } from "@/lib/mock-data";
+import { GameControllerIcon } from "../icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/rooms", label: "Rooms", icon: Compass },
+  { href: "/games", label: "Games", icon: GameControllerIcon },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar-1");
   const currentUser = getCurrentUser();
 
   return (
@@ -64,7 +64,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarFooter>
             <SidebarMenu>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" asChild>
+                <SidebarMenuButton tooltip="Settings" asChild isActive={pathname.startsWith('/settings')}>
                   <Link href="/settings">
                     <Settings />
                     <span>Settings</span>
