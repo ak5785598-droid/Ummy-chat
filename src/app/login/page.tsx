@@ -11,7 +11,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground">
       <div className="flex flex-col items-center text-center">
         <UmmyLogoIcon className="h-24 w-24" />
-        <h1 className="mt-4 font-headline text-6xl font-bold bg-gradient-to-r from-primary to-amber-500 text-transparent bg-clip-text">Ummy</h1>
+        <h1 className="mt-4 font-headline text-6xl font-bold text-primary">Ummy</h1>
         <p className="mt-2 text-lg text-muted-foreground">connect with your vibe...</p>
       </div>
 
