@@ -5,17 +5,17 @@ import { PlaceHolderImages } from './placeholder-images';
 const users: User[] = [
   { 
     id: 'u1', 
-    name: 'Alina', 
+    name: 'Priya', 
     avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-1')?.imageUrl!, 
     isOnline: true, 
     bio: 'Just vibing and connecting with new people! Music and art lover.',
     coverUrl: PlaceHolderImages.find(i => i.id === 'profile-header')?.imageUrl,
     stats: { sent: 6450359, followers: 8, fans: 44 },
     details: {
-      age: 25,
+      age: 24,
       emotionalState: 'Keep secret',
       occupation: 'Anchor',
-      hometown: 'Beijing',
+      hometown: 'Mumbai',
       personalitySignature: 'Happy every day'
     },
     wallet: {
@@ -24,45 +24,49 @@ const users: User[] = [
   },
   { 
     id: 'u2', 
-    name: 'Ben', 
+    name: 'Rohan', 
     avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-2')?.imageUrl!, 
     isOnline: true,
     stats: { sent: 12345, followers: 120, fans: 88 },
+     details: { hometown: 'Delhi' },
   },
   { 
     id: 'u3', 
-    name: 'Chloe', 
+    name: 'Anjali', 
     avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-3')?.imageUrl!, 
     isOnline: false,
     stats: { sent: 5432, followers: 230, fans: 150 },
+     details: { hometown: 'Bangalore' },
   },
   { id: 'u4', 
-    name: 'David', 
+    name: 'Vikram', 
     avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-4')?.imageUrl!, 
     isOnline: true,
     stats: { sent: 9876, followers: 50, fans: 25 },
+     details: { hometown: 'Chennai' },
   },
   { 
     id: 'u5', 
-    name: 'Eva', 
+    name: 'Sneha', 
     avatarUrl: PlaceHolderImages.find(i => i.id === 'user-avatar-5')?.imageUrl!, 
     isOnline: false,
     stats: { sent: 100, followers: 10, fans: 5 },
+     details: { hometown: 'Kolkata' },
   },
-  { id: 'u6', name: 'Frank', avatarUrl: 'https://picsum.photos/seed/user6/200/200', isOnline: true, stats: { followers: 15, fans: 12 } },
-  { id: 'u7', name: 'Grace', avatarUrl: 'https://picsum.photos/seed/user7/200/200', isOnline: false, stats: { followers: 88, fans: 42 } },
-  { id: 'u8', name: 'Henry', avatarUrl: 'https://picsum.photos/seed/user8/200/200', isOnline: true, stats: { followers: 123, fans: 99 } },
-  { id: 'u9', name: 'Ivy', avatarUrl: 'https://picsum.photos/seed/user9/200/200', isOnline: true, stats: { followers: 45, fans: 30 } },
-  { id: 'u10', name: 'Jack', avatarUrl: 'https://picsum.photos/seed/user10/200/200', isOnline: false, stats: { followers: 78, fans: 60 } },
+  { id: 'u6', name: 'Arjun', avatarUrl: 'https://picsum.photos/seed/user6/200/200', isOnline: true, stats: { followers: 15, fans: 12 }, details: { hometown: 'Hyderabad' } },
+  { id: 'u7', name: 'Neha', avatarUrl: 'https://picsum.photos/seed/user7/200/200', isOnline: false, stats: { followers: 88, fans: 42 }, details: { hometown: 'Pune' } },
+  { id: 'u8', name: 'Karan', avatarUrl: 'https://picsum.photos/seed/user8/200/200', isOnline: true, stats: { followers: 123, fans: 99 }, details: { hometown: 'Ahmedabad' } },
+  { id: 'u9', name: 'Pooja', avatarUrl: 'https://picsum.photos/seed/user9/200/200', isOnline: true, stats: { followers: 45, fans: 30 }, details: { hometown: 'Jaipur' } },
+  { id: 'u10', name: 'Sameer', avatarUrl: 'https://picsum.photos/seed/user10/200/200', isOnline: false, stats: { followers: 78, fans: 60 }, details: { hometown: 'Lucknow' } },
   { id: 'u11', name: 'Support Bot', avatarUrl: 'https://picsum.photos/seed/support/200/200', isOnline: true, stats: { followers: 999, fans: 999 } },
-  { id: 'u12', name: 'Karen', avatarUrl: 'https://picsum.photos/seed/user12/200/200', isOnline: false, stats: { followers: 23, fans: 11 } },
-  { id: 'u13', name: 'Leo', avatarUrl: 'https://picsum.photos/seed/user13/200/200', isOnline: true, stats: { followers: 89, fans: 54 } },
-  { id: 'u14', name: 'Mia', avatarUrl: 'https://picsum.photos/seed/user14/200/200', isOnline: true, stats: { followers: 150, fans: 110 } },
+  { id: 'u12', name: 'Deepika', avatarUrl: 'https://picsum.photos/seed/user12/200/200', isOnline: false, stats: { followers: 23, fans: 11 }, details: { hometown: 'Chandigarh' } },
+  { id: 'u13', name: 'Rahul', avatarUrl: 'https://picsum.photos/seed/user13/200/200', isOnline: true, stats: { followers: 89, fans: 54 }, details: { hometown: 'Bhopal' } },
+  { id: 'u14', name: 'Isha', avatarUrl: 'https://picsum.photos/seed/user14/200/200', isOnline: true, stats: { followers: 150, fans: 110 }, details: { hometown: 'Indore' } },
 ];
 
 const messages: Message[] = [
     { id: 'm1', text: 'Hey everyone! Excited to be here.', user: users[0], timestamp: '10:30 AM' },
-    { id: 'm2', text: 'Welcome, Alina! What are your favorite genres?', user: users[1], timestamp: '10:31 AM' },
+    { id: 'm2', text: 'Welcome, Priya! What are your favorite genres?', user: users[1], timestamp: '10:31 AM' },
     { id: 'm3', text: 'I love indie and lo-fi beats. Perfect for chilling.', user: users[0], timestamp: '10:32 AM' },
     { id: 'm4', text: 'Nice! Anyone have recommendations for a good lo-fi playlist?', user: users[3], timestamp: '10:33 AM' },
 ];
@@ -139,14 +143,14 @@ const games: Game[] = [
 ];
 
 const coinPackages: CoinPackage[] = [
-  { id: 'cp01', amount: 20000, price: 25 },
-  { id: 'cp02', amount: 40000, price: 50, bonus: 2000 },
-  { id: 'cp1', amount: 80000, price: 100, bonus: 10000 },
-  { id: 'cp2', amount: 400000, price: 500, bonus: 60000 },
-  { id: 'cp3', amount: 800000, price: 1000, bonus: 150000 },
-  { id: 'cp4', amount: 2000000, price: 2500, bonus: 400000 },
-  { id: 'cp5', amount: 4000000, price: 5000, bonus: 1000000 },
-  { id: 'cp6', amount: 8000000, price: 10000, bonus: 2400000 },
+  { id: 'cp01', amount: 2000, price: 25 },
+  { id: 'cp02', amount: 4200, price: 50, bonus: 200 },
+  { id: 'cp1', amount: 10000, price: 100, bonus: 1000 },
+  { id: 'cp2', amount: 55000, price: 500, bonus: 5000 },
+  { id: 'cp3', amount: 115000, price: 1000, bonus: 15000 },
+  { id: 'cp4', amount: 300000, price: 2500, bonus: 50000 },
+  { id: 'cp5', amount: 650000, price: 5000, bonus: 150000 },
+  { id: 'cp6', amount: 1400000, price: 10000, bonus: 400000 },
 ];
 
 const contributions: Contribution[] = [
