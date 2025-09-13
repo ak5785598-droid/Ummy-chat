@@ -1,17 +1,68 @@
 export const UmmyLogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg
+    width="32"
+    height="32"
+    viewBox="0 0 100 100"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
     <defs>
-      <linearGradient id="logo-gradient" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor={props.color || "hsl(var(--primary))"} />
-        <stop offset="100%" stopColor={props.color || "hsl(var(--accent))"} />
+      <radialGradient
+        id="heart-gradient"
+        cx="0.5"
+        cy="0.5"
+        r="0.5"
+        fx="0.3"
+        fy="0.3"
+      >
+        <stop offset="0%" stopColor="#FF89B5" />
+        <stop offset="100%" stopColor="#E85A90" />
+      </radialGradient>
+      <linearGradient id="mic-gradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#E85A90" />
+        <stop offset="100%" stopColor="#D13B76" />
       </linearGradient>
     </defs>
-    <circle cx="16" cy="17" r="9" fill="hsl(var(--background))" stroke="url(#logo-gradient)" strokeWidth="2"/>
-    <circle cx="9.5" cy="9.5" r="4.5" fill="hsl(var(--background))" stroke="url(#logo-gradient)" strokeWidth="2"/>
-    <circle cx="22.5" cy="9.5" r="4.5" fill="hsl(var(--background))" stroke="url(#logo-gradient)" strokeWidth="2"/>
-    <circle cx="13" cy="16" r="1.5" fill="url(#logo-gradient)"/>
-    <circle cx="19" cy="16" r="1.5" fill="url(#logo-gradient)"/>
-    <path d="M16 20 a2,2 0 0,0 0,2" stroke="url(#logo-gradient)" strokeWidth="1.5" strokeLinecap="round" />
+
+    {/* Headphones */}
+    <path
+      d="M 20 55 A 30 30 0 0 1 80 55"
+      stroke="#5F3A70"
+      strokeWidth="10"
+      fill="none"
+      strokeLinecap="round"
+    />
+    <circle cx="15" cy="55" r="10" fill="#5F3A70" />
+    <circle cx="85" cy="55" r="10" fill="#5F3A70" />
+
+    {/* Heart */}
+    <path
+      d="M50 30 C 35 15, 10 25, 10 45 C 10 65, 50 85, 50 85 C 50 85, 90 65, 90 45 C 90 25, 65 15, 50 30 Z"
+      fill="url(#heart-gradient)"
+    />
+
+    {/* Face */}
+    <circle cx="38" cy="48" r="3" fill="#333" />
+    <circle cx="62" cy="48" r="3" fill="#333" />
+    <path
+      d="M 45 60 Q 50 68 55 60"
+      stroke="#333"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+    />
+
+    {/* Soundwave */}
+    <rect x="42" y="68" width="4" height="12" rx="2" fill="white" />
+    <rect x="48" y="65" width="4" height="18" rx="2" fill="white" />
+    <rect x="54" y="68" width="4" height="12" rx="2" fill="white" />
+
+    {/* Microphone */}
+    <g transform="translate(65, 75) rotate(25)">
+      <rect x="-8" y="-12" width="16" height="24" rx="8" fill="#5F3A70" />
+      <circle cx="0" cy="5" r="3" fill="#FF89B5" />
+      <circle cx="-5" cy="0" r="2" fill="#E85A90" />
+    </g>
   </svg>
 );
 
