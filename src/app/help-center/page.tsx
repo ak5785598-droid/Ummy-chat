@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
+import { AppLayout } from '@/components/layout/app-layout';
 
 const faqs = [
   {
@@ -43,61 +44,63 @@ const faqs = [
 
 export default function HelpCenterPage() {
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="font-headline text-4xl font-bold tracking-tight">
-          Help Center
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          Find answers to your questions and get the support you need.
-        </p>
-      </header>
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">
-            Frequently Asked Questions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, index) => (
-              <AccordionItem value={`item-${index}`} key={index}>
-                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Need More Help?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            If you can't find the answer you're looking for, join our official help room to chat with a support agent.
+    <AppLayout>
+      <div className="space-y-8">
+        <header className="space-y-2">
+          <h1 className="font-headline text-4xl font-bold tracking-tight">
+            Help Center
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Find answers to your questions and get the support you need.
           </p>
-          <Link href="/rooms/official-help-room">
-             <div className="flex items-center justify-between rounded-lg border p-4 hover:bg-secondary transition-colors">
-                <div className="flex items-center gap-3">
-                    <LifeBuoy className="h-6 w-6 text-primary" />
-                    <div>
-                        <h3 className="font-semibold">Join Official Help Room</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Get live support from our team.
-                        </p>
-                    </div>
-                </div>
-                 <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium">
-                    Join Room
-                 </button>
-            </div>
-          </Link>
-        </CardContent>
-      </Card>
-    </div>
+        </header>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">
+              Frequently Asked Questions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, index) => (
+                <AccordionItem value={`item-${index}`} key={index}>
+                  <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">Need More Help?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              If you can't find the answer you're looking for, join our official help room to chat with a support agent.
+            </p>
+            <Link href="/rooms/official-help-room">
+               <div className="flex items-center justify-between rounded-lg border p-4 hover:bg-secondary transition-colors">
+                  <div className="flex items-center gap-3">
+                      <LifeBuoy className="h-6 w-6 text-primary" />
+                      <div>
+                          <h3 className="font-semibold">Join Official Help Room</h3>
+                          <p className="text-sm text-muted-foreground">
+                              Get live support from our team.
+                          </p>
+                      </div>
+                  </div>
+                   <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium">
+                      Join Room
+                   </button>
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }
