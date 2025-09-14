@@ -12,6 +12,17 @@ export default function GamesPage() {
   const freeGames = getFreeGames();
   const premiumGames = getPremiumGames();
 
+  const getGameLink = (gameId: string) => {
+    switch (gameId) {
+      case 'g1':
+        return '/games/ludo';
+      case 'g2':
+        return '/games/carrom';
+      default:
+        return '#';
+    }
+  }
+
   return (
     <AppLayout>
       <div className="space-y-8">
@@ -28,7 +39,7 @@ export default function GamesPage() {
             {freeGames.map((game) => (
               <div key={game.id} className="group block">
                 <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
-                  <Link href={game.id === 'g1' ? '/games/ludo' : '#'} className="block">
+                  <Link href={getGameLink(game.id)} className="block">
                     <CardHeader className="p-0">
                       <div className="relative aspect-video w-full">
                         <Image
@@ -47,7 +58,7 @@ export default function GamesPage() {
                   </Link>
                   <CardFooter className="p-4 pt-0">
                      <Button asChild className="w-full">
-                        <Link href={game.id === 'g1' ? '/games/ludo' : '#'}>Play</Link>
+                        <Link href={getGameLink(game.id)}>Play</Link>
                      </Button>
                   </CardFooter>
                 </Card>
@@ -96,5 +107,3 @@ export default function GamesPage() {
     </AppLayout>
   );
 }
-
-    

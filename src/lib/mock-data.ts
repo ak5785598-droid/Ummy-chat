@@ -175,8 +175,8 @@ const rooms: Room[] = [
 ];
 
 const games: Game[] = [
-  { id: 'g1', title: 'Ludo Party', coverUrl: 'https://images.unsplash.com/photo-1591696205602-2f950c417cb9', cost: 0, imageHint: 'ludo board' },
-  { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://picsum.photos/seed/carrom-board/300/200', cost: 0, imageHint: 'carrom board' },
+  { id: 'g1', title: 'Ludo Party', coverUrl: 'https://images.unsplash.com/photo-1591696205602-2f950c417cb9?q=80&w=2940&auto=format&fit=crop', cost: 0, imageHint: 'ludo board' },
+  { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://images.unsplash.com/photo-1610839563032-353316138715?q=80&w=2832&auto=format&fit=crop', cost: 0, imageHint: 'carrom board' },
   { id: 'g3', title: 'Chess Masters', coverUrl: 'https://picsum.photos/seed/chess-set/300/200', cost: 0, imageHint: 'chess set' },
   { id: 'g4', title: 'Bubble Shooter', coverUrl: 'https://picsum.photos/seed/arcade-game/300/200', cost: 0, imageHint: 'arcade game' },
   { id: 'g9', title: 'Crazy Alpaca', coverUrl: 'https://picsum.photos/seed/funny-alpaca/300/200', cost: 0, imageHint: 'funny alpaca' },
@@ -299,5 +299,3 @@ export const getAchievementTasks = (): Task[] => {
 export const getProfileVisitors = (): User[] => {
     return users.slice(7, 14);
 }
-
-    
