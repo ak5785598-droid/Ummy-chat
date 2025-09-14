@@ -1,0 +1,29 @@
+import { AppLayout } from '@/components/layout/app-layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GameControllerIcon } from '@/components/icons';
+
+export default function LudoGamePage() {
+  return (
+    <AppLayout>
+      <div className="space-y-8">
+        <header className="flex items-center gap-3">
+          <GameControllerIcon className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-4xl font-bold tracking-tight">
+            Ludo Party
+          </h1>
+        </header>
+        <Card>
+          <CardContent className="p-2 md:p-4">
+            <div className="aspect-[4/3] w-full">
+              <iframe
+                src="https://ludogame.io/"
+                className="h-full w-full rounded-md border-0"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+}

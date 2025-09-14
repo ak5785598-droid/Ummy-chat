@@ -25,28 +25,32 @@ export default function GamesPage() {
           <h2 className="font-headline text-2xl font-semibold">Free to Play</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {freeGames.map((game) => (
-              <Link href="#" key={game.id} className="group block">
+              <div key={game.id} className="group block">
                 <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
-                  <CardHeader className="p-0">
-                    <div className="relative aspect-video w-full">
-                      <Image
-                        src={game.coverUrl}
-                        alt={game.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        data-ai-hint={game.imageHint}
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <CardTitle className="font-headline text-lg truncate">{game.title}</CardTitle>
-                  </CardContent>
+                  <Link href={game.id === 'g1' ? '/games/ludo' : '#'} className="block">
+                    <CardHeader className="p-0">
+                      <div className="relative aspect-video w-full">
+                        <Image
+                          src={game.coverUrl}
+                          alt={game.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          data-ai-hint={game.imageHint}
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <CardTitle className="font-headline text-lg truncate">{game.title}</CardTitle>
+                    </CardContent>
+                  </Link>
                   <CardFooter className="p-4 pt-0">
-                    <Button className="w-full">Play</Button>
+                     <Button asChild className="w-full">
+                        <Link href={game.id === 'g1' ? '/games/ludo' : '#'}>Play</Link>
+                     </Button>
                   </CardFooter>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -55,32 +59,34 @@ export default function GamesPage() {
           <h2 className="font-headline text-2xl font-semibold">Premium Games</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {premiumGames.map((game) => (
-              <Link href="#" key={game.id} className="group block">
+              <div key={game.id} className="group block">
                 <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
-                  <CardHeader className="p-0">
-                    <div className="relative aspect-video w-full">
-                      <Image
-                        src={game.coverUrl}
-                        alt={game.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        data-ai-hint={game.imageHint}
-                      />
-                       <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-primary/80 px-2 py-1 text-xs font-bold text-primary-foreground backdrop-blur-sm">
-                          <Gem className="h-3 w-3" />
-                          <span>{game.cost}</span>
-                        </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <CardTitle className="font-headline text-lg truncate">{game.title}</CardTitle>
-                  </CardContent>
+                   <Link href="#" className="block">
+                    <CardHeader className="p-0">
+                      <div className="relative aspect-video w-full">
+                        <Image
+                          src={game.coverUrl}
+                          alt={game.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          data-ai-hint={game.imageHint}
+                        />
+                         <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-primary/80 px-2 py-1 text-xs font-bold text-primary-foreground backdrop-blur-sm">
+                            <Gem className="h-3 w-3" />
+                            <span>{game.cost}</span>
+                          </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <CardTitle className="font-headline text-lg truncate">{game.title}</CardTitle>
+                    </CardContent>
+                  </Link>
                   <CardFooter className="p-4 pt-0">
                     <Button className="w-full">Play Now</Button>
                   </CardFooter>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
