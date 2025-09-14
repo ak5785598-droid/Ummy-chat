@@ -18,6 +18,10 @@ export default function GamesPage() {
         return '/games/ludo';
       case 'g2':
         return '/games/carrom';
+      case 'g3':
+        return '/games/chess';
+      case 'g4':
+        return '/games/bubble-shooter';
       default:
         return '#';
     }
