@@ -175,17 +175,17 @@ const rooms: Room[] = [
 ];
 
 const games: Game[] = [
-  { id: 'g1', title: 'Ludo Party', coverUrl: 'https://picsum.photos/seed/ludo/300/200', cost: 0, imageHint: 'ludo board' },
-  { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://picsum.photos/seed/carrom/300/200', cost: 0, imageHint: 'carrom board' },
-  { id: 'g3', title: 'Chess Masters', coverUrl: 'https://picsum.photos/seed/chess/300/200', cost: 0, imageHint: 'chess game' },
-  { id: 'g4', title: 'Bubble Shooter', coverUrl: 'https://picsum.photos/seed/bubble/300/200', cost: 0, imageHint: 'colorful bubbles' },
-  { id: 'g9', title: 'Crazy Alpaca', coverUrl: 'https://picsum.photos/seed/alpaca/300/200', cost: 0, imageHint: 'funny alpaca' },
-  { id: 'g10', title: 'Carrom', coverUrl: 'https://picsum.photos/seed/carrom2/300/200', cost: 0, imageHint: 'carrom board game' },
-  { id: 'g11', title: 'Monster Crush', coverUrl: 'https://picsum.photos/seed/monster/300/200', cost: 0, imageHint: 'cute monster' },
-  { id: 'g5', title: 'Rummy Riches', coverUrl: 'https://picsum.photos/seed/rummy/300/200', cost: 100, imageHint: 'playing cards' },
-  { id: 'g6', title: 'Poker Pro', coverUrl: 'https://picsum.photos/seed/poker/300/200', cost: 500, imageHint: 'poker chips' },
-  { id: 'g7', title: 'Teen Patti Gold', coverUrl: 'https://picsum.photos/seed/teenpatti/300/200', cost: 200, imageHint: 'card game' },
-  { id: 'g8', title: '8 Ball Pool', coverUrl: 'https://picsum.photos/seed/pool/300/200', cost: 50, imageHint: 'billiards table' },
+  { id: 'g1', title: 'Ludo Party', coverUrl: 'https://picsum.photos/seed/ludo-board/300/200', cost: 0, imageHint: 'ludo board' },
+  { id: 'g2', title: 'Carrom Clash', coverUrl: 'https://picsum.photos/seed/carrom-board/300/200', cost: 0, imageHint: 'carrom board' },
+  { id: 'g3', title: 'Chess Masters', coverUrl: 'https://picsum.photos/seed/chess-game/300/200', cost: 0, imageHint: 'chess game' },
+  { id: 'g4', title: 'Bubble Shooter', coverUrl: 'https://picsum.photos/seed/bubble-game/300/200', cost: 0, imageHint: 'colorful bubbles' },
+  { id: 'g9', title: 'Crazy Alpaca', coverUrl: 'https://picsum.photos/seed/alpaca-farm/300/200', cost: 0, imageHint: 'funny alpaca' },
+  { id: 'g10', title: 'Carrom', coverUrl: 'https://picsum.photos/seed/carrom-game/300/200', cost: 0, imageHint: 'carrom board game' },
+  { id: 'g11', title: 'Monster Crush', coverUrl: 'https://picsum.photos/seed/monster-game/300/200', cost: 0, imageHint: 'cute monster' },
+  { id: 'g5', title: 'Rummy Riches', coverUrl: 'https://picsum.photos/seed/rummy-cards/300/200', cost: 100, imageHint: 'playing cards' },
+  { id: 'g6', title: 'Poker Pro', coverUrl: 'https://picsum.photos/seed/poker-chips/300/200', cost: 500, imageHint: 'poker chips' },
+  { id: 'g7', title: 'Teen Patti Gold', coverUrl: 'https://picsum.photos/seed/card-game/300/200', cost: 200, imageHint: 'card game' },
+  { id: 'g8', title: '8 Ball Pool', coverUrl: 'https://picsum.photos/seed/billiards-game/300/200', cost: 50, imageHint: 'billiards table' },
 ];
 
 const coinPackages: CoinPackage[] = [
