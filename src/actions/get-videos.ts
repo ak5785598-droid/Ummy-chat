@@ -11,7 +11,7 @@ export async function searchVideosAction(query: string) {
     console.error(error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     if (errorMessage.includes('API key')) {
-        return { success: false, error: "The YouTube search feature is not configured. Please add a Google API key." };
+        return { success: false, error: "The YouTube search feature is not configured. Please add a Google API key to your environment variables to enable it." };
     }
     return {
       success: false,
