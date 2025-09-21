@@ -1,52 +1,66 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Youtube, Clapperboard, PlaySquare, AlertTriangle } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import {
+  Youtube,
+  Clapperboard,
+  PlaySquare,
+  AlertTriangle,
+  Loader2,
+  Search,
+} from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AppLayout } from '@/components/layout/app-layout';
+import { searchVideosAction } from '@/actions/get-videos';
+import type { VideoSearchResult } from '@/ai/flows/youtube-video-search';
 
 export default function WatchPage() {
-  const [videoUrl, setVideoUrl] = useState('');
-  const [inputValue, setInputValue] = useState('');
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<VideoSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const getYouTubeVideoId = (url: string) => {
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError(null);
-    let videoId = null;
-    try {
-      const urlObject = new URL(url);
-      const hostname = urlObject.hostname;
-      if (hostname.includes('youtube.com')) {
-        videoId = urlObject.searchParams.get('v');
-      } else if (hostname.includes('youtu.be')) {
-        videoId = urlObject.pathname.slice(1);
-      }
-      if (!videoId) {
-        throw new Error();
-      }
-      return videoId;
-    } catch (e) {
-      setError('Invalid YouTube URL. Please enter a valid video link.');
-      return null;
-    }
-  };
+    setSearchResults([]);
+    setSelectedVideoId(null);
+    const formData = new FormData(event.currentTarget);
+    const query = formData.get('query') as string;
 
-  const handleWatchClick = () => {
-    if (!inputValue) {
-      setError('Please enter a YouTube URL.');
+    if (!query) {
+      setError('Please enter a search term.');
       return;
     }
-    const videoId = getYouTubeVideoId(inputValue);
-    if (videoId) {
-      setVideoUrl(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
-    } else {
-      setVideoUrl('');
-    }
+
+    startTransition(async () => {
+      const result = await searchVideosAction(query);
+
+      if (result.success) {
+        setSearchResults(result.data);
+        if (result.data.length === 0) {
+            setError('No videos found. Try a different search term.')
+        }
+      } else {
+        setError(result.error);
+      }
+    });
   };
+
+  const videoEmbedUrl = selectedVideoId
+    ? `https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`
+    : null;
 
   return (
     <AppLayout>
@@ -60,38 +74,46 @@ export default function WatchPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Watch a YouTube Video</CardTitle>
-            <CardDescription>Paste a YouTube video URL below to watch it with your friends.</CardDescription>
+            <CardTitle className="font-headline">
+              Search YouTube Videos
+            </CardTitle>
+            <CardDescription>
+              Enter a song or video name to search YouTube and watch it with
+              your friends.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
+            <form onSubmit={handleSearch} className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Enter a YouTube video URL..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleWatchClick()}
+                name="query"
+                placeholder="e.g., 'latest movie trailers' or 'lofi hip hop radio'"
                 className="flex-1"
+                disabled={isPending}
               />
-              <Button onClick={handleWatchClick}>
-                <PlaySquare />
-                <span className="sr-only md:not-sr-only ml-2">Watch</span>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Search />
+                )}
+                <span className="sr-only md:not-sr-only ml-2">Search</span>
               </Button>
-            </div>
+            </form>
 
             {error && (
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Invalid URL</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            {videoUrl ? (
+            {videoEmbedUrl ? (
               <div className="aspect-video w-full">
                 <iframe
                   className="h-full w-full rounded-lg"
-                  src={videoUrl}
+                  src={videoEmbedUrl}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -99,13 +121,51 @@ export default function WatchPage() {
                 ></iframe>
               </div>
             ) : (
+              !isPending && searchResults.length === 0 && (
                 <Alert className="bg-secondary">
                   <Clapperboard className="h-4 w-4" />
                   <AlertTitle>Start a Watch Party!</AlertTitle>
                   <AlertDescription>
-                    Paste a YouTube video link above to begin.
+                    Search for a YouTube video to begin. <br />
+                    <span className='font-bold mt-2 block'>Note: This feature requires a YouTube API key. Please add your key to a `.env.local` file as `YOUTUBE_API_KEY=your_key_here`.</span>
                   </AlertDescription>
                 </Alert>
+              )
+            )}
+            
+            {isPending && (
+                <div className='flex justify-center items-center p-8'>
+                    <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+                </div>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {searchResults.map((video) => (
+                  <Card
+                    key={video.videoId}
+                    className="cursor-pointer overflow-hidden transition-all hover:shadow-md hover:-translate-y-1"
+                    onClick={() => {
+                        setSelectedVideoId(video.videoId)
+                        setSearchResults([])
+                    }}
+                  >
+                    <div className="relative aspect-video w-full">
+                      <Image
+                        src={video.thumbnailUrl}
+                        alt={video.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="text-base font-medium line-clamp-2">
+                        {video.title}
+                      </CardTitle>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
