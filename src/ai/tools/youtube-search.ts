@@ -8,7 +8,7 @@ import { z } from 'genkit';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-export function isConfigured(): boolean {
+function isConfigured(): boolean {
   return !!YOUTUBE_API_KEY;
 }
 
