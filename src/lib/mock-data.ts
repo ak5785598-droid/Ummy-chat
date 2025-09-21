@@ -227,16 +227,16 @@ const pkBattles: PkBattle[] = [
 ]
 
 const dailyTasks: Task[] = [
-    { id: 'dt1', title: 'Join a room', description: 'Spend at least 10 minutes in any public chat room.', coinReward: 50, isCompleted: true, cta: { label: 'Go', href: '/rooms'} },
-    { id: 'dt2', title: 'Send a gift', description: 'Send a virtual gift to any user in a room.', coinReward: 100, isCompleted: false, cta: { label: 'Go', href: '/rooms'} },
-    { id: 'dt3', title: 'Play a game', description: 'Play any game in the Game Center.', coinReward: 75, isCompleted: false, cta: { label: 'Go', href: '/games'} },
+    { id: 'dt1', title: 'Join a room', description: 'Spend at least 10 minutes in any public chat room.', coinReward: 3000, isCompleted: true, cta: { label: 'Go', href: '/rooms'} },
+    { id: 'dt2', title: 'Send a gift', description: 'Send a virtual gift to any user in a room.', coinReward: 3500, isCompleted: false, cta: { label: 'Go', href: '/rooms'} },
+    { id: 'dt3', title: 'Play a game', description: 'Play any game in the Game Center.', coinReward: 3200, isCompleted: false, cta: { label: 'Go', href: '/games'} },
 ];
 
 const achievementTasks: Task[] = [
-    { id: 'at1', title: 'Follow 3 users', description: 'Expand your social circle by following three other users.', coinReward: 200, isCompleted: true, cta: { label: 'Explore', href: '/' } },
-    { id: 'at2', title: 'Become a room host', description: 'Create and host your own chat room.', coinReward: 500, isCompleted: false, cta: { label: 'Create', href: '/rooms' } },
-    { id: 'at3', title: 'Top Contributor', description: 'Become one of the top 3 contributors in any room.', coinReward: 1000, isCompleted: false, cta: { label: 'Explore', href: '/rooms'} },
-    { id: 'at4', title: 'Win a PK Battle', description: 'Be the host of a winning room in a PK Battle.', coinReward: 1500, isCompleted: false, cta: { label: 'Battle', href: '/' } },
+    { id: 'at1', title: 'Follow 3 users', description: 'Expand your social circle by following three other users.', coinReward: 5000, isCompleted: true, cta: { label: 'Explore', href: '/' } },
+    { id: 'at2', title: 'Become a room host', description: 'Create and host your own chat room.', coinReward: 10000, isCompleted: false, cta: { label: 'Create', href: '/rooms' } },
+    { id: 'at3', title: 'Top Contributor', description: 'Become one of the top 3 contributors in any room.', coinReward: 20000, isCompleted: false, cta: { label: 'Explore', href: '/rooms'} },
+    { id: 'at4', title: 'Win a PK Battle', description: 'Be the host of a winning room in a PK Battle.', coinReward: 25000, isCompleted: false, cta: { label: 'Battle', href: '/' } },
 ];
 
 
