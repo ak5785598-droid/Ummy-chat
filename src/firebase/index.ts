@@ -4,9 +4,10 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // A record to hold the initialized SDKs to prevent re-initialization.
-let firebaseServices: { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore } | null = null;
+let firebaseServices: { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore, storage: FirebaseStorage } | null = null;
 
 /**
  * Initializes Firebase services if they haven't been already.
@@ -25,12 +26,14 @@ export function initializeFirebase() {
 
   const auth = getAuth(app);
   const firestore = getFirestore(app);
+  const storage = getStorage(app);
 
   // Cache the initialized services.
   firebaseServices = {
     firebaseApp: app,
     auth,
     firestore,
+    storage,
   };
 
   return firebaseServices;

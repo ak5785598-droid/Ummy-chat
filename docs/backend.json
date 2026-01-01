@@ -386,5 +386,14 @@
       }
     ],
     "reasoning": "The Firestore data structure is designed to support a voice chat room application (like Ummy) with a focus on user profiles, chat rooms, friend requests, chat messages, and virtual gifting. It prioritizes authorization independence and security through denormalization and structural segregation.\n\n**Authorization Independence:** The structure avoids `get()` calls in security rules by denormalizing authorization data. For example, the `ChatRoom` documents include the `ownerId` which can be used in rules without fetching the user's document. Furthermore, fields like `moderatorIds` are embedded within the `ChatRoom` document. This avoids the need to fetch user roles from separate collections.\n\n**Structural Segregation:** User-specific data (e.g., profile) is stored under `/users/{userId}`, ensuring clear ownership. Chat rooms are stored in a top-level `/chatRooms` collection, but each document contains `ownerId` and `moderatorIds`, enabling fine-grained access control without the need for collection group queries.\n\n**QAPs (Rules Are Not Filters):** The structure supports secure list operations. Listing chat rooms can be secured based on membership or ownership, thanks to the denormalized `ownerId` and `moderatorIds` fields within each chat room document. Friend requests are segregated under `/friendRequests` and can be queried and secured based on the `senderId` and `receiverId`.\n\n**Access Modeling:** Path-based ownership is used for user profiles (`/users/{userId}/profile`). Collaborative data (chat rooms) includes an `ownerId` and `moderatorIds` for access control. Global roles are not explicitly implemented, as the authorization relies on `request.auth.uid` and data within the documents. If roles were a requirement, a separate `/roles_admin/{uid}` collection could be added to denote admin roles.\n\n**Invariants:** The structure supports data integrity. Timestamps (`createdAt`, `timestamp`) are included in relevant entities to track creation and modification times. Ownership is enforced through the `ownerId` field in `ChatRoom` documents, ensuring that only the owner can modify certain aspects of the chat room."
+  },
+  "storage": {
+    "structure": [
+      {
+        "path": "/users/{userId}/profile-picture.jpg",
+        "description": "Stores the profile picture for a given user. Only the authenticated user can upload or update their own picture.",
+        "contentType": "image/jpeg"
+      }
+    ]
   }
 }
