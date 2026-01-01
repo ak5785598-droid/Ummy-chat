@@ -259,7 +259,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import type { Room } from '@/lib/types';
+import type { Room, User as RoomUser } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -291,10 +291,13 @@ export function RoomClient({ room }: { room: Room }) {
   const [pkProgress1, setPkProgress1] = useState(30);
   const [pkProgress2, setPkProgress2] = useState(70);
   const { user: currentUser } = useUser();
+  const [pkContestant1, setPkContestant1] = useState<RoomUser | null>(null);
+  const [pkContestant2, setPkContestant2] = useState<RoomUser | null>(null);
 
   useEffect(() => {
     const getPermissions = async () => {
       try {
+        // This code runs only on the client
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true,
@@ -320,9 +323,14 @@ export function RoomClient({ room }: { room: Room }) {
     };
     getPermissions();
   }, [toast]);
-
+  
   useEffect(() => {
     if (!room) return;
+    // Set contestants only on client-side
+    const [c1, c2] = room.participants.slice(0, 2);
+    setPkContestant1(c1);
+    setPkContestant2(c2);
+
     const interval = setInterval(() => {
       if (room.participants.length > 0) {
         const randomIndex = Math.floor(Math.random() * room.participants.length);
@@ -336,6 +344,9 @@ export function RoomClient({ room }: { room: Room }) {
   
   useEffect(() => {
     if (isPkBattle) {
+      // Set initial random values on client
+      setPkProgress1(Math.random() * 100);
+      setPkProgress2(Math.random() * 100);
       const battleInterval = setInterval(() => {
         setPkProgress1(Math.random() * 100);
         setPkProgress2(Math.random() * 100);
@@ -348,8 +359,6 @@ export function RoomClient({ room }: { room: Room }) {
     return null;
   }
   
-  const [pkContestant1, pkContestant2] = room.participants.slice(0, 2);
-
   const reactions = [
     { icon: Heart, label: 'Love' },
     { icon: ThumbsUp, label: 'Like' },
