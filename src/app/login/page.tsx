@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
-import { Phone, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/firebase';
+import { Phone, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
   FacebookAuthProvider,
@@ -35,8 +35,16 @@ export default function LoginPage() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  
+  useEffect(() => {
+    // If user is logged in, redirect to rooms
+    if (user) {
+      router.push('/rooms');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (auth && !window.recaptchaVerifier) {
@@ -50,6 +58,7 @@ export default function LoginPage() {
   }, [auth]);
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -65,6 +74,7 @@ export default function LoginPage() {
   };
   
   const handleFacebookSignIn = async () => {
+    if (!auth) return;
     const provider = new FacebookAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -81,8 +91,8 @@ export default function LoginPage() {
 
   const handlePhoneSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.recaptchaVerifier) {
-      console.error('reCAPTCHA verifier not initialized');
+    if (!auth || !window.recaptchaVerifier) {
+      console.error('Auth or reCAPTCHA verifier not initialized');
       return;
     }
     setIsSendingCode(true);
@@ -131,6 +141,13 @@ export default function LoginPage() {
     }
   };
 
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground">
