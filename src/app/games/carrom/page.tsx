@@ -15,7 +15,7 @@ export default function CarromGamePage() {
         </header>
         <Card>
           <CardContent className="p-2 md:p-4">
-            <div className="aspect-video w-full">
+            <div className="aspect-[4/3] w-full">
               <iframe
                 src="https://playpager.com/embed/carrom/index.html"
                 className="h-full w-full rounded-md border-0"
