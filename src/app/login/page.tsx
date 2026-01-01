@@ -49,14 +49,14 @@ export default function LoginPage() {
   useEffect(() => {
     if (auth && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
         'recaptcha-container',
         {
           size: 'invisible',
           callback: () => {
             // reCAPTCHA solved, allow signInWithPhoneNumber.
           },
-        }
+        },
+        auth
       );
     }
   }, [auth]);
