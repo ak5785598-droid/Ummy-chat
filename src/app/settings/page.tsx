@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -27,42 +26,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getCurrentUser, getCoinPackages } from '@/lib/mock-data';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SettingsPage() {
   const currentUser = getCurrentUser();
   const coinPackages = getCoinPackages();
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    if (!auth) {
-      toast({
-        variant: 'destructive',
-        title: 'Logout Failed',
-        description: 'Auth service not available.',
-      });
-      return;
-    }
-    try {
-      await signOut(auth);
-      router.push('/login');
-      toast({
-        title: 'Logged Out',
-        description: 'You have been successfully logged out.',
-      });
-    } catch (error) {
-      console.error('Error logging out:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Logout Failed',
-        description: (error as Error).message,
-      });
-    }
+    router.push('/login');
+    toast({
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
+    });
   };
 
   return (
