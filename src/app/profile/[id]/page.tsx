@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getFriends, getUserById, getTopContributors, getProfileVisitors } from '@/lib/mock-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { User, Cake, MapPin, Briefcase, Smile, Eye, Loader, Edit, Camera } from 'lucide-react';
 import { TopContributorsCard } from '@/components/top-contributors-card';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -15,9 +15,12 @@ import { useUser } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { useToast } from '@/hooks/use-toast';
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage() {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  
   const { user: currentUser, isLoading } = useUser();
-  const user = getUserById(params.id);
+  const user = getUserById(id);
   const friends = getFriends();
   const topContributors = getTopContributors();
   const visitors = getProfileVisitors();
