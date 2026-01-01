@@ -46,7 +46,7 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       await signInWithPopup(auth, provider);
-      // No need to toast here, the redirect will happen via useEffect
+      // The useEffect will handle the redirect on user state change.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -65,9 +65,19 @@ export default function LoginPage() {
   const setupRecaptcha = () => {
     if (!auth) return null;
     // Ensure 'recaptcha-container' exists and is visible
-    return new RecaptchaVerifier(auth, 'recaptcha-container', {
+    const recaptchaContainer = document.getElementById('recaptcha-container');
+    if (!recaptchaContainer) return null;
+    
+    // cleanup previous verifier
+    if ((window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier.clear();
+    }
+
+    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       size: 'invisible',
     });
+    (window as any).recaptchaVerifier = verifier;
+    return verifier;
   };
 
   const handlePhoneSignIn = async () => {
@@ -100,7 +110,7 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       await confirmationResult.confirm(verificationCode);
-      // No need to toast here, the redirect will happen via useEffect
+      // The useEffect will handle the redirect on user state change.
     } catch (error: any) {
         console.error(error);
         toast({
@@ -116,7 +126,7 @@ export default function LoginPage() {
 
   if (isUserLoading || user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader className="h-8 w-8 animate-spin text-primary" />
       </div>
     );

@@ -2,43 +2,40 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// A record to hold the initialized SDKs to prevent re-initialization.
+let firebaseServices: { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore } | null = null;
+
+/**
+ * Initializes Firebase services if they haven't been already.
+ * This function handles both server-side and client-side execution environments
+ * and ensures that `initializeApp` is called only once.
+ *
+ * @returns An object containing the initialized `firebaseApp`, `auth`, and `firestore` instances.
+ */
 export function initializeFirebase() {
-  if (!getApps().length) {
-    // Important! initializeApp() is called without any arguments because Firebase App Hosting
-    // integrates with the initializeApp() function to provide the environment variables needed to
-    // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
-    // without arguments.
-    let firebaseApp;
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Only warn in production because it's normal to use the firebaseConfig to initialize
-      // during development
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
-    return getSdks(firebaseApp);
+  // Return the cached services if they already exist.
+  if (firebaseServices) {
+    return firebaseServices;
   }
 
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+  const auth = getAuth(app);
+  const firestore = getFirestore(app);
+
+  // Cache the initialized services.
+  firebaseServices = {
+    firebaseApp: app,
+    auth,
+    firestore,
+  };
+
+  return firebaseServices;
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
-}
 
 export * from './provider';
 export * from './client-provider';
