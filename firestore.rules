@@ -1,204 +1,233 @@
 /**
- * This ruleset enforces a security model for the Dilsey voice chat application.
- *
  * Core Philosophy:
- * The model combines strict user-ownership for personal data with a flexible, role-based
- * system for collaborative spaces (Chat Rooms). The default posture is to deny access,
- * granting permissions explicitly and securely.
+ * This ruleset enforces a security model that combines strict user ownership for
+ * personal data with a flexible, role-based collaborative model for shared resources
+ * like chat rooms. The primary goal is to ensure that users can only access and
+ * modify data they own or have been explicitly granted permission to.
  *
  * Data Structure:
- * - /userProfiles/{userId}: Private user data, only accessible by the owner.
- * - /chatRooms/{chatRoomId}: Collaborative spaces. Access is governed by roles
- *   (owner, moderator, member) stored directly on the document.
- * - /chatRooms/{chatRoomId}/chatMessages/{chatMessageId}: Messages within a room.
- *   Access is derived from the parent chat room's member list.
- * - /friendRequests/{friendRequestId}: Private requests visible only to the sender
- *   and receiver.
- * - /gifts/{giftId}: A public, read-only catalog of virtual gifts.
- * - /giftTransactions/{giftTransactionId}: Private transaction records, visible
- *   only to the involved parties.
+ * User-specific data, such as profiles, is logically nested under the path
+ * `/users/{userId}`. Shared resources like `/chatRooms` and transactional data like
+ * `/friendRequests` are organized in top-level collections. Read-only, publicly
+ * available data like `/gifts` and `/tags` are also stored in top-level collections.
  *
  * Key Security Decisions:
- * - User Isolation: Users can only access their own profile data. Listing all users
- *   is prohibited to protect privacy.
- * - Denormalization for Authorization: Chat room access control lists (ownerId,
- *   moderatorIds, memberIds) are denormalized onto the chatRoom document. This
- *   avoids costly and slow lookups in rules and enables secure queries.
- * - Subcollection Security: Access to subcollections like 'chatMessages' is
- *   secured by checking the user's membership status in the parent 'chatRooms' document.
- * - Public Data: The '/gifts' collection is publicly readable but client writes are
- *   disabled, assuming it is managed by administrators.
- * - Transactional Integrity: Operations like friend requests and gift transactions
- *   are restricted to the sender and receiver, and key fields (sender, receiver)
- *   are immutable after creation.
+ * - User Profiles: A user's profile documents can only be created, read, or modified
+ *   by the authenticated user who owns them.
+ * - Chat Rooms: Chat rooms are discoverable by any authenticated user, but
+ *   modification is restricted to their designated 'owner' and 'moderators'.
+ * - Chat Messages: Access to messages within a chat room is strictly limited to
+ *   the members (owners/moderators) of that room.
+ * - Friend Requests: Can only be created by the sender and can only be seen or acted
+ *   upon by the sender and receiver.
+ * - Admin-Managed Data: Collections like `/gifts` and `/tags` are treated as
+ *   read-only for regular users, with the assumption they are managed by an
+ *   administrative process.
+ *
+ * Denormalization for Authorization:
+ * This ruleset relies on denormalized fields for efficient and secure authorization.
+ * For example, `ChatRoom` documents contain `ownerId` and `moderatorIds` arrays directly,
+ * allowing security rules to check permissions without needing extra database reads (`get` calls)
+ * on other collections, which would be slow and costly.
+ *
+ * Structural Segregation:
+ * The separation of user-private data (`/users/{userId}/...`) from shared, top-level
+ * collections (`/chatRooms`, `/friendRequests`) creates a clear and secure boundary,
+ * simplifying rules and preventing accidental data exposure in list operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
-    // Helper Functions
-    // ----------------------------------------------------------------------
-
+    // Helper Functions for Reusable Logic
+    
     /**
-     * Returns true if the user is authenticated.
+     * Checks if a user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Returns true if the authenticated user's UID matches the provided userId.
-     * This is the foundation for the ownership model.
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the foundation of the ownership model.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
+    
     /**
-     * Returns true if the document being accessed already exists.
-     * Crucial for protecting against writes to non-existent paths.
+     * Checks if a document currently exists in Firestore.
+     * Used to protect against updates or deletes of non-existent documents.
      */
     function isExistingDoc() {
       return resource != null;
     }
     
     /**
-     * A secure convenience function for update/delete operations.
-     * Checks that a document exists AND the user is its owner.
+     * Checks if the user is the owner of an existing document.
      */
     function isExistingOwner(userId) {
       return isOwner(userId) && isExistingDoc();
     }
     
     /**
-     * Returns true if the user is the sender of the document.
+     * Checks if the authenticated user is the sender of a given document
+     * (e.g., a friend request, a gift).
      */
     function isSender(docData) {
       return isSignedIn() && request.auth.uid == docData.senderId;
     }
     
     /**
-     * Returns true if the user is the receiver of the document.
+     * Checks if the authenticated user is the receiver of a given document.
      */
     function isReceiver(docData) {
       return isSignedIn() && request.auth.uid == docData.receiverId;
     }
     
     /**
-     * Checks if the user is a member, moderator, or owner of a chat room.
-     * Requires a get() call to the parent chat room document.
+     * Checks if the authenticated user is a participant (sender or receiver)
+     * in a friend request.
      */
-    function canAccessChatRoom(chatRoomId) {
-      let chatRoom = get(/databases/$(database)/documents/chatRooms/$(chatRoomId));
-      return isSignedIn() && (
-        request.auth.uid == chatRoom.data.ownerId ||
-        request.auth.uid in chatRoom.data.moderatorIds ||
-        request.auth.uid in chatRoom.data.memberIds
-      );
-    }
-    
-    /**
-     * Checks if the user is a moderator or owner of a chat room.
-     * Requires a get() call to the parent chat room document.
-     */
-    function isChatRoomAdmin(chatRoomId) {
-      let chatRoom = get(/databases/$(database)/documents/chatRooms/$(chatRoomId));
-      return isSignedIn() && (
-        request.auth.uid == chatRoom.data.ownerId ||
-        request.auth.uid in chatRoom.data.moderatorIds
-      );
+    function isPartyToRequest(requestData) {
+      return isSignedIn() && (request.auth.uid == requestData.senderId || request.auth.uid == requestData.receiverId);
     }
 
-    // ----------------------------------------------------------------------
-    // Collection Rules
-    // ----------------------------------------------------------------------
+    /**
+     * Checks if the authenticated user is the owner of a given chat room.
+     */
+    function isRoomOwner(roomData) {
+      return isSignedIn() && request.auth.uid == roomData.ownerId;
+    }
     
     /**
-     * @description A user can create, read, and update their own profile, but cannot delete it.
-     * @path /userProfiles/{userId}
-     * @allow (create) An authenticated user creating their own profile: auth.uid == userId.
-     * @deny (get) A user trying to read another user's profile: auth.uid != userId.
-     * @principle Restricts access to a user's own data tree and enforces self-creation.
+     * Checks if the authenticated user is a moderator of a given chat room.
      */
-    match /userProfiles/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
+    function isRoomModerator(roomData) {
+      return isSignedIn() && request.auth.uid in roomData.moderatorIds;
+    }
+    
+    /**
+     * Checks if the user is an administrator (owner or moderator) of a chat room.
+     */
+    function isRoomAdmin(roomData) {
+      return isRoomOwner(roomData) || isRoomModerator(roomData);
+    }
+    
+    /**
+     * Checks if a user is a participant in a chat room by fetching the parent room document.
+     * Note: This assumes only owners and moderators can participate. If regular users
+     * should participate, the ChatRoom entity needs a 'participantIds' field.
+     */
+    function isChatRoomParticipant(chatRoomId) {
+      let room = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
+      return isRoomAdmin(room);
+    }
+
+    /**
+     * @description   Manages a user's profile document(s).
+     * @path          /users/{userId}/profile/{profileId}
+     * @allow         (create, read, update, delete) A user (UID 'user123') can manage their own profile documents under `/users/user123/profile/`.
+     * @deny          (any) A user (UID 'user456') cannot access anything under `/users/user123/profile/`.
+     * @principle     Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/profile/{profileId} {
+      allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if false;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Any signed-in user can read/list chat rooms. Only members can create. Owners/moderators manage, owners delete.
-     * @path /chatRooms/{chatRoomId}
-     * @allow (get) Any authenticated user can view a chat room's details.
-     * @deny (delete) A room member who is not the owner tries to delete the room.
-     * @principle Implements role-based shared access using denormalized member lists.
+     * @description   Manages chat rooms, which are public to find but have restricted write access.
+     * @path          /chatRooms/{chatRoomId}
+     * @allow         (create) An authenticated user can create a new chat room, setting themself as the owner.
+     * @allow         (update) The owner or a moderator of a room can update its details.
+     * @deny          (update) A regular user cannot update a chat room they don't moderate.
+     * @deny          (delete) Only the owner can delete a room; moderators cannot.
+     * @principle     Enforces a collaborative model where writes are controlled by roles (owner/moderator) denormalized onto the document.
      */
     match /chatRooms/{chatRoomId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isExistingDoc() && (isOwner(resource.data.ownerId) || isOwner(request.auth.uid) && request.auth.uid in resource.data.moderatorIds);
-      allow delete: if isExistingOwner(resource.data.ownerId);
-    }
-
-    /**
-     * @description Members of a chat room can read and create messages. Senders or room admins can delete messages.
-     * @path /chatRooms/{chatRoomId}/chatMessages/{chatMessageId}
-     * @allow (create) A member of chatRoomId sends a message.
-     * @deny (list) A user who is not a member of chatRoomId tries to list messages.
-     * @principle Derives permissions from a parent document in the hierarchy.
-     */
-    match /chatRooms/{chatRoomId}/chatMessages/{chatMessageId} {
-      allow get, list: if canAccessChatRoom(chatRoomId);
-      allow create: if canAccessChatRoom(chatRoomId) && isSender(request.resource.data) && request.resource.data.chatRoomId == chatRoomId;
-      allow update: if false;
-      allow delete: if isExistingDoc() && (isSender(resource.data) || isChatRoomAdmin(chatRoomId));
-    }
-
-    /**
-     * @description Only the sender or receiver of a friend request can access it.
-     * @path /friendRequests/{friendRequestId}
-     * @allow (get) The sender or receiver reads the friend request document.
-     * @deny (get) A user who is neither the sender nor the receiver tries to read the request.
-     * @principle Secures data shared between a specific pair of users.
-     */
-    match /friendRequests/{friendRequestId} {
-      allow get: if isExistingDoc() && (isSender(resource.data) || isReceiver(resource.data));
-      allow list: if false;
-      allow create: if isSender(request.resource.data) && request.resource.data.receiverId != request.auth.uid;
-      allow update: if isExistingDoc() && isReceiver(resource.data) && request.resource.data.senderId == resource.data.senderId && request.resource.data.receiverId == resource.data.receiverId;
-      allow delete: if isExistingDoc() && (isSender(resource.data) || isReceiver(resource.data));
+      allow update: if isExistingDoc() && isRoomAdmin(resource.data) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingDoc() && isRoomOwner(resource.data);
     }
     
     /**
-     * @description The catalog of available gifts is public to all users, but cannot be modified by clients.
-     * @path /gifts/{giftId}
-     * @allow (list) Any user, signed in or not, can view the list of available gifts.
-     * @deny (create) A regular user attempts to add a new gift to the catalog.
-     * @principle Provides public read-only access for catalog-style data. Writes must be done via Admin SDK.
+     * @description   Manages messages within a specific chat room subcollection.
+     * @path          /chatRooms/{chatRoomId}/messages/{chatMessageId}
+     * @allow         (read, create) A member (owner/moderator) of chat room 'room123' can read and create messages.
+     * @allow         (delete) A user can delete their own message. The room owner can also delete any message.
+     * @deny          (read) A user who is not a member of 'room123' cannot read its messages.
+     * @principle     Secures a subcollection by checking for membership in the parent document, requiring a `get()` call.
      */
-    match /gifts/{giftId} {
-      allow get, list: if true;
-      allow create: if false; // Admin-only task
-      allow update: if false; // Admin-only task
-      allow delete: if false; // Admin-only task
+    match /chatRooms/{chatRoomId}/messages/{chatMessageId} {
+      allow get, list: if isChatRoomParticipant(chatRoomId);
+      allow create: if isChatRoomParticipant(chatRoomId) && isSender(request.resource.data) && request.resource.data.chatRoomId == chatRoomId;
+      allow update, delete: if isExistingDoc() && isChatRoomParticipant(chatRoomId) && (isSender(resource.data) || isRoomOwner(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data));
+    }
+    
+    /**
+     * @description   Manages friend requests between two users.
+     * @path          /friendRequests/{friendRequestId}
+     * @allow         (read) The sender or receiver can read the request document.
+     * @allow         (update) The receiver can update the request (e.g., change status to 'accepted').
+     * @allow         (list) A user can query for requests where they are the sender OR the receiver.
+     * @deny          (read) A third-party user cannot read a friend request between two other users.
+     * @principle     Grants access based on multiple ownership fields (`senderId`, `receiverId`) within the document.
+     */
+    match /friendRequests/{friendRequestId} {
+      allow get: if isExistingDoc() && isPartyToRequest(resource.data);
+      allow list: if isSignedIn() && (request.query.get('senderId') == request.auth.uid || request.query.get('receiverId') == request.auth.uid);
+      allow create: if isSignedIn() && isSender(request.resource.data) && request.resource.data.senderId != request.resource.data.receiverId;
+      allow update: if isExistingDoc() && isReceiver(resource.data) && request.resource.data.senderId == resource.data.senderId && request.resource.data.receiverId == resource.data.receiverId;
+      allow delete: if isExistingDoc() && isPartyToRequest(resource.data);
+    }
+    
+    /**
+     * @description   Manages transactional records of gifts sent between users.
+     * @path          /userGifts/{userGiftId}
+     * @allow         (create) A user can send a gift to another user, creating a new `UserGift` document.
+     * @allow         (read) The sender or receiver of a gift can view the transaction record.
+     * @deny          (update, delete) Gift records are immutable and cannot be changed or deleted after creation.
+     * @principle     Secures transactional data by making it immutable and readable only by the involved parties.
+     */
+    match /userGifts/{userGiftId} {
+      allow get: if isExistingDoc() && (isSender(resource.data) || isReceiver(resource.data));
+      allow list: if false;
+      allow create: if isSignedIn() && isSender(request.resource.data);
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Gift transactions are private records accessible only to the sender and receiver.
-     * @path /giftTransactions/{giftTransactionId}
-     * @allow (get) The user who sent or received the gift views the transaction record.
-     * @deny (get) A user not involved in the transaction tries to read it.
-     * @principle Enforces privacy for transactional records between two parties. Deletes are disallowed for auditing.
+     * @description   Stores definitions of available virtual gifts. Read-only for users.
+     * @path          /gifts/{giftId}
+     * @allow         (read) Any authenticated user can read the list of available gifts.
+     * @deny          (write) No user can create, update, or delete gift definitions.
+     * @principle     Provides public read access for application data while prohibiting all client-side writes. This data must be managed via the console or a trusted backend server.
      */
-    match /giftTransactions/{giftTransactionId} {
-      allow get: if isExistingDoc() && (isSender(resource.data) || isReceiver(resource.data));
-      allow list: if false;
-      allow create: if isSender(request.resource.data);
-      allow update: if false;
-      allow delete: if false;
+    match /gifts/{giftId} {
+      allow get, list: if isSignedIn();
+      allow create: if false; // TODO: Add admin role check for authorized users
+      allow update: if false; // TODO: Add admin role check for authorized users
+      allow delete: if false; // TODO: Add admin role check for authorized users
+    }
+    
+    /**
+     * @description   Stores definitions of available chat room tags. Read-only for users.
+     * @path          /tags/{tagId}
+     * @allow         (read) Any authenticated user can read the list of available tags.
+     * @deny          (write) No user can create, update, or delete tag definitions.
+     * @principle     Provides public read access for application data while prohibiting all client-side writes. This data must be managed via the console or a trusted backend server.
+     */
+    match /tags/{tagId} {
+      allow get, list: if isSignedIn();
+      allow create: if false; // TODO: Add admin role check for authorized users
+      allow update: if false; // TODO: Add admin role check for authorized users
+      allow delete: if false; // TODO: Add admin role check for authorized users
     }
   }
 }

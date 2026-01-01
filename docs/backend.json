@@ -10,27 +10,28 @@
           "type": "string",
           "description": "Unique identifier for the user profile."
         },
-        "displayName": {
+        "username": {
           "type": "string",
-          "description": "The user's display name."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
+          "description": "The user's chosen username.",
+          "format": "string"
         },
         "avatarUrl": {
           "type": "string",
-          "description": "URL of the user's avatar image.",
+          "description": "URL of the user's profile picture.",
           "format": "uri"
         },
         "bio": {
           "type": "string",
           "description": "A short biography or description of the user."
         },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
         "interests": {
           "type": "array",
-          "description": "A list of the user's interests.",
+          "description": "An array of strings representing the user's interests.",
           "items": {
             "type": "string"
           }
@@ -38,7 +39,7 @@
       },
       "required": [
         "id",
-        "displayName",
+        "username",
         "email"
       ]
     },
@@ -58,85 +59,44 @@
         },
         "description": {
           "type": "string",
-          "description": "A description of the chat room's topic or purpose."
+          "description": "A description of the chat room's topic."
         },
         "ownerId": {
           "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who created the chat room. (Relationship: UserProfile 1:N ChatRoom)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatRoom).  The user ID of the chat room owner."
         },
         "moderatorIds": {
           "type": "array",
-          "description": "References to UserProfiles. The IDs of the users who are moderators of the chat room. (Relationship: UserProfile N:N ChatRoom)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "memberIds": {
-          "type": "array",
-          "description": "References to UserProfiles. The IDs of the users who are members of the chat room. (Relationship: UserProfile N:N ChatRoom)",
+          "description": "References to UserProfiles. (Relationship: UserProfile 1:N ChatRoom). An array of user IDs representing the chat room moderators.",
           "items": {
             "type": "string"
           }
         },
         "createdAt": {
           "type": "string",
-          "description": "The date and time the chat room was created.",
+          "description": "Timestamp of when the chat room was created.",
           "format": "date-time"
         },
-        "aiRecommendationScore": {
-          "type": "number",
-          "description": "A score (0-1) representing how well the chat room matches user interests based on AI analysis."
+        "tags": {
+          "type": "array",
+          "description": "References to Tags. (Relationship: Tag N:N ChatRoom). An array of tag ID",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
         "name",
-        "description",
         "ownerId",
         "createdAt"
-      ]
-    },
-    "ChatMessage": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChatMessage",
-      "type": "object",
-      "description": "Represents a message sent in a chat room.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the chat message."
-        },
-        "chatRoomId": {
-          "type": "string",
-          "description": "Reference to ChatRoom. The ID of the chat room the message was sent in. (Relationship: ChatRoom 1:N ChatMessage)"
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who sent the message. (Relationship: UserProfile 1:N ChatMessage)"
-        },
-        "content": {
-          "type": "string",
-          "description": "The content of the chat message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The date and time the message was sent.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "chatRoomId",
-        "senderId",
-        "content",
-        "timestamp"
       ]
     },
     "FriendRequest": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "FriendRequest",
       "type": "object",
-      "description": "Represents a friend request between two users.",
+      "description": "Represents a friend request between users.",
       "properties": {
         "id": {
           "type": "string",
@@ -144,11 +104,11 @@
         },
         "senderId": {
           "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who sent the friend request. (Relationship: UserProfile 1:N FriendRequest as Sender)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N FriendRequest). The user ID of the sender."
         },
         "receiverId": {
           "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who received the friend request. (Relationship: UserProfile 1:N FriendRequest as Receiver)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N FriendRequest). The user ID of the receiver."
         },
         "status": {
           "type": "string",
@@ -156,7 +116,7 @@
         },
         "createdAt": {
           "type": "string",
-          "description": "The date and time the friend request was created.",
+          "description": "Timestamp of when the friend request was created.",
           "format": "date-time"
         }
       },
@@ -166,6 +126,42 @@
         "receiverId",
         "status",
         "createdAt"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a text message sent within a chat room.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the chat message."
+        },
+        "chatRoomId": {
+          "type": "string",
+          "description": "Reference to ChatRoom. (Relationship: ChatRoom 1:N ChatMessage). The chat room ID where the message was sent."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatMessage). The user ID of the sender."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the chat message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "chatRoomId",
+        "senderId",
+        "content",
+        "timestamp"
       ]
     },
     "Gift": {
@@ -187,56 +183,48 @@
           "description": "URL of the gift's image.",
           "format": "uri"
         },
-        "cost": {
+        "value": {
           "type": "number",
-          "description": "The cost of the gift in virtual currency."
-        },
-        "description": {
-          "type": "string",
-          "description": "A description of the gift."
+          "description": "The value of the gift (e.g., in virtual currency)."
         }
       },
       "required": [
         "id",
         "name",
         "imageUrl",
-        "cost"
+        "value"
       ]
     },
-    "GiftTransaction": {
+    "UserGift": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "GiftTransaction",
+      "title": "UserGift",
       "type": "object",
-      "description": "Represents a transaction where a user sends a gift to another user.",
+      "description": "Represents a gift sent from one user to another.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the gift transaction."
+          "description": "Unique identifier for the user gift transaction."
         },
         "senderId": {
           "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who sent the gift. (Relationship: UserProfile 1:N GiftTransaction as Sender)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N UserGift). The user ID of the sender."
         },
         "receiverId": {
           "type": "string",
-          "description": "Reference to UserProfile. The ID of the user who received the gift. (Relationship: UserProfile 1:N GiftTransaction as Receiver)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N UserGift). The user ID of the receiver."
         },
         "giftId": {
           "type": "string",
-          "description": "Reference to Gift. The ID of the gift that was sent. (Relationship: Gift 1:N GiftTransaction)"
-        },
-        "chatRoomId": {
-          "type": "string",
-          "description": "Reference to ChatRoom. The ID of the chatroom the gift was sent in (if applicable). (Relationship: ChatRoom 1:N GiftTransaction)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The number of gifts sent in the transaction."
+          "description": "Reference to Gift. (Relationship: Gift 1:N UserGift). The gift ID."
         },
         "timestamp": {
           "type": "string",
-          "description": "The date and time the gift was sent.",
+          "description": "Timestamp of when the gift was sent.",
           "format": "date-time"
+        },
+        "message": {
+          "type": "string",
+          "description": "An optional message from the sender."
         }
       },
       "required": [
@@ -244,32 +232,50 @@
         "senderId",
         "receiverId",
         "giftId",
-        "quantity",
         "timestamp"
+      ]
+    },
+    "Tag": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tag",
+      "type": "object",
+      "description": "Represents a tag for a chatroom.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the tag."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the tag."
+        }
+      },
+      "required": [
+        "id",
+        "name"
       ]
     }
   },
   "auth": {
     "providers": [
-      "google.com",
-      "facebook.com",
-      "phone"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/userProfiles/{userId}",
+        "path": "/users/{userId}/profile",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profile information. Path-based ownership enables simple security rules.",
+          "description": "Stores user profile information. Path-based ownership ensures only the user can modify their profile.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique ID of the user."
+              "description": "The unique identifier of the user."
             }
           ]
         }
@@ -281,31 +287,11 @@
           "schema": {
             "$ref": "#/backend/entities/ChatRoom"
           },
-          "description": "Stores voice chat room information. Includes denormalized 'memberIds', 'moderatorIds', and 'ownerId' fields for authorization independence.",
+          "description": "Stores chat room information, including the owner and moderators for access control. Includes denormalized 'ownerId' and 'moderatorIds' for authorization independence.",
           "params": [
             {
               "name": "chatRoomId",
-              "description": "The unique ID of the chat room."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/chatRooms/{chatRoomId}/chatMessages/{chatMessageId}",
-        "definition": {
-          "entityName": "ChatMessage",
-          "schema": {
-            "$ref": "#/backend/entities/ChatMessage"
-          },
-          "description": "Stores chat messages within a chat room. Includes denormalized 'chatRoomId' and 'senderId' from the parent chat room and user profile to enforce access control. Members of the ChatRoom collection can read and write to its ChatMessages subcollection.",
-          "params": [
-            {
-              "name": "chatRoomId",
-              "description": "The unique ID of the chat room."
-            },
-            {
-              "name": "chatMessageId",
-              "description": "The unique ID of the chat message."
+              "description": "The unique identifier of the chat room."
             }
           ]
         }
@@ -317,11 +303,31 @@
           "schema": {
             "$ref": "#/backend/entities/FriendRequest"
           },
-          "description": "Stores friend requests between users. Security rules ensure that only the sender or receiver can modify the request.",
+          "description": "Stores friend request information. Enables listing and securing friend requests based on sender and receiver IDs.",
           "params": [
             {
               "name": "friendRequestId",
-              "description": "The unique ID of the friend request."
+              "description": "The unique identifier of the friend request."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chatRooms/{chatRoomId}/messages/{chatMessageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores chat messages within a chat room.",
+          "params": [
+            {
+              "name": "chatRoomId",
+              "description": "The unique identifier of the chat room."
+            },
+            {
+              "name": "chatMessageId",
+              "description": "The unique identifier of the chat message."
             }
           ]
         }
@@ -333,32 +339,48 @@
           "schema": {
             "$ref": "#/backend/entities/Gift"
           },
-          "description": "Stores information about virtual gifts.",
+          "description": "Stores gift information. This is a top-level collection that requires special access control based on admin roles (not explicitly defined in schemas).",
           "params": [
             {
               "name": "giftId",
-              "description": "The unique ID of the gift."
+              "description": "The unique identifier of the gift."
             }
           ]
         }
       },
       {
-        "path": "/giftTransactions/{giftTransactionId}",
+        "path": "/userGifts/{userGiftId}",
         "definition": {
-          "entityName": "GiftTransaction",
+          "entityName": "UserGift",
           "schema": {
-            "$ref": "#/backend/entities/GiftTransaction"
+            "$ref": "#/backend/entities/UserGift"
           },
-          "description": "Stores gift transactions between users. Includes references to sender, receiver, and gift.",
+          "description": "Stores information about gifts sent between users.",
           "params": [
             {
-              "name": "giftTransactionId",
-              "description": "The unique ID of the gift transaction."
+              "name": "userGiftId",
+              "description": "The unique identifier of the user gift transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tags/{tagId}",
+        "definition": {
+          "entityName": "Tag",
+          "schema": {
+            "$ref": "#/backend/entities/Tag"
+          },
+          "description": "Stores tag information for chat rooms.",
+          "params": [
+            {
+              "name": "tagId",
+              "description": "The unique identifier of the tag."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support a voice chat application similar to Wafa or Miss Yo, prioritizing authorization independence, clarity, and scalability. User authentication is handled via Firebase Auth (Gmail login), and data is structured to facilitate secure and efficient data access. Authorization Independence is achieved through denormalization of access control data, specifically the `members` map, into child collections (e.g., `chatMessages`) so that security rules can be evaluated without `get()` calls. This ensures that transactions and batch writes remain atomic. Structural segregation is applied by separating user profiles, chat rooms, and other data into dedicated collections to maintain homogeneous security requirements within each collection. The structure supports the required QAPs (queries are not filters) by leveraging the `members` map to securely list chat rooms a user has access to, and segregating data with different access needs into different collections.\n\nFor collaborative data (ChatRooms), a Membership Map (`members: {uid1: \"role\", uid2: \"role\"}`) is used. This approach enables efficient querying of a user's access to ChatRooms.\n"
+    "reasoning": "The Firestore data structure is designed to support a voice chat room application (like Dilsey) with a focus on user profiles, chat rooms, friend requests, chat messages, and virtual gifting. It prioritizes authorization independence and security through denormalization and structural segregation.\n\n**Authorization Independence:** The structure avoids `get()` calls in security rules by denormalizing authorization data. For example, the `ChatRoom` documents include the `ownerId` which can be used in rules without fetching the user's document. Furthermore, fields like `moderatorIds` are embedded within the `ChatRoom` document. This avoids the need to fetch user roles from separate collections.\n\n**Structural Segregation:** User-specific data (e.g., profile) is stored under `/users/{userId}`, ensuring clear ownership. Chat rooms are stored in a top-level `/chatRooms` collection, but each document contains `ownerId` and `moderatorIds`, enabling fine-grained access control without the need for collection group queries.\n\n**QAPs (Rules Are Not Filters):** The structure supports secure list operations. Listing chat rooms can be secured based on membership or ownership, thanks to the denormalized `ownerId` and `moderatorIds` fields within each chat room document. Friend requests are segregated under `/friendRequests` and can be queried and secured based on the `senderId` and `receiverId`.\n\n**Access Modeling:** Path-based ownership is used for user profiles (`/users/{userId}/profile`). Collaborative data (chat rooms) includes an `ownerId` and `moderatorIds` for access control. Global roles are not explicitly implemented, as the authorization relies on `request.auth.uid` and data within the documents. If roles were a requirement, a separate `/roles_admin/{uid}` collection could be added to denote admin roles.\n\n**Invariants:** The structure supports data integrity. Timestamps (`createdAt`, `timestamp`) are included in relevant entities to track creation and modification times. Ownership is enforced through the `ownerId` field in `ChatRoom` documents, ensuring that only the owner can modify certain aspects of the chat room."
   }
 }
