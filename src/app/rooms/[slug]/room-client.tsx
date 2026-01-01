@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -277,6 +278,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getCurrentUser } from '@/lib/mock-data';
 
 export function RoomClient({ room }: { room: Room }) {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
@@ -289,6 +291,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isPkBattle, setIsPkBattle] = useState(false);
   const [pkProgress1, setPkProgress1] = useState(30);
   const [pkProgress2, setPkProgress2] = useState(70);
+  const currentUser = getCurrentUser();
 
   useEffect(() => {
     const getPermissions = async () => {
@@ -437,6 +440,8 @@ export function RoomClient({ room }: { room: Room }) {
   const toggleMic = () => setIsMicOn(prev => !prev);
   const toggleCamera = () => setIsCameraOn(prev => !prev);
 
+  const otherParticipants = room.participants.filter(p => p.id !== currentUser.id);
+
 
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -512,7 +517,7 @@ export function RoomClient({ room }: { room: Room }) {
                     </div>
                   )}
                 </div>
-                {room.participants.map((p) => (
+                {otherParticipants.map((p) => (
                   <div key={p.id} className="relative group aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-md">
                     <Avatar className={cn(
                       "h-20 w-20 border-4 border-transparent transition-all",
