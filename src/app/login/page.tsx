@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
-import { Phone, ArrowRight, Loader2 } from 'lucide-react';
+import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult,
+  type ConfirmationResult,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
@@ -38,22 +38,26 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  
+
   useEffect(() => {
     // If user is logged in, redirect to rooms
-    if (user) {
+    if (!isUserLoading && user) {
       router.push('/rooms');
     }
-  }, [user, router]);
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (auth && !window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        },
-      });
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        'recaptcha-container',
+        {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+          },
+        }
+      );
     }
   }, [auth]);
 
@@ -72,7 +76,7 @@ export default function LoginPage() {
       });
     }
   };
-  
+
   const handleFacebookSignIn = async () => {
     if (!auth) return;
     const provider = new FacebookAuthProvider();
@@ -81,7 +85,7 @@ export default function LoginPage() {
       router.push('/rooms');
     } catch (error) {
       console.error('Error signing in with Facebook: ', error);
-       toast({
+      toast({
         variant: 'destructive',
         title: 'Facebook Sign-In Failed',
         description: (error as Error).message,
@@ -92,7 +96,12 @@ export default function LoginPage() {
   const handlePhoneSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !window.recaptchaVerifier) {
-      console.error('Auth or reCAPTCHA verifier not initialized');
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          'Authentication service is not ready. Please try again in a moment.',
+      });
       return;
     }
     setIsSendingCode(true);
@@ -112,7 +121,8 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not send verification code. Please check the number and try again.',
+        description:
+          'Could not send verification code. Please check the number and try again.',
       });
     } finally {
       setIsSendingCode(false);
@@ -122,22 +132,27 @@ export default function LoginPage() {
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!window.confirmationResult) {
-       console.error('No confirmation result available.');
-       return
+      console.error('No confirmation result available.');
+      toast({
+        variant: 'destructive',
+        title: 'Verification Error',
+        description: 'Please request a new code.',
+      });
+      return;
     }
     setIsVerifyingCode(true);
     try {
-        await window.confirmationResult.confirm(code);
-        router.push('/rooms');
+      await window.confirmationResult.confirm(code);
+      router.push('/rooms');
     } catch (error) {
-        console.error('Error verifying code: ', error);
-        toast({
-            variant: 'destructive',
-            title: 'Verification Failed',
-            description: 'The code you entered is incorrect. Please try again.',
-        });
+      console.error('Error verifying code: ', error);
+      toast({
+        variant: 'destructive',
+        title: 'Verification Failed',
+        description: 'The code you entered is incorrect. Please try again.',
+      });
     } finally {
-        setIsVerifyingCode(false);
+      setIsVerifyingCode(false);
     }
   };
 
@@ -164,7 +179,7 @@ export default function LoginPage() {
 
       <div className="mt-16 w-full max-w-sm space-y-4">
         {authFlow === 'main' && (
-           <>
+          <>
             <Button
               variant="outline"
               className="w-full justify-center gap-4 bg-white text-black hover:bg-gray-200"
@@ -193,42 +208,56 @@ export default function LoginPage() {
         )}
 
         {authFlow === 'phone' && (
-            <div className="space-y-4 animate-in fade-in-20">
-                {!window.confirmationResult ? (
-                    <form onSubmit={handlePhoneSignIn} className="space-y-4">
-                         <p className="text-sm text-center text-muted-foreground">Enter your phone number with country code.</p>
-                        <Input 
-                            type="tel"
-                            placeholder="e.g. 919876543210"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            required
-                        />
-                         <Button type="submit" className="w-full" disabled={isSendingCode}>
-                            {isSendingCode ? 'Sending...' : 'Send Verification Code'}
-                        </Button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleVerifyCode} className="space-y-4">
-                         <p className="text-sm text-center text-muted-foreground">Enter the 6-digit code sent to your phone.</p>
-                        <Input 
-                            type="text"
-                            placeholder="Verification Code"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            maxLength={6}
-                            required
-                        />
-                         <Button type="submit" className="w-full" disabled={isVerifyingCode}>
-                             {isVerifyingCode ? 'Verifying...' : 'Verify and Sign In'}
-                         </Button>
-                    </form>
-                )}
-                 <Button variant="link" onClick={() => { setAuthFlow('main'); window.confirmationResult = undefined; }}>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Back to other sign-in options
+          <div className="space-y-4 animate-in fade-in-20">
+            {!window.confirmationResult ? (
+              <form onSubmit={handlePhoneSignIn} className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground">
+                  Enter your phone number with country code.
+                </p>
+                <Input
+                  type="tel"
+                  placeholder="e.g. 919876543210"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                />
+                <Button type="submit" className="w-full" disabled={isSendingCode}>
+                  {isSendingCode ? 'Sending...' : 'Send Verification Code'}
                 </Button>
-            </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground">
+                  Enter the 6-digit code sent to your phone.
+                </p>
+                <Input
+                  type="text"
+                  placeholder="Verification Code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  maxLength={6}
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isVerifyingCode}
+                >
+                  {isVerifyingCode ? 'Verifying...' : 'Verify and Sign In'}
+                </Button>
+              </form>
+            )}
+            <Button
+              variant="link"
+              onClick={() => {
+                setAuthFlow('main');
+                window.confirmationResult = undefined;
+              }}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to other sign-in options
+            </Button>
+          </div>
         )}
       </div>
 

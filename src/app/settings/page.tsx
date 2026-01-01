@@ -39,6 +39,14 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   const handleLogout = async () => {
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'Auth service not available.',
+      });
+      return;
+    }
     try {
       await signOut(auth);
       router.push('/login');
