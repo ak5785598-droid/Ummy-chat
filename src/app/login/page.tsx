@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
-import { Phone, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -46,11 +46,7 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       await signInWithPopup(auth, provider);
-      router.push('/rooms');
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome to Ummy!',
-      });
+      // No need to toast here, the redirect will happen via useEffect
     } catch (error: any) {
       console.error(error);
       toast({
@@ -65,14 +61,21 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => handleSignIn(new GoogleAuthProvider());
   const handleFacebookSignIn = () => handleSignIn(new FacebookAuthProvider());
+  
+  const setupRecaptcha = () => {
+    if (!auth) return null;
+    // Ensure 'recaptcha-container' exists and is visible
+    return new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+    });
+  };
 
   const handlePhoneSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
+      const verifier = setupRecaptcha();
+      if (!verifier) throw new Error("Recaptcha could not be verified.");
       const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, verifier);
       setConfirmationResult(result);
       setPhoneLoginStep('code');
@@ -97,11 +100,7 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       await confirmationResult.confirm(verificationCode);
-      router.push('/rooms');
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome to Ummy!',
-      });
+      // No need to toast here, the redirect will happen via useEffect
     } catch (error: any) {
         console.error(error);
         toast({
