@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [code, setCode] = useState('');
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -45,9 +46,6 @@ export default function LoginPage() {
       router.push('/rooms');
     }
   }, [user, isUserLoading, router]);
-
-  // We need to move the recaptcha verifier setup into the phone sign in handler
-  // to ensure the auth object is available and the DOM element is mounted.
 
   const handleGoogleSignIn = async () => {
     if (!auth) return;
@@ -94,10 +92,8 @@ export default function LoginPage() {
     }
     setIsSendingCode(true);
     try {
-      // Initialize reCAPTCHA here, where we know the container exists
-      // and auth is available.
       if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(
+        window.recaptchaVerifier = new RecaptchaVerifier(auth,
           'recaptcha-container',
           {
             size: 'invisible',
@@ -105,7 +101,6 @@ export default function LoginPage() {
               // reCAPTCHA solved, allow signInWithPhoneNumber.
             },
           },
-          auth
         );
       }
       const verifier = window.recaptchaVerifier;
@@ -115,6 +110,7 @@ export default function LoginPage() {
         verifier
       );
       window.confirmationResult = confirmationResult;
+      setIsCodeSent(true);
       toast({
         title: 'Verification code sent!',
         description: `A code has been sent to +${phoneNumber}`,
@@ -158,6 +154,14 @@ export default function LoginPage() {
       setIsVerifyingCode(false);
     }
   };
+  
+  const resetPhoneAuth = () => {
+    setAuthFlow('main');
+    window.confirmationResult = undefined;
+    setIsCodeSent(false);
+    setPhoneNumber('');
+    setCode('');
+  }
 
   if (isUserLoading || user) {
     return (
@@ -212,7 +216,7 @@ export default function LoginPage() {
 
         {authFlow === 'phone' && (
           <div className="space-y-4 animate-in fade-in-20">
-            {!window.confirmationResult ? (
+            {!isCodeSent ? (
               <form onSubmit={handlePhoneSignIn} className="space-y-4">
                 <p className="text-sm text-center text-muted-foreground">
                   Enter your phone number with country code.
@@ -223,6 +227,7 @@ export default function LoginPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   required
+                  disabled={isSendingCode}
                 />
                 <Button type="submit" className="w-full" disabled={isSendingCode}>
                   {isSendingCode ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : 'Send Verification Code'}
@@ -240,6 +245,7 @@ export default function LoginPage() {
                   onChange={(e) => setCode(e.target.value)}
                   maxLength={6}
                   required
+                  disabled={isVerifyingCode}
                 />
                 <Button
                   type="submit"
@@ -252,10 +258,7 @@ export default function LoginPage() {
             )}
             <Button
               variant="link"
-              onClick={() => {
-                setAuthFlow('main');
-                window.confirmationResult = undefined;
-              }}
+              onClick={resetPhoneAuth}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to other sign-in options
