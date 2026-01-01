@@ -4,14 +4,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook } from 'react-icons/fa';
 import { Loader } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
-  FacebookAuthProvider,
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -41,26 +39,23 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
+  const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, new GoogleAuthProvider());
       // The useEffect will handle the redirect on user state change.
     } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: error.message || 'Could not sign in.',
+        description: error.message || 'Could not sign in with Google.',
       });
     } finally {
       setIsSigningIn(false);
     }
   };
-
-  const handleGoogleSignIn = () => handleSignIn(new GoogleAuthProvider());
-  const handleFacebookSignIn = () => handleSignIn(new FacebookAuthProvider());
   
   const setupRecaptcha = () => {
     if (!auth) return null;
@@ -178,15 +173,6 @@ export default function LoginPage() {
             >
               <FcGoogle className="h-5 w-5" />
               Sign in with Google
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-center gap-4 bg-[#1877F2] text-white hover:bg-[#166fe5]"
-              onClick={handleFacebookSignIn}
-              disabled={isSigningIn}
-            >
-              <FaFacebook className="h-5 w-5" />
-              Facebook Sign In
             </Button>
           </>
         ) : (
