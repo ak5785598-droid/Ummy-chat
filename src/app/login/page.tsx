@@ -1,11 +1,29 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
 import { Phone } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/rooms');
+    } catch (error) {
+      console.error("Error signing in with Google: ", error);
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground">
       <div className="flex flex-col items-center text-center">
@@ -28,15 +46,14 @@ export default function LoginPage() {
             sign in with phone
           </Button>
         </Link>
-        <Link href="/rooms" className="w-full">
-          <Button
-            variant="outline"
-            className="w-full justify-center gap-4 bg-white text-black hover:bg-gray-200"
-          >
-            <FcGoogle className="h-5 w-5" />
-            sign in with google
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          className="w-full justify-center gap-4 bg-white text-black hover:bg-gray-200"
+          onClick={handleGoogleSignIn}
+        >
+          <FcGoogle className="h-5 w-5" />
+          sign in with google
+        </Button>
         <Link href="/rooms" className="w-full">
           <Button
             variant="outline"

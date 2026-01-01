@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Alegreya, Belleza } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import { FirebaseClientProvider } from '@/firebase';
 
 const fontSans = Belleza({
   subsets: ['latin'],
@@ -33,7 +34,9 @@ export default function RootLayout({
           fontSans.variable,
           fontSerif.variable
         )}>
-        {children}
+        <FirebaseClientProvider>
+          {children}
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
