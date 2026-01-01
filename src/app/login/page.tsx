@@ -20,13 +20,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-    confirmationResult?: ConfirmationResult;
-  }
-}
-
 export default function LoginPage() {
   const [authFlow, setAuthFlow] = useState<'main' | 'phone'>('main');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -34,6 +27,10 @@ export default function LoginPage() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] =
+    useState<RecaptchaVerifier | null>(null);
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -92,24 +89,16 @@ export default function LoginPage() {
     }
     setIsSendingCode(true);
     try {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth,
-          'recaptcha-container',
-          {
-            size: 'invisible',
-            callback: () => {
-              // reCAPTCHA solved, allow signInWithPhoneNumber.
-            },
-          },
-        );
-      }
-      const verifier = window.recaptchaVerifier;
-      const confirmationResult = await signInWithPhoneNumber(
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+      setRecaptchaVerifier(verifier);
+      const result = await signInWithPhoneNumber(
         auth,
         `+${phoneNumber}`,
         verifier
       );
-      window.confirmationResult = confirmationResult;
+      setConfirmationResult(result);
       setIsCodeSent(true);
       toast({
         title: 'Verification code sent!',
@@ -123,6 +112,9 @@ export default function LoginPage() {
         description:
           'Could not send verification code. Please check the number and try again.',
       });
+      // Clean up failed attempt
+      recaptchaVerifier?.clear();
+      setIsCodeSent(false);
     } finally {
       setIsSendingCode(false);
     }
@@ -130,7 +122,7 @@ export default function LoginPage() {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.confirmationResult) {
+    if (!confirmationResult) {
       console.error('No confirmation result available.');
       toast({
         variant: 'destructive',
@@ -141,7 +133,7 @@ export default function LoginPage() {
     }
     setIsVerifyingCode(true);
     try {
-      await window.confirmationResult.confirm(code);
+      await confirmationResult.confirm(code);
       router.push('/rooms');
     } catch (error) {
       console.error('Error verifying code: ', error);
@@ -154,14 +146,15 @@ export default function LoginPage() {
       setIsVerifyingCode(false);
     }
   };
-  
+
   const resetPhoneAuth = () => {
     setAuthFlow('main');
-    window.confirmationResult = undefined;
     setIsCodeSent(false);
     setPhoneNumber('');
     setCode('');
-  }
+    setConfirmationResult(null);
+    recaptchaVerifier?.clear();
+  };
 
   if (isUserLoading || user) {
     return (
