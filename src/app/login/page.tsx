@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,36 +39,11 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (!auth) return;
-
-    // This runs once when the component mounts
-    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: (response: any) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-      },
-    });
-    
-    // Store the verifier instance in a way that it persists across re-renders
-    // but doesn't cause re-renders itself. Attaching to window is a common pattern.
-    (window as any).recaptchaVerifier = verifier;
-
-    // Cleanup when component unmounts
-    return () => {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-      }
-    };
-  }, [auth]);
-
-
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      // The useEffect will handle the redirect on user state change.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -86,9 +60,15 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const verifier = (window as any).recaptchaVerifier;
-      if (!verifier) throw new Error("Recaptcha could not be verified.");
+      // Lazy initialization of RecaptchaVerifier to avoid "auth/argument-error" 
+      // and "already rendered" issues often caused by React 18's strict mode useEffect.
+      if (!(window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+      }
       
+      const verifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, verifier);
       setConfirmationResult(result);
       setPhoneLoginStep('code');
@@ -98,7 +78,7 @@ export default function LoginPage() {
       });
     } catch (error: any) {
       console.error(error);
-      // Reset reCAPTCHA on error
+      // Reset reCAPTCHA on error if it was rendered
       if ((window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.render().then((widgetId: any) => {
            if((window as any).grecaptcha){
@@ -121,7 +101,6 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       await confirmationResult.confirm(verificationCode);
-      // The useEffect will handle the redirect on user state change.
     } catch (error: any) {
         console.error(error);
         toast({
