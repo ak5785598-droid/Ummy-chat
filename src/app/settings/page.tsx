@@ -33,8 +33,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signOut, updateProfile } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function SettingsPage() {
   const auth = useAuth();
@@ -46,6 +47,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [bio, setBio] = useState(userProfile?.bio || '');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleLogout = async () => {
@@ -73,9 +75,16 @@ export default function SettingsPage() {
         // Update Firebase Auth display name
         await updateProfile(user, { displayName: displayName });
 
-        // Update Firestore user profile
+        // Update Firestore user profile using setDoc with merge: true 
+        // to handle cases where the document might not exist yet.
         const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-        await updateDoc(userProfileRef, { username: displayName });
+        await setDoc(userProfileRef, { 
+          id: user.uid,
+          username: displayName,
+          email: user.email || '',
+          bio: bio,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
 
         toast({
             title: 'Profile Updated',
@@ -161,6 +170,15 @@ export default function SettingsPage() {
                     id="name" 
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea 
+                    id="bio" 
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell us a bit about yourself..."
                   />
                 </div>
                 <div className="space-y-2">

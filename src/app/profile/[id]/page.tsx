@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   
   const { user: currentUser, isLoading } = useUser();
-  const user = getUserById(id);
+  const user = getUserById(id || '');
   const friends = getFriends();
   const topContributors = getTopContributors();
   const visitors = getProfileVisitors();

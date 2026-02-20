@@ -1,4 +1,3 @@
-
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { GameControllerIcon } from '@/components/icons';
