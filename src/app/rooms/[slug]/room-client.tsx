@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Mic,
   MicOff,
@@ -22,12 +22,9 @@ import {
   Trophy,
   Rocket,
   Sparkles,
-  HeartPulse,
-  HeartHandshake,
-  Castle,
   Loader,
 } from 'lucide-react';
-import type { Room, User as RoomUser } from '@/lib/types';
+import type { Room, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +41,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 
 export function RoomClient({ room }: { room: Room }) {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
@@ -52,15 +50,50 @@ export function RoomClient({ room }: { room: Room }) {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isPkBattle, setIsPkBattle] = useState(false);
   const [pkProgress1, setPkProgress1] = useState(50);
   const [pkProgress2, setPkProgress2] = useState(50);
   const { user: currentUser, isLoading: isUserLoading } = useUser();
-  
-  const [pkContestant1, setPkContestant1] = useState<RoomUser | null>(null);
-  const [pkContestant2, setPkContestant2] = useState<RoomUser | null>(null);
+  const firestore = useFirestore();
+
+  // Listen to real-time messages for this specific room
+  const messagesQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    return query(
+      collection(firestore, 'chatRooms', room.id, 'messages'),
+      orderBy('timestamp', 'asc'),
+      limit(50)
+    );
+  }, [firestore, room.id]);
+
+  const { data: firestoreMessages, isLoading: isMessagesLoading } = useCollection(messagesQuery);
+
+  // Map Firestore messages to our UI Message type
+  const activeMessages: Message[] = firestoreMessages?.map((m: any) => ({
+    id: m.id,
+    text: m.content,
+    timestamp: m.timestamp?.toDate() ? new Date(m.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+    user: {
+      id: m.senderId,
+      name: m.senderName || 'User',
+      avatarUrl: m.senderAvatar || '',
+    }
+  })) || room.messages || [];
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [activeMessages]);
 
   // Initialize camera and mic
   useEffect(() => {
@@ -84,43 +117,35 @@ export function RoomClient({ room }: { room: Room }) {
     getPermissions();
   }, []);
 
-  // Simulate room activity
-  useEffect(() => {
-    if (!room || !room.participants) return;
-    
-    if (room.participants.length >= 2) {
-        setPkContestant1(room.participants[0]);
-        setPkContestant2(room.participants[1]);
-    }
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim() || !currentUser || !firestore || isSending) return;
 
-    const interval = setInterval(() => {
-      if (room.participants.length > 0) {
-        const randomIndex = Math.floor(Math.random() * room.participants.length);
-        const randomParticipant = room.participants[randomIndex];
-        setSpeakingId(randomParticipant.id);
-        setTimeout(() => setSpeakingId(null), 1500);
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [room]);
-
-  // Simulate PK Battle progress
-  useEffect(() => {
-    if (isPkBattle) {
-      setPkProgress1(30 + Math.random() * 40);
-      setPkProgress2(30 + Math.random() * 40);
-      const battleInterval = setInterval(() => {
-        setPkProgress1(prev => Math.max(10, Math.min(90, prev + (Math.random() - 0.5) * 10)));
-        setPkProgress2(prev => Math.max(10, Math.min(90, prev + (Math.random() - 0.5) * 10)));
-      }, 2000);
-      return () => clearInterval(battleInterval);
+    setIsSending(true);
+    try {
+      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: messageText,
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName || 'Anonymous',
+        senderAvatar: currentUser.photoURL || '',
+        timestamp: serverTimestamp(),
+      });
+      setMessageText('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+      });
+    } finally {
+      setIsSending(false);
     }
-  }, [isPkBattle]);
+  };
 
   const toggleMic = () => setIsMicOn(prev => !prev);
   const toggleCamera = () => setIsCameraOn(prev => !prev);
 
-  // Fallback UI while loading user
   if (isUserLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -129,7 +154,6 @@ export function RoomClient({ room }: { room: Room }) {
     );
   }
 
-  // If user is not logged in, redirect handled by parent usually, but fallback here
   if (!currentUser) return null;
 
   const reactions = [
@@ -153,9 +177,6 @@ export function RoomClient({ room }: { room: Room }) {
     ],
   };
 
-  // --- Seat (Seta) Management ---
-  // Seat 1: Always the current user
-  // Seats 2-10: Participants then placeholders
   const otherParticipants = (room.participants || []).filter(p => p.id !== currentUser.uid);
   const totalSeats = 10;
   const filledSeatsCount = otherParticipants.length;
@@ -164,7 +185,6 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
-        {/* Room Header */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between p-4">
             <div>
@@ -191,99 +211,51 @@ export function RoomClient({ room }: { room: Room }) {
           </CardHeader>
         </Card>
 
-        {/* PK Battle or Main Seats View */}
-        {isPkBattle && pkContestant1 && pkContestant2 ? (
-          <Card className="flex-1 bg-gradient-to-br from-blue-500/10 to-red-500/10">
-            <CardContent className="p-4 h-full flex flex-col items-center justify-center gap-8 relative">
-              <Swords className="h-16 w-16 text-destructive absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform rotate-[-15deg] opacity-20" />
-              <div className="flex w-full items-center justify-around z-10">
-                <div className="flex flex-col items-center gap-2">
-                  <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-blue-500 shadow-xl">
-                    <AvatarImage src={pkContestant1.avatarUrl} alt={pkContestant1.name} />
-                    <AvatarFallback>{pkContestant1.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-bold text-lg">{pkContestant1.name}</span>
-                </div>
-                <div className="font-headline text-3xl sm:text-5xl font-black text-muted-foreground/30 italic">VS</div>
-                <div className="flex flex-col items-center gap-2">
-                  <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-red-500 shadow-xl">
-                    <AvatarImage src={pkContestant2.avatarUrl} alt={pkContestant2.name} />
-                    <AvatarFallback>{pkContestant2.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-bold text-lg">{pkContestant2.name}</span>
-                </div>
-              </div>
-              <div className="w-full max-w-xl space-y-2">
-                <div className="flex justify-between font-bold text-sm">
-                  <span className="text-blue-500">{(pkProgress1 * 100).toFixed(0)}</span>
-                  <span className="text-red-500">{(pkProgress2 * 100).toFixed(0)}</span>
-                </div>
-                <div className="flex w-full items-center gap-1">
-                  <Progress value={pkProgress1} className="h-4 [&>div]:bg-blue-500" />
-                  <Progress value={pkProgress2} className="h-4 [&>div]:bg-red-500 transform -scale-x-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="flex-1 overflow-hidden">
-            <CardContent className="p-4 h-full bg-secondary/5">
-              <ScrollArea className="h-full">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  
-                  {/* Seat 1: Me (Current User) */}
-                  <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-xl overflow-hidden ring-4 ring-primary/40 shadow-inner">
-                    <video ref={videoRef} className={cn("w-full h-full object-cover", (isCameraOn && hasCameraPermission) ? "block" : "hidden")} autoPlay muted />
-                    {(!isCameraOn || !hasCameraPermission) && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground bg-secondary/20">
-                        <Avatar className="h-16 w-16">
-                            <AvatarImage src={currentUser.photoURL || ''} />
-                            <AvatarFallback>{currentUser.displayName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-[8px] uppercase tracking-widest font-bold text-primary">Me</span>
-                      </div>
-                    )}
-                    <div className="absolute bottom-2 left-2 right-2 p-1 bg-black/60 rounded-md text-center backdrop-blur-md">
-                      <span className="font-semibold text-white text-[10px] truncate block">{currentUser.displayName}</span>
-                    </div>
-                  </div>
-
-                  {/* Seat 2-10: Filled Seats */}
-                  {otherParticipants.map((p) => (
-                    <div key={p.id} className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-card border rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                      <Avatar className={cn(
-                        "h-16 w-16 sm:h-20 sm:w-20 border-4 border-transparent transition-all",
-                        speakingId === p.id && "border-primary shadow-lg scale-105"
-                      )}>
-                        <AvatarImage src={p.avatarUrl} alt={p.name} />
-                        <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+        <Card className="flex-1 overflow-hidden">
+          <CardContent className="p-4 h-full bg-secondary/5">
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-xl overflow-hidden ring-4 ring-primary/40 shadow-inner">
+                  <video ref={videoRef} className={cn("w-full h-full object-cover", (isCameraOn && hasCameraPermission) ? "block" : "hidden")} autoPlay muted />
+                  {(!isCameraOn || !hasCameraPermission) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground bg-secondary/20">
+                      <Avatar className="h-16 w-16">
+                          <AvatarImage src={currentUser.photoURL || ''} />
+                          <AvatarFallback>{currentUser.displayName?.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span className="font-semibold text-center text-[10px] truncate w-full px-2">{p.name}</span>
-                      {speakingId === p.id && (
-                        <div className="absolute top-2 right-2 flex gap-0.5 h-3">
-                          <div className="w-0.5 bg-primary animate-bounce h-full" style={{ animationDelay: '0ms' }} />
-                          <div className="w-0.5 bg-primary animate-bounce h-2/3" style={{ animationDelay: '100ms' }} />
-                          <div className="w-0.5 bg-primary animate-bounce h-full" style={{ animationDelay: '200ms' }} />
-                        </div>
-                      )}
+                      <span className="text-[8px] uppercase tracking-widest font-bold text-primary">Me</span>
                     </div>
-                  ))}
-
-                  {/* Seat X-10: Empty Seats (Placeholders) */}
-                  {Array.from({ length: emptySeatsCount }).map((_, i) => (
-                    <div key={`empty-${i}`} className="aspect-square border-2 border-dashed border-muted/50 bg-muted/5 flex flex-col items-center justify-center rounded-xl text-muted-foreground/20 hover:bg-muted/10 transition-colors">
-                      <UserPlus className="h-8 w-8 mb-1" />
-                      <span className="text-[8px] font-bold uppercase tracking-widest">Available</span>
-                    </div>
-                  ))}
+                  )}
+                  <div className="absolute bottom-2 left-2 right-2 p-1 bg-black/60 rounded-md text-center backdrop-blur-md">
+                    <span className="font-semibold text-white text-[10px] truncate block">{currentUser.displayName}</span>
+                  </div>
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        )}
+
+                {otherParticipants.map((p) => (
+                  <div key={p.id} className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-card border rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <Avatar className={cn(
+                      "h-16 w-16 sm:h-20 sm:w-20 border-4 border-transparent transition-all",
+                      speakingId === p.id && "border-primary shadow-lg scale-105"
+                    )}>
+                      <AvatarImage src={p.avatarUrl} alt={p.name} />
+                      <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-semibold text-center text-[10px] truncate w-full px-2">{p.name}</span>
+                  </div>
+                ))}
+
+                {Array.from({ length: emptySeatsCount }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square border-2 border-dashed border-muted/50 bg-muted/5 flex flex-col items-center justify-center rounded-xl text-muted-foreground/20 hover:bg-muted/10 transition-colors">
+                    <UserPlus className="h-8 w-8 mb-1" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">Available</span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Right Sidebar: Chat and Gifts */}
       <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full">
         <CardHeader className="p-4 border-b">
           <CardTitle className="font-headline text-lg flex items-center gap-2">
@@ -292,11 +264,11 @@ export function RoomClient({ room }: { room: Room }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-4">
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-full pr-4" ref={scrollRef}>
             <div className="space-y-4">
-              {(room.messages || []).length > 0 ? (
-                room.messages.map((msg) => (
-                  <div key={msg.id} className="flex items-start gap-2">
+              {activeMessages.length > 0 ? (
+                activeMessages.map((msg) => (
+                  <div key={msg.id} className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-1">
                     <Avatar className="h-7 w-7 border">
                       <AvatarImage src={msg.user.avatarUrl} alt={msg.user.name} />
                       <AvatarFallback>{msg.user.name.charAt(0)}</AvatarFallback>
@@ -371,10 +343,16 @@ export function RoomClient({ room }: { room: Room }) {
               </PopoverContent>
             </Popover>
           </div>
-          <form className="flex items-center gap-2" onSubmit={(e) => e.preventDefault()}>
-            <Input placeholder="Type a message..." className="h-9 text-xs rounded-full border-muted-foreground/20" />
-            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shrink-0">
-              <Send className="h-4 w-4" />
+          <form className="flex items-center gap-2" onSubmit={handleSendMessage}>
+            <Input 
+              placeholder="Type a message..." 
+              className="h-9 text-xs rounded-full border-muted-foreground/20" 
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              disabled={isSending}
+            />
+            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shrink-0" disabled={isSending || !messageText.trim()}>
+              {isSending ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>
         </div>
