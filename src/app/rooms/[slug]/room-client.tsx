@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import Image from 'next/image';
 import {
   Mic,
   MicOff,
@@ -15,59 +14,17 @@ import {
   PartyPopper,
   Crown,
   Swords,
-  Lock,
   UserPlus,
-  ShieldX,
-  VolumeX,
-  Star,
   Gem,
-  Car,
-  Plane,
-  Castle,
-  HeartHandshake,
-  HeartPulse,
-  Ship,
-  IceCream,
-  Pizza,
-  Gamepad2,
+  Star,
+  Flower,
+  Lollipop,
   Trophy,
   Rocket,
-  Diamond,
-  Watch,
-  Palette,
-  Music,
-  Camera,
-  Film,
   Sparkles,
-  Sun,
-  Moon,
-  Cat,
-  Lollipop,
-  Cake,
-  Feather,
-  Mic2,
-  Banana,
-  Leaf,
-  Droplet,
-  Cloud,
-  Flower,
-  Anchor,
-  Laptop,
-  Briefcase,
-  Bike,
-  Bus,
-  Train,
-  ShoppingBag,
-  GraduationCap,
-  Guitar,
-  Paintbrush,
-  Clover,
-  Dog,
-  Umbrella,
-  Brain,
-  Building,
-  Home,
-  Globe,
+  HeartPulse,
+  HeartHandshake,
+  Castle,
   Loader,
 } from 'lucide-react';
 import type { Room, User as RoomUser } from '@/lib/types';
@@ -127,10 +84,13 @@ export function RoomClient({ room }: { room: Room }) {
   }, []);
 
   useEffect(() => {
-    if (!room || room.participants.length < 2) return;
+    if (!room || room.participants.length < 1) return;
     
-    setPkContestant1(room.participants[0]);
-    setPkContestant2(room.participants[1]);
+    // Pick contestants for simulated PK Battle
+    if (room.participants.length >= 2) {
+        setPkContestant1(room.participants[0]);
+        setPkContestant2(room.participants[1]);
+    }
 
     const interval = setInterval(() => {
       if (room.participants.length > 0) {
@@ -187,22 +147,27 @@ export function RoomClient({ room }: { room: Room }) {
     ],
   };
 
+  // Logic to fill exactly 10 seats
+  // Seat 0: Me
+  // Seat 1-9: Other participants, then empty seats
   const otherParticipants = room.participants.filter(p => p.id !== currentUser.uid);
+  const totalSeats = 10;
+  const emptySeatsCount = Math.max(0, totalSeats - 1 - otherParticipants.length);
 
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between p-4">
             <div>
-              <CardTitle className="font-headline text-2xl">{room.title}</CardTitle>
+              <CardTitle className="font-headline text-2xl truncate max-w-[200px] sm:max-w-md">{room.title}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary">{room.topic}</Badge>
-                <Badge variant="outline">Online: {room.participants.length || 1}</Badge>
+                <Badge variant="outline">Online: {room.participants.length + 1}</Badge>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="outline" onClick={() => setIsPkBattle(p => !p)}>
+              <Button size="icon" variant="outline" onClick={() => setIsPkBattle(p => !p)} className="hidden sm:flex">
                 <Swords className="h-5 w-5 text-destructive" />
               </Button>
               <Button size="icon" variant={isMicOn ? "outline" : "secondary"} onClick={toggleMic} disabled={!hasMicPermission}>
@@ -219,20 +184,20 @@ export function RoomClient({ room }: { room: Room }) {
         </Card>
 
         {isPkBattle && pkContestant1 && pkContestant2 ? (
-          <Card className="flex-1">
+          <Card className="flex-1 bg-gradient-to-br from-blue-500/10 to-red-500/10">
             <CardContent className="p-4 h-full flex flex-col items-center justify-center gap-8 relative">
               <Swords className="h-16 w-16 text-destructive absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform rotate-[-15deg] opacity-20" />
               <div className="flex w-full items-center justify-around z-10">
                 <div className="flex flex-col items-center gap-2">
-                  <Avatar className="h-32 w-32 border-4 border-blue-500 shadow-xl">
+                  <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-blue-500 shadow-xl">
                     <AvatarImage src={pkContestant1.avatarUrl} alt={pkContestant1.name} />
                     <AvatarFallback>{pkContestant1.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span className="font-bold text-lg">{pkContestant1.name}</span>
                 </div>
-                <div className="font-headline text-5xl font-black text-muted-foreground/30 italic">VS</div>
+                <div className="font-headline text-3xl sm:text-5xl font-black text-muted-foreground/30 italic">VS</div>
                 <div className="flex flex-col items-center gap-2">
-                  <Avatar className="h-32 w-32 border-4 border-red-500 shadow-xl">
+                  <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-red-500 shadow-xl">
                     <AvatarImage src={pkContestant2.avatarUrl} alt={pkContestant2.name} />
                     <AvatarFallback>{pkContestant2.name.charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -252,53 +217,56 @@ export function RoomClient({ room }: { room: Room }) {
             </CardContent>
           </Card>
         ) : (
-          <Card className="flex-1">
-            <CardContent className="p-4 h-full">
+          <Card className="flex-1 overflow-hidden">
+            <CardContent className="p-4 h-full bg-secondary/5">
               <ScrollArea className="h-full">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {/* Your own video feed */}
-                  <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-md overflow-hidden ring-2 ring-primary">
+                  
+                  {/* Seat 1: Current User */}
+                  <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-xl overflow-hidden ring-4 ring-primary/40 shadow-inner">
                     <video ref={videoRef} className={cn("w-full h-full object-cover", (isCameraOn && hasCameraPermission) ? "block" : "hidden")} autoPlay muted />
                     {(!isCameraOn || !hasCameraPermission) && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground bg-secondary/50">
-                        <VideoOff className="h-10 w-10"/>
-                        <span className="text-xs">{ !hasCameraPermission ? "Camera Disabled" : "Camera Off" }</span>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground bg-secondary/20">
+                        <Avatar className="h-16 w-16">
+                            <AvatarImage src={currentUser.photoURL || ''} />
+                            <AvatarFallback>{currentUser.displayName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-[10px] uppercase tracking-wider font-bold">{ !hasCameraPermission ? "Camera Permission" : "Camera Off" }</span>
                       </div>
                     )}
-                    <div className="absolute bottom-2 left-2 right-2 p-1 bg-black/60 rounded text-center backdrop-blur-sm">
-                      <span className="font-semibold text-white text-xs truncate block">{currentUser.displayName} (Me)</span>
+                    <div className="absolute bottom-2 left-2 right-2 p-1 bg-black/60 rounded-md text-center backdrop-blur-md">
+                      <span className="font-semibold text-white text-[10px] truncate block">{currentUser.displayName}</span>
                     </div>
                   </div>
 
-                  {/* Other participants (Mock or placeholder) */}
-                  {otherParticipants.length > 0 ? (
-                    otherParticipants.map((p) => (
-                      <div key={p.id} className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-secondary/20 rounded-md">
-                        <Avatar className={cn(
-                          "h-20 w-20 border-4 border-transparent transition-all",
-                          speakingId === p.id && "border-primary shadow-lg scale-105"
-                        )}>
-                          <AvatarImage src={p.avatarUrl} alt={p.name} />
-                          <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-semibold text-center text-xs truncate w-full px-2">{p.name}</span>
-                        {speakingId === p.id && (
-                          <div className="absolute top-2 right-2 flex gap-0.5 h-3">
-                            <div className="w-1 bg-primary animate-bounce h-full" style={{ animationDelay: '0ms' }} />
-                            <div className="w-1 bg-primary animate-bounce h-2/3" style={{ animationDelay: '100ms' }} />
-                            <div className="w-1 bg-primary animate-bounce h-full" style={{ animationDelay: '200ms' }} />
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    // Empty seats
-                    Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="aspect-square border-2 border-dashed border-muted flex items-center justify-center rounded-md text-muted-foreground/30">
-                        <UserPlus className="h-8 w-8" />
-                      </div>
-                    ))
-                  )}
+                  {/* Other filled seats */}
+                  {otherParticipants.map((p) => (
+                    <div key={p.id} className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-card border rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                      <Avatar className={cn(
+                        "h-16 w-16 sm:h-20 sm:w-20 border-4 border-transparent transition-all",
+                        speakingId === p.id && "border-primary shadow-lg scale-105"
+                      )}>
+                        <AvatarImage src={p.avatarUrl} alt={p.name} />
+                        <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-center text-[10px] truncate w-full px-2">{p.name}</span>
+                      {speakingId === p.id && (
+                        <div className="absolute top-2 right-2 flex gap-0.5 h-3">
+                          <div className="w-0.5 bg-primary animate-bounce h-full" style={{ animationDelay: '0ms' }} />
+                          <div className="w-0.5 bg-primary animate-bounce h-2/3" style={{ animationDelay: '100ms' }} />
+                          <div className="w-0.5 bg-primary animate-bounce h-full" style={{ animationDelay: '200ms' }} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Empty Seats (Seta) */}
+                  {Array.from({ length: emptySeatsCount }).map((_, i) => (
+                    <div key={`empty-${i}`} className="aspect-square border-2 border-dashed border-muted/50 bg-muted/5 flex flex-col items-center justify-center rounded-xl text-muted-foreground/20 hover:bg-muted/10 transition-colors">
+                      <UserPlus className="h-8 w-8 mb-1" />
+                      <span className="text-[8px] font-bold uppercase tracking-widest">Available</span>
+                    </div>
+                  ))}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -306,17 +274,20 @@ export function RoomClient({ room }: { room: Room }) {
         )}
       </div>
 
-      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col">
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="font-headline text-lg">Room Chat</CardTitle>
+      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full">
+        <CardHeader className="p-4 border-b">
+          <CardTitle className="font-headline text-lg flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Room Chat
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 pt-4">
+        <CardContent className="flex-1 min-h-0 p-4">
           <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
               {room.messages.length > 0 ? (
                 room.messages.map((msg) => (
                   <div key={msg.id} className="flex items-start gap-2">
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="h-7 w-7 border">
                       <AvatarImage src={msg.user.avatarUrl} alt={msg.user.name} />
                       <AvatarFallback>{msg.user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
@@ -325,61 +296,75 @@ export function RoomClient({ room }: { room: Room }) {
                         <span className="font-bold text-xs">{msg.user.name}</span>
                         <span className="text-[10px] text-muted-foreground">{msg.timestamp}</span>
                       </div>
-                      <p className="text-xs bg-muted/30 p-2 rounded-md mt-1">{msg.text}</p>
+                      <p className="text-xs bg-muted/40 p-2 rounded-lg mt-1 leading-relaxed shadow-sm">{msg.text}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-muted-foreground text-xs italic">
-                  Be the first to say hi!
+                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground/50 space-y-2">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <Send className="h-5 w-5" />
+                  </div>
+                  <p className="text-xs italic">No messages yet. Say hi!</p>
                 </div>
               )}
             </div>
           </ScrollArea>
         </CardContent>
         <Separator />
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 bg-secondary/5">
           <div className="flex items-center gap-2">
             {reactions.map(r => (
-              <Button key={r.label} variant="ghost" size="icon" className="h-8 w-8 hover:scale-110 transition-transform">
-                <r.icon className="h-4 w-4"/>
+              <Button key={r.label} variant="ghost" size="icon" className="h-8 w-8 hover:scale-125 transition-transform">
+                <r.icon className="h-4 w-4 text-muted-foreground hover:text-primary"/>
               </Button>
             ))}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 text-primary border-primary/20 hover:bg-primary/10 ml-auto">
+                <Button variant="outline" size="icon" className="h-9 w-9 text-primary border-primary/20 hover:bg-primary/10 ml-auto rounded-full shadow-sm">
                   <Gift className="h-4 w-4"/>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
+              <PopoverContent className="w-80 p-0 rounded-xl overflow-hidden shadow-2xl" align="end">
                 <Tabs defaultValue="common">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
                     <TabsTrigger value="common">Common</TabsTrigger>
                     <TabsTrigger value="premium">Premium</TabsTrigger>
                     <TabsTrigger value="couple">Couple</TabsTrigger>
                   </TabsList>
-                  <ScrollArea className="h-64">
-                    <TabsContent value="common" className="p-2 grid grid-cols-4 gap-2">
+                  <ScrollArea className="h-72">
+                    <TabsContent value="common" className="p-3 grid grid-cols-4 gap-2">
                       {gifts.common.map((g) => (
-                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-secondary cursor-pointer">
+                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors border border-transparent hover:border-primary/20">
                           <g.icon className="h-8 w-8 text-primary" />
-                          <span className="text-[10px] text-center truncate w-full">{g.name}</span>
-                          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
+                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
                             <Gem className="h-2 w-2" />
                             <span>{g.cost}</span>
                           </div>
                         </div>
                       ))}
                     </TabsContent>
-                    {/* Add Premium and Couple tabs content similarly if needed */}
+                    <TabsContent value="premium" className="p-3 grid grid-cols-4 gap-2">
+                      {gifts.premium.map((g) => (
+                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors border border-transparent hover:border-primary/20">
+                          <g.icon className="h-8 w-8 text-primary" />
+                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
+                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
+                            <Gem className="h-2 w-2" />
+                            <span>{g.cost}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </TabsContent>
                   </ScrollArea>
                 </Tabs>
               </PopoverContent>
             </Popover>
           </div>
           <form className="flex items-center gap-2" onSubmit={(e) => e.preventDefault()}>
-            <Input placeholder="Type a message..." className="h-9 text-xs" />
-            <Button type="submit" size="icon" className="h-9 w-9">
+            <Input placeholder="Type a message..." className="h-9 text-xs rounded-full border-muted-foreground/20" />
+            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shrink-0">
               <Send className="h-4 w-4" />
             </Button>
           </form>

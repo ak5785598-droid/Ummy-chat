@@ -17,7 +17,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   // 1. Try mock data first
   const mockRoom = getRoomBySlug(slug);
 
-  // 2. If not in mock, try Firestore (assuming slug might be a doc ID)
+  // 2. If not in mock, try Firestore (slug is the document ID for custom rooms)
   const roomDocRef = useMemoFirebase(() => {
     if (!firestore || mockRoom) return null;
     return doc(firestore, 'chatRooms', slug);
@@ -32,11 +32,11 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       return {
         id: firestoreRoom.id,
         slug: firestoreRoom.id,
-        title: firestoreRoom.name,
-        topic: firestoreRoom.description,
+        title: firestoreRoom.name || 'Untitled Room',
+        topic: firestoreRoom.description || 'No topic set',
         category: (firestoreRoom.category as any) || 'Chat',
         coverUrl: `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
-        participants: [], // Dynamic participants can be handled in client
+        participants: [], // Real participants would be fetched from a subcollection or presence system
         messages: [],
       };
     }
