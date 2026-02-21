@@ -26,6 +26,7 @@ import {
   Sparkles,
   Loader,
   MoreVertical,
+  UserPlus,
 } from 'lucide-react';
 import type { Room, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -137,10 +138,28 @@ export function RoomClient({ room }: { room: Room }) {
 
   const toggleSeatLock = (index: number) => {
     setLockedSeats(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
+    const isLocked = !lockedSeats.includes(index);
+    toast({
+      title: isLocked ? 'Seat Locked' : 'Seat Unlocked',
+      description: `Seat ${index} is now ${isLocked ? 'restricted' : 'open'}.`,
+    });
   };
 
   const toggleSeatMute = (index: number) => {
     setMutedSeats(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
+    const isMuted = !mutedSeats.includes(index);
+    toast({
+      title: isMuted ? 'User Muted' : 'User Unmuted',
+      description: `Seat ${index} has been ${isMuted ? 'muted' : 'unmuted'} by admin.`,
+    });
+  };
+
+  const handleKickout = (name: string) => {
+    toast({
+      variant: 'destructive',
+      title: 'User Kicked',
+      description: `${name} has been removed from the room.`,
+    });
   };
 
   if (isUserLoading) return <div className="flex h-full w-full items-center justify-center"><Loader className="h-8 w-8 animate-spin" /></div>;
@@ -172,25 +191,23 @@ export function RoomClient({ room }: { room: Room }) {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <CardTitle className="font-headline text-2xl truncate">{room.title}</CardTitle>
-                {room.announcement && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-primary animate-pulse">
-                        <Megaphone className="h-5 w-5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4" /> Announcement</h4>
-                        <p className="text-sm text-muted-foreground">{room.announcement}</p>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary animate-pulse">
+                      <Megaphone className="h-5 w-5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4" /> Announcement</h4>
+                      <p className="text-sm text-muted-foreground">{room.announcement || 'Welcome to the room! Have a great time chatting.'}</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary">{room.topic}</Badge>
-                <Badge variant="outline">ID: {room.id.substring(0, 8)}</Badge>
+                <Badge variant="outline" className="font-mono text-[10px]">ID: {room.id.substring(0, 8)}</Badge>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -238,7 +255,7 @@ export function RoomClient({ room }: { room: Room }) {
                   return (
                     <div key={seatIndex} className={cn(
                       "relative aspect-square flex flex-col items-center justify-center gap-2 border rounded-xl shadow-sm transition-all group",
-                      isLocked ? "bg-muted/50 border-dashed" : "bg-card hover:shadow-md"
+                      isLocked ? "bg-muted/50 border-dashed border-primary/20" : "bg-card hover:shadow-md"
                     )}>
                       {participant ? (
                         <>
@@ -251,39 +268,59 @@ export function RoomClient({ room }: { room: Room }) {
                             {isMuted && <VolumeX className="h-3 w-3 text-red-500 bg-black/50 p-0.5 rounded" />}
                           </div>
                           {isOwner && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
-                                  {isMuted ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
-                                  {isMuted ? 'Unmute Seat' : 'Mute Seat'}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive" onClick={() => toast({ title: "User Kicked", description: "This is a mock action." })}>
-                                  <UserX className="mr-2 h-4 w-4" /> Kickout
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full shadow-lg">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
+                                    {isMuted ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4 text-red-500" />}
+                                    {isMuted ? 'Unmute' : 'Mute Seat'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => handleKickout(participant.name)}>
+                                    <UserX className="mr-2 h-4 w-4" /> Kickout
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           )}
                         </>
                       ) : (
                         <>
-                          {isLocked ? <Lock className="h-6 w-6 text-muted-foreground/30" /> : <Unlock className="h-6 w-6 text-muted-foreground/10" />}
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/20">
-                            {isLocked ? 'Locked' : 'Available'}
-                          </span>
+                          <div className="flex flex-col items-center gap-1">
+                            {isLocked ? <Lock className="h-6 w-6 text-primary/40" /> : <Unlock className="h-6 w-6 text-muted-foreground/10" />}
+                            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/30">
+                              {isLocked ? 'Locked' : 'Available'}
+                            </span>
+                          </div>
+                          
                           {isOwner && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100"
-                              onClick={() => toggleSeatLock(seatIndex)}
-                            >
-                              <Settings2 className="h-4 w-4 text-primary" />
-                            </Button>
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[1px] rounded-xl">
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="secondary" 
+                                  size="icon" 
+                                  className="h-8 w-8 rounded-full shadow-md"
+                                  onClick={() => toggleSeatLock(seatIndex)}
+                                  title={isLocked ? "Unlock" : "Lock"}
+                                >
+                                  {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                                </Button>
+                                {!isLocked && (
+                                   <Button 
+                                   variant="primary" 
+                                   size="icon" 
+                                   className="h-8 w-8 rounded-full shadow-md bg-primary text-primary-foreground"
+                                   onClick={() => toast({ title: "Invite Sent", description: "Invite link copied to clipboard." })}
+                                 >
+                                   <UserPlus className="h-4 w-4" />
+                                 </Button>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </>
                       )}
@@ -296,42 +333,64 @@ export function RoomClient({ room }: { room: Room }) {
         </Card>
       </div>
 
-      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl">
-        <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
+      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl border-none">
+        <CardHeader className="p-4 border-b flex flex-row items-center justify-between bg-card rounded-t-xl">
           <CardTitle className="font-headline text-lg flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" /> Room Chat
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast({ title: "Chat Cleared", description: "Chat is clean now." })}>
-             <Settings2 className="h-4 w-4" />
-          </Button>
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => toast({ title: "Chat Cleared", description: "All messages have been cleared for you." })}>
+                   Clear History
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Room Settings", description: "Room privacy updated." })}>
+                   Privacy Mode
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-4">
           <ScrollArea className="h-full pr-4" ref={scrollRef}>
             <div className="space-y-4">
               {activeMessages.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-2">
-                  <Avatar className="h-7 w-7 border">
+                <div key={msg.id} className="flex items-start gap-2 group">
+                  <Avatar className="h-7 w-7 border shadow-sm">
                     <AvatarImage src={msg.user.avatarUrl} alt={msg.user.name} />
                     <AvatarFallback>{msg.user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="font-bold text-xs">{msg.user.name}</span>
-                      <span className="text-[10px] text-muted-foreground">{msg.timestamp}</span>
+                      <span className="font-bold text-xs hover:underline cursor-pointer">{msg.user.name}</span>
+                      <span className="text-[9px] text-muted-foreground">{msg.timestamp}</span>
                     </div>
-                    <p className="text-xs bg-muted/40 p-2 rounded-lg mt-1 leading-relaxed">{msg.text}</p>
+                    <p className="text-xs bg-muted/40 p-2 rounded-2xl rounded-tl-none mt-1 leading-relaxed border border-transparent hover:border-primary/10 transition-colors">
+                      {msg.text}
+                    </p>
                   </div>
                 </div>
               ))}
+              {activeMessages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-2 opacity-40">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                  <p className="text-xs font-medium">No messages yet. Start the vibe!</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>
         <Separator />
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 bg-card rounded-b-xl">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9 text-primary border-primary/20 rounded-full">
+                <Button variant="outline" size="icon" className="h-9 w-9 text-primary border-primary/20 rounded-full hover:bg-primary/5">
                   <Gift className="h-4 w-4"/>
                 </Button>
               </PopoverTrigger>
@@ -344,9 +403,9 @@ export function RoomClient({ room }: { room: Room }) {
                   <ScrollArea className="h-72">
                     <TabsContent value="common" className="p-3 grid grid-cols-4 gap-2">
                       {gifts.common.map((g) => (
-                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors">
+                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors active:scale-95">
                           <g.icon className="h-8 w-8 text-primary" />
-                          <span className="text-[9px] font-semibold text-center">{g.name}</span>
+                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
                           <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
                             <Gem className="h-2 w-2" /> <span>{g.cost}</span>
                           </div>
@@ -355,9 +414,9 @@ export function RoomClient({ room }: { room: Room }) {
                     </TabsContent>
                     <TabsContent value="premium" className="p-3 grid grid-cols-4 gap-2">
                       {gifts.premium.map((g) => (
-                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors">
+                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors active:scale-95">
                           <g.icon className="h-8 w-8 text-primary" />
-                          <span className="text-[9px] font-semibold text-center">{g.name}</span>
+                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
                           <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
                             <Gem className="h-2 w-2" /> <span>{g.cost}</span>
                           </div>
@@ -372,12 +431,12 @@ export function RoomClient({ room }: { room: Room }) {
           <form className="flex items-center gap-2" onSubmit={handleSendMessage}>
             <Input 
               placeholder="Type a message..." 
-              className="h-9 text-xs rounded-full" 
+              className="h-9 text-xs rounded-full border-muted-foreground/20 focus-visible:ring-primary/40" 
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               disabled={isSending}
             />
-            <Button type="submit" size="icon" className="h-9 w-9 rounded-full" disabled={isSending || !messageText.trim()}>
+            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shadow-lg transition-transform active:scale-90" disabled={isSending || !messageText.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

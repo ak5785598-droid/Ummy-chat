@@ -37,6 +37,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         topic: firestoreRoom.description || 'No topic set',
         category: (firestoreRoom.category as any) || 'Chat',
         coverUrl: `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
+        ownerId: firestoreRoom.ownerId, // Fixed: ensure ownerId is passed
         participants: [], // New rooms start empty
         messages: [],
       };
