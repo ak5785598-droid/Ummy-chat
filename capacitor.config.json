@@ -1,0 +1,10 @@
+{
+  "appId": "com.ummy.app",
+  "appName": "Ummy",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://studio-7826224327-e0efc.web.app",
+    "allowNavigation": ["*"]
+  }
+}
