@@ -30,7 +30,7 @@ import {
   UserPlus,
   Smile,
 } from 'lucide-react';
-import type { Room, Message } from '@/lib/types';
+import type { Room, Message, User as RoomUser } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +67,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [isClearing, setIsClearing] = useState(false);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [mutedSeats, setMutedSeats] = useState<number[]>([]);
+  // Use local state for participants to handle "Kick Out" visibility immediately
+  const [activeParticipants, setActiveParticipants] = useState<RoomUser[]>(room.participants || []);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -167,7 +169,8 @@ export function RoomClient({ room }: { room: Room }) {
     });
   };
 
-  const handleKickout = (name: string) => {
+  const handleKickout = (id: string, name: string) => {
+    setActiveParticipants(prev => prev.filter(p => p.id !== id));
     toast({
       variant: 'destructive',
       title: 'User Kicked Out',
@@ -230,8 +233,9 @@ export function RoomClient({ room }: { room: Room }) {
     ],
   };
 
-  const otherParticipants = (room.participants || []).filter(p => p.id !== currentUser.uid);
   const totalSeats = 10;
+  // Participants for seats 2-10
+  const otherParticipantsToDisplay = activeParticipants.filter(p => p.id !== currentUser.uid);
 
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -331,7 +335,7 @@ export function RoomClient({ room }: { room: Room }) {
 
                 {/* Seats 2-10 */}
                 {Array.from({ length: totalSeats - 1 }).map((_, i) => {
-                  const participant = otherParticipants[i];
+                  const participant = otherParticipantsToDisplay[i];
                   const seatIndex = i + 2;
                   const isLocked = lockedSeats.includes(seatIndex);
                   const isMuted = mutedSeats.includes(seatIndex);
@@ -341,7 +345,13 @@ export function RoomClient({ room }: { room: Room }) {
                       "relative aspect-square flex flex-col items-center justify-center gap-2 border-2 rounded-2xl shadow-sm transition-all",
                       isLocked ? "bg-muted/50 border-dashed border-primary/20" : "bg-card hover:border-primary/40"
                     )}>
-                      {participant ? (
+                      {/* User's requirement: LOCK SEAT MEAN THERE IS NO DP AND NSME SEEN AT THAT SEAT */}
+                      {isLocked ? (
+                        <div className="flex flex-col items-center gap-2 opacity-50">
+                           <Lock className="h-8 w-8 text-primary" />
+                           <span className="text-[9px] font-bold uppercase tracking-widest">Closed</span>
+                        </div>
+                      ) : participant ? (
                         <>
                           <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-primary/10">
                             <AvatarImage src={participant.avatarUrl} alt={participant.name} />
@@ -353,15 +363,13 @@ export function RoomClient({ room }: { room: Room }) {
                           </div>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center gap-2 opacity-50">
-                          {isLocked ? <Lock className="h-8 w-8 text-primary" /> : <Unlock className="h-8 w-8 text-muted-foreground/20" />}
-                          <span className="text-[9px] font-bold uppercase tracking-widest">
-                            {isLocked ? 'Closed' : 'Open'}
-                          </span>
+                        <div className="flex flex-col items-center gap-2 opacity-30">
+                          <Unlock className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-[9px] font-bold uppercase tracking-widest">Open</span>
                         </div>
                       )}
 
-                      {/* THREE DOTS MENU FOR ALL SEATS (OWNER ONLY) */}
+                      {/* ADMIN MENU (THREE DOTS) FOR ALL SEATS (OWNER ONLY) */}
                       {isOwner && (
                         <div className="absolute top-2 right-2">
                           <DropdownMenu>
@@ -374,26 +382,30 @@ export function RoomClient({ room }: { room: Room }) {
                               <DropdownMenuLabel>Seat {seatIndex} Controls</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               
-                              {/* LOCK/UNLOCK (FOR ALL SEATS) */}
+                              {/* LOCK/UNLOCK (FOR EVERY SEAT) */}
                               <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)}>
                                 {isLocked ? <Unlock className="mr-2 h-4 w-4 text-green-500" /> : <Lock className="mr-2 h-4 w-4 text-primary" />}
                                 {isLocked ? 'Unlock Seat' : 'Lock Seat'}
                               </DropdownMenuItem>
                               
-                              {/* INVITE (FOR ALL SEATS) */}
+                              {/* INVITE (FOR EVERY SEAT) */}
                               <DropdownMenuItem onClick={handleInvite}>
                                 <UserPlus className="mr-2 h-4 w-4" /> Invite to Seat
                               </DropdownMenuItem>
 
                               {/* PARTICIPANT ONLY ACTIONS */}
-                              {participant && (
+                              {participant && !isLocked && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
                                     {isMuted ? <Volume2 className="mr-2 h-4 w-4 text-green-500" /> : <VolumeX className="mr-2 h-4 w-4 text-orange-500" />}
                                     {isMuted ? 'Unmute' : 'Mute'}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleKickout(participant.name)} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
+                                  {/* KICK OUT: User requirement: Completely invisible from the room */}
+                                  <DropdownMenuItem 
+                                    onClick={() => handleKickout(participant.id, participant.name)} 
+                                    className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground"
+                                  >
                                     <UserX className="mr-2 h-4 w-4" /> Kick Out User
                                   </DropdownMenuItem>
                                 </>
