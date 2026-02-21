@@ -13,11 +13,8 @@ import {
   Unlock,
   Volume2,
   VolumeX,
-  Megaphone,
   Gem,
   Star,
-  Flower,
-  Lollipop,
   Trophy,
   Crown,
   Rocket,
@@ -28,7 +25,6 @@ import {
   UserX,
   Trash2,
   UserPlus,
-  Smile,
 } from 'lucide-react';
 import type { Room, Message, User as RoomUser } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,7 +32,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Popover,
   PopoverContent,
@@ -53,7 +48,6 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, doc, writeBatch } from 'firebase/firestore';
 
@@ -73,8 +67,9 @@ export function RoomClient({ room }: { room: Room }) {
   const { user: currentUser, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Admin logic: Owner can perform all actions
+  // Role Detection
   const isOwner = currentUser?.uid === room.ownerId || room.slug === 'mumbai-adda';
+  const isAdmin = room.moderatorIds?.includes(currentUser?.uid || '') || isOwner;
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -168,7 +163,7 @@ export function RoomClient({ room }: { room: Room }) {
     toast({
       variant: 'destructive',
       title: 'User Kicked Out',
-      description: `${name} has been removed and is now invisible from the room.`,
+      description: `${name} has been removed and is now completely invisible from the room.`,
     });
   };
 
@@ -180,7 +175,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleClearChat = async () => {
-    if (!firestore || !room.id || isClearing) return;
+    if (!firestore || !room.id || isClearing || !isOwner) return;
     
     setIsClearing(true);
     try {
@@ -234,13 +229,18 @@ export function RoomClient({ room }: { room: Room }) {
                 <CardTitle className="font-headline text-2xl truncate">{room.title}</CardTitle>
                 <Badge variant="outline" className="hidden sm:inline-flex">{room.topic}</Badge>
               </div>
-              {isOwner && (
-                <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1">
+                {isOwner && (
                   <Badge variant="default" className="bg-primary/80 flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" /> Admin Mode
+                    <ShieldAlert className="h-3 w-3" /> Owner Mode
                   </Badge>
-                </div>
-              )}
+                )}
+                {isAdmin && !isOwner && (
+                  <Badge variant="secondary" className="bg-accent/80 flex items-center gap-1">
+                    <Crown className="h-3 w-3" /> Admin Mode
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ export function RoomClient({ room }: { room: Room }) {
                 {isCameraOn ? <Video className="h-5 w-5"/> : <VideoOff className="h-5 w-5"/>}
               </Button>
               
-              {isOwner && (
+              {isAdmin && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="default" size="icon" className="rounded-full bg-primary text-primary-foreground">
@@ -259,12 +259,14 @@ export function RoomClient({ room }: { room: Room }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Room Admin Tools</DropdownMenuLabel>
+                    <DropdownMenuLabel>Management Tools</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold">
-                      {isClearing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      Clear Chat For Everyone
-                    </DropdownMenuItem>
+                    {isOwner && (
+                      <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold">
+                        {isClearing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Clear Chat History (Global)
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleInvite}>
                       <UserPlus className="mr-2 h-4 w-4" /> Global Invite
                     </DropdownMenuItem>
@@ -294,7 +296,7 @@ export function RoomClient({ room }: { room: Room }) {
                     </Avatar>
                   )}
                   <div className="absolute bottom-2 inset-x-2 p-1.5 bg-black/60 rounded-lg text-center backdrop-blur-sm">
-                    <span className="font-bold text-white text-[10px] truncate block uppercase tracking-tight">{currentUser.displayName} (Admin)</span>
+                    <span className="font-bold text-white text-[10px] truncate block uppercase tracking-tight">{currentUser.displayName} {isOwner ? '(Owner)' : isAdmin ? '(Admin)' : ''}</span>
                   </div>
                 </div>
 
@@ -308,12 +310,12 @@ export function RoomClient({ room }: { room: Room }) {
                   return (
                     <div key={seatIndex} className={cn(
                       "relative aspect-square flex flex-col items-center justify-center gap-2 border-2 rounded-2xl transition-all overflow-hidden",
-                      isLocked ? "bg-slate-200 border-dashed border-slate-400" : "bg-card hover:border-primary/40 shadow-sm"
+                      isLocked ? "bg-slate-200 border-dashed border-slate-400 shadow-inner" : "bg-card hover:border-primary/40 shadow-sm"
                     )}>
                       {isLocked ? (
                         <div className="flex flex-col items-center gap-1 opacity-60">
                            <Lock className="h-8 w-8 text-slate-500" />
-                           <span className="text-[10px] font-bold text-slate-500 uppercase">Locked</span>
+                           <span className="text-[10px] font-bold text-slate-500 uppercase">Closed</span>
                         </div>
                       ) : participant ? (
                         <>
@@ -334,7 +336,7 @@ export function RoomClient({ room }: { room: Room }) {
                       )}
 
                       {/* Admin Menu for EACH SEAT */}
-                      {isOwner && (
+                      {isAdmin && (
                         <div className="absolute top-2 right-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -343,7 +345,7 @@ export function RoomClient({ room }: { room: Room }) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-52">
-                              <DropdownMenuLabel>Seat {seatIndex} Admin</DropdownMenuLabel>
+                              <DropdownMenuLabel>Seat {seatIndex} Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)}>
                                 {isLocked ? <Unlock className="mr-2 h-4 w-4 text-green-500" /> : <Lock className="mr-2 h-4 w-4 text-primary" />}

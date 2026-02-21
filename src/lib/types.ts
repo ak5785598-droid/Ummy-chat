@@ -48,6 +48,7 @@ export type Room = {
   background?: string;
   isLocked?: boolean;
   ownerId?: string;
+  moderatorIds?: string[];
   participants: User[];
   messages: Message[];
 };
