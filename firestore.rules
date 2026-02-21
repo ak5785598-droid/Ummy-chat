@@ -16,24 +16,12 @@
  *   by the authenticated user who owns them.
  * - Chat Rooms: Chat rooms are discoverable by any authenticated user, but
  *   modification is restricted to their designated 'owner' and 'moderators'.
- * - Chat Messages: Access to messages within a chat room is strictly limited to
- *   the members (owners/moderators) of that room.
+ * - Chat Messages: Access to messages within a chat room is open to all authenticated users.
  * - Friend Requests: Can only be created by the sender and can only be seen or acted
  *   upon by the sender and receiver.
  * - Admin-Managed Data: Collections like `/gifts` and `/tags` are treated as
  *   read-only for regular users, with the assumption they are managed by an
  *   administrative process.
- *
- * Denormalization for Authorization:
- * This ruleset relies on denormalized fields for efficient and secure authorization.
- * For example, `ChatRoom` documents contain `ownerId` and `moderatorIds` arrays directly,
- * allowing security rules to check permissions without needing extra database reads (`get` calls)
- * on other collections, which would be slow and costly.
- *
- * Structural Segregation:
- * The separation of user-private data (`/users/{userId}/...`) from shared, top-level
- * collections (`/chatRooms`, `/friendRequests`) creates a clear and secure boundary,
- * simplifying rules and preventing accidental data exposure in list operations.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -41,104 +29,58 @@ service cloud.firestore {
 
     // Helper Functions for Reusable Logic
     
-    /**
-     * Checks if a user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the foundation of the ownership model.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    /**
-     * Checks if a document currently exists in Firestore.
-     * Used to protect against updates or deletes of non-existent documents.
-     */
     function isExistingDoc() {
       return resource != null;
     }
     
-    /**
-     * Checks if the user is the owner of an existing document.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && isExistingDoc();
     }
     
-    /**
-     * Checks if the authenticated user is the sender of a given document
-     * (e.g., a friend request, a gift).
-     */
     function isSender(docData) {
       return isSignedIn() && request.auth.uid == docData.senderId;
     }
     
-    /**
-     * Checks if the authenticated user is the receiver of a given document.
-     */
     function isReceiver(docData) {
       return isSignedIn() && request.auth.uid == docData.receiverId;
     }
     
-    /**
-     * Checks if the authenticated user is a participant (sender or receiver)
-     * in a friend request.
-     */
     function isPartyToRequest(requestData) {
       return isSignedIn() && (request.auth.uid == requestData.senderId || request.auth.uid == requestData.receiverId);
     }
 
-    /**
-     * Checks if the authenticated user is the owner of a given chat room.
-     */
     function isRoomOwner(roomData) {
       return isSignedIn() && request.auth.uid == roomData.ownerId;
     }
     
-    /**
-     * Checks if the authenticated user is a moderator of a given chat room.
-     */
     function isRoomModerator(roomData) {
       return isSignedIn() && request.auth.uid in roomData.moderatorIds;
     }
     
-    /**
-     * Checks if the user is an administrator (owner or moderator) of a chat room.
-     */
     function isRoomAdmin(roomData) {
       return isRoomOwner(roomData) || isRoomModerator(roomData);
-    }
-    
-    /**
-     * Checks if a user is a participant in a chat room by fetching the parent room document.
-     * Note: This assumes only owners and moderators can participate. If regular users
-     * should participate, the ChatRoom entity needs a 'participantIds' field.
-     */
-    function isChatRoomParticipant(chatRoomId) {
-      let room = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
-      return isRoomAdmin(room);
     }
 
     /**
      * @description   Manages a user's profile document(s).
-     * @path          /users/{userId}/profile/{profileId}
      */
     match /users/{userId}/profile/{profileId} {
       allow get, list: if isSignedIn();
-      allow create: if isOwner(userId) && request.resource.data.id == profileId && profileId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id && profileId == userId;
+      allow create: if isOwner(userId) && request.resource.data.id == profileId && (profileId == userId || profileId == 'profile');
+      allow update: if isExistingOwner(userId) && profileId == userId;
       allow delete: if isExistingOwner(userId) && profileId == userId;
     }
 
     /**
      * @description   Manages chat rooms, which are public to find but have restricted write access.
-     * Updated to allow listing for all authenticated users to fix the 'My Rooms' error.
      */
     match /chatRooms/{chatRoomId} {
       allow read: if isSignedIn();
@@ -149,11 +91,12 @@ service cloud.firestore {
     
     /**
      * @description   Manages messages within a specific chat room subcollection.
+     * Open participation for authenticated users in MVP.
      */
     match /chatRooms/{chatRoomId}/messages/{chatMessageId} {
-      allow get, list: if isChatRoomParticipant(chatRoomId);
-      allow create: if isChatRoomParticipant(chatRoomId) && isSender(request.resource.data) && request.resource.data.chatRoomId == chatRoomId;
-      allow update, delete: if isExistingDoc() && isChatRoomParticipant(chatRoomId) && (isSender(resource.data) || isRoomOwner(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data));
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isSender(request.resource.data) && request.resource.data.chatRoomId == chatRoomId;
+      allow update, delete: if isExistingDoc() && (isSender(resource.data) || isRoomOwner(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data));
     }
     
     /**
@@ -167,35 +110,21 @@ service cloud.firestore {
       allow delete: if isExistingDoc() && isPartyToRequest(resource.data);
     }
     
-    /**
-     * @description   Manages transactional records of gifts sent between users.
-     */
     match /userGifts/{userGiftId} {
       allow get: if isExistingDoc() && (isSender(resource.data) || isReceiver(resource.data));
       allow list: if false;
       allow create: if isSignedIn() && isSender(request.resource.data);
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
-    /**
-     * @description   Stores definitions of available virtual gifts. Read-only for users.
-     */
     match /gifts/{giftId} {
       allow get, list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
     
-    /**
-     * @description   Stores definitions of available chat room tags. Read-only for users.
-     */
     match /tags/{tagId} {
       allow get, list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
   }
 }

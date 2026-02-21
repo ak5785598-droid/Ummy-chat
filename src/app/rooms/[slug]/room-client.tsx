@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -14,7 +13,6 @@ import {
   Unlock,
   Volume2,
   VolumeX,
-  UserX,
   Megaphone,
   Gem,
   Star,
@@ -26,7 +24,6 @@ import {
   Sparkles,
   Loader,
   MoreVertical,
-  UserPlus,
   ShieldAlert,
   XCircle,
 } from 'lucide-react';
@@ -71,8 +68,7 @@ export function RoomClient({ room }: { room: Room }) {
   const { user: currentUser, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Determine if the user is the owner (from Firestore or Mock Data)
-  // For testing, u1 (Priya) is treated as the generic mock owner.
+  // Determine if the user is the owner
   const isOwner = currentUser?.uid === room.ownerId || (room.ownerId === 'u1' && currentUser?.uid);
 
   // Listen to real-time messages
@@ -124,17 +120,26 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending) return;
     setIsSending(true);
+    
+    const payload = {
+      content: messageText,
+      senderId: currentUser.uid,
+      senderName: currentUser.displayName || 'Anonymous',
+      senderAvatar: currentUser.photoURL || '',
+      chatRoomId: room.id, // CRITICAL: Required by security rules
+      timestamp: serverTimestamp(),
+    };
+
     try {
-      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: messageText,
-        senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'Anonymous',
-        senderAvatar: currentUser.photoURL || '',
-        timestamp: serverTimestamp(),
-      });
+      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), payload);
       setMessageText('');
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to send message.' });
+    } catch (error: any) {
+      console.error('Send message error:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error', 
+        description: 'Failed to send message. Please try again.' 
+      });
     } finally {
       setIsSending(false);
     }
@@ -154,7 +159,7 @@ export function RoomClient({ room }: { room: Room }) {
     const isMuted = !mutedSeats.includes(index);
     toast({
       title: isMuted ? 'User Muted' : 'User Unmuted',
-      description: `Seat ${index} has been ${isMuted ? 'muted' : 'unmuted'} by admin.`,
+      description: `Seat ${index} has been ${isMuted ? 'muted' : 'unmuted'}.`,
     });
   };
 
@@ -230,7 +235,7 @@ export function RoomClient({ room }: { room: Room }) {
               {isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="primary" size="icon" className="rounded-full bg-primary text-primary-foreground shadow-lg border-2 border-background scale-110">
+                    <Button variant="primary" size="icon" className="rounded-full bg-primary text-primary-foreground shadow-lg border-2 border-background">
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -277,7 +282,7 @@ export function RoomClient({ room }: { room: Room }) {
                   </div>
                 </div>
 
-                {/* Other Participants and Empty Seats */}
+                {/* Other Participant Seats */}
                 {Array.from({ length: totalSeats - 1 }).map((_, i) => {
                   const participant = otherParticipants[i];
                   const seatIndex = i + 2;
@@ -300,13 +305,13 @@ export function RoomClient({ room }: { room: Room }) {
                             {isMuted && <VolumeX className="h-4 w-4 text-red-500 bg-black/60 p-1 rounded-md" />}
                           </div>
                           
-                          {/* DIRECT ADMIN CONTROLS - ALWAYS VISIBLE TO OWNER */}
+                          {/* ADMIN CONTROLS PERMANENTLY VISIBLE FOR OWNER */}
                           {isOwner && (
                             <div className="absolute top-2 right-2 flex flex-col gap-1 z-20">
                               <Button 
                                 variant="destructive" 
                                 size="icon" 
-                                className="h-7 w-7 rounded-full shadow-lg bg-red-600 hover:bg-red-700"
+                                className="h-7 w-7 rounded-full shadow-lg bg-red-600 hover:bg-red-700 border-2 border-white"
                                 onClick={() => handleKickout(participant.name)}
                                 title="KICK OUT"
                               >
@@ -315,7 +320,7 @@ export function RoomClient({ room }: { room: Room }) {
                               <Button 
                                 variant="secondary" 
                                 size="icon" 
-                                className={cn("h-7 w-7 rounded-full shadow-lg", isMuted ? "bg-green-500 text-white" : "bg-primary text-white")}
+                                className={cn("h-7 w-7 rounded-full shadow-lg border-2 border-white", isMuted ? "bg-green-500 text-white" : "bg-primary text-white")}
                                 onClick={() => toggleSeatMute(seatIndex)}
                                 title={isMuted ? "Unmute" : "Mute"}
                               >
@@ -333,16 +338,16 @@ export function RoomClient({ room }: { room: Room }) {
                             </span>
                           </div>
                           
-                          {/* ADMIN LOCK CONTROLS */}
+                          {/* ADMIN LOCK CONTROLS PERMANENTLY VISIBLE */}
                           {isOwner && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-background/5 opacity-0 hover:opacity-100 transition-opacity rounded-xl z-20">
+                            <div className="absolute top-2 right-2 z-20">
                               <Button 
                                 variant="primary" 
                                 size="icon" 
-                                className="h-10 w-10 rounded-full shadow-xl bg-primary text-white border-2 border-white"
+                                className="h-7 w-7 rounded-full shadow-xl bg-primary text-white border-2 border-white"
                                 onClick={() => toggleSeatLock(seatIndex)}
                               >
-                                {isLocked ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+                                {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                               </Button>
                             </div>
                           )}
@@ -390,7 +395,7 @@ export function RoomClient({ room }: { room: Room }) {
                     <Sparkles className="h-10 w-10 text-primary" />
                   </div>
                   <p className="text-sm font-bold uppercase tracking-tight">No messages yet</p>
-                  <p className="text-[10px] max-w-[150px]">Be the first to say hi and set the vibe for the room!</p>
+                  <p className="text-[10px] max-w-[150px]">Be the first to say hi!</p>
                 </div>
               )}
             </div>
