@@ -54,7 +54,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(true);
@@ -63,6 +63,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [mutedSeats, setMutedSeats] = useState<number[]>([]);
   
@@ -73,6 +74,7 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
 
   // Determine if the user is the owner
+  // We check against the ownerId from Firestore or the hardcoded mock owner 'u1'
   const isOwner = currentUser?.uid === room.ownerId || (room.ownerId === 'u1' && currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1');
 
   // Listen to real-time messages
@@ -175,11 +177,35 @@ export function RoomClient({ room }: { room: Room }) {
     });
   };
 
-  const handleClearChat = () => {
-    toast({
-      title: 'Success',
-      description: 'Chat history has been cleared for everyone.',
-    });
+  const handleClearChat = async () => {
+    if (!firestore || !room.id || isClearing) return;
+    
+    setIsClearing(true);
+    try {
+      // For permanent deletion that "no one can see", we must delete the actual docs from Firestore
+      if (firestoreMessages && firestoreMessages.length > 0) {
+        const batch = writeBatch(firestore);
+        firestoreMessages.forEach((msg) => {
+          const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
+          batch.delete(msgRef);
+        });
+        await batch.commit();
+      }
+      
+      toast({
+        title: 'Chat History Cleared',
+        description: 'All messages have been permanently deleted from this room.',
+      });
+    } catch (error: any) {
+      console.error('Clear chat error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to clear chat history. Check your permissions.',
+      });
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   if (isUserLoading) return <div className="flex h-full w-full items-center justify-center"><Loader className="h-8 w-8 animate-spin" /></div>;
@@ -214,7 +240,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <CardTitle className="font-headline text-2xl truncate">{room.title}</CardTitle>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary animate-pulse">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
                       <Megaphone className="h-5 w-5" />
                     </Button>
                   </PopoverTrigger>
@@ -252,12 +278,14 @@ export function RoomClient({ room }: { room: Room }) {
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel>Room Management</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold">
-                      <Trash2 className="mr-2 h-4 w-4" /> Clear Chat History
+                    <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
+                      {isClearing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      Clear Chat History (Permanent)
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => toast({ title: "Privacy", description: "Room locked." })}>
                       <Lock className="mr-2 h-4 w-4" /> Lock Room (Private)
                     </DropdownMenuItem>
@@ -320,23 +348,23 @@ export function RoomClient({ room }: { room: Room }) {
                             {isMuted && <VolumeX className="h-4 w-4 text-red-500 bg-black/60 p-1 rounded-md" />}
                           </div>
                           
-                          {/* SEAT ADMIN MENU (THREE DOTS) - FOR PARTICIPANTS */}
+                          {/* SEAT ADMIN MENU (THREE DOTS) - FOR OCCUPIED SEATS */}
                           {isOwner && (
                             <div className="absolute top-2 right-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/90 shadow-md">
+                                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background shadow-md">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-48">
-                                  <DropdownMenuLabel>Participant Actions</DropdownMenuLabel>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuLabel>Manage Participant</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
                                     {isMuted ? <Volume2 className="mr-2 h-4 w-4 text-green-500" /> : <VolumeX className="mr-2 h-4 w-4 text-orange-500" />}
-                                    {isMuted ? 'Unmute User' : 'Mute User'}
+                                    {isMuted ? 'Unmute' : 'Mute'}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleKickout(participant.name)} className="text-destructive font-bold">
+                                  <DropdownMenuItem onClick={() => handleKickout(participant.name)} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
                                     <UserX className="mr-2 h-4 w-4" /> Kick Out User
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -358,11 +386,13 @@ export function RoomClient({ room }: { room: Room }) {
                             <div className="absolute top-2 right-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/90 shadow-md">
+                                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background shadow-md">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Seat Control</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)}>
                                     {isLocked ? <Unlock className="mr-2 h-4 w-4 text-green-500" /> : <Lock className="mr-2 h-4 w-4 text-primary" />}
                                     {isLocked ? 'Open Seat' : 'Lock Seat'}
@@ -386,7 +416,7 @@ export function RoomClient({ room }: { room: Room }) {
       <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl border-none bg-card/80 backdrop-blur-md">
         <CardHeader className="p-4 border-b flex flex-row items-center justify-between rounded-t-xl bg-secondary/20">
           <CardTitle className="font-headline text-lg flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" /> Global Vibe
+            <Sparkles className="h-5 w-5 text-primary" /> Live Chat
           </CardTitle>
           <Badge variant="outline" className="text-[10px] font-bold border-primary/20">LIVE</Badge>
         </CardHeader>
@@ -477,9 +507,9 @@ export function RoomClient({ room }: { room: Room }) {
               className="h-12 text-sm rounded-2xl border-primary/10 focus-visible:ring-primary/40 bg-background shadow-md pr-10" 
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
-              disabled={isSending}
+              disabled={isSending || isClearing}
             />
-            <Button type="submit" size="icon" className="h-12 w-12 rounded-2xl shadow-xl bg-primary hover:bg-primary/90 transition-all active:scale-90 -ml-14" disabled={isSending || !messageText.trim()}>
+            <Button type="submit" size="icon" className="h-12 w-12 rounded-2xl shadow-xl bg-primary hover:bg-primary/90 transition-all active:scale-90 -ml-14" disabled={isSending || isClearing || !messageText.trim()}>
               {isSending ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             </Button>
           </form>
@@ -488,4 +518,3 @@ export function RoomClient({ room }: { room: Room }) {
     </div>
   );
 }
-
