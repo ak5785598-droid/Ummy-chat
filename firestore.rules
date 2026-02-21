@@ -47,7 +47,7 @@ service cloud.firestore {
         allow read, list: if isSignedIn();
         // Fixed: Ensure the chatMessage subcollection correctly associates with the room
         allow create: if isSignedIn() && request.resource.data.chatRoomId == chatRoomId;
-        // Room owners can delete any message in their room
+        // Room owners can delete any message in their room (Clear Chat functionality)
         allow update, delete: if isSignedIn() && (resource.data.senderId == request.auth.uid || isRoomOwner(chatRoomId));
       }
     }

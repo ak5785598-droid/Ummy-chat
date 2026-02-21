@@ -84,10 +84,10 @@ const rooms: Room[] = [
     topic: 'Bollywood & Gup-Shup', 
     category: 'Popular',
     coverUrl: PlaceHolderImages.find(i => i.id === 'room-cover-1')?.imageUrl!,
-    participants: [users[0], users[1], users[3]],
+    participants: [users[1], users[2], users[3], users[4]],
     messages: messages,
     announcement: 'Welcome to the biggest Mumbai Adda! No toxicity allowed.',
-    ownerId: 'u1' // Assigned to mock user u1
+    ownerId: '901piBzTQ0VzCtAvlyyobwvAaTs1' // Mock owner matching default user or admin UID
   },
   { 
     id: 'r2', 
@@ -96,7 +96,7 @@ const rooms: Room[] = [
     topic: 'Food & History', 
     category: 'Popular',
     coverUrl: PlaceHolderImages.find(i => i.id === 'room-cover-2')?.imageUrl!,
-    participants: users.slice(0, 4),
+    participants: users.slice(1, 4),
     messages: [],
     ownerId: 'u2'
   },

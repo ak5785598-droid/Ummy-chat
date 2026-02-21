@@ -67,7 +67,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isClearing, setIsClearing] = useState(false);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [mutedSeats, setMutedSeats] = useState<number[]>([]);
-  // Local state for participants to handle "Kick Out" visibility immediately
   const [activeParticipants, setActiveParticipants] = useState<RoomUser[]>(room.participants || []);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -76,7 +75,6 @@ export function RoomClient({ room }: { room: Room }) {
   const { user: currentUser, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Admin Detection: Checks Firestore ownerId or special dev owner UID for Mumbai Adda
   const isOwner = currentUser?.uid === room.ownerId || (room.slug === 'mumbai-adda' && currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1');
 
   const messagesQuery = useMemoFirebase(() => {
@@ -202,7 +200,7 @@ export function RoomClient({ room }: { room: Room }) {
       
       toast({
         title: 'Chat History Cleared',
-        description: 'All messages have been permanently deleted for everyone.',
+        description: 'All messages have been permanently deleted for everyone (Owner, Admin, and Users).',
       });
     } catch (error: any) {
       console.error('Clear chat error:', error);
@@ -240,8 +238,7 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
-        {/* ROOM HEADER CARD */}
-        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden shadow-md">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden shadow-md border-none">
           <CardHeader className="flex flex-row items-center justify-between p-4 relative z-10">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -278,7 +275,6 @@ export function RoomClient({ room }: { room: Room }) {
                 {isCameraOn ? <Video className="h-5 w-5"/> : <VideoOff className="h-5 w-5"/>}
               </Button>
               
-              {/* GLOBAL ROOM MENU (Owner Only) */}
               {isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -291,13 +287,13 @@ export function RoomClient({ room }: { room: Room }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
                       {isClearing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      Clear Chat History (Forever for all)
+                      Clear Chat History (Permanent for All)
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleInvite}>
                       <UserPlus className="mr-2 h-4 w-4" /> Invite Friends
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => toast({ title: "Privacy", description: "Room updated." })}>
+                    <DropdownMenuItem onClick={() => toast({ title: "Privacy", description: "Room privacy updated." })}>
                       <Lock className="mr-2 h-4 w-4" /> Change Room Privacy
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -311,12 +307,10 @@ export function RoomClient({ room }: { room: Room }) {
           </CardHeader>
         </Card>
 
-        {/* SEATS GRID */}
         <Card className="flex-1 overflow-hidden border-none shadow-inner">
           <CardContent className="p-4 h-full bg-secondary/10">
             <ScrollArea className="h-full">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {/* Seat 1: Me */}
                 <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-2xl overflow-hidden ring-4 ring-primary/40 shadow-xl">
                   <video ref={videoRef} className={cn("w-full h-full object-cover", isCameraOn ? "block" : "hidden")} autoPlay muted />
                   {!isCameraOn && (
@@ -333,7 +327,6 @@ export function RoomClient({ room }: { room: Room }) {
                   </div>
                 </div>
 
-                {/* Seats 2-10 */}
                 {Array.from({ length: totalSeats - 1 }).map((_, i) => {
                   const participant = otherParticipantsToDisplay[i];
                   const seatIndex = i + 2;
@@ -343,17 +336,16 @@ export function RoomClient({ room }: { room: Room }) {
                   return (
                     <div key={seatIndex} className={cn(
                       "relative aspect-square flex flex-col items-center justify-center gap-2 border-2 rounded-2xl shadow-sm transition-all",
-                      isLocked ? "bg-muted/50 border-dashed border-primary/20" : "bg-card hover:border-primary/40"
+                      isLocked ? "bg-slate-200 border-dashed border-slate-400" : "bg-card hover:border-primary/40"
                     )}>
-                      {/* Requirements: NO DP AND NAME SEEN IF LOCKED */}
                       {isLocked ? (
                         <div className="flex flex-col items-center gap-2 opacity-50">
-                           <Lock className="h-8 w-8 text-primary" />
-                           <span className="text-[9px] font-bold uppercase tracking-widest">Closed</span>
+                           <Lock className="h-10 w-10 text-slate-500" />
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Closed</span>
                         </div>
                       ) : participant ? (
                         <>
-                          <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-primary/10">
+                          <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-primary/10 shadow-sm">
                             <AvatarImage src={participant.avatarUrl} alt={participant.name} />
                             <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
@@ -369,31 +361,24 @@ export function RoomClient({ room }: { room: Room }) {
                         </div>
                       )}
 
-                      {/* Unified Seat Admin Menu (Three Dots) - Owner Only */}
                       {isOwner && (
                         <div className="absolute top-2 right-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/80 shadow-md backdrop-blur-sm hover:bg-primary hover:text-white transition-colors">
+                              <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/90 shadow-md backdrop-blur-sm hover:bg-primary hover:text-white transition-colors border">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-52">
                               <DropdownMenuLabel>Seat {seatIndex} Admin</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              
-                              {/* Lock / Unlock Options */}
                               <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)}>
                                 {isLocked ? <Unlock className="mr-2 h-4 w-4 text-green-500" /> : <Lock className="mr-2 h-4 w-4 text-primary" />}
                                 {isLocked ? 'Unlock Seat' : 'Lock Seat'}
                               </DropdownMenuItem>
-                              
-                              {/* Invite Option */}
                               <DropdownMenuItem onClick={handleInvite}>
                                 <UserPlus className="mr-2 h-4 w-4 text-blue-500" /> Invite to Seat
                               </DropdownMenuItem>
-
-                              {/* Participant Specific Options */}
                               {participant && !isLocked && (
                                 <>
                                   <DropdownMenuSeparator />
@@ -422,13 +407,12 @@ export function RoomClient({ room }: { room: Room }) {
         </Card>
       </div>
 
-      {/* CHAT & GIFTS SIDEBAR */}
       <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl border-none bg-card/80 backdrop-blur-md">
         <CardHeader className="p-4 border-b flex flex-row items-center justify-between rounded-t-xl bg-secondary/20">
           <CardTitle className="font-headline text-lg flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" /> Live Chat
           </CardTitle>
-          <Badge variant="outline" className="text-[10px] font-bold border-primary/20">LIVE</Badge>
+          <Badge variant="outline" className="text-[10px] font-bold border-primary/20 uppercase tracking-widest">Live</Badge>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-4">
           <ScrollArea className="h-full pr-4" ref={scrollRef}>
@@ -455,7 +439,7 @@ export function RoomClient({ room }: { room: Room }) {
                   <div className="p-5 rounded-full bg-primary/10">
                     <Sparkles className="h-12 w-12 text-primary" />
                   </div>
-                  <p className="text-sm font-bold uppercase tracking-widest">Chat cleared</p>
+                  <p className="text-sm font-bold uppercase tracking-widest">No messages yet</p>
                 </div>
               )}
             </div>
@@ -513,7 +497,7 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
           <form className="flex items-center gap-3" onSubmit={handleSendMessage}>
             <Input 
-              placeholder="Type your vibe..." 
+              placeholder="Type your message..." 
               className="h-12 text-sm rounded-2xl border-primary/10 focus-visible:ring-primary/40 bg-background shadow-md pr-10" 
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
