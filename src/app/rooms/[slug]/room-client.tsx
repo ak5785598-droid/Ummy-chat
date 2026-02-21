@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -187,7 +188,7 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden shadow-md">
           <CardHeader className="flex flex-row items-center justify-between p-4 relative z-10">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -207,23 +208,46 @@ export function RoomClient({ room }: { room: Room }) {
                 </Popover>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary">{room.topic}</Badge>
+                <Badge variant="secondary" className="px-2 py-0.5">{room.topic}</Badge>
                 <Badge variant="outline" className="font-mono text-[10px]">ID: {room.id.substring(0, 8)}</Badge>
                 {isOwner && (
-                    <Badge variant="default" className="bg-primary/80 flex items-center gap-1">
+                    <Badge variant="default" className="bg-primary/80 flex items-center gap-1 shadow-sm">
                         <ShieldAlert className="h-3 w-3" /> Admin Mode
                     </Badge>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="icon" variant={isMicOn ? "outline" : "secondary"} onClick={() => setIsMicOn(!isMicOn)}>
+              <Button size="icon" variant={isMicOn ? "outline" : "secondary"} onClick={() => setIsMicOn(!isMicOn)} className="rounded-full">
                 {isMicOn ? <Mic className="h-5 w-5"/> : <MicOff className="h-5 w-5"/>}
               </Button>
-              <Button size="icon" variant={isCameraOn ? "outline" : "secondary"} onClick={() => setIsCameraOn(!isCameraOn)}>
+              <Button size="icon" variant={isCameraOn ? "outline" : "secondary"} onClick={() => setIsCameraOn(!isCameraOn)} className="rounded-full">
                 {isCameraOn ? <Video className="h-5 w-5"/> : <VideoOff className="h-5 w-5"/>}
               </Button>
-              <Button size="icon" variant="destructive" asChild>
+              
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="primary" size="icon" className="rounded-full bg-primary text-primary-foreground shadow-md">
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => toast({ title: "Room Settings", description: "Announcement updated." })}>
+                      <Megaphone className="mr-2 h-4 w-4" /> Update Announcement
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toast({ title: "Chat Cleared", description: "History cleared for all users." })}>
+                      <Sparkles className="mr-2 h-4 w-4" /> Clear Chat History
+                    </DropdownMenuItem>
+                    <Separator className="my-1" />
+                    <DropdownMenuItem onClick={() => toast({ title: "Privacy", description: "Room is now private." })}>
+                      <Lock className="mr-2 h-4 w-4" /> Make Room Private
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              <Button size="icon" variant="destructive" asChild className="rounded-full shadow-md">
                 <a href="/rooms"><PhoneOff className="h-5 w-5"/></a>
               </Button>
             </div>
@@ -235,20 +259,38 @@ export function RoomClient({ room }: { room: Room }) {
             <ScrollArea className="h-full">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {/* User's Seat */}
-                <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-xl overflow-hidden ring-4 ring-primary/40 shadow-xl">
+                <div className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-muted rounded-xl overflow-hidden ring-4 ring-primary/40 shadow-2xl">
                   <video ref={videoRef} className={cn("w-full h-full object-cover", isCameraOn ? "block" : "hidden")} autoPlay muted />
                   {!isCameraOn && (
-                    <Avatar className="h-16 w-16 shadow-inner">
+                    <Avatar className="h-20 w-20 shadow-inner">
                       <AvatarImage src={currentUser.photoURL || ''} />
                       <AvatarFallback>{currentUser.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                   )}
                   <div className="absolute top-2 left-2 flex gap-1">
-                    {!isMicOn && <MicOff className="h-3 w-3 text-red-500 bg-black/50 p-0.5 rounded" />}
+                    {!isMicOn && <MicOff className="h-4 w-4 text-red-500 bg-black/60 p-1 rounded-md" />}
                   </div>
-                  <div className="absolute bottom-2 left-2 right-2 p-1 bg-black/60 rounded-md text-center backdrop-blur-md">
-                    <span className="font-semibold text-white text-[10px] truncate block">{currentUser.displayName}</span>
+                  <div className="absolute bottom-2 left-2 right-2 p-1.5 bg-black/70 rounded-lg text-center backdrop-blur-md">
+                    <span className="font-bold text-white text-[10px] truncate block uppercase tracking-tight">{currentUser.displayName}</span>
                   </div>
+                  
+                  {isOwner && (
+                    <div className="absolute top-2 right-2">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                           <DropdownMenuItem onClick={() => setIsMicOn(!isMicOn)}>
+                              {isMicOn ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
+                              {isMicOn ? 'Mute Myself' : 'Unmute Myself'}
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                 </div>
 
                 {/* Other Participants and Empty Seats */}
@@ -261,7 +303,7 @@ export function RoomClient({ room }: { room: Room }) {
                   return (
                     <div key={seatIndex} className={cn(
                       "relative aspect-square flex flex-col items-center justify-center gap-2 border rounded-xl shadow-sm transition-all group",
-                      isLocked ? "bg-muted/50 border-dashed border-primary/20" : "bg-card hover:shadow-md"
+                      isLocked ? "bg-muted/50 border-dashed border-primary/40" : "bg-card hover:shadow-lg"
                     )}>
                       {participant ? (
                         <>
@@ -269,24 +311,24 @@ export function RoomClient({ room }: { room: Room }) {
                             <AvatarImage src={participant.avatarUrl} alt={participant.name} />
                             <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-semibold text-center text-[10px] truncate w-full px-2">{participant.name}</span>
+                          <span className="font-bold text-center text-[10px] truncate w-full px-2 uppercase tracking-tight">{participant.name}</span>
                           <div className="absolute top-2 left-2 flex gap-1">
-                            {isMuted && <VolumeX className="h-3 w-3 text-red-500 bg-black/50 p-0.5 rounded" />}
+                            {isMuted && <VolumeX className="h-4 w-4 text-red-500 bg-black/60 p-1 rounded-md" />}
                           </div>
                           
-                          {/* Admin Controls for Occupied Seats */}
+                          {/* Admin Controls for Occupied Seats - ALWAYS VISIBLE */}
                           {isOwner && (
-                            <div className="absolute top-1 right-1">
+                            <div className="absolute top-2 right-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full shadow-lg border-2 border-background hover:bg-primary hover:text-white transition-colors">
+                                  <Button variant="primary" size="icon" className="h-8 w-8 rounded-full shadow-md bg-primary text-white border-2 border-background">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-52">
                                   <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
-                                    {isMuted ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4 text-red-500" />}
-                                    {isMuted ? 'Unmute' : 'Mute Seat'}
+                                    {isMuted ? <Volume2 className="mr-2 h-4 w-4 text-green-500" /> : <VolumeX className="mr-2 h-4 w-4 text-red-500" />}
+                                    {isMuted ? 'Unmute Participant' : 'Mute Participant'}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground" 
@@ -301,34 +343,37 @@ export function RoomClient({ room }: { room: Room }) {
                         </>
                       ) : (
                         <>
-                          <div className="flex flex-col items-center gap-1">
-                            {isLocked ? <Lock className="h-6 w-6 text-primary/40" /> : <Unlock className="h-6 w-6 text-muted-foreground/10" />}
-                            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/30">
-                              {isLocked ? 'Locked' : 'Available'}
+                          <div className="flex flex-col items-center gap-2">
+                            {isLocked ? <Lock className="h-8 w-8 text-primary/60" /> : <Unlock className="h-8 w-8 text-muted-foreground/20" />}
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40">
+                              {isLocked ? 'Closed' : 'Open'}
                             </span>
                           </div>
                           
-                          {/* Admin Controls for Empty Seats */}
+                          {/* Admin Controls for Empty Seats - ALWAYS VISIBLE */}
                           {isOwner && (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[1px] rounded-xl">
+                            <div className="absolute inset-0 flex items-center justify-center bg-background/10 backdrop-blur-[1px] rounded-xl">
                               <div className="flex gap-2">
                                 <Button 
                                   variant="secondary" 
                                   size="icon" 
-                                  className="h-8 w-8 rounded-full shadow-md hover:bg-primary hover:text-white"
+                                  className={cn(
+                                    "h-10 w-10 rounded-full shadow-lg border-2 border-background transition-colors",
+                                    isLocked ? "bg-primary text-white" : "bg-white text-primary"
+                                  )}
                                   onClick={() => toggleSeatLock(seatIndex)}
-                                  title={isLocked ? "Unlock" : "Lock"}
+                                  title={isLocked ? "Unlock Seat" : "Lock Seat"}
                                 >
-                                  {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                                  {isLocked ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
                                 </Button>
                                 {!isLocked && (
                                    <Button 
                                    variant="primary" 
                                    size="icon" 
-                                   className="h-8 w-8 rounded-full shadow-md bg-primary text-primary-foreground"
-                                   onClick={() => toast({ title: "Invite Sent", description: "Invite link copied to clipboard." })}
+                                   className="h-10 w-10 rounded-full shadow-lg bg-green-500 text-white border-2 border-background hover:bg-green-600"
+                                   onClick={() => toast({ title: "Invite Link", description: "Room invite link copied to clipboard!" })}
                                  >
-                                   <UserPlus className="h-4 w-4" />
+                                   <UserPlus className="h-5 w-5" />
                                  </Button>
                                 )}
                               </div>
@@ -345,91 +390,78 @@ export function RoomClient({ room }: { room: Room }) {
         </Card>
       </div>
 
-      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl border-none">
-        <CardHeader className="p-4 border-b flex flex-row items-center justify-between bg-card rounded-t-xl">
+      <Card className="lg:col-span-1 xl:col-span-1 flex flex-col h-full shadow-2xl border-none bg-card">
+        <CardHeader className="p-4 border-b flex flex-row items-center justify-between rounded-t-xl bg-secondary/10">
           <CardTitle className="font-headline text-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Room Chat
+            <Sparkles className="h-5 w-5 text-primary" /> Global Vibe
           </CardTitle>
-          {isOwner && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Settings2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => toast({ title: "Chat Cleared", description: "All messages have been cleared for you." })}>
-                   Clear History
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast({ title: "Room Settings", description: "Room privacy updated." })}>
-                   Privacy Mode
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <Badge variant="outline" className="text-[10px] font-bold">LIVE</Badge>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-4">
           <ScrollArea className="h-full pr-4" ref={scrollRef}>
             <div className="space-y-4">
               {activeMessages.map((msg) => (
                 <div key={msg.id} className="flex items-start gap-2 group">
-                  <Avatar className="h-7 w-7 border shadow-sm">
+                  <Avatar className="h-8 w-8 border shadow-sm flex-shrink-0">
                     <AvatarImage src={msg.user.avatarUrl} alt={msg.user.name} />
                     <AvatarFallback>{msg.user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="font-bold text-xs hover:underline cursor-pointer">{msg.user.name}</span>
-                      <span className="text-[9px] text-muted-foreground">{msg.timestamp}</span>
+                      <span className="font-bold text-xs hover:underline cursor-pointer truncate max-w-[100px]">{msg.user.name}</span>
+                      <span className="text-[9px] text-muted-foreground whitespace-nowrap">{msg.timestamp}</span>
                     </div>
-                    <p className="text-xs bg-muted/40 p-2 rounded-2xl rounded-tl-none mt-1 leading-relaxed border border-transparent hover:border-primary/10 transition-colors">
+                    <p className="text-xs bg-muted/60 p-2.5 rounded-2xl rounded-tl-none mt-1 leading-relaxed border border-transparent group-hover:border-primary/20 transition-all shadow-sm break-words">
                       {msg.text}
                     </p>
                   </div>
                 </div>
               ))}
               {activeMessages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-2 opacity-40">
-                  <Sparkles className="h-8 w-8 text-primary" />
-                  <p className="text-xs font-medium">No messages yet. Start the vibe!</p>
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-3 opacity-30">
+                  <div className="p-4 rounded-full bg-primary/10">
+                    <Sparkles className="h-10 w-10 text-primary" />
+                  </div>
+                  <p className="text-sm font-bold uppercase tracking-tight">No messages yet</p>
+                  <p className="text-[10px] max-w-[150px]">Be the first to say hi and set the vibe for the room!</p>
                 </div>
               )}
             </div>
           </ScrollArea>
         </CardContent>
         <Separator />
-        <div className="p-4 space-y-3 bg-card rounded-b-xl">
+        <div className="p-4 space-y-4 bg-secondary/5 rounded-b-xl">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9 text-primary border-primary/20 rounded-full hover:bg-primary/5">
-                  <Gift className="h-4 w-4"/>
+                <Button variant="outline" size="icon" className="h-10 w-10 text-primary border-primary/20 rounded-full hover:bg-primary/5 bg-background shadow-sm">
+                  <Gift className="h-5 w-5"/>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
+              <PopoverContent className="w-80 p-0 shadow-2xl border-primary/20" align="end">
                 <Tabs defaultValue="common">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="common">Normal</TabsTrigger>
-                    <TabsTrigger value="premium">Premium</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 rounded-none border-b">
+                    <TabsTrigger value="common" className="rounded-none">Normal</TabsTrigger>
+                    <TabsTrigger value="premium" className="rounded-none">Premium</TabsTrigger>
                   </TabsList>
-                  <ScrollArea className="h-72">
-                    <TabsContent value="common" className="p-3 grid grid-cols-4 gap-2">
+                  <ScrollArea className="h-80">
+                    <TabsContent value="common" className="p-3 m-0 grid grid-cols-4 gap-2">
                       {gifts.common.map((g) => (
-                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors active:scale-95">
-                          <g.icon className="h-8 w-8 text-primary" />
-                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
-                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
+                        <div key={g.name} className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-all active:scale-95 group">
+                          <g.icon className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" />
+                          <span className="text-[9px] font-bold text-center truncate w-full uppercase">{g.name}</span>
+                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                             <Gem className="h-2 w-2" /> <span>{g.cost}</span>
                           </div>
                         </div>
                       ))}
                     </TabsContent>
-                    <TabsContent value="premium" className="p-3 grid grid-cols-4 gap-2">
+                    <TabsContent value="premium" className="p-3 m-0 grid grid-cols-4 gap-2">
                       {gifts.premium.map((g) => (
-                        <div key={g.name} className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors active:scale-95">
-                          <g.icon className="h-8 w-8 text-primary" />
-                          <span className="text-[9px] font-semibold text-center truncate w-full">{g.name}</span>
-                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-muted-foreground bg-muted px-1 rounded">
+                        <div key={g.name} className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-primary/10 cursor-pointer transition-all active:scale-95 group">
+                          <g.icon className="h-10 w-10 text-accent group-hover:scale-110 transition-transform" />
+                          <span className="text-[9px] font-bold text-center truncate w-full uppercase">{g.name}</span>
+                          <div className="flex items-center gap-0.5 text-[8px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
                             <Gem className="h-2 w-2" /> <span>{g.cost}</span>
                           </div>
                         </div>
@@ -439,17 +471,24 @@ export function RoomClient({ room }: { room: Room }) {
                 </Tabs>
               </PopoverContent>
             </Popover>
+            <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hide py-1">
+               {['👋', '❤️', '🔥', '😂', '💯'].map(emoji => (
+                  <button key={emoji} className="text-xl hover:scale-125 transition-transform" onClick={() => setMessageText(prev => prev + emoji)}>
+                    {emoji}
+                  </button>
+               ))}
+            </div>
           </div>
-          <form className="flex items-center gap-2" onSubmit={handleSendMessage}>
+          <form className="flex items-center gap-3" onSubmit={handleSendMessage}>
             <Input 
-              placeholder="Type a message..." 
-              className="h-9 text-xs rounded-full border-muted-foreground/20 focus-visible:ring-primary/40" 
+              placeholder="Type your vibe..." 
+              className="h-11 text-sm rounded-2xl border-muted-foreground/20 focus-visible:ring-primary/40 bg-background shadow-inner" 
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               disabled={isSending}
             />
-            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shadow-lg transition-transform active:scale-90" disabled={isSending || !messageText.trim()}>
-              <Send className="h-4 w-4" />
+            <Button type="submit" size="icon" className="h-11 w-11 rounded-2xl shadow-xl bg-primary hover:bg-primary/90 transition-all active:scale-90" disabled={isSending || !messageText.trim()}>
+              <Send className="h-5 w-5" />
             </Button>
           </form>
         </div>
