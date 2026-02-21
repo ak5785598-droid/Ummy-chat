@@ -143,7 +143,7 @@ export function RoomClient({ room }: { room: Room }) {
       toast({ 
         variant: 'destructive', 
         title: 'Error', 
-        description: 'Failed to send message.' 
+        description: 'Failed to send message. Please try again.' 
       });
     } finally {
       setIsSending(false);
@@ -261,7 +261,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <Badge variant="secondary" className="px-2 py-0.5">{room.topic}</Badge>
                 {isOwner && (
                     <Badge variant="default" className="bg-primary/80 flex items-center gap-1 shadow-sm">
-                        <ShieldAlert className="h-3 w-3" /> Admin Mode
+                        <ShieldAlert className="h-3 w-3" /> Admin Mode Active
                     </Badge>
                 )}
               </div>
@@ -287,7 +287,7 @@ export function RoomClient({ room }: { room: Room }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleClearChat} className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground">
                       {isClearing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      Clear Chat History (Permanent for All)
+                      Clear Chat History (Permanent)
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleInvite}>
@@ -335,7 +335,7 @@ export function RoomClient({ room }: { room: Room }) {
 
                   return (
                     <div key={seatIndex} className={cn(
-                      "relative aspect-square flex flex-col items-center justify-center gap-2 border-2 rounded-2xl shadow-sm transition-all",
+                      "relative aspect-square flex flex-col items-center justify-center gap-2 border-2 rounded-2xl shadow-sm transition-all overflow-hidden",
                       isLocked ? "bg-slate-200 border-dashed border-slate-400" : "bg-card hover:border-primary/40"
                     )}>
                       {isLocked ? (
