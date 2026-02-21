@@ -1,23 +1,23 @@
-
 {
-  "name": "Ummy - Live Voice Chat",
+  "name": "Ummy - Find Your Vibe",
   "short_name": "Ummy",
-  "description": "Connect with your tribe through live voice chat rooms.",
+  "description": "A voice chat app to connect with people and build communities.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a2e",
-  "theme_color": "#161042",
+  "theme_color": "#161b22",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/ummy-icon/192/192",
+      "src": "https://picsum.photos/seed/ummy/192/192",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://picsum.photos/seed/ummy-icon/512/512",
+      "src": "https://picsum.photos/seed/ummy/512/512",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
