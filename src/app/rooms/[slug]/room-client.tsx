@@ -274,7 +274,7 @@ export function RoomClient({ room }: { room: Room }) {
                             {isMuted && <VolumeX className="h-3 w-3 text-red-500 bg-black/50 p-0.5 rounded" />}
                           </div>
                           
-                          {/* Admin Controls for Occupied Seats - Kick out system */}
+                          {/* Admin Controls for Occupied Seats */}
                           {isOwner && (
                             <div className="absolute top-1 right-1">
                               <DropdownMenu>
@@ -308,7 +308,7 @@ export function RoomClient({ room }: { room: Room }) {
                             </span>
                           </div>
                           
-                          {/* Admin Controls for Empty Seats - Lock system */}
+                          {/* Admin Controls for Empty Seats */}
                           {isOwner && (
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[1px] rounded-xl">
                               <div className="flex gap-2">

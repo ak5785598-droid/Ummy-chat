@@ -137,6 +137,10 @@ const games: Game[] = [
   { id: 'g15', title: '777 Lucky Slot', slug: 'lucky-slot', coverUrl: 'https://picsum.photos/seed/slot-machine/300/200', cost: 100, imageHint: 'slot machine' },
   { id: 'g4', title: 'Bubble Shooter', slug: 'bubble-shooter', coverUrl: 'https://picsum.photos/seed/arcade-game/300/200', cost: 0, imageHint: 'arcade game' },
   { id: 'g12', title: 'Fruit Greedy', slug: 'fruit-greedy', coverUrl: 'https://picsum.photos/seed/fruit-game/300/200', cost: 150, imageHint: 'fruit apple' },
+  { id: 'g13', title: '8 Ball Pool', slug: '8-ball-pool', coverUrl: 'https://picsum.photos/seed/pool-ball/300/200', cost: 0, imageHint: 'pool ball' },
+  { id: 'g14', title: 'Crazy Alpaca', slug: 'crazy-alpaca', coverUrl: 'https://picsum.photos/seed/alpaca/300/200', cost: 0, imageHint: 'alpaca' },
+  { id: 'g16', title: 'Monster Crush', slug: 'monster-crush', coverUrl: 'https://picsum.photos/seed/monster/300/200', cost: 0, imageHint: 'monster' },
+  { id: 'g17', title: 'Rummy Riches', slug: 'rummy', coverUrl: 'https://picsum.photos/seed/poker-cards/300/200', cost: 0, imageHint: 'poker cards' },
 ];
 
 const coinPackages: CoinPackage[] = [

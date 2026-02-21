@@ -8,13 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getFriends, getUserById, getTopContributors, getProfileVisitors } from '@/lib/mock-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
-import { User, Cake, MapPin, Briefcase, Smile, Eye, Loader, Edit, Camera, Gem, Award, ShieldCheck, BadgeCheck } from 'lucide-react';
+import { User, Cake, MapPin, Briefcase, Smile, Eye, Loader, Edit, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles } from 'lucide-react';
 import { TopContributorsCard } from '@/components/top-contributors-card';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -75,7 +76,7 @@ export default function ProfilePage() {
                     user.frame === 'Official' && "from-yellow-400 to-orange-500",
                     user.frame === 'CG' && "from-blue-400 to-purple-500",
                     user.frame === 'Leader' && "from-red-400 to-rose-600",
-                    !user.frame || user.frame === 'None' && "from-transparent to-transparent"
+                    (!user.frame || user.frame === 'None') && "from-transparent to-transparent"
                   )}>
                     <Avatar className="h-28 w-28 border-4 border-background">
                       <AvatarImage src={isOwnProfile ? currentUser.photoURL! : user.avatarUrl} data-ai-hint="person portrait" />
