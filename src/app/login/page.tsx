@@ -45,10 +45,9 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (error: any) {
-      console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
+        title: 'Sign In Failed',
         description: error.message || 'Could not sign in with Google.',
       });
     } finally {
@@ -58,10 +57,19 @@ export default function LoginPage() {
   
   const handlePhoneSignIn = async () => {
     if (!auth) return;
+    
+    // Basic validation to prevent auth/invalid-phone-number (TOO_SHORT)
+    if (phoneNumber.replace(/\D/g, '').length < 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Number',
+        description: 'Please enter a full phone number with area code (at least 10 digits).',
+      });
+      return;
+    }
+
     setIsSigningIn(true);
     try {
-      // Lazy initialization of RecaptchaVerifier to avoid "auth/argument-error" 
-      // and "already rendered" issues often caused by React 18's strict mode useEffect.
       if (!(window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           size: 'invisible',
@@ -69,16 +77,15 @@ export default function LoginPage() {
       }
       
       const verifier = (window as any).recaptchaVerifier;
-      const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, verifier);
+      const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+      const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
       setConfirmationResult(result);
       setPhoneLoginStep('code');
       toast({
-        title: 'Verification Code Sent',
-        description: 'Please check your phone for the code.',
+        title: 'Code Sent',
+        description: 'Check your phone for the verification code.',
       });
     } catch (error: any) {
-      console.error(error);
-      // Reset reCAPTCHA on error if it was rendered
       if ((window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.render().then((widgetId: any) => {
            if((window as any).grecaptcha){
@@ -88,8 +95,10 @@ export default function LoginPage() {
       }
       toast({
         variant: 'destructive',
-        title: 'Failed to send code',
-        description: error.message || 'Could not send verification code.',
+        title: 'Failed to Send Code',
+        description: error.code === 'auth/invalid-phone-number' 
+          ? 'The phone number format is invalid. Use e.g. 15551234567' 
+          : error.message,
       });
     } finally {
       setIsSigningIn(false);
@@ -102,17 +111,15 @@ export default function LoginPage() {
     try {
       await confirmationResult.confirm(verificationCode);
     } catch (error: any) {
-        console.error(error);
         toast({
             variant: 'destructive',
             title: 'Invalid Code',
-            description: error.message || 'The code you entered is incorrect.',
+            description: 'The verification code is incorrect. Please try again.',
         });
     } finally {
         setIsSigningIn(false);
     }
   };
-
 
   if (isUserLoading || user) {
     return (
@@ -123,14 +130,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground text-sans">
       <div id="recaptcha-container"></div>
       <div className="flex flex-col items-center text-center">
         <UmmyLogoIcon className="h-24 w-24 text-primary" />
         <h1 className="mt-4 font-headline text-6xl font-bold text-primary">
           Ummy
         </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <p className="mt-2 text-lg text-muted-foreground font-serif">
           Find your vibe, connect with your tribe.
         </p>
       </div>
@@ -138,16 +145,17 @@ export default function LoginPage() {
       <div className="mt-16 w-full max-w-sm space-y-4">
         {phoneLoginStep === 'number' ? (
            <>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
                 <Input
                     type="tel"
-                    placeholder="Phone Number (e.g. 15551234567)"
+                    placeholder="Phone (e.g. 15551234567)"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     disabled={isSigningIn}
+                    className="h-12 text-lg"
                 />
-                 <Button onClick={handlePhoneSignIn} disabled={isSigningIn || !phoneNumber}>
-                    {isSigningIn ? <Loader className="h-4 w-4 animate-spin" /> : 'Send Code'}
+                 <Button onClick={handlePhoneSignIn} disabled={isSigningIn || !phoneNumber} className="h-12 text-lg font-bold">
+                    {isSigningIn ? <Loader className="h-4 w-4 animate-spin" /> : 'Send Verification Code'}
                 </Button>
             </div>
             <div className="relative">
@@ -162,11 +170,11 @@ export default function LoginPage() {
             </div>
             <Button
               variant="outline"
-              className="w-full justify-center gap-4 bg-white text-black hover:bg-gray-200"
+              className="w-full h-12 justify-center gap-4 bg-white text-black hover:bg-gray-200 border-2"
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
             >
-              <FcGoogle className="h-5 w-5" />
+              <FcGoogle className="h-6 w-6" />
               Sign in with Google
             </Button>
           </>
@@ -174,22 +182,24 @@ export default function LoginPage() {
              <div className="space-y-4">
                 <Input
                     type="text"
-                    placeholder="Enter verification code"
+                    placeholder="Enter 6-digit code"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     disabled={isSigningIn}
+                    className="h-12 text-center text-2xl tracking-widest"
+                    maxLength={6}
                 />
-                <Button onClick={handleVerifyCode} disabled={isSigningIn || !verificationCode} className="w-full">
+                <Button onClick={handleVerifyCode} disabled={isSigningIn || !verificationCode} className="w-full h-12 text-lg font-bold">
                     {isSigningIn ? <Loader className="h-4 w-4 animate-spin" /> : 'Verify and Sign In'}
                 </Button>
-                <Button variant="link" onClick={() => setPhoneLoginStep('number')}>
-                    Back to phone number entry
+                <Button variant="link" onClick={() => setPhoneLoginStep('number')} className="w-full text-muted-foreground">
+                    Edit Phone Number
                 </Button>
             </div>
         )}
       </div>
 
-      <div className="absolute bottom-8 text-center text-xs text-muted-foreground">
+      <div className="absolute bottom-8 text-center text-xs text-muted-foreground font-serif">
         <p>By signing in, you agree to our</p>
         <Link href="/terms" className="underline">
           Terms & Privacy
