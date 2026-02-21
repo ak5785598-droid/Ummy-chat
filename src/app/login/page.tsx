@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { Loader } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import {
@@ -17,6 +16,7 @@ import {
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +43,12 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      // Forces the account picker to show every time
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      await signInWithPopup(auth, provider);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -58,12 +63,11 @@ export default function LoginPage() {
   const handlePhoneSignIn = async () => {
     if (!auth) return;
     
-    // Basic validation to prevent auth/invalid-phone-number (TOO_SHORT)
     if (phoneNumber.replace(/\D/g, '').length < 10) {
       toast({
         variant: 'destructive',
         title: 'Invalid Number',
-        description: 'Please enter a full phone number with area code (at least 10 digits).',
+        description: 'Please enter a full phone number with area code.',
       });
       return;
     }
@@ -86,20 +90,10 @@ export default function LoginPage() {
         description: 'Check your phone for the verification code.',
       });
     } catch (error: any) {
-      // Avoid intrusive console.error triggering the debug overlay
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-           if((window as any).grecaptcha){
-               (window as any).grecaptcha.reset(widgetId);
-           }
-        });
-      }
       toast({
         variant: 'destructive',
         title: 'Failed to Send Code',
-        description: error.code === 'auth/invalid-phone-number' 
-          ? 'The phone number format is invalid. Use e.g. 15551234567' 
-          : error.message,
+        description: error.message,
       });
     } finally {
       setIsSigningIn(false);
@@ -115,7 +109,7 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Invalid Code',
-            description: 'The verification code is incorrect. Please try again.',
+            description: 'The verification code is incorrect.',
         });
     } finally {
         setIsSigningIn(false);
@@ -131,7 +125,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground text-sans">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-foreground font-sans">
       <div id="recaptcha-container"></div>
       <div className="flex flex-col items-center text-center">
         <UmmyLogoIcon className="h-24 w-24 text-primary" />
@@ -200,7 +194,7 @@ export default function LoginPage() {
         )}
       </div>
 
-      <div className="absolute bottom-8 text-center text-xs text-muted-foreground font-serif">
+      <div className="absolute bottom-8 text-center text-xs text-muted-foreground">
         <p>By signing in, you agree to our</p>
         <Link href="/terms" className="underline">
           Terms & Privacy
