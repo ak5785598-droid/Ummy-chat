@@ -27,6 +27,7 @@ import {
   Loader,
   MoreVertical,
   UserPlus,
+  ShieldAlert,
 } from 'lucide-react';
 import type { Room, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -157,7 +158,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleKickout = (name: string) => {
     toast({
       variant: 'destructive',
-      title: 'User Kicked',
+      title: 'User Kicked Out',
       description: `${name} has been removed from the room.`,
     });
   };
@@ -186,8 +187,8 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="grid h-[calc(100vh-10rem)] md:h-full gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10">
-          <CardHeader className="flex flex-row items-center justify-between p-4">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between p-4 relative z-10">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <CardTitle className="font-headline text-2xl truncate">{room.title}</CardTitle>
@@ -208,6 +209,11 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary">{room.topic}</Badge>
                 <Badge variant="outline" className="font-mono text-[10px]">ID: {room.id.substring(0, 8)}</Badge>
+                {isOwner && (
+                    <Badge variant="default" className="bg-primary/80 flex items-center gap-1">
+                        <ShieldAlert className="h-3 w-3" /> Admin Mode
+                    </Badge>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -267,21 +273,26 @@ export function RoomClient({ room }: { room: Room }) {
                           <div className="absolute top-2 left-2 flex gap-1">
                             {isMuted && <VolumeX className="h-3 w-3 text-red-500 bg-black/50 p-0.5 rounded" />}
                           </div>
+                          
+                          {/* Admin Controls for Occupied Seats - Kick out system */}
                           {isOwner && (
-                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute top-1 right-1">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full shadow-lg">
+                                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full shadow-lg border-2 border-background hover:bg-primary hover:text-white transition-colors">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
+                                <DropdownMenuContent align="end" className="w-48">
                                   <DropdownMenuItem onClick={() => toggleSeatMute(seatIndex)}>
                                     {isMuted ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4 text-red-500" />}
                                     {isMuted ? 'Unmute' : 'Mute Seat'}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => handleKickout(participant.name)}>
-                                    <UserX className="mr-2 h-4 w-4" /> Kickout
+                                  <DropdownMenuItem 
+                                    className="text-destructive font-bold focus:bg-destructive focus:text-destructive-foreground" 
+                                    onClick={() => handleKickout(participant.name)}
+                                  >
+                                    <UserX className="mr-2 h-4 w-4" /> Kick Out User
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -297,13 +308,14 @@ export function RoomClient({ room }: { room: Room }) {
                             </span>
                           </div>
                           
+                          {/* Admin Controls for Empty Seats - Lock system */}
                           {isOwner && (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[1px] rounded-xl">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40 backdrop-blur-[1px] rounded-xl">
                               <div className="flex gap-2">
                                 <Button 
                                   variant="secondary" 
                                   size="icon" 
-                                  className="h-8 w-8 rounded-full shadow-md"
+                                  className="h-8 w-8 rounded-full shadow-md hover:bg-primary hover:text-white"
                                   onClick={() => toggleSeatLock(seatIndex)}
                                   title={isLocked ? "Unlock" : "Lock"}
                                 >
