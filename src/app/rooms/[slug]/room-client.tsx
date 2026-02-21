@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -14,13 +15,10 @@ import {
   UserX,
   Trash2,
   UserPlus,
-  ShieldCheck,
-  ShieldAlert,
   Smile,
   Gift,
   Info,
   Armchair,
-  MessageSquare,
 } from 'lucide-react';
 import type { Room, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +37,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, writeBatch } from 'firebase/firestore';
 
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
@@ -58,7 +56,8 @@ export function RoomClient({ room }: { room: Room }) {
   // Role Detection
   const isOwner = useMemo(() => {
     if (!currentUser) return false;
-    return currentUser.uid === room.ownerId || room.slug === 'mumbai-adda';
+    // Allow any logged in user to be the owner of the mock 'mumbai-adda' room for testing
+    return currentUser.uid === room.ownerId || room.slug === 'mumbai-adda' || room.id === 'mumbai-adda';
   }, [currentUser, room]);
 
   const isAdmin = useMemo(() => {
@@ -66,7 +65,7 @@ export function RoomClient({ room }: { room: Room }) {
     return room.moderatorIds?.includes(currentUser.uid) || isOwner;
   }, [currentUser, room, isOwner]);
 
-  // Real-time Chat Logic - Guarded by currentUser to prevent permission errors
+  // Real-time Chat Logic
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
     return query(
@@ -171,7 +170,7 @@ export function RoomClient({ room }: { room: Room }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/20 h-12 w-12 border border-white/10">
-                  <MoreVertical className="h-8 w-8 text-primary" />
+                  <MoreVertical className="h-6 w-6 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 bg-[#1a1a2e] border-white/10 text-white shadow-2xl">

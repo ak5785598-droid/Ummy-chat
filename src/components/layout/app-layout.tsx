@@ -1,8 +1,9 @@
+
 "use client";
 
-import { Home, Compass, User, Settings, Youtube, ClipboardList, Loader, Trophy } from "lucide-react";
+import { Compass, User, Settings, Youtube, ClipboardList, Loader, Trophy, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   Sidebar,
@@ -18,8 +19,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/logo";
-import { useUser } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { GameControllerIcon } from "../icons";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { href: "/rooms", label: "Rooms", icon: Compass },
@@ -32,7 +35,28 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoading } = useUser();
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      router.push('/login');
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: error.message,
+      });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -73,6 +97,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {user && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Sign Out" onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <LogOut />
+                    <span>Sign Out</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                  {isLoading ? (
                   <div className="flex items-center gap-2 p-2">
