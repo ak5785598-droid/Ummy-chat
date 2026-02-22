@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -24,7 +23,7 @@ service cloud.firestore {
     match /chatRooms/{chatRoomId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.moderatorIds);
+      allow update: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
       
       match /participants/{participantId} {

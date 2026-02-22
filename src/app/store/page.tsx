@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Gem, ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader } from 'lucide-react';
-import { useUser, useFirestore } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
