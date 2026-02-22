@@ -1,32 +1,36 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Trophy, Crown, TrendingUp, Heart, Loader } from 'lucide-react';
 
+/**
+ * Global Leaderboard.
+ * Real-time rankings for coins and popularity, guarded by auth to prevent permission errors.
+ */
 export default function LeaderboardPage() {
+  const { user } = useUser();
   const firestore = useFirestore();
 
   // REAL QUERIES FOR PRODUCTION DATA
   const richUsersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'users'), orderBy('wallet.coins', 'desc'), limit(20));
-  }, [firestore]);
+  }, [firestore, user]);
 
   const charmUsersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'users'), orderBy('stats.followers', 'desc'), limit(20));
-  }, [firestore]);
+  }, [firestore, user]);
 
   const topRoomsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'chatRooms'), limit(20));
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richUsersQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmUsersQuery);
@@ -103,7 +107,7 @@ export default function LeaderboardPage() {
                 <Avatar className="h-10 w-10">
                    <AvatarImage 
                      src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : (item.avatarUrl || item.profile?.avatarUrl)} 
-                     alt={item.username || item.name || "User"}
+                     alt={item.username || item.name || "User Avatar"}
                    />
                   <AvatarFallback>{(item.username || item.name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>

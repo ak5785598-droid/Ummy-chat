@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -10,17 +9,20 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
-import { RecommendationsForm } from '@/components/recommendations-form';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
+/**
+ * Explore Rooms Page.
+ * Real-time discovery of voice communities with official hub featured at top.
+ */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Guard: Only query if we have a user to prevent auth:null permission errors
+  // Guard: Only query if we have a user context to avoid permission errors
   const allRoomsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user) return null;
     return query(collection(firestore, 'chatRooms'), orderBy('createdAt', 'desc'), limit(50));

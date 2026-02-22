@@ -12,21 +12,26 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 
 interface ChatRoomCardProps {
   room: Room;
 }
 
+/**
+ * Chat Room Discovery Card.
+ * Displays real-time participant counts with authenticated query guards.
+ */
 export function ChatRoomCard({ room }: ChatRoomCardProps) {
+  const { user } = useUser();
   const firestore = useFirestore();
 
-  // REAL-TIME PARTICIPANT COUNT
+  // REAL-TIME PARTICIPANT COUNT - Guarded by auth to prevent permission errors
   const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
+    if (!firestore || !room.id || !user) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-  }, [firestore, room.id]);
+  }, [firestore, room.id, user]);
 
   const { data: participants } = useCollection(participantsQuery);
   const onlineCount = participants?.length || 0;
@@ -38,7 +43,7 @@ export function ChatRoomCard({ room }: ChatRoomCardProps) {
           <div className="relative h-40 w-full">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`}
-              alt={room.title}
+              alt={`Cover image for ${room.title}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
