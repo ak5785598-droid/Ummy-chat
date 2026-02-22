@@ -120,7 +120,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarMenuButton asChild className="h-16 rounded-2xl bg-secondary/20 hover:bg-secondary/30 transition-all border border-white/5">
                        <Link href="/profile">
                          <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-lg">
-                            <AvatarImage src={avatarUrl} />
+                            <AvatarImage src={avatarUrl} alt={displayName} />
                             <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                           </Avatar>
                         <div className="flex flex-col ml-2 overflow-hidden">
@@ -141,7 +141,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
              {user && (
                 <Link href="/profile" className="ml-auto">
                  <Avatar className="h-9 w-9 border-2 border-primary/20">
-                    <AvatarImage src={avatarUrl} />
+                    <AvatarImage src={avatarUrl} alt={displayName} />
                     <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                   </Avatar>
               </Link>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -46,7 +47,10 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-1 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-slate-300">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : (top3[1].avatarUrl || top3[1].profile?.avatarUrl)} />
+                  <AvatarImage 
+                    src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : (top3[1].avatarUrl || top3[1].profile?.avatarUrl)} 
+                    alt={top3[1].username || top3[1].name || "Runner Up"}
+                  />
                   <AvatarFallback>{(top3[1].username || top3[1].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-slate-300 text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">2</div>
@@ -61,7 +65,10 @@ export default function LeaderboardPage() {
               <Crown className="text-yellow-400 h-8 w-8 mb-1 animate-bounce" />
               <div className="relative">
                 <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-xl">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : (top3[0].avatarUrl || top3[0].profile?.avatarUrl)} />
+                  <AvatarImage 
+                    src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : (top3[0].avatarUrl || top3[0].profile?.avatarUrl)} 
+                    alt={top3[0].username || top3[0].name || "Champion"}
+                  />
                   <AvatarFallback>{(top3[0].username || top3[0].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-yellow-400 text-yellow-900 rounded-full w-10 h-10 flex items-center justify-center font-bold border-2 border-white">1</div>
@@ -75,7 +82,10 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-3 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-amber-600">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : (top3[2].avatarUrl || top3[2].profile?.avatarUrl)} />
+                  <AvatarImage 
+                    src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : (top3[2].avatarUrl || top3[2].profile?.avatarUrl)} 
+                    alt={top3[2].username || top3[2].name || "Third Place"}
+                  />
                   <AvatarFallback>{(top3[2].username || top3[2].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">3</div>
@@ -91,7 +101,10 @@ export default function LeaderboardPage() {
               <div key={item.id} className="flex items-center gap-4 p-4 border-b last:border-0 hover:bg-secondary/20 transition-colors">
                 <span className="w-6 text-center font-bold text-muted-foreground">{index + 4}</span>
                 <Avatar className="h-10 w-10">
-                   <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : (item.avatarUrl || item.profile?.avatarUrl)} />
+                   <AvatarImage 
+                     src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : (item.avatarUrl || item.profile?.avatarUrl)} 
+                     alt={item.username || item.name || "User"}
+                   />
                   <AvatarFallback>{(item.username || item.name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">

@@ -59,7 +59,7 @@ export default function RoomsPage() {
             <div className="relative aspect-[1536/681] w-full">
               <Image
                 src={activeBanner?.imageUrl || "https://picsum.photos/seed/ummy-banner/1536/681"}
-                alt="Official Ummy Event"
+                alt={activeBanner?.title || "Official Ummy Event Banner"}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 priority
@@ -91,7 +91,7 @@ export default function RoomsPage() {
                 <div className="relative h-40 w-40 shrink-0">
                   <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
                   <Avatar className="h-full w-full border-4 border-primary shadow-2xl">
-                    <AvatarImage src="https://picsum.photos/seed/official-help/400" />
+                    <AvatarImage src="https://picsum.photos/seed/official-help/400" alt="Official Help Avatar" />
                     <AvatarFallback>UM</AvatarFallback>
                   </Avatar>
                 </div>
@@ -200,8 +200,8 @@ function Avatar({ children, className }: { children: React.ReactNode, className?
   return <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>;
 }
 
-function AvatarImage({ src }: { src: string }) {
-  return <img className="aspect-square h-full w-full" src={src} />;
+function AvatarImage({ src, alt }: { src: string, alt?: string }) {
+  return <img className="aspect-square h-full w-full" src={src} alt={alt || "Avatar"} />;
 }
 
 function AvatarFallback({ children }: { children: React.ReactNode }) {

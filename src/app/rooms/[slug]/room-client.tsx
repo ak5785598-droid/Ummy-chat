@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -164,7 +165,10 @@ export function RoomClient({ room }: { room: Room }) {
            <div className="relative group">
               <div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse group-hover:bg-primary/40" />
               <Avatar className="h-14 w-14 border-2 border-primary/50 relative z-10 shadow-2xl">
-                <AvatarImage src={room.coverUrl || `https://picsum.photos/seed/${room.id}/200`} />
+                <AvatarImage 
+                  src={room.coverUrl || `https://picsum.photos/seed/${room.id}/200`} 
+                  alt={room.title || "Room Cover"}
+                />
                 <AvatarFallback>UM</AvatarFallback>
               </Avatar>
               {isOwner && (
