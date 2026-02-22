@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo, useEffect } from 'react';
@@ -9,16 +10,20 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader } from 'lucide-react';
 import type { Room } from '@/lib/types';
 
+/**
+ * Real-time Room Page.
+ * Handles the logic for loading a chat room and initializing the Official Help Hub.
+ */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const firestore = useFirestore();
   const { user: currentUser, isLoading: isUserLoading } = useUser();
 
-  // Guard: Only fetch document if we have an authenticated user to avoid permission errors
+  // Guard: Only fetch document if we have an authenticated user context
   const roomDocRef = useMemoFirebase(() => {
-    if (!firestore || !slug || !currentUser) return null;
+    if (!firestore || !slug || isUserLoading) return null;
     return doc(firestore, 'chatRooms', slug);
-  }, [firestore, slug, currentUser]);
+  }, [firestore, slug, isUserLoading]);
 
   const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
@@ -58,13 +63,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     } as any;
   }, [firestoreRoom]);
 
-  const isLoading = isUserLoading || isDocLoading;
-
-  if (isLoading) {
+  // Comprehensive loading state
+  if (isUserLoading || (isDocLoading && !firestoreRoom)) {
     return (
       <AppLayout>
-        <div className="flex h-[50vh] w-full items-center justify-center">
-          <Loader className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex h-[50vh] w-full flex-col items-center justify-center space-y-4">
+          <Loader className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground animate-pulse font-mono uppercase tracking-widest">Entering Room...</p>
         </div>
       </AppLayout>
     );
@@ -76,13 +81,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
           <Loader className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse">Initializing Official Help Hub...</p>
+          <p className="text-muted-foreground animate-pulse">Initializing Official Hub...</p>
         </div>
       </AppLayout>
     );
   }
 
-  if (!activeRoom) {
+  // If loading finished and no room found
+  if (!isDocLoading && !activeRoom && !isUserLoading) {
     notFound();
   }
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Compass, User, Settings, Youtube, ClipboardList, Loader, Trophy, LogOut, ShoppingBag, ShieldCheck } from "lucide-react";
+import { Compass, User, Settings, Youtube, ClipboardList, Loader, Trophy, LogOut, ShoppingBag, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -27,6 +27,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 
 const navItems = [
   { href: "/rooms", label: "Explore", icon: Compass },
+  { href: "/match", label: "Vibe Match", icon: Zap },
   { href: "/store", label: "Boutique", icon: ShoppingBag },
   { href: "/leaderboard", label: "Rankings", icon: Trophy },
   { href: "/tasks", label: "Task Center", icon: ClipboardList },
@@ -86,7 +87,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
               {isAdmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Official Panel" size="lg" className="bg-primary/5 text-primary">
+                  <SidebarMenuButton asChild tooltip="Official Panel" size="lg" className="bg-primary/5 text-primary border border-primary/20 rounded-xl mb-2">
                     <Link href="/admin">
                       <ShieldCheck className="h-5 w-5" />
                       <span>Admin Control</span>
@@ -116,15 +117,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                  {isUserLoading || isProfileLoading ? (
                     <div className="flex items-center justify-center py-4"><Loader className="animate-spin text-primary" /></div>
                  ): user ? (
-                    <SidebarMenuButton asChild className="h-16 rounded-2xl bg-secondary/20">
+                    <SidebarMenuButton asChild className="h-16 rounded-2xl bg-secondary/20 hover:bg-secondary/30 transition-all border border-white/5">
                        <Link href="/profile">
-                         <Avatar className="h-10 w-10 border-2 border-primary/20">
+                         <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-lg">
                             <AvatarImage src={avatarUrl} />
                             <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                           </Avatar>
                         <div className="flex flex-col ml-2 overflow-hidden">
                           <span className="font-bold truncate text-sm">{displayName}</span>
-                          <span className="text-[10px] opacity-40 uppercase tracking-widest truncate">Profile View</span>
+                          <span className="text-[10px] opacity-40 uppercase tracking-widest truncate">View Profile</span>
                         </div>
                       </Link>
                     </SidebarMenuButton>
@@ -134,7 +135,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <div className="flex flex-1 flex-col overflow-hidden">
-           <header className="flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-md px-6 md:hidden sticky top-0 z-40">
+           <header className="flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-md px-6 md:hidden sticky top-0 z-40 shadow-sm">
             <SidebarTrigger />
             <Logo />
              {user && (

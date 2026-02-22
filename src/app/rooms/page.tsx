@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Compass, Loader, Sparkles, LayoutPanelTop, Crown, LifeBuoy, ArrowRight } from 'lucide-react';
+import { Compass, Loader, Sparkles, LayoutPanelTop, Crown, LifeBuoy, ArrowRight, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
@@ -16,20 +17,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 export default function RoomsPage() {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const allRoomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || isUserLoading) return null;
     return query(collection(firestore, 'chatRooms'), orderBy('createdAt', 'desc'), limit(50));
-  }, [firestore, user]);
+  }, [firestore, isUserLoading]);
 
-  const { data: roomsData, isLoading } = useCollection(allRoomsQuery);
+  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(allRoomsQuery);
 
   const configRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || isUserLoading) return null;
     return doc(firestore, 'appConfig', 'global');
-  }, [firestore, user]);
+  }, [firestore, isUserLoading]);
   
   const { data: config } = useDoc(configRef);
 
@@ -47,9 +48,6 @@ export default function RoomsPage() {
     if (!roomsData || !user) return [];
     return roomsData.filter((r: any) => r.ownerId === user.uid && r.id !== 'official-help-room');
   }, [roomsData, user]);
-
-  // Find the official room if it exists in the collection
-  const officialRoom = roomsData?.find((r: any) => r.id === 'official-help-room');
 
   return (
     <AppLayout>
@@ -83,7 +81,7 @@ export default function RoomsPage() {
           </Link>
         </section>
 
-        {/* FEATURED OFFICIAL HELP ROOM */}
+        {/* FEATURED OFFICIAL HELP ROOM & MATCH */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 overflow-hidden border-none bg-gradient-to-br from-[#1a1a2e] to-[#16213e] shadow-2xl relative group">
              <div className="absolute top-0 right-0 p-6 z-10">
@@ -117,14 +115,22 @@ export default function RoomsPage() {
              </div>
           </Card>
 
-          <Card className="border-primary/20 bg-primary/5 rounded-[2rem] flex flex-col">
-            <CardContent className="p-6 flex-1 flex flex-col justify-center">
+          <Card className="border-primary/20 bg-primary/5 rounded-[2rem] flex flex-col shadow-inner overflow-hidden relative">
+            <CardContent className="p-6 flex-1 flex flex-col justify-center relative z-10">
                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-6 w-6 text-primary" />
-                  <h2 className="font-headline text-xl font-bold">Smart Connect</h2>
+                  <Zap className="h-6 w-6 text-primary animate-bounce" />
+                  <h2 className="font-headline text-xl font-bold">Vibe Match</h2>
                </div>
-               <RecommendationsForm />
+               <p className="text-xs text-muted-foreground mb-6">Let AI find your perfect tribe based on your current mood.</p>
+               <Button asChild variant="outline" className="rounded-full border-primary/20 hover:bg-primary/10 transition-all font-bold group">
+                  <Link href="/match" className="flex items-center justify-between w-full">
+                     Start Matching <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+               </Button>
             </CardContent>
+            <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none">
+              <Sparkles className="h-32 w-32 text-primary" />
+            </div>
           </Card>
         </section>
 
@@ -147,7 +153,7 @@ export default function RoomsPage() {
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {myRooms.map((room: any) => (
-                <ChatRoomCard key={room.id} room={{ ...room, slug: room.id, title: room.name, topic: room.description, coverUrl: room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`} as any} />
+                <ChatRoomCard key={room.id} room={{ ...room, id: room.id } as any} />
               ))}
             </div>
           </section>
@@ -165,14 +171,14 @@ export default function RoomsPage() {
             </TabsList>
           </div>
           
-          {isLoading ? (
+          {isRoomsLoading ? (
             <div className="flex justify-center py-20"><Loader className="h-10 w-10 animate-spin text-primary" /></div>
           ) : (
             categories.map((category) => (
                 <TabsContent key={category} value={category}>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {roomsByCategory(category).map((room: any) => (
-                      <ChatRoomCard key={room.id} room={{ ...room, slug: room.id, title: room.name, topic: room.description, coverUrl: room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`} as any} />
+                      <ChatRoomCard key={room.id} room={{ ...room, id: room.id } as any} />
                     ))}
                   </div>
                   {roomsByCategory(category).length === 0 && (
