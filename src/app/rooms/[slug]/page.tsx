@@ -1,7 +1,6 @@
 'use client';
 
 import { use, useMemo } from 'react';
-import { getRoomBySlug } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { RoomClient } from './room-client';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -15,39 +14,33 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const firestore = useFirestore();
   const { user: currentUser, isLoading: isUserLoading } = useUser();
 
-  // 1. Try mock data first
-  const mockRoom = getRoomBySlug(slug);
-
-  // 2. If not in mock, try Firestore (slug is the document ID for custom rooms)
+  // Fetch real room data from Firestore using slug as ID
   const roomDocRef = useMemoFirebase(() => {
-    if (!firestore || mockRoom) return null;
+    if (!firestore || !slug) return null;
     return doc(firestore, 'chatRooms', slug);
-  }, [firestore, slug, mockRoom]);
+  }, [firestore, slug]);
 
   const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
   // Transform Firestore data into Room type
   const activeRoom: Room | null = useMemo(() => {
-    if (mockRoom) return { ...mockRoom, moderatorIds: mockRoom.moderatorIds || [] };
-    if (firestoreRoom) {
-      return {
-        id: firestoreRoom.id,
-        slug: firestoreRoom.id,
-        title: firestoreRoom.name || 'Untitled Room',
-        topic: firestoreRoom.description || 'No topic set',
-        category: (firestoreRoom.category as any) || 'Chat',
-        coverUrl: `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
-        ownerId: firestoreRoom.ownerId,
-        moderatorIds: firestoreRoom.moderatorIds || [],
-        participants: [], // New rooms start empty
-        messages: [],
-      };
-    }
-    return null;
-  }, [mockRoom, firestoreRoom]);
+    if (!firestoreRoom) return null;
+    return {
+      id: firestoreRoom.id,
+      slug: firestoreRoom.id,
+      title: firestoreRoom.name || 'Untitled Room',
+      topic: firestoreRoom.description || 'No topic set',
+      category: (firestoreRoom.category as any) || 'Chat',
+      coverUrl: `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
+      ownerId: firestoreRoom.ownerId,
+      moderatorIds: firestoreRoom.moderatorIds || [],
+      lockedSeats: firestoreRoom.lockedSeats || [],
+      announcement: firestoreRoom.announcement || "Welcome! Be respectful and enjoy the group vibe.",
+      createdAt: firestoreRoom.createdAt,
+    } as any;
+  }, [firestoreRoom]);
 
-  // Combined loading state
-  const isLoading = isUserLoading || (isDocLoading && !mockRoom);
+  const isLoading = isUserLoading || isDocLoading;
 
   if (isLoading) {
     return (
@@ -59,15 +52,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  // If loading is done and we still have no room
-  if (!activeRoom && !isLoading) {
+  if (!activeRoom) {
     notFound();
   }
 
-  // Final render
   return (
-    <AppLayout>
-      <RoomClient room={activeRoom!} />
-    </AppLayout>
+    <div className="bg-[#1a1a2e] min-h-screen">
+       <RoomClient room={activeRoom!} />
+    </div>
   );
 }

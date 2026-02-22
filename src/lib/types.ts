@@ -33,8 +33,19 @@ export type User = {
 export type Message = {
   id: string;
   text: string;
-  user: User;
-  timestamp: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  timestamp: any;
+};
+
+export type RoomParticipant = {
+  uid: string;
+  name: string;
+  avatarUrl: string;
+  seatIndex: number; // 0 for sofa, 1-10 for seats
+  isMuted: boolean;
+  joinedAt: any;
 };
 
 export type Room = {
@@ -45,12 +56,10 @@ export type Room = {
   category: 'Popular' | 'Game' | 'Chat' | 'Singing' | 'Battle';
   coverUrl: string;
   announcement?: string;
-  background?: string;
-  isLocked?: boolean;
-  ownerId?: string;
+  ownerId: string;
   moderatorIds?: string[];
-  participants: User[];
-  messages: Message[];
+  lockedSeats?: number[];
+  createdAt: any;
 };
 
 export type Game = {
@@ -67,19 +76,6 @@ export type CoinPackage = {
   amount: number;
   price: number;
   bonus?: number;
-};
-
-export type Contribution = {
-    user: User;
-    amount: number;
-}
-
-export type PkBattle = {
-  id: string;
-  room1: Room;
-  room2: Room;
-  score1: number;
-  score2: number;
 };
 
 export type Task = {

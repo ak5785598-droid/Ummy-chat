@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -17,10 +16,9 @@ import {
   UserPlus,
   Smile,
   Gift,
-  Info,
   Armchair,
 } from 'lucide-react';
-import type { Room, Message } from '@/lib/types';
+import type { Room, Message, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,16 +35,28 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, writeBatch } from 'firebase/firestore';
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp, 
+  query, 
+  orderBy, 
+  limit, 
+  getDocs, 
+  writeBatch, 
+  doc, 
+  setDoc, 
+  deleteDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove
+} from 'firebase/firestore';
 
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [lockedSeats, setLockedSeats] = useState<number[]>([]);
-  const [mutedSeats, setMutedSeats] = useState<number[]>([]);
-  const [kickedUserIds, setKickedUserIds] = useState<string[]>([]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -54,34 +64,54 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
 
   // Role Detection
-  const isOwner = useMemo(() => {
-    if (!currentUser) return false;
-    // Mumbai-adda room is always owned by whoever is testing during this phase
-    return currentUser.uid === room.ownerId || room.slug === 'mumbai-adda';
-  }, [currentUser, room]);
+  const isOwner = currentUser?.uid === room.ownerId;
+  const isAdmin = isOwner || room.moderatorIds?.includes(currentUser?.uid || '');
 
-  const isAdmin = useMemo(() => {
-    if (!currentUser) return false;
-    return isOwner || room.moderatorIds?.includes(currentUser.uid);
-  }, [currentUser, room, isOwner]);
+  // Real-time Participants
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+  }, [firestore, room.id]);
+
+  const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
+
+  // Manage Local Presence
+  useEffect(() => {
+    if (!firestore || !room.id || !currentUser) return;
+
+    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+    
+    setDoc(participantRef, {
+      uid: currentUser.uid,
+      name: currentUser.displayName || 'Anonymous',
+      avatarUrl: currentUser.photoURL || '',
+      joinedAt: serverTimestamp(),
+      isMuted: true,
+      seatIndex: 0, // Sofa by default
+    }, { merge: true });
+
+    return () => {
+      deleteDoc(participantRef);
+    };
+  }, [firestore, room.id, currentUser]);
 
   // Real-time Chat
   const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id || !currentUser) return null;
+    if (!firestore || !room.id) return null;
     return query(
       collection(firestore, 'chatRooms', room.id, 'messages'),
       orderBy('timestamp', 'asc'),
       limit(100)
     );
-  }, [firestore, room.id, currentUser]);
+  }, [firestore, room.id]);
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
-  const activeMessages: Message[] = useMemo(() => {
+  const activeMessages = useMemo(() => {
     return firestoreMessages?.map((m: any) => ({
       id: m.id,
       text: m.content,
-      timestamp: m.timestamp?.toDate() ? new Date(m.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+      timestamp: m.timestamp?.toDate() ? new Date(m.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...',
       user: {
         id: m.senderId,
         name: m.senderName || 'User',
@@ -125,30 +155,39 @@ export function RoomClient({ room }: { room: Room }) {
     try {
       const msgsSnapshot = await getDocs(collection(firestore, 'chatRooms', room.id, 'messages'));
       const batch = writeBatch(firestore);
-      msgsSnapshot.forEach((m) => {
-        batch.delete(m.ref);
-      });
+      msgsSnapshot.forEach((m) => batch.delete(m.ref));
       await batch.commit();
-      toast({ title: 'Chat Cleared', description: 'History permanently deleted for everyone.' });
+      toast({ title: 'Chat Cleared' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed', description: 'Only the owner can clear history.' });
+      toast({ variant: 'destructive', title: 'Failed' });
     } finally {
       setIsClearing(false);
     }
   };
 
-  const toggleSeatLock = (index: number) => {
-    if (!isAdmin) return;
-    setLockedSeats(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
-    toast({ title: lockedSeats.includes(index) ? 'Seat Opened' : 'Seat Locked & User Removed' });
+  const takeSeat = async (index: number) => {
+    if (!firestore || !room.id || !currentUser) return;
+    if (room.lockedSeats?.includes(index)) {
+      toast({ variant: 'destructive', title: 'Seat Locked' });
+      return;
+    }
+    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+    await updateDoc(participantRef, { seatIndex: index });
   };
 
-  if (isUserLoading) return <div className="flex h-screen items-center justify-center bg-[#1a1a2e]"><Loader className="h-8 w-8 animate-spin text-primary" /></div>;
+  const toggleSeatLock = async (index: number) => {
+    if (!firestore || !room.id || !isAdmin) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    const isLocked = room.lockedSeats?.includes(index);
+    await updateDoc(roomRef, {
+      lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index)
+    });
+  };
 
-  const otherParticipants = (room.participants || []).filter(p => !kickedUserIds.includes(p.id) && p.id !== currentUser?.uid);
+  if (isUserLoading) return <div className="flex h-screen items-center justify-center bg-[#1a1a2e]"><Loader className="h-10 w-10 animate-spin text-primary" /></div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] overflow-hidden text-white font-headline">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] overflow-hidden text-white font-headline">
       
       {/* Header Section */}
       <header className="flex items-center justify-between p-4 bg-black/30 backdrop-blur-md border-b border-white/10 shrink-0">
@@ -192,46 +231,34 @@ export function RoomClient({ room }: { room: Room }) {
       <div className="px-4 py-2 shrink-0">
         <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10 text-xs">
           <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
-          <span className="text-white/80 italic truncate font-body">{room.announcement || "Welcome! Be respectful and enjoy the group vibe."}</span>
+          <span className="text-white/80 italic truncate font-body">{room.announcement}</span>
         </div>
       </div>
 
       <ScrollArea className="flex-1 px-4" ref={scrollRef}>
         {/* Seats Grid (10 Seats) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 py-6">
-          {/* Host Seat - No. 1 */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative">
-              <Avatar className="h-20 w-20 border-2 border-primary shadow-xl ring-2 ring-primary/20">
-                <AvatarImage src={currentUser?.photoURL || ''} />
-                <AvatarFallback>{currentUser?.displayName?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 -right-1 bg-primary text-[8px] font-bold px-1.5 rounded-full border border-[#1a1a2e] shadow-md">No.1</div>
-            </div>
-            <span className="text-xs font-bold text-primary truncate max-w-[80px]">{currentUser?.displayName || "You"}</span>
-          </div>
-
-          {/* Dynamic Seats 2-10 */}
-          {Array.from({ length: 9 }).map((_, i) => {
-            const seatIndex = i + 2;
-            const participant = otherParticipants[i];
-            const isLocked = lockedSeats.includes(seatIndex);
-            const isMuted = mutedSeats.includes(seatIndex);
+          {Array.from({ length: 10 }).map((_, i) => {
+            const seatIndex = i + 1;
+            const occupant = participants?.find(p => p.seatIndex === seatIndex);
+            const isLocked = room.lockedSeats?.includes(seatIndex);
 
             return (
               <div key={seatIndex} className="flex flex-col items-center gap-2 group">
                 <div className="relative">
-                  <div className={cn(
-                    "h-20 w-20 rounded-full flex items-center justify-center transition-all relative",
-                    isLocked ? "bg-black/40 border border-white/10" : "bg-white/5 border border-white/10 hover:bg-white/10",
-                    participant && !isLocked && "ring-2 ring-primary/40 border-primary"
+                  <div 
+                    onClick={() => !occupant && !isLocked && takeSeat(seatIndex)}
+                    className={cn(
+                    "h-20 w-20 rounded-full flex items-center justify-center transition-all relative cursor-pointer",
+                    isLocked ? "bg-black/40 border border-white/10 cursor-not-allowed" : "bg-white/5 border border-white/10 hover:bg-white/10",
+                    occupant && !isLocked && "ring-2 ring-primary shadow-[0_0_15px_rgba(255,107,107,0.4)]"
                   )}>
                     {isLocked ? (
                       <Lock className="h-8 w-8 text-white/20" />
-                    ) : participant ? (
+                    ) : occupant ? (
                       <Avatar className="h-full w-full">
-                        <AvatarImage src={participant.avatarUrl} alt={participant.name} />
-                        <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={occupant.avatarUrl} alt={occupant.name} />
+                        <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     ) : (
                       <Armchair className="h-8 w-8 text-white/20" />
@@ -252,22 +279,13 @@ export function RoomClient({ room }: { room: Room }) {
                               {isLocked ? <Unlock className="mr-3 h-4 w-4 text-green-400" /> : <Lock className="mr-3 h-4 w-4 text-yellow-400" />}
                               <span className="font-bold">{isLocked ? 'Unlock Seat' : 'Lock Seat'}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast({ title: 'Invite Sent' })} className="focus:bg-white/10 h-11 cursor-pointer">
-                              <UserPlus className="mr-3 h-4 w-4 text-blue-400" /> <span className="font-bold">Invite User</span>
-                            </DropdownMenuItem>
-                            {participant && !isLocked && (
-                              <>
-                                <DropdownMenuItem onClick={() => setMutedSeats(prev => isMuted ? prev.filter(s => s !== seatIndex) : [...prev, seatIndex])} className="focus:bg-white/10 h-11 cursor-pointer">
-                                  {isMuted ? <Mic className="mr-3 h-4 w-4 text-primary" /> : <MicOff className="mr-3 h-4 w-4 text-muted-foreground" />}
-                                  <span className="font-bold">{isMuted ? 'Unmute' : 'Mute User'}</span>
-                                </DropdownMenuItem>
+                            {occupant && (
                                 <DropdownMenuItem onClick={() => {
-                                  setKickedUserIds(prev => [...prev, participant.id]);
-                                  toast({ variant: 'destructive', title: 'User Kicked', description: `${participant.name} is now invisible.` });
+                                    const pRef = doc(firestore!, 'chatRooms', room.id, 'participants', occupant.uid);
+                                    updateDoc(pRef, { seatIndex: 0 }); // Kick to sofa
                                 }} className="text-destructive focus:bg-destructive/10 h-11 cursor-pointer font-bold">
-                                  <UserX className="mr-3 h-4 w-4" /> Kick Out
+                                    <UserX className="mr-3 h-4 w-4" /> Kick to Sofa
                                 </DropdownMenuItem>
-                              </>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -277,9 +295,9 @@ export function RoomClient({ room }: { room: Room }) {
                 </div>
                 <span className={cn(
                   "text-[10px] font-bold truncate max-w-[80px] uppercase tracking-wider",
-                  isLocked ? "text-white/20" : participant ? "text-white" : "text-white/40"
+                  isLocked ? "text-white/20" : occupant ? "text-white" : "text-white/40"
                 )}>
-                  {isLocked ? "CLOSED" : participant ? participant.name : "SOFA"}
+                  {isLocked ? "CLOSED" : occupant ? occupant.name : "SOFA"}
                 </span>
               </div>
             );

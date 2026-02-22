@@ -1,104 +1,135 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/app-layout';
-import { getPopularUsers, getAllRooms } from '@/lib/mock-data';
-import { Trophy, Medal, Crown, TrendingUp, Heart } from 'lucide-react';
-import Link from 'next/link';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { Trophy, Crown, TrendingUp, Heart, Loader } from 'lucide-react';
 
 export default function LeaderboardPage() {
-  const topUsers = getPopularUsers().sort((a, b) => (b.level?.rich || 0) - (a.level?.rich || 0));
-  const topCharm = [...topUsers].sort((a, b) => (b.level?.charm || 0) - (a.level?.charm || 0));
-  const topRooms = getAllRooms().sort((a, b) => b.participants.length - a.participants.length);
+  const firestore = useFirestore();
 
-  const RankingList = ({ items, type }: { items: any[], type: 'rich' | 'charm' | 'room' }) => (
-    <div className="space-y-4">
-      <div className="flex justify-center items-end gap-4 py-8">
-        {/* Silver - 2nd */}
-        <div className="flex flex-col items-center order-1 mt-8">
-          <div className="relative">
-            <Avatar className="h-20 w-20 border-4 border-slate-300">
-              <AvatarImage src={type === 'room' ? items[1].coverUrl : items[1].avatarUrl} />
-              <AvatarFallback>{items[1].name?.charAt(0) || items[1].title?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="absolute -top-2 -left-2 bg-slate-300 text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">2</div>
-          </div>
-          <p className="font-bold mt-2 text-sm">{items[1].name || items[1].title}</p>
-        </div>
-        
-        {/* Gold - 1st */}
-        <div className="flex flex-col items-center order-2">
-          <Crown className="text-yellow-400 h-8 w-8 mb-1 animate-bounce" />
-          <div className="relative">
-            <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-xl">
-              <AvatarImage src={type === 'room' ? items[0].coverUrl : items[0].avatarUrl} />
-              <AvatarFallback>{items[0].name?.charAt(0) || items[0].title?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="absolute -top-2 -left-2 bg-yellow-400 text-yellow-900 rounded-full w-10 h-10 flex items-center justify-center font-bold border-2 border-white">1</div>
-          </div>
-          <p className="font-bold mt-2 text-lg">{items[0].name || items[0].title}</p>
-        </div>
+  // Real User Leaderboards
+  const richUsersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'), orderBy('wallet.coins', 'desc'), limit(20));
+  }, [firestore]);
 
-        {/* Bronze - 3rd */}
-        <div className="flex flex-col items-center order-3 mt-8">
-          <div className="relative">
-            <Avatar className="h-20 w-20 border-4 border-amber-600">
-              <AvatarImage src={type === 'room' ? items[2].coverUrl : items[2].avatarUrl} />
-              <AvatarFallback>{items[2].name?.charAt(0) || items[2].title?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="absolute -top-2 -left-2 bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">3</div>
-          </div>
-          <p className="font-bold mt-2 text-sm">{items[2].name || items[2].title}</p>
-        </div>
-      </div>
+  const charmUsersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'), orderBy('stats.followers', 'desc'), limit(20));
+  }, [firestore]);
 
-      <Card>
-        <CardContent className="p-0">
-          {items.slice(3, 10).map((item, index) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 border-b last:border-0 hover:bg-secondary/20 transition-colors">
-              <span className="w-6 text-center font-bold text-muted-foreground">{index + 4}</span>
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={type === 'room' ? item.coverUrl : item.avatarUrl} />
-                <AvatarFallback>{item.name?.charAt(0) || item.title?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="font-semibold">{item.name || item.title}</p>
-                {type !== 'room' && <p className="text-[10px] text-muted-foreground">ID: {item.specialId || item.id.substring(0, 8)}</p>}
+  const topRoomsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'chatRooms'), limit(20));
+  }, [firestore]);
+
+  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richUsersQuery);
+  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmUsersQuery);
+  const { data: rooms, isLoading: isLoadingRooms } = useCollection(topRoomsQuery);
+
+  const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: 'rich' | 'charm' | 'room', isLoading: boolean }) => {
+    if (isLoading) return <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>;
+    if (!items || items.length === 0) return <div className="text-center py-20 text-muted-foreground">No data available yet.</div>;
+
+    const top3 = items.slice(0, 3);
+    const others = items.slice(3);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-center items-end gap-4 py-8">
+          {/* Silver - 2nd */}
+          {top3[1] && (
+            <div className="flex flex-col items-center order-1 mt-8">
+              <div className="relative">
+                <Avatar className="h-20 w-20 border-4 border-slate-300">
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : top3[1].avatarUrl} />
+                  <AvatarFallback>{(top3[1].name || top3[1].username || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-2 -left-2 bg-slate-300 text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">2</div>
               </div>
-              <div className="flex items-center gap-1 font-bold text-primary">
-                {type === 'rich' && <Trophy className="h-3 w-3" />}
-                {type === 'charm' && <Heart className="h-3 w-3" />}
-                {type === 'room' && <TrendingUp className="h-3 w-3" />}
-                {type === 'rich' ? item.level.rich : type === 'charm' ? item.level.charm : item.participants.length}
-              </div>
+              <p className="font-bold mt-2 text-sm">{top3[1].name || top3[1].username}</p>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  );
+          )}
+          
+          {/* Gold - 1st */}
+          {top3[0] && (
+            <div className="flex flex-col items-center order-2">
+              <Crown className="text-yellow-400 h-8 w-8 mb-1 animate-bounce" />
+              <div className="relative">
+                <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-xl">
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : top3[0].avatarUrl} />
+                  <AvatarFallback>{(top3[0].name || top3[0].username || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-2 -left-2 bg-yellow-400 text-yellow-900 rounded-full w-10 h-10 flex items-center justify-center font-bold border-2 border-white">1</div>
+              </div>
+              <p className="font-bold mt-2 text-lg">{top3[0].name || top3[0].username}</p>
+            </div>
+          )}
+
+          {/* Bronze - 3rd */}
+          {top3[2] && (
+            <div className="flex flex-col items-center order-3 mt-8">
+              <div className="relative">
+                <Avatar className="h-20 w-20 border-4 border-amber-600">
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : top3[2].avatarUrl} />
+                  <AvatarFallback>{(top3[2].name || top3[2].username || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-2 -left-2 bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">3</div>
+              </div>
+              <p className="font-bold mt-2 text-sm">{top3[2].name || top3[2].username}</p>
+            </div>
+          )}
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            {others.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-4 p-4 border-b last:border-0 hover:bg-secondary/20 transition-colors">
+                <span className="w-6 text-center font-bold text-muted-foreground">{index + 4}</span>
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : item.avatarUrl} />
+                  <AvatarFallback>{(item.name || item.username || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-semibold">{item.name || item.username}</p>
+                  <p className="text-[10px] text-muted-foreground">ID: {item.id.substring(0, 8)}</p>
+                </div>
+                <div className="flex items-center gap-1 font-bold text-primary">
+                  {type === 'rich' && <Trophy className="h-3 w-3" />}
+                  {type === 'charm' && <Heart className="h-3 w-3" />}
+                  {type === 'room' && <TrendingUp className="h-3 w-3" />}
+                  {type === 'rich' ? (item.wallet?.coins || 0) : type === 'charm' ? (item.stats?.followers || 0) : 'Live'}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <AppLayout>
       <div className="space-y-8">
         <header className="flex items-center gap-3">
           <Trophy className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-4xl font-bold tracking-tight">Hall of Fame</h1>
+          <h1 className="font-headline text-4xl font-bold tracking-tight">Real-time Rankings</h1>
         </header>
 
         <Tabs defaultValue="rich" className="w-full">
           <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8 bg-secondary/50 rounded-full p-1 h-12">
             <TabsTrigger value="rich" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Rich</TabsTrigger>
             <TabsTrigger value="charm" className="rounded-full data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">Charm</TabsTrigger>
-            <TabsTrigger value="room" className="rounded-full data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">Rooms</TabsTrigger>
+            <TabsTrigger value="room" className="rounded-full data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">Active</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="rich"><RankingList items={topUsers} type="rich" /></TabsContent>
-          <TabsContent value="charm"><RankingList items={topCharm} type="charm" /></TabsContent>
-          <TabsContent value="room"><RankingList items={topRooms} type="room" /></TabsContent>
+          <TabsContent value="rich"><RankingList items={richUsers} type="rich" isLoading={isLoadingRich} /></TabsContent>
+          <TabsContent value="charm"><RankingList items={charmUsers} type="charm" isLoading={isLoadingCharm} /></TabsContent>
+          <TabsContent value="room"><RankingList items={rooms} type="room" isLoading={isLoadingRooms} /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
