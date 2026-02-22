@@ -51,6 +51,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Source identity strictly from Firestore to isolate from external Auth (Google/Phone)
   const displayName = userProfile?.username || user?.displayName || 'User';
   const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
 

@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
 import { useToast } from './use-toast';
 
+/**
+ * Hook to handle profile picture uploads to Firebase Storage and update Firestore.
+ * Ensures the app's internal DP is isolated from the external Auth provider (Google/Phone).
+ */
 export function useProfilePictureUpload() {
   const storage = useStorage();
   const firestore = useFirestore();
@@ -28,15 +31,15 @@ export function useProfilePictureUpload() {
     toast({ title: 'Uploading...', description: 'Please wait while we update your DP.' });
 
     try {
+      // 1. Upload to Storage
       const storagePath = `users/${user.uid}/profile-picture.jpg`;
       const storageRef = ref(storage, storagePath);
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // Update Auth for legacy/backup
-      await updateProfile(user, { photoURL: downloadURL });
-
-      // Update Firestore (Primary Source of Truth)
+      // 2. Update Firestore ONLY (Source of Truth)
+      // We explicitly DO NOT call updateProfile(user, { photoURL }) to ensure
+      // the app identity never reflects back to the real Gmail/Google account.
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await setDoc(userProfileRef, { 
         avatarUrl: downloadURL,

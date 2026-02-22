@@ -16,6 +16,10 @@ import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
+/**
+ * Real User Profile Page.
+ * Fetches identity details from Firestore to ensure app data is isolated from Google.
+ */
 export default function ProfilePage() {
   const params = useParams();
   const profileId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -23,6 +27,7 @@ export default function ProfilePage() {
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
 
+  // Reference the specific Firestore profile path defined in backend.json
   const profileRef = useMemoFirebase(() => {
     if (!firestore || !profileId) return null;
     return doc(firestore, 'users', profileId, 'profile', profileId);

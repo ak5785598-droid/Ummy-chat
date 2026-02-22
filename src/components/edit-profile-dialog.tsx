@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
 import { Pencil, Loader, Camera, Globe, User2 } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +25,11 @@ interface EditProfileDialogProps {
   profile: any;
 }
 
+/**
+ * Unified Profile Editing Dialog.
+ * Handles Name, Bio, and DP updates in one place.
+ * Enforces read-only constraints for Country and Gender.
+ */
 export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +42,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
 
-  // Sync state when profile data or dialog opens
+  // Sync internal state when dialog opens or profile changes
   useEffect(() => {
     if (profile) {
       setName(profile.username || profile.name || '');
@@ -52,10 +56,8 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
     setIsSubmitting(true);
     try {
-      // Update Firebase Auth display name for consistency
-      await updateProfile(user, { displayName: name });
-
-      // Update Firestore Profile document
+      // Update Firestore Profile ONLY (Unified source of truth)
+      // We do NOT update Firebase Auth display name to keep app identity separate from Google.
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await setDoc(userProfileRef, {
         username: name,
@@ -102,7 +104,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Edit Profile</DialogTitle>
             <DialogDescription>
-              Update your name, bio, and DP. Country and Gender are fixed.
+              Update your Name, Bio, and DP. Country and Gender are fixed.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
@@ -119,7 +121,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                   {isUploading ? <Loader className="h-6 w-6 animate-spin text-white" /> : <Camera className="h-6 w-6 text-white" />}
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Click photo to change</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Click photo to change DP</span>
             </div>
 
             <div className="grid gap-2">
@@ -130,6 +132,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                 onChange={(e) => setName(e.target.value)}
                 required
                 disabled={isSubmitting}
+                placeholder="Enter your real name"
               />
             </div>
             <div className="grid gap-2">
@@ -147,13 +150,13 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2 opacity-60">
                 <Label className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-muted-foreground">
-                  <Globe className="h-3 w-3" /> Country
+                  <Globe className="h-3 w-3" /> Country (Fixed)
                 </Label>
                 <Input value={profile?.details?.hometown || 'India'} disabled className="bg-muted cursor-not-allowed h-9 text-xs" />
               </div>
               <div className="grid gap-2 opacity-60">
                 <Label className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-muted-foreground">
-                  <User2 className="h-3 w-3" /> Gender
+                  <User2 className="h-3 w-3" /> Gender (Fixed)
                 </Label>
                 <Input value={profile?.details?.gender || 'Secret'} disabled className="bg-muted cursor-not-allowed h-9 text-xs" />
               </div>
@@ -162,7 +165,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
           <DialogFooter>
             <Button type="submit" className="w-full h-12 text-lg font-bold" disabled={isSubmitting || isUploading}>
               {isSubmitting ? <Loader className="mr-2 h-5 w-5 animate-spin" /> : null}
-              Save Real Changes
+              Save All Changes
             </Button>
           </DialogFooter>
         </form>
