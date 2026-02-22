@@ -1,6 +1,6 @@
 /**
  * Standard Security Rules for Ummy
- * Optimized for real-time chat and administrative actions.
+ * Optimized for real-time chat, participant tracking, and administrative actions.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -22,6 +22,13 @@ service cloud.firestore {
       allow create, update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
+    
+    /**
+     * @description   Top-level Users Rules (for Leaderboards)
+     */
+    match /users/{userId} {
+      allow read, list: if isSignedIn();
+    }
 
     /**
      * @description   Chat Room Rules
@@ -29,37 +36,56 @@ service cloud.firestore {
     match /chatRooms/{chatRoomId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
+      // Allow updates if user is owner, moderator, or it's the default test room
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.moderatorIds || chatRoomId == 'mumbai-adda');
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || chatRoomId == 'mumbai-adda');
       
       /**
-       * @description   Message Rules
+       * @description   Participant Rules (Presence & Seats)
+       */
+      match /participants/{participantId} {
+        allow read, list: if isSignedIn();
+        allow create, update, delete: if isSignedIn();
+      }
+
+      /**
+       * @description   Message Rules (Real-time Chat)
        */
       match /messages/{chatMessageId} {
         allow read, list: if isSignedIn();
-        // Allow anyone to create messages if they are signed in
         allow create: if isSignedIn();
-        // Allow owners/moderators to delete any message
         allow delete: if isSignedIn();
         allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid);
       }
     }
     
+    /**
+     * @description   Friend Request Rules
+     */
     match /friendRequests/{friendRequestId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn();
     }
     
+    /**
+     * @description   Virtual Gift Transaction Rules
+     */
     match /userGifts/{userGiftId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
     }
 
+    /**
+     * @description   Global Gift Definition Rules
+     */
     match /gifts/{giftId} {
       allow read, list: if isSignedIn();
     }
     
+    /**
+     * @description   Room Tag Rules
+     */
     match /tags/{tagId} {
       allow read, list: if isSignedIn();
     }
