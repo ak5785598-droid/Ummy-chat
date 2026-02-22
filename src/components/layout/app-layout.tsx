@@ -23,6 +23,7 @@ import { useUser, useAuth } from "@/firebase";
 import { GameControllerIcon } from "../icons";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 const navItems = [
   { href: "/rooms", label: "Rooms", icon: Compass },
@@ -36,7 +37,8 @@ const navItems = [
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
   const { toast } = useToast();
 
@@ -57,6 +59,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       });
     }
   };
+
+  // Prioritize the real-time profile data for the avatar
+  const displayName = userProfile?.username || user?.displayName || 'User';
+  const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
 
   return (
     <SidebarProvider>
@@ -108,19 +114,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               )}
 
               <SidebarMenuItem>
-                 {isLoading ? (
+                 {isUserLoading ? (
                   <div className="flex items-center gap-2 p-2">
                     <Loader className="h-7 w-7 animate-spin" />
                     <span className="text-sm">Loading...</span>
                   </div>
                  ): user ? (
-                    <SidebarMenuButton tooltip={user.displayName || 'Profile'} asChild>
+                    <SidebarMenuButton tooltip={displayName} asChild>
                        <Link href="/profile">
                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-                            <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                            <AvatarImage src={avatarUrl} alt={displayName} />
+                            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                           </Avatar>
-                        <span>{user.displayName}</span>
+                        <span>{displayName}</span>
                       </Link>
                     </SidebarMenuButton>
                  ) : null}
@@ -137,8 +143,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
              {user && (
                 <Link href="/profile">
                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                    <AvatarImage src={avatarUrl} alt={displayName} />
+                    <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                   </Avatar>
               </Link>
              )}

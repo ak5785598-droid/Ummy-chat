@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -87,14 +88,18 @@ export default function SettingsPage() {
     )
   }
 
+  // Prioritize the real-time profile data over the cached auth object
+  const displayName = userProfile?.username || user.displayName || 'User';
+  const avatarUrl = userProfile?.avatarUrl || user.photoURL || undefined;
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <header className="flex items-center space-x-4">
           <div className="relative group">
             <Avatar className="h-20 w-20 border-2 border-primary/20">
-              <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-              <AvatarFallback className="text-2xl">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <button 
               onClick={() => fileInputRef.current?.click()}
@@ -107,9 +112,9 @@ export default function SettingsPage() {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold font-headline">
-                {user.displayName}
+                {displayName}
               </h1>
-              <EditProfileDialog profile={userProfile || { username: user.displayName, id: user.uid }} />
+              <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid }} />
             </div>
             <p className="text-sm text-muted-foreground mt-1">ID: {user.uid.substring(0, 8)}</p>
           </div>
@@ -164,7 +169,7 @@ export default function SettingsPage() {
                       <p className="text-xs text-muted-foreground">Change your name or bio using the pencil icon above.</p>
                     </div>
                   </div>
-                  <EditProfileDialog profile={userProfile || { username: user.displayName, id: user.uid }} />
+                  <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid }} />
                 </div>
               </CardContent>
             </Card>

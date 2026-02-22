@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from './use-toast';
 
@@ -38,12 +38,16 @@ export function useProfilePictureUpload() {
       // 3. Get the download URL
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 4. Update Firebase Auth profile
+      // 4. Update Firebase Auth profile (for backup/fallback)
       await updateProfile(user, { photoURL: downloadURL });
 
-      // 5. Update Firestore profile document
+      // 5. Update Firestore profile document (Primary Source of Truth)
+      // Use setDoc with merge: true to handle cases where the document might not exist yet
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      await updateDoc(userProfileRef, { avatarUrl: downloadURL });
+      await setDoc(userProfileRef, { 
+        avatarUrl: downloadURL,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
 
       toast({
         title: 'Success!',

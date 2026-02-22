@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Pencil, Loader, Camera, Globe, User2 } from 'lucide-react';
 import {
@@ -49,11 +50,11 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
       // 2. Update Firestore profile document
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      await updateDoc(userProfileRef, {
+      await setDoc(userProfileRef, {
         username: name,
         bio: bio,
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
 
       toast({
         title: 'Profile Updated',
@@ -103,7 +104,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
               <div className="relative group">
                 <Avatar className="h-24 w-24 border-4 border-primary/20">
                   <AvatarImage src={profile.avatarUrl} />
-                  <AvatarFallback className="text-3xl">{name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-3xl">{(name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div 
                   onClick={() => fileInputRef.current?.click()}
