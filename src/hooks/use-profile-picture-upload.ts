@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useToast } from './use-toast';
 
@@ -26,27 +25,22 @@ export function useProfilePictureUpload() {
     }
 
     setIsUploading(true);
+    toast({ title: 'Uploading...', description: 'Please wait while we update your DP.' });
 
     try {
-      // 1. Create a storage reference
       const storagePath = `users/${user.uid}/profile-picture.jpg`;
       const storageRef = ref(storage, storagePath);
-
-      // 2. Upload the file
       const uploadResult = await uploadBytes(storageRef, file);
-
-      // 3. Get the download URL
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 4. Update Firebase Auth profile (for backup/fallback)
+      // Update Auth for legacy/backup
       await updateProfile(user, { photoURL: downloadURL });
 
-      // 5. Update Firestore profile document (Primary Source of Truth)
-      // Use setDoc with merge: true to handle cases where the document might not exist yet
+      // Update Firestore (Primary Source of Truth)
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await setDoc(userProfileRef, { 
         avatarUrl: downloadURL,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       }, { merge: true });
 
       toast({

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Compass, User, Settings, Youtube, ClipboardList, Loader, Trophy, LogOut } from "lucide-react";
@@ -38,7 +37,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading: isUserLoading } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const auth = useAuth();
   const { toast } = useToast();
 
@@ -47,26 +46,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     try {
       await signOut(auth);
       router.push('/login');
-      toast({
-        title: 'Logged Out',
-        description: 'You have been successfully logged out.',
-      });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Logout Failed',
-        description: error.message,
-      });
+      toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
     }
   };
 
-  // Prioritize the real-time profile data for the avatar
   const displayName = userProfile?.username || user?.displayName || 'User';
   const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full bg-background">
         <Sidebar>
           <SidebarHeader>
             <Logo />
@@ -113,20 +103,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               )}
 
-              <SidebarMenuItem>
-                 {isUserLoading ? (
+              <SidebarMenuItem className="pt-4 border-t border-white/5">
+                 {isUserLoading || isProfileLoading ? (
                   <div className="flex items-center gap-2 p-2">
-                    <Loader className="h-7 w-7 animate-spin" />
-                    <span className="text-sm">Loading...</span>
+                    <Loader className="h-7 w-7 animate-spin text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-40">Syncing...</span>
                   </div>
                  ): user ? (
-                    <SidebarMenuButton tooltip={displayName} asChild>
+                    <SidebarMenuButton tooltip={displayName} asChild className="h-12">
                        <Link href="/profile">
-                         <Avatar className="h-7 w-7">
+                         <Avatar className="h-8 w-8 border border-primary/20">
                             <AvatarImage src={avatarUrl} alt={displayName} />
                             <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                           </Avatar>
-                        <span>{displayName}</span>
+                        <span className="font-bold truncate">{displayName}</span>
                       </Link>
                     </SidebarMenuButton>
                  ) : null}
@@ -135,14 +125,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <div className="flex flex-1 flex-col">
-           <header className="flex h-14 items-center gap-4 border-b bg-background px-6 md:hidden">
+           <header className="flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-md px-6 md:hidden sticky top-0 z-40">
             <SidebarTrigger />
             <div className="flex-1">
               <Logo />
             </div>
              {user && (
                 <Link href="/profile">
-                 <Avatar className="h-8 w-8">
+                 <Avatar className="h-9 w-9 border-2 border-primary/20 shadow-md">
                     <AvatarImage src={avatarUrl} alt={displayName} />
                     <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -150,7 +140,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
              )}
           </header>
           <SidebarInset>
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">{children}</main>
           </SidebarInset>
         </div>
       </div>

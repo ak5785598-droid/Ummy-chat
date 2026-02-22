@@ -1,12 +1,8 @@
-
 'use client';
 import { useMemo } from 'react';
-import { useFirestore, useDoc, WithId } from '@/firebase';
-import { doc, DocumentData } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-// Assuming a UserProfile type is defined somewhere, e.g., in @/lib/types
-// If not, you should define it based on your data structure.
-// For this example, let's assume it looks like this:
 export interface UserProfile {
     id: string;
     username: string;
@@ -15,22 +11,35 @@ export interface UserProfile {
     email: string;
     interests?: string[];
     coins?: number;
+    details?: {
+      gender?: string;
+      hometown?: string;
+      age?: number;
+    };
+    wallet?: {
+      coins: number;
+      diamonds: number;
+    };
+    stats?: {
+      followers: number;
+      fans: number;
+    };
+    level?: {
+      rich: number;
+      charm: number;
+    };
+    frame?: string;
+    tags?: string[];
 }
 
-
 /**
- * Hook to fetch a specific user's profile from Firestore.
- * 
- * @param userId The ID of the user whose profile is to be fetched.
- * @returns An object containing the user profile data, loading state, and any error.
+ * Hook to fetch a specific user's profile from Firestore in real-time.
  */
 export function useUserProfile(userId: string | undefined) {
     const firestore = useFirestore();
 
-    const userProfileRef = useMemo(() => {
+    const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
-        // The path must match exactly how it's stored in Firestore.
-        // Based on backend.json, it seems to be /users/{userId}/profile/{userId}
         return doc(firestore, 'users', userId, 'profile', userId);
     }, [firestore, userId]);
     

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -12,8 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bell,
@@ -22,7 +19,6 @@ import {
   CreditCard,
   Gem,
   Star,
-  LifeBuoy,
   Loader,
   Camera,
   LogOut,
@@ -54,16 +50,8 @@ export default function SettingsPage() {
     try {
         await signOut(auth);
         router.push('/login');
-        toast({
-          title: 'Logged Out',
-          description: 'You have been successfully logged out.',
-        });
     } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Logout Failed',
-            description: error.message,
-        });
+        toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
     }
   };
 
@@ -81,53 +69,56 @@ export default function SettingsPage() {
   if (isUserLoading || isProfileLoading || !user) {
     return (
        <AppLayout>
-          <div className="flex h-full w-full items-center justify-center">
-            <Loader className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex h-full w-full items-center justify-center py-20">
+            <Loader className="h-10 w-10 animate-spin text-primary" />
           </div>
        </AppLayout>
     )
   }
 
-  // Prioritize the real-time profile data over the cached auth object
   const displayName = userProfile?.username || user.displayName || 'User';
-  const avatarUrl = userProfile?.avatarUrl || user.photoURL || undefined;
+  const avatarUrl = userProfile?.avatarUrl || user.photoURL || '';
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <header className="flex items-center space-x-4">
+        <header className="flex items-center space-x-6 bg-secondary/20 p-6 rounded-3xl border border-white/5 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
           <div className="relative group">
-            <Avatar className="h-20 w-20 border-2 border-primary/20">
+            <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-2xl">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-3xl">{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               disabled={isUploading}
             >
-              {isUploading ? <Loader className="h-5 w-5 animate-spin text-white" /> : <Camera className="h-5 w-5 text-white" />}
+              {isUploading ? <Loader className="h-6 w-6 animate-spin text-white" /> : <Camera className="h-6 w-6 text-white" />}
             </button>
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold font-headline">
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-bold font-headline tracking-tight">
                 {displayName}
               </h1>
-              <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid }} />
+              <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid, avatarUrl }} />
             </div>
-            <p className="text-sm text-muted-foreground mt-1">ID: {user.uid.substring(0, 8)}</p>
+            <p className="text-xs text-muted-foreground font-mono mt-2 tracking-widest opacity-60">ID: {user.uid.substring(0, 12).toUpperCase()}</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 border border-white/5 shadow-sm">
-            <Gem className="h-5 w-5 text-primary" />
-            <span className="font-bold text-lg">
-              {(userProfile?.coins || 0).toLocaleString()}
-            </span>
+          <div className="hidden md:flex flex-col items-end gap-2">
+             <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 border border-primary/20 shadow-sm">
+                <Gem className="h-5 w-5 text-primary" />
+                <span className="font-bold text-xl text-primary">
+                  {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                </span>
+             </div>
+             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">Your Current Balance</p>
           </div>
         </header>
 
         <Tabs defaultValue="account" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-muted/50 rounded-full p-1 h-12">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-muted/50 rounded-full p-1 h-12 mb-8">
             <TabsTrigger value="account" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <User className="mr-2 h-4 w-4" /> Account
             </TabsTrigger>
@@ -142,89 +133,90 @@ export default function SettingsPage() {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="account" className="mt-6">
-            <Card className="border-none shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Identity Verification</CardTitle>
-                <CardDescription>
-                  Your profile details. Username and bio can be edited.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <Label>Country (Fixed)</Label>
-                      <Input value={userProfile?.details?.hometown || 'India'} disabled className="bg-muted" />
-                   </div>
-                   <div className="space-y-2">
-                      <Label>Gender (Fixed)</Label>
-                      <Input value={userProfile?.details?.gender || 'Secret'} disabled className="bg-muted" />
-                   </div>
-                </div>
-                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Pencil className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-bold text-sm">Need to update your details?</p>
-                      <p className="text-xs text-muted-foreground">Change your name or bio using the pencil icon above.</p>
+          <TabsContent value="account">
+            <div className="grid gap-6">
+              <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="font-headline text-2xl">Identity Verification</CardTitle>
+                  <CardDescription>
+                    Your permanent profile details. Only name and bio are editable.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 opacity-60">
+                        <Label className="text-xs uppercase font-bold tracking-widest">Country (Fixed)</Label>
+                        <Input value={userProfile?.details?.hometown || 'India'} disabled className="bg-muted h-12 cursor-not-allowed" />
+                    </div>
+                    <div className="space-y-2 opacity-60">
+                        <Label className="text-xs uppercase font-bold tracking-widest">Gender (Fixed)</Label>
+                        <Input value={userProfile?.details?.gender || 'Secret'} disabled className="bg-muted h-12 cursor-not-allowed" />
                     </div>
                   </div>
-                  <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid }} />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="mt-6 border-none shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-destructive text-xl flex items-center gap-2">
-                   Danger Zone
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 justify-between border-destructive/20 hover:bg-destructive/5" 
-                  onClick={handleLogout}
-                >
-                  <div className="flex items-center gap-2">
-                    <LogOut className="h-4 w-4 text-destructive" />
-                    <span className="font-bold">Log Out of Ummy</span>
+                  <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                         <Pencil className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-bold">Update Profile Details</p>
+                        <p className="text-xs text-muted-foreground">Change your display name and personal biography.</p>
+                      </div>
+                    </div>
+                    <EditProfileDialog profile={userProfile || { username: displayName, id: user.uid, avatarUrl }} />
                   </div>
-                  <span className="text-xs opacity-40">Safe Exit</span>
-                </Button>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-xl bg-destructive/5 border border-destructive/10">
+                <CardHeader>
+                  <CardTitle className="font-headline text-destructive text-2xl flex items-center gap-2">
+                     <LogOut className="h-6 w-6" /> Account Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-14 justify-between border-destructive/20 hover:bg-destructive text-destructive hover:text-white transition-all font-bold text-lg rounded-2xl" 
+                    onClick={handleLogout}
+                  >
+                    <span>Sign Out of Ummy</span>
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="billing" className="mt-6">
-            <Card className="border-none shadow-lg">
+          <TabsContent value="billing">
+            <Card className="border-none shadow-xl">
               <CardHeader>
-                <CardTitle className="font-headline text-xl">Buy Coins</CardTitle>
+                <CardTitle className="font-headline text-2xl">Recharge Center</CardTitle>
                 <CardDescription>
-                  Purchase coins to send gifts and play premium games.
+                  Instant coin delivery. Get coins to send gifts and play games.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {coinPackages.map((pkg, index) => (
                   <Card
                     key={pkg.id}
-                    className="relative flex flex-col items-center justify-center p-6 text-center transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-secondary/20 border-white/5"
+                    className="relative flex flex-col items-center justify-center p-6 text-center transition-all hover:shadow-2xl hover:-translate-y-2 cursor-pointer bg-secondary/20 border-white/5 rounded-3xl"
                   >
                     {index === coinPackages.length - 1 && (
-                      <div className="absolute -top-3 inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground uppercase">
-                        <Star className="h-3 w-3" /> Best Value
+                      <div className="absolute -top-3 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-white uppercase shadow-lg">
+                        <Star className="h-3 w-3 fill-white" /> Popular
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-2xl font-bold text-primary">
-                      <Gem className="h-6 w-6" />
+                    <div className="flex items-center gap-2 text-3xl font-bold text-primary">
+                      <Gem className="h-8 w-8" />
                       <span>{pkg.amount.toLocaleString()}</span>
                     </div>
                     {pkg.bonus && (
-                      <p className="text-[10px] text-green-500 font-bold uppercase mt-1">
-                         + {pkg.bonus.toLocaleString()} Bonus
+                      <p className="text-[10px] text-green-500 font-black uppercase mt-2 bg-green-500/10 px-2 py-0.5 rounded">
+                         + {pkg.bonus.toLocaleString()} Extra
                       </p>
                     )}
-                    <Button className="mt-4 w-full rounded-full shadow-md">₹{pkg.price.toFixed(0)}</Button>
+                    <Button className="mt-6 w-full rounded-full h-11 font-bold shadow-lg">₹{pkg.price.toFixed(0)}</Button>
                   </Card>
                 ))}
               </CardContent>

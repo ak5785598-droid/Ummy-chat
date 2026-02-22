@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Pencil, Loader, Camera, Globe, User2 } from 'lucide-react';
 import {
@@ -36,8 +35,8 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
 
-  const [name, setName] = useState(profile.username || profile.name || '');
-  const [bio, setBio] = useState(profile.bio || '');
+  const [name, setName] = useState(profile?.username || profile?.name || '');
+  const [bio, setBio] = useState(profile?.bio || '');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,20 +44,18 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
     setIsSubmitting(true);
     try {
-      // 1. Update Firebase Auth display name
       await updateProfile(user, { displayName: name });
 
-      // 2. Update Firestore profile document
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await setDoc(userProfileRef, {
         username: name,
         bio: bio,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       }, { merge: true });
 
       toast({
         title: 'Profile Updated',
-        description: 'Your changes have been saved successfully.',
+        description: 'Your real identity has been updated successfully.',
       });
       setOpen(false);
     } catch (error: any) {
@@ -86,7 +83,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="rounded-full bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary h-10 w-10">
+        <Button variant="outline" size="icon" className="rounded-full bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary h-10 w-10 shadow-lg">
           <Pencil className="h-5 w-5" />
         </Button>
       </DialogTrigger>
@@ -95,15 +92,14 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Edit Profile</DialogTitle>
             <DialogDescription>
-              Update your public identity. Country and Gender are fixed.
+              Update your name, bio, and DP. Country and Gender are fixed.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            {/* Avatar Section */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative group">
-                <Avatar className="h-24 w-24 border-4 border-primary/20">
-                  <AvatarImage src={profile.avatarUrl} />
+                <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-xl">
+                  <AvatarImage src={profile?.avatarUrl} />
                   <AvatarFallback className="text-3xl">{(name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div 
@@ -113,10 +109,9 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                   {isUploading ? <Loader className="h-6 w-6 animate-spin text-white" /> : <Camera className="h-6 w-6 text-white" />}
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground">Click photo to change</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Click photo to change</span>
             </div>
 
-            {/* Editable Fields */}
             <div className="grid gap-2">
               <Label htmlFor="edit-name">Display Name</Label>
               <Input
@@ -133,26 +128,25 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell the world about yourself..."
-                className="resize-none"
+                className="resize-none h-24"
               />
             </div>
 
-            {/* Read-only Fields */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2 opacity-60">
-                <Label className="flex items-center gap-1.5"><Globe className="h-3 w-3" /> Country</Label>
-                <Input value={profile.details?.hometown || 'India'} disabled className="bg-muted cursor-not-allowed" />
+              <div className="grid gap-2 opacity-50">
+                <Label className="flex items-center gap-1.5"><Globe className="h-3 w-3" /> Country (Fixed)</Label>
+                <Input value={profile?.details?.hometown || 'India'} disabled className="bg-muted cursor-not-allowed" />
               </div>
-              <div className="grid gap-2 opacity-60">
-                <Label className="flex items-center gap-1.5"><User2 className="h-3 w-3" /> Gender</Label>
-                <Input value={profile.details?.gender || 'Secret'} disabled className="bg-muted cursor-not-allowed" />
+              <div className="grid gap-2 opacity-50">
+                <Label className="flex items-center gap-1.5"><User2 className="h-3 w-3" /> Gender (Fixed)</Label>
+                <Input value={profile?.details?.gender || 'Secret'} disabled className="bg-muted cursor-not-allowed" />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting || isUploading}>
-              {isSubmitting ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save Profile
+            <Button type="submit" className="w-full h-12 text-lg font-bold" disabled={isSubmitting || isUploading}>
+              {isSubmitting ? <Loader className="mr-2 h-5 w-5 animate-spin" /> : null}
+              Save Real Changes
             </Button>
           </DialogFooter>
         </form>
