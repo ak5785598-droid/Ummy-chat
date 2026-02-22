@@ -28,6 +28,12 @@ export type User = {
     coins: number;
     diamonds: number;
   };
+  inventory?: {
+    activeFrame?: string;
+    activeBubble?: string;
+    activeWave?: string;
+    ownedItems: string[];
+  };
 };
 
 export type Message = {
@@ -46,6 +52,7 @@ export type RoomParticipant = {
   seatIndex: number; // 0 for sofa, 1-10 for seats
   isMuted: boolean;
   joinedAt: any;
+  activeFrame?: string;
 };
 
 export type Room = {
@@ -88,4 +95,12 @@ export type Task = {
       label: string;
       href: string;
   }
+};
+
+export type PkBattle = {
+  id: string;
+  room1: Room;
+  room2: Room;
+  score1: number;
+  score2: number;
 };
