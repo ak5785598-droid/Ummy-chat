@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -90,9 +89,9 @@ export function RoomClient({ room }: { room: Room }) {
       joinedAt: serverTimestamp(),
       isMuted: true,
       seatIndex: 0,
-    }, { merge: true });
+    }, { merge: true }).catch(err => console.warn('Presence sync delayed', err));
 
-    return () => { deleteDoc(participantRef); };
+    return () => { deleteDoc(participantRef).catch(() => {}); };
   }, [firestore, room.id, currentUser, userProfile]);
 
   // Guard: Ensure we only list messages if we have an authenticated user
@@ -144,20 +143,20 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    await updateDoc(participantRef, { seatIndex: index });
+    updateDoc(participantRef, { seatIndex: index });
   };
 
   const toggleSeatLock = async (index: number) => {
     if (!firestore || !room.id || !isAdmin) return;
     const roomRef = doc(firestore, 'chatRooms', room.id);
     const isLocked = room.lockedSeats?.includes(index);
-    await updateDoc(roomRef, { lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index) });
+    updateDoc(roomRef, { lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index) });
   };
 
-  if (isUserLoading) return <div className="flex h-screen items-center justify-center bg-[#1a1a2e]"><Loader className="animate-spin text-primary" /></div>;
+  if (isUserLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin text-primary" /></div>;
 
   return (
-    <div className="flex flex-col h-screen bg-[#11111e] overflow-hidden text-white font-headline">
+    <div className="flex flex-col h-full bg-[#11111e] overflow-hidden text-white font-headline rounded-3xl border border-white/5">
       
       {/* PROFESSIONAL ROOM HEADER */}
       <header className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-xl border-b border-white/5 shrink-0 z-50">
@@ -204,8 +203,8 @@ export function RoomClient({ room }: { room: Room }) {
 
       {/* ANNOUNCEMENT TICKER */}
       <div className="px-4 py-2 bg-primary/10 border-b border-primary/5 shrink-0">
-        <div className="flex items-center gap-3 text-[10px] font-bold tracking-widest uppercase">
-          <Sparkles className="h-4 w-4 text-yellow-400 animate-bounce" />
+        <div className="flex items-center gap-3 text-[10px] font-bold tracking-widest uppercase overflow-hidden">
+          <Sparkles className="h-4 w-4 text-yellow-400 animate-bounce shrink-0" />
           <marquee className="text-primary/80 italic">{room.announcement || "Welcome to the Official Ummy Experience! Be respectful and vibe hard."}</marquee>
         </div>
       </div>
@@ -301,7 +300,7 @@ export function RoomClient({ room }: { room: Room }) {
                   <span className="text-[10px] font-black tracking-widest uppercase text-primary/80">{msg.user.name}</span>
                   <span className="text-[8px] text-white/10 font-mono">{msg.timestamp}</span>
                 </div>
-                <div className="bg-white/5 p-4 rounded-3xl rounded-tl-none border border-white/5 text-sm font-body leading-relaxed group-hover:bg-white/10 transition-colors shadow-xl">
+                <div className="bg-white/5 p-4 rounded-3xl rounded-tl-none border border-white/5 text-sm font-body leading-relaxed group-hover:bg-white/10 transition-colors shadow-xl text-white">
                   {msg.text}
                 </div>
               </div>
@@ -316,7 +315,7 @@ export function RoomClient({ room }: { room: Room }) {
             <div className="relative flex-1">
               <Input 
                 placeholder="Message the room..." 
-                className="bg-white/5 border-white/5 rounded-3xl h-14 px-6 focus:ring-primary/40 focus:bg-white/10 text-sm font-body placeholder:text-white/20"
+                className="bg-white/5 border-white/5 rounded-3xl h-14 px-6 focus:ring-primary/40 focus:bg-white/10 text-sm font-body placeholder:text-white/20 text-white"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 disabled={isSending}

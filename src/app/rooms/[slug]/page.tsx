@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect } from 'react';
@@ -93,8 +92,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   }
 
   return (
-    <div className="bg-[#1a1a2e] min-h-screen">
+    <AppLayout>
        <RoomClient room={activeRoom!} />
-    </div>
+    </AppLayout>
   );
 }

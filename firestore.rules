@@ -14,24 +14,29 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    match /users/{userId} {
-      allow read, list: if isSignedIn();
-      
-      match /profile/{profileId} {
+    match /users {
+      allow list: if isSignedIn();
+      match /{userId} {
         allow read: if isSignedIn();
-        allow write: if isOwner(userId);
+        match /profile/{profileId} {
+          allow read: if isSignedIn();
+          allow write: if isOwner(userId);
+        }
       }
     }
 
-    match /chatRooms/{chatRoomId} {
+    match /chatRooms {
       allow read, list, create, update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      
-      match /participants/{participantId} {
-        allow read, list, create, update, delete: if isSignedIn();
-      }
-      match /messages/{messageId} {
-        allow read, list, create, delete: if isSignedIn();
+      match /{chatRoomId} {
+        allow read, list, create, update: if isSignedIn();
+        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        
+        match /participants/{participantId} {
+          allow read, list, create, update, delete: if isSignedIn();
+        }
+        match /messages/{messageId} {
+          allow read, list, create, delete: if isSignedIn();
+        }
       }
     }
   }
