@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Compass, Loader, Sparkles, LayoutPanelTop, Crown } from 'lucide-react';
+import { Compass, Loader, Sparkles, LayoutPanelTop, Crown, LifeBuoy, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
@@ -12,6 +12,8 @@ import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { RecommendationsForm } from '@/components/recommendations-form';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function RoomsPage() {
   const { user } = useUser();
@@ -37,14 +39,17 @@ export default function RoomsPage() {
 
   const roomsByCategory = (category: string) => {
     if (!roomsData) return [];
-    if (category === 'Popular') return roomsData.slice(0, 8);
-    return roomsData.filter((room: any) => room.category === category);
+    if (category === 'Popular') return roomsData.filter((r: any) => r.id !== 'official-help-room').slice(0, 8);
+    return roomsData.filter((room: any) => room.category === category && room.id !== 'official-help-room');
   };
 
   const myRooms = useMemo(() => {
     if (!roomsData || !user) return [];
-    return roomsData.filter((r: any) => r.ownerId === user.uid);
+    return roomsData.filter((r: any) => r.ownerId === user.uid && r.id !== 'official-help-room');
   }, [roomsData, user]);
+
+  // Find the official room if it exists in the collection
+  const officialRoom = roomsData?.find((r: any) => r.id === 'official-help-room');
 
   return (
     <AppLayout>
@@ -78,6 +83,51 @@ export default function RoomsPage() {
           </Link>
         </section>
 
+        {/* FEATURED OFFICIAL HELP ROOM */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 overflow-hidden border-none bg-gradient-to-br from-[#1a1a2e] to-[#16213e] shadow-2xl relative group">
+             <div className="absolute top-0 right-0 p-6 z-10">
+                <Badge className="bg-primary hover:bg-primary shadow-xl animate-pulse">LIVE SUPPORT</Badge>
+             </div>
+             <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8 relative z-10">
+                <div className="relative h-40 w-40 shrink-0">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+                  <Avatar className="h-full w-full border-4 border-primary shadow-2xl">
+                    <AvatarImage src="https://picsum.photos/seed/official-help/400" />
+                    <AvatarFallback>UM</AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="space-y-4 text-center md:text-left">
+                   <div className="flex items-center justify-center md:justify-start gap-2">
+                     <LifeBuoy className="h-6 w-6 text-primary" />
+                     <h2 className="text-3xl font-black font-headline text-white italic uppercase tracking-tighter">Official Help Room</h2>
+                   </div>
+                   <p className="text-white/60 font-body text-lg leading-snug max-w-md">
+                     New here? Join our official community hub to meet people, learn the app, and get real-time support from the Ummy Team.
+                   </p>
+                   <Button asChild size="lg" className="rounded-full px-10 shadow-xl shadow-primary/20 hover:scale-105 transition-transform group">
+                      <Link href="/rooms/official-help-room" className="flex items-center gap-2">
+                         Join Official Hub <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                   </Button>
+                </div>
+             </CardContent>
+             <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
+                <LifeBuoy className="h-64 w-64 -mb-10 -mr-10" />
+             </div>
+          </Card>
+
+          <Card className="border-primary/20 bg-primary/5 rounded-[2rem] flex flex-col">
+            <CardContent className="p-6 flex-1 flex flex-col justify-center">
+               <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  <h2 className="font-headline text-xl font-bold">Smart Connect</h2>
+               </div>
+               <RecommendationsForm />
+            </CardContent>
+          </Card>
+        </section>
+
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <h1 className="font-headline text-4xl font-bold tracking-tight flex items-center gap-2">
@@ -88,19 +138,6 @@ export default function RoomsPage() {
           </div>
           <CreateRoomDialog />
         </header>
-
-        {/* AI Recommendations Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <h2 className="font-headline text-2xl font-semibold">Smart Connect</h2>
-          </div>
-          <Card className="border-primary/20 bg-primary/5 rounded-[2rem]">
-            <CardContent className="p-8">
-              <RecommendationsForm />
-            </CardContent>
-          </Card>
-        </section>
 
         {/* My Rooms Section */}
         {myRooms.length > 0 && (
@@ -151,4 +188,16 @@ export default function RoomsPage() {
       </div>
     </AppLayout>
   );
+}
+
+function Avatar({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>;
+}
+
+function AvatarImage({ src }: { src: string }) {
+  return <img className="aspect-square h-full w-full" src={src} />;
+}
+
+function AvatarFallback({ children }: { children: React.ReactNode }) {
+  return <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">{children}</div>;
 }
