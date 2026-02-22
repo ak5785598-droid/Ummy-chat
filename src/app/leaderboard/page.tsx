@@ -11,7 +11,7 @@ import { Trophy, Crown, TrendingUp, Heart, Loader } from 'lucide-react';
 export default function LeaderboardPage() {
   const firestore = useFirestore();
 
-  // Real User Leaderboards
+  // REAL QUERIES FOR PRODUCTION DATA
   const richUsersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'users'), orderBy('wallet.coins', 'desc'), limit(20));
@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
 
   const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: 'rich' | 'charm' | 'room', isLoading: boolean }) => {
     if (isLoading) return <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>;
-    if (!items || items.length === 0) return <div className="text-center py-20 text-muted-foreground">No data available yet.</div>;
+    if (!items || items.length === 0) return <div className="text-center py-20 text-muted-foreground">No real data available yet. Start your journey to be #1!</div>;
 
     const top3 = items.slice(0, 3);
     const others = items.slice(3);
@@ -46,12 +46,12 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-1 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-slate-300">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : top3[1].avatarUrl} />
-                  <AvatarFallback>{(top3[1].name || top3[1].username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : (top3[1].avatarUrl || top3[1].profile?.avatarUrl)} />
+                  <AvatarFallback>{(top3[1].username || top3[1].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-slate-300 text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">2</div>
               </div>
-              <p className="font-bold mt-2 text-sm">{top3[1].name || top3[1].username}</p>
+              <p className="font-bold mt-2 text-sm">{top3[1].username || top3[1].name}</p>
             </div>
           )}
           
@@ -61,12 +61,12 @@ export default function LeaderboardPage() {
               <Crown className="text-yellow-400 h-8 w-8 mb-1 animate-bounce" />
               <div className="relative">
                 <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-xl">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : top3[0].avatarUrl} />
-                  <AvatarFallback>{(top3[0].name || top3[0].username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : (top3[0].avatarUrl || top3[0].profile?.avatarUrl)} />
+                  <AvatarFallback>{(top3[0].username || top3[0].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-yellow-400 text-yellow-900 rounded-full w-10 h-10 flex items-center justify-center font-bold border-2 border-white">1</div>
               </div>
-              <p className="font-bold mt-2 text-lg">{top3[0].name || top3[0].username}</p>
+              <p className="font-bold mt-2 text-lg">{top3[0].username || top3[0].name}</p>
             </div>
           )}
 
@@ -75,12 +75,12 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-3 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-amber-600">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : top3[2].avatarUrl} />
-                  <AvatarFallback>{(top3[2].name || top3[2].username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : (top3[2].avatarUrl || top3[2].profile?.avatarUrl)} />
+                  <AvatarFallback>{(top3[2].username || top3[2].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -top-2 -left-2 bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white">3</div>
               </div>
-              <p className="font-bold mt-2 text-sm">{top3[2].name || top3[2].username}</p>
+              <p className="font-bold mt-2 text-sm">{top3[2].username || top3[2].name}</p>
             </div>
           )}
         </div>
@@ -91,18 +91,18 @@ export default function LeaderboardPage() {
               <div key={item.id} className="flex items-center gap-4 p-4 border-b last:border-0 hover:bg-secondary/20 transition-colors">
                 <span className="w-6 text-center font-bold text-muted-foreground">{index + 4}</span>
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : item.avatarUrl} />
-                  <AvatarFallback>{(item.name || item.username || 'U').charAt(0)}</AvatarFallback>
+                   <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : (item.avatarUrl || item.profile?.avatarUrl)} />
+                  <AvatarFallback>{(item.username || item.name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-semibold">{item.name || item.username}</p>
-                  <p className="text-[10px] text-muted-foreground">ID: {item.id.substring(0, 8)}</p>
+                  <p className="font-semibold">{item.username || item.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">ID: {item.id.substring(0, 8)}</p>
                 </div>
                 <div className="flex items-center gap-1 font-bold text-primary">
                   {type === 'rich' && <Trophy className="h-3 w-3" />}
                   {type === 'charm' && <Heart className="h-3 w-3" />}
                   {type === 'room' && <TrendingUp className="h-3 w-3" />}
-                  {type === 'rich' ? (item.wallet?.coins || 0) : type === 'charm' ? (item.stats?.followers || 0) : 'Live'}
+                  {type === 'rich' ? (item.wallet?.coins || 0).toLocaleString() : type === 'charm' ? (item.stats?.followers || 0).toLocaleString() : 'Live'}
                 </div>
               </div>
             ))}
@@ -117,7 +117,7 @@ export default function LeaderboardPage() {
       <div className="space-y-8">
         <header className="flex items-center gap-3">
           <Trophy className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-4xl font-bold tracking-tight">Real-time Rankings</h1>
+          <h1 className="font-headline text-4xl font-bold tracking-tight">Global Rankings</h1>
         </header>
 
         <Tabs defaultValue="rich" className="w-full">

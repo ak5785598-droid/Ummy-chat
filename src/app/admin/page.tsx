@@ -54,6 +54,7 @@ export default function AdminPage() {
   }
 
   const handleSaveConfig = async () => {
+    if (!firestore) return;
     setIsSaving(true);
     try {
       await setDoc(configRef, { 

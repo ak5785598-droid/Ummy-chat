@@ -26,14 +26,20 @@ export default function StorePage() {
   const { toast } = useToast();
 
   const handlePurchase = async (item: any) => {
-    if (!userProfile || !user) return;
-    if ((userProfile.wallet?.coins || 0) < item.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${item.price - (userProfile.wallet?.coins || 0)} more coins.` });
+    if (!userProfile || !user || !firestore) return;
+    
+    const balance = userProfile.wallet?.coins || 0;
+    if (balance < item.price) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Insufficient Coins', 
+        description: `You need ${item.price - balance} more coins.` 
+      });
       return;
     }
 
     try {
-      const profileRef = doc(firestore!, 'users', user.uid, 'profile', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await updateDoc(profileRef, {
         'wallet.coins': increment(-item.price),
         'inventory.ownedItems': arrayUnion(item.id)
