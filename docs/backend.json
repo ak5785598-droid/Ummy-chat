@@ -37,8 +37,25 @@
           }
         },
         "coins": {
-            "type": "number",
-            "description": "The number of coins the user has."
+          "type": "number",
+          "description": "The number of coins the user has."
+        },
+        "details": {
+          "type": "object",
+          "properties": {
+            "gender": {
+              "type": "string",
+              "enum": ["Male", "Female", "Other", "Secret"],
+              "description": "The user's gender (Fixed after creation)."
+            },
+            "hometown": {
+              "type": "string",
+              "description": "The user's country or hometown (Fixed after creation)."
+            },
+            "age": {
+              "type": "number"
+            }
+          }
         }
       },
       "required": [

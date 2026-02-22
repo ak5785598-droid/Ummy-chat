@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
-import { User, MapPin, Briefcase, Loader, Edit, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Eye } from 'lucide-react';
+import { User, MapPin, Briefcase, Loader, Edit, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Eye, Globe2, HeartHandshake } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
+import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -75,6 +76,13 @@ export default function ProfilePage() {
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            
+            {/* Top Right Edit Pencil for Own Profile */}
+            {isOwnProfile && (
+              <div className="absolute top-4 right-4 z-10">
+                <EditProfileDialog profile={profile} />
+              </div>
+            )}
           </div>
           <div className="p-6 relative">
             <div className="relative flex -mt-20 items-end gap-6">
@@ -85,13 +93,13 @@ export default function ProfilePage() {
                     profile.frame === 'CG' && "from-blue-400 to-purple-500",
                     (!profile.frame || profile.frame === 'None') && "from-transparent to-transparent"
                   )}>
-                    <Avatar className="h-28 w-28 border-4 border-background">
+                    <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
                       <AvatarImage src={profile.avatarUrl} />
                       <AvatarFallback className="text-4xl">{(profile.username || profile.name || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
                   {isOwnProfile && (
-                     <div className="absolute inset-2 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleEditClick}>
+                     <div className="absolute inset-2 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                         {isUploading ? <Loader className="h-8 w-8 animate-spin text-white" /> : <Camera className="h-8 w-8 text-white" />}
                      </div>
                   )}
@@ -109,12 +117,7 @@ export default function ProfilePage() {
                    </div>
               </div>
               <div className="flex gap-2">
-                {isOwnProfile ? (
-                    <Button onClick={handleEditClick} disabled={isUploading}>
-                        {isUploading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
-                        Edit
-                    </Button>
-                ): <Button className="rounded-full px-8">Follow</Button>}
+                {!isOwnProfile && <Button className="rounded-full px-8 shadow-lg">Follow</Button>}
               </div>
             </div>
           </div>
@@ -129,14 +132,14 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg border border-white/5 shadow-inner">
                   <div className="flex items-center gap-2">
                     <Gem className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-sm">Coins</span>
                   </div>
                   <span className="font-bold">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg border border-white/5 shadow-inner">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-accent" />
                     <span className="font-semibold text-sm">Diamonds</span>
@@ -148,17 +151,30 @@ export default function ProfilePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="font-headline">Bio</CardTitle>
+                <CardTitle className="font-headline">Identity Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
-                <p className="text-muted-foreground italic">"{profile.bio || 'This user is quite mysterious...'}"</p>
-                <div className="flex items-center gap-4">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <span>Age: {profile.details?.age || 'Secret'}</span>
+                <p className="text-muted-foreground italic mb-4">"{profile.bio || 'This user is quite mysterious...'}"</p>
+                <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
+                  <User className="h-5 w-5 text-primary/70" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground">Gender</span>
+                    <span className="font-semibold">{profile.details?.gender || 'Secret'}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                  <span>Hometown: {profile.details?.hometown || 'Earth'}</span>
+                <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
+                  <Globe2 className="h-5 w-5 text-accent/70" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground">Country</span>
+                    <span className="font-semibold">{profile.details?.hometown || 'India'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
+                  <HeartHandshake className="h-5 w-5 text-green-500/70" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground">Age</span>
+                    <span className="font-semibold">{profile.details?.age || '22'}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -166,24 +182,24 @@ export default function ProfilePage() {
 
           <div className="md:col-span-2 space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="font-headline flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" /> About {profile.username || profile.name}
+                  <Sparkles className="h-5 w-5 text-primary" /> Performance Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="p-4 bg-secondary/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold">{profile.stats?.followers || 0}</p>
-                        <p className="text-xs text-muted-foreground uppercase">Followers</p>
+                    <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl text-center border border-primary/10 shadow-sm">
+                        <p className="text-3xl font-bold text-primary">{profile.stats?.followers || 0}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Followers</p>
                     </div>
-                    <div className="p-4 bg-secondary/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold">{profile.stats?.fans || 0}</p>
-                        <p className="text-xs text-muted-foreground uppercase">Fans</p>
+                    <div className="p-6 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl text-center border border-accent/10 shadow-sm">
+                        <p className="text-3xl font-bold text-accent">{profile.stats?.fans || 0}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Total Fans</p>
                     </div>
-                    <div className="p-4 bg-secondary/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold">{profile.level?.rich || 0}</p>
-                        <p className="text-xs text-muted-foreground uppercase">Rich Level</p>
+                    <div className="p-6 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-2xl text-center border border-yellow-500/10 shadow-sm">
+                        <p className="text-3xl font-bold text-yellow-600">{profile.level?.rich || 0}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">VIP Status</p>
                     </div>
                  </div>
               </CardContent>
