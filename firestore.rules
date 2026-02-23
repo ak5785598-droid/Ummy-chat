@@ -13,15 +13,27 @@ service cloud.firestore {
     match /users/{userId} {
       // Users can read any summary for rankings/leaderboards
       allow read: if isSignedIn();
-      // Users can manage their own identity summary and profile
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      // Users can create their own identity summary
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      // Allow updates if owner, admin, or ONLY updating stats/updatedAt (for gifting)
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'updatedAt']))
+      );
       // Admins have global oversight
-      allow update, delete: if isAdmin();
+      allow delete: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow write: if isSignedIn() && request.auth.uid == userId;
-        allow update, delete: if isAdmin();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        // Allow updates if owner, admin, or ONLY updating stats/updatedAt (for gifting)
+        allow update: if isSignedIn() && (
+          request.auth.uid == userId || 
+          isAdmin() || 
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'updatedAt']))
+        );
+        allow delete: if isAdmin();
       }
 
       match /notifications/{notificationId} {
@@ -52,7 +64,6 @@ service cloud.firestore {
       // Any signed in user can find and launch rooms
       allow read, list, create: if isSignedIn();
       
-      // Updated: Allow Room Admins to update everything.
       // Allow regular users to update ONLY 'stats' and 'updatedAt' (required for sending gifts).
       allow update: if isSignedIn() && (
         isRoomAdmin() || 
