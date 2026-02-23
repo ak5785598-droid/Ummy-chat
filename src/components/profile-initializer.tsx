@@ -35,7 +35,7 @@ export function ProfileInitializer() {
             email: user.email || '',
             bio: 'Vibing on Ummy! Join my tribe.',
             wallet: { 
-              coins: 1500, // Increased starting balance for Beta testing
+              coins: 1500, // Starting balance
               diamonds: 0,
               totalSpent: 0
             },
@@ -52,7 +52,7 @@ export function ProfileInitializer() {
             }
           };
 
-          // Background sync to minimize blocking main thread
+          // Background sync
           await setDoc(profileRef, initialData, { merge: true });
           
           await setDoc(userRef, {
@@ -68,7 +68,7 @@ export function ProfileInitializer() {
 
           toast({
             title: 'Welcome to Ummy!',
-            description: 'Your frequency is now synced. Enjoy 1,500 free coins!',
+            description: 'Enjoy 1,500 free coins!',
           });
         }
       } catch (e) {

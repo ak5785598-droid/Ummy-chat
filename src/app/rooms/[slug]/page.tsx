@@ -65,7 +65,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
           setHasHandshaked(true);
         }
       } else {
-        setHasHandshaked(true);
+        // Short delay to ensure Firestore listener is fully populated
+        const timer = setTimeout(() => setHasHandshaked(true), 500);
+        return () => clearTimeout(timer);
       }
     };
 
@@ -102,8 +104,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Wait until auth, doc loading, AND the handshake are all settled
-  const isWaiting = isAuthLoading || isDocLoading || isProvisioning || !hasHandshaked;
+  // Robust loading check to prevent 404 flickering
+  const isWaiting = isAuthLoading || (!!roomDocRef && isDocLoading) || isProvisioning || !hasHandshaked;
 
   if (isWaiting) {
     return (

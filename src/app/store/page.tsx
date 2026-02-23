@@ -5,17 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Gem, ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft } from 'lucide-react';
-import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { doc, updateDoc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useUserProfile, updateDocumentNonBlocking } from '@/firebase';
+import { doc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-/**
- * Ummy Boutique Store.
- * Categorized items for profile customization.
- */
 const STORE_ITEMS = [
   { id: 'f1', name: 'Golden Official', type: 'Frame', price: 15000, description: 'The mark of ultimate authority.', icon: Star, color: 'text-yellow-500' },
   { id: 'f2', name: 'Cyberpunk Red', type: 'Frame', price: 8000, description: 'Neon glow for the tech-savvy.', icon: Star, color: 'text-red-500' },
@@ -34,49 +30,36 @@ export default function StorePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const handlePurchase = async (item: any) => {
+  const handlePurchase = (item: any) => {
     if (!userProfile || !user || !firestore) return;
     
     const balance = userProfile.wallet?.coins || 0;
     if (balance < item.price) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Insufficient Coins', 
-        description: `You need ${item.price - balance} more coins.` 
-      });
+      toast({ variant: 'destructive', title: 'Insufficient Coins' });
       return;
     }
 
-    try {
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      const userRef = doc(firestore, 'users', user.uid);
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    const userRef = doc(firestore, 'users', user.uid);
 
-      const updateData = {
-        'wallet.coins': increment(-item.price),
-        'inventory.ownedItems': arrayUnion(item.id),
-        'updatedAt': serverTimestamp()
-      };
+    const updateData = {
+      'wallet.coins': increment(-item.price),
+      'inventory.ownedItems': arrayUnion(item.id),
+      'updatedAt': serverTimestamp()
+    };
 
-      await Promise.all([
-        updateDoc(profileRef, updateData),
-        updateDoc(userRef, { 
-          'wallet.coins': increment(-item.price),
-          'updatedAt': serverTimestamp()
-        })
-      ]);
+    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, { 
+      'wallet.coins': increment(-item.price),
+      'updatedAt': serverTimestamp()
+    });
 
-      toast({ title: 'Purchase Successful!', description: `${item.name} has been added to your inventory.` });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to process purchase.' });
-    }
+    toast({ title: 'Success!', description: `${item.name} added to inventory.` });
   };
 
   if (isLoading) return (
     <AppLayout>
-      <div className="flex h-[50vh] flex-col items-center justify-center space-y-4">
-        <Loader className="animate-spin text-primary h-10 w-10" />
-        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Opening Boutique...</p>
-      </div>
+      <div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div>
     </AppLayout>
   );
 
@@ -94,7 +77,7 @@ export default function StorePage() {
                 <h1 className="text-4xl font-bold font-headline uppercase italic tracking-tighter flex items-center gap-3">
                   <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
                 </h1>
-                <p className="text-muted-foreground font-body text-lg">Official customization store for your unique frequency.</p>
+                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity.</p>
              </div>
           </div>
           <div className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl">
@@ -109,11 +92,7 @@ export default function StorePage() {
         <Tabs defaultValue="All" className="w-full space-y-8">
           <TabsList className="bg-secondary/50 p-1.5 h-14 rounded-full border border-white/50 w-full md:w-fit overflow-x-auto no-scrollbar">
             {categories.map(cat => (
-              <TabsTrigger 
-                key={cat} 
-                value={cat} 
-                className="rounded-full px-8 font-black uppercase tracking-widest text-xs data-[state=active]:bg-primary data-[state=active]:text-white"
-              >
+              <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-black uppercase tracking-widest text-xs data-[state=active]:bg-primary data-[state=active]:text-white">
                 {cat}
               </TabsTrigger>
             ))}
@@ -131,26 +110,18 @@ export default function StorePage() {
                         <Badge className="absolute top-6 right-6 bg-secondary/80 text-foreground border-none font-black uppercase text-[10px] tracking-widest px-3">
                           {item.type}
                         </Badge>
-                        <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none" />
                       </div>
                       <CardHeader className="text-center pb-2">
                         <CardTitle className="font-headline uppercase italic text-xl tracking-tighter">{item.name}</CardTitle>
-                        <CardDescription className="text-xs font-body italic leading-tight px-4">{item.description}</CardDescription>
+                        <CardDescription className="text-xs font-body italic">{item.description}</CardDescription>
                       </CardHeader>
                       <CardFooter className="flex flex-col gap-4 p-8 pt-4">
                         <div className="flex items-center gap-1 font-black text-2xl text-primary italic">
                           <Gem className="h-5 w-5" />
                           {item.price.toLocaleString()}
                         </div>
-                        <Button 
-                          onClick={() => handlePurchase(item)} 
-                          disabled={isOwned}
-                          className={cn(
-                            "w-full h-12 rounded-2xl font-black uppercase italic tracking-widest transition-all shadow-lg",
-                            isOwned ? "bg-muted text-muted-foreground" : "bg-primary text-white shadow-primary/20"
-                          )}
-                        >
-                          {isOwned ? 'Already Owned' : 'Purchase Now'}
+                        <Button onClick={() => handlePurchase(item)} disabled={isOwned} className={cn("w-full h-12 rounded-2xl font-black uppercase italic shadow-lg", isOwned ? "bg-muted" : "bg-primary text-white")}>
+                          {isOwned ? 'Owned' : 'Purchase'}
                         </Button>
                       </CardFooter>
                     </Card>

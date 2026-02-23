@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -49,7 +48,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useUserProfile } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useUserProfile, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { 
   collection, 
   addDoc, 
@@ -183,134 +182,126 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
     setIsSending(true);
-    try {
-      addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: messageText,
-        senderId: currentUser.uid,
-        senderName: userProfile.username || 'User',
-        senderAvatar: userProfile.avatarUrl || '',
-        chatRoomId: room.id, 
-        timestamp: serverTimestamp(),
-        type: 'text'
-      });
-      setMessageText('');
-    } catch (e) { 
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to send message.' }); 
-    } finally { 
-      setIsSending(false); 
-    }
+    
+    const msgData = {
+      content: messageText,
+      senderId: currentUser.uid,
+      senderName: userProfile.username || 'User',
+      senderAvatar: userProfile.avatarUrl || '',
+      chatRoomId: room.id, 
+      timestamp: serverTimestamp(),
+      type: 'text'
+    };
+
+    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), msgData);
+    setMessageText('');
+    setIsSending(false);
   };
 
   const handleSendGift = async (gift: Gift) => {
     if (!currentUser || !firestore || !userProfile) return;
     
     if ((userProfile.wallet?.coins || 0) < gift.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${gift.price} coins for this gift!` });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${gift.price} coins!` });
       return;
     }
 
-    try {
-      const userRef = doc(firestore, 'users', currentUser.uid);
-      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      
-      const updateData = {
-        'wallet.coins': increment(-gift.price),
-        'wallet.totalSpent': increment(gift.price), // Tracking for RICH Ranking
+    const userRef = doc(firestore, 'users', currentUser.uid);
+    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    
+    const updateData = {
+      'wallet.coins': increment(-gift.price),
+      'wallet.totalSpent': increment(gift.price), // Tracking for RICH Ranking
+      'updatedAt': serverTimestamp()
+    };
+
+    // Non-blocking update for Sender
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+
+    // Identify Recipient (Boosts Charm Rank)
+    let finalRecipient = giftRecipient;
+    if (!finalRecipient) {
+      const host = participants?.find(p => p.seatIndex === 1);
+      if (host) finalRecipient = { uid: host.uid, name: host.name };
+    }
+
+    if (finalRecipient) {
+      const recipientRef = doc(firestore, 'users', finalRecipient.uid);
+      const recipientProfileRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
+      const charmUpdate = {
+        'stats.fans': increment(gift.price), // Incrementing Fans for CHARM Ranking
         'updatedAt': serverTimestamp()
       };
-
-      // Atomic update for Sender (Boosts Wealth Rank)
-      updateDoc(userRef, updateData);
-      updateDoc(profileRef, updateData);
-
-      // Identify Recipient (Boosts Charm Rank)
-      let finalRecipient = giftRecipient;
-      if (!finalRecipient) {
-        // Default to Host if no one selected
-        const host = participants?.find(p => p.seatIndex === 1);
-        if (host) finalRecipient = { uid: host.uid, name: host.name };
-      }
-
-      if (finalRecipient) {
-        const recipientRef = doc(firestore, 'users', finalRecipient.uid);
-        const recipientProfileRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
-        const charmUpdate = {
-          'stats.fans': increment(gift.price), // Incrementing Fans for CHARM Ranking
-          'updatedAt': serverTimestamp()
-        };
-        updateDoc(recipientRef, charmUpdate);
-        updateDoc(recipientProfileRef, charmUpdate);
-      }
-
-      // Add gift message to trigger room-wide animation
-      addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `sent a ${gift.name} ${gift.emoji} ${finalRecipient ? `to ${finalRecipient.name}` : ''}!`,
-        senderId: currentUser.uid,
-        senderName: userProfile.username || 'User',
-        senderAvatar: userProfile.avatarUrl || '',
-        chatRoomId: room.id,
-        timestamp: serverTimestamp(),
-        type: 'gift',
-        giftId: gift.id,
-        recipientName: finalRecipient?.name || 'Room'
-      });
-
-      setIsGiftPickerOpen(false);
-      setGiftRecipient(null);
-      toast({ title: 'Gift Sent!', description: `Rank updated automatically!` });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Gift Error', description: 'Failed to send gift.' });
+      updateDocumentNonBlocking(recipientRef, charmUpdate);
+      updateDocumentNonBlocking(recipientProfileRef, charmUpdate);
     }
+
+    // Add gift message
+    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+      content: `sent a ${gift.name} ${gift.emoji} ${finalRecipient ? `to ${finalRecipient.name}` : ''}!`,
+      senderId: currentUser.uid,
+      senderName: userProfile.username || 'User',
+      senderAvatar: userProfile.avatarUrl || '',
+      chatRoomId: room.id,
+      timestamp: serverTimestamp(),
+      type: 'gift',
+      giftId: gift.id,
+      recipientName: finalRecipient?.name || 'Room'
+    });
+
+    setIsGiftPickerOpen(false);
+    setGiftRecipient(null);
+    toast({ title: 'Gift Sent!', description: 'Global rankings updated!' });
   };
 
   const handleClearChat = async () => {
     if (!isAdmin || !firestore || !room.id) return;
-    try {
-      const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
-      const snapshot = await getDocs(messagesRef);
-      if (snapshot.empty) { toast({ title: 'Chat is already clear' }); return; }
-      const batch = writeBatch(firestore);
-      snapshot.docs.forEach((d) => { batch.delete(d.ref); });
-      batch.commit();
-      toast({ title: 'Chat Cleared', description: 'All room messages have been removed.' });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Action Failed' });
-    }
+    const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
+    const snapshot = await getDocs(messagesRef);
+    if (snapshot.empty) return;
+    const batch = writeBatch(firestore);
+    snapshot.docs.forEach((d) => { batch.delete(d.ref); });
+    batch.commit();
+    toast({ title: 'Chat Cleared' });
   };
 
-  const takeSeat = async (index: number) => {
+  const takeSeat = (index: number) => {
     if (!firestore || !room.id || !currentUser) return;
     if (room.lockedSeats?.includes(index)) {
       toast({ variant: 'destructive', title: 'Seat Locked' });
       return;
     }
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    updateDoc(participantRef, { seatIndex: index });
-    toast({ title: 'Welcome to seat!', description: `You took seat ${index}.` });
+    updateDocumentNonBlocking(participantRef, { seatIndex: index });
+    toast({ title: 'Welcome!', description: `You took seat ${index}.` });
   };
 
-  const leaveSeat = async () => {
+  const leaveSeat = () => {
     if (!firestore || !room.id || !currentUser) return;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    updateDoc(participantRef, { seatIndex: 0 });
+    updateDocumentNonBlocking(participantRef, { seatIndex: 0 });
     setIsActionMenuOpen(false);
     toast({ title: 'Left Seat' });
   };
 
-  const toggleSeatLock = async (index: number | null) => {
+  const toggleSeatLock = (index: number | null) => {
     if (!firestore || !room.id || !isAdmin || index === null) return;
     const roomRef = doc(firestore, 'chatRooms', room.id);
     const isLocked = room.lockedSeats?.includes(index);
-    updateDoc(roomRef, { lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index) });
+    updateDocumentNonBlocking(roomRef, { lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index) });
     setIsActionMenuOpen(false);
   };
 
   const handleSeatAvatarClick = (index: number, occupant: RoomParticipant | undefined) => {
-    if (occupant || isAdmin) {
+    if (occupant) {
       setSelectedSeatIndex(index);
       setIsActionMenuOpen(true);
-    } else if (!occupant && !room.lockedSeats?.includes(index)) {
+    } else if (!room.lockedSeats?.includes(index)) {
       takeSeat(index);
+    } else if (isAdmin) {
+      setSelectedSeatIndex(index);
+      setIsActionMenuOpen(true);
     }
   };
 
@@ -322,7 +313,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (firstAvailable) {
         takeSeat(firstAvailable);
       } else {
-        toast({ variant: 'destructive', title: 'Room Full', description: 'No empty seats available.' });
+        toast({ variant: 'destructive', title: 'Room Full' });
       }
     } else {
       setIsMicOn(!isMicOn);
@@ -347,7 +338,6 @@ export function RoomClient({ room }: { room: Room }) {
         <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" className="h-full w-full object-cover opacity-60 scale-110" />
       </div>
 
-      {/* High-Impact Gift Animation Overlay */}
       {activeGiftAnimation && (
         <div className="absolute inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
           <div className="bg-black/60 backdrop-blur-3xl p-12 rounded-[4rem] border-4 border-primary/50 flex flex-col items-center gap-6 shadow-[0_0_150px_rgba(251,191,36,0.4)]">
@@ -355,8 +345,7 @@ export function RoomClient({ room }: { room: Room }) {
                "text-[12rem] transition-all drop-shadow-[0_0_50px_rgba(255,255,255,0.5)]",
                activeGiftAnimation.gift.animationType === 'pulse' && "animate-pulse",
                activeGiftAnimation.gift.animationType === 'zoom' && "scale-150 animate-bounce",
-               activeGiftAnimation.gift.animationType === 'bounce' && "animate-bounce",
-               activeGiftAnimation.gift.animationType === 'spin' && "animate-spin"
+               activeGiftAnimation.gift.animationType === 'bounce' && "animate-bounce"
              )}>
                 {activeGiftAnimation.gift.emoji}
              </div>
@@ -406,15 +395,14 @@ export function RoomClient({ room }: { room: Room }) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="icon" asChild className="rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white">
-            <a href="/rooms"><PhoneOff className="h-5 w-5" /></a>
+          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white" onClick={() => window.location.href='/rooms'}>
+            <PhoneOff className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
       <ScrollArea className="relative z-10 flex-1 px-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto py-6 space-y-12 pb-32">
-          {/* Host Seat */}
           <div className="flex justify-center">
              <div className="flex flex-col items-center gap-3">
                 <div 
@@ -435,7 +423,6 @@ export function RoomClient({ room }: { room: Room }) {
              </div>
           </div>
 
-          {/* Seat Grid */}
           <div className="grid grid-cols-4 gap-x-4 gap-y-10">
             {Array.from({ length: 12 }).map((_, i) => {
               const seatIndex = i + 2; 
@@ -467,7 +454,6 @@ export function RoomClient({ room }: { room: Room }) {
             })}
           </div>
 
-          {/* Chat Messages */}
           <div className="mt-8 max-w-lg mx-auto space-y-3 px-4">
             {activeMessages.map((msg) => (
               <div key={msg.id} className={cn(
@@ -552,14 +538,12 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </footer>
 
-      {/* Seat Action Menu Dialog */}
       <Dialog open={isActionMenuOpen} onOpenChange={setIsActionMenuOpen}>
         <DialogContent className="sm:max-w-sm bg-white/95 backdrop-blur-xl border-none p-0 rounded-t-[2.5rem] overflow-hidden">
           <DialogHeader className="p-6 border-b border-gray-100">
             <DialogTitle className="text-center font-headline text-2xl text-gray-800 uppercase italic">Seat Actions</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col text-center divide-y divide-gray-100">
-            {/* Conditional Gift Option */}
             {selectedSeatIndex !== null && (
               <button 
                 onClick={() => { 
@@ -581,11 +565,9 @@ export function RoomClient({ room }: { room: Room }) {
             </button>
             <button onClick={() => { toast({ title: 'Invited!', description: 'Link shared to your tribe.' }); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">Invite Tribe</button>
             {isAdmin && (
-              <>
-                <button onClick={() => toggleSeatLock(selectedSeatIndex)} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
-                  {room.lockedSeats?.includes(selectedSeatIndex || 0) ? 'Unlock Seat' : 'Lock Seat'}
-                </button>
-              </>
+              <button onClick={() => toggleSeatLock(selectedSeatIndex)} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
+                {room.lockedSeats?.includes(selectedSeatIndex || 0) ? 'Unlock Seat' : 'Lock Seat'}
+              </button>
             )}
             <button onClick={leaveSeat} className="py-6 font-black text-destructive hover:bg-red-50 transition-colors uppercase tracking-widest text-sm italic">Leave Seat</button>
             <button onClick={() => setIsActionMenuOpen(false)} className="py-6 font-bold text-gray-400 bg-gray-50/50 uppercase tracking-widest text-[10px]">Cancel</button>

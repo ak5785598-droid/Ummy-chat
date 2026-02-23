@@ -1,21 +1,17 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Trophy, Crown, TrendingUp, Heart, Loader, Gem, Star, ShieldCheck, ChevronLeft, Zap } from 'lucide-react';
+import { Crown, TrendingUp, Loader, Star, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 
-/**
- * Global Ranking Page.
- * Automatically synchronizes with gift spending (Rich) and gift receipt (Charm).
- */
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -23,164 +19,67 @@ export default function LeaderboardPage() {
 
   const richUsersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'users'), 
-      orderBy('wallet.totalSpent', 'desc'), 
-      limit(50)
-    );
+    return query(collection(firestore, 'users'), orderBy('wallet.totalSpent', 'desc'), limit(50));
   }, [firestore, user]);
 
   const charmUsersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'users'), 
-      orderBy('stats.fans', 'desc'), // Fans represents total charm received from gifts
-      limit(50)
-    );
+    return query(collection(firestore, 'users'), orderBy('stats.fans', 'desc'), limit(50));
   }, [firestore, user]);
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richUsersQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmUsersQuery);
 
-  const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: 'rich' | 'charm', isLoading: boolean }) => {
-    if (isLoading) return (
-      <div className="flex flex-col items-center justify-center py-40 gap-4">
-        <Loader className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p>
-      </div>
-    );
-
-    if (!items || items.length === 0) return (
-      <div className="text-center py-40 space-y-4">
-        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-secondary/5">
-          <TrendingUp className="h-10 w-10 text-muted-foreground/20" />
-        </div>
-        <p className="text-muted-foreground/40 font-body text-lg italic max-w-xs mx-auto">The chronicles are empty. Be the first to claim glory.</p>
-      </div>
-    );
+  const RankingList = ({ items, type, isLoading }: any) => {
+    if (isLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
+    if (!items || items.length === 0) return <div className="text-center py-40 opacity-40 italic"><TrendingUp className="mx-auto mb-4" /> The chronicles are empty.</div>;
 
     const top3 = items.slice(0, 3);
     const others = items.slice(3);
 
     return (
       <div className="space-y-4 animate-in fade-in duration-1000">
-        {/* Ornate Podium Section */}
-        <div className="flex justify-center items-end gap-2 md:gap-4 py-16 relative">
-          
-          {/* TOP 2 - Silver */}
+        <div className="flex justify-center items-end gap-4 py-16 relative">
           {top3[1] && (
-            <div className="flex flex-col items-center order-1 relative z-10 w-1/3">
-              <div className="relative mb-6">
-                <div className="absolute -inset-2 bg-gradient-to-b from-slate-400 to-slate-100 rounded-full blur-sm opacity-50" />
-                <div className="relative p-1 bg-gradient-to-b from-slate-200 to-slate-400 rounded-full">
-                  <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={top3[1].avatarUrl} />
-                    <AvatarFallback>{(top3[1].username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                    <Crown className="text-slate-300 h-8 w-8 drop-shadow-lg" />
-                  </div>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-black uppercase tracking-widest px-4 py-0.5 rounded-sm border border-white/20 shadow-lg">
-                    TOP 2
-                  </div>
-                </div>
-              </div>
-              <p className="font-black text-xs uppercase text-slate-300 truncate max-w-full italic">{top3[1].username}</p>
-              <div className="flex flex-col items-center mt-2 gap-1">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                   <div className={cn("h-3 w-3 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
-                   {(type === 'rich' ? (top3[1].wallet?.totalSpent || 0) : (top3[1].stats?.fans || 0)).toLocaleString()}
-                </div>
-              </div>
+            <div className="flex flex-col items-center order-1 w-1/3">
+              <Avatar className="h-20 w-20 border-2 border-slate-400"><AvatarImage src={top3[1].avatarUrl} /></Avatar>
+              <p className="font-black text-[10px] mt-2 uppercase text-slate-300 truncate">{top3[1].username}</p>
+              <div className="text-[10px] font-bold text-yellow-500">{(type === 'rich' ? top3[1].wallet?.totalSpent : top3[1].stats?.fans)?.toLocaleString()}</div>
             </div>
           )}
-          
-          {/* TOP 1 - Gold */}
           {top3[0] && (
-            <div className="flex flex-col items-center order-2 scale-125 relative z-20 w-1/3 -mt-10">
-              <div className="relative mb-8">
-                <div className="absolute -inset-4 bg-gradient-to-b from-yellow-500 to-amber-700 rounded-full blur-xl opacity-30 animate-pulse" />
-                <div className="relative p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)]">
-                  <Avatar className="h-24 w-24 md:h-28 md:w-28 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={top3[0].avatarUrl} />
-                    <AvatarFallback>{(top3[0].username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                    <Crown className="text-yellow-400 h-10 w-10 drop-shadow-[0_0_10px_rgba(234,179,8,0.8)] animate-bounce" />
-                  </div>
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10px] font-black uppercase tracking-widest px-6 py-1 rounded-sm border-2 border-yellow-200/40 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-                    TOP 1
-                  </div>
-                </div>
+            <div className="flex flex-col items-center order-2 scale-125 w-1/3 -mt-10">
+              <div className="relative">
+                <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 text-yellow-400 animate-bounce" />
+                <Avatar className="h-24 w-24 border-2 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]"><AvatarImage src={top3[0].avatarUrl} /></Avatar>
               </div>
-              <h2 className="font-black text-sm uppercase text-yellow-400 tracking-tighter drop-shadow-md italic">{top3[0].username}</h2>
-              <div className="flex flex-col items-center mt-3 gap-1">
-                <div className="flex items-center gap-1 text-xs font-black text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.3)]">
-                   <div className={cn("h-4 w-4 rounded-full border-2 border-white/40 shadow-md", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
-                   {(type === 'rich' ? (top3[0].wallet?.totalSpent || 0) : (top3[0].stats?.fans || 0)).toLocaleString()}
-                </div>
-              </div>
+              <h2 className="font-black text-xs mt-4 uppercase text-yellow-400">{top3[0].username}</h2>
+              <div className="text-xs font-black text-yellow-500">{(type === 'rich' ? top3[0].wallet?.totalSpent : top3[0].stats?.fans)?.toLocaleString()}</div>
             </div>
           )}
-
-          {/* TOP 3 - Bronze */}
           {top3[2] && (
-            <div className="flex flex-col items-center order-3 relative z-10 w-1/3">
-              <div className="relative mb-6">
-                <div className="absolute -inset-2 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full blur-sm opacity-50" />
-                <div className="relative p-1 bg-gradient-to-b from-amber-600 to-amber-900 rounded-full">
-                  <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={top3[2].avatarUrl} />
-                    <AvatarFallback>{(top3[2].username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                    <Crown className="text-amber-700 h-8 w-8 drop-shadow-lg" />
-                  </div>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-800 to-amber-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-0.5 rounded-sm border border-white/20 shadow-lg">
-                    TOP 3
-                  </div>
-                </div>
-              </div>
-              <p className="font-black text-xs uppercase text-amber-700 truncate max-w-full italic">{top3[2].username}</p>
-              <div className="flex flex-col items-center mt-2 gap-1">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                   <div className={cn("h-3 w-3 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
-                   {(type === 'rich' ? (top3[2].wallet?.totalSpent || 0) : (top3[2].stats?.fans || 0)).toLocaleString()}
-                </div>
-              </div>
+            <div className="flex flex-col items-center order-3 w-1/3">
+              <Avatar className="h-20 w-20 border-2 border-amber-700"><AvatarImage src={top3[2].avatarUrl} /></Avatar>
+              <p className="font-black text-[10px] mt-2 uppercase text-amber-700 truncate">{top3[2].username}</p>
+              <div className="text-[10px] font-bold text-yellow-500">{(type === 'rich' ? top3[2].wallet?.totalSpent : top3[2].stats?.fans)?.toLocaleString()}</div>
             </div>
           )}
         </div>
 
-        {/* Rank 4-50 Luxury List */}
         <div className="rounded-t-[3rem] bg-gradient-to-b from-[#111] to-black border-t border-yellow-500/10 shadow-2xl overflow-hidden mt-8">
           <CardContent className="p-0">
             {others.map((item, index) => (
-              <div 
-                key={item.id} 
-                className="flex items-center gap-4 p-5 border-b border-white/5 last:border-0 hover:bg-white/5 transition-all group"
-              >
-                <span className="w-8 text-center font-black text-white/20 italic group-hover:text-yellow-500 transition-colors">{index + 4}</span>
-                <Avatar className="h-14 w-14 border-2 border-white/10 p-0.5">
-                   <AvatarImage src={item.avatarUrl} />
-                  <AvatarFallback className="font-bold">{(item.username || 'U').charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-black text-sm uppercase text-white/90 truncate italic">{item.username}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 rounded-sm">Lv.{(type === 'rich' ? item.level?.rich : item.level?.charm) || 1}</Badge>
-                    <span className="text-[8px] text-white/20 font-mono">ID:{item.id.substring(0, 6)}</span>
-                  </div>
+              <div key={item.id} className="flex items-center gap-4 p-5 border-b border-white/5 last:border-0 hover:bg-white/5 transition-all">
+                <span className="w-8 text-center font-black text-white/20 italic">{index + 4}</span>
+                <Avatar className="h-14 w-14 border-2 border-white/10"><AvatarImage src={item.avatarUrl} /></Avatar>
+                <div className="flex-1">
+                  <p className="font-black text-sm uppercase text-white/90 truncate italic">{item.username}</p>
+                  <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 mt-1">Lv.{(type === 'rich' ? item.level?.rich : item.level?.charm) || 1}</Badge>
                 </div>
-                <div className="flex items-center gap-2 text-right">
-                   <div className="flex flex-col items-end">
-                      <div className={cn("flex items-center gap-1 font-black text-sm", type === 'rich' ? "text-yellow-500" : "text-pink-500")}>
-                        {(type === 'rich' ? (item.wallet?.totalSpent || 0) : (item.stats?.fans || 0)).toLocaleString()}
-                        <div className={cn("h-4 w-4 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
-                      </div>
-                   </div>
+                <div className="text-right">
+                  <div className={cn("font-black text-sm", type === 'rich' ? "text-yellow-500" : "text-pink-500")}>
+                    {(type === 'rich' ? (item.wallet?.totalSpent || 0) : (item.stats?.fans || 0)).toLocaleString()}
+                  </div>
                 </div>
               </div>
             ))}
@@ -194,61 +93,19 @@ export default function LeaderboardPage() {
     <AppLayout>
       <div className="min-h-screen bg-black text-white overflow-hidden pb-10">
         <header className="relative p-6 pt-10 flex items-center justify-between">
-          <Link href="/rooms" className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-            <ChevronLeft className="h-6 w-6" />
-          </Link>
-          <h1 className="font-headline text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-md">
+          <Link href="/rooms" className="bg-white/10 p-2 rounded-full backdrop-blur-md"><ChevronLeft className="h-6 w-6" /></Link>
+          <h1 className="font-headline text-3xl font-black italic uppercase tracking-tighter">
             {rankingType === 'rich' ? 'Wealth Ranking' : 'Charm Ranking'}
           </h1>
-          <div className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-             <Star className="h-6 w-6 text-yellow-400" />
-          </div>
+          <div className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Star className="h-6 w-6 text-yellow-400" /></div>
         </header>
 
         <div className="px-6 space-y-8">
            <div className="flex justify-center gap-4">
-             <button 
-               onClick={() => setRankingMode('rich')}
-               className={cn(
-                 "px-8 py-2 rounded-xl font-black uppercase italic transition-all",
-                 rankingType === 'rich' 
-                   ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black shadow-[0_0_20px_rgba(234,179,8,0.4)] border-b-4 border-yellow-700" 
-                   : "bg-white/5 text-white/40"
-               )}
-             >
-                Rich
-             </button>
-             <button 
-               onClick={() => setRankingMode('charm')}
-               className={cn(
-                 "px-8 py-2 rounded-xl font-black uppercase italic transition-all",
-                 rankingType === 'charm' 
-                   ? "bg-gradient-to-b from-pink-100 to-pink-500 text-black shadow-[0_0_20px_rgba(236,72,153,0.4)] border-b-4 border-pink-700" 
-                   : "bg-white/5 text-white/40"
-               )}
-             >
-                Charm
-             </button>
+             <button onClick={() => setRankingMode('rich')} className={cn("px-8 py-2 rounded-xl font-black uppercase italic transition-all", rankingType === 'rich' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black border-b-4 border-yellow-700" : "bg-white/5 text-white/40")}>Rich</button>
+             <button onClick={() => setRankingMode('charm')} className={cn("px-8 py-2 rounded-xl font-black uppercase italic transition-all", rankingType === 'charm' ? "bg-gradient-to-b from-pink-100 to-pink-500 text-black border-b-4 border-pink-700" : "bg-white/5 text-white/40")}>Charm</button>
            </div>
-
-           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="flex justify-around w-full bg-transparent border-b border-white/5 h-12 mb-8 rounded-none p-0">
-              <TabsTrigger 
-                value="all" 
-                className="flex-1 rounded-none text-xs font-black uppercase text-white/40 data-[state=active]:text-yellow-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-500 transition-all"
-              >
-                Global
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="m-0">
-              <RankingList 
-                items={rankingType === 'rich' ? richUsers : charmUsers} 
-                type={rankingType} 
-                isLoading={rankingType === 'rich' ? isLoadingRich : isLoadingCharm} 
-              />
-            </TabsContent>
-          </Tabs>
+           <RankingList items={rankingType === 'rich' ? richUsers : charmUsers} type={rankingType} isLoading={rankingType === 'rich' ? isLoadingRich : isLoadingCharm} />
         </div>
       </div>
     </AppLayout>
