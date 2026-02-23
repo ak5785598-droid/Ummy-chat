@@ -38,12 +38,17 @@ service cloud.firestore {
       allow read, list, create, update: if isSignedIn();
       allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
+      function isRoomAdmin() {
+        let roomData = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
+        return roomData.ownerId == request.auth.uid || roomData.get('moderatorIds', []).hasAny([request.auth.uid]);
+      }
+
       match /participants/{participantId} {
         allow read, list, create, update, delete: if isSignedIn();
       }
       match /messages/{messageId} {
         allow read, list, create: if isSignedIn();
-        allow delete: if isAdmin();
+        allow delete: if isAdmin() || isRoomAdmin();
       }
     }
 

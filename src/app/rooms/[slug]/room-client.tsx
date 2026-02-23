@@ -96,8 +96,10 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
 
+  const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
   const isOwner = currentUser?.uid === room.ownerId;
-  const isAdmin = isOwner || room.moderatorIds?.includes(currentUser?.uid || '');
+  const isModerator = room.moderatorIds?.includes(currentUser?.uid || '');
+  const canManageRoom = isGlobalAdmin || isOwner || isModerator;
 
   // Real-time Participants
   const participantsQuery = useMemoFirebase(() => {
@@ -287,17 +289,28 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleClearChat = async () => {
-    if (!isAdmin || !firestore || !room.id) return;
+    if (!canManageRoom || !firestore || !room.id) return;
     const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
     try {
       const snapshot = await getDocs(messagesRef);
       if (snapshot.empty) return;
-      const batch = writeBatch(firestore);
-      snapshot.docs.forEach((d) => { batch.delete(d.ref); });
-      await batch.commit();
-      toast({ title: 'Chat Cleared' });
+      
+      // Firestore batches have a limit of 500 operations
+      const chunks = [];
+      for (let i = 0; i < snapshot.docs.length; i += 500) {
+        chunks.push(snapshot.docs.slice(i, i + 500));
+      }
+
+      for (const chunk of chunks) {
+        const batch = writeBatch(firestore);
+        chunk.forEach((d) => { batch.delete(d.ref); });
+        await batch.commit();
+      }
+      
+      toast({ title: 'Chat Cleared', description: 'The frequency is now silent.' });
     } catch (e) {
       console.warn("Clear failed:", e);
+      toast({ variant: 'destructive', title: 'Clear Failed', description: 'Insufficient authority or connection loss.' });
     }
   };
 
@@ -321,7 +334,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const toggleSeatLock = (index: number | null) => {
-    if (!firestore || !room.id || !isAdmin || index === null) return;
+    if (!firestore || !room.id || !canManageRoom || index === null) return;
     const roomRef = doc(firestore, 'chatRooms', room.id);
     const isLocked = room.lockedSeats?.includes(index);
     updateDocumentNonBlocking(roomRef, { lockedSeats: isLocked ? arrayRemove(index) : arrayUnion(index) });
@@ -334,7 +347,7 @@ export function RoomClient({ room }: { room: Room }) {
       setIsActionMenuOpen(true);
     } else if (!room.lockedSeats?.includes(index)) {
       takeSeat(index);
-    } else if (isAdmin) {
+    } else if (canManageRoom) {
       setSelectedSeatIndex(index);
       setIsActionMenuOpen(true);
     }
@@ -426,7 +439,7 @@ export function RoomClient({ room }: { room: Room }) {
             <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
               <DropdownMenuLabel>Management</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {isAdmin && (
+              {canManageRoom && (
                 <DropdownMenuItem onClick={handleClearChat} className="text-destructive focus:bg-destructive/10">
                   <Trash2 className="mr-2 h-4 w-4" /> Clear Chat
                 </DropdownMenuItem>
@@ -613,7 +626,7 @@ export function RoomClient({ room }: { room: Room }) {
               {isMicOn ? 'Turn Off Mic' : 'Turn On Mic'}
             </button>
             <button onClick={() => { toast({ title: 'Invitation Sent!' }); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">Invite Tribe</button>
-            {isAdmin && (
+            {canManageRoom && (
               <button onClick={() => toggleSeatLock(selectedSeatIndex)} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
                 {room.lockedSeats?.includes(selectedSeatIndex || 0) ? 'Unlock Seat' : 'Lock Seat'}
               </button>
