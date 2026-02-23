@@ -94,12 +94,7 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'galaxy', name: 'Galaxy', emoji: '🌌', price: 50000, animationType: 'zoom' },
 ];
 
-/**
- * Room Client - Elite "Yari" Edition.
- * Features full Admin controls, Sequential ID display, and Background Minimization support.
- */
 export function RoomClient({ room }: { room: Room }) {
-  const [isMicOn, setIsMicOn] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
@@ -132,6 +127,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
+  const isMicOn = isInSeat && !currentUserParticipant?.isMuted;
 
   // Messages Sync
   const messagesQuery = useMemoFirebase(() => {
@@ -271,12 +267,13 @@ export function RoomClient({ room }: { room: Room }) {
     toast({ title: isLocked ? `Seat ${index} Unlocked` : `Seat ${index} Locked` });
   };
 
-  const muteParticipant = (uid: string, currentState: boolean) => {
+  const silenceParticipant = (uid: string, currentState: boolean) => {
     if (!canManageRoom || !firestore || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), {
-      isMuted: !currentState
+      isSilenced: !currentState,
+      isMuted: true // Force mute them too
     });
-    toast({ title: currentState ? 'User Unmuted' : 'User Muted' });
+    toast({ title: currentState ? 'Tribe Unsilenced' : 'Tribe Silenced' });
   };
 
   const kickParticipant = (uid: string) => {
@@ -313,8 +310,10 @@ export function RoomClient({ room }: { room: Room }) {
 
   const leaveSeat = () => {
     if (!firestore || !room.id || !currentUser) return;
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0 });
-    setIsMicOn(false);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { 
+      seatIndex: 0,
+      isMuted: true 
+    });
     setIsActionMenuOpen(false);
   };
 
@@ -332,19 +331,20 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleMicToggle = () => {
-    if (currentUserParticipant?.isMuted) {
-      toast({ variant: 'destructive', title: 'Muted by Admin' });
-      return;
-    }
     if (!isInSeat) {
       const first = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i));
       if (first) takeSeat(first);
-    } else {
-      const newState = !isMicOn;
-      setIsMicOn(newState);
-      if (firestore && currentUser && room.id) {
-        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !newState });
-      }
+      return;
+    }
+
+    if (currentUserParticipant?.isSilenced) {
+      toast({ variant: 'destructive', title: 'Silenced by Admin' });
+      return;
+    }
+
+    const nextMuteState = !currentUserParticipant?.isMuted;
+    if (firestore && currentUser && room.id) {
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: nextMuteState });
     }
   };
 
@@ -363,51 +363,53 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={minimizeRoom} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20 transition-all">
              <ChevronDown className="h-5 w-5" />
           </button>
-          <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-lg">
-            <AvatarImage src={room.coverUrl} />
-            <AvatarFallback>UM</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="font-black text-xl tracking-tight uppercase italic">{room.title}</h1>
-            <Sheet>
-              <SheetTrigger asChild>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-white/60 uppercase cursor-pointer hover:text-white transition-colors">
-                  <span>No: {room.roomNumber || '0000'}</span>
-                  <div className="flex items-center gap-1 text-pink-400">
-                    <Users className="h-3 w-3" />
-                    <span>{onlineCount} Tribe</span>
+          <Sheet>
+            <SheetTrigger asChild>
+              <div className="flex items-center gap-3 cursor-pointer group">
+                <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-lg group-hover:scale-105 transition-transform">
+                  <AvatarImage src={room.coverUrl} />
+                  <AvatarFallback>UM</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h1 className="font-black text-xl tracking-tight uppercase italic">{room.title}</h1>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-white/60 uppercase">
+                    <span>No: {room.roomNumber || '0000'}</span>
+                    <div className="flex items-center gap-1 text-pink-400">
+                      <Users className="h-3 w-3" />
+                      <span>{onlineCount} Tribe</span>
+                    </div>
                   </div>
                 </div>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="bg-slate-900 border-none rounded-t-[3rem] text-white p-0 overflow-hidden h-[70vh]">
-                 <SheetHeader className="p-8 pb-4">
-                    <SheetTitle className="text-2xl font-black uppercase italic text-center">Tribe Frequency Members</SheetTitle>
-                 </SheetHeader>
-                 <ScrollArea className="h-full px-8 pb-20">
-                    <div className="space-y-4">
-                       {participants?.map((p) => (
-                         <div key={p.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <div className="flex items-center gap-4">
-                               <AvatarFrame frameId={p.activeFrame} size="sm">
-                                  <Avatar><AvatarImage src={p.avatarUrl} /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
-                               </AvatarFrame>
-                               <div>
-                                  <p className="font-bold text-sm">{p.name}</p>
-                                  <div className="flex items-center gap-2">
-                                     {p.seatIndex === 1 && <Badge className="bg-blue-500 text-[8px] h-4">MASTER</Badge>}
-                                     {room.moderatorIds?.includes(p.uid) && <Badge className="bg-purple-500 text-[8px] h-4">MOD</Badge>}
-                                     {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
-                                  </div>
-                               </div>
-                            </div>
-                            {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
-                         </div>
-                       ))}
-                    </div>
-                 </ScrollArea>
-              </SheetContent>
-            </Sheet>
-          </div>
+              </div>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-slate-900 border-none rounded-t-[3rem] text-white p-0 overflow-hidden h-[70vh]">
+               <SheetHeader className="p-8 pb-4">
+                  <SheetTitle className="text-2xl font-black uppercase italic text-center">Tribe Frequency Members</SheetTitle>
+               </SheetHeader>
+               <ScrollArea className="h-full px-8 pb-20">
+                  <div className="space-y-4">
+                     {participants?.map((p) => (
+                       <div key={p.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                          <div className="flex items-center gap-4">
+                             <AvatarFrame frameId={p.activeFrame} size="sm">
+                                <Avatar><AvatarImage src={p.avatarUrl} /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
+                             </AvatarFrame>
+                             <div>
+                                <p className="font-bold text-sm">{p.name}</p>
+                                <div className="flex items-center gap-2">
+                                   {p.seatIndex === 1 && <Badge className="bg-blue-500 text-[8px] h-4">MASTER</Badge>}
+                                   {room.moderatorIds?.includes(p.uid) && <Badge className="bg-purple-500 text-[8px] h-4">MOD</Badge>}
+                                   {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
+                                </div>
+                             </div>
+                          </div>
+                          {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
+                       </div>
+                     ))}
+                  </div>
+               </ScrollArea>
+            </SheetContent>
+          </Sheet>
         </div>
         <div className="flex gap-2">
           <DropdownMenu>
@@ -635,11 +637,11 @@ export function RoomClient({ room }: { room: Room }) {
                 {selectedOccupant ? (
                   <>
                     <button 
-                      onClick={() => muteParticipant(selectedOccupant.uid, selectedOccupant.isMuted)} 
+                      onClick={() => silenceParticipant(selectedOccupant.uid, selectedOccupant.isSilenced ?? false)} 
                       className="py-5 font-bold text-gray-700 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2"
                     >
-                      {selectedOccupant.isMuted ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                      {selectedOccupant.isMuted ? 'Unmute Tribe' : 'Mute Tribe'}
+                      {selectedOccupant.isSilenced ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                      {selectedOccupant.isSilenced ? 'Unsilence Tribe' : 'Silence Tribe'}
                     </button>
                     {selectedOccupant.uid !== currentUser?.uid && (
                       <button 

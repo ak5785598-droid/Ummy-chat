@@ -137,7 +137,7 @@ export default function RoomsPage() {
                </div>
             </Link>
 
-            <div className="relative h-28 rounded-2xl bg-gradient-to-br from-[#00CED1] to-[#1E90FF] p-3 shadow-md hover:scale-[1.02] transition-transform group overflow-hidden border border-blue-300">
+            <Link href="/leaderboard" className="relative h-28 rounded-2xl bg-gradient-to-br from-[#00CED1] to-[#1E90FF] p-3 shadow-md hover:scale-[1.02] transition-transform group overflow-hidden border border-blue-300">
                <span className="text-white font-black text-sm uppercase tracking-tight relative z-10">Family</span>
                <div className="absolute bottom-2 left-2 right-2 flex flex-wrap justify-center gap-1 opacity-60">
                   {Array.from({length: 4}).map((_, i) => (
@@ -145,7 +145,7 @@ export default function RoomsPage() {
                   ))}
                </div>
                <Users className="absolute -bottom-4 -right-4 h-20 w-20 text-white/10" />
-            </div>
+            </Link>
           </div>
 
           {/* Category Pill Tabs */}

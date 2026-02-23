@@ -50,6 +50,7 @@ export type RoomParticipant = {
   avatarUrl: string;
   seatIndex: number;
   isMuted: boolean;
+  isSilenced?: boolean; // Admin imposed silence
   joinedAt: any;
   activeFrame?: string;
 };
