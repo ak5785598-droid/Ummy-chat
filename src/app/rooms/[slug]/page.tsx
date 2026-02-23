@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -13,7 +12,7 @@ import type { Room } from '@/lib/types';
 /**
  * Chat Room Entry Page.
  * Handles authentication checks, room data fetching, and official room provisioning.
- * Optimized to prevent premature 404s during official room setup or slow connections.
+ * Reinforced to prevent premature 404s during official room setup.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
