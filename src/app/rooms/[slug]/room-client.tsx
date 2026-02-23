@@ -20,6 +20,7 @@ import {
   Settings,
   Share2,
   Volume2,
+  Trash2,
 } from 'lucide-react';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +32,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -49,14 +52,12 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
-  onSnapshot
 } from 'firebase/firestore';
 
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [entryMessage, setEntryMessage] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -140,6 +141,21 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!isAdmin || !firestore || !room.id || !firestoreMessages) return;
+    
+    try {
+      // For the prototype, we delete the current visible messages one by one
+      const deletePromises = firestoreMessages.map(m => 
+        deleteDoc(doc(firestore, 'chatRooms', room.id, 'messages', m.id))
+      );
+      await Promise.all(deletePromises);
+      toast({ title: 'Chat Cleared', description: 'All room messages have been removed.' });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Action Failed', description: 'Could not clear chat history.' });
+    }
+  };
+
   const takeSeat = async (index: number) => {
     if (!firestore || !room.id || !currentUser) return;
     if (room.lockedSeats?.includes(index)) {
@@ -176,7 +192,7 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
         <img 
           src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" 
-          alt="Galaxy Background" 
+          alt="Galaxy nebula space background" 
           className="h-full w-full object-cover opacity-60 scale-110"
         />
       </div>
@@ -185,7 +201,7 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-6 bg-transparent">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-[0_0_15px_rgba(255,107,107,0.3)]">
-            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt="Room Logo" />
+            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt={`${room.title} logo`} />
             <AvatarFallback>UM</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
@@ -200,14 +216,36 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" aria-label="Settings">
-            <Settings className="h-6 w-6" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" aria-label="Share">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" aria-label="Room Settings">
+                <Settings className="h-6 w-6" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-slate-900 border-white/10 text-white">
+              <DropdownMenuLabel className="text-xs uppercase tracking-widest text-white/40">Management</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/5" />
+              {isAdmin && (
+                <DropdownMenuItem onClick={handleClearChat} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Clear Chat History</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="focus:bg-white/5">
+                <Users className="mr-2 h-4 w-4" />
+                <span>Participant List</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-white/5">
+                <Volume2 className="mr-2 h-4 w-4" />
+                <span>Audio Settings</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" aria-label="Share Frequency">
             <Share2 className="h-6 w-6" />
           </Button>
           <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" asChild>
-            <a href="/rooms" aria-label="Exit Room">
+            <a href="/rooms" aria-label="Exit Frequency">
               <PhoneOff className="h-6 w-6" />
             </a>
           </Button>
@@ -232,7 +270,7 @@ export function RoomClient({ room }: { room: Room }) {
                    >
                       {hostParticipant ? (
                         <Avatar className="h-full w-full rounded-full border-2 border-black">
-                           <AvatarImage src={hostParticipant.avatarUrl} alt={hostParticipant.name} />
+                           <AvatarImage src={hostParticipant.avatarUrl} alt={`${hostParticipant.name}'s avatar image`} />
                            <AvatarFallback>{hostParticipant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                       ) : (
@@ -240,6 +278,7 @@ export function RoomClient({ room }: { room: Room }) {
                       )}
                    </div>
                 </div>
+                <Badge variant="secondary" className="bg-blue-500 text-white border-none text-[10px] uppercase font-black px-3">Room Master</Badge>
              </div>
           </div>
 
@@ -265,7 +304,7 @@ export function RoomClient({ room }: { room: Room }) {
                         <Lock className="h-6 w-6 text-red-500/40" />
                       ) : occupant ? (
                         <Avatar className="h-full w-full rounded-full p-0.5">
-                          <AvatarImage src={occupant.avatarUrl} alt={occupant.name} />
+                          <AvatarImage src={occupant.avatarUrl} alt={`${occupant.name}'s mic seat avatar`} />
                           <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                       ) : (
@@ -282,10 +321,16 @@ export function RoomClient({ room }: { room: Room }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
-                            <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)} className="text-xs uppercase font-bold">
+                            <DropdownMenuItem onClick={() => toggleSeatLock(seatIndex)} className="text-xs uppercase font-bold focus:bg-white/5">
                               {isLocked ? <Unlock className="mr-2 h-3 w-3" /> : <Lock className="mr-2 h-3 w-3" />}
-                              {isLocked ? 'Unlock' : 'Lock'}
+                              {isLocked ? 'Unlock Seat' : 'Lock Seat'}
                             </DropdownMenuItem>
+                            {occupant && !isOwner && (
+                              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                <UserX className="mr-2 h-3 w-3" />
+                                <span>Kick User</span>
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -343,10 +388,10 @@ export function RoomClient({ room }: { room: Room }) {
             >
               {isMicOn ? <Mic className="h-5 w-5"/> : <MicOff className="h-5 w-5"/>}
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-12 w-12 bg-white/5 border border-white/10 backdrop-blur-md text-white/60">
+            <Button variant="ghost" size="icon" className="rounded-full h-12 w-12 bg-white/5 border border-white/10 backdrop-blur-md text-white/60" aria-label="Toggle Audio">
               <Volume2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 shadow-xl shadow-pink-500/20 border-2 border-white/20 animate-pulse hover:scale-110 transition-transform">
+            <Button variant="ghost" size="icon" className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 shadow-xl shadow-pink-500/20 border-2 border-white/20 animate-pulse hover:scale-110 transition-transform" aria-label="Send Gift">
               <Gift className="h-7 w-7 text-white" />
             </Button>
           </div>

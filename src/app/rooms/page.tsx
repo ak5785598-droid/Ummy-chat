@@ -61,7 +61,7 @@ export default function RoomsPage() {
                   <div className="relative aspect-[1536/681] rounded-2xl overflow-hidden shadow-xl mx-2">
                     <Image
                       src={`https://picsum.photos/seed/ummy-banner-${i}/800/400`}
-                      alt={`Featured Community Event ${i}`}
+                      alt={`Featured Ummy community event banner ${i}`}
                       fill
                       className="object-cover"
                       priority

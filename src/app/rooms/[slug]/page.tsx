@@ -40,10 +40,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
   useEffect(() => {
-    if (!isDocLoading && !isAuthLoading) {
+    if (!isDocLoading && !isAuthLoading && roomDocRef) {
       setHasActuallyLoadedOnce(true);
     }
-  }, [isDocLoading, isAuthLoading]);
+  }, [isDocLoading, isAuthLoading, roomDocRef]);
 
   // Provision official room if it doesn't exist
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         moderatorIds: ['official-admin'],
         lockedSeats: []
       }, { merge: true }).catch(err => {
-        console.error("Hub initialization failed", err);
+        console.warn("Hub initialization failed", err);
       });
     }
   }, [slug, isDocLoading, firestoreRoom, firestore, currentUser, hasActuallyLoadedOnce]);
