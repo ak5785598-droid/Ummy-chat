@@ -5,19 +5,21 @@ import { notFound, useRouter } from 'next/navigation';
 import { RoomClient } from './room-client';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { Loader, ShieldAlert } from 'lucide-react';
 import type { Room } from '@/lib/types';
+import { useRoomContext } from '@/components/room-provider';
 
 /**
  * Chat Room Entry Page Gateway.
- * Ensures rooms are provisioned with sequential numeric IDs.
+ * Ensures rooms are provisioned with sequential numeric IDs (0001+).
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
   const firestore = useFirestore();
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
+  const { setActiveRoom, setIsMinimized } = useRoomContext();
   
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
   const [isProvisioning, setIsProvisioning] = useState(false);
@@ -91,6 +93,27 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
     performHandshake();
   }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, roomDocRef, isAuthLoading]);
+
+  // Sync global room context
+  useEffect(() => {
+    if (firestoreRoom) {
+      setActiveRoom({
+        id: firestoreRoom.id,
+        roomNumber: firestoreRoom.roomNumber,
+        slug: firestoreRoom.id,
+        title: firestoreRoom.name || 'Frequency',
+        topic: firestoreRoom.description || '',
+        category: (firestoreRoom.category as any) || 'Chat',
+        coverUrl: firestoreRoom.coverUrl || `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
+        ownerId: firestoreRoom.ownerId,
+        moderatorIds: firestoreRoom.moderatorIds || [],
+        lockedSeats: firestoreRoom.lockedSeats || [],
+        announcement: firestoreRoom.announcement || "Enjoy the vibe!",
+        createdAt: firestoreRoom.createdAt,
+      } as any);
+      setIsMinimized(false);
+    }
+  }, [firestoreRoom, setActiveRoom, setIsMinimized]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;

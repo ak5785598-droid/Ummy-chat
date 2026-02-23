@@ -28,6 +28,7 @@ import {
   UserCheck,
   Ban,
   ShieldCheck,
+  ChevronDown,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -50,6 +51,13 @@ import {
   DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -70,6 +78,8 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
+import { useRouter } from 'next/navigation';
+import { useRoomContext } from '@/components/room-provider';
 
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
@@ -83,7 +93,7 @@ const AVAILABLE_GIFTS: Gift[] = [
 
 /**
  * Room Client - Elite Voice App Edition.
- * Displays Sequential Room Numbers (e.g. 0001).
+ * Now featuring Minimization and Tribe Roster.
  */
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
@@ -97,8 +107,10 @@ export function RoomClient({ room }: { room: Room }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const entranceAnnounced = useRef<boolean>(false);
   const { toast } = useToast();
+  const router = useRouter();
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
+  const { setIsMinimized, setActiveRoom } = useRoomContext();
   const firestore = useFirestore();
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
@@ -124,39 +136,6 @@ export function RoomClient({ room }: { room: Room }) {
       setIsMicOn(false);
     }
   }, [currentUserParticipant?.isMuted]);
-
-  // Presence & Voice Sync
-  useEffect(() => {
-    if (!firestore || !room.id || !currentUser || !userProfile) return;
-    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    
-    setDoc(participantRef, {
-      uid: currentUser.uid,
-      name: userProfile.username || 'Guest',
-      avatarUrl: userProfile.avatarUrl || '',
-      activeFrame: userProfile.inventory?.activeFrame || 'None',
-      joinedAt: serverTimestamp(),
-      isMuted: !isMicOn,
-      seatIndex: currentUserParticipant?.seatIndex || 0,
-    }, { merge: true });
-
-    if (!entranceAnnounced.current) {
-      entranceAnnounced.current = true;
-      addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: 'entered the frequency',
-        senderId: currentUser.uid,
-        senderName: userProfile.username || 'User',
-        senderAvatar: userProfile.avatarUrl || '',
-        chatRoomId: room.id, 
-        timestamp: serverTimestamp(),
-        type: 'entrance'
-      });
-    }
-
-    return () => { 
-      deleteDoc(participantRef).catch(() => {}); 
-    };
-  }, [firestore, room.id, currentUser?.uid, userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, isMicOn]);
 
   // Messages Sync
   const messagesQuery = useMemoFirebase(() => {
@@ -252,8 +231,6 @@ export function RoomClient({ room }: { room: Room }) {
     setGiftRecipient(null);
   };
 
-  // --- Admin Controls ---
-
   const handleClearChat = async () => {
     if (!canManageRoom || !firestore || !room.id) return;
     const snap = await getDocs(collection(firestore, 'chatRooms', room.id, 'messages'));
@@ -287,19 +264,29 @@ export function RoomClient({ room }: { room: Room }) {
     setIsActionMenuOpen(false);
   };
 
-  const inviteUser = () => {
-    const link = `${window.location.origin}/rooms/${room.id}`;
-    navigator.clipboard.writeText(link);
-    toast({ title: 'Invite Link Copied!', description: 'Share this link with your friends.' });
+  const leaveRoom = () => {
+    if (firestore && currentUser && room.id) {
+      deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid));
+    }
+    setActiveRoom(null);
+    router.push('/rooms');
+  };
+
+  const minimizeRoom = () => {
+    setIsMinimized(true);
+    router.push('/rooms');
   };
 
   const takeSeat = (index: number) => {
     if (!firestore || !room.id || !currentUser) return;
     if (room.lockedSeats?.includes(index)) {
-      toast({ variant: 'destructive', title: 'Seat Locked', description: 'This frequency is currently restricted.' });
+      toast({ variant: 'destructive', title: 'Seat Locked' });
       return;
     }
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index });
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { 
+      seatIndex: index,
+      isMuted: true // Re-mute when changing seats for safety
+    });
   };
 
   const leaveSeat = () => {
@@ -324,14 +311,18 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleMicToggle = () => {
     if (currentUserParticipant?.isMuted) {
-      toast({ variant: 'destructive', title: 'Muted by Admin', description: 'You cannot unmute at this time.' });
+      toast({ variant: 'destructive', title: 'Muted by Admin' });
       return;
     }
     if (!isInSeat) {
       const first = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i));
       if (first) takeSeat(first);
     } else {
-      setIsMicOn(!isMicOn);
+      const newState = !isMicOn;
+      setIsMicOn(newState);
+      if (firestore && currentUser && room.id) {
+        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !newState });
+      }
     }
   };
 
@@ -347,19 +338,53 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-6 pb-2">
         <div className="flex items-center gap-3">
+          <button onClick={minimizeRoom} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20">
+             <ChevronDown className="h-5 w-5" />
+          </button>
           <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-lg">
             <AvatarImage src={room.coverUrl} />
             <AvatarFallback>UM</AvatarFallback>
           </Avatar>
           <div>
             <h1 className="font-black text-xl tracking-tight uppercase italic">{room.title}</h1>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-white/60 uppercase">
-              <span>No: {room.roomNumber || '0000'}</span>
-              <div className="flex items-center gap-1 text-pink-400">
-                <Users className="h-3 w-3" />
-                <span>{onlineCount} Tribe</span>
-              </div>
-            </div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-white/60 uppercase cursor-pointer hover:text-white transition-colors">
+                  <span>No: {room.roomNumber || '0000'}</span>
+                  <div className="flex items-center gap-1 text-pink-400">
+                    <Users className="h-3 w-3" />
+                    <span>{onlineCount} Tribe</span>
+                  </div>
+                </div>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="bg-slate-900 border-none rounded-t-[3rem] text-white p-0 overflow-hidden h-[70vh]">
+                 <SheetHeader className="p-8 pb-4">
+                    <SheetTitle className="text-2xl font-black uppercase italic text-center">Tribe Frequency Members</SheetTitle>
+                 </SheetHeader>
+                 <ScrollArea className="h-full px-8 pb-20">
+                    <div className="space-y-4">
+                       {participants?.map((p) => (
+                         <div key={p.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="flex items-center gap-4">
+                               <AvatarFrame frameId={p.activeFrame} size="sm">
+                                  <Avatar><AvatarImage src={p.avatarUrl} /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
+                               </AvatarFrame>
+                               <div>
+                                  <p className="font-bold text-sm">{p.name}</p>
+                                  <div className="flex items-center gap-2">
+                                     {p.seatIndex === 1 && <Badge className="bg-blue-500 text-[8px] h-4">MASTER</Badge>}
+                                     {room.moderatorIds?.includes(p.uid) && <Badge className="bg-purple-500 text-[8px] h-4">MOD</Badge>}
+                                     {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
+                                  </div>
+                               </div>
+                            </div>
+                            {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
+                         </div>
+                       ))}
+                    </div>
+                 </ScrollArea>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
         <div className="flex gap-2">
@@ -377,7 +402,7 @@ export function RoomClient({ room }: { room: Room }) {
                   <DropdownMenuItem onClick={handleClearChat} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear Chat
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={inviteUser}>
+                  <DropdownMenuItem onClick={() => { const link = `${window.location.origin}/rooms/${room.id}`; navigator.clipboard.writeText(link); toast({ title: 'Link Copied!' }); }}>
                     <UserPlus className="mr-2 h-4 w-4" /> Invite Tribe
                   </DropdownMenuItem>
                 </>
@@ -386,12 +411,12 @@ export function RoomClient({ room }: { room: Room }) {
                 <Share2 className="mr-2 h-4 w-4" /> Share Room
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href='/rooms'}>
+              <DropdownMenuItem onClick={leaveRoom}>
                 <LogOut className="mr-2 h-4 w-4" /> Leave Room
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/20 text-red-500" onClick={() => window.location.href='/rooms'}>
+          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/20 text-red-500" onClick={leaveRoom}>
             <PhoneOff className="h-5 w-5" />
           </Button>
         </div>
@@ -548,7 +573,6 @@ export function RoomClient({ room }: { room: Room }) {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col divide-y divide-gray-100">
-            {/* General Actions */}
             {selectedOccupant && (
               <button 
                 onClick={() => { setGiftRecipient({ uid: selectedOccupant.uid, name: selectedOccupant.name, avatarUrl: selectedOccupant.avatarUrl }); setIsGiftPickerOpen(true); setIsActionMenuOpen(false); }} 
@@ -558,7 +582,6 @@ export function RoomClient({ room }: { room: Room }) {
               </button>
             )}
 
-            {/* Admin Actions */}
             {canManageRoom && (
               <>
                 {selectedOccupant ? (
@@ -591,7 +614,6 @@ export function RoomClient({ room }: { room: Room }) {
               </>
             )}
 
-            {/* Self Actions */}
             {selectedOccupant?.uid === currentUser?.uid ? (
               <button 
                 onClick={leaveSeat} 

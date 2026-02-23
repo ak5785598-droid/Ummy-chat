@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageSquare, User, Settings, Youtube, ClipboardList, Loader, Trophy, LogOut, ShoppingBag, ShieldCheck, Zap } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Youtube, ClipboardList, Trophy, LogOut, ShoppingBag, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,19 +15,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/logo";
 import { useUser, useAuth } from "@/firebase";
-import { GameControllerIcon, UmmyLogoIcon } from "../icons";
+import { UmmyLogoIcon, GameControllerIcon } from "../icons";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { FloatingRoomBar } from "../floating-room-bar";
 
 const navItems = [
   { href: "/rooms", label: "Home", icon: Home },
-  { href: "/watch", label: "Message", icon: MessageSquare }, // Mocking message for demo
+  { href: "/watch", label: "Watch", icon: MessageSquare },
   { href: "/profile", label: "Me", icon: User },
 ];
 
@@ -51,7 +50,7 @@ export function AppLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading: isUserLoading } = useUser();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
+  const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
   const { toast } = useToast();
 
@@ -65,9 +64,15 @@ export function AppLayout({
     }
   };
 
-  const displayName = userProfile?.username || user?.displayName || 'User';
-  const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <UmmyLogoIcon className="h-12 w-12 text-primary animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -135,31 +140,36 @@ export function AppLayout({
             </main>
           </SidebarInset>
 
+          {/* Floating Minimized Room Bar */}
+          <FloatingRoomBar />
+
           {/* Bottom Mobile Navigation */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-[60] rounded-t-3xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-            {navItems.map((item) => {
-              const active = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
-              return (
-                <Link 
-                  key={item.label} 
-                  href={item.href} 
-                  className={cn(
-                    "flex flex-col items-center gap-1 transition-all",
-                    active ? "text-primary scale-110" : "text-gray-400"
-                  )}
-                >
-                  {item.label === 'Home' ? (
-                     <div className={cn("p-1.5 rounded-full", active ? "bg-primary/20" : "")}>
-                        <UmmyLogoIcon className={cn("h-7 w-7", active ? "text-primary" : "text-gray-400 grayscale")} />
-                     </div>
-                  ) : (
-                    <item.icon className="h-7 w-7" strokeWidth={active ? 3 : 2} />
-                  )}
-                  <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          {!hideSidebarOnMobile && (
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-[60] rounded-t-3xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+              {navItems.map((item) => {
+                const active = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
+                return (
+                  <Link 
+                    key={item.label} 
+                    href={item.href} 
+                    className={cn(
+                      "flex flex-col items-center gap-1 transition-all",
+                      active ? "text-primary scale-110" : "text-gray-400"
+                    )}
+                  >
+                    {item.label === 'Home' ? (
+                       <div className={cn("p-1.5 rounded-full", active ? "bg-primary/20" : "")}>
+                          <UmmyLogoIcon className={cn("h-7 w-7", active ? "text-primary" : "text-gray-400 grayscale")} />
+                       </div>
+                    ) : (
+                      <item.icon className="h-7 w-7" strokeWidth={active ? 3 : 2} />
+                    )}
+                    <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
         </div>
       </div>
     </SidebarProvider>

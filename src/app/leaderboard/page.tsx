@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,9 +65,7 @@ export default function LeaderboardPage() {
 
     return (
       <div className="space-y-4 animate-in fade-in duration-1000">
-        {/* The Podium */}
         <div className="flex justify-center items-end gap-4 py-16 relative">
-          {/* 2nd Place */}
           {top3[1] && (
             <div className="flex flex-col items-center order-1 w-1/3">
               <div className="relative">
@@ -82,7 +81,6 @@ export default function LeaderboardPage() {
               </div>
             </div>
           )}
-          {/* 1st Place */}
           {top3[0] && (
             <div className="flex flex-col items-center order-2 scale-125 w-1/3 -mt-10">
               <div className="relative">
@@ -99,7 +97,6 @@ export default function LeaderboardPage() {
               </div>
             </div>
           )}
-          {/* 3rd Place */}
           {top3[2] && (
             <div className="flex flex-col items-center order-3 w-1/3">
               <div className="relative">
@@ -117,7 +114,6 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Scrollable List */}
         <div className="rounded-t-[3.5rem] bg-gradient-to-b from-[#151515] to-black border-t border-white/5 shadow-2xl overflow-hidden mt-8">
           <CardContent className="p-0">
             {others.map((item, index) => (
