@@ -13,7 +13,7 @@ import type { Room } from '@/lib/types';
 /**
  * Chat Room Entry Page.
  * Handles authentication checks, room data fetching, and official room provisioning.
- * Optimized to reduce initialization lag and prevent premature 404s.
+ * Optimized to prevent premature 404s during official room setup.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -23,6 +23,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
   const [isProvisioning, setIsProvisioning] = useState(false);
+  const [hasCheckedProvisioning, setHasCheckedProvisioning] = useState(false);
 
   // Authentication Guard
   useEffect(() => {
@@ -46,7 +47,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   // Provision official room if it doesn't exist
   useEffect(() => {
     const checkAndProvision = async () => {
-      if (slug === 'official-help-room' && !isDocLoading && !firestoreRoom && firestore && currentUser && !isProvisioning) {
+      // We only care about provisioning the official help room
+      if (slug !== 'official-help-room') {
+        setHasCheckedProvisioning(true);
+        return;
+      }
+
+      // Wait until we definitely know if the room exists or not
+      if (!isDocLoading && !firestoreRoom && firestore && currentUser && !isProvisioning && !hasCheckedProvisioning) {
         setIsProvisioning(true);
         setInitStatus('Syncing Official Hub...');
         const officialRef = doc(firestore, 'chatRooms', 'official-help-room');
@@ -66,12 +74,15 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
           console.warn("Hub initialization failed", err);
         } finally {
           setIsProvisioning(false);
+          setHasCheckedProvisioning(true);
         }
+      } else if (firestoreRoom || (isDocLoading === false && slug !== 'official-help-room')) {
+        setHasCheckedProvisioning(true);
       }
     };
     
     checkAndProvision();
-  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning]);
+  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, hasCheckedProvisioning]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;
@@ -109,8 +120,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Loading State Guard - Don't call notFound() if we are still loading, auth'ing, or provisioning the official room
-  if (isAuthLoading || isDocLoading || (slug === 'official-help-room' && !firestoreRoom) || isProvisioning) {
+  // Loading State Guard - More patient for official room
+  const isWaitingForOfficial = slug === 'official-help-room' && !hasCheckedProvisioning;
+  if (isAuthLoading || isDocLoading || isProvisioning || isWaitingForOfficial) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -123,7 +135,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  // Final 404 Guard - Only after loading is definitive
+  // Final 404 Guard - Only after loading and provisioning checks are definitive
   if (!activeRoom) {
     notFound();
     return null;
