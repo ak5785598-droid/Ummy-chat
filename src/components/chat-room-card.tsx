@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { BarChart2, Zap } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import type { Room } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
@@ -68,7 +68,6 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             <h3 className="font-bold text-xs text-gray-800 truncate uppercase tracking-tight">
               {room.title}
             </h3>
-            {room.id === 'official-help-room' && <Zap className="h-3 w-3 text-yellow-500 fill-current" />}
           </div>
         </div>
       </Link>

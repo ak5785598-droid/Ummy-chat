@@ -2,21 +2,18 @@
 
 import { useState, useMemo } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Search, Loader, Flame, Gamepad2, Music, Crown, Heart, Users, Home, BadgeCheck, Sparkles } from 'lucide-react';
+import { Search, Loader, Flame, Gamepad2, Music, Crown, Heart, Users, Home } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { collection, query, limit } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 /**
  * Explore Rooms Page - Yari Elite Edition.
- * Matches the reference screenshot layout.
+ * Matches the reference screenshot layout exactly.
  */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
@@ -38,7 +35,7 @@ export default function RoomsPage() {
 
   const filteredRooms = useMemo(() => {
     if (!roomsData) return [];
-    if (activeTab === 'Popular') return roomsData.slice(0, 10);
+    if (activeTab === 'Popular') return roomsData;
     return roomsData.filter((r: any) => r.category === activeTab);
   }, [roomsData, activeTab]);
 
@@ -151,15 +148,9 @@ export default function RoomsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 pb-24">
-              {filteredRooms.length > 0 ? (
-                filteredRooms.map((room: any) => (
-                  <ChatRoomCard key={room.id} room={room} variant="modern" />
-                ))
-              ) : (
-                <div className="col-span-2 py-20 text-center text-muted-foreground bg-white rounded-3xl border-2 border-dashed border-gray-100">
-                   <p className="font-bold uppercase tracking-widest text-xs">Waiting for new Tribes...</p>
-                </div>
-              )}
+              {filteredRooms.map((room: any) => (
+                <ChatRoomCard key={room.id} room={room} variant="modern" />
+              ))}
             </div>
           )}
         </div>
