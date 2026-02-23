@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
  * Enterprise Leaderboard - Premium Podium Design.
  */
 export default function LeaderboardPage() {
-  const { user } = user();
+  const { user } = useUser();
   const firestore = useFirestore();
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>('rich');
 
