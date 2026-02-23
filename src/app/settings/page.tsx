@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -45,6 +45,14 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
 
+  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isUploading) {
+      setLocalAvatarPreview(null);
+    }
+  }, [isUploading, userProfile?.avatarUrl]);
+
   const handleLogout = async () => {
     if (!auth) return;
     try {
@@ -62,6 +70,8 @@ export default function SettingsPage() {
         toast({ variant: "destructive", title: "File too large", description: "Limit is 5MB." });
         return;
       }
+      const previewUrl = URL.createObjectURL(file);
+      setLocalAvatarPreview(previewUrl);
       uploadProfilePicture(file);
     }
   };
@@ -77,7 +87,7 @@ export default function SettingsPage() {
   }
 
   const displayName = userProfile?.username || user.displayName || 'User';
-  const avatarUrl = userProfile?.avatarUrl || user.photoURL || '';
+  const avatarUrl = localAvatarPreview || userProfile?.avatarUrl || user.photoURL || '';
 
   return (
     <AppLayout>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -13,6 +12,7 @@ import type { Room } from '@/lib/types';
 /**
  * Dynamic Room Page.
  * Handles authentication, Firestore room fetching, and "Official Room" auto-provisioning.
+ * Hardened to prevent race conditions and intermittent 404s.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -20,7 +20,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const firestore = useFirestore();
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
-  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+  const [hasActuallyLoadedOnce, setHasActuallyLoadedOnce] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading) {
@@ -40,14 +40,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
   useEffect(() => {
-    if (isDocLoading) {
-      setHasAttemptedFetch(true);
+    if (!isDocLoading && !isAuthLoading) {
+      setHasActuallyLoadedOnce(true);
     }
-  }, [isDocLoading]);
+  }, [isDocLoading, isAuthLoading]);
 
   // Provision official room if it doesn't exist
   useEffect(() => {
-    if (slug === 'official-help-room' && !isDocLoading && !firestoreRoom && firestore && currentUser) {
+    if (slug === 'official-help-room' && !isDocLoading && !firestoreRoom && firestore && currentUser && hasActuallyLoadedOnce) {
       setInitStatus('Provisioning Official Hub...');
       const officialRef = doc(firestore, 'chatRooms', 'official-help-room');
       setDoc(officialRef, {
@@ -64,7 +64,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         console.error("Hub initialization failed", err);
       });
     }
-  }, [slug, isDocLoading, firestoreRoom, firestore, currentUser]);
+  }, [slug, isDocLoading, firestoreRoom, firestore, currentUser, hasActuallyLoadedOnce]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;
@@ -96,15 +96,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Only trigger 404 if we are definitively logged in, have a valid doc ref, are NOT loading, and document is still null.
-  // We explicitly skip 404 for 'official-help-room' while it might be provisioning.
-  const isActuallyNotFound = !isAuthLoading && !!currentUser && !!roomDocRef && !isDocLoading && !firestoreRoom && hasAttemptedFetch && slug !== 'official-help-room';
-
-  if (isActuallyNotFound) {
+  // Only trigger 404 if loading is completely finished and doc is truly missing
+  if (hasActuallyLoadedOnce && !firestoreRoom && slug !== 'official-help-room') {
     notFound();
   }
 
-  if (isAuthLoading || (roomDocRef && !firestoreRoom)) {
+  if (!hasActuallyLoadedOnce || (slug === 'official-help-room' && !firestoreRoom)) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -115,16 +112,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  if (!currentUser || !activeRoom) {
-     return (
-        <AppLayout>
-            <div className="flex h-[60vh] w-full flex-col items-center justify-center">
-                <Loader className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-xs text-muted-foreground mt-4 uppercase font-bold tracking-widest">Finalizing Connection...</p>
-            </div>
-        </AppLayout>
-     );
-  }
+  if (!activeRoom) return null;
 
   return (
     <AppLayout>

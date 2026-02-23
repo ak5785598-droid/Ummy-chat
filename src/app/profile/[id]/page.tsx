@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,11 +35,21 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Optimistic UI state for DP change
+  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isAuthLoading && !currentUser) {
       router.replace('/login');
     }
   }, [currentUser, isAuthLoading, router]);
+
+  // Reset local preview when upload is finished or profile data changes
+  useEffect(() => {
+    if (!isUploading) {
+      setLocalAvatarPreview(null);
+    }
+  }, [isUploading, profile?.avatarUrl]);
 
   const isLoading = isAuthLoading || isProfileLoading;
 
@@ -54,7 +64,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Only trigger 404 if we are definitively NOT loading and the document is truly missing
   if (!profile && !isProfileLoading && !isAuthLoading && profileRef) {
     notFound();
   }
@@ -71,6 +80,9 @@ export default function ProfilePage() {
         toast({ variant: "destructive", title: "File too large", description: "Limit is 5MB." });
         return;
       }
+      // Optimistic UI: Set preview immediately
+      const previewUrl = URL.createObjectURL(file);
+      setLocalAvatarPreview(previewUrl);
       uploadProfilePicture(file);
     }
   };
@@ -107,7 +119,10 @@ export default function ProfilePage() {
                     (!profile.frame || profile.frame === 'None') && "from-transparent to-transparent"
                   )}>
                     <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
-                      <AvatarImage src={profile.avatarUrl} alt={`${profile.username || 'User'}'s Profile Photo`} />
+                      <AvatarImage 
+                        src={localAvatarPreview || profile.avatarUrl} 
+                        alt={`${profile.username || 'User'}'s Profile Photo`} 
+                      />
                       <AvatarFallback className="text-4xl">{(profile.username || profile.name || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>

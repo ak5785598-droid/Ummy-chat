@@ -8,7 +8,7 @@ import { useToast } from './use-toast';
 
 /**
  * Hook to handle profile picture uploads to Firebase Storage and update Firestore.
- * Ensures the app's internal DP is isolated from the external Auth provider (Google/Phone).
+ * Optimized for speed and background execution.
  */
 export function useProfilePictureUpload() {
   const storage = useStorage();
@@ -28,7 +28,6 @@ export function useProfilePictureUpload() {
     }
 
     setIsUploading(true);
-    toast({ title: 'Uploading...', description: 'Please wait while we update your DP.' });
 
     try {
       // 1. Upload to Storage
@@ -38,8 +37,6 @@ export function useProfilePictureUpload() {
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
       // 2. Update Firestore ONLY (Source of Truth)
-      // We explicitly DO NOT call updateProfile(user, { photoURL }) to ensure
-      // the app identity never reflects back to the real Gmail/Google account.
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       await setDoc(userProfileRef, { 
         avatarUrl: downloadURL,
@@ -48,7 +45,7 @@ export function useProfilePictureUpload() {
 
       toast({
         title: 'Success!',
-        description: 'Your profile picture has been updated.',
+        description: 'Your profile has been updated.',
       });
     } catch (error: any) {
       console.error('Error uploading profile picture:', error);

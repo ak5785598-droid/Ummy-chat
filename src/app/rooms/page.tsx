@@ -37,7 +37,7 @@ export default function RoomsPage() {
 
   return (
     <AppLayout hideSidebarOnMobile>
-      <div className="min-h-screen bg-background pb-20 -m-4 md:-m-12">
+      <div className="min-h-screen bg-background pb-20">
         {/* Top Header Section - Yellow Yari Style */}
         <header className="bg-gradient-to-b from-primary to-primary/80 px-4 pt-10 pb-6 rounded-b-[2.5rem] shadow-lg sticky top-0 z-50">
           <div className="flex items-center justify-between mb-4">
