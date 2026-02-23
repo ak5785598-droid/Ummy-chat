@@ -86,6 +86,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<{ gift: Gift; senderName: string } | null>(null);
+  const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -214,28 +215,49 @@ export function RoomClient({ room }: { room: Room }) {
       
       const updateData = {
         'wallet.coins': increment(-gift.price),
-        'wallet.totalSpent': increment(gift.price),
+        'wallet.totalSpent': increment(gift.price), // Tracking for RICH Ranking
         'updatedAt': serverTimestamp()
       };
 
-      // Atomic update for balance
+      // Atomic update for Sender (Boosts Wealth Rank)
       updateDoc(userRef, updateData);
       updateDoc(profileRef, updateData);
 
+      // Identify Recipient (Boosts Charm Rank)
+      let finalRecipient = giftRecipient;
+      if (!finalRecipient) {
+        // Default to Host if no one selected
+        const host = participants?.find(p => p.seatIndex === 1);
+        if (host) finalRecipient = { uid: host.uid, name: host.name };
+      }
+
+      if (finalRecipient) {
+        const recipientRef = doc(firestore, 'users', finalRecipient.uid);
+        const recipientProfileRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
+        const charmUpdate = {
+          'stats.fans': increment(gift.price), // Incrementing Fans for CHARM Ranking
+          'updatedAt': serverTimestamp()
+        };
+        updateDoc(recipientRef, charmUpdate);
+        updateDoc(recipientProfileRef, charmUpdate);
+      }
+
       // Add gift message to trigger room-wide animation
       addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `sent a ${gift.name} ${gift.emoji}!`,
+        content: `sent a ${gift.name} ${gift.emoji} ${finalRecipient ? `to ${finalRecipient.name}` : ''}!`,
         senderId: currentUser.uid,
         senderName: userProfile.username || 'User',
         senderAvatar: userProfile.avatarUrl || '',
         chatRoomId: room.id,
         timestamp: serverTimestamp(),
         type: 'gift',
-        giftId: gift.id
+        giftId: gift.id,
+        recipientName: finalRecipient?.name || 'Room'
       });
 
       setIsGiftPickerOpen(false);
-      toast({ title: 'Gift Sent!', description: `You sent a ${gift.name} to the room!` });
+      setGiftRecipient(null);
+      toast({ title: 'Gift Sent!', description: `Rank updated automatically!` });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Gift Error', description: 'Failed to send gift.' });
     }
@@ -284,7 +306,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleSeatAvatarClick = (index: number, occupant: RoomParticipant | undefined) => {
-    if (occupant?.uid === currentUser?.uid || isAdmin) {
+    if (occupant || isAdmin) {
       setSelectedSeatIndex(index);
       setIsActionMenuOpen(true);
     } else if (!occupant && !room.lockedSeats?.includes(index)) {
@@ -484,7 +506,7 @@ export function RoomClient({ room }: { room: Room }) {
             >
               {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
             </Button>
-            <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
+            <Dialog open={isGiftPickerOpen} onOpenChange={(val) => { setIsGiftPickerOpen(val); if (!val) setGiftRecipient(null); }}>
               <DialogTrigger asChild>
                 <Button className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 animate-pulse shadow-xl shadow-pink-500/20">
                    <GiftIcon className="h-7 w-7 text-white" />
@@ -494,7 +516,9 @@ export function RoomClient({ room }: { room: Room }) {
                  <div className="p-8 space-y-6">
                     <header className="text-center space-y-1">
                        <h2 className="text-3xl font-black italic uppercase tracking-tighter">Ummy Boutique</h2>
-                       <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Surprise the Tribe with a Vibe</p>
+                       <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">
+                         {giftRecipient ? `Sending to ${giftRecipient.name}` : 'Surprise the Tribe with a Vibe'}
+                       </p>
                     </header>
                     <div className="grid grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto p-2">
                        {AVAILABLE_GIFTS.map(gift => (
@@ -535,6 +559,23 @@ export function RoomClient({ room }: { room: Room }) {
             <DialogTitle className="text-center font-headline text-2xl text-gray-800 uppercase italic">Seat Actions</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col text-center divide-y divide-gray-100">
+            {/* Conditional Gift Option */}
+            {selectedSeatIndex !== null && (
+              <button 
+                onClick={() => { 
+                  const occupant = participants?.find(p => p.seatIndex === selectedSeatIndex);
+                  if (occupant) {
+                    setGiftRecipient({ uid: occupant.uid, name: occupant.name });
+                    setIsGiftPickerOpen(true);
+                  }
+                  setIsActionMenuOpen(false); 
+                }} 
+                className="py-5 font-black text-primary hover:bg-primary/5 transition-colors uppercase tracking-widest text-xs italic"
+              >
+                Send Gift
+              </button>
+            )}
+
             <button onClick={() => { setIsMicOn(!isMicOn); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
               {isMicOn ? 'Turn Off Mic' : 'On Mic'}
             </button>

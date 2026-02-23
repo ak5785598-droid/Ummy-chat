@@ -7,16 +7,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Trophy, Crown, TrendingUp, Heart, Loader, Gem, Star, ShieldCheck, ChevronLeft } from 'lucide-react';
+import { Trophy, Crown, TrendingUp, Heart, Loader, Gem, Star, ShieldCheck, ChevronLeft, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useState } from 'react';
 
 /**
- * Global Ranking Page - Redesigned to match Premium Graphic Design
+ * Global Ranking Page.
+ * Automatically synchronizes with gift spending (Rich) and gift receipt (Charm).
  */
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const [rankingType, setRankingMode] = useState<'rich' | 'charm'>('rich');
 
   const richUsersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -31,21 +34,15 @@ export default function LeaderboardPage() {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'users'), 
-      orderBy('stats.followers', 'desc'), 
+      orderBy('stats.fans', 'desc'), // Fans represents total charm received from gifts
       limit(50)
     );
   }, [firestore, user]);
 
-  const topRoomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'chatRooms'), limit(50));
-  }, [firestore, user]);
-
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richUsersQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmUsersQuery);
-  const { data: rooms, isLoading: isLoadingRooms } = useCollection(topRoomsQuery);
 
-  const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: 'rich' | 'charm' | 'room', isLoading: boolean }) => {
+  const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: 'rich' | 'charm', isLoading: boolean }) => {
     if (isLoading) return (
       <div className="flex flex-col items-center justify-center py-40 gap-4">
         <Loader className="h-10 w-10 animate-spin text-primary" />
@@ -77,7 +74,7 @@ export default function LeaderboardPage() {
                 <div className="absolute -inset-2 bg-gradient-to-b from-slate-400 to-slate-100 rounded-full blur-sm opacity-50" />
                 <div className="relative p-1 bg-gradient-to-b from-slate-200 to-slate-400 rounded-full">
                   <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : top3[1].avatarUrl} />
+                    <AvatarImage src={top3[1].avatarUrl} />
                     <AvatarFallback>{(top3[1].username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2">
@@ -88,14 +85,11 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
               </div>
-              <p className="font-black text-xs uppercase text-slate-300 truncate max-w-full italic">{top3[1].username || top3[1].name}</p>
+              <p className="font-black text-xs uppercase text-slate-300 truncate max-w-full italic">{top3[1].username}</p>
               <div className="flex flex-col items-center mt-2 gap-1">
-                <div className="flex items-center gap-1 bg-purple-600/20 text-purple-400 px-2 py-0.5 rounded-full text-[8px] font-black border border-purple-400/20">
-                  <Star className="h-2 w-2 fill-current" /> SVIP 2
-                </div>
                 <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                   <div className="h-3 w-3 rounded-full bg-yellow-500 border border-white/20 shadow-sm" />
-                   {(type === 'rich' ? (top3[1].wallet?.totalSpent || 0) : (top3[1].stats?.followers || 0)).toLocaleString()}
+                   <div className={cn("h-3 w-3 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
+                   {(type === 'rich' ? (top3[1].wallet?.totalSpent || 0) : (top3[1].stats?.fans || 0)).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -108,7 +102,7 @@ export default function LeaderboardPage() {
                 <div className="absolute -inset-4 bg-gradient-to-b from-yellow-500 to-amber-700 rounded-full blur-xl opacity-30 animate-pulse" />
                 <div className="relative p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)]">
                   <Avatar className="h-24 w-24 md:h-28 md:w-28 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : top3[0].avatarUrl} />
+                    <AvatarImage src={top3[0].avatarUrl} />
                     <AvatarFallback>{(top3[0].username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2">
@@ -119,14 +113,11 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
               </div>
-              <h2 className="font-black text-sm uppercase text-yellow-400 tracking-tighter drop-shadow-md italic">{top3[0].username || top3[0].name}</h2>
+              <h2 className="font-black text-sm uppercase text-yellow-400 tracking-tighter drop-shadow-md italic">{top3[0].username}</h2>
               <div className="flex flex-col items-center mt-3 gap-1">
-                <div className="flex items-center gap-1 bg-blue-600/20 text-blue-400 px-3 py-0.5 rounded-full text-[8px] font-black border border-blue-400/20">
-                  <Star className="h-2.5 w-2.5 fill-current" /> SVIP 3
-                </div>
                 <div className="flex items-center gap-1 text-xs font-black text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.3)]">
-                   <div className="h-4 w-4 rounded-full bg-yellow-500 border-2 border-white/40 shadow-md" />
-                   {(type === 'rich' ? (top3[0].wallet?.totalSpent || 0) : (top3[0].stats?.followers || 0)).toLocaleString()}
+                   <div className={cn("h-4 w-4 rounded-full border-2 border-white/40 shadow-md", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
+                   {(type === 'rich' ? (top3[0].wallet?.totalSpent || 0) : (top3[0].stats?.fans || 0)).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -139,7 +130,7 @@ export default function LeaderboardPage() {
                 <div className="absolute -inset-2 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full blur-sm opacity-50" />
                 <div className="relative p-1 bg-gradient-to-b from-amber-600 to-amber-900 rounded-full">
                   <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-slate-900 shadow-2xl">
-                    <AvatarImage src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : top3[2].avatarUrl} />
+                    <AvatarImage src={top3[2].avatarUrl} />
                     <AvatarFallback>{(top3[2].username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2">
@@ -150,14 +141,11 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
               </div>
-              <p className="font-black text-xs uppercase text-amber-700 truncate max-w-full italic">{top3[2].username || top3[2].name}</p>
+              <p className="font-black text-xs uppercase text-amber-700 truncate max-w-full italic">{top3[2].username}</p>
               <div className="flex flex-col items-center mt-2 gap-1">
-                <div className="flex items-center gap-1 bg-green-600/20 text-green-400 px-2 py-0.5 rounded-full text-[8px] font-black border border-green-400/20">
-                  <Star className="h-2 w-2 fill-current" /> SVIP 1
-                </div>
                 <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                   <div className="h-3 w-3 rounded-full bg-yellow-500 border border-white/20 shadow-sm" />
-                   {(type === 'rich' ? (top3[2].wallet?.totalSpent || 0) : (top3[2].stats?.followers || 0)).toLocaleString()}
+                   <div className={cn("h-3 w-3 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
+                   {(type === 'rich' ? (top3[2].wallet?.totalSpent || 0) : (top3[2].stats?.fans || 0)).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -174,17 +162,12 @@ export default function LeaderboardPage() {
               >
                 <span className="w-8 text-center font-black text-white/20 italic group-hover:text-yellow-500 transition-colors">{index + 4}</span>
                 <Avatar className="h-14 w-14 border-2 border-white/10 p-0.5">
-                   <AvatarImage 
-                     src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : item.avatarUrl} 
-                   />
-                  <AvatarFallback className="font-bold">{(item.username || item.name || 'U').charAt(0)}</AvatarFallback>
+                   <AvatarImage src={item.avatarUrl} />
+                  <AvatarFallback className="font-bold">{(item.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-black text-sm uppercase text-white/90 truncate italic">{item.username || item.name}</p>
-                    <div className="flex items-center gap-1 bg-purple-600/30 text-purple-300 px-1.5 py-0 rounded-sm text-[7px] font-black border border-purple-500/10">
-                       SVIP 2
-                    </div>
+                    <p className="font-black text-sm uppercase text-white/90 truncate italic">{item.username}</p>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 rounded-sm">Lv.{(type === 'rich' ? item.level?.rich : item.level?.charm) || 1}</Badge>
@@ -193,32 +176,14 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="flex items-center gap-2 text-right">
                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-1 font-black text-sm text-yellow-500">
-                        {(type === 'rich' ? (item.wallet?.totalSpent || 0) : (item.stats?.followers || 0)).toLocaleString()}
-                        <div className="h-4 w-4 rounded-full bg-yellow-500 border border-white/20 shadow-sm" />
+                      <div className={cn("flex items-center gap-1 font-black text-sm", type === 'rich' ? "text-yellow-500" : "text-pink-500")}>
+                        {(type === 'rich' ? (item.wallet?.totalSpent || 0) : (item.stats?.fans || 0)).toLocaleString()}
+                        <div className={cn("h-4 w-4 rounded-full border border-white/20 shadow-sm", type === 'rich' ? "bg-yellow-500" : "bg-pink-500")} />
                       </div>
                    </div>
                 </div>
               </div>
             ))}
-            
-            {/* User Personal Sticky Rank Bar (Hallucinated placeholder for self) */}
-            <div className="sticky bottom-0 bg-gradient-to-r from-amber-700 to-amber-900 p-4 flex items-center justify-between border-t border-white/20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-               <div className="flex items-center gap-4">
-                  <span className="font-black text-white italic">100+</span>
-                  <Avatar className="h-12 w-12 border-2 border-white/20">
-                    <AvatarImage src={user?.photoURL || ''} />
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-black text-sm uppercase text-white italic">{user?.displayName || 'king'}</p>
-                    <Badge className="bg-amber-100/20 text-white border-none text-[8px] h-4">Lv.3</Badge>
-                  </div>
-               </div>
-               <div className="flex items-center gap-1 text-white font-black">
-                  0 <div className="h-4 w-4 rounded-full bg-yellow-500 border border-white/20" />
-               </div>
-            </div>
           </CardContent>
         </div>
       </div>
@@ -233,7 +198,7 @@ export default function LeaderboardPage() {
             <ChevronLeft className="h-6 w-6" />
           </Link>
           <h1 className="font-headline text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-md">
-            Ranking
+            {rankingType === 'rich' ? 'Wealth Ranking' : 'Charm Ranking'}
           </h1>
           <div className="bg-white/10 p-2 rounded-full backdrop-blur-md">
              <Star className="h-6 w-6 text-yellow-400" />
@@ -241,37 +206,48 @@ export default function LeaderboardPage() {
         </header>
 
         <div className="px-6 space-y-8">
-           <div className="flex justify-center">
-             <button className="bg-gradient-to-b from-yellow-100 to-yellow-500 text-black px-10 py-2 rounded-xl font-black uppercase italic shadow-[0_0_20px_rgba(234,179,8,0.4)] border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition-all">
-                Honor
+           <div className="flex justify-center gap-4">
+             <button 
+               onClick={() => setRankingMode('rich')}
+               className={cn(
+                 "px-8 py-2 rounded-xl font-black uppercase italic transition-all",
+                 rankingType === 'rich' 
+                   ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black shadow-[0_0_20px_rgba(234,179,8,0.4)] border-b-4 border-yellow-700" 
+                   : "bg-white/5 text-white/40"
+               )}
+             >
+                Rich
+             </button>
+             <button 
+               onClick={() => setRankingMode('charm')}
+               className={cn(
+                 "px-8 py-2 rounded-xl font-black uppercase italic transition-all",
+                 rankingType === 'charm' 
+                   ? "bg-gradient-to-b from-pink-100 to-pink-500 text-black shadow-[0_0_20px_rgba(236,72,153,0.4)] border-b-4 border-pink-700" 
+                   : "bg-white/5 text-white/40"
+               )}
+             >
+                Charm
              </button>
            </div>
 
-           <Tabs defaultValue="rich" className="w-full">
+           <Tabs defaultValue="all" className="w-full">
             <TabsList className="flex justify-around w-full bg-transparent border-b border-white/5 h-12 mb-8 rounded-none p-0">
               <TabsTrigger 
-                value="daily" 
+                value="all" 
                 className="flex-1 rounded-none text-xs font-black uppercase text-white/40 data-[state=active]:text-yellow-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-500 transition-all"
               >
-                Daily
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rich" 
-                className="flex-1 rounded-none text-xs font-black uppercase text-white/40 data-[state=active]:text-yellow-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-500 transition-all"
-              >
-                Weekly
-              </TabsTrigger>
-              <TabsTrigger 
-                value="monthly" 
-                className="flex-1 rounded-none text-xs font-black uppercase text-white/40 data-[state=active]:text-yellow-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-500 transition-all"
-              >
-                Monthly
+                Global
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="daily" className="m-0"><RankingList items={richUsers} type="rich" isLoading={isLoadingRich} /></TabsContent>
-            <TabsContent value="rich" className="m-0"><RankingList items={richUsers} type="rich" isLoading={isLoadingRich} /></TabsContent>
-            <TabsContent value="monthly" className="m-0"><RankingList items={richUsers} type="rich" isLoading={isLoadingRich} /></TabsContent>
+            <TabsContent value="all" className="m-0">
+              <RankingList 
+                items={rankingType === 'rich' ? richUsers : charmUsers} 
+                type={rankingType} 
+                isLoading={rankingType === 'rich' ? isLoadingRich : isLoadingCharm} 
+              />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
