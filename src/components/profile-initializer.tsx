@@ -19,18 +19,19 @@ export function ProfileInitializer() {
     if (!user || !firestore || hasInitialized.current === user.uid) return;
 
     const initProfile = async () => {
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      const userRef = doc(firestore, 'users', user.uid);
+      const profileId = user.uid;
+      const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+      const userRef = doc(firestore, 'users', profileId);
       
       try {
         const profileSnap = await getDoc(profileRef);
-        hasInitialized.current = user.uid;
+        hasInitialized.current = profileId;
 
         if (!profileSnap.exists()) {
           const initialData = {
-            id: user.uid,
-            username: user.displayName || `Ummy_${user.uid.substring(0, 5)}`,
-            avatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/400`,
+            id: profileId,
+            username: user.displayName || `Ummy_${profileId.substring(0, 5)}`,
+            avatarUrl: user.photoURL || `https://picsum.photos/seed/${profileId}/400`,
             email: user.email || '',
             bio: 'Vibing on Ummy! Join my tribe.',
             wallet: { 
@@ -56,7 +57,7 @@ export function ProfileInitializer() {
           
           // Background sync for user summary - REQUIRED for Security Rules
           await setDoc(userRef, {
-            id: user.uid,
+            id: profileId,
             username: initialData.username,
             avatarUrl: initialData.avatarUrl,
             wallet: initialData.wallet,

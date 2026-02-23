@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc, updateDoc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where } from 'firebase/firestore';
 import { Settings, Shield, Zap, Gem, Globe, Layout, Loader, Search, User, ClipboardList, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -97,15 +96,14 @@ export default function AdminPage() {
         updatedAt: serverTimestamp()
       };
       
-      await Promise.all([
-        updateDoc(userRef, updateData),
-        updateDoc(profileRef, updateData)
-      ]);
+      // Use setDoc with merge for robustness during admin overrides
+      setDocumentNonBlocking(userRef, updateData, { merge: true });
+      setDocumentNonBlocking(profileRef, updateData, { merge: true });
 
       await logAdminAction(`Adjust ${type}`, targetUserId, { amount });
       
       toast({ title: 'Balance Adjusted', description: `${amount} ${type} processed.` });
-      handleSearchUsers(); // Refresh
+      setTimeout(() => handleSearchUsers(), 500); // Small delay to allow write to propagate for UI
     } catch (e) {
       toast({ variant: 'destructive', title: 'Action failed' });
     } finally {

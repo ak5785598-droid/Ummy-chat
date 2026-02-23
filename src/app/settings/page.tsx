@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
@@ -60,10 +60,14 @@ export default function SettingsPage() {
     if (!firestore || !user) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
-    const updateData = { 'wallet.coins': increment(1000), updatedAt: serverTimestamp() };
+    const updateData = { 
+      'wallet.coins': increment(1000), 
+      updatedAt: serverTimestamp() 
+    };
     
-    updateDocumentNonBlocking(profileRef, updateData);
-    updateDocumentNonBlocking(userRef, updateData);
+    // Use setDocument with merge for robustness
+    setDocumentNonBlocking(profileRef, updateData, { merge: true });
+    setDocumentNonBlocking(userRef, updateData, { merge: true });
     toast({ title: 'Top-up Successful!', description: '1,000 Testing Coins added.' });
   };
 

@@ -49,10 +49,9 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useUserProfile, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useUserProfile, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { 
   collection, 
-  addDoc, 
   serverTimestamp, 
   query, 
   orderBy, 
@@ -60,7 +59,6 @@ import {
   doc, 
   setDoc, 
   deleteDoc,
-  updateDoc,
   arrayUnion,
   arrayRemove,
   increment,
@@ -210,15 +208,15 @@ export function RoomClient({ room }: { room: Room }) {
     const userRef = doc(firestore, 'users', currentUser.uid);
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     
+    // Robust "Upsert" style updates using dot notation and merge
     const updateData = {
       'wallet.coins': increment(-gift.price),
       'wallet.totalSpent': increment(gift.price), 
       'updatedAt': serverTimestamp()
     };
 
-    // Atomic-style updates for the sender
-    updateDocumentNonBlocking(userRef, updateData);
-    updateDocumentNonBlocking(profileRef, updateData);
+    setDocumentNonBlocking(userRef, updateData, { merge: true });
+    setDocumentNonBlocking(profileRef, updateData, { merge: true });
 
     // Identify Recipient (Charm Ranking)
     let finalRecipient = giftRecipient;
@@ -234,8 +232,8 @@ export function RoomClient({ room }: { room: Room }) {
         'stats.fans': increment(gift.price), 
         'updatedAt': serverTimestamp()
       };
-      updateDocumentNonBlocking(recipientRef, charmUpdate);
-      updateDocumentNonBlocking(recipientProfileRef, charmUpdate);
+      setDocumentNonBlocking(recipientRef, charmUpdate, { merge: true });
+      setDocumentNonBlocking(recipientProfileRef, charmUpdate, { merge: true });
     }
 
     // Register gift event in chat
