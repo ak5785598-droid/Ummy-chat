@@ -24,6 +24,7 @@ import {
   Heart,
   Star,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -70,9 +71,11 @@ import {
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
-  { id: 'ring', name: 'Diamond Ring', emoji: '💍', price: 500, animationType: 'bounce' },
+  { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
   { id: 'car', name: 'Luxury Car', emoji: '🏎️', price: 2000, animationType: 'bounce' },
   { id: 'rocket', name: 'Rocket', emoji: '🚀', price: 5000, animationType: 'zoom' },
+  { id: 'castle', name: 'Castle', emoji: '🏰', price: 10000, animationType: 'bounce' },
+  { id: 'galaxy', name: 'Galaxy', emoji: '🌌', price: 50000, animationType: 'zoom' },
 ];
 
 export function RoomClient({ room }: { room: Room }) {
@@ -180,7 +183,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
     setIsSending(true);
     try {
-      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
+      addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
         content: messageText,
         senderId: currentUser.uid,
         senderName: userProfile.username || 'User',
@@ -216,10 +219,11 @@ export function RoomClient({ room }: { room: Room }) {
       };
 
       // Atomic update for balance
-      await Promise.all([updateDoc(userRef, updateData), updateDoc(profileRef, updateData)]);
+      updateDoc(userRef, updateData);
+      updateDoc(profileRef, updateData);
 
       // Add gift message to trigger room-wide animation
-      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
+      addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
         content: `sent a ${gift.name} ${gift.emoji}!`,
         senderId: currentUser.uid,
         senderName: userProfile.username || 'User',
@@ -245,7 +249,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (snapshot.empty) { toast({ title: 'Chat is already clear' }); return; }
       const batch = writeBatch(firestore);
       snapshot.docs.forEach((d) => { batch.delete(d.ref); });
-      await batch.commit();
+      batch.commit();
       toast({ title: 'Chat Cleared', description: 'All room messages have been removed.' });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Action Failed' });
@@ -260,7 +264,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     updateDoc(participantRef, { seatIndex: index });
-    toast({ title: 'You took a seat!', description: `Welcome to seat ${index}.` });
+    toast({ title: 'Welcome to seat!', description: `You took seat ${index}.` });
   };
 
   const leaveSeat = async () => {
@@ -268,7 +272,7 @@ export function RoomClient({ room }: { room: Room }) {
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     updateDoc(participantRef, { seatIndex: 0 });
     setIsActionMenuOpen(false);
-    toast({ title: 'Seat Left' });
+    toast({ title: 'Left Seat' });
   };
 
   const toggleSeatLock = async (index: number | null) => {
@@ -296,7 +300,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (firstAvailable) {
         takeSeat(firstAvailable);
       } else {
-        toast({ variant: 'destructive', title: 'Full Room', description: 'No empty seats available.' });
+        toast({ variant: 'destructive', title: 'Room Full', description: 'No empty seats available.' });
       }
     } else {
       setIsMicOn(!isMicOn);
@@ -307,7 +311,7 @@ export function RoomClient({ room }: { room: Room }) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
         <Loader className="animate-spin text-primary h-10 w-10" />
-        <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Syncing Room Data...</p>
+        <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Entering Frequency...</p>
       </div>
     );
   }
@@ -321,25 +325,25 @@ export function RoomClient({ room }: { room: Room }) {
         <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" className="h-full w-full object-cover opacity-60 scale-110" />
       </div>
 
-      {/* Gift Animation Overlay */}
+      {/* High-Impact Gift Animation Overlay */}
       {activeGiftAnimation && (
         <div className="absolute inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
-          <div className="bg-black/40 backdrop-blur-xl p-8 rounded-[3rem] border-4 border-primary/50 flex flex-col items-center gap-4 shadow-[0_0_100px_rgba(255,107,107,0.4)]">
+          <div className="bg-black/60 backdrop-blur-3xl p-12 rounded-[4rem] border-4 border-primary/50 flex flex-col items-center gap-6 shadow-[0_0_150px_rgba(251,191,36,0.4)]">
              <div className={cn(
-               "text-9xl transition-all",
+               "text-[12rem] transition-all drop-shadow-[0_0_50px_rgba(255,255,255,0.5)]",
                activeGiftAnimation.gift.animationType === 'pulse' && "animate-pulse",
-               activeGiftAnimation.gift.animationType === 'zoom' && "scale-125 animate-bounce",
+               activeGiftAnimation.gift.animationType === 'zoom' && "scale-150 animate-bounce",
                activeGiftAnimation.gift.animationType === 'bounce' && "animate-bounce",
                activeGiftAnimation.gift.animationType === 'spin' && "animate-spin"
              )}>
                 {activeGiftAnimation.gift.emoji}
              </div>
              <div className="text-center">
-                <p className="font-black text-2xl uppercase italic text-primary drop-shadow-md">
+                <p className="font-black text-4xl uppercase italic text-primary drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
                    {activeGiftAnimation.senderName}
                 </p>
-                <p className="font-black text-sm uppercase tracking-widest text-white/80">
-                   Sent {activeGiftAnimation.gift.name}!
+                <p className="font-black text-xl uppercase tracking-widest text-white/90">
+                   Launched {activeGiftAnimation.gift.name}!
                 </p>
              </div>
           </div>
@@ -489,10 +493,10 @@ export function RoomClient({ room }: { room: Room }) {
               <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none">
                  <div className="p-8 space-y-6">
                     <header className="text-center space-y-1">
-                       <h2 className="text-3xl font-black italic uppercase tracking-tighter">Boutique Gifts</h2>
+                       <h2 className="text-3xl font-black italic uppercase tracking-tighter">Ummy Boutique</h2>
                        <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Surprise the Tribe with a Vibe</p>
                     </header>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto p-2">
                        {AVAILABLE_GIFTS.map(gift => (
                          <button 
                            key={gift.id}
@@ -524,7 +528,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </footer>
 
-      {/* Action Menu Dialog */}
+      {/* Seat Action Menu Dialog */}
       <Dialog open={isActionMenuOpen} onOpenChange={setIsActionMenuOpen}>
         <DialogContent className="sm:max-w-sm bg-white/95 backdrop-blur-xl border-none p-0 rounded-t-[2.5rem] overflow-hidden">
           <DialogHeader className="p-6 border-b border-gray-100">
@@ -532,7 +536,7 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <div className="flex flex-col text-center divide-y divide-gray-100">
             <button onClick={() => { setIsMicOn(!isMicOn); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
-              {isMicOn ? 'Mute Mic' : 'Turn On Mic'}
+              {isMicOn ? 'Turn Off Mic' : 'On Mic'}
             </button>
             <button onClick={() => { toast({ title: 'Invited!', description: 'Link shared to your tribe.' }); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">Invite Tribe</button>
             {isAdmin && (

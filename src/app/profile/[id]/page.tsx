@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
@@ -9,7 +10,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { User, Loader, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Globe2, HeartHandshake, Layout, ShoppingBag, Store } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useUserProfile } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -20,22 +21,15 @@ import Link from 'next/link';
 
 /**
  * Social Profile Page.
- * Updated with direct Store/Boutique access.
+ * Optimized for high-speed loading and direct Store access.
  */
 export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const profileId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const profileId = Array.isArray(params?.id) ? params.id[0] : params?.id as string;
   
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
-  const firestore = useFirestore();
-
-  const profileRef = useMemoFirebase(() => {
-    if (!firestore || !profileId) return null;
-    return doc(firestore, 'users', profileId, 'profile', profileId);
-  }, [firestore, profileId]);
-
-  const { data: profile, isLoading: isProfileLoading } = useDoc<any>(profileRef);
+  const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId);
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,14 +46,14 @@ export default function ProfilePage() {
     if (!isUploading) {
       setLocalAvatarPreview(null);
     }
-  }, [isUploading, profile?.avatarUrl]);
+  }, [isUploading]);
 
   if (isAuthLoading || (isProfileLoading && !profile)) {
     return (
       <AppLayout>
         <div className="flex h-full w-full flex-col items-center justify-center py-20 space-y-4">
           <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Locating Profile...</p>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Syncing Identity...</p>
         </div>
       </AppLayout>
     );
@@ -73,7 +67,6 @@ export default function ProfilePage() {
   if (!profile || !currentUser) return null;
 
   const isOwnProfile = currentUser.uid === profileId;
-  const profileHeaderImage = PlaceHolderImages.find(img => img.id === 'profile-header');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -104,7 +97,7 @@ export default function ProfilePage() {
             
             {isOwnProfile && (
               <div className="absolute top-4 right-4 z-10 flex gap-2">
-                <Button asChild size="sm" className="rounded-full bg-primary text-black font-black uppercase tracking-widest text-[10px] h-9 px-4 shadow-lg hover:scale-105 transition-transform">
+                <Button asChild size="sm" className="rounded-full bg-primary text-black font-black uppercase tracking-widest text-[10px] h-9 px-4 shadow-lg hover:scale-105 transition-transform border-none">
                   <Link href="/store">
                     <Store className="mr-1.5 h-3.5 w-3.5" />
                     Boutique
@@ -126,7 +119,7 @@ export default function ProfilePage() {
                       <AvatarImage 
                         src={localAvatarPreview || profile.avatarUrl} 
                       />
-                      <AvatarFallback className="text-4xl">{(profile.username || profile.name || 'U').charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="text-4xl">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
                   {isOwnProfile && (
@@ -140,7 +133,7 @@ export default function ProfilePage() {
                </div>
               <div className="flex-1 pb-4">
                    <div className="flex items-center gap-2">
-                     <h1 className="font-headline text-4xl font-black italic uppercase tracking-tighter text-gray-900 drop-shadow-sm">{profile.username || profile.name}</h1>
+                     <h1 className="font-headline text-4xl font-black italic uppercase tracking-tighter text-gray-900 drop-shadow-sm">{profile.username}</h1>
                      {profile.tags?.includes('Admin') && <ShieldCheck className="h-7 w-7 text-primary" />}
                      {profile.tags?.includes('Official') && <BadgeCheck className="h-7 w-7 text-blue-500" />}
                    </div>
