@@ -1,11 +1,12 @@
 'use client';
-import { useRef } from 'react';
+
+import { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { User, Loader, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Globe2, HeartHandshake } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -18,40 +19,49 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
 export default function ProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const profileId = Array.isArray(params.id) ? params.id[0] : params.id;
   
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
 
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !profileId || !currentUser) return null;
+    if (!firestore || !profileId) return null;
     return doc(firestore, 'users', profileId, 'profile', profileId);
-  }, [firestore, profileId, currentUser]);
+  }, [firestore, profileId]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc<any>(profileRef);
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!isAuthLoading && !currentUser) {
+      router.replace('/login');
+    }
+  }, [currentUser, isAuthLoading, router]);
+
   const isLoading = isAuthLoading || isProfileLoading;
 
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex h-full w-full items-center justify-center py-20">
+        <div className="flex h-full w-full flex-col items-center justify-center py-20 space-y-4">
           <Loader className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Social Data...</p>
         </div>
       </AppLayout>
     );
   }
 
-  if (!profile && !isProfileLoading && profileRef) {
+  // Only trigger 404 if we are definitively NOT loading and the document is truly missing
+  if (!profile && !isProfileLoading && !isAuthLoading && profileRef) {
     notFound();
   }
 
-  if (!profile) return null;
+  if (!profile || !currentUser) return null;
 
-  const isOwnProfile = currentUser?.uid === profileId;
+  const isOwnProfile = currentUser.uid === profileId;
   const profileHeaderImage = PlaceHolderImages.find(img => img.id === 'profile-header');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,26 +168,32 @@ export default function ProfilePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="font-headline">Identity Details</CardTitle>
+                <CardTitle className="font-headline text-xl">Identity Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <p className="text-muted-foreground italic mb-4">"{profile.bio || 'This user is quite mysterious...'}"</p>
                 <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
-                  <User className="h-5 w-5 text-primary/70" />
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary/70" />
+                  </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground">Gender</span>
                     <span className="font-semibold">{profile.details?.gender || 'Secret'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
-                  <Globe2 className="h-5 w-5 text-accent/70" />
+                  <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Globe2 className="h-5 w-5 text-accent/70" />
+                  </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground">Country</span>
                     <span className="font-semibold">{profile.details?.hometown || 'India'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-2 bg-muted/20 rounded-lg">
-                  <HeartHandshake className="h-5 w-5 text-green-500/70" />
+                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <HeartHandshake className="h-5 w-5 text-green-500/70" />
+                  </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground">Age</span>
                     <span className="font-semibold">{profile.details?.age || '22'}</span>
