@@ -23,15 +23,15 @@ export function ProfileInitializer() {
 
     const initProfile = async () => {
       const profileId = user.uid;
-      const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
       const userRef = doc(firestore, 'users', profileId);
+      const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
       const countersRef = doc(firestore, 'appConfig', 'counters');
       
       try {
-        const profileSnap = await getDoc(profileRef);
+        const userSnap = await getDoc(userRef);
         hasInitialized.current = profileId;
 
-        if (!profileSnap.exists()) {
+        if (!userSnap.exists()) {
           // Use transaction to get and increment the user ID counter starting at 1001
           const finalData = await runTransaction(firestore, async (transaction) => {
             const countersSnap = await transaction.get(countersRef);
@@ -71,10 +71,8 @@ export function ProfileInitializer() {
             return initialData;
           });
 
-          // Background sync for detailed profile
-          await setDoc(profileRef, finalData, { merge: true });
-          
           // Background sync for user summary - REQUIRED for Security Rules & Global Rankings
+          // We do this FIRST because rules depend on this document
           await setDoc(userRef, {
             id: profileId,
             specialId: finalData.specialId,
@@ -87,6 +85,9 @@ export function ProfileInitializer() {
             updatedAt: serverTimestamp(),
             joinedAt: serverTimestamp(),
           }, { merge: true });
+
+          // Background sync for detailed profile
+          await setDoc(profileRef, finalData, { merge: true });
 
           toast({
             title: 'Welcome to Ummy!',

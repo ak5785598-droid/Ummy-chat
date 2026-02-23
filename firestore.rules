@@ -3,7 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
     
-    // Robust Admin Check - Ensuring it doesn't block initial profile creation
+    // Robust Admin Check: Verify if the user document has elevated tags.
+    // We use get() and check for field existence to prevent rules errors.
     function isAdmin() {
       return isSignedIn() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -11,18 +12,18 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Users can read any summary for rankings/leaderboards
       allow read: if isSignedIn();
-      // Allow users to create their own identity summary and profile
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      // Allow updates by the owner or an admin
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAdmin();
+      // Users can create and update their own identity summary
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      // Admins have global oversight
+      allow update, delete: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.auth.uid == userId;
-        allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-        allow delete: if isAdmin();
+        // Users can manage their own detailed profile
+        allow create, update: if isSignedIn() && request.auth.uid == userId;
+        allow update, delete: if isAdmin();
       }
     }
 
@@ -44,8 +45,11 @@ service cloud.firestore {
         return isAdmin() || roomData.ownerId == request.auth.uid || roomData.get('moderatorIds', []).hasAny([request.auth.uid]);
       }
 
+      // Any signed in user can find and launch rooms
       allow read, list, create: if isSignedIn();
+      // Room masters and moderators can update room settings
       allow update: if isSignedIn() && isRoomAdmin();
+      // Owners or Global Admins can terminate frequencies
       allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       match /participants/{participantId} {
