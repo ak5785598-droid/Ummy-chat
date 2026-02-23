@@ -25,6 +25,7 @@ import {
   Zap,
   Sparkles,
   Megaphone,
+  UserCheck,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -80,7 +81,7 @@ const AVAILABLE_GIFTS: Gift[] = [
 
 /**
  * Room Client - Elite Voice App Edition.
- * Features: Animated Mic Stages, Full-Screen Gift Effects, Identity Persistence.
+ * Features: Animated Mic Stages, Full-Screen Gift Effects, User Entrance Announcements.
  */
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
@@ -93,6 +94,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const entranceAnnounced = useRef<boolean>(false);
   const { toast } = useToast();
   const { user: currentUser, isLoading: isUserLoading } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(currentUser?.uid);
@@ -115,11 +117,12 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
-  // Presence & Voice Sync Engine
+  // Presence & Voice Sync Engine + Entrance Announcement
   useEffect(() => {
     if (!firestore || !room.id || !currentUser || !userProfile) return;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     
+    // 1. Sync Participant Presence
     setDoc(participantRef, {
       uid: currentUser.uid,
       name: userProfile.username || 'Guest',
@@ -129,6 +132,20 @@ export function RoomClient({ room }: { room: Room }) {
       isMuted: !isMicOn,
       seatIndex: currentUserParticipant?.seatIndex || 0,
     }, { merge: true }).catch(err => console.warn('Sync delayed', err));
+
+    // 2. Broadcast Entrance Message (Once per session)
+    if (!entranceAnnounced.current) {
+      entranceAnnounced.current = true;
+      addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: 'entered the frequency',
+        senderId: currentUser.uid,
+        senderName: userProfile.username || 'User',
+        senderAvatar: userProfile.avatarUrl || '',
+        chatRoomId: room.id, 
+        timestamp: serverTimestamp(),
+        type: 'entrance'
+      });
+    }
 
     return () => { 
       deleteDoc(participantRef).catch(() => {}); 
@@ -204,8 +221,6 @@ export function RoomClient({ room }: { room: Room }) {
     // Sender: Wealth Sync
     setDocumentNonBlocking(userRef, { 
       wallet: { coins: increment(-gift.price), totalSpent: increment(gift.price) },
-      username: userProfile.username,
-      avatarUrl: userProfile.avatarUrl,
       updatedAt: serverTimestamp()
     }, { merge: true });
     setDocumentNonBlocking(profileRef, { 
@@ -228,8 +243,6 @@ export function RoomClient({ room }: { room: Room }) {
       const rpRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
       const updates = { 
         stats: { fans: increment(gift.price) }, 
-        username: finalRecipient.name, 
-        avatarUrl: finalRecipient.avatarUrl || '', 
         updatedAt: serverTimestamp() 
       };
       setDocumentNonBlocking(rRef, updates, { merge: true });
@@ -432,9 +445,24 @@ export function RoomClient({ room }: { room: Room }) {
           {/* Real-time Feed */}
           <div className="mt-8 max-w-lg mx-auto space-y-3 px-4">
             {activeMessages.map((msg) => (
-              <div key={msg.id} className={cn("flex items-start gap-2 animate-in fade-in", msg.type === 'gift' && "bg-primary/10 p-2 rounded-xl border border-primary/20")}>
-                <span className={cn("text-[10px] font-black uppercase shrink-0 mt-1", msg.type === 'gift' ? "text-primary" : "text-blue-400")}>{msg.user.name}:</span>
-                <p className={cn("text-xs font-body", msg.type === 'gift' ? "text-primary font-black italic" : "text-white/80")}>{msg.text}</p>
+              <div key={msg.id} className={cn(
+                "flex items-start gap-2 animate-in fade-in", 
+                msg.type === 'gift' && "bg-primary/10 p-2 rounded-xl border border-primary/20",
+                msg.type === 'entrance' && "bg-blue-500/10 p-1.5 px-3 rounded-full border border-blue-500/20 justify-center w-fit mx-auto"
+              )}>
+                {msg.type === 'entrance' ? (
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-3 w-3 text-blue-400" />
+                    <p className="text-[10px] font-black uppercase italic text-blue-400">
+                      {msg.user.name} <span className="opacity-60">{msg.text}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <span className={cn("text-[10px] font-black uppercase shrink-0 mt-1", msg.type === 'gift' ? "text-primary" : "text-blue-400")}>{msg.user.name}:</span>
+                    <p className={cn("text-xs font-body", msg.type === 'gift' ? "text-primary font-black italic" : "text-white/80")}>{msg.text}</p>
+                  </>
+                )}
               </div>
             ))}
           </div>
