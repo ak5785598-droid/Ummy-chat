@@ -57,7 +57,7 @@ export function ProfileInitializer() {
             email: user.email || '',
             bio: 'Vibing on the Ummy frequency! Join my tribe.',
             wallet: { 
-              coins: 1500, 
+              coins: 100000, // Distribution Gift: 100k coins
               diamonds: 0,
               totalSpent: 0
             },
@@ -97,7 +97,7 @@ export function ProfileInitializer() {
         // 4. Send Welcome Message to user's local inbox
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Welcome to the Tribe!',
-          content: `Your unique Tribe ID is ${finalData.specialId}. We've gifted you 1,500 Gold Coins to get started in the Boutique!`,
+          content: `Your unique Tribe ID is ${finalData.specialId}. We've gifted you 100,000 Gold Coins to get started in the Boutique!`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false
@@ -105,7 +105,7 @@ export function ProfileInitializer() {
 
         toast({
           title: 'Welcome to Ummy!',
-          description: `Your Tribe ID is ${finalData.specialId}. Enjoy 1,500 free coins!`,
+          description: `Your Tribe ID is ${finalData.specialId}. Enjoy 100,000 free coins!`,
         });
 
       } catch (e: any) {

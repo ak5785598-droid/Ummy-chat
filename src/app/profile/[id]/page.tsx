@@ -91,14 +91,14 @@ export default function ProfilePage() {
     
     const updateData = { 
       wallet: {
-        coins: increment(1000)
+        coins: increment(100000)
       },
       updatedAt: serverTimestamp() 
     };
     
     setDocumentNonBlocking(profileRef, updateData, { merge: true });
     setDocumentNonBlocking(userRef, updateData, { merge: true });
-    toast({ title: 'Top-up Successful!', description: '1,000 Beta Coins added.' });
+    toast({ title: 'Top-up Successful!', description: '100,000 Beta Coins added.' });
   };
 
   if (isAuthLoading || (isProfileLoading && !profile)) {
@@ -170,7 +170,7 @@ export default function ProfilePage() {
             {isOwnProfile && (
               <div className="px-6 py-3 bg-primary/5">
                  <Button variant="outline" size="sm" className="w-full rounded-2xl border-dashed border-2 border-primary/30 hover:bg-primary/10 text-primary font-black uppercase italic" onClick={handleTestTopUp}>
-                   <Zap className="h-3.5 w-3.5 mr-1.5" /> Claim 1,000 Beta Coins
+                   <Zap className="h-3.5 w-3.5 mr-1.5" /> Claim 100,000 Beta Coins
                  </Button>
               </div>
             )}

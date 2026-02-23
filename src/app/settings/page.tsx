@@ -72,7 +72,7 @@ export default function SettingsPage() {
     // Use robust nested object structure for recursive setDoc merge
     const updateData = { 
       wallet: {
-        coins: increment(1000),
+        coins: increment(100000),
       },
       ...identitySync,
       updatedAt: serverTimestamp() 
@@ -80,7 +80,7 @@ export default function SettingsPage() {
     
     setDocumentNonBlocking(profileRef, updateData, { merge: true });
     setDocumentNonBlocking(userRef, updateData, { merge: true });
-    toast({ title: 'Top-up Successful!', description: '1,000 Testing Coins added.' });
+    toast({ title: 'Top-up Successful!', description: '100,000 Testing Coins added.' });
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,7 +136,7 @@ export default function SettingsPage() {
             <MenuItem icon={Gem} label="Coins" extra={(userProfile?.wallet?.coins || 0).toLocaleString()} />
             <div className="px-6 py-2">
                <Button variant="outline" size="sm" className="w-full rounded-xl border-dashed" onClick={handleTestTopUp}>
-                 <Zap className="h-3.5 w-3.5 mr-1.5" /> Claim 1,000 Beta Coins
+                 <Zap className="h-3.5 w-3.5 mr-1.5" /> Claim 100,000 Beta Coins
                </Button>
             </div>
             <MenuItem icon={Sparkles} label="Diamonds" extra={(userProfile?.wallet?.diamonds || 0).toLocaleString()} iconColor="text-blue-500" />
