@@ -24,6 +24,8 @@ import {
   Ban,
   ChevronDown,
   AlertTriangle,
+  User as UserIcon,
+  RefreshCw,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -203,50 +205,58 @@ export function RoomClient({ room }: { room: Room }) {
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const roomDocRef = doc(firestore, 'chatRooms', room.id);
     
-    // 1. Update Sender Balance
-    const walletUpdates = {
-      wallet: {
-        coins: increment(-gift.price),
-        totalSpent: increment(gift.price)
-      },
+    let finalRecipient = giftRecipient;
+    if (!finalRecipient) {
+      const host = participants?.find(p => p.seatIndex === 1);
+      if (host) finalRecipient = { uid: host.uid, name: host.name, avatarUrl: host.avatarUrl };
+      else finalRecipient = { uid: currentUser.uid, name: userProfile.username, avatarUrl: userProfile.avatarUrl };
+    }
+
+    const isSelfGifting = finalRecipient.uid === currentUser.uid;
+
+    // 1. Update Sender Balance (and stats)
+    const walletUpdates: any = {
+      'wallet.coins': increment(-gift.price),
+      'wallet.totalSpent': increment(gift.price),
       updatedAt: serverTimestamp()
     };
 
-    setDocumentNonBlocking(userRef, walletUpdates, { merge: true });
-    setDocumentNonBlocking(profileRef, walletUpdates, { merge: true });
+    // 2. Diamond Return (40%)
+    const diamondReturn = Math.floor(gift.price * 0.4);
 
-    // 2. Update Room Stats
+    if (isSelfGifting) {
+      walletUpdates['wallet.diamonds'] = increment(diamondReturn);
+      walletUpdates['stats.fans'] = increment(gift.price);
+    }
+
+    // Apply Sender Updates
+    updateDocumentNonBlocking(userRef, walletUpdates);
+    updateDocumentNonBlocking(profileRef, walletUpdates);
+
+    // 3. Update Room Stats
     updateDocumentNonBlocking(roomDocRef, { 
       'stats.totalGifts': increment(gift.price), 
       updatedAt: serverTimestamp() 
     });
 
-    let finalRecipient = giftRecipient;
-    if (!finalRecipient) {
-      const host = participants?.find(p => p.seatIndex === 1);
-      if (host) finalRecipient = { uid: host.uid, name: host.name, avatarUrl: host.avatarUrl };
-    }
-
-    // 3. Update Recipient Stats & DIAMOND RETURN (40%)
-    if (finalRecipient) {
+    // 4. Update Recipient Stats (if NOT self-gifting, as self-gifting was handled above)
+    if (!isSelfGifting) {
       const rRef = doc(firestore, 'users', finalRecipient.uid);
       const rpRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
       
-      const diamondReturn = Math.floor(gift.price * 0.4); // 40% Diamond Commission
-      
       const recipientUpdates = { 
         'stats.fans': increment(gift.price), 
-        'wallet.diamonds': increment(diamondReturn), // RECIPIENT GETS DIAMONDS
+        'wallet.diamonds': increment(diamondReturn),
         updatedAt: serverTimestamp() 
       };
       
-      setDocumentNonBlocking(rRef, recipientUpdates, { merge: true });
-      setDocumentNonBlocking(rpRef, recipientUpdates, { merge: true });
+      updateDocumentNonBlocking(rRef, recipientUpdates);
+      updateDocumentNonBlocking(rpRef, recipientUpdates);
     }
 
-    // 4. Post Gift Message
+    // 5. Post Gift Message
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: `sent a ${gift.name} ${gift.emoji}!`,
+      content: `sent ${isSelfGifting ? 'themselves' : finalRecipient.name} a ${gift.name} ${gift.emoji}!`,
       senderId: currentUser.uid,
       senderName: userProfile.username,
       senderAvatar: userProfile.avatarUrl,
@@ -254,7 +264,7 @@ export function RoomClient({ room }: { room: Room }) {
       timestamp: serverTimestamp(),
       type: 'gift',
       giftId: gift.id,
-      recipientName: finalRecipient?.name || 'Room'
+      recipientName: finalRecipient.name
     });
 
     setIsGiftPickerOpen(false);
@@ -642,6 +652,42 @@ export function RoomClient({ room }: { room: Room }) {
               <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden">
                  <DialogHeader className="p-8 pb-0 text-center"><DialogTitle className="text-3xl font-black uppercase italic">Ummy Boutique</DialogTitle></DialogHeader>
                  <div className="p-8 pt-6 space-y-6">
+                    {/* Recipient Selector */}
+                    <div className="flex items-center justify-between bg-secondary/30 p-4 rounded-2xl border-2 border-dashed border-primary/20">
+                       <div className="flex items-center gap-3">
+                          <div className="relative">
+                             <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                <AvatarImage src={giftRecipient?.avatarUrl || hostParticipant?.avatarUrl || userProfile?.avatarUrl} />
+                                <AvatarFallback><UserIcon className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
+                             </Avatar>
+                             <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full ring-2 ring-white">
+                                <UserCheck className="h-3 w-3" />
+                             </div>
+                          </div>
+                          <div>
+                             <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Gifting Recipient</p>
+                             <p className="text-sm font-black uppercase italic text-primary">
+                                {giftRecipient?.uid === currentUser?.uid ? 'Myself' : (giftRecipient?.name || hostParticipant?.name || 'The Frequency')}
+                             </p>
+                          </div>
+                       </div>
+                       <Button 
+                         variant="ghost" 
+                         size="sm" 
+                         onClick={() => {
+                           if (giftRecipient?.uid === currentUser?.uid) {
+                             setGiftRecipient(null); // Reset to host
+                           } else {
+                             setGiftRecipient({ uid: currentUser!.uid, name: userProfile!.username, avatarUrl: userProfile!.avatarUrl });
+                           }
+                         }}
+                         className="rounded-full text-[10px] font-black uppercase italic tracking-widest text-primary hover:bg-primary/10 transition-colors"
+                       >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          {giftRecipient?.uid === currentUser?.uid ? 'Switch to Host' : 'Gift Myself'}
+                       </Button>
+                    </div>
+
                     <div className="grid grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto p-2 no-scrollbar">
                        {AVAILABLE_GIFTS.map(g => (
                          <button key={g.id} onClick={() => handleSendGift(g)} className="flex flex-col items-center gap-2 p-4 rounded-3xl bg-secondary/50 hover:bg-primary/20 transition-all border-2 border-transparent hover:border-primary group">

@@ -101,7 +101,10 @@ export default function ProfilePage() {
     }
   };
 
-  if (isAuthLoading || isProfileLoading) {
+  // Wait for both auth and profile to resolve
+  const isWaiting = isAuthLoading || isProfileLoading;
+
+  if (isWaiting) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -112,7 +115,7 @@ export default function ProfilePage() {
     );
   }
 
-  // Handle the case where the profile doc doesn't exist yet (newly logged in user)
+  // Handle newly logged in users who are still initializing
   if (!profile && isOwnProfile) {
     return (
       <AppLayout>
@@ -124,12 +127,12 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile && !isProfileLoading) {
+  if (!profile) {
     notFound();
     return null;
   }
 
-  if (!profile || !currentUser) return null;
+  if (!currentUser) return null;
 
   return (
     <AppLayout>

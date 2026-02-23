@@ -12,11 +12,16 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      
+      // Allow updates to own profile
+      allow update: if isSignedIn() && request.auth.uid == userId;
       
       // SPECIAL: Allow anyone to update 'stats', 'updatedAt', and 'wallet' for gifting/follow system
-      // This enables the 40% Diamond Return system.
+      // This enables the 40% Diamond Return and Fan system.
+      // Use list of allowed keys to prevent overwriting other identity fields.
       allow update: if isSignedIn() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'updatedAt', 'wallet']) ||
         request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
       );
       
@@ -24,8 +29,9 @@ service cloud.firestore {
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow create, update: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && request.auth.uid == userId;
         allow update: if isSignedIn() && (
+          request.auth.uid == userId ||
           request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
         );
         allow delete: if isAdmin();
