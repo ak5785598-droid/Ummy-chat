@@ -11,6 +11,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
+/**
+ * Explore Rooms Page.
+ * Vibrant Yari-style design with community banners and discovery grid.
+ */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -18,7 +22,6 @@ export default function RoomsPage() {
 
   const allRoomsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user) return null;
-    // Simplified query to prevent index-related hangs during initial load
     return query(collection(firestore, 'chatRooms'), limit(50));
   }, [firestore, isUserLoading, user]);
 
@@ -39,7 +42,7 @@ export default function RoomsPage() {
   return (
     <AppLayout hideSidebarOnMobile>
       <div className="min-h-screen bg-background pb-20">
-        {/* Top Header Section - Yellow Style */}
+        {/* Top Header Section - Signature Yellow Style */}
         <header className="bg-gradient-to-b from-primary to-primary/80 px-4 pt-10 pb-6 rounded-b-[2.5rem] shadow-lg sticky top-0 z-50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 bg-white/20 p-2 rounded-full backdrop-blur-sm">
@@ -63,10 +66,11 @@ export default function RoomsPage() {
                     <div className="relative aspect-[1536/681] rounded-2xl overflow-hidden shadow-xl mx-2">
                       <Image
                         src={`https://picsum.photos/seed/ummy-banner-${i}/800/400`}
-                        alt={`Featured community event banner ${i}`}
+                        alt={`Official featured community event banner ${i}`}
                         fill
                         className="object-cover"
                         priority
+                        sizes="(max-width: 768px) 100vw, 800px"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
@@ -82,15 +86,15 @@ export default function RoomsPage() {
           <div className="grid grid-cols-3 gap-3">
             <Link href="/leaderboard" className="relative h-24 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-400 p-3 shadow-lg hover:scale-105 transition-transform group overflow-hidden">
                <span className="text-white font-bold text-sm uppercase relative z-10">Ranking</span>
-               <Crown className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" />
+               <Crown className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" aria-hidden="true" />
             </Link>
             <Link href="/match" className="relative h-24 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 p-3 shadow-lg hover:scale-105 transition-transform group overflow-hidden">
                <span className="text-white font-bold text-sm uppercase relative z-10">CP</span>
-               <Heart className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" />
+               <Heart className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" aria-hidden="true" />
             </Link>
             <div className="relative h-24 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-3 shadow-lg hover:scale-105 transition-transform group overflow-hidden cursor-pointer">
                <span className="text-white font-bold text-sm uppercase relative z-10">Family</span>
-               <Users className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" />
+               <Users className="absolute -bottom-2 -right-2 h-16 w-16 text-white/20 group-hover:scale-110 transition-transform" aria-hidden="true" />
             </div>
           </div>
 
@@ -106,7 +110,7 @@ export default function RoomsPage() {
                     : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
                 }`}
               >
-                {cat.id === 'Popular' && <Flame className="h-4 w-4 fill-current" />}
+                {cat.id === 'Popular' && <Flame className="h-4 w-4 fill-current" aria-hidden="true" />}
                 {cat.label}
               </button>
             ))}
@@ -115,9 +119,11 @@ export default function RoomsPage() {
             </div>
           </div>
 
-          {/* Rooms Grid */}
+          {/* Rooms Discovery Grid */}
           {isRoomsLoading ? (
-            <div className="flex justify-center py-20"><Loader className="h-10 w-10 animate-spin text-primary" /></div>
+            <div className="flex justify-center py-20">
+              <Loader className="h-10 w-10 animate-spin text-primary" />
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 pb-24">
               {filteredRooms.length > 0 ? (

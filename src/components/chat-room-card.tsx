@@ -13,6 +13,10 @@ interface ChatRoomCardProps {
   variant?: 'default' | 'modern';
 }
 
+/**
+ * Chat Room Card Component.
+ * Optimized with proper alt tags and real-time participant counts.
+ */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -32,7 +36,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden shadow-md">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/400`}
-              alt={`Cover for room ${room.title}`}
+              alt={`Live community room: ${room.title}`}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               sizes="(max-width: 768px) 50vw, 33vw"
@@ -60,7 +64,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           <div className="relative h-40 w-full">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`}
-              alt={`Banner for room ${room.title}`}
+              alt={`Chat room background for ${room.title}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

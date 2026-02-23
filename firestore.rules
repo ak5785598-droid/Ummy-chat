@@ -4,6 +4,7 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
 
+    // User data rules
     match /users {
       allow list: if isSignedIn();
       match /{userId} {
@@ -17,28 +18,28 @@ service cloud.firestore {
       }
     }
 
+    // App configuration rules
     match /appConfig/{configId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn(); 
     }
     
+    // Store items rules
     match /storeItems/{itemId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }
 
-    match /chatRooms {
+    // Chat room rules (Flattened for stability)
+    match /chatRooms/{chatRoomId} {
       allow read, list, create, update: if isSignedIn();
-      match /{chatRoomId} {
-        allow read, list, create, update: if isSignedIn();
-        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-        
-        match /participants/{participantId} {
-          allow read, list, create, update, delete: if isSignedIn();
-        }
-        match /messages/{messageId} {
-          allow read, list, create, delete: if isSignedIn();
-        }
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      
+      match /participants/{participantId} {
+        allow read, list, create, update, delete: if isSignedIn();
+      }
+      match /messages/{messageId} {
+        allow read, list, create, delete: if isSignedIn();
       }
     }
   }
