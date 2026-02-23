@@ -9,6 +9,7 @@ import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { doc, updateDoc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 /**
