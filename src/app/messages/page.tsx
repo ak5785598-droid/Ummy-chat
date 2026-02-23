@@ -7,6 +7,7 @@ import { Bell, MessageCircle, UserPlus, Star, ShieldCheck, ChevronRight, Search 
 import { useUser, useUserProfile } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { UmmyLogoIcon } from '@/components/icons';
 
 /**
  * Message Center - High-fidelity Inbox.
