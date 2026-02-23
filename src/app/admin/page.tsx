@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Enterprise Admin Control Panel.
@@ -59,7 +61,15 @@ export default function AdminPage() {
         details,
         createdAt: serverTimestamp()
       });
-    } catch (e) {}
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'adminLogs',
+          operation: 'create',
+          requestResourceData: { action, targetId }
+        }));
+      }
+    }
   };
 
   const handleSearchUsers = async () => {
@@ -74,6 +84,13 @@ export default function AdminPage() {
       );
       const snap = await getDocs(q);
       setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'users',
+          operation: 'list',
+        }));
+      }
     } finally {
       setIsSearching(false);
     }
@@ -105,6 +122,13 @@ export default function AdminPage() {
       await batch.commit();
       await logAdminAction('Wipe All Rooms', 'collection/chatRooms', { count: snap.size });
       toast({ title: 'All Frequencies Terminated' });
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'chatRooms',
+          operation: 'delete',
+        }));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -118,6 +142,13 @@ export default function AdminPage() {
       await setDoc(countersRef, { roomCounter: 0, userCounter: 1000 }, { merge: true });
       await logAdminAction('Reset Counters', 'config/counters', {});
       toast({ title: 'System Counters Reset', description: 'IDs will restart from baseline.' });
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'appConfig/counters',
+          operation: 'update',
+        }));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -189,7 +220,15 @@ export default function AdminPage() {
                    <CardContent className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl">
                          <div><Label className="font-black uppercase italic">Economy Engine</Label><p className="text-[10px] text-muted-foreground">Toggle coin spending.</p></div>
-                         <Switch checked={config?.economyEnabled ?? true} onCheckedChange={(val) => setDoc(configRef!, { economyEnabled: val }, { merge: true })} />
+                         <Switch checked={config?.economyEnabled ?? true} onCheckedChange={(val) => setDoc(configRef!, { economyEnabled: val }, { merge: true }).catch(e => {
+                            if (e.code === 'permission-denied') {
+                               errorEmitter.emit('permission-error', new FirestorePermissionError({
+                                  path: configRef!.path,
+                                  operation: 'update',
+                                  requestResourceData: { economyEnabled: val }
+                               }));
+                            }
+                         })} />
                       </div>
                    </CardContent>
                 </Card>

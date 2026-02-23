@@ -83,6 +83,8 @@ import {
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
@@ -231,11 +233,20 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleClearChat = async () => {
     if (!canManageRoom || !firestore || !room.id) return;
-    const snap = await getDocs(collection(firestore, 'chatRooms', room.id, 'messages'));
-    const batch = writeBatch(firestore);
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    toast({ title: 'Chat Cleared' });
+    try {
+      const snap = await getDocs(collection(firestore, 'chatRooms', room.id, 'messages'));
+      const batch = writeBatch(firestore);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      toast({ title: 'Chat Cleared' });
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `chatRooms/${room.id}/messages`,
+          operation: 'delete',
+        }));
+      }
+    }
   };
 
   const handleDeleteRoom = async () => {
@@ -251,7 +262,13 @@ export function RoomClient({ room }: { room: Room }) {
       toast({ title: 'Frequency Terminated', description: 'The tribe has been disbanded.' });
       setActiveRoom(null);
       router.push('/rooms');
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `chatRooms/${room.id}`,
+          operation: 'delete',
+        }));
+      }
       toast({ variant: 'destructive', title: 'Deletion Failed' });
     } finally {
       setIsDeleting(false);

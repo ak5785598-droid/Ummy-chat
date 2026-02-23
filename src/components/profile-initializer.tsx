@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Ensures a user profile exists in Firestore after login.
@@ -91,8 +93,14 @@ export function ProfileInitializer() {
             description: `Your Tribe ID is ${finalData.specialId}. Enjoy 1,500 free coins!`,
           });
         }
-      } catch (e) {
-        console.error("Profile initialization error:", e);
+      } catch (e: any) {
+        if (e.code === 'permission-denied') {
+          const contextualError = new FirestorePermissionError({
+            path: `users/${user.uid}`,
+            operation: 'create',
+          });
+          errorEmitter.emit('permission-error', contextualError);
+        }
       }
     };
 

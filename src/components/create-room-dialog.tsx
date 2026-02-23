@@ -88,12 +88,14 @@ export function CreateRoomDialog() {
       setOpen(false);
       router.push(`/rooms/${docRef.id}`);
     } catch (error: any) {
-      console.error(error);
-      const permissionError = new FirestorePermissionError({
-        path: 'chatRooms',
-        operation: 'create',
-      });
-      errorEmitter.emit('permission-error', permissionError);
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: 'chatRooms',
+          operation: 'create',
+          requestResourceData: { name, topic, category }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
     } finally {
       setIsSubmitting(false);
     }
