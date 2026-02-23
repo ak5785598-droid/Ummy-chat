@@ -23,7 +23,10 @@ import {
   Shirt,
   Sparkles,
   ShoppingCart,
-  Pencil
+  Pencil,
+  MessageSquare,
+  BadgeInfo,
+  Store
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -40,7 +43,7 @@ import Link from 'next/link';
 
 /**
  * Me Center / Settings Page
- * High-fidelity redesign matching the community aesthetic.
+ * Redesigned to match the provided specifications.
  */
 export default function SettingsPage() {
   const auth = useAuth();
@@ -93,179 +96,117 @@ export default function SettingsPage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const displayName = userProfile?.username || user.displayName || 'User';
   const avatarUrl = localAvatarPreview || userProfile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/200`;
 
   const MenuItem = ({ icon: Icon, label, href, extra, iconColor }: { icon: any, label: string, href?: string, extra?: React.ReactNode, iconColor?: string }) => {
     const content = (
-      <div className="flex items-center justify-between py-5 border-b border-gray-100 last:border-0 group cursor-pointer px-6 hover:bg-gray-50/50 transition-all">
+      <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 group cursor-pointer px-6 hover:bg-gray-50/50 transition-all">
         <div className="flex items-center gap-4">
-          <div className={cn("p-2.5 rounded-2xl bg-muted/20", iconColor || "text-gray-400")}>
-            <Icon className="h-6 w-6" />
-          </div>
-          <span className="font-black text-gray-800 text-sm uppercase italic tracking-tight">{label}</span>
+          <Icon className={cn("h-6 w-6", iconColor || "text-primary")} />
+          <span className="font-bold text-gray-800 text-sm">{label}</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
-          {extra}
-          <ChevronRight className="h-5 w-5 opacity-40 group-hover:translate-x-1 transition-transform" />
+          {extra && <span className="text-xs text-muted-foreground">{extra}</span>}
+          <ChevronRight className="h-4 w-4 opacity-40 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
     );
 
     if (href) {
-      return <Link href={href}>{content}</Link>;
+      return <Link href={href} className="block">{content}</Link>;
     }
     return content;
   };
 
   return (
     <AppLayout>
-      <div className="max-w-xl mx-auto space-y-6 pb-24 animate-in fade-in duration-700">
+      <div className="max-w-xl mx-auto space-y-6 pb-24 animate-in fade-in duration-700 bg-gray-50/50 min-h-screen">
         
-        {/* Top Profile Header Area */}
-        <div className="relative bg-white pb-8 rounded-b-[3rem] shadow-xl overflow-hidden">
-          <div className="relative h-48 w-full">
+        {/* Header Section */}
+        <div className="relative bg-white pb-6 rounded-b-[2rem] shadow-sm overflow-hidden">
+          <div className="relative h-44 w-full">
             <Image 
-              src="https://picsum.photos/seed/me-banner/1200/400" 
+              src="https://images.unsplash.com/photo-1501785888041-af3ef285b470" 
               alt="Profile banner background" 
               fill 
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           </div>
           
-          <div className="px-8 -mt-12 flex flex-row items-end gap-6 relative z-10">
+          <div className="px-6 -mt-10 flex flex-row items-end gap-4 relative z-10">
             <div className="relative group">
-              <div className="p-1.5 rounded-full bg-white shadow-2xl">
-                <Avatar className="h-28 w-28 border-4 border-white bg-orange-600 shadow-inner">
-                  <AvatarImage src={avatarUrl} alt={`${displayName}'s account avatar`} />
-                  <AvatarFallback className="text-4xl text-white font-black italic">{displayName.charAt(0)}</AvatarFallback>
-                </Avatar>
-              </div>
+              <Avatar className="h-24 w-24 border-4 border-white bg-primary shadow-lg">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback className="text-3xl text-white font-black">{displayName.charAt(0)}</AvatarFallback>
+              </Avatar>
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-1.5 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                 disabled={isUploading}
-                aria-label="Change profile picture"
               >
-                {isUploading ? <Loader className="h-8 w-8 animate-spin text-white" /> : <Camera className="h-8 w-8 text-white" />}
+                {isUploading ? <Loader className="h-6 w-6 animate-spin text-white" /> : <Camera className="h-6 w-6 text-white" />}
               </button>
             </div>
-            
-            <div className="pb-4 space-y-2">
-               <div className="flex items-center gap-2">
-                 <h1 className="text-3xl font-black text-gray-900 tracking-tighter italic uppercase">{displayName}</h1>
-                 <EditProfileDialog profile={userProfile} />
-               </div>
-               <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-primary/20 text-primary border-none px-4 rounded-full text-[10px] font-black uppercase tracking-widest italic">Lv.Rich {userProfile?.level?.rich || 1}</Badge>
-                  <Badge className="bg-accent/20 text-accent border-none px-4 rounded-full text-[10px] font-black uppercase tracking-widest italic">Lv.Charm {userProfile?.level?.charm || 1}</Badge>
-                  <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-2 py-0.5 rounded">ID: {user.uid.substring(0, 8)}</span>
+            <div className="pb-2">
+               <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
+               <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline" className="text-[10px] uppercase font-bold border-primary text-primary">Lv. {userProfile?.level?.rich || 1}</Badge>
+                  <EditProfileDialog profile={userProfile} />
                </div>
             </div>
           </div>
         </div>
 
         {/* Performance Overview */}
-        <div className="px-4 space-y-4">
-          <h2 className="text-xs font-black text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2 px-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Performance Pulse
-          </h2>
+        <div className="px-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-3xl p-8 text-center border-none shadow-sm relative overflow-hidden group">
-              <span className="text-4xl font-black text-primary relative z-10">{userProfile?.stats?.followers || 0}</span>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 relative z-10">Followers</p>
-              <div className="absolute -bottom-4 -right-4 text-primary/5 rotate-12 group-hover:scale-110 transition-transform"><User className="h-20 w-20" /></div>
+            <div className="bg-yellow-50 rounded-2xl p-6 text-center shadow-sm border border-yellow-100">
+              <span className="text-2xl font-black text-gray-800">{userProfile?.stats?.followers || 0}</span>
+              <p className="text-xs text-gray-500 mt-1">Followers</p>
             </div>
-            <div className="bg-white rounded-3xl p-8 text-center border-none shadow-sm relative overflow-hidden group">
-              <span className="text-4xl font-black text-accent relative z-10">{userProfile?.stats?.fans || 0}</span>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 relative z-10">Total Fans</p>
-              <div className="absolute -bottom-4 -right-4 text-accent/5 rotate-12 group-hover:scale-110 transition-transform"><Sparkles className="h-20 w-20" /></div>
+            <div className="bg-pink-50 rounded-2xl p-6 text-center shadow-sm border border-pink-100">
+              <span className="text-2xl font-black text-gray-800">{userProfile?.stats?.fans || 0}</span>
+              <p className="text-xs text-gray-500 mt-1">Total Fans</p>
             </div>
           </div>
         </div>
 
-        {/* Wallet & Assets */}
-        <div className="px-4 space-y-4">
-          <h2 className="text-xs font-black text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2 px-2">
-            <Wallet className="h-4 w-4 text-primary" /> Global Assets
-          </h2>
-          <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
-            <div className="flex items-center justify-between p-6 border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                  <Gem className="h-8 w-8" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-black text-gray-800 text-sm uppercase italic">Coins</span>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Main Currency</span>
-                </div>
-              </div>
-              <span className="font-black text-3xl italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between p-6 group hover:bg-gray-50/50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-blue-100/50 text-blue-500">
-                  <Sparkles className="h-8 w-8" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-black text-gray-800 text-sm uppercase italic">Diamonds</span>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Premium Essence</span>
-                </div>
-              </div>
-              <span className="font-black text-3xl italic">{(userProfile?.wallet?.diamonds || 0).toLocaleString()}</span>
-            </div>
+        {/* Wallet & Assets Section */}
+        <div className="px-4 space-y-3">
+          <h2 className="text-lg font-bold text-gray-800 px-2">Wallet & Assets</h2>
+          <Card className="border-none shadow-sm bg-white overflow-hidden rounded-2xl">
+            <MenuItem icon={Gem} label="Coins" extra={userProfile?.wallet?.coins?.toLocaleString() || '0'} />
+            <MenuItem icon={Sparkles} label="Diamonds" extra={userProfile?.wallet?.diamonds?.toLocaleString() || '0'} iconColor="text-blue-500" />
+            <MenuItem icon={Wallet} label="Wallet" href="/store" iconColor="text-purple-500" />
+            <MenuItem icon={Store} label="Store" href="/store" iconColor="text-orange-500" />
+            <MenuItem icon={Trophy} label={`Level (Lv.${userProfile?.level?.rich || 1})`} href="/leaderboard" iconColor="text-yellow-500" />
+            <MenuItem icon={Shirt} label="My Items" href="/store" iconColor="text-cyan-500" />
           </Card>
         </div>
 
-        {/* Main Menu List */}
-        <div className="px-4">
-          <Card className="border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden">
-            <MenuItem icon={ShoppingCart} label="Ummy Boutique" href="/store" iconColor="text-cyan-500" />
-            <MenuItem 
-              icon={Trophy} 
-              label="Leaderboard" 
-              href="/leaderboard" 
-              iconColor="text-orange-500" 
-              extra={
-                <div className="flex items-center gap-1 bg-amber-800/10 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black italic border border-amber-700/10">
-                   <Star className="h-3 w-3 fill-current" />
-                   <span>Top 100</span>
-                </div>
-              }
-            />
-            <MenuItem icon={Shirt} label="My Inventory" href="/store" iconColor="text-purple-500" />
+        {/* Others Section */}
+        <div className="px-4 space-y-3">
+          <h2 className="text-lg font-bold text-gray-800 px-2">Others</h2>
+          <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+            <MenuItem icon={Globe} label="Language" extra="English" iconColor="text-gray-400" />
+            <MenuItem icon={MessageSquare} label="Feedback" href="/help-center" iconColor="text-gray-400" />
+            <MenuItem icon={SettingsIcon} label="Settings" iconColor="text-gray-400" />
           </Card>
         </div>
 
-        {/* Settings Group */}
-        <div className="px-4">
-          <Card className="border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden">
-            <MenuItem 
-              icon={Globe} 
-              label="Language" 
-              iconColor="text-gray-400" 
-              extra={<span className="text-xs font-black uppercase text-muted-foreground/60 italic">English</span>}
-            />
-            <MenuItem icon={Mail} label="Help & Feedback" href="/help-center" iconColor="text-gray-400" />
-            <MenuItem icon={SettingsIcon} label="Account Settings" iconColor="text-gray-400" />
-          </Card>
-        </div>
-
-        {/* Logout Button */}
+        {/* Logout */}
         <div className="px-8 pt-4">
            <Button 
             variant="ghost" 
-            className="w-full text-destructive hover:bg-destructive/10 rounded-2xl h-14 font-black uppercase tracking-widest text-xs italic"
+            className="w-full text-destructive hover:bg-destructive/10 rounded-2xl h-14 font-bold"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out from Frequency
+            Logout
           </Button>
         </div>
 

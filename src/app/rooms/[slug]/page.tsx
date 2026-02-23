@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -12,8 +11,7 @@ import type { Room } from '@/lib/types';
 
 /**
  * Chat Room Entry Page.
- * Handles authentication checks, room data fetching, and official room provisioning.
- * Reinforced to prevent premature 404s during official room setup.
+ * Reinforced to prevent premature 404s and handle official room provisioning.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -23,16 +21,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
   const [isProvisioning, setIsProvisioning] = useState(false);
-  const [hasCheckedProvisioning, setHasCheckedProvisioning] = useState(false);
+  const [hasHandshaked, setHasHandshaked] = useState(false);
 
   // Authentication Guard
   useEffect(() => {
-    if (!isAuthLoading) {
-      if (!currentUser) {
-        router.replace('/login');
-      } else {
-        setInitStatus('Connecting to Frequency...');
-      }
+    if (!isAuthLoading && !currentUser) {
+      router.replace('/login');
     }
   }, [isAuthLoading, currentUser, router]);
 
@@ -44,96 +38,79 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
-  // Provision official room if it doesn't exist
+  // Handshake Logic: Ensure official hubs are provisioned before ever showing 404
   useEffect(() => {
-    const checkAndProvision = async () => {
-      // Wait until we have a stable reference and auth is settled
-      if (!roomDocRef || isAuthLoading || !firestore || !currentUser) return;
+    const performHandshake = async () => {
+      if (!roomDocRef || isAuthLoading || !firestore || !currentUser || isDocLoading) return;
 
-      // Handle special provisioning for the official hub
-      if (slug === 'official-help-room') {
-        if (!isDocLoading && !firestoreRoom && !isProvisioning && !hasCheckedProvisioning) {
-          setIsProvisioning(true);
-          setInitStatus('Syncing Official Hub...');
-          const officialRef = doc(firestore, 'chatRooms', 'official-help-room');
-          try {
-            await setDoc(officialRef, {
-              name: 'Ummy Official Help Room',
-              description: 'Meet the community and get live support from the official team.',
-              ownerId: 'official-admin',
-              category: 'Popular',
-              coverUrl: 'https://picsum.photos/seed/official-help/1200/400',
-              announcement: 'Welcome to Ummy! Be respectful and enjoy the group vibe. Official support is active here.',
-              createdAt: serverTimestamp(),
-              moderatorIds: ['official-admin'],
-              lockedSeats: []
-            }, { merge: true });
-          } catch (err) {
-            console.warn("Hub initialization failed", err);
-          } finally {
-            setIsProvisioning(false);
-            setHasCheckedProvisioning(true);
-          }
-        } else if (firestoreRoom || !isDocLoading) {
-          setHasCheckedProvisioning(true);
+      if (slug === 'official-help-room' && !firestoreRoom && !isProvisioning) {
+        setIsProvisioning(true);
+        setInitStatus('Provisioning Official Hub...');
+        try {
+          await setDoc(roomDocRef, {
+            name: 'Ummy Official Hub',
+            description: 'Live community and team support.',
+            ownerId: 'official-admin',
+            category: 'Popular',
+            coverUrl: 'https://picsum.photos/seed/official-hub/1200/400',
+            announcement: 'Welcome! This is the official support frequency.',
+            createdAt: serverTimestamp(),
+            moderatorIds: ['official-admin'],
+            lockedSeats: []
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Handshake failed:", e);
+        } finally {
+          setIsProvisioning(false);
+          setHasHandshaked(true);
         }
       } else {
-        // For regular rooms, just mark checked once loading finishes
-        if (!isDocLoading) {
-          setHasCheckedProvisioning(true);
-        }
+        setHasHandshaked(true);
       }
     };
-    
-    checkAndProvision();
-  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, hasCheckedProvisioning, roomDocRef, isAuthLoading]);
+
+    performHandshake();
+  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, roomDocRef, isAuthLoading]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;
     return {
       id: firestoreRoom.id,
       slug: firestoreRoom.id,
-      title: firestoreRoom.name || 'Untitled Room',
-      topic: firestoreRoom.description || 'No topic set',
+      title: firestoreRoom.name || 'Frequency',
+      topic: firestoreRoom.description || '',
       category: (firestoreRoom.category as any) || 'Chat',
       coverUrl: firestoreRoom.coverUrl || `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
       ownerId: firestoreRoom.ownerId,
       moderatorIds: firestoreRoom.moderatorIds || [],
       lockedSeats: firestoreRoom.lockedSeats || [],
-      announcement: firestoreRoom.announcement || "Welcome! Be respectful and enjoy the group vibe.",
+      announcement: firestoreRoom.announcement || "Enjoy the vibe!",
       createdAt: firestoreRoom.createdAt,
     } as any;
   }, [firestoreRoom]);
 
-  // Handle Permission or Security Errors
   if (docError) {
      return (
         <AppLayout>
             <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 text-center px-6">
                 <ShieldAlert className="h-16 w-16 text-destructive mb-2" />
-                <h1 className="text-2xl font-black uppercase italic">Access Frequency Denied</h1>
-                <p className="text-muted-foreground max-w-md">The room ID is invalid or you do not have permission to access this vibe.</p>
-                <button 
-                  onClick={() => router.push('/rooms')} 
-                  className="bg-primary text-black font-black uppercase px-8 py-3 rounded-full shadow-lg"
-                >
-                  Back to Explore
-                </button>
+                <h1 className="text-2xl font-black uppercase italic">Handshake Denied</h1>
+                <p className="text-muted-foreground max-w-md">You do not have permission to access this frequency.</p>
+                <button onClick={() => router.push('/rooms')} className="bg-primary text-black font-black uppercase px-8 py-3 rounded-full">Back to Explore</button>
             </div>
         </AppLayout>
      );
   }
 
-  // Patience Guard: Wait for auth, the ref to be created, doc loading, and provisioning
-  // We explicitly wait until isDocLoading is false AND hasCheckedProvisioning is true
-  const isWaiting = isAuthLoading || !roomDocRef || isDocLoading || isProvisioning || !hasCheckedProvisioning;
+  // Wait until auth, doc loading, AND the handshake are all settled
+  const isWaiting = isAuthLoading || isDocLoading || isProvisioning || !hasHandshaked;
 
   if (isWaiting) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
           <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground animate-pulse font-mono uppercase tracking-[0.3em] font-bold">
+          <p className="text-xs text-muted-foreground animate-pulse font-black uppercase tracking-widest">
             {initStatus}
           </p>
         </div>
@@ -141,7 +118,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  // Final 404 Guard: Only after all patient checks have failed
   if (!activeRoom) {
     notFound();
     return null;
