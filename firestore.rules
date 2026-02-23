@@ -19,9 +19,7 @@ service cloud.firestore {
       
       // SPECIAL: Allow anyone to update 'stats', 'updatedAt', and 'wallet' for gifting/follow system
       // This enables the 40% Diamond Return and Fan system.
-      // Use list of allowed keys to prevent overwriting other identity fields.
       allow update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'updatedAt', 'wallet']) ||
         request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
       );
       
