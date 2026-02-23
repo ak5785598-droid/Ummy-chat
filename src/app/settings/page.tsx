@@ -26,13 +26,14 @@ import {
   Pencil,
   MessageSquare,
   BadgeInfo,
-  Store
+  Store,
+  Zap
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
@@ -40,6 +41,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 
 /**
  * Me Center / Settings Page
@@ -47,6 +49,7 @@ import Link from 'next/link';
  */
 export default function SettingsPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
@@ -55,6 +58,7 @@ export default function SettingsPage() {
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
 
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
+  const [isToppingUp, setIsToppingUp] = useState(false);
 
   useEffect(() => {
     if (!isUploading) {
@@ -69,6 +73,34 @@ export default function SettingsPage() {
       router.push('/login');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
+    }
+  };
+
+  const handleTestTopUp = async () => {
+    if (!firestore || !user || isToppingUp) return;
+    setIsToppingUp(true);
+    try {
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const userRef = doc(firestore, 'users', user.uid);
+      
+      const updateData = {
+        'wallet.coins': increment(1000),
+        updatedAt: serverTimestamp()
+      };
+      
+      await Promise.all([
+        updateDoc(profileRef, updateData),
+        updateDoc(userRef, updateData)
+      ]);
+
+      toast({ 
+        title: 'Frequency Boosted!', 
+        description: '1,000 Beta Coins have been added to your identity.' 
+      });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Top-up failed' });
+    } finally {
+      setIsToppingUp(false);
     }
   };
 
@@ -180,6 +212,20 @@ export default function SettingsPage() {
           <h2 className="text-lg font-bold text-gray-800 px-2">Wallet & Assets</h2>
           <Card className="border-none shadow-sm bg-white overflow-hidden rounded-2xl">
             <MenuItem icon={Gem} label="Coins" extra={userProfile?.wallet?.coins?.toLocaleString() || '0'} />
+            
+            <div className="px-6 py-2">
+               <Button 
+                 variant="outline" 
+                 size="sm" 
+                 disabled={isToppingUp}
+                 className="w-full rounded-xl border-dashed border-primary/40 text-primary font-bold h-9 bg-primary/5 hover:bg-primary/10 transition-all"
+                 onClick={handleTestTopUp}
+               >
+                 {isToppingUp ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 mr-1.5" />}
+                 Claim 1,000 Beta Coins
+               </Button>
+            </div>
+
             <MenuItem icon={Sparkles} label="Diamonds" extra={userProfile?.wallet?.diamonds?.toLocaleString() || '0'} iconColor="text-blue-500" />
             <MenuItem icon={Wallet} label="Wallet" href="/store" iconColor="text-purple-500" />
             <MenuItem icon={Store} label="Store" href="/store" iconColor="text-orange-500" />
