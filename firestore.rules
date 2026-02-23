@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -36,20 +35,23 @@ service cloud.firestore {
     }
 
     match /chatRooms/{chatRoomId} {
-      allow read, list, create, update: if isSignedIn();
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-      
       function isRoomAdmin() {
         let roomData = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
-        return roomData.ownerId == request.auth.uid || roomData.get('moderatorIds', []).hasAny([request.auth.uid]);
+        return isAdmin() || roomData.ownerId == request.auth.uid || roomData.get('moderatorIds', []).hasAny([request.auth.uid]);
       }
 
+      allow read, list, create: if isSignedIn();
+      allow update: if isSignedIn() && isRoomAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      
       match /participants/{participantId} {
-        allow read, list, create, update, delete: if isSignedIn();
+        allow read, list, create: if isSignedIn();
+        allow update: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin());
+        allow delete: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin());
       }
       match /messages/{messageId} {
         allow read, list, create: if isSignedIn();
-        allow delete: if isAdmin() || isRoomAdmin();
+        allow delete: if isSignedIn() && isRoomAdmin();
       }
     }
 
