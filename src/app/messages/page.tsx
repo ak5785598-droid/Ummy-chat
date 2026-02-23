@@ -2,27 +2,27 @@
 
 import { AppLayout } from '@/components/layout/app-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, MessageCircle, UserPlus, Star, ShieldCheck, ChevronRight, Search } from 'lucide-react';
-import { useUser, useUserProfile } from '@/firebase';
+import { Bell, MessageCircle, UserPlus, Star, ShieldCheck, ChevronRight, Search, Loader } from 'lucide-react';
+import { useUser, useUserProfile, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import Link from 'next/link';
 import { UmmyLogoIcon } from '@/components/icons';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 /**
  * Message Center - High-fidelity Elite Inbox.
+ * Dynamically fetches system notifications and user chats.
  */
 export default function MessagesPage() {
   const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
+  const firestore = useFirestore();
 
-  const officialMessages = [
-    {
-      id: 'system-1',
-      title: 'Welcome to Ummy Official!',
-      content: 'Your Tribe Frequency is now online. Join the Official Hub for team support.',
-      time: 'Just now',
-      isOfficial: true,
-    }
-  ];
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('timestamp', 'desc'));
+  }, [firestore, user]);
+
+  const { data: systemMessages, isLoading } = useCollection(notificationsQuery);
 
   return (
     <AppLayout>
@@ -77,21 +77,29 @@ export default function MessagesPage() {
           </TabsContent>
 
           <TabsContent value="official" className="pt-6 space-y-4">
-             {officialMessages.map((msg) => (
-               <div key={msg.id} className="p-4 bg-white rounded-3xl border border-gray-100 flex gap-4 hover:shadow-md transition-shadow cursor-pointer">
-                  <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
-                     <UmmyLogoIcon className="h-8 w-8" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                     <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-black text-sm uppercase italic">Ummy Assistant</h3>
-                        <span className="text-[10px] font-bold text-muted-foreground">{msg.time}</span>
-                     </div>
-                     <p className="text-xs text-muted-foreground line-clamp-2">{msg.content}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 self-center text-gray-300" />
-               </div>
-             ))}
+             {isLoading ? (
+               <div className="flex justify-center py-10"><Loader className="animate-spin text-primary" /></div>
+             ) : systemMessages?.length === 0 ? (
+               <div className="py-20 text-center text-muted-foreground uppercase font-black text-[10px] tracking-widest italic opacity-40">No System Broadcasts</div>
+             ) : (
+               systemMessages?.map((msg: any) => (
+                 <div key={msg.id} className="p-4 bg-white rounded-3xl border border-gray-100 flex gap-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
+                       <UmmyLogoIcon className="h-8 w-8" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-black text-sm uppercase italic">{msg.title || 'Ummy Assistant'}</h3>
+                          <span className="text-[10px] font-bold text-muted-foreground">
+                            {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d') : 'Now'}
+                          </span>
+                       </div>
+                       <p className="text-xs text-muted-foreground line-clamp-2">{msg.content}</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 self-center text-gray-300" />
+                 </div>
+               ))
+             )}
           </TabsContent>
         </Tabs>
       </div>

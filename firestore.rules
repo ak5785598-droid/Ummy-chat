@@ -4,7 +4,7 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     
     // Robust Admin Check: Verify if the user document has elevated tags.
-    // We use get() and check for field existence to prevent rules errors.
+    // We check existence first to prevent rules errors on new user creation.
     function isAdmin() {
       return isSignedIn() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -14,16 +14,21 @@ service cloud.firestore {
     match /users/{userId} {
       // Users can read any summary for rankings/leaderboards
       allow read: if isSignedIn();
-      // Users can create and update their own identity summary
-      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      // Users can manage their own identity summary and profile
+      allow write: if isSignedIn() && request.auth.uid == userId;
       // Admins have global oversight
       allow update, delete: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        // Users can manage their own detailed profile
-        allow create, update: if isSignedIn() && request.auth.uid == userId;
+        allow write: if isSignedIn() && request.auth.uid == userId;
         allow update, delete: if isAdmin();
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+        allow delete: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
