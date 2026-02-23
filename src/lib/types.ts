@@ -1,3 +1,4 @@
+
 export type User = {
   id: string;
   name: string;
@@ -46,7 +47,7 @@ export type RoomParticipant = {
   uid: string;
   name: string;
   avatarUrl: string;
-  seatIndex: number; // 0 for sofa, 1-10 for seats
+  seatIndex: number; // 0 for audience, 1 for host, 2-13 for seats
   isMuted: boolean;
   joinedAt: any;
   activeFrame?: string;
@@ -57,7 +58,7 @@ export type Room = {
   slug: string;
   title: string;
   topic: string;
-  category: 'Popular' | 'Game' | 'Chat' | 'Singing' | 'Battle';
+  category: 'Popular' | 'Game' | 'Chat' | 'Singing';
   coverUrl: string;
   announcement?: string;
   ownerId: string;
@@ -103,14 +104,6 @@ export type Task = {
       label: string;
       href: string;
   }
-};
-
-export type PkBattle = {
-  id: string;
-  room1: Room;
-  room2: Room;
-  score1: number;
-  score2: number;
 };
 
 export type AdminLog = {

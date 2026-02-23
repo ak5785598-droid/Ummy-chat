@@ -25,7 +25,6 @@ import {
   Star,
   Zap,
   Sparkles,
-  Swords,
   Megaphone,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift, Message } from '@/lib/types';
@@ -82,7 +81,7 @@ const AVAILABLE_GIFTS: Gift[] = [
 
 /**
  * Room Client - Enterprise Yari Edition.
- * Features: Marquee Announcement, PK Tug-of-War Bar, Animated Gifting, Identity Frames.
+ * Features: Marquee Announcement, Animated Gifting, Identity Frames.
  */
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
@@ -468,30 +467,6 @@ export function RoomClient({ room }: { room: Room }) {
                <p className="text-[10px] font-black uppercase tracking-widest text-primary/80 animate-marquee inline-block">
                   {room.announcement || 'Welcome to the frequency! Respect the vibe and enjoy the tribe.'}
                </p>
-            </div>
-         </div>
-      </div>
-
-      {/* PK Tug-of-War Bar */}
-      <div className="relative z-50 px-6 mt-4">
-         <div className="bg-black/40 backdrop-blur-xl border-2 border-white/5 rounded-2xl p-2 relative overflow-hidden">
-            <div className="flex justify-between items-center px-4 mb-1">
-               <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black italic text-blue-400 uppercase">Host</span>
-                  <span className="text-[10px] font-mono text-white/60">{(roomGiftScore * 0.6).toLocaleString()}</span>
-               </div>
-               <div className="bg-red-500 p-1 rounded-sm rotate-12 flex items-center gap-1">
-                  <Swords className="h-3 w-3 text-white" />
-                  <span className="text-[8px] font-black text-white italic">PK LIVE</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-white/60">{(roomGiftScore * 0.4).toLocaleString()}</span>
-                  <span className="text-[10px] font-black italic text-pink-400 uppercase">Tribe</span>
-               </div>
-            </div>
-            <div className="relative h-2 w-full bg-pink-500 rounded-full overflow-hidden">
-               <div className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-1000" style={{ width: '60%' }} />
-               <div className="absolute top-0 left-[60%] -translate-x-1/2 h-full w-1 bg-white/50" />
             </div>
          </div>
       </div>

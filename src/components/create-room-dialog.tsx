@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +28,10 @@ import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+/**
+ * Dialog component for creating a new voice chat room.
+ * Hardened with proper Next.js 15 routing and error handling.
+ */
 export function CreateRoomDialog() {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +58,7 @@ export function CreateRoomDialog() {
       createdAt: serverTimestamp(),
       category: category,
       tags: [],
+      stats: { totalGifts: 0 } // Initialize for leaderboard indexing
     };
 
     try {
@@ -82,64 +86,65 @@ export function CreateRoomDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2 rounded-full font-black uppercase italic tracking-widest text-xs px-6 shadow-lg shadow-primary/20">
           <Plus className="h-4 w-4" />
           Create Room
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-t-[2.5rem] border-none shadow-2xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Create Your Room</DialogTitle>
-            <DialogDescription>
-              Start a new conversation. Set a name and topic for your vibe.
+          <DialogHeader className="p-4 text-center">
+            <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Start a Tribe</DialogTitle>
+            <DialogDescription className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Define your frequency and gather your tribe.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-8 px-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Room Name</Label>
+              <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Room Name</Label>
               <Input
                 id="name"
-                placeholder="The Cool Lounge"
+                placeholder="e.g. Neon Dreamers"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="h-14 rounded-2xl border-2 focus:border-primary transition-all text-lg"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="topic">Topic / Description</Label>
+              <Label htmlFor="topic" className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Vibe Topic</Label>
               <Input
                 id="topic"
-                placeholder="Talking about everything and nothing"
+                placeholder="e.g. Late night lofi vibes"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                className="h-14 rounded-2xl border-2 focus:border-primary transition-all"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category" className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="category">
+                <SelectTrigger id="category" className="h-14 rounded-2xl border-2">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Chat">Chat</SelectItem>
-                  <SelectItem value="Game">Game</SelectItem>
-                  <SelectItem value="Singing">Singing</SelectItem>
-                  <SelectItem value="Battle">Battle</SelectItem>
+                <SelectContent className="bg-white border-none shadow-xl rounded-2xl">
+                  <SelectItem value="Chat">General Chat</SelectItem>
+                  <SelectItem value="Game">Game Zone</SelectItem>
+                  <SelectItem value="Singing">Singing/Music</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || !name || !topic}>
+          <DialogFooter className="p-4 pt-0">
+            <Button type="submit" className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20" disabled={isSubmitting || !name || !topic}>
               {isSubmitting ? (
                 <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  <Loader className="mr-2 h-6 w-6 animate-spin" />
+                  Syncing...
                 </>
               ) : (
-                'Create Room'
+                'Launch Frequency'
               )}
             </Button>
           </DialogFooter>
