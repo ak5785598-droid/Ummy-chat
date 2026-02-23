@@ -15,7 +15,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Allow listing users for the global leaderboard
       allow read, list: if isSignedIn();
+      
       match /profile/{profileId} {
         allow read: if isSignedIn();
         allow write: if isOwner(userId);

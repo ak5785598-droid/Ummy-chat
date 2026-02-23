@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 
 /**
  * Ensures a user profile exists in Firestore after login.
@@ -17,11 +17,12 @@ export function ProfileInitializer() {
 
     const initProfile = async () => {
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const userRef = doc(firestore, 'users', user.uid);
+      
       const profileSnap = await getDoc(profileRef);
 
       if (!profileSnap.exists()) {
-        // Create initial production-ready profile from Auth data
-        await setDoc(profileRef, {
+        const initialData = {
           id: user.uid,
           username: user.displayName || 'Ummy User',
           avatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/200`,
@@ -39,6 +40,20 @@ export function ProfileInitializer() {
             hometown: 'India',
             age: 22
           }
+        };
+
+        // Create initial production-ready profile in subcollection
+        await setDoc(profileRef, initialData, { merge: true });
+        
+        // Also sync basic info to top-level user doc for rankings/leaderboard queries
+        await setDoc(userRef, {
+          id: user.uid,
+          username: initialData.username,
+          avatarUrl: initialData.avatarUrl,
+          wallet: initialData.wallet,
+          stats: initialData.stats,
+          level: initialData.level,
+          updatedAt: serverTimestamp()
         }, { merge: true });
       }
     };
