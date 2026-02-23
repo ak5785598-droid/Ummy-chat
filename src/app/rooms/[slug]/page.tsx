@@ -13,7 +13,7 @@ import type { Room } from '@/lib/types';
 /**
  * Chat Room Entry Page.
  * Handles authentication checks, room data fetching, and official room provisioning.
- * Optimized to prevent premature 404s during official room setup.
+ * Optimized to prevent premature 404s during official room setup or slow connections.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -47,42 +47,46 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   // Provision official room if it doesn't exist
   useEffect(() => {
     const checkAndProvision = async () => {
-      // Only handle special provisioning for the official hub
-      if (slug !== 'official-help-room') {
-        if (!isDocLoading) setHasCheckedProvisioning(true);
-        return;
-      }
+      // Wait until we have a stable reference and auth is settled
+      if (!roomDocRef || isAuthLoading || !firestore || !currentUser) return;
 
-      // If loading is done and room is missing, create it
-      if (!isDocLoading && !firestoreRoom && firestore && currentUser && !isProvisioning && !hasCheckedProvisioning) {
-        setIsProvisioning(true);
-        setInitStatus('Syncing Official Hub...');
-        const officialRef = doc(firestore, 'chatRooms', 'official-help-room');
-        try {
-          await setDoc(officialRef, {
-            name: 'Ummy Official Help Room',
-            description: 'Meet the community and get live support from the official team.',
-            ownerId: 'official-admin',
-            category: 'Popular',
-            coverUrl: 'https://picsum.photos/seed/official-help/1200/400',
-            announcement: 'Welcome to Ummy! Be respectful and enjoy the group vibe. Official support is active here.',
-            createdAt: serverTimestamp(),
-            moderatorIds: ['official-admin'],
-            lockedSeats: []
-          }, { merge: true });
-        } catch (err) {
-          console.warn("Hub initialization failed", err);
-        } finally {
-          setIsProvisioning(false);
+      // Handle special provisioning for the official hub
+      if (slug === 'official-help-room') {
+        if (!isDocLoading && !firestoreRoom && !isProvisioning && !hasCheckedProvisioning) {
+          setIsProvisioning(true);
+          setInitStatus('Syncing Official Hub...');
+          const officialRef = doc(firestore, 'chatRooms', 'official-help-room');
+          try {
+            await setDoc(officialRef, {
+              name: 'Ummy Official Help Room',
+              description: 'Meet the community and get live support from the official team.',
+              ownerId: 'official-admin',
+              category: 'Popular',
+              coverUrl: 'https://picsum.photos/seed/official-help/1200/400',
+              announcement: 'Welcome to Ummy! Be respectful and enjoy the group vibe. Official support is active here.',
+              createdAt: serverTimestamp(),
+              moderatorIds: ['official-admin'],
+              lockedSeats: []
+            }, { merge: true });
+          } catch (err) {
+            console.warn("Hub initialization failed", err);
+          } finally {
+            setIsProvisioning(false);
+            setHasCheckedProvisioning(true);
+          }
+        } else if (firestoreRoom || !isDocLoading) {
           setHasCheckedProvisioning(true);
         }
-      } else if (firestoreRoom || (!isDocLoading && slug !== 'official-help-room')) {
-        setHasCheckedProvisioning(true);
+      } else {
+        // For regular rooms, just mark checked once loading finishes
+        if (!isDocLoading) {
+          setHasCheckedProvisioning(true);
+        }
       }
     };
     
     checkAndProvision();
-  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, hasCheckedProvisioning]);
+  }, [slug, firestoreRoom, isDocLoading, firestore, currentUser, isProvisioning, hasCheckedProvisioning, roomDocRef, isAuthLoading]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;
@@ -120,8 +124,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Patience Guard: Wait for auth, loading, provisioning, and official checks
-  const isWaiting = isAuthLoading || isDocLoading || isProvisioning || (slug === 'official-help-room' && !hasCheckedProvisioning);
+  // Patience Guard: Wait for auth, the ref to be created, doc loading, and provisioning
+  const isWaiting = isAuthLoading || !roomDocRef || isDocLoading || isProvisioning || !hasCheckedProvisioning;
 
   if (isWaiting) {
     return (
