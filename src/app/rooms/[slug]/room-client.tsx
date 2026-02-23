@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -11,7 +12,7 @@ import {
   Loader,
   MoreVertical,
   UserX,
-  Gift,
+  Gift as GiftIcon,
   Users,
   Crown,
   Settings,
@@ -20,8 +21,11 @@ import {
   Trash2,
   LogOut,
   UserPlus,
+  Heart,
+  Star,
+  Zap,
 } from 'lucide-react';
-import type { Room, RoomParticipant } from '@/lib/types';
+import type { Room, RoomParticipant, Gift, Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,16 +67,22 @@ import {
   getDocs,
 } from 'firebase/firestore';
 
-/**
- * Chat Room Client View.
- * Optimized for high-performance real-time interaction and specific seat menus.
- */
+const AVAILABLE_GIFTS: Gift[] = [
+  { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
+  { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
+  { id: 'ring', name: 'Diamond Ring', emoji: '💍', price: 500, animationType: 'bounce' },
+  { id: 'car', name: 'Luxury Car', emoji: '🏎️', price: 2000, animationType: 'bounce' },
+  { id: 'rocket', name: 'Rocket', emoji: '🚀', price: 5000, animationType: 'zoom' },
+];
+
 export function RoomClient({ room }: { room: Room }) {
   const [isMicOn, setIsMicOn] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
+  const [activeGiftAnimation, setActiveGiftAnimation] = useState<{ gift: Gift; senderName: string } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -115,14 +125,7 @@ export function RoomClient({ room }: { room: Room }) {
     };
   }, [firestore, room.id, currentUser?.uid, userProfile?.username, userProfile?.avatarUrl]);
 
-  // Sync Mic State with Firestore
-  useEffect(() => {
-    if (!firestore || !room.id || !currentUser) return;
-    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    updateDoc(participantRef, { isMuted: !isMicOn }).catch(() => {});
-  }, [isMicOn, firestore, room.id, currentUser]);
-
-  // Messages Query
+  // Messages Query for both Text and Gifts
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
     return query(
@@ -138,9 +141,25 @@ export function RoomClient({ room }: { room: Room }) {
     return firestoreMessages?.map((m: any) => ({
       id: m.id,
       text: m.content,
+      type: m.type || 'text',
+      giftId: m.giftId,
       user: { id: m.senderId, name: m.senderName || 'User', avatarUrl: m.senderAvatar || '' }
     })) || [];
   }, [firestoreMessages]);
+
+  // Gift Animation Trigger Logic
+  useEffect(() => {
+    if (!activeMessages.length) return;
+    const lastMsg = activeMessages[activeMessages.length - 1];
+    if (lastMsg.type === 'gift' && lastMsg.giftId) {
+      const gift = AVAILABLE_GIFTS.find(g => g.id === lastMsg.giftId);
+      if (gift) {
+        setActiveGiftAnimation({ gift, senderName: lastMsg.user.name });
+        const timer = setTimeout(() => setActiveGiftAnimation(null), 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activeMessages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -168,6 +187,7 @@ export function RoomClient({ room }: { room: Room }) {
         senderAvatar: userProfile.avatarUrl || '',
         chatRoomId: room.id, 
         timestamp: serverTimestamp(),
+        type: 'text'
       });
       setMessageText('');
     } catch (e) { 
@@ -177,23 +197,41 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  const handleSendGift = async () => {
+  const handleSendGift = async (gift: Gift) => {
     if (!currentUser || !firestore || !userProfile) return;
-    const giftCost = 100;
-    if ((userProfile.wallet?.coins || 0) < giftCost) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Recharge to send gifts!' });
+    
+    if ((userProfile.wallet?.coins || 0) < gift.price) {
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${gift.price} coins for this gift!` });
       return;
     }
+
     try {
       const userRef = doc(firestore, 'users', currentUser.uid);
       const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      
       const updateData = {
-        'wallet.coins': increment(-giftCost),
-        'wallet.totalSpent': increment(giftCost),
+        'wallet.coins': increment(-gift.price),
+        'wallet.totalSpent': increment(gift.price),
         'updatedAt': serverTimestamp()
       };
+
+      // Atomic update for balance
       await Promise.all([updateDoc(userRef, updateData), updateDoc(profileRef, updateData)]);
-      toast({ title: 'Gift Sent!', description: `You sent a 100 coin gift!` });
+
+      // Add gift message to trigger room-wide animation
+      await addDoc(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: `sent a ${gift.name} ${gift.emoji}!`,
+        senderId: currentUser.uid,
+        senderName: userProfile.username || 'User',
+        senderAvatar: userProfile.avatarUrl || '',
+        chatRoomId: room.id,
+        timestamp: serverTimestamp(),
+        type: 'gift',
+        giftId: gift.id
+      });
+
+      setIsGiftPickerOpen(false);
+      toast({ title: 'Gift Sent!', description: `You sent a ${gift.name} to the room!` });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Gift Error', description: 'Failed to send gift.' });
     }
@@ -241,14 +279,6 @@ export function RoomClient({ room }: { room: Room }) {
     setIsActionMenuOpen(false);
   };
 
-  const toggleAllSeatsLock = async () => {
-    if (!firestore || !room.id || !isAdmin) return;
-    const roomRef = doc(firestore, 'chatRooms', room.id);
-    const allLocked = room.lockedSeats?.length >= 13;
-    updateDoc(roomRef, { lockedSeats: allLocked ? [] : Array.from({ length: 13 }, (_, i) => i + 1) });
-    setIsActionMenuOpen(false);
-  };
-
   const handleSeatAvatarClick = (index: number, occupant: RoomParticipant | undefined) => {
     if (occupant?.uid === currentUser?.uid || isAdmin) {
       setSelectedSeatIndex(index);
@@ -260,7 +290,6 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleBottomMicClick = () => {
     if (!isInSeat) {
-      // Find first available seat
       const firstAvailable = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].find(idx => 
         !participants?.some(p => p.seatIndex === idx) && !room.lockedSeats?.includes(idx)
       );
@@ -291,6 +320,31 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
         <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" className="h-full w-full object-cover opacity-60 scale-110" />
       </div>
+
+      {/* Gift Animation Overlay */}
+      {activeGiftAnimation && (
+        <div className="absolute inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
+          <div className="bg-black/40 backdrop-blur-xl p-8 rounded-[3rem] border-4 border-primary/50 flex flex-col items-center gap-4 shadow-[0_0_100px_rgba(255,107,107,0.4)]">
+             <div className={cn(
+               "text-9xl transition-all",
+               activeGiftAnimation.gift.animationType === 'pulse' && "animate-pulse",
+               activeGiftAnimation.gift.animationType === 'zoom' && "scale-125 animate-bounce",
+               activeGiftAnimation.gift.animationType === 'bounce' && "animate-bounce",
+               activeGiftAnimation.gift.animationType === 'spin' && "animate-spin"
+             )}>
+                {activeGiftAnimation.gift.emoji}
+             </div>
+             <div className="text-center">
+                <p className="font-black text-2xl uppercase italic text-primary drop-shadow-md">
+                   {activeGiftAnimation.senderName}
+                </p>
+                <p className="font-black text-sm uppercase tracking-widest text-white/80">
+                   Sent {activeGiftAnimation.gift.name}!
+                </p>
+             </div>
+          </div>
+        </div>
+      )}
 
       <header className="relative z-50 flex items-center justify-between p-6">
         <div className="flex items-center gap-3">
@@ -387,11 +441,21 @@ export function RoomClient({ room }: { room: Room }) {
             })}
           </div>
 
+          {/* Chat Messages */}
           <div className="mt-8 max-w-lg mx-auto space-y-3 px-4">
             {activeMessages.map((msg) => (
-              <div key={msg.id} className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2">
-                <span className="text-[10px] font-black text-blue-400 uppercase shrink-0 mt-1">{msg.user.name}:</span>
-                <p className="text-xs text-white/80 font-body">{msg.text}</p>
+              <div key={msg.id} className={cn(
+                "flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2",
+                msg.type === 'gift' && "bg-primary/10 p-2 rounded-xl border border-primary/20"
+              )}>
+                <span className={cn(
+                  "text-[10px] font-black uppercase shrink-0 mt-1",
+                  msg.type === 'gift' ? "text-primary" : "text-blue-400"
+                )}>{msg.user.name}:</span>
+                <p className={cn(
+                  "text-xs font-body",
+                  msg.type === 'gift' ? "text-primary font-black italic" : "text-white/80"
+                )}>{msg.text}</p>
               </div>
             ))}
           </div>
@@ -416,7 +480,46 @@ export function RoomClient({ room }: { room: Room }) {
             >
               {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
             </Button>
-            <Button onClick={handleSendGift} className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 animate-pulse shadow-xl shadow-pink-500/20"><Gift className="h-7 w-7 text-white" /></Button>
+            <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 animate-pulse shadow-xl shadow-pink-500/20">
+                   <GiftIcon className="h-7 w-7 text-white" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none">
+                 <div className="p-8 space-y-6">
+                    <header className="text-center space-y-1">
+                       <h2 className="text-3xl font-black italic uppercase tracking-tighter">Boutique Gifts</h2>
+                       <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Surprise the Tribe with a Vibe</p>
+                    </header>
+                    <div className="grid grid-cols-3 gap-4">
+                       {AVAILABLE_GIFTS.map(gift => (
+                         <button 
+                           key={gift.id}
+                           onClick={() => handleSendGift(gift)}
+                           className="flex flex-col items-center gap-2 p-4 rounded-3xl bg-secondary/50 hover:bg-primary/20 transition-all border-2 border-transparent hover:border-primary group"
+                         >
+                            <span className="text-4xl group-hover:scale-125 transition-transform">{gift.emoji}</span>
+                            <div className="text-center">
+                               <p className="text-[10px] font-black uppercase truncate w-20">{gift.name}</p>
+                               <div className="flex items-center justify-center gap-1 text-[10px] font-black text-primary">
+                                  <Zap className="h-3 w-3 fill-current" />
+                                  {gift.price}
+                               </div>
+                            </div>
+                         </button>
+                       ))}
+                    </div>
+                    <div className="bg-secondary/30 p-4 rounded-2xl flex items-center justify-between">
+                       <span className="text-xs font-black uppercase">Your Balance</span>
+                       <div className="flex items-center gap-2 font-black text-primary italic">
+                          <Zap className="h-4 w-4 fill-current" />
+                          {userProfile?.wallet?.coins || 0}
+                       </div>
+                    </div>
+                 </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </footer>
@@ -425,7 +528,7 @@ export function RoomClient({ room }: { room: Room }) {
       <Dialog open={isActionMenuOpen} onOpenChange={setIsActionMenuOpen}>
         <DialogContent className="sm:max-w-sm bg-white/95 backdrop-blur-xl border-none p-0 rounded-t-[2.5rem] overflow-hidden">
           <DialogHeader className="p-6 border-b border-gray-100">
-            <DialogTitle className="text-center font-headline text-2xl text-gray-800 uppercase italic italic">Seat Actions</DialogTitle>
+            <DialogTitle className="text-center font-headline text-2xl text-gray-800 uppercase italic">Seat Actions</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col text-center divide-y divide-gray-100">
             <button onClick={() => { setIsMicOn(!isMicOn); setIsActionMenuOpen(false); }} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
@@ -437,7 +540,6 @@ export function RoomClient({ room }: { room: Room }) {
                 <button onClick={() => toggleSeatLock(selectedSeatIndex)} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">
                   {room.lockedSeats?.includes(selectedSeatIndex || 0) ? 'Unlock Seat' : 'Lock Seat'}
                 </button>
-                <button onClick={toggleAllSeatsLock} className="py-5 font-bold text-gray-700 hover:bg-gray-50 transition-colors uppercase tracking-widest text-xs">Lock All Seats</button>
               </>
             )}
             <button onClick={leaveSeat} className="py-6 font-black text-destructive hover:bg-red-50 transition-colors uppercase tracking-widest text-sm italic">Leave Seat</button>

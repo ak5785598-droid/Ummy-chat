@@ -39,6 +39,8 @@ export type Message = {
   senderName: string;
   senderAvatar: string;
   timestamp: any;
+  type?: 'text' | 'gift';
+  giftId?: string;
 };
 
 export type RoomParticipant = {
@@ -63,6 +65,14 @@ export type Room = {
   moderatorIds?: string[];
   lockedSeats?: number[];
   createdAt: any;
+};
+
+export type Gift = {
+  id: string;
+  name: string;
+  emoji: string;
+  price: number;
+  animationType: 'pulse' | 'bounce' | 'spin' | 'zoom';
 };
 
 export type Game = {
