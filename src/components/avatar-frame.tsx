@@ -50,7 +50,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
                <circle cx="50" cy="30" r="5" fill="#ef4444" className="animate-pulse" />
             </g>
 
-            {/* Side Roses (Represented as clusters) */}
+            {/* Side Roses */}
             <g className="animate-bounce" style={{ animationDuration: '3s' }}>
                <circle cx="15" cy="30" r="8" fill="#7e22ce" stroke="#581c87" strokeWidth="1" />
                <circle cx="85" cy="30" r="8" fill="#7e22ce" stroke="#581c87" strokeWidth="1" />
@@ -58,21 +58,12 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
                <circle cx="88" cy="25" r="5" fill="#a855f7" />
             </g>
 
-            {/* Bottom Wings & Hexagon */}
+            {/* Bottom Wings */}
             <g transform="translate(0, 70)">
-               {/* Wings */}
                <path d="M10 10 Q -5 0, 30 15 L 40 20" fill="white" stroke="url(#imperialGold)" strokeWidth="1" opacity="0.9" />
                <path d="M90 10 Q 105 0, 70 15 L 60 20" fill="white" stroke="url(#imperialGold)" strokeWidth="1" opacity="0.9" />
-               
-               {/* Central Hexagon Gem */}
                <path d="M50 5 L65 15 L65 35 L50 45 L35 35 L35 15 Z" fill="#7e22ce" stroke="url(#imperialGold)" strokeWidth="2" />
                <path d="M50 15 L58 22 L58 28 L50 35 L42 28 L42 22 Z" fill="#a855f7" className="animate-pulse" />
-            </g>
-
-            {/* Floating Sparkles */}
-            <g className="animate-pulse">
-               <path d="M20 80 L22 85 L20 90 L18 85 Z" fill="white" />
-               <path d="M80 80 L82 85 L80 90 L78 85 Z" fill="white" />
             </g>
           </svg>
         )}

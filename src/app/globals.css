@@ -86,3 +86,11 @@
 .animate-glow {
   animation: glow-pulse 2s infinite;
 }
+
+@keyframes voice-wave {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.animate-voice-wave {
+  animation: voice-wave 1.5s infinite;
+}
