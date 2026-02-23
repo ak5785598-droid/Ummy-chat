@@ -17,25 +17,25 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { slug } = use(params);
   const router = useRouter();
   const firestore = useFirestore();
-  const { user: currentUser, isLoading: isUserLoading } = useUser();
+  const { user: currentUser, isLoading: isAuthLoading } = useUser();
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
 
   // Redirect to login if auth check finishes and no user is found
   useEffect(() => {
-    if (!isUserLoading) {
+    if (!isAuthLoading) {
       if (!currentUser) {
         router.replace('/login');
       } else {
         setInitStatus('Connecting to Frequency...');
       }
     }
-  }, [isUserLoading, currentUser, router]);
+  }, [isAuthLoading, currentUser, router]);
 
   // Guard: Only fetch document if we have an authenticated user context
   const roomDocRef = useMemoFirebase(() => {
-    if (!firestore || !slug || isUserLoading || !currentUser) return null;
+    if (!firestore || !slug || isAuthLoading || !currentUser) return null;
     return doc(firestore, 'chatRooms', slug);
-  }, [firestore, slug, isUserLoading, currentUser]);
+  }, [firestore, slug, isAuthLoading, currentUser]);
 
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
@@ -92,13 +92,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Final check for existence - only trigger if we definitely have a user and ref and we are not loading
+  // Final check for existence - only trigger if we definitely have a user and ref AND the fetch is done
   if (currentUser && roomDocRef && !isDocLoading && !firestoreRoom && slug !== 'official-help-room') {
     notFound();
   }
 
   // Loading screen for auth or doc loading
-  if (isUserLoading || (isDocLoading && !firestoreRoom) || (slug === 'official-help-room' && !firestoreRoom)) {
+  if (isAuthLoading || (roomDocRef && !firestoreRoom)) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">

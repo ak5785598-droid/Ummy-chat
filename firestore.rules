@@ -14,14 +14,11 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    match /users {
-      allow list: if isSignedIn();
-      match /{userId} {
+    match /users/{userId} {
+      allow read, list: if isSignedIn();
+      match /profile/{profileId} {
         allow read: if isSignedIn();
-        match /profile/{profileId} {
-          allow read: if isSignedIn();
-          allow write: if isOwner(userId);
-        }
+        allow write: if isOwner(userId);
       }
     }
 

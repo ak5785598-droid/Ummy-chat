@@ -77,7 +77,7 @@ export default function ProfilePage() {
             {profileHeaderImage && (
               <Image
                 src={profile.coverUrl || profileHeaderImage.imageUrl}
-                alt="Profile header background"
+                alt={`${profile.username || 'User'}'s Profile header background`}
                 fill
                 className="object-cover"
                 priority
@@ -101,7 +101,7 @@ export default function ProfilePage() {
                     (!profile.frame || profile.frame === 'None') && "from-transparent to-transparent"
                   )}>
                     <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
-                      <AvatarImage src={profile.avatarUrl} alt={`${profile.username || 'User'} Profile Photo`} />
+                      <AvatarImage src={profile.avatarUrl} alt={`${profile.username || 'User'}'s Profile Photo`} />
                       <AvatarFallback className="text-4xl">{(profile.username || profile.name || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
@@ -109,6 +109,7 @@ export default function ProfilePage() {
                      <div 
                         className="absolute inset-2 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" 
                         onClick={() => fileInputRef.current?.click()}
+                        aria-label="Change profile picture"
                       >
                         {isUploading ? <Loader className="h-8 w-8 animate-spin text-white" /> : <Camera className="h-8 w-8 text-white" />}
                      </div>

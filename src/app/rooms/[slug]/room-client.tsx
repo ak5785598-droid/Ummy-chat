@@ -183,6 +183,8 @@ export function RoomClient({ room }: { room: Room }) {
     );
   }
 
+  const hostParticipant = participants?.find(p => p.seatIndex === 1);
+
   return (
     <div className="flex flex-col h-full bg-[#0a0a0f] overflow-hidden text-white font-headline rounded-3xl border border-white/5 relative">
       
@@ -254,19 +256,19 @@ export function RoomClient({ room }: { room: Room }) {
                 <div className="relative">
                    <div className="absolute -inset-1 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full animate-pulse blur-sm opacity-50" />
                    <div 
-                      onClick={() => !participants?.find(p => p.seatIndex === 1) && takeSeat(1)}
+                      onClick={() => !hostParticipant && takeSeat(1)}
                       className={cn(
                       "h-32 w-32 rounded-full flex items-center justify-center transition-all relative cursor-pointer border-4 bg-black/40",
-                      participants?.find(p => p.seatIndex === 1) ? "border-yellow-400" : "border-white/10 hover:border-primary/50"
+                      hostParticipant ? "border-yellow-400" : "border-white/10 hover:border-primary/50"
                    )}>
-                      {participants?.find(p => p.seatIndex === 1) ? (
+                      {hostParticipant ? (
                          <div className="relative h-full w-full">
                             <Avatar className="h-full w-full rounded-full border-2 border-black">
                                <AvatarImage 
-                                 src={participants.find(p => p.seatIndex === 1)?.avatarUrl} 
-                                 alt={`${participants.find(p => p.seatIndex === 1)?.name} Avatar`} 
+                                 src={hostParticipant.avatarUrl} 
+                                 alt={`${hostParticipant.name} Host Avatar`} 
                                />
-                               <AvatarFallback>H</AvatarFallback>
+                               <AvatarFallback>{hostParticipant.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg border border-black/10">HOST</div>
                          </div>
