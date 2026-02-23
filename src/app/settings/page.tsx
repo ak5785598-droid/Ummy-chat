@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -31,7 +30,7 @@ import {
   useFirestore, 
   useUserProfile, 
   useProfilePictureUpload, 
-  updateDocumentNonBlocking 
+  setDocumentNonBlocking 
 } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
@@ -65,20 +64,22 @@ export default function SettingsPage() {
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    // Ensure summary document is in sync with username/avatar for leaderboards
     const identitySync = {
-      username: userProfile.username || user.displayName || 'User',
-      avatarUrl: userProfile.avatarUrl || user.photoURL || '',
+      username: userProfile.username || 'User',
+      avatarUrl: userProfile.avatarUrl || '',
     };
 
+    // Use robust nested object structure for recursive setDoc merge
     const updateData = { 
-      'wallet.coins': increment(1000),
+      wallet: {
+        coins: increment(1000),
+      },
       ...identitySync,
       updatedAt: serverTimestamp() 
     };
     
-    updateDocumentNonBlocking(profileRef, updateData);
-    updateDocumentNonBlocking(userRef, updateData);
+    setDocumentNonBlocking(profileRef, updateData, { merge: true });
+    setDocumentNonBlocking(userRef, updateData, { merge: true });
     toast({ title: 'Top-up Successful!', description: '1,000 Testing Coins added.' });
   };
 
@@ -115,9 +116,12 @@ export default function SettingsPage() {
             <Image src="https://images.unsplash.com/photo-1501785888041-af3ef285b470" alt="Banner" fill className="object-cover" />
           </div>
           <div className="px-6 -mt-10 flex items-end gap-4 relative z-10">
-            <Avatar className="h-24 w-24 border-4 border-white shadow-lg" onClick={() => fileInputRef.current?.click()}>
+            <Avatar className="h-24 w-24 border-4 border-white shadow-lg cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
               <AvatarImage src={localAvatarPreview || userProfile?.avatarUrl} />
               <AvatarFallback>{(userProfile?.username || 'U').charAt(0)}</AvatarFallback>
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-full transition-opacity">
+                 {isUploading ? <Loader className="animate-spin text-white" /> : <Camera className="text-white h-6 w-6" />}
+              </div>
             </Avatar>
             <div className="pb-2">
                <h1 className="text-2xl font-bold">{userProfile?.username}</h1>
@@ -129,13 +133,13 @@ export default function SettingsPage() {
         <div className="px-4 space-y-3">
           <h2 className="text-lg font-bold px-2">Wallet & Assets</h2>
           <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
-            <MenuItem icon={Gem} label="Coins" extra={userProfile?.wallet?.coins?.toLocaleString()} />
+            <MenuItem icon={Gem} label="Coins" extra={(userProfile?.wallet?.coins || 0).toLocaleString()} />
             <div className="px-6 py-2">
                <Button variant="outline" size="sm" className="w-full rounded-xl border-dashed" onClick={handleTestTopUp}>
                  <Zap className="h-3.5 w-3.5 mr-1.5" /> Claim 1,000 Beta Coins
                </Button>
             </div>
-            <MenuItem icon={Sparkles} label="Diamonds" extra={userProfile?.wallet?.diamonds} iconColor="text-blue-500" />
+            <MenuItem icon={Sparkles} label="Diamonds" extra={(userProfile?.wallet?.diamonds || 0).toLocaleString()} iconColor="text-blue-500" />
             <MenuItem icon={Store} label="Store" href="/store" iconColor="text-orange-500" />
             <MenuItem icon={Trophy} label="Level" href="/leaderboard" iconColor="text-yellow-500" />
             <MenuItem icon={Shirt} label="My Items" href="/store" iconColor="text-cyan-500" />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -206,15 +205,15 @@ export function RoomClient({ room }: { room: Room }) {
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const roomRef = doc(firestore, 'chatRooms', room.id);
     
-    // Identity for synchronization
+    // IDENTITY SYNC: Ensure root document has latest info for leaderboards
     const identitySync = {
-      username: userProfile.username,
-      avatarUrl: userProfile.avatarUrl,
+      username: userProfile.username || 'User',
+      avatarUrl: userProfile.avatarUrl || '',
       updatedAt: serverTimestamp()
     };
 
-    // Sender updates: Use nested object structure for setDoc compatibility
-    const walletUpdates = {
+    // SENDER: Use nested object structure for recursive merge
+    const senderUpdates = {
       wallet: {
         coins: increment(-gift.price),
         totalSpent: increment(gift.price),
@@ -222,10 +221,10 @@ export function RoomClient({ room }: { room: Room }) {
       ...identitySync
     };
 
-    setDocumentNonBlocking(userRef, walletUpdates, { merge: true });
-    setDocumentNonBlocking(profileRef, walletUpdates, { merge: true });
+    setDocumentNonBlocking(userRef, senderUpdates, { merge: true });
+    setDocumentNonBlocking(profileRef, senderUpdates, { merge: true });
 
-    // Room Ranking update: Use nested object structure
+    // ROOM: Use nested object structure
     setDocumentNonBlocking(roomRef, {
       stats: {
         totalGifts: increment(gift.price),
@@ -239,12 +238,11 @@ export function RoomClient({ room }: { room: Room }) {
       if (host) finalRecipient = { uid: host.uid, name: host.name, avatarUrl: host.avatarUrl };
     }
 
-    // Recipient updates (Charm Ranking)
+    // RECIPIENT: Ensure root document is created/updated with latest identity for leaderboards
     if (finalRecipient) {
       const recipientRef = doc(firestore, 'users', finalRecipient.uid);
       const recipientProfileRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
       
-      // CRITICAL: Use nested object structure for stats.fans to ensure Firestore indexing
       const charmUpdates = {
         stats: {
           fans: increment(gift.price),
@@ -272,7 +270,7 @@ export function RoomClient({ room }: { room: Room }) {
 
     setIsGiftPickerOpen(false);
     setGiftRecipient(null);
-    toast({ title: 'Gift Sent!', description: 'Global rankings updated!' });
+    toast({ title: 'Gift Sent!', description: 'Rankings updated instantly!' });
   };
 
   const handleClearChat = async () => {
@@ -384,7 +382,7 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-6">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50">
-            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} />
+            <AvatarImage src={room.coverUrl || `https://picsum.photos/seed/${room.id}/200`} />
             <AvatarFallback>UM</AvatarFallback>
           </Avatar>
           <div>

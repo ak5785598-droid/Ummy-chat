@@ -11,13 +11,8 @@ let firebaseServices: { firebaseApp: FirebaseApp; auth: Auth; firestore: Firesto
 
 /**
  * Initializes Firebase services if they haven't been already.
- * This function handles both server-side and client-side execution environments
- * and ensures that `initializeApp` is called only once.
- *
- * @returns An object containing the initialized `firebaseApp`, `auth`, and `firestore` instances.
  */
 export function initializeFirebase() {
-  // Return the cached services if they already exist.
   if (firebaseServices) {
     return firebaseServices;
   }
@@ -28,7 +23,6 @@ export function initializeFirebase() {
   const firestore = getFirestore(app);
   const storage = getStorage(app);
 
-  // Cache the initialized services.
   firebaseServices = {
     firebaseApp: app,
     auth,
@@ -39,7 +33,6 @@ export function initializeFirebase() {
   return firebaseServices;
 }
 
-
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
@@ -49,5 +42,5 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-export * from '@/hooks/use-user-profile';
-export * from '@/hooks/use-profile-picture-upload';
+export { useUserProfile } from '@/hooks/use-user-profile';
+export { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';

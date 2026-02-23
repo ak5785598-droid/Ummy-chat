@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, Star, ChevronLeft, Home } from 'lucide-react';
+import { Crown, TrendingUp, Loader, Star, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -44,18 +43,34 @@ export default function LeaderboardPage() {
     const top3 = items.slice(0, 3);
     const others = items.slice(3);
 
+    const getValue = (item: any) => {
+      if (type === 'rich') return item.wallet?.totalSpent || 0;
+      if (type === 'charm') return item.stats?.fans || 0;
+      return item.stats?.totalGifts || 0;
+    };
+
+    const getDisplayName = (item: any) => {
+      if (type === 'rooms') return item.name || item.title || 'Tribe Room';
+      return item.username || 'Ummy User';
+    };
+
+    const getDisplayImage = (item: any) => {
+      if (type === 'rooms') return item.coverUrl || `https://picsum.photos/seed/${item.id}/400`;
+      return item.avatarUrl || `https://picsum.photos/seed/${item.id}/200`;
+    };
+
     return (
       <div className="space-y-4 animate-in fade-in duration-1000">
         <div className="flex justify-center items-end gap-4 py-16 relative">
           {top3[1] && (
             <div className="flex flex-col items-center order-1 w-1/3">
               <Avatar className="h-20 w-20 border-2 border-slate-400">
-                <AvatarImage src={type === 'rooms' ? top3[1].coverUrl : top3[1].avatarUrl} />
-                <AvatarFallback>{(type === 'rooms' ? top3[1].name : (top3[1].username || 'U'))?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={getDisplayImage(top3[1])} />
+                <AvatarFallback>{getDisplayName(top3[1]).charAt(0)}</AvatarFallback>
               </Avatar>
-              <p className="font-black text-[10px] mt-2 uppercase text-slate-300 truncate">{type === 'rooms' ? (top3[1].name || top3[1].title) : (top3[1].username || 'Ummy User')}</p>
+              <p className="font-black text-[10px] mt-2 uppercase text-slate-300 truncate w-full text-center px-2">{getDisplayName(top3[1])}</p>
               <div className="text-[10px] font-bold text-yellow-500">
-                {(type === 'rich' ? top3[1].wallet?.totalSpent : type === 'charm' ? top3[1].stats?.fans : top3[1].stats?.totalGifts || 0)?.toLocaleString()}
+                {getValue(top3[1]).toLocaleString()}
               </div>
             </div>
           )}
@@ -64,25 +79,25 @@ export default function LeaderboardPage() {
               <div className="relative">
                 <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 text-yellow-400 animate-bounce" />
                 <Avatar className="h-24 w-24 border-2 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]">
-                   <AvatarImage src={type === 'rooms' ? top3[0].coverUrl : top3[0].avatarUrl} />
-                   <AvatarFallback>{(type === 'rooms' ? top3[0].name : (top3[0].username || 'U'))?.charAt(0)}</AvatarFallback>
+                   <AvatarImage src={getDisplayImage(top3[0])} />
+                   <AvatarFallback>{getDisplayName(top3[0]).charAt(0)}</AvatarFallback>
                 </Avatar>
               </div>
-              <h2 className="font-black text-xs mt-4 uppercase text-yellow-400">{type === 'rooms' ? (top3[0].name || top3[0].title) : (top3[0].username || 'Ummy User')}</h2>
+              <h2 className="font-black text-xs mt-4 uppercase text-yellow-400 truncate w-full text-center px-2">{getDisplayName(top3[0])}</h2>
               <div className="text-xs font-black text-yellow-500">
-                {(type === 'rich' ? top3[0].wallet?.totalSpent : type === 'charm' ? top3[0].stats?.fans : top3[0].stats?.totalGifts || 0)?.toLocaleString()}
+                {getValue(top3[0]).toLocaleString()}
               </div>
             </div>
           )}
           {top3[2] && (
             <div className="flex flex-col items-center order-3 w-1/3">
               <Avatar className="h-20 w-20 border-2 border-amber-700">
-                <AvatarImage src={type === 'rooms' ? top3[2].coverUrl : top3[2].avatarUrl} />
-                <AvatarFallback>{(type === 'rooms' ? top3[2].name : (top3[2].username || 'U'))?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={getDisplayImage(top3[2])} />
+                <AvatarFallback>{getDisplayName(top3[2]).charAt(0)}</AvatarFallback>
               </Avatar>
-              <p className="font-black text-[10px] mt-2 uppercase text-amber-700 truncate">{type === 'rooms' ? (top3[2].name || top3[2].title) : (top3[2].username || 'Ummy User')}</p>
+              <p className="font-black text-[10px] mt-2 uppercase text-amber-700 truncate w-full text-center px-2">{getDisplayName(top3[2])}</p>
               <div className="text-[10px] font-bold text-yellow-500">
-                {(type === 'rich' ? top3[2].wallet?.totalSpent : type === 'charm' ? top3[2].stats?.fans : top3[2].stats?.totalGifts || 0)?.toLocaleString()}
+                {getValue(top3[2]).toLocaleString()}
               </div>
             </div>
           )}
@@ -94,18 +109,18 @@ export default function LeaderboardPage() {
               <div key={item.id} className="flex items-center gap-4 p-5 border-b border-white/5 last:border-0 hover:bg-white/5 transition-all">
                 <span className="w-8 text-center font-black text-white/20 italic">{index + 4}</span>
                 <Avatar className="h-14 w-14 border-2 border-white/10">
-                  <AvatarImage src={type === 'rooms' ? item.coverUrl : item.avatarUrl} />
-                  <AvatarFallback>{(type === 'rooms' ? (item.name || item.title) : (item.username || 'U'))?.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={getDisplayImage(item)} />
+                  <AvatarFallback>{getDisplayName(item).charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-black text-sm uppercase text-white/90 truncate italic">{type === 'rooms' ? (item.name || item.title) : (item.username || 'Ummy User')}</p>
+                  <p className="font-black text-sm uppercase text-white/90 truncate italic">{getDisplayName(item)}</p>
                   <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 mt-1">
-                    {type === 'rooms' ? (item.category || 'Tribe') : `Lv.${(type === 'rich' ? item.level?.rich : item.level?.charm) || 1}`}
+                    {type === 'rooms' ? (item.category || 'Tribe') : `Lv.${(item.level?.rich || 1)}`}
                   </Badge>
                 </div>
                 <div className="text-right">
                   <div className={cn("font-black text-sm", type === 'rich' ? "text-yellow-500" : type === 'charm' ? "text-pink-500" : "text-blue-400")}>
-                    {(type === 'rich' ? (item.wallet?.totalSpent || 0) : type === 'charm' ? (item.stats?.fans || 0) : (item.stats?.totalGifts || 0)).toLocaleString()}
+                    {getValue(item).toLocaleString()}
                   </div>
                 </div>
               </div>
