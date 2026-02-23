@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -83,6 +84,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id || !currentUser || !userProfile) return;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     
+    // Initial Join
     setDoc(participantRef, {
       uid: currentUser.uid,
       name: userProfile.username || 'Guest',
@@ -90,10 +92,11 @@ export function RoomClient({ room }: { room: Room }) {
       activeFrame: userProfile.frame || 'None',
       joinedAt: serverTimestamp(),
       isMuted: !isMicOn,
-      seatIndex: 0,
+      seatIndex: 0, // Default to audience
     }, { merge: true }).catch(err => console.warn('Presence sync delayed', err));
 
     return () => { 
+      // Cleanup on unmount
       deleteDoc(participantRef).catch(() => {}); 
     };
   }, [firestore, room.id, currentUser?.uid, userProfile?.username, userProfile?.avatarUrl]);
@@ -105,7 +108,7 @@ export function RoomClient({ room }: { room: Room }) {
     updateDoc(participantRef, { isMuted: !isMicOn }).catch(() => {});
   }, [isMicOn, firestore, room.id, currentUser]);
 
-  // Messages Query - Fixed to use limitToLast for correct chat flow
+  // Messages Query
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
     return query(
@@ -235,7 +238,7 @@ export function RoomClient({ room }: { room: Room }) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
         <Loader className="animate-spin text-primary h-10 w-10" />
-        <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Initializing Neural Grid...</p>
+        <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Syncing Room Data...</p>
       </div>
     );
   }
@@ -245,6 +248,7 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl border border-white/5">
       
+      {/* Dynamic Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
         <img 
@@ -257,7 +261,7 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-6 bg-transparent">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-[0_0_15px_rgba(255,107,107,0.3)]">
-            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt={`${room.title} logo icon`} />
+            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt={`${room.title} icon`} />
             <AvatarFallback>UM</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
@@ -301,7 +305,7 @@ export function RoomClient({ room }: { room: Room }) {
             <Share2 className="h-6 w-6" />
           </Button>
           <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" asChild>
-            <a href="/rooms" aria-label="Exit Frequency">
+            <a href="/rooms" aria-label="Exit Room">
               <PhoneOff className="h-6 w-6" />
             </a>
           </Button>
@@ -311,6 +315,7 @@ export function RoomClient({ room }: { room: Room }) {
       <ScrollArea className="relative z-10 flex-1 px-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto py-6 space-y-12">
           
+          {/* Main Host Seat */}
           <div className="flex justify-center">
              <div className="flex flex-col items-center gap-3">
                 <div className="relative">
@@ -320,7 +325,7 @@ export function RoomClient({ room }: { room: Room }) {
                         <DropdownMenuTrigger asChild>
                           <div className="h-28 w-28 rounded-full flex items-center justify-center transition-all relative cursor-pointer border-2 bg-black/40 backdrop-blur-md border-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.5)]">
                             <Avatar className="h-full w-full rounded-full border-2 border-black">
-                               <AvatarImage src={hostParticipant.avatarUrl} alt={`${hostParticipant.name}'s room master avatar`} />
+                               <AvatarImage src={hostParticipant.avatarUrl} alt={hostParticipant.name} />
                                <AvatarFallback>{hostParticipant.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                           </div>
@@ -342,7 +347,7 @@ export function RoomClient({ room }: { room: Room }) {
                      >
                         {hostParticipant ? (
                           <Avatar className="h-full w-full rounded-full border-2 border-black">
-                             <AvatarImage src={hostParticipant.avatarUrl} alt={`${hostParticipant.name}'s room master avatar`} />
+                             <AvatarImage src={hostParticipant.avatarUrl} alt={hostParticipant.name} />
                              <AvatarFallback>{hostParticipant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ) : (
@@ -355,6 +360,7 @@ export function RoomClient({ room }: { room: Room }) {
              </div>
           </div>
 
+          {/* Seat Grid */}
           <div className="grid grid-cols-4 gap-x-4 gap-y-10">
             {Array.from({ length: 12 }).map((_, i) => {
               const seatIndex = i + 2; 
@@ -369,7 +375,7 @@ export function RoomClient({ room }: { room: Room }) {
                         <DropdownMenuTrigger asChild>
                           <div className="h-16 w-16 rounded-full flex items-center justify-center transition-all relative cursor-pointer bg-black/30 backdrop-blur-lg border-2 border-primary shadow-[0_0_20px_rgba(255,107,107,0.3)] ring-2 ring-white/5">
                             <Avatar className="h-full w-full rounded-full p-0.5">
-                              <AvatarImage src={occupant.avatarUrl} alt={`${occupant.name}'s mic seat avatar`} />
+                              <AvatarImage src={occupant.avatarUrl} alt={occupant.name} />
                               <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             {!occupant.isMuted && (
@@ -397,7 +403,7 @@ export function RoomClient({ room }: { room: Room }) {
                           <Lock className="h-6 w-6 text-red-500/40" />
                         ) : occupant ? (
                           <Avatar className="h-full w-full rounded-full p-0.5">
-                            <AvatarImage src={occupant.avatarUrl} alt={`${occupant.name}'s mic seat avatar`} />
+                            <AvatarImage src={occupant.avatarUrl} alt={occupant.name} />
                             <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ) : (
@@ -438,6 +444,7 @@ export function RoomClient({ room }: { room: Room }) {
             })}
           </div>
 
+          {/* Chat Messages */}
           <div className="mt-8 mb-24 max-w-lg mx-auto space-y-3 px-4">
             {activeMessages.map((msg) => (
               <div key={msg.id} className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2">
@@ -449,6 +456,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </ScrollArea>
 
+      {/* Control Footer */}
       <footer className="relative z-50 shrink-0 px-6 pb-12 pt-4 bg-transparent">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           
