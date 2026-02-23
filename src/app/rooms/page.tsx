@@ -10,15 +10,17 @@ import { collection, query, limit } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { cn } from '@/lib/utils';
 
 /**
  * Explore Rooms Page - Yari Elite Edition.
- * Matches the reference screenshot layout exactly.
+ * Now features functional Mine vs Popular filtering.
  */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState('Popular');
+  const [filterType, setFilterType] = useState<'popular' | 'mine'>('popular');
 
   const allRoomsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user) return null;
@@ -35,9 +37,18 @@ export default function RoomsPage() {
 
   const filteredRooms = useMemo(() => {
     if (!roomsData) return [];
-    if (activeTab === 'Popular') return roomsData;
-    return roomsData.filter((r: any) => r.category === activeTab);
-  }, [roomsData, activeTab]);
+    let rooms = roomsData;
+    
+    if (filterType === 'mine' && user) {
+      rooms = rooms.filter((r: any) => r.ownerId === user.uid);
+    }
+    
+    if (activeTab !== 'Popular') {
+      rooms = rooms.filter((r: any) => r.category === activeTab);
+    }
+    
+    return rooms;
+  }, [roomsData, activeTab, filterType, user]);
 
   return (
     <AppLayout>
@@ -51,10 +62,26 @@ export default function RoomsPage() {
               </div>
             </div>
             <div className="flex items-center gap-8">
-              <button className="text-xl font-bold text-gray-400 hover:text-gray-800 transition-colors">Mine</button>
+              <button 
+                onClick={() => setFilterType('mine')}
+                className={cn(
+                  "text-xl font-bold transition-all",
+                  filterType === 'mine' ? "text-gray-900 scale-110" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                Mine
+              </button>
               <div className="flex flex-col items-center">
-                <button className="text-2xl font-black text-gray-900">Popular</button>
-                <div className="h-1.5 w-6 bg-gray-900 rounded-full mt-1" />
+                <button 
+                  onClick={() => setFilterType('popular')}
+                  className={cn(
+                    "text-2xl font-black transition-all",
+                    filterType === 'popular' ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                  )}
+                >
+                  Popular
+                </button>
+                {filterType === 'popular' && <div className="h-1.5 w-6 bg-gray-900 rounded-full mt-1" />}
               </div>
             </div>
             <button className="p-2" aria-label="Search">
@@ -148,9 +175,15 @@ export default function RoomsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 pb-32">
-              {filteredRooms.map((room: any) => (
-                <ChatRoomCard key={room.id} room={room} variant="modern" />
-              ))}
+              {filteredRooms.length > 0 ? (
+                filteredRooms.map((room: any) => (
+                  <ChatRoomCard key={room.id} room={room} variant="modern" />
+                ))
+              ) : (
+                <div className="col-span-2 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs italic">
+                  No Frequencies Found
+                </div>
+              )}
             </div>
           )}
         </div>

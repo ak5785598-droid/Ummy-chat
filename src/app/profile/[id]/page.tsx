@@ -33,9 +33,31 @@ import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { AvatarFrame } from '@/components/avatar-frame';
 
+const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick, router }: any) => (
+  <div 
+    className="flex items-center justify-between py-4 border-b last:border-0 px-6 hover:bg-gray-50/50 cursor-pointer transition-colors" 
+    onClick={() => {
+      if (onClick) onClick();
+      else if (href) router.push(href);
+    }}
+  >
+    <div className="flex items-center gap-4">
+      <div className={cn("p-2 rounded-xl", iconColor?.replace('text-', 'bg-') + '/10' || "bg-primary/10")}>
+         <Icon className={cn("h-5 w-5", iconColor || "text-primary")} />
+      </div>
+      <span className="font-bold text-gray-800 text-sm">{label}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      {extra && <span className="text-xs font-black text-muted-foreground italic">{extra}</span>}
+      <ChevronRight className="h-4 w-4 opacity-40" />
+    </div>
+  </div>
+);
+
 /**
  * Premium Me Center / Profile Page.
  * Displays unique sequential User IDs (starting 1001).
+ * Optimized sub-component structure for performance.
  */
 export default function ProfilePage() {
   const params = useParams();
@@ -112,27 +134,6 @@ export default function ProfilePage() {
 
   if (!profile || !currentUser) return null;
 
-  const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) => (
-    <div 
-      className="flex items-center justify-between py-4 border-b last:border-0 px-6 hover:bg-gray-50/50 cursor-pointer transition-colors" 
-      onClick={() => {
-        if (onClick) onClick();
-        else if (href) router.push(href);
-      }}
-    >
-      <div className="flex items-center gap-4">
-        <div className={cn("p-2 rounded-xl", iconColor?.replace('text-', 'bg-') + '/10' || "bg-primary/10")}>
-           <Icon className={cn("h-5 w-5", iconColor || "text-primary")} />
-        </div>
-        <span className="font-bold text-gray-800 text-sm">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {extra && <span className="text-xs font-black text-muted-foreground italic">{extra}</span>}
-        <ChevronRight className="h-4 w-4 opacity-40" />
-      </div>
-    </div>
-  );
-
   return (
     <AppLayout>
       <div className="max-w-xl mx-auto space-y-6 pb-24 bg-gray-50/50 min-h-screen animate-in fade-in duration-700">
@@ -201,6 +202,7 @@ export default function ProfilePage() {
               extra={(profile.wallet?.coins || 0).toLocaleString()} 
               href={isOwnProfile ? "/settings" : undefined}
               iconColor="text-yellow-500"
+              router={router}
             />
             
             {isOwnProfile && (
@@ -216,12 +218,14 @@ export default function ProfilePage() {
               label="Blue Diamonds" 
               extra={(profile.wallet?.diamonds || 0).toLocaleString()} 
               iconColor="text-blue-500" 
+              router={router}
             />
             <MenuItem 
               icon={Store} 
               label="Ummy Boutique" 
               href="/store" 
               iconColor="text-orange-500" 
+              router={router}
             />
             <MenuItem 
               icon={Trophy} 
@@ -229,12 +233,14 @@ export default function ProfilePage() {
               href="/leaderboard" 
               extra={`Level ${profile.level?.rich || 1}`}
               iconColor="text-yellow-600" 
+              router={router}
             />
             <MenuItem 
               icon={Shirt} 
               label={isOwnProfile ? "My Assets" : "Collection"} 
               href="/store" 
               iconColor="text-cyan-500" 
+              router={router}
             />
           </Card>
         </div>
@@ -243,9 +249,9 @@ export default function ProfilePage() {
         <div className="px-4 space-y-3">
           <h2 className="text-sm font-black uppercase tracking-widest px-2 font-headline text-gray-400">Community</h2>
           <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
-            <MenuItem icon={Globe} label="Region" extra="India / Official" iconColor="text-gray-400" />
-            <MenuItem icon={MessageSquare} label="Feedback" href="/help-center" iconColor="text-gray-400" />
-            <MenuItem icon={SettingsIcon} label="Preference" href={isOwnProfile ? "/settings" : undefined} iconColor="text-gray-400" />
+            <MenuItem icon={Globe} label="Region" extra="India / Official" iconColor="text-gray-400" router={router} />
+            <MenuItem icon={MessageSquare} label="Feedback" href="/help-center" iconColor="text-gray-400" router={router} />
+            <MenuItem icon={SettingsIcon} label="Preference" href={isOwnProfile ? "/settings" : undefined} iconColor="text-gray-400" router={router} />
           </Card>
         </div>
 
