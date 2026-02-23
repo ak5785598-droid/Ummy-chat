@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
     
-    // Robust Admin Check
+    // Robust Admin Check - Ensuring it doesn't block initial profile creation
     function isAdmin() {
       return isSignedIn() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -12,7 +12,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      // Allow users to create their own identity summary
+      // Allow users to create their own identity summary and profile
       allow create: if isSignedIn() && request.auth.uid == userId;
       // Allow updates by the owner or an admin
       allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
@@ -20,7 +20,6 @@ service cloud.firestore {
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        // User must be creating/updating their own detailed profile
         allow create: if isSignedIn() && request.auth.uid == userId;
         allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
         allow delete: if isAdmin();
@@ -29,9 +28,8 @@ service cloud.firestore {
 
     match /appConfig/{configId} {
       allow read: if isSignedIn();
-      // Allow users to update counters during initialization (transactional increment)
-      allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['userCounter', 'roomCounter']);
-      allow write: if isAdmin();
+      // allow anyone to increment user/room counters during initialization
+      allow write: if isSignedIn() && (configId == 'counters' || isAdmin());
     }
     
     match /adminLogs/{logId} {

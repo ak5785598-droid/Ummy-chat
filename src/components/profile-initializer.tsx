@@ -94,6 +94,9 @@ export function ProfileInitializer() {
           });
         }
       } catch (e: any) {
+        // Reset reference so we can retry if it was a transient error
+        hasInitialized.current = null;
+        
         if (e.code === 'permission-denied') {
           const contextualError = new FirestorePermissionError({
             path: `users/${user.uid}`,
