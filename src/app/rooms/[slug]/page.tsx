@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -11,8 +10,8 @@ import { Loader, ShieldAlert } from 'lucide-react';
 import type { Room } from '@/lib/types';
 
 /**
- * Chat Room Entry Page.
- * Hardened to prevent premature 404s and handle official room provisioning.
+ * Chat Room Entry Page Gateway.
+ * Hardened to prevent premature 404s and handle official room provisioning with high reliability.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -39,7 +38,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
-  // Handshake Logic: Ensure rooms are provisioned before ever showing 404
+  // Frequency Handshake: Ensures rooms are provisioned or found before ever showing 404
   useEffect(() => {
     const performHandshake = async () => {
       if (!roomDocRef || isAuthLoading || !firestore || !currentUser || isDocLoading) return;
@@ -60,7 +59,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
             createdAt: serverTimestamp(),
             moderatorIds: [currentUser.uid],
             lockedSeats: [],
-            stats: { totalGifts: 0 } // Initialize stats for leaderboard indexing
+            stats: { totalGifts: 0 } // Initialize nested object for leaderboard indexing
           }, { merge: true });
         } catch (e) {
           console.warn("Handshake delayed:", e);
@@ -106,7 +105,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Robust loading check to prevent 404 flickering
+  // Robust loading check to prevent 404 flickering while background processes run
   const isWaiting = isAuthLoading || (!!roomDocRef && isDocLoading) || isProvisioning || !hasHandshaked;
 
   if (isWaiting) {
