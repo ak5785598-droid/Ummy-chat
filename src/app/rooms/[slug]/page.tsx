@@ -47,13 +47,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   // Provision official room if it doesn't exist
   useEffect(() => {
     const checkAndProvision = async () => {
-      // We only care about provisioning the official help room
+      // Only handle special provisioning for the official hub
       if (slug !== 'official-help-room') {
-        setHasCheckedProvisioning(true);
+        if (!isDocLoading) setHasCheckedProvisioning(true);
         return;
       }
 
-      // Wait until we definitely know if the room exists or not
+      // If loading is done and room is missing, create it
       if (!isDocLoading && !firestoreRoom && firestore && currentUser && !isProvisioning && !hasCheckedProvisioning) {
         setIsProvisioning(true);
         setInitStatus('Syncing Official Hub...');
@@ -76,7 +76,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
           setIsProvisioning(false);
           setHasCheckedProvisioning(true);
         }
-      } else if (firestoreRoom || (isDocLoading === false && slug !== 'official-help-room')) {
+      } else if (firestoreRoom || (!isDocLoading && slug !== 'official-help-room')) {
         setHasCheckedProvisioning(true);
       }
     };
@@ -101,7 +101,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     } as any;
   }, [firestoreRoom]);
 
-  // Permission/Security Error Display
+  // Handle Permission or Security Errors
   if (docError) {
      return (
         <AppLayout>
@@ -120,9 +120,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Loading State Guard - More patient for official room
-  const isWaitingForOfficial = slug === 'official-help-room' && !hasCheckedProvisioning;
-  if (isAuthLoading || isDocLoading || isProvisioning || isWaitingForOfficial) {
+  // Patience Guard: Wait for auth, loading, provisioning, and official checks
+  const isWaiting = isAuthLoading || isDocLoading || isProvisioning || (slug === 'official-help-room' && !hasCheckedProvisioning);
+
+  if (isWaiting) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -135,7 +136,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  // Final 404 Guard - Only after loading and provisioning checks are definitive
+  // Final 404 Guard: Only after all patient checks have failed
   if (!activeRoom) {
     notFound();
     return null;
