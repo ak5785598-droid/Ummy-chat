@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { Pencil, Loader, Camera, Globe, User2 } from 'lucide-react';
 import {
   Dialog,
@@ -27,7 +28,7 @@ interface EditProfileDialogProps {
 
 /**
  * Optimized Unified Profile Editing Dialog.
- * Uses non-blocking background updates for maximum speed.
+ * Synchronizes identity changes to both the detailed profile and the root summary document.
  */
 export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
@@ -54,14 +55,20 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
     setIsSubmitting(true);
     
-    // Background sync - UI closes immediately after initiating write
+    // Background sync for both detailed profile and root summary
+    const userSummaryRef = doc(firestore, 'users', user.uid);
     const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-    updateDoc(userProfileRef, {
+    
+    const updateData = {
       username: name,
       bio: bio,
       updatedAt: serverTimestamp()
-    }).catch(err => {
-      console.warn("Silent background update failed:", err);
+    };
+
+    updateDocumentNonBlocking(userProfileRef, updateData);
+    updateDocumentNonBlocking(userSummaryRef, {
+      username: name,
+      updatedAt: serverTimestamp()
     });
 
     // Close and toast immediately for perceived performance
@@ -96,7 +103,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl uppercase italic">Edit Profile</DialogTitle>
             <DialogDescription>
-              Update your Name, Bio, and DP. Identity changes are instant.
+              Update your Name, Bio, and DP. Identity changes are instant and synced to leaderboards.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">

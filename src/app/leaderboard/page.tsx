@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -50,9 +51,9 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-1 w-1/3">
               <Avatar className="h-20 w-20 border-2 border-slate-400">
                 <AvatarImage src={type === 'rooms' ? top3[1].coverUrl : top3[1].avatarUrl} />
-                <AvatarFallback>{(type === 'rooms' ? top3[1].name : top3[1].username)?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{(type === 'rooms' ? top3[1].name : (top3[1].username || 'U'))?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <p className="font-black text-[10px] mt-2 uppercase text-slate-300 truncate">{type === 'rooms' ? top3[1].name : top3[1].username}</p>
+              <p className="font-black text-[10px] mt-2 uppercase text-slate-300 truncate">{type === 'rooms' ? top3[1].name : (top3[1].username || 'Ummy User')}</p>
               <div className="text-[10px] font-bold text-yellow-500">
                 {(type === 'rich' ? top3[1].wallet?.totalSpent : type === 'charm' ? top3[1].stats?.fans : top3[1].stats?.totalGifts || 0)?.toLocaleString()}
               </div>
@@ -64,10 +65,10 @@ export default function LeaderboardPage() {
                 <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 text-yellow-400 animate-bounce" />
                 <Avatar className="h-24 w-24 border-2 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                    <AvatarImage src={type === 'rooms' ? top3[0].coverUrl : top3[0].avatarUrl} />
-                   <AvatarFallback>{(type === 'rooms' ? top3[0].name : top3[0].username)?.charAt(0)}</AvatarFallback>
+                   <AvatarFallback>{(type === 'rooms' ? top3[0].name : (top3[0].username || 'U'))?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </div>
-              <h2 className="font-black text-xs mt-4 uppercase text-yellow-400">{type === 'rooms' ? top3[0].name : top3[0].username}</h2>
+              <h2 className="font-black text-xs mt-4 uppercase text-yellow-400">{type === 'rooms' ? top3[0].name : (top3[0].username || 'Ummy User')}</h2>
               <div className="text-xs font-black text-yellow-500">
                 {(type === 'rich' ? top3[0].wallet?.totalSpent : type === 'charm' ? top3[0].stats?.fans : top3[0].stats?.totalGifts || 0)?.toLocaleString()}
               </div>
@@ -77,9 +78,9 @@ export default function LeaderboardPage() {
             <div className="flex flex-col items-center order-3 w-1/3">
               <Avatar className="h-20 w-20 border-2 border-amber-700">
                 <AvatarImage src={type === 'rooms' ? top3[2].coverUrl : top3[2].avatarUrl} />
-                <AvatarFallback>{(type === 'rooms' ? top3[2].name : top3[2].username)?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{(type === 'rooms' ? top3[2].name : (top3[2].username || 'U'))?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <p className="font-black text-[10px] mt-2 uppercase text-amber-700 truncate">{type === 'rooms' ? top3[2].name : top3[2].username}</p>
+              <p className="font-black text-[10px] mt-2 uppercase text-amber-700 truncate">{type === 'rooms' ? top3[2].name : (top3[2].username || 'Ummy User')}</p>
               <div className="text-[10px] font-bold text-yellow-500">
                 {(type === 'rich' ? top3[2].wallet?.totalSpent : type === 'charm' ? top3[2].stats?.fans : top3[2].stats?.totalGifts || 0)?.toLocaleString()}
               </div>
@@ -94,10 +95,10 @@ export default function LeaderboardPage() {
                 <span className="w-8 text-center font-black text-white/20 italic">{index + 4}</span>
                 <Avatar className="h-14 w-14 border-2 border-white/10">
                   <AvatarImage src={type === 'rooms' ? item.coverUrl : item.avatarUrl} />
-                  <AvatarFallback>{(type === 'rooms' ? item.name : item.username)?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{(type === 'rooms' ? item.name : (item.username || 'U'))?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-black text-sm uppercase text-white/90 truncate italic">{type === 'rooms' ? item.name : item.username}</p>
+                  <p className="font-black text-sm uppercase text-white/90 truncate italic">{type === 'rooms' ? item.name : (item.username || 'Ummy User')}</p>
                   <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 mt-1">
                     {type === 'rooms' ? (item.category || 'Tribe') : `Lv.${(type === 'rich' ? item.level?.rich : item.level?.charm) || 1}`}
                   </Badge>

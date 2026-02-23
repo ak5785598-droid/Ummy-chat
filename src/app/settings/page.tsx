@@ -31,7 +31,7 @@ import {
   useFirestore, 
   useUserProfile, 
   useProfilePictureUpload, 
-  setDocumentNonBlocking 
+  updateDocumentNonBlocking 
 } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
@@ -61,20 +61,24 @@ export default function SettingsPage() {
   };
 
   const handleTestTopUp = () => {
-    if (!firestore || !user) return;
+    if (!firestore || !user || !userProfile) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    // Corrected nested object structure for setDoc with merge
+    // Ensure summary document is in sync with username/avatar for leaderboards
+    const identitySync = {
+      username: userProfile.username || user.displayName || 'User',
+      avatarUrl: userProfile.avatarUrl || user.photoURL || '',
+    };
+
     const updateData = { 
-      wallet: {
-        coins: increment(1000)
-      },
+      'wallet.coins': increment(1000),
+      ...identitySync,
       updatedAt: serverTimestamp() 
     };
     
-    setDocumentNonBlocking(profileRef, updateData, { merge: true });
-    setDocumentNonBlocking(userRef, updateData, { merge: true });
+    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, updateData);
     toast({ title: 'Top-up Successful!', description: '1,000 Testing Coins added.' });
   };
 

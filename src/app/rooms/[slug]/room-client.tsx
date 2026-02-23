@@ -96,7 +96,6 @@ export function RoomClient({ room }: { room: Room }) {
   const isOwner = currentUser?.uid === room.ownerId;
   const isAdmin = isOwner || room.moderatorIds?.includes(currentUser?.uid || '');
 
-  // Participants Subcollection
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
@@ -108,7 +107,6 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
-  // Presence Synchronization
   useEffect(() => {
     if (!firestore || !room.id || !currentUser || !userProfile) return;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
@@ -128,7 +126,6 @@ export function RoomClient({ room }: { room: Room }) {
     };
   }, [firestore, room.id, currentUser?.uid, userProfile?.username, userProfile?.avatarUrl]);
 
-  // Messages Query for both Text and Gifts
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
     return query(
@@ -150,7 +147,6 @@ export function RoomClient({ room }: { room: Room }) {
     })) || [];
   }, [firestoreMessages]);
 
-  // Gift Animation Trigger Logic
   useEffect(() => {
     if (!activeMessages.length) return;
     const lastMsg = activeMessages[activeMessages.length - 1];
@@ -210,27 +206,29 @@ export function RoomClient({ room }: { room: Room }) {
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const roomRef = doc(firestore, 'chatRooms', room.id);
     
-    // Use nested object syntax for setDoc with merge to ensure correct map structure
-    const userUpdateData = {
-      wallet: {
-        coins: increment(-gift.price),
-        totalSpent: increment(gift.price)
-      },
+    // Sync identity fields to summary doc to ensure leaderboard displays correct info
+    const identitySync = {
+      username: userProfile.username,
+      avatarUrl: userProfile.avatarUrl,
       updatedAt: serverTimestamp()
     };
 
-    setDocumentNonBlocking(userRef, userUpdateData, { merge: true });
-    setDocumentNonBlocking(profileRef, userUpdateData, { merge: true });
+    // Use dot notation for partial updates to protect other nested fields
+    const walletUpdates = {
+      'wallet.coins': increment(-gift.price),
+      'wallet.totalSpent': increment(gift.price),
+      ...identitySync
+    };
 
-    // Update Room Stats for the Room Leaderboard
-    setDocumentNonBlocking(roomRef, {
-      stats: {
-        totalGifts: increment(gift.price)
-      },
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+    updateDocumentNonBlocking(userRef, walletUpdates);
+    updateDocumentNonBlocking(profileRef, walletUpdates);
 
-    // Identify Recipient (Charm Ranking)
+    // Update Room Stats for the Room Leaderboard (using dot notation)
+    updateDocumentNonBlocking(roomRef, {
+      'stats.totalGifts': increment(gift.price),
+      'updatedAt': serverTimestamp()
+    });
+
     let finalRecipient = giftRecipient;
     if (!finalRecipient) {
       const host = participants?.find(p => p.seatIndex === 1);
@@ -240,17 +238,16 @@ export function RoomClient({ room }: { room: Room }) {
     if (finalRecipient) {
       const recipientRef = doc(firestore, 'users', finalRecipient.uid);
       const recipientProfileRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
-      const charmUpdate = {
-        stats: {
-          fans: increment(gift.price)
-        },
-        updatedAt: serverTimestamp()
+      
+      const charmUpdates = {
+        'stats.fans': increment(gift.price),
+        'updatedAt': serverTimestamp()
       };
-      setDocumentNonBlocking(recipientRef, charmUpdate, { merge: true });
-      setDocumentNonBlocking(recipientProfileRef, charmUpdate, { merge: true });
+      
+      updateDocumentNonBlocking(recipientRef, charmUpdates);
+      updateDocumentNonBlocking(recipientProfileRef, charmUpdates);
     }
 
-    // Register gift event in chat
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: `sent a ${gift.name} ${gift.emoji} ${finalRecipient ? `to ${finalRecipient.name}` : ''}!`,
       senderId: currentUser.uid,

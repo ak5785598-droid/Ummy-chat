@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc, setDoc, updateDoc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where } from 'firebase/firestore';
+import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, setDoc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where } from 'firebase/firestore';
 import { Settings, Shield, Zap, Gem, Globe, Layout, Loader, Search, User, ClipboardList, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,6 @@ import { format } from 'date-fns';
 
 /**
  * Enterprise Admin Control Panel.
- * Secured via tag-based permissions.
  */
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -93,21 +92,18 @@ export default function AdminPage() {
       const userRef = doc(firestore, 'users', targetUserId);
       const profileRef = doc(firestore, 'users', targetUserId, 'profile', targetUserId);
       
-      // Use nested object structure for setDoc merge to maintain database hierarchy
       const updateData = {
-        wallet: {
-          [type]: increment(amount)
-        },
+        [`wallet.${type}`]: increment(amount),
         updatedAt: serverTimestamp()
       };
       
-      setDocumentNonBlocking(userRef, updateData, { merge: true });
-      setDocumentNonBlocking(profileRef, updateData, { merge: true });
+      updateDocumentNonBlocking(userRef, updateData);
+      updateDocumentNonBlocking(profileRef, updateData);
 
       await logAdminAction(`Adjust ${type}`, targetUserId, { amount });
       
       toast({ title: 'Balance Adjusted', description: `${amount} ${type} processed.` });
-      setTimeout(() => handleSearchUsers(), 500); // Small delay to allow write to propagate for UI
+      setTimeout(() => handleSearchUsers(), 500); 
     } catch (e) {
       toast({ variant: 'destructive', title: 'Action failed' });
     } finally {
@@ -234,7 +230,7 @@ export default function AdminPage() {
                               <AvatarFallback>{u.username?.charAt(0)}</AvatarFallback>
                            </Avatar>
                            <div className="flex-1 text-center md:text-left">
-                              <p className="text-xl font-black uppercase italic">{u.username}</p>
+                              <p className="text-xl font-black uppercase italic">{u.username || 'User'}</p>
                               <p className="text-xs text-muted-foreground font-mono">ID: {u.id}</p>
                               <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
                                  <Badge className="bg-primary/20 text-primary border-none">Coins: {u.wallet?.coins || 0}</Badge>
