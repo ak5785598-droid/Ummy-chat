@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   User as UserIcon,
   RefreshCw,
+  Gamepad2,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -643,6 +644,15 @@ export function RoomClient({ room }: { room: Room }) {
             <Button onClick={handleMicToggle} className={cn("rounded-full h-12 w-12 transition-all shadow-lg", isInSeat ? (isMicOn ? "bg-primary text-black" : "bg-white/10 text-white/40") : "bg-white/5")}>
               {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
             </Button>
+            
+            {/* Game Remote Button */}
+            <Button 
+              onClick={() => router.push('/games')}
+              className="rounded-full h-12 w-12 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 shadow-lg shadow-blue-500/10 transition-all"
+            >
+              <Gamepad2 className="h-6 w-6" />
+            </Button>
+
             <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-full h-14 w-14 bg-gradient-to-br from-pink-500 to-rose-600 animate-pulse shadow-xl shadow-pink-500/20">
