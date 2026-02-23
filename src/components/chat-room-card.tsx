@@ -32,7 +32,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden shadow-md">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/400`}
-              alt={room.title}
+              alt={`Cover for room ${room.title}`}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               sizes="(max-width: 768px) 50vw, 33vw"
@@ -46,7 +46,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-2 px-1">
-            <span className="text-lg">🇮🇳</span>
+            <span className="text-lg" aria-label="India flag">🇮🇳</span>
             <h3 className="font-bold text-sm truncate flex-1">{room.title}</h3>
           </div>
         </div>
@@ -61,7 +61,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           <div className="relative h-40 w-full">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`}
-              alt={room.title}
+              alt={`Banner for room ${room.title}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

@@ -4,6 +4,20 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
 
+    // Allow listing the users collection for the leaderboard
+    match /users {
+      allow list: if isSignedIn();
+      match /{userId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
+        
+        match /profile/{profileId} {
+          allow read: if isSignedIn();
+          allow write: if isOwner(userId);
+        }
+      }
+    }
+
     match /appConfig/{configId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn(); 
@@ -12,16 +26,6 @@ service cloud.firestore {
     match /storeItems/{itemId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
-    }
-
-    match /users/{userId} {
-      // Allow listing users for the global leaderboard
-      allow read, list: if isSignedIn();
-      
-      match /profile/{profileId} {
-        allow read: if isSignedIn();
-        allow write: if isOwner(userId);
-      }
     }
 
     match /chatRooms {

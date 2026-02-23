@@ -100,8 +100,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Final check for existence - only trigger if we definitely have a user, a ref, the fetch is finished, AND we actually attempted a fetch
-  // This prevents the "premature 404" during the initial hydration/auth handshake
+  // Final check for existence
   const isActuallyNotFound = !isAuthLoading && !!currentUser && !!roomDocRef && !isDocLoading && !firestoreRoom && hasAttemptedFetch;
 
   if (isActuallyNotFound && slug !== 'official-help-room') {

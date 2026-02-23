@@ -40,7 +40,7 @@ export default function RoomsPage() {
   return (
     <AppLayout hideSidebarOnMobile>
       <div className="min-h-screen bg-background pb-20 -m-4 md:-m-12">
-        {/* Top Header Section */}
+        {/* Top Header Section - Yellow Yari Style */}
         <header className="bg-gradient-to-b from-primary to-primary/80 px-4 pt-10 pb-6 rounded-b-[2.5rem] shadow-lg sticky top-0 z-50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 bg-white/20 p-2 rounded-full backdrop-blur-sm">
@@ -50,7 +50,7 @@ export default function RoomsPage() {
               <button className="text-xl font-bold opacity-60 hover:opacity-100 transition-opacity">Mine</button>
               <button className="text-2xl font-black border-b-4 border-black pb-1">Popular</button>
             </div>
-            <button className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+            <button className="bg-white/20 p-2 rounded-full backdrop-blur-sm" aria-label="Search">
               <Search className="h-6 w-6 text-black" />
             </button>
           </div>
@@ -63,7 +63,7 @@ export default function RoomsPage() {
                   <div className="relative aspect-[1536/681] rounded-2xl overflow-hidden shadow-xl mx-2">
                     <Image
                       src={`https://picsum.photos/seed/ummy-banner-${i}/800/400`}
-                      alt="Featured Event"
+                      alt={`Featured Community Event ${i}`}
                       fill
                       className="object-cover"
                       priority
@@ -77,19 +77,19 @@ export default function RoomsPage() {
         </header>
 
         <div className="px-4 mt-6 space-y-6">
-          {/* Quick Access Grid */}
+          {/* Quick Access Grid - Vibrant Tiered Access */}
           <div className="grid grid-cols-3 gap-3">
-            <Link href="/leaderboard" className="relative h-24 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-400 p-3 shadow-lg hover:scale-105 transition-transform">
+            <Link href="/leaderboard" className="relative h-24 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-400 p-3 shadow-lg hover:scale-105 transition-transform group">
                <span className="text-white font-bold text-sm uppercase">Ranking</span>
-               <Crown className="absolute bottom-2 right-2 h-10 w-10 text-white/40" />
+               <Crown className="absolute bottom-2 right-2 h-10 w-10 text-white/40 group-hover:scale-110 transition-transform" />
             </Link>
-            <Link href="/match" className="relative h-24 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 p-3 shadow-lg hover:scale-105 transition-transform">
+            <Link href="/match" className="relative h-24 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 p-3 shadow-lg hover:scale-105 transition-transform group">
                <span className="text-white font-bold text-sm uppercase">CP</span>
-               <Heart className="absolute bottom-2 right-2 h-10 w-10 text-white/40" />
+               <Heart className="absolute bottom-2 right-2 h-10 w-10 text-white/40 group-hover:scale-110 transition-transform" />
             </Link>
-            <div className="relative h-24 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-3 shadow-lg hover:scale-105 transition-transform">
+            <div className="relative h-24 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-3 shadow-lg hover:scale-105 transition-transform group cursor-pointer">
                <span className="text-white font-bold text-sm uppercase">Family</span>
-               <Users className="absolute bottom-2 right-2 h-10 w-10 text-white/40" />
+               <Users className="absolute bottom-2 right-2 h-10 w-10 text-white/40 group-hover:scale-110 transition-transform" />
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export default function RoomsPage() {
             </div>
           </div>
 
-          {/* Rooms Grid */}
+          {/* Rooms Grid - 2 Column Layout */}
           {isRoomsLoading ? (
             <div className="flex justify-center py-20"><Loader className="h-10 w-10 animate-spin text-primary" /></div>
           ) : (
