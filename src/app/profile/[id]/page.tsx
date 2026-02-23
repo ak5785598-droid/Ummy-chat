@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
 import { User, Loader, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Globe2, HeartHandshake } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useUserProfile } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -16,10 +16,6 @@ import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
-/**
- * Real User Profile Page.
- * Fetches identity details from Firestore to ensure app data is isolated from Google.
- */
 export default function ProfilePage() {
   const params = useParams();
   const profileId = Array.isArray(params.id) ? params.id[0] : params.id;

@@ -53,7 +53,7 @@ export function TopContributorsCard({
                 >
                   <AvatarImage
                     src={c.user.avatarUrl}
-                    alt={c.user.name}
+                    alt={c.user.name + "'s Contributor Avatar"}
                     data-ai-hint="person portrait"
                   />
                   <AvatarFallback>{c.user.name.charAt(0)}</AvatarFallback>
@@ -75,7 +75,7 @@ export function TopContributorsCard({
             <div key={c.user.id} className="flex items-center gap-4 text-sm">
               <span className={`w-6 text-center font-bold ${getRankColor(i + 3)}`}>{i + 4}</span>
               <Avatar className="h-10 w-10">
-                <AvatarImage src={c.user.avatarUrl} alt={c.user.name} data-ai-hint="person portrait" />
+                <AvatarImage src={c.user.avatarUrl} alt={c.user.name + "'s Ranking Avatar"} data-ai-hint="person portrait" />
                 <AvatarFallback>{c.user.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">

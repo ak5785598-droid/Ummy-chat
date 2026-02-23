@@ -2,9 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Search, Loader, Flame, Gamepad2, Music, Crown, Heart, Users, Home, MessageSquare, User } from 'lucide-react';
+import { Search, Loader, Flame, Gamepad2, Music, Crown, Heart, Users, Home } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
@@ -50,7 +48,7 @@ export default function RoomsPage() {
               <button className="text-xl font-bold opacity-60 hover:opacity-100 transition-opacity">Mine</button>
               <button className="text-2xl font-black border-b-4 border-black pb-1">Popular</button>
             </div>
-            <button className="bg-white/20 p-2 rounded-full backdrop-blur-sm" aria-label="Search">
+            <button className="bg-white/20 p-2 rounded-full backdrop-blur-sm" aria-label="Search rooms">
               <Search className="h-6 w-6 text-black" />
             </button>
           </div>

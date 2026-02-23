@@ -9,10 +9,6 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader, ShieldAlert } from 'lucide-react';
 import type { Room } from '@/lib/types';
 
-/**
- * Real-time Room Page.
- * Handles the logic for loading a chat room and initializing the Official Help Hub.
- */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
@@ -21,7 +17,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const [initStatus, setInitStatus] = useState<string>('Verifying Session...');
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
-  // Redirect to login if auth check finishes and no user is found
   useEffect(() => {
     if (!isAuthLoading) {
       if (!currentUser) {
@@ -32,7 +27,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     }
   }, [isAuthLoading, currentUser, router]);
 
-  // Guard: Only fetch document if we have an authenticated user context
   const roomDocRef = useMemoFirebase(() => {
     if (!firestore || !slug || isAuthLoading || !currentUser) return null;
     return doc(firestore, 'chatRooms', slug);
@@ -40,14 +34,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
-  // Track if we've actually seen the loading state for the current ref
   useEffect(() => {
     if (isDocLoading) {
       setHasAttemptedFetch(true);
     }
   }, [isDocLoading]);
 
-  // Auto-initialize Official Help Room if it doesn't exist
   useEffect(() => {
     if (slug === 'official-help-room' && !isDocLoading && !firestoreRoom && firestore && currentUser) {
       setInitStatus('Provisioning Official Hub...');
@@ -68,7 +60,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     }
   }, [slug, isDocLoading, firestoreRoom, firestore, currentUser]);
 
-  // Transform Firestore data into Room type
   const activeRoom: Room | null = useMemo(() => {
     if (!firestoreRoom) return null;
     return {
@@ -86,7 +77,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     } as any;
   }, [firestoreRoom]);
 
-  // Handle Permission or Fetch Errors
   if (docError) {
      return (
         <AppLayout>
@@ -100,14 +90,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
      );
   }
 
-  // Final check for existence
   const isActuallyNotFound = !isAuthLoading && !!currentUser && !!roomDocRef && !isDocLoading && !firestoreRoom && hasAttemptedFetch;
 
   if (isActuallyNotFound && slug !== 'official-help-room') {
     notFound();
   }
 
-  // Loading screen for auth or doc loading
   if (isAuthLoading || (roomDocRef && !firestoreRoom)) {
     return (
       <AppLayout>
@@ -119,7 +107,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  // Ensure we have a user and a room before rendering client
   if (!currentUser || !activeRoom) {
      return (
         <AppLayout>

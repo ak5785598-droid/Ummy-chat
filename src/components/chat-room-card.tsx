@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Users, BarChart2 } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import type { Room } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
@@ -39,7 +39,6 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
             
-            {/* Overlay Stats */}
             <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] text-white font-bold">
               <BarChart2 className="h-3 w-3" />
               <span>{onlineCount}</span>

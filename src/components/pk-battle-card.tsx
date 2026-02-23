@@ -12,7 +12,7 @@ interface PkBattleCardProps {
 
 export function PkBattleCard({ battle }: PkBattleCardProps) {
   const { room1, room2, score1, score2 } = battle;
-  const totalScore = score1 + score2;
+  const totalScore = (score1 + score2) || 1;
   const progress1 = (score1 / totalScore) * 100;
   
   const host1 = room1.participants[0];
@@ -29,7 +29,7 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
                 <div className="flex flex-col items-center gap-2 w-1/3">
                     <Link href={`/profile/${host1.id}`}>
                         <Avatar className="h-16 w-16 border-2 border-blue-500">
-                            <AvatarImage src={host1.avatarUrl} alt={host1.name} />
+                            <AvatarImage src={host1.avatarUrl} alt={host1.name + "'s PK Avatar"} />
                             <AvatarFallback>{host1.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </Link>
@@ -45,7 +45,7 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
                 <div className="flex flex-col items-center gap-2 w-1/3">
                     <Link href={`/profile/${host2.id}`}>
                         <Avatar className="h-16 w-16 border-2 border-red-500">
-                            <AvatarImage src={host2.avatarUrl} alt={host2.name} />
+                            <AvatarImage src={host2.avatarUrl} alt={host2.name + "'s Opponent PK Avatar"} />
                             <AvatarFallback>{host2.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </Link>

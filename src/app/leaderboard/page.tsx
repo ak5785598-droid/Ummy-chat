@@ -8,15 +8,10 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Trophy, Crown, TrendingUp, Heart, Loader } from 'lucide-react';
 
-/**
- * Global Leaderboard.
- * Real-time rankings for coins and popularity, guarded by auth to prevent permission errors.
- */
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // REAL QUERIES FOR PRODUCTION DATA
   const richUsersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users'), orderBy('wallet.coins', 'desc'), limit(20));
@@ -46,14 +41,13 @@ export default function LeaderboardPage() {
     return (
       <div className="space-y-4">
         <div className="flex justify-center items-end gap-4 py-8">
-          {/* Silver - 2nd */}
           {top3[1] && (
             <div className="flex flex-col items-center order-1 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-slate-300">
                   <AvatarImage 
                     src={type === 'room' ? `https://picsum.photos/seed/${top3[1].id}/200` : (top3[1].avatarUrl || top3[1].profile?.avatarUrl)} 
-                    alt={top3[1].username || top3[1].name || "Runner Up"}
+                    alt={top3[1].username || top3[1].name || "Runner Up Avatar"}
                   />
                   <AvatarFallback>{(top3[1].username || top3[1].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -63,7 +57,6 @@ export default function LeaderboardPage() {
             </div>
           )}
           
-          {/* Gold - 1st */}
           {top3[0] && (
             <div className="flex flex-col items-center order-2">
               <Crown className="text-yellow-400 h-8 w-8 mb-1 animate-bounce" />
@@ -71,7 +64,7 @@ export default function LeaderboardPage() {
                 <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-xl">
                   <AvatarImage 
                     src={type === 'room' ? `https://picsum.photos/seed/${top3[0].id}/200` : (top3[0].avatarUrl || top3[0].profile?.avatarUrl)} 
-                    alt={top3[0].username || top3[0].name || "Champion"}
+                    alt={top3[0].username || top3[0].name || "Champion Avatar"}
                   />
                   <AvatarFallback>{(top3[0].username || top3[0].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -81,14 +74,13 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          {/* Bronze - 3rd */}
           {top3[2] && (
             <div className="flex flex-col items-center order-3 mt-8">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-amber-600">
                   <AvatarImage 
                     src={type === 'room' ? `https://picsum.photos/seed/${top3[2].id}/200` : (top3[2].avatarUrl || top3[2].profile?.avatarUrl)} 
-                    alt={top3[2].username || top3[2].name || "Third Place"}
+                    alt={top3[2].username || top3[2].name || "Third Place Avatar"}
                   />
                   <AvatarFallback>{(top3[2].username || top3[2].name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -107,7 +99,7 @@ export default function LeaderboardPage() {
                 <Avatar className="h-10 w-10">
                    <AvatarImage 
                      src={type === 'room' ? `https://picsum.photos/seed/${item.id}/200` : (item.avatarUrl || item.profile?.avatarUrl)} 
-                     alt={item.username || item.name || "User Avatar"}
+                     alt={item.username || item.name || "Ranked User Avatar"}
                    />
                   <AvatarFallback>{(item.username || item.name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>

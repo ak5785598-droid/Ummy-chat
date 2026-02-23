@@ -86,7 +86,7 @@ export default function SettingsPage() {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
           <div className="relative group">
             <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-2xl">
-              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarImage src={avatarUrl} alt={displayName + "'s Settings Avatar"} />
               <AvatarFallback className="text-3xl">{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <button 
