@@ -95,6 +95,43 @@
   animation: voice-wave 1.5s infinite;
 }
 
+/* Gift Animations */
+@keyframes heart-burst {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.5) rotate(15deg); opacity: 1; }
+  100% { transform: scale(2) rotate(-15deg); opacity: 0; }
+}
+.animate-heart-burst {
+  animation: heart-burst 1.5s ease-out forwards;
+}
+
+@keyframes rocket-launch {
+  0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
+}
+.animate-rocket-launch {
+  animation: rocket-launch 2s cubic-bezier(0.47, 0, 0.745, 0.715) forwards;
+}
+
+@keyframes galaxy-zoom {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; filter: blur(10px); }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; filter: blur(0px); }
+  100% { transform: scale(3) rotate(360deg); opacity: 0; }
+}
+.animate-galaxy-zoom {
+  animation: galaxy-zoom 3s ease-in-out forwards;
+}
+
+@keyframes car-drift {
+  0% { transform: translateX(-100vw) skewX(-20deg); opacity: 0; }
+  50% { transform: translateX(0) skewX(0deg); opacity: 1; }
+  100% { transform: translateX(100vw) skewX(20deg); opacity: 0; }
+}
+.animate-car-drift {
+  animation: car-drift 2s ease-in-out forwards;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

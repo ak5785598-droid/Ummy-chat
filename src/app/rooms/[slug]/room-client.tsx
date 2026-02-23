@@ -85,6 +85,7 @@ import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
@@ -104,6 +105,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
+  const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -153,6 +155,14 @@ export function RoomClient({ room }: { room: Room }) {
     })) || [];
   }, [firestoreMessages]);
 
+  // Animation Trigger
+  useEffect(() => {
+    const lastMsg = firestoreMessages?.[firestoreMessages.length - 1];
+    if (lastMsg?.type === 'gift' && lastMsg.giftId) {
+      setActiveGiftAnimation(lastMsg.giftId);
+    }
+  }, [firestoreMessages]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -199,7 +209,10 @@ export function RoomClient({ room }: { room: Room }) {
     setDocumentNonBlocking(userRef, walletUpdates, { merge: true });
     setDocumentNonBlocking(profileRef, walletUpdates, { merge: true });
 
-    updateDocumentNonBlocking(roomDocRef, { stats: { totalGifts: increment(gift.price) }, updatedAt: serverTimestamp() });
+    updateDocumentNonBlocking(roomDocRef, { 
+      'stats.totalGifts': increment(gift.price), 
+      updatedAt: serverTimestamp() 
+    });
 
     let finalRecipient = giftRecipient;
     if (!finalRecipient) {
@@ -210,7 +223,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (finalRecipient) {
       const rRef = doc(firestore, 'users', finalRecipient.uid);
       const rpRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
-      const updates = { stats: { fans: increment(gift.price) }, updatedAt: serverTimestamp() };
+      const updates = { 'stats.fans': increment(gift.price), updatedAt: serverTimestamp() };
       setDocumentNonBlocking(rRef, updates, { merge: true });
       setDocumentNonBlocking(rpRef, updates, { merge: true });
     }
@@ -370,6 +383,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl border border-white/5 animate-in fade-in duration-700">
+      <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
+      
       <div className="absolute inset-0 z-0 opacity-60">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
         <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" className="h-full w-full object-cover scale-110" alt="Room Vibe" />
