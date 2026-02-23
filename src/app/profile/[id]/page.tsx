@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { User, Loader, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Globe2, HeartHandshake, Layout } from 'lucide-react';
+import { User, Loader, Camera, Gem, Award, ShieldCheck, BadgeCheck, Sparkles, Globe2, HeartHandshake, Layout, ShoppingBag } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
+import Link from 'next/link';
 
 /**
  * Social Profile Page.
@@ -106,7 +107,13 @@ export default function ProfilePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             
             {isOwnProfile && (
-              <div className="absolute top-4 right-4 z-10">
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
+                <Button asChild size="sm" className="rounded-full bg-primary text-black font-black uppercase tracking-widest text-[10px] h-9 px-4 shadow-lg hover:scale-105 transition-transform">
+                  <Link href="/store">
+                    <ShoppingBag className="mr-1.5 h-3.5 w-3.5" />
+                    Boutique
+                  </Link>
+                </Button>
                 <EditProfileDialog profile={profile} />
               </div>
             )}
@@ -159,10 +166,15 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 space-y-6">
             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden">
-              <CardHeader className="bg-secondary/10">
-                <CardTitle className="font-headline flex items-center gap-2 text-lg">
+              <CardHeader className="bg-secondary/10 flex flex-row items-center justify-between">
+                <CardTitle className="font-headline flex items-center gap-2 text-lg m-0">
                   <Award className="h-5 w-5 text-primary" /> Wallet & Assets
                 </CardTitle>
+                {isOwnProfile && (
+                  <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] font-black uppercase text-primary hover:bg-primary/10">
+                    <Link href="/store">Shop</Link>
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-black/5">
