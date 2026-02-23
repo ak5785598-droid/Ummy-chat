@@ -8,14 +8,11 @@ import {
   Send,
   Lock,
   Unlock,
-  Sparkles,
   Loader,
   MoreVertical,
   UserX,
-  Smile,
   Gift,
   Users,
-  Swords,
   Crown,
   Settings,
   Share2,
@@ -77,7 +74,8 @@ export function RoomClient({ room }: { room: Room }) {
   const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
   const onlineCount = participants?.length || 0;
 
-  // Presence Synchronization
+  // Presence Synchronization - Hardened to prevent re-join loops
+  const presenceKey = `${currentUser?.uid}-${room.id}`;
   useEffect(() => {
     if (!firestore || !room.id || !currentUser || !userProfile) return;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
@@ -95,7 +93,7 @@ export function RoomClient({ room }: { room: Room }) {
     return () => { 
       deleteDoc(participantRef).catch(() => {}); 
     };
-  }, [firestore, room.id, currentUser, userProfile]);
+  }, [firestore, room.id, currentUser?.uid, userProfile?.username, userProfile?.avatarUrl]);
 
   // Messages Query
   const messagesQuery = useMemoFirebase(() => {
@@ -145,7 +143,6 @@ export function RoomClient({ room }: { room: Room }) {
     if (!isAdmin || !firestore || !room.id || !firestoreMessages) return;
     
     try {
-      // For the prototype, we delete the current visible messages one by one
       const deletePromises = firestoreMessages.map(m => 
         deleteDoc(doc(firestore, 'chatRooms', room.id, 'messages', m.id))
       );
@@ -201,7 +198,7 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-6 bg-transparent">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-[0_0_15px_rgba(255,107,107,0.3)]">
-            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt={`${room.title} logo`} />
+            <AvatarImage src={`https://picsum.photos/seed/${room.id}/200`} alt={`${room.title} logo icon`} />
             <AvatarFallback>UM</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
@@ -270,7 +267,7 @@ export function RoomClient({ room }: { room: Room }) {
                    >
                       {hostParticipant ? (
                         <Avatar className="h-full w-full rounded-full border-2 border-black">
-                           <AvatarImage src={hostParticipant.avatarUrl} alt={`${hostParticipant.name}'s avatar image`} />
+                           <AvatarImage src={hostParticipant.avatarUrl} alt={`${hostParticipant.name}'s room master avatar`} />
                            <AvatarFallback>{hostParticipant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                       ) : (

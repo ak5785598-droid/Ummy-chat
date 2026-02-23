@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -124,7 +125,7 @@ export default function SettingsPage() {
           <div className="relative h-48 w-full rounded-b-[2rem] overflow-hidden">
             <Image 
               src="https://picsum.photos/seed/profile-banner/1200/400" 
-              alt="Profile banner" 
+              alt="Settings profile banner background" 
               fill 
               className="object-cover"
               priority
@@ -134,7 +135,7 @@ export default function SettingsPage() {
           <div className="px-6 -mt-12 flex flex-col items-start relative z-10">
             <div className="relative group">
               <Avatar className="h-24 w-24 border-4 border-white shadow-xl ring-4 ring-primary/5">
-                <AvatarImage src={avatarUrl} alt={`${displayName}'s avatar`} />
+                <AvatarImage src={avatarUrl} alt={`${displayName}'s account avatar`} />
                 <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
               </Avatar>
               <button 
@@ -263,5 +264,3 @@ export default function SettingsPage() {
     </AppLayout>
   );
 }
-
-import { cn } from '@/lib/utils';

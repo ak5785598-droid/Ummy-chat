@@ -9,11 +9,6 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader, ShieldAlert } from 'lucide-react';
 import type { Room } from '@/lib/types';
 
-/**
- * Dynamic Room Page.
- * Handles authentication, Firestore room fetching, and "Official Room" auto-provisioning.
- * Hardened to prevent race conditions and intermittent 404s.
- */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
@@ -90,17 +85,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
                 <ShieldAlert className="h-16 w-16 text-destructive mb-2" />
                 <h1 className="text-2xl font-black uppercase italic">Access Frequency Denied</h1>
                 <p className="text-muted-foreground max-w-md">The room ID is invalid or you do not have permission to access this vibe.</p>
-                <button onClick={() => router.push('/rooms')} className="bg-primary text-white font-black uppercase px-8 py-3 rounded-full shadow-lg">Back to Explore</button>
+                <button onClick={() => router.push('/rooms')} className="bg-primary text-black font-black uppercase px-8 py-3 rounded-full shadow-lg">Back to Explore</button>
             </div>
         </AppLayout>
      );
   }
 
-  // Only trigger 404 if loading is completely finished and doc is truly missing
-  if (hasActuallyLoadedOnce && !firestoreRoom && slug !== 'official-help-room') {
-    notFound();
-  }
-
+  // Robust loading guard
   if (!hasActuallyLoadedOnce || (slug === 'official-help-room' && !firestoreRoom)) {
     return (
       <AppLayout>
@@ -112,7 +103,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  if (!activeRoom) return null;
+  if (!activeRoom) {
+    notFound();
+    return null;
+  }
 
   return (
     <AppLayout>
