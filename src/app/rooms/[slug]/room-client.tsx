@@ -202,7 +202,7 @@ export function RoomClient({ room }: { room: Room }) {
               <Avatar className="h-14 w-14 border-2 border-primary relative z-10 shadow-2xl">
                 <AvatarImage 
                   src={room.coverUrl || `https://picsum.photos/seed/${room.id}/200`} 
-                  alt={`${room.title} Cover`}
+                  alt={`${room.title} Cover Photo`}
                 />
                 <AvatarFallback>UM</AvatarFallback>
               </Avatar>
@@ -264,7 +264,7 @@ export function RoomClient({ room }: { room: Room }) {
                             <Avatar className="h-full w-full rounded-full border-2 border-black">
                                <AvatarImage 
                                  src={participants.find(p => p.seatIndex === 1)?.avatarUrl} 
-                                 alt="Host Avatar" 
+                                 alt={`${participants.find(p => p.seatIndex === 1)?.name} Avatar`} 
                                />
                                <AvatarFallback>H</AvatarFallback>
                             </Avatar>

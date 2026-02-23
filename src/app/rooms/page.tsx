@@ -13,6 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 /**
  * Explore Rooms Page.
@@ -197,16 +198,4 @@ export default function RoomsPage() {
       </div>
     </AppLayout>
   );
-}
-
-function Avatar({ children, className }: { children: React.ReactNode, className?: string }) {
-  return <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>;
-}
-
-function AvatarImage({ src, alt }: { src: string, alt: string }) {
-  return <img className="aspect-square h-full w-full" src={src} alt={alt} />;
-}
-
-function AvatarFallback({ children }: { children: React.ReactNode }) {
-  return <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">{children}</div>;
 }

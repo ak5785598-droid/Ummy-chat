@@ -43,7 +43,7 @@ export function ChatRoomCard({ room }: ChatRoomCardProps) {
           <div className="relative h-40 w-full">
             <Image
               src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`}
-              alt={`Cover image for ${room.title}`}
+              alt={`Cover image for room ${room.title}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
