@@ -9,7 +9,8 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Production Profile Initializer.
- * Assigns a unique sequential numeric ID and small starting balance.
+ * Assigns a unique sequential numeric ID and standard starting balance.
+ * Hardened: Synchronizes root identity before detailed profile for Security Rules compliance.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -54,7 +55,7 @@ export function ProfileInitializer() {
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
             wallet: { 
-              coins: 500, // Small welcome bonus for production
+              coins: 500, // Standard production starting bonus
               diamonds: 0,
               totalSpent: 0
             },
@@ -74,6 +75,7 @@ export function ProfileInitializer() {
           return initialData;
         });
 
+        // Step 1: Set Root Identity (Critical for Security Rules)
         await setDoc(userRef, {
           id: profileId,
           specialId: finalData.specialId,
@@ -87,8 +89,10 @@ export function ProfileInitializer() {
           joinedAt: serverTimestamp(),
         }, { merge: true });
 
+        // Step 2: Set Detailed Profile
         await setDoc(profileRef, finalData, { merge: true });
 
+        // Step 3: Welcome Notification
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Welcome to Ummy!',
           content: `Your unique Tribe ID is ${finalData.specialId}. We've gifted you 500 Gold Coins to explore the Boutique!`,

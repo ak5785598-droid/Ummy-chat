@@ -12,23 +12,21 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      // Allow users to create their own identity summary
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      // Allow updates if owner, admin, or ONLY updating stats/updatedAt (for gifting/rankings)
+      // Allow users to create or update their own identity summary
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      
+      // Allow updates to stats/updatedAt for gifting and follow systems
       allow update: if isSignedIn() && (
-        request.auth.uid == userId || 
-        isAdmin() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt']))
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
       );
+      
       allow delete: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow create, update: if isSignedIn() && request.auth.uid == userId;
         allow update: if isSignedIn() && (
-          request.auth.uid == userId || 
-          isAdmin() || 
-          (request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt']))
+          request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
         );
         allow delete: if isAdmin();
       }
@@ -42,7 +40,7 @@ service cloud.firestore {
 
     match /appConfig/{configId} {
       allow read: if isSignedIn();
-      // allow anyone to increment user/room counters during initialization
+      // Allow anyone to increment user/room counters during initialization
       allow write: if isSignedIn() && (configId == 'counters' || isAdmin());
     }
     
@@ -60,7 +58,7 @@ service cloud.firestore {
 
       allow read, list, create: if isSignedIn();
       
-      // Allow regular users to update stats (for gifting) and updatedAt.
+      // Authorize updates for GIFTING: allow regular users to update stats and updatedAt.
       allow update: if isSignedIn() && (
         isRoomAdmin() || 
         (request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt']))
