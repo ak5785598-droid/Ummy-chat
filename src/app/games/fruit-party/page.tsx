@@ -264,47 +264,60 @@ export default function FruitPartyPage() {
         {/* Main Game Board */}
         <main className="flex-1 flex flex-col items-center justify-center pt-20 px-4 space-y-8">
            
-           {/* The Fruit Wheel */}
-           <div className="relative w-80 h-80 flex items-center justify-center">
+           {/* The Interactive Fruit Wheel */}
+           <div className="relative w-[22rem] h-[22rem] flex items-center justify-center">
               <div className="absolute inset-0 bg-white/10 rounded-full border-8 border-white/20 blur-sm" />
               <div className="absolute inset-4 rounded-full border-4 border-white/40 border-dashed animate-spin-slow" />
               
-              {/* Items in a circle */}
+              {/* Circular Betting Items */}
               {ITEMS.map((item, index) => {
                 const angle = (index / ITEMS.length) * 360;
                 const isActive = spinningIndex === index;
                 const isWinner = gameState === 'result' && resultId === item.id;
+                const hasBet = !!myBets[item.id];
                 
                 return (
-                  <div 
+                  <button 
                     key={item.id}
+                    onClick={() => handlePlaceBet(item.id)}
+                    disabled={gameState !== 'betting'}
                     className={cn(
-                      "absolute w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all duration-300 border-2",
-                      isActive ? "scale-125 z-20 border-yellow-400 shadow-[0_0_20px_rgba(251,191,36,0.8)]" : "border-white/20 opacity-80",
+                      "absolute w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 border-2 active:scale-90 group",
+                      isActive ? "scale-125 z-20 border-yellow-400 shadow-[0_0_30px_rgba(251,191,36,0.8)]" : "border-white/20",
                       isWinner && "animate-bounce scale-150 z-30 ring-4 ring-yellow-400",
+                      hasBet ? "ring-2 ring-yellow-400 shadow-lg" : "opacity-90",
+                      gameState !== 'betting' && "grayscale-[0.5]",
                       item.color
                     )}
                     style={{
-                      transform: `rotate(${angle}deg) translate(120px) rotate(-${angle}deg)`
+                      transform: `rotate(${angle}deg) translate(140px) rotate(-${angle}deg)`
                     }}
                   >
-                    <span className="text-2xl">{item.emoji}</span>
-                    <span className="text-[6px] font-black text-white uppercase">{item.multiplier}X</span>
-                  </div>
+                    <span className="text-3xl group-hover:scale-110 transition-transform">{item.emoji}</span>
+                    <span className="text-[8px] font-black text-white uppercase">{item.multiplier}X</span>
+                    
+                    {/* Interactive Bet Stack Indicator */}
+                    {hasBet && (
+                      <div className="absolute -top-4 -right-2 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[10px] font-black shadow-xl animate-in zoom-in bounce-in ring-2 ring-white z-50 flex items-center gap-0.5">
+                         <Zap className="h-2.5 w-2.5 fill-current" />
+                         {myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}K` : myBets[item.id]}
+                      </div>
+                    )}
+                  </button>
                 );
               })}
 
               {/* Center Display */}
-              <div className="relative z-10 w-32 h-32 bg-white rounded-full shadow-2xl flex flex-col items-center justify-center border-4 border-yellow-400">
+              <div className="relative z-10 w-36 h-32 bg-white rounded-full shadow-2xl flex flex-col items-center justify-center border-4 border-yellow-400">
                  {gameState === 'betting' ? (
                    <>
                     <Timer className="h-6 w-6 text-yellow-600 mb-1" />
                     <span className="text-4xl font-black text-yellow-600 italic tracking-tighter">{timeLeft}s</span>
-                    <span className="text-[8px] font-black text-yellow-600 uppercase">Betting</span>
+                    <span className="text-[8px] font-black text-yellow-600 uppercase">Place Bets</span>
                    </>
                  ) : (
                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black uppercase text-gray-400">Winning</span>
+                      <span className="text-[10px] font-black uppercase text-gray-400">Spinning</span>
                       <span className="text-5xl animate-in zoom-in duration-500">{ITEMS[spinningIndex].emoji}</span>
                    </div>
                  )}
@@ -321,11 +334,11 @@ export default function FruitPartyPage() {
               ))}
            </div>
 
-           {/* Betting Controls */}
-           <div className="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-6 space-y-6 shadow-2xl">
+           {/* Chip Selection Controls */}
+           <div className="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-6 space-y-4 shadow-2xl">
               <div className="flex justify-between items-center px-2">
-                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Select Wager Chip</p>
-                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Fruit Party Engine v1.5</Badge>
+                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Select Bet Chip</p>
+                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Tap Wheel to Bet</Badge>
               </div>
               
               <div className="flex justify-between gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -334,42 +347,13 @@ export default function FruitPartyPage() {
                     key={chip}
                     onClick={() => setSelectedChip(chip)}
                     className={cn(
-                      "flex-1 h-12 min-w-[60px] rounded-2xl flex flex-col items-center justify-center transition-all border-2 active:scale-95",
+                      "flex-1 h-12 min-w-[64px] rounded-2xl flex flex-col items-center justify-center transition-all border-2 active:scale-95",
                       selectedChip === chip 
                         ? "bg-yellow-400 border-white shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
                         : "bg-white/10 border-white/10 text-white/60"
                     )}
                    >
                       <span className="text-xs font-black italic">{chip >= 1000 ? `${chip/1000}K` : chip}</span>
-                   </button>
-                 ))}
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                 {ITEMS.map(item => (
-                   <button 
-                    key={item.id}
-                    onClick={() => handlePlaceBet(item.id)}
-                    disabled={gameState !== 'betting'}
-                    className={cn(
-                      "relative h-16 rounded-2xl flex flex-col items-center justify-center transition-all border-2 group active:scale-95 overflow-visible",
-                      myBets[item.id] ? "border-yellow-400 bg-white/20 shadow-[0_0_15px_rgba(251,191,36,0.2)]" : "border-white/10 bg-black/20",
-                      gameState !== 'betting' && "opacity-50 grayscale"
-                    )}
-                   >
-                      <span className="text-2xl group-hover:scale-110 transition-transform">{item.emoji}</span>
-                      <span className="text-[8px] font-black text-white/60">{item.multiplier}X</span>
-                      
-                      {/* Interactive Bet Stack Indicator */}
-                      {myBets[item.id] && (
-                        <div 
-                          key={myBets[item.id]} 
-                          className="absolute -top-3 -right-2 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[10px] font-black shadow-xl animate-in zoom-in bounce-in ring-2 ring-white z-50 flex items-center gap-0.5"
-                        >
-                           <Zap className="h-2.5 w-2.5 fill-current" />
-                           {myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}K` : myBets[item.id]}
-                        </div>
-                      )}
                    </button>
                  ))}
               </div>
