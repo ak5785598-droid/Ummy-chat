@@ -39,7 +39,7 @@ export type Message = {
   senderName: string;
   senderAvatar: string;
   timestamp: any;
-  type?: 'text' | 'gift' | 'entrance';
+  type?: 'text' | 'gift' | 'entrance' | 'leave' | 'emoji';
   giftId?: string;
   recipientName?: string;
 };

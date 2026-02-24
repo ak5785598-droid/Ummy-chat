@@ -29,6 +29,7 @@ import {
   Gamepad2,
   Star,
   ShieldCheck,
+  Smile,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -107,6 +108,8 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
 ];
 
+const AVAILABLE_EMOJIS = ['🔥', '❤️', '😂', '😮', '🙌', '✨', '💯', '🎉', '🌟', '😎', '🎮', '🎤'];
+
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
@@ -120,6 +123,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isSending, setIsSending] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
@@ -203,6 +207,21 @@ export function RoomClient({ room }: { room: Room }) {
     });
     setMessageText('');
     setIsSending(false);
+  };
+
+  const handleSendEmoji = async (emoji: string) => {
+    if (!currentUser || !firestore || !userProfile) return;
+    
+    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+      content: emoji,
+      senderId: currentUser.uid,
+      senderName: userProfile.username || 'User',
+      senderAvatar: userProfile.avatarUrl || '',
+      chatRoomId: room.id,
+      timestamp: serverTimestamp(),
+      type: 'emoji'
+    });
+    setIsEmojiPickerOpen(false);
   };
 
   const handleSendGift = async (gift: Gift) => {
@@ -642,7 +661,8 @@ export function RoomClient({ room }: { room: Room }) {
               <div key={msg.id} className={cn(
                 "flex items-start gap-2 animate-in fade-in slide-in-from-left-2 duration-300", 
                 msg.type === 'gift' && "bg-primary/10 p-2 rounded-xl border border-primary/20 shadow-[0_0_15px_rgba(255,204,0,0.1)]",
-                (msg.type === 'entrance' || msg.type === 'leave') && "bg-blue-500/10 p-1.5 px-3 rounded-full border border-blue-500/20 justify-center w-fit mx-auto"
+                (msg.type === 'entrance' || msg.type === 'leave') && "bg-blue-500/10 p-1.5 px-3 rounded-full border border-blue-500/20 justify-center w-fit mx-auto",
+                msg.type === 'emoji' && "justify-center w-full py-2"
               )}>
                 {msg.type === 'entrance' || msg.type === 'leave' ? (
                   <div className="flex items-center gap-2">
@@ -650,6 +670,11 @@ export function RoomClient({ room }: { room: Room }) {
                     <p className={cn("text-[10px] font-black uppercase italic", msg.type === 'entrance' ? "text-blue-400" : "text-red-400")}>
                       {msg.user.name} <span className="opacity-60">{msg.text}</span>
                     </p>
+                  </div>
+                ) : msg.type === 'emoji' ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[8px] font-black uppercase text-white/40">{msg.user.name}</span>
+                    <span className="text-5xl animate-bounce drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{msg.text}</span>
                   </div>
                 ) : (
                   <>
@@ -669,7 +694,7 @@ export function RoomClient({ room }: { room: Room }) {
             <Input placeholder="Share a vibe..." className="bg-transparent border-none text-xs text-white placeholder:text-white/40 focus-visible:ring-0" value={messageText} onChange={(e) => setMessageText(e.target.value)} disabled={isSending} />
             <button type="submit" disabled={isSending || !messageText.trim()} className="text-white hover:text-primary transition-colors"><Send className="h-5 w-5" /></button>
           </form>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button onClick={handleMicToggle} className={cn("rounded-full h-12 w-12 transition-all shadow-lg", isInSeat ? (isMicOn ? "bg-primary text-black scale-110" : "bg-white/10 text-white/40") : "bg-white/5")}>
               {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
             </Button>
@@ -680,6 +705,28 @@ export function RoomClient({ room }: { room: Room }) {
             >
               <Gamepad2 className="h-6 w-6" />
             </Button>
+
+            <Dialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full h-12 w-12 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 shadow-lg transition-all hover:scale-110">
+                   <Smile className="h-6 w-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-xs bg-slate-900 text-white border-white/10 rounded-[2.5rem] p-6">
+                 <DialogHeader className="pb-4"><DialogTitle className="text-center font-black uppercase italic text-sm tracking-widest">Tribe Reactions</DialogTitle></DialogHeader>
+                 <div className="grid grid-cols-4 gap-4">
+                    {AVAILABLE_EMOJIS.map(emoji => (
+                      <button 
+                        key={emoji} 
+                        onClick={() => handleSendEmoji(emoji)}
+                        className="text-3xl hover:scale-125 transition-transform active:scale-90 p-2 bg-white/5 rounded-2xl hover:bg-white/10"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                 </div>
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
               <DialogTrigger asChild>
