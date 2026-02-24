@@ -41,10 +41,12 @@ const sidebarItems = [
 
 export function AppLayout({ 
   children, 
-  hideSidebarOnMobile = false 
+  hideSidebarOnMobile = false,
+  fullScreen = false
 }: { 
   children: React.ReactNode; 
   hideSidebarOnMobile?: boolean;
+  fullScreen?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -69,6 +71,17 @@ export function AppLayout({
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <UmmyLogoIcon className="h-12 w-12 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  // Pure clean layout for immersive games
+  if (fullScreen) {
+    return (
+      <div className="min-h-screen w-full bg-black font-headline overflow-hidden relative">
+        <main className="h-screen w-full relative">
+          {children}
+        </main>
       </div>
     );
   }
