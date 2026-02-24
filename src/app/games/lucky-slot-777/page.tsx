@@ -112,10 +112,9 @@ export default function LuckySlot777Page() {
     
     // Physical Rotation Logic:
     // 8 slices, each 45 degrees.
-    // The arrow is at the top (0 degrees).
-    // To land on index 'i', we must rotate the wheel so slice 'i' is at 0.
+    // Landing Angle centers the winning slice at the top (0 degrees).
     const sliceAngle = 360 / WHEEL_DISTRIBUTION.length;
-    const extraSpins = 10; // For high-speed effect
+    const extraSpins = 40; // Hyper-velocity sustained rotations
     const landingAngle = (360 - (targetIdx * sliceAngle)) % 360;
     const totalRotation = rotation + (360 * extraSpins) + landingAngle;
     
@@ -123,10 +122,10 @@ export default function LuckySlot777Page() {
     setResultId(WHEEL_DISTRIBUTION[targetIdx]);
     setSpinningIndex(targetIdx);
 
-    // Fast 2.5s duration for rotation
+    // Sustained 5s duration for hyper-velocity rotation
     setTimeout(() => {
       showResult(WHEEL_DISTRIBUTION[targetIdx]);
-    }, 2500);
+    }, 5000);
   };
 
   const showResult = (id: string) => {
@@ -190,8 +189,8 @@ export default function LuckySlot777Page() {
   };
 
   const formatAmount = (v: number) => {
-    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-    if (v >= 1000) return `${(v / 1000).toFixed(1)}K`;
+    if (v >= 1000000) return `${(v / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+    if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}K`;
     return v.toString();
   };
 
@@ -332,7 +331,7 @@ export default function LuckySlot777Page() {
                 className={cn(
                   "relative w-full h-full rounded-full border-[8px] border-yellow-500 shadow-2xl overflow-hidden",
                   gameState === 'spinning' 
-                    ? "transition-transform duration-[2500ms] cubic-bezier(0.15, 0, 0.15, 1) animate-pulse" 
+                    ? "transition-transform duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1) animate-pulse" 
                     : "transition-none"
                 )}
                 style={{ transform: `rotate(${rotation}deg)` }}
