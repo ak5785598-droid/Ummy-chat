@@ -54,6 +54,7 @@ export type RoomParticipant = {
   joinedAt: any;
   activeFrame?: string;
   activeWave?: string;
+  activeEmoji?: string | null;
 };
 
 export type Room = {

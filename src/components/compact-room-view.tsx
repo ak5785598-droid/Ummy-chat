@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Users, ChevronDown, Crown, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 
 export function CompactRoomView() {
   const { activeRoom, setIsMinimized } = useRoomContext();
@@ -77,7 +78,10 @@ export function CompactRoomView() {
                       occupant ? "border-primary shadow-lg" : "border-white/10",
                     )}>
                       {occupant ? (
-                        <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                        <>
+                          <EmojiReactionOverlay emoji={occupant.activeEmoji} size="sm" />
+                          <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                        </>
                       ) : <Mic className="h-4 w-4 text-white/10" />}
                     </div>
                   </AvatarFrame>

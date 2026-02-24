@@ -94,6 +94,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
+import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
@@ -108,7 +109,7 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
 ];
 
-const AVAILABLE_EMOJIS = ['🔥', '❤️', '😂', '😮', '🙌', '✨', '💯', '🎉', '🌟', '😎', '🎮', '🎤'];
+const AVAILABLE_EMOJIS = ['🔥', '❤️', '😂', '😭', '😮', '🙌', '✨', '💯', '🎉', '🌟', '😎', '🎮'];
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -212,6 +213,17 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSendEmoji = async (emoji: string) => {
     if (!currentUser || !firestore || !userProfile) return;
     
+    // Update Participant document for over-avatar animation
+    if (currentUserParticipant) {
+      const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+      updateDocumentNonBlocking(participantRef, { activeEmoji: emoji });
+      
+      // Auto-clear emoji after 4s
+      setTimeout(() => {
+        updateDocumentNonBlocking(participantRef, { activeEmoji: null });
+      }, 4000);
+    }
+
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: emoji,
       senderId: currentUser.uid,
@@ -599,7 +611,10 @@ export function RoomClient({ room }: { room: Room }) {
                         )}
                       >
                         {hostParticipant ? (
-                          <Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>
+                          <>
+                            <EmojiReactionOverlay emoji={hostParticipant.activeEmoji} size="xl" />
+                            <Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>
+                          </>
                         ) : <Crown className="h-10 w-10 text-white/10" />}
                       </div>
                    </AvatarFrame>
@@ -630,7 +645,10 @@ export function RoomClient({ room }: { room: Room }) {
                         )}
                       >
                         {isLocked ? <Lock className="h-6 w-6 text-red-500/40" /> : occupant ? (
-                          <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          <>
+                            <EmojiReactionOverlay emoji={occupant.activeEmoji} size="md" />
+                            <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          </>
                         ) : <Mic className="h-6 w-6 text-white/20" />}
                       </div>
                     </AvatarFrame>
