@@ -1,89 +1,49 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
     
-    // Check if the user document has elevated tags for system-wide admin.
-    function isAdmin() {
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tags', []).hasAny(['Admin', 'Official']);
-    }
-
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
-      
-      // Allow updates to own profile
-      allow update: if isSignedIn() && request.auth.uid == userId;
-      
-      // SPECIAL: Allow anyone to update 'stats', 'updatedAt', and 'wallet' for gifting/follow system
-      // This enables the 40% Diamond Return and Fan system.
       allow update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
+        request.auth.uid == userId || 
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'wallet', 'updatedAt'])
       );
-      
-      allow delete: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.auth.uid == userId;
-        allow update: if isSignedIn() && (
-          request.auth.uid == userId ||
-          request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'wallet'])
-        );
-        allow delete: if isAdmin();
+        allow create, update: if isSignedIn() && request.auth.uid == userId;
       }
-
-      match /notifications/{notificationId} {
+      match /notifications/{id} {
         allow read: if isSignedIn() && request.auth.uid == userId;
-        allow create: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
-        allow delete: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn();
       }
     }
 
-    match /appConfig/{configId} {
+    match /appConfig/{id} {
       allow read: if isSignedIn();
-      // Allow anyone to increment counters during initialization/creation
-      allow write: if isSignedIn() && (configId == 'counters' || isAdmin());
-    }
-    
-    match /adminLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isSignedIn(); // Allow logging actions during processing
-      allow update, delete: if false;
+      allow write: if isSignedIn() && id == 'counters';
     }
 
-    match /chatRooms/{chatRoomId} {
-      function isRoomAdmin() {
-        let roomData = resource.data;
-        return isAdmin() || roomData.ownerId == request.auth.uid || roomData.get('moderatorIds', []).hasAny([request.auth.uid]);
-      }
-
+    match /chatRooms/{roomId} {
       allow read, list, create: if isSignedIn();
-      
-      // Authorize updates for GIFTING & ROOM MGMT
-      allow update: if isSignedIn() && (
-        isRoomAdmin() || 
-        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'updatedAt', 'lockedSeats']))
-      );
-      
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-      
-      match /participants/{participantId} {
-        allow read, list, create: if isSignedIn();
-        allow update: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin());
-        allow delete: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin());
-      }
-      match /messages/{messageId} {
-        allow read, list, create: if isSignedIn();
-        allow delete: if isSignedIn() && isRoomAdmin();
-      }
-    }
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-    match /storeItems/{itemId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      match /participants/{userId} {
+        allow read, list: if isSignedIn();
+        allow write: if isSignedIn() && request.auth.uid == userId;
+        
+        match /signaling/{peerId} {
+          allow read, write: if isSignedIn();
+        }
+      }
+      match /messages/{id} {
+        allow read, list, create: if isSignedIn();
+        allow delete: if isSignedIn();
+      }
     }
   }
 }

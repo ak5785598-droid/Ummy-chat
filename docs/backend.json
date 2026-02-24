@@ -7,10 +7,10 @@
       "description": "Represents a user profile in the Ummy app.",
       "properties": {
         "id": { "type": "string" },
+        "specialId": { "type": "string", "description": "Unique 6-digit numeric ID." },
         "username": { "type": "string" },
         "avatarUrl": { "type": "string", "format": "uri" },
         "bio": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
         "wallet": {
           "type": "object",
           "properties": {
@@ -34,46 +34,25 @@
             "followers": { "type": "number" },
             "fans": { "type": "number" }
           }
-        },
-        "level": {
-          "type": "object",
-          "properties": {
-            "rich": { "type": "number" },
-            "charm": { "type": "number" }
-          }
         }
       }
     },
-    "AppConfig": {
-      "title": "AppConfig",
+    "ChatRoom": {
+      "title": "ChatRoom",
       "type": "object",
       "properties": {
-        "economyEnabled": { "type": "boolean" },
-        "maintenanceMode": { "type": "boolean" },
-        "activeBanners": { "type": "array", "items": { "$ref": "#/backend/entities/Banner" } }
+        "name": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "category": { "type": "string" },
+        "lockedSeats": { "type": "array", "items": { "type": "number" } },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "totalGifts": { "type": "number" }
+          }
+        }
       }
-    },
-    "Banner": {
-      "title": "Banner",
-      "type": "object",
-      "properties": {
-        "imageUrl": { "type": "string" },
-        "link": { "type": "string" },
-        "title": { "type": "string" }
-      }
-    },
-    "AdminLog": {
-      "title": "AdminLog",
-      "type": "object",
-      "description": "Audit log for admin actions.",
-      "properties": {
-        "adminId": { "type": "string" },
-        "targetId": { "type": "string" },
-        "action": { "type": "string" },
-        "details": { "type": "object" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["adminId", "action", "createdAt"]
     }
   },
   "auth": {
@@ -82,27 +61,36 @@
   "firestore": {
     "structure": [
       {
-        "path": "/appConfig/global",
-        "definition": {
-          "entityName": "AppConfig",
-          "schema": { "$ref": "#/backend/entities/AppConfig" },
-          "description": "Global application settings."
-        }
-      },
-      {
-        "path": "/users/{userId}/profile/{profileId}",
+        "path": "/users/{userId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": { "$ref": "#/backend/entities/UserProfile" },
-          "description": "User profile data."
+          "description": "User root identity."
         }
       },
       {
-        "path": "/adminLogs/{logId}",
+        "path": "/chatRooms/{roomId}",
         "definition": {
-          "entityName": "AdminLog",
-          "schema": { "$ref": "#/backend/entities/AdminLog" },
-          "description": "Audit trails for admin operations."
+          "entityName": "ChatRoom",
+          "schema": { "$ref": "#/backend/entities/ChatRoom" },
+          "description": "Voice room metadata."
+        }
+      },
+      {
+        "path": "/chatRooms/{roomId}/participants/{userId}/signaling/{peerId}",
+        "definition": {
+          "entityName": "WebRTCSignal",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["offer", "answer", "candidate"] },
+              "sdp": { "type": "string" },
+              "candidate": { "type": "object" },
+              "from": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          },
+          "description": "Signaling messages for WebRTC handshakes."
         }
       }
     ]

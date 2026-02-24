@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -89,6 +90,7 @@ import { useRoomContext } from '@/components/room-provider';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { useWebRTC } from '@/hooks/use-webrtc';
 
 /**
  * High-Tier Gift Definitions.
@@ -105,6 +107,18 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'galaxy', name: 'Galaxy', emoji: '🌌', price: 100000, animationType: 'zoom' },
   { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
 ];
+
+/**
+ * AUDIO PLAYER COMPONENT
+ * Renders an invisible audio element for a remote peer.
+ */
+function RemoteAudio({ stream }: { stream: MediaStream }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.srcObject = stream;
+  }, [stream]);
+  return <audio ref={audioRef} autoPlay className="hidden" />;
+}
 
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
@@ -140,6 +154,9 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMicOn = isInSeat && !currentUserParticipant?.isMuted;
+
+  // WEBRTC INTEGRATION
+  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !currentUser) return null;
@@ -388,6 +405,11 @@ export function RoomClient({ room }: { room: Room }) {
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl border border-white/5 animate-in fade-in duration-700">
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       
+      {/* Remote Audio Streams */}
+      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+        <RemoteAudio key={peerId} stream={stream} />
+      ))}
+
       <div className="absolute inset-0 z-0 opacity-60">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
         <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070&auto=format&fit=crop" className="h-full w-full object-cover scale-110" alt="Room Vibe" />
