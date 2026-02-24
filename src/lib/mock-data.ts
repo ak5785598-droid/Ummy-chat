@@ -16,6 +16,14 @@ const games: Game[] = [
     cost: 0, 
     imageHint: 'ludo board' 
   },
+  { 
+    id: 'g2', 
+    title: 'Fruit Party', 
+    slug: 'fruit-party', 
+    coverUrl: 'https://picsum.photos/seed/fruit-party/1200/600', 
+    cost: 0, 
+    imageHint: 'vibrant fruits' 
+  },
 ];
 
 const coinPackages: CoinPackage[] = [

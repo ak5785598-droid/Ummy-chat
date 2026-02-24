@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getFreeGames } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { GameControllerIcon } from "@/components/icons";
-import { Play, Sparkles, Construction } from "lucide-react";
+import { Play, Sparkles, Construction, Zap } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 
 export default function GamesPage() {
@@ -27,7 +27,34 @@ export default function GamesPage() {
         </header>
         
         {games.length > 0 ? (
-          <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+             {/* Fruit Party Feature */}
+             <Link href="/games/fruit-party" className="block group">
+                <div className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white">
+                   <Image 
+                     src="https://picsum.photos/seed/fruit-party/1200/600" 
+                     alt="Fruit Party" 
+                     fill 
+                     className="object-cover group-hover:scale-105 transition-transform duration-1000"
+                     data-ai-hint="vibrant fruits"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-r from-orange-500/80 via-transparent to-transparent flex flex-col justify-center px-12 space-y-2">
+                      <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md w-fit px-4 py-1.5 rounded-full border border-white/30">
+                         <Zap className="h-4 w-4 text-white" />
+                         <span className="text-xs font-black uppercase text-white italic">Coin Party</span>
+                      </div>
+                      <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter">Fruit Party</h2>
+                      <p className="text-white/80 max-w-xs font-body text-sm">Bet on the luck of the fruit wheel. 10s rapid rounds!</p>
+                      <div className="pt-2">
+                         <Button size="lg" className="rounded-full px-10 font-black uppercase italic bg-white text-orange-600 hover:bg-white/90">
+                            <Play className="mr-2 h-5 w-5 fill-current" /> Join Party
+                         </Button>
+                      </div>
+                   </div>
+                </div>
+             </Link>
+
+             {/* Ludo Masters Feature */}
              <Link href="/games/ludo" className="block group">
                 <div className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white">
                    <Image 
@@ -37,16 +64,16 @@ export default function GamesPage() {
                      className="object-cover group-hover:scale-105 transition-transform duration-1000"
                      data-ai-hint="ludo board"
                    />
-                   <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-12 space-y-4">
-                      <div className="flex items-center gap-2 bg-primary/20 backdrop-blur-md w-fit px-4 py-1.5 rounded-full border border-primary/30">
-                         <Sparkles className="h-4 w-4 text-primary" />
-                         <span className="text-xs font-black uppercase text-primary italic">Live Multiplayer</span>
+                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 via-transparent to-transparent flex flex-col justify-center px-12 space-y-2">
+                      <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md w-fit px-4 py-1.5 rounded-full border border-white/30">
+                         <Sparkles className="h-4 w-4 text-white" />
+                         <span className="text-xs font-black uppercase text-white italic">Live Multiplayer</span>
                       </div>
-                      <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter">Ludo Masters</h2>
-                      <p className="text-white/60 max-w-md font-body text-lg">Full-screen immersive gameplay with live voice frequency enabled. Join your tribe now.</p>
-                      <div className="pt-4">
-                         <Button size="lg" className="rounded-full px-10 font-black uppercase italic shadow-xl shadow-primary/20">
-                            <Play className="mr-2 h-5 w-5 fill-current" /> Launch Game
+                      <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter">Ludo Master</h2>
+                      <p className="text-white/80 max-w-xs font-body text-sm">Classic tribe board game with full voice sync.</p>
+                      <div className="pt-2">
+                         <Button size="lg" className="rounded-full px-10 font-black uppercase italic bg-white text-blue-600 hover:bg-white/90">
+                            <Play className="mr-2 h-5 w-5 fill-current" /> Launch Ludo
                          </Button>
                       </div>
                    </div>
