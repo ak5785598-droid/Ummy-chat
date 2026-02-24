@@ -1,28 +1,12 @@
 import { AppLayout } from '@/components/layout/app-layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { GameControllerIcon } from '@/components/icons';
+import { Ghost } from 'lucide-react';
 
-export default function PokerGamePage() {
+export default function RemovedPage() {
   return (
     <AppLayout>
-      <div className="space-y-8">
-        <header className="flex items-center gap-3">
-          <GameControllerIcon className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-4xl font-bold tracking-tight">
-            Poker Pro
-          </h1>
-        </header>
-        <Card>
-          <CardContent className="p-2 md:p-4">
-            <div className="aspect-video w-full">
-              <iframe
-                src="https://playpager.com/embed/poker/poker.html"
-                className="h-full w-full rounded-md border-0"
-                allowFullScreen
-              ></iframe>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 opacity-20">
+        <Ghost className="h-12 w-12" />
+        <p className="font-black uppercase italic">Prototype Removed</p>
       </div>
     </AppLayout>
   );

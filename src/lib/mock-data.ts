@@ -2,15 +2,20 @@ import type { User, Room, Game, CoinPackage, Task } from './types';
 
 /**
  * Production Data Source.
- * All mock users and rooms have been permanently removed for a clean slate.
+ * All mock users, rooms, and prototype games have been permanently removed.
  */
 const users: User[] = [];
 const rooms: Room[] = []; 
 
 const games: Game[] = [
-  { id: 'g1', title: 'Ludo Party', slug: 'ludo', coverUrl: 'https://picsum.photos/seed/ludo/300/200', cost: 0, imageHint: 'ludo board' },
-  { id: 'g2', title: 'Carrom Clash', slug: 'carrom', coverUrl: 'https://picsum.photos/seed/carrom/300/200', cost: 0, imageHint: 'carrom board' },
-  { id: 'g3', title: '8 Ball Pool', slug: '8-ball-pool', coverUrl: 'https://picsum.photos/seed/pool/300/200', cost: 0, imageHint: 'billiards table' },
+  { 
+    id: 'g1', 
+    title: 'Ludo Masters', 
+    slug: 'ludo', 
+    coverUrl: 'https://picsum.photos/seed/ludo-pro/1200/600', 
+    cost: 0, 
+    imageHint: 'ludo board' 
+  },
 ];
 
 const coinPackages: CoinPackage[] = [
