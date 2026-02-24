@@ -53,6 +53,7 @@ export type RoomParticipant = {
   isSilenced?: boolean; // Admin imposed silence
   joinedAt: any;
   activeFrame?: string;
+  activeWave?: string;
 };
 
 export type Room = {

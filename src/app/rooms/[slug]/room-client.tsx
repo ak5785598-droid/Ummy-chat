@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -82,7 +81,8 @@ import {
   writeBatch,
   getDocs,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  addDoc
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
@@ -92,9 +92,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
 
-/**
- * High-Tier Gift Definitions.
- */
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
@@ -108,10 +105,6 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
 ];
 
-/**
- * AUDIO PLAYER COMPONENT
- * Renders an invisible audio element for a remote peer.
- */
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
@@ -155,7 +148,6 @@ export function RoomClient({ room }: { room: Room }) {
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMicOn = isInSeat && !currentUserParticipant?.isMuted;
 
-  // WEBRTC INTEGRATION
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
@@ -192,6 +184,17 @@ export function RoomClient({ room }: { room: Room }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [activeMessages]);
+
+  const logAuditAction = (action: string, details: any) => {
+    if (!firestore || !currentUser || !userProfile) return;
+    addDoc(collection(firestore, 'adminLogs'), {
+      adminId: currentUser.uid,
+      adminName: userProfile.username,
+      action,
+      details,
+      createdAt: serverTimestamp()
+    });
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,6 +264,10 @@ export function RoomClient({ room }: { room: Room }) {
       };
       updateDocumentNonBlocking(rRef, recipientUpdates);
       updateDocumentNonBlocking(rpRef, recipientUpdates);
+    }
+
+    if (gift.price >= 1000) {
+      logAuditAction('Big Gift', { gift: gift.name, price: gift.price, from: userProfile.username, to: finalRecipient.name });
     }
 
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
@@ -349,14 +356,15 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const takeSeat = (index: number) => {
-    if (!firestore || !room.id || !currentUser) return;
+    if (!firestore || !room.id || !currentUser || !userProfile) return;
     if (room.lockedSeats?.includes(index)) {
       toast({ variant: 'destructive', title: 'Seat Locked' });
       return;
     }
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { 
       seatIndex: index,
-      isMuted: true 
+      isMuted: true,
+      activeWave: userProfile.inventory?.activeWave || 'Default'
     });
   };
 
@@ -401,11 +409,18 @@ export function RoomClient({ room }: { room: Room }) {
   const hostParticipant = participants?.find(p => p.seatIndex === 1);
   const selectedOccupant = participants?.find(p => p.seatIndex === selectedSeatIndex);
 
+  const getWaveColor = (waveId?: string) => {
+    switch(waveId) {
+      case 'w1': return 'text-cyan-500';
+      case 'w2': return 'text-orange-600';
+      default: return 'text-primary';
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl border border-white/5 animate-in fade-in duration-700">
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       
-      {/* Remote Audio Streams */}
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} />
       ))}
@@ -546,7 +561,7 @@ export function RoomClient({ room }: { room: Room }) {
              <div className="flex flex-col items-center gap-3">
                 <div className="relative">
                    {hostParticipant && !hostParticipant.isMuted && (
-                      <div className="absolute -inset-4 rounded-full border-2 border-primary animate-voice-wave" />
+                      <div className={cn("absolute -inset-4 rounded-full border-2 animate-voice-wave", getWaveColor(hostParticipant.activeWave))} />
                    )}
                    <AvatarFrame frameId={hostParticipant?.activeFrame} size="xl">
                       <div 
@@ -575,7 +590,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <div key={idx} className="flex flex-col items-center gap-2 group">
                   <div className="relative">
                     {occupant && !occupant.isMuted && (
-                       <div className="absolute -inset-2 rounded-full border-2 border-primary animate-voice-wave" />
+                       <div className={cn("absolute -inset-2 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />
                     )}
                     <AvatarFrame frameId={occupant?.activeFrame} size="md">
                       <div 
