@@ -37,13 +37,20 @@ const ITEMS = [
 ];
 
 const CHIPS = [
-  { value: 100, color: 'bg-green-500', border: 'border-green-600' },
-  { value: 1000, color: 'bg-blue-500', border: 'border-blue-600' },
-  { value: 50000, color: 'bg-yellow-500', border: 'border-yellow-600' },
-  { value: 100000, color: 'bg-purple-500', border: 'border-purple-600' },
-  { value: 500000, color: 'bg-emerald-600', border: 'border-emerald-700' },
-  { value: 1000000, color: 'bg-slate-900', border: 'border-slate-950' },
+  { value: 100, color: 'bg-green-500', border: 'border-green-600', label: '100' },
+  { value: 1000, color: 'bg-blue-500', border: 'border-blue-600', label: '1K' },
+  { value: 50000, color: 'bg-yellow-500', border: 'border-yellow-600', label: '50K' },
+  { value: 100000, color: 'bg-purple-500', border: 'border-purple-600', label: '100K' },
+  { value: 500000, color: 'bg-emerald-600', border: 'border-emerald-700', label: '500K' },
+  { value: 1000000, color: 'bg-slate-900', border: 'border-slate-950', label: '1M' },
 ];
+
+type RoundWinner = {
+  name: string;
+  amount: number;
+  avatar: string;
+  isMe?: boolean;
+};
 
 export default function FruitPartyPage() {
   const router = useRouter();
@@ -64,6 +71,7 @@ export default function FruitPartyPage() {
   const [isLaunching, setIsLaunching] = useState(true);
   const [lastWinAmount, setLastWinAmount] = useState<number>(0);
   const [showWinOverlay, setShowWinOverlay] = useState(false);
+  const [lastWinners, setLastWinners] = useState<RoundWinner[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -129,9 +137,18 @@ export default function FruitPartyPage() {
     setGameState('result');
     setHistory(prev => [id, ...prev].slice(0, 8));
     
-    const winAmount = (myBets[id] || 0) * (ITEMS.find(i => i.id === id)?.multiplier || 0);
+    const winningItem = ITEMS.find(i => i.id === id);
+    const multiplier = winningItem?.multiplier || 0;
+    const winAmount = (myBets[id] || 0) * multiplier;
     
-    if (winAmount > 0 && currentUser && firestore) {
+    // Generate Mock Winners for Game Show atmosphere
+    const mockWinners: RoundWinner[] = [
+      { name: 'JuiceMaster', amount: 25000 * multiplier, avatar: 'https://picsum.photos/seed/fruit1/100' },
+      { name: 'BerryTribe', amount: 12000 * multiplier, avatar: 'https://picsum.photos/seed/fruit2/100' },
+      { name: 'CitrusKing', amount: 5000 * multiplier, avatar: 'https://picsum.photos/seed/fruit3/100' },
+    ];
+
+    if (winAmount > 0 && currentUser && firestore && userProfile) {
       setLastWinAmount(winAmount);
       setShowWinOverlay(true);
       
@@ -142,15 +159,25 @@ export default function FruitPartyPage() {
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
       
+      mockWinners.unshift({ 
+        name: userProfile.username, 
+        amount: winAmount, 
+        avatar: userProfile.avatarUrl,
+        isMe: true 
+      });
+
       setTimeout(() => setShowWinOverlay(false), 3000);
     }
+
+    setLastWinners(mockWinners.sort((a, b) => b.amount - a.amount).slice(0, 3));
 
     setTimeout(() => {
       setMyBets({});
       setGameState('betting');
       setTimeLeft(10);
       setResultId(null);
-    }, 4000);
+      setLastWinners([]);
+    }, 7000); // 7s for podium visibility
   };
 
   const handlePlaceBet = (itemId: string) => {
@@ -219,6 +246,93 @@ export default function FruitPartyPage() {
           loop 
           muted={isMuted} 
         />
+
+        {/* Champions Podium Overlay */}
+        {gameState === 'result' && lastWinners.length > 0 && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-500">
+             <div className="bg-black/90 backdrop-blur-2xl absolute inset-0" />
+             <div className="relative z-10 text-center space-y-12 max-w-2xl w-full px-6">
+                
+                <div className="relative space-y-2">
+                   <div className="absolute inset-0 bg-yellow-400/20 blur-[100px] animate-pulse rounded-full" />
+                   <div className="flex justify-center mb-4">
+                      <div className="bg-orange-500 p-4 rounded-3xl shadow-2xl shadow-orange-500/40">
+                         <Trophy className="h-12 w-12 text-white animate-bounce" />
+                      </div>
+                   </div>
+                   <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl">Champions Circle</h2>
+                   <p className="text-orange-400 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                      <Sparkles className="h-4 w-4" /> Party Legends <Sparkles className="h-4 w-4" />
+                   </p>
+                </div>
+
+                {/* The Podium */}
+                <div className="flex items-end justify-center gap-4 h-[300px]">
+                   {/* Rank 2 */}
+                   {lastWinners[1] && (
+                     <div className="flex flex-col items-center w-1/3 space-y-4 animate-in slide-in-from-bottom-10 duration-700 delay-200">
+                        <div className="relative">
+                           <Avatar className="h-20 w-20 border-4 border-slate-300 shadow-2xl">
+                              <AvatarImage src={lastWinners[1].avatar} />
+                              <AvatarFallback>U</AvatarFallback>
+                           </Avatar>
+                           <div className="absolute -top-2 -left-2 bg-slate-300 text-black text-xs font-black h-8 w-8 rounded-full flex items-center justify-center border-4 border-black">2</div>
+                        </div>
+                        <div className="bg-slate-300/10 border-2 border-slate-300/30 p-4 rounded-t-3xl w-full text-center space-y-1 backdrop-blur-md">
+                           <p className="text-sm font-black text-white truncate uppercase italic">{lastWinners[1].name}</p>
+                           <p className="text-lg font-black text-slate-300 italic">+{formatAmount(lastWinners[1].amount)}</p>
+                        </div>
+                     </div>
+                   )}
+
+                   {/* Rank 1 (The Winner) */}
+                   {lastWinners[0] && (
+                     <div className="flex flex-col items-center w-1/3 space-y-4 animate-in slide-in-from-bottom-20 duration-1000">
+                        <div className="relative">
+                           <div className="absolute -inset-4 bg-yellow-400/20 blur-2xl animate-pulse rounded-full" />
+                           <Crown className="absolute -top-10 left-1/2 -translate-x-1/2 h-12 w-12 text-yellow-400 drop-shadow-xl animate-bounce" />
+                           <Avatar className="h-28 w-28 border-4 border-yellow-400 shadow-[0_0_40px_rgba(251,191,36,0.6)]">
+                              <AvatarImage src={lastWinners[0].avatar} />
+                              <AvatarFallback>U</AvatarFallback>
+                           </Avatar>
+                           <div className="absolute -top-2 -left-2 bg-yellow-400 text-black text-sm font-black h-10 w-10 rounded-full flex items-center justify-center border-4 border-black ring-2 ring-yellow-400/50">1</div>
+                        </div>
+                        <div className="bg-yellow-400/20 border-2 border-yellow-400/50 p-6 rounded-t-[2.5rem] w-full text-center space-y-1 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+                           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity animate-shine-gloss" />
+                           <p className="text-lg font-black text-white uppercase italic tracking-tighter">{lastWinners[0].name}</p>
+                           <p className="text-2xl font-black text-yellow-400 italic flex items-center justify-center gap-1">
+                              <Zap className="h-5 w-5 fill-current" />
+                              {formatAmount(lastWinners[0].amount)}
+                           </p>
+                           {lastWinners[0].isMe && <Badge className="bg-yellow-400 text-black text-[10px] font-black uppercase mt-2">You Won!</Badge>}
+                        </div>
+                     </div>
+                   )}
+
+                   {/* Rank 3 */}
+                   {lastWinners[2] && (
+                     <div className="flex flex-col items-center w-1/3 space-y-4 animate-in slide-in-from-bottom-10 duration-700 delay-400">
+                        <div className="relative">
+                           <Avatar className="h-20 w-20 border-4 border-amber-700 shadow-2xl">
+                              <AvatarImage src={lastWinners[2].avatar} />
+                              <AvatarFallback>U</AvatarFallback>
+                           </Avatar>
+                           <div className="absolute -top-2 -left-2 bg-amber-700 text-white text-xs font-black h-8 w-8 rounded-full flex items-center justify-center border-4 border-black">3</div>
+                        </div>
+                        <div className="bg-amber-700/10 border-2 border-amber-700/30 p-4 rounded-t-3xl w-full text-center space-y-1 backdrop-blur-md">
+                           <p className="text-sm font-black text-white truncate uppercase italic">{lastWinners[2].name}</p>
+                           <p className="text-lg font-black text-amber-700 italic">+{formatAmount(lastWinners[2].amount)}</p>
+                        </div>
+                     </div>
+                   )}
+                </div>
+
+                <div className="pt-8">
+                   <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">Syncing Next Frequency...</p>
+                </div>
+             </div>
+          </div>
+        )}
 
         {showWinOverlay && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-500">
@@ -366,7 +480,7 @@ export default function FruitPartyPage() {
                       <span className={cn(
                         "text-xs font-black italic drop-shadow-sm",
                         selectedChip === chip.value ? "text-white" : "text-white/60"
-                      )}>{formatAmount(chip.value)}</span>
+                      )}>{chip.label}</span>
                       {selectedChip === chip.value && <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse pointer-events-none" />}
                    </button>
                  ))}
