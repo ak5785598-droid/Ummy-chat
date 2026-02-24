@@ -16,7 +16,9 @@ import {
   VolumeX,
   Timer,
   Crown,
-  History
+  History,
+  Coins,
+  Sparkles
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,8 @@ export default function FruitPartyPage() {
   const [history, setHistory] = useState<string[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
+  const [lastWinAmount, setLastWinAmount] = useState<number>(0);
+  const [showWinOverlay, setShowWinOverlay] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -117,12 +121,17 @@ export default function FruitPartyPage() {
     const winAmount = (myBets[id] || 0) * (ITEMS.find(i => i.id === id)?.multiplier || 0);
     
     if (winAmount > 0 && currentUser && firestore) {
+      setLastWinAmount(winAmount);
+      setShowWinOverlay(true);
+      
       const userRef = doc(firestore, 'users', currentUser.uid);
       const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       const updateData = { 'wallet.coins': increment(winAmount), updatedAt: serverTimestamp() };
+      
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
-      toast({ title: 'BIG WIN! 🍓', description: `You won ${winAmount.toLocaleString()} coins!` });
+      
+      setTimeout(() => setShowWinOverlay(false), 3000);
     }
 
     setTimeout(() => {
@@ -137,7 +146,6 @@ export default function FruitPartyPage() {
     if (gameState !== 'betting' || !currentUser || !firestore || !userProfile) return;
     
     const currentBalance = userProfile.wallet?.coins || 0;
-    const totalBet = Object.values(myBets).reduce((a, b) => a + b, 0) + selectedChip;
 
     if (currentBalance < selectedChip) {
       toast({ variant: 'destructive', title: 'Insufficient Coins' });
@@ -148,6 +156,7 @@ export default function FruitPartyPage() {
     const userRef = doc(firestore, 'users', currentUser.uid);
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
+    
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
 
@@ -192,6 +201,26 @@ export default function FruitPartyPage() {
           loop 
           muted={isMuted} 
         />
+
+        {/* Win Reward Overlay */}
+        {showWinOverlay && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-500">
+             <div className="bg-black/40 backdrop-blur-md absolute inset-0" />
+             <div className="relative z-10 text-center space-y-4">
+                <div className="text-8xl animate-bounce">🏆</div>
+                <h2 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-[0_0_20px_rgba(251,191,36,0.8)]">Big Win!</h2>
+                <div className="bg-yellow-400 text-black px-10 py-4 rounded-full text-4xl font-black italic shadow-2xl flex items-center gap-3">
+                   <Zap className="h-8 w-8 fill-current" />
+                   +{lastWinAmount.toLocaleString()}
+                </div>
+                <div className="flex justify-center gap-4">
+                   <Sparkles className="h-10 w-10 text-white animate-pulse" />
+                   <Sparkles className="h-10 w-10 text-white animate-pulse delay-150" />
+                   <Sparkles className="h-10 w-10 text-white animate-pulse delay-300" />
+                </div>
+             </div>
+          </div>
+        )}
 
         {/* Immersive Header */}
         <header className="absolute top-0 left-0 right-0 z-50 p-4 flex items-center justify-between pointer-events-none">
@@ -297,8 +326,8 @@ export default function FruitPartyPage() {
            {/* Betting Controls */}
            <div className="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-6 space-y-6 shadow-2xl">
               <div className="flex justify-between items-center px-2">
-                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Select Wager</p>
-                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Fruit Party Engine v1.0</Badge>
+                 <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Select Wager Chip</p>
+                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Fruit Party Engine v1.1</Badge>
               </div>
               
               <div className="flex justify-between gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -307,7 +336,7 @@ export default function FruitPartyPage() {
                     key={chip}
                     onClick={() => setSelectedChip(chip)}
                     className={cn(
-                      "flex-1 h-12 rounded-2xl flex flex-col items-center justify-center transition-all border-2 active:scale-95",
+                      "flex-1 h-12 min-w-[60px] rounded-2xl flex flex-col items-center justify-center transition-all border-2 active:scale-95",
                       selectedChip === chip 
                         ? "bg-yellow-400 border-white shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-110" 
                         : "bg-white/10 border-white/10 text-white/60"
@@ -333,8 +362,8 @@ export default function FruitPartyPage() {
                       <span className="text-2xl group-hover:scale-110 transition-transform">{item.emoji}</span>
                       <span className="text-[8px] font-black text-white/60">{item.multiplier}X</span>
                       {myBets[item.id] && (
-                        <div className="absolute -top-2 -right-1 bg-yellow-400 text-black px-1.5 rounded-full text-[8px] font-black shadow-lg animate-in zoom-in">
-                           {myBets[item.id]}
+                        <div className="absolute -top-2 -right-1 bg-yellow-400 text-black px-1.5 rounded-full text-[10px] font-black shadow-lg animate-in zoom-in ring-2 ring-white">
+                           {myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}K` : myBets[item.id]}
                         </div>
                       )}
                    </button>
