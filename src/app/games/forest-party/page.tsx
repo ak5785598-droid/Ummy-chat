@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -86,7 +87,6 @@ export default function WildPartyPage() {
 
   const { data: participants } = useCollection(participantsQuery);
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
-  const activeSpeakers = participants?.filter(p => !p.isMuted && p.seatIndex > 0) || [];
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 2000);
@@ -317,7 +317,6 @@ export default function WildPartyPage() {
                  <div className="w-8 h-10 bg-yellow-500 clip-path-triangle shadow-2xl border-x-2 border-yellow-600" />
               </div>
 
-              {/* Physical Rotating Wheel */}
               <div 
                 className={cn(
                   "relative w-full h-full rounded-full border-[16px] border-[#3d1a05] shadow-2xl overflow-visible bg-[#5d2a0a]",
@@ -325,17 +324,14 @@ export default function WildPartyPage() {
                 )}
                 style={{ transform: `rotate(${rotation}deg)` }}
               >
-                 {/* Spoke Lines */}
                  {Array.from({ length: 8 }).map((_, i) => (
                    <div key={i} className="absolute top-1/2 left-1/2 w-[50%] h-1 bg-white/10 origin-left" style={{ transform: `rotate(${i * 45}deg)` }} />
                  ))}
                  
-                 {/* Glowing Studs */}
                  {Array.from({ length: 8 }).map((_, i) => (
                    <div key={i} className="absolute w-3 h-3 bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(251,191,36,1)] z-50 border border-white/50" style={{ top: '50%', left: '50%', transform: `rotate(${i * 45}deg) translate(165px) translateY(-50%)` }} />
                  ))}
 
-                 {/* Characters - ATTACHED TO ROTATING WHEEL BUT COUNTER-ROTATED TO STAY UPRIGHT */}
                  {ANIMALS.map((animal, index) => {
                     const angle = index * 45;
                     const isWinner = gameState === 'result' && resultId === animal.id;
@@ -350,10 +346,9 @@ export default function WildPartyPage() {
                           transform: `translate(-50%, -50%) rotate(${angle}deg) translate(145px)`
                         }}
                       >
-                        {/* THE UPRIGHT CONTAINER */}
                         <div 
                           className={cn(
-                            "w-full h-full rounded-full flex flex-col items-center justify-center transition-all duration-300 border-2 backdrop-blur-md",
+                            "w-full h-full rounded-full flex flex-col items-center justify-center transition-all border-2 backdrop-blur-md",
                             gameState === 'spinning' ? "duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1)" : "duration-300",
                             isWinner ? "scale-150 z-50 bg-yellow-400 border-white shadow-[0_0_40px_rgba(251,191,36,0.8)] animate-bounce" : "bg-black/20 border-white/10",
                             hasBet && "border-yellow-400 ring-2 ring-yellow-400/20"

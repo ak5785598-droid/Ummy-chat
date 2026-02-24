@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch } from 'firebase/firestore';
-import { Shield, Loader, Search, ClipboardList, TrendingUp, AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, TrendingUp, AlertTriangle, Trash2, RefreshCw, Gamepad2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,14 +19,10 @@ import { format } from 'date-fns';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-/**
- * Enterprise Admin Control Panel.
- * Featuring the "Nuclear" option to remove all rooms and reset sequential IDs.
- */
 export default function AdminPage() {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
+  const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -34,21 +31,50 @@ export default function AdminPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Global Config
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'appConfig', 'global');
   }, [firestore]);
   const { data: config } = useDoc(configRef);
 
-  // Logs
   const logsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'adminLogs'), orderBy('createdAt', 'desc'), limit(20));
   }, [firestore]);
   const { data: logs } = useCollection(logsQuery);
 
+  const gamesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'games'), orderBy('title', 'asc'));
+  }, [firestore]);
+  const { data: games } = useCollection(gamesQuery);
+
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
+
+  const handleInitGames = async () => {
+    if (!firestore || !isAdmin) return;
+    setIsSaving(true);
+    try {
+      const gamesList = [
+        { title: 'Ludo Masters', slug: 'ludo', coverUrl: 'https://picsum.photos/seed/ludo-pro/600/600', cost: 0, imageHint: 'ludo board' },
+        { title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://picsum.photos/seed/fruit-party/600/600', cost: 0, imageHint: 'vibrant fruits' },
+        { title: 'Wild Party', slug: 'forest-party', coverUrl: 'https://picsum.photos/seed/forest-party/600/600', cost: 0, imageHint: 'forest animals' },
+        { title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: 'https://picsum.photos/seed/lucky777/600/600', cost: 0, imageHint: 'lucky 777 slot' },
+      ];
+
+      const batch = writeBatch(firestore);
+      gamesList.forEach(g => {
+        const gameRef = doc(collection(firestore, 'games'));
+        batch.set(gameRef, { ...g, createdAt: serverTimestamp() });
+      });
+      await batch.commit();
+      toast({ title: 'Games Initialized!' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Initialization Failed' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const logAdminAction = async (action: string, targetId: string, details: any) => {
     if (!firestore || !user) return;
@@ -173,6 +199,7 @@ export default function AdminPage() {
           <TabsList className="bg-secondary/50 p-1 h-12 rounded-full border w-fit">
             <TabsTrigger value="overview" className="rounded-full px-6 font-black uppercase text-[10px]">Overview</TabsTrigger>
             <TabsTrigger value="users" className="rounded-full px-6 font-black uppercase text-[10px]">Users</TabsTrigger>
+            <TabsTrigger value="games" className="rounded-full px-6 font-black uppercase text-[10px]">Games</TabsTrigger>
             <TabsTrigger value="config" className="rounded-full px-6 font-black uppercase text-[10px]">Config</TabsTrigger>
             <TabsTrigger value="logs" className="rounded-full px-6 font-black uppercase text-[10px]">Logs</TabsTrigger>
           </TabsList>
@@ -208,6 +235,39 @@ export default function AdminPage() {
                            </div>
                         </div>
                       ))}
+                   </div>
+                </CardContent>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="games" className="space-y-6">
+             <Card className="rounded-[2rem] border-none shadow-xl">
+                <CardHeader className="flex flex-row items-center justify-between">
+                   <CardTitle className="font-headline uppercase italic">Game Frequency Hub</CardTitle>
+                   <Button onClick={handleInitGames} disabled={isSaving || (games && games.length > 0)} className="rounded-full h-10 px-6 font-black uppercase text-[10px] italic">
+                      <RefreshCw className="mr-2 h-4 w-4" /> Initialize Games
+                   </Button>
+                </CardHeader>
+                <CardContent>
+                   <div className="grid gap-4">
+                      {games?.map((g) => (
+                        <div key={g.id} className="p-4 bg-muted/20 rounded-2xl border flex items-center gap-4">
+                           <div className="h-14 w-14 rounded-xl overflow-hidden border-2 border-white">
+                              <img src={g.coverUrl} className="h-full w-full object-cover" alt={g.title} />
+                           </div>
+                           <div className="flex-1">
+                              <p className="font-black text-sm uppercase italic">{g.title}</p>
+                              <Badge variant="outline" className="text-[8px] h-4 mt-1 border-primary/20 text-primary uppercase font-black">{g.slug}</Badge>
+                           </div>
+                           <p className="text-[10px] font-bold text-muted-foreground">Skill: {g.cost === 0 ? 'Free' : 'High Stakes'}</p>
+                        </div>
+                      ))}
+                      {(!games || games.length === 0) && (
+                        <div className="py-10 text-center opacity-40 italic flex flex-col items-center gap-2">
+                           <Gamepad2 className="h-10 w-10" />
+                           <p className="text-[10px] font-black uppercase">No Dynamic Games Provisioned</p>
+                        </div>
+                      )}
                    </div>
                 </CardContent>
              </Card>

@@ -53,6 +53,17 @@
           }
         }
       }
+    },
+    "Game": {
+      "title": "Game",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "cost": { "type": "number" },
+        "imageHint": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -77,20 +88,11 @@
         }
       },
       {
-        "path": "/chatRooms/{roomId}/participants/{userId}/signaling/{peerId}",
+        "path": "/games/{gameId}",
         "definition": {
-          "entityName": "WebRTCSignal",
-          "schema": {
-            "type": "object",
-            "properties": {
-              "type": { "type": "string", "enum": ["offer", "answer", "candidate"] },
-              "sdp": { "type": "string" },
-              "candidate": { "type": "object" },
-              "from": { "type": "string" },
-              "timestamp": { "type": "string", "format": "date-time" }
-            }
-          },
-          "description": "Signaling messages for WebRTC handshakes."
+          "entityName": "Game",
+          "schema": { "$ref": "#/backend/entities/Game" },
+          "description": "Dynamic game registry."
         }
       }
     ]

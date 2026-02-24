@@ -1,12 +1,15 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
+    function isAdmin() {
+      return isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags.hasAny(['Admin', 'Official']));
+    }
     
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Allow the owner to change everything, or others to only update stats/wallet during gifting
       allow update: if isSignedIn() && (
         request.auth.uid == userId || 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt'])
@@ -15,7 +18,6 @@ service cloud.firestore {
       match /profile/{profileId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.auth.uid == userId;
-        // Same logic for the detailed profile subcollection
         allow update: if isSignedIn() && (
           request.auth.uid == userId || 
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt'])
@@ -29,7 +31,12 @@ service cloud.firestore {
 
     match /appConfig/{id} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && (id == 'counters' || id == 'global');
+      allow write: if isAdmin() || (isSignedIn() && (id == 'counters'));
+    }
+
+    match /games/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /chatRooms/{roomId} {
@@ -51,10 +58,9 @@ service cloud.firestore {
       }
     }
 
-    // Admin Logs
     match /adminLogs/{id} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags.hasAny(['Admin', 'Official']));
+      allow read: if isAdmin();
     }
   }
 }
