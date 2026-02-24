@@ -63,9 +63,14 @@ export default function RoomsPage() {
         {/* Ummy Production Header */}
         <header className="bg-gradient-to-b from-[#FFF5A5] to-[#FFFFFF] px-4 pt-10 pb-4 shadow-sm sticky top-0 z-50">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 p-2">
-              <div className="bg-white/80 p-1.5 rounded-xl shadow-sm border border-yellow-200">
-                 <Home className="h-5 w-5 text-gray-700" />
+            <div className="flex items-center gap-3 p-2">
+              <div className="relative">
+                <div className="bg-white/80 p-1.5 rounded-xl shadow-sm border border-yellow-200">
+                   <Home className="h-5 w-5 text-gray-700" />
+                </div>
+                <div className="absolute -top-2.5 -right-2.5 z-10 scale-90">
+                   <CreateRoomDialog iconOnly />
+                </div>
               </div>
               <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 font-black uppercase text-[8px] h-5 tracking-widest px-2">Production</Badge>
             </div>

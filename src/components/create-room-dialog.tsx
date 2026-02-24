@@ -32,7 +32,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
  * Dialog component for creating a new voice chat room.
  * Assigns a unique sequential 6-digit room number (starting from 100,000).
  */
-export function CreateRoomDialog() {
+export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useUser();
@@ -105,10 +105,16 @@ export function CreateRoomDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 rounded-full font-black uppercase italic tracking-widest text-xs px-6 shadow-lg shadow-primary/20">
-          <Plus className="h-4 w-4" />
-          Create Room
-        </Button>
+        {iconOnly ? (
+          <button className="bg-primary text-black p-1 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-white ring-2 ring-primary/20">
+            <Plus className="h-3 w-3" />
+          </button>
+        ) : (
+          <Button className="gap-2 rounded-full font-black uppercase italic tracking-widest text-xs px-6 shadow-lg shadow-primary/20">
+            <Plus className="h-4 w-4" />
+            Create Room
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] rounded-t-[2.5rem] border-none shadow-2xl">
         <form onSubmit={handleSubmit}>
