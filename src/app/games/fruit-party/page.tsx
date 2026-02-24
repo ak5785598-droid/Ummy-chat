@@ -27,14 +27,13 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 const ITEMS = [
-  { id: 'banana', emoji: '🍌', multiplier: 5, label: '5 times', color: 'bg-yellow-400' },
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: '5 times', color: 'bg-red-500' },
   { id: 'apple', emoji: '🍎', multiplier: 5, label: '5 times', color: 'bg-rose-500' },
-  { id: 'orange', emoji: '🍊', multiplier: 10, label: '10 times', color: 'bg-orange-400' },
-  { id: 'grape', emoji: '🍇', multiplier: 10, label: '10 times', color: 'bg-purple-500' },
-  { id: 'burger', emoji: '🍔', multiplier: 13, label: '12 times', color: 'bg-orange-600' },
-  { id: 'shrimp', emoji: '🍤', multiplier: 20, label: '20 times', color: 'bg-pink-400' },
-  { id: 'pizza', emoji: '🍕', multiplier: 45, label: '45 times', color: 'bg-red-700' },
+  { id: 'orange', emoji: '🍊', multiplier: 5, label: '5 times', color: 'bg-orange-400' },
+  { id: 'lemon', emoji: '🍋', multiplier: 5, label: '5 times', color: 'bg-yellow-300' },
+  { id: 'cherry', emoji: '🍒', multiplier: 5, label: '5 times', color: 'bg-red-600' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 10, label: '10 times', color: 'bg-red-500' },
+  { id: 'mango', emoji: '🥭', multiplier: 15, label: '15 times', color: 'bg-orange-500' },
+  { id: 'grape', emoji: '🍇', multiplier: 45, label: '45 times', color: 'bg-purple-500' },
 ];
 
 const CHIPS = [100, 500, 1000, 5000, 10000];
@@ -99,7 +98,7 @@ export default function FruitPartyPage() {
   const startSpin = (targetId: string) => {
     let current = 0;
     const targetIdx = ITEMS.findIndex(i => i.id === targetId);
-    const spins = 24 + targetIdx; // At least 3 full rotations
+    const spins = 21 + targetIdx; // Multiple rotations
     let speed = 50;
 
     const runSpin = () => {
@@ -253,14 +252,12 @@ export default function FruitPartyPage() {
                  <Zap className="h-4 w-4 fill-current" />
                  <span className="text-sm font-black italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
               </div>
-              <Button 
+              <button 
                 onClick={() => setIsMuted(!isMuted)}
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full bg-white/20 text-white border border-white/20"
+                className="rounded-full h-10 w-10 bg-white/20 text-white border border-white/20 flex items-center justify-center"
               >
                 {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </Button>
+              </button>
            </div>
         </header>
 
@@ -328,7 +325,7 @@ export default function FruitPartyPage() {
            <div className="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-6 space-y-6 shadow-2xl">
               <div className="flex justify-between items-center px-2">
                  <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Select Wager Chip</p>
-                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Fruit Party Engine v1.4</Badge>
+                 <Badge variant="outline" className="border-white/20 text-white text-[8px]">Fruit Party Engine v1.5</Badge>
               </div>
               
               <div className="flex justify-between gap-2 overflow-x-auto pb-2 no-scrollbar">
