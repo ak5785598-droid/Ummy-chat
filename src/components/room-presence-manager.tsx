@@ -65,9 +65,9 @@ export function RoomPresenceManager() {
 
     performSync();
 
-    // Cleanup logic is handled by navigation or manual leave room actions
     return () => {
       // Intentionally not deleting presence here to support quick page reloads
+      // The manual "Leave Room" action handles message and deletion
     };
   }, [firestore, activeRoom?.id, user?.uid, userProfile]);
 

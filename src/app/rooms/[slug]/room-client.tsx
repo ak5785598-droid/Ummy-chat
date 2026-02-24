@@ -27,6 +27,8 @@ import {
   User as UserIcon,
   RefreshCw,
   Gamepad2,
+  Star,
+  ShieldCheck,
 } from 'lucide-react';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -110,7 +112,7 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   useEffect(() => {
     if (audioRef.current) audioRef.current.srcObject = stream;
   }, [stream]);
-  return <audio audioRef={audioRef} autoPlay className="hidden" />;
+  return <audio ref={audioRef} autoPlay className="hidden" />;
 }
 
 export function RoomClient({ room }: { room: Room }) {
@@ -185,17 +187,6 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [activeMessages]);
 
-  const logAuditAction = (action: string, details: any) => {
-    if (!firestore || !currentUser || !userProfile) return;
-    addDoc(collection(firestore, 'adminLogs'), {
-      adminId: currentUser.uid,
-      adminName: userProfile.username,
-      action,
-      details,
-      createdAt: serverTimestamp()
-    });
-  };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
@@ -239,7 +230,6 @@ export function RoomClient({ room }: { room: Room }) {
       updatedAt: serverTimestamp()
     };
 
-    // 40% Return Logic
     const diamondReturn = Math.floor(gift.price * 0.4);
 
     if (isSelfGifting) {
@@ -247,17 +237,14 @@ export function RoomClient({ room }: { room: Room }) {
       walletUpdates['stats.fans'] = increment(gift.price);
     }
 
-    // Update Sender (or Self)
     updateDocumentNonBlocking(userRef, walletUpdates);
     updateDocumentNonBlocking(profileRef, walletUpdates);
 
-    // Update Room Stats
     updateDocumentNonBlocking(roomDocRef, { 
       'stats.totalGifts': increment(gift.price), 
       updatedAt: serverTimestamp() 
     });
 
-    // Update Recipient (if not self)
     if (!isSelfGifting) {
       const rRef = doc(firestore, 'users', finalRecipient.uid);
       const rpRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
@@ -268,11 +255,6 @@ export function RoomClient({ room }: { room: Room }) {
       };
       updateDocumentNonBlocking(rRef, recipientUpdates);
       updateDocumentNonBlocking(rpRef, recipientUpdates);
-    }
-
-    // Event-Driven Log for big gifts
-    if (gift.price >= 1000) {
-      logAuditAction('Big Gift', { gift: gift.name, price: gift.price, from: userProfile.username, to: finalRecipient.name });
     }
 
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
@@ -349,6 +331,16 @@ export function RoomClient({ room }: { room: Room }) {
 
   const leaveRoom = () => {
     if (firestore && currentUser && room.id) {
+      // Send leave message
+      addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: 'left the frequency',
+        senderId: currentUser.uid,
+        senderName: userProfile?.username || 'Tribe Member',
+        senderAvatar: userProfile?.avatarUrl || '',
+        chatRoomId: room.id,
+        timestamp: serverTimestamp(),
+        type: 'leave'
+      });
       deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid));
     }
     setActiveRoom(null);
@@ -465,24 +457,35 @@ export function RoomClient({ room }: { room: Room }) {
                </SheetHeader>
                <ScrollArea className="h-full px-8 pb-20">
                   <div className="space-y-4">
-                     {participants?.map((p) => (
-                       <div key={p.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 animate-in slide-in-from-bottom-2 duration-300">
-                          <div className="flex items-center gap-4">
-                             <AvatarFrame frameId={p.activeFrame} size="sm">
-                                <Avatar><AvatarImage src={p.avatarUrl} /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
-                             </AvatarFrame>
-                             <div>
-                                <p className="font-bold text-sm">{p.name}</p>
-                                <div className="flex items-center gap-2">
-                                   {p.seatIndex === 1 && <Badge className="bg-blue-500 text-[8px] h-4">MASTER</Badge>}
-                                   {room.moderatorIds?.includes(p.uid) && <Badge className="bg-purple-500 text-[8px] h-4">MOD</Badge>}
-                                   {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
-                                </div>
-                             </div>
-                          </div>
-                          {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
-                       </div>
-                     ))}
+                     {participants?.map((p) => {
+                       const isPMod = room.moderatorIds?.includes(p.uid);
+                       const isPOwner = p.uid === room.ownerId;
+                       return (
+                        <div key={p.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 animate-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex items-center gap-4">
+                              <AvatarFrame frameId={p.activeFrame} size="sm">
+                                  <Avatar><AvatarImage src={p.avatarUrl} /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
+                              </AvatarFrame>
+                              <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-bold text-sm">{p.name}</p>
+                                    {isPOwner ? (
+                                      <Crown className="h-3 w-3 text-yellow-500 fill-current" />
+                                    ) : isPMod ? (
+                                      <ShieldCheck className="h-3 w-3 text-blue-400 fill-current" />
+                                    ) : null}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {isPOwner && <Badge className="bg-yellow-500 text-black text-[8px] h-4">OWNER</Badge>}
+                                    {isPMod && <Badge className="bg-blue-500 text-[8px] h-4">MOD</Badge>}
+                                    {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
+                                  </div>
+                              </div>
+                            </div>
+                            {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
+                        </div>
+                       );
+                     })}
                   </div>
                </ScrollArea>
             </SheetContent>
@@ -518,20 +521,20 @@ export function RoomClient({ room }: { room: Room }) {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive font-black">
-                      <AlertTriangle className="mr-2 h-4 w-4" /> Delete Frequency
+                      <AlertTriangle className="mr-2 h-4 w-4" /> Terminate Frequency
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="bg-white text-black border-none rounded-[2rem]">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-2xl font-black uppercase italic">Terminate Frequency?</AlertDialogTitle>
                       <AlertDialogDescription className="text-muted-foreground font-body text-base">
-                        This will permanently delete the tribe. All messages and participants will be disconnected.
+                        This will permanently delete the tribe frequency. All tribe members will be disconnected instantly.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={handleDeleteRoom} className="bg-destructive text-white rounded-full">
-                        {isDeleting ? <Loader className="animate-spin h-4 w-4" /> : 'Delete Permanently'}
+                        {isDeleting ? <Loader className="animate-spin h-4 w-4" /> : 'Terminate Now'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -591,6 +594,7 @@ export function RoomClient({ room }: { room: Room }) {
               const idx = i + 2; 
               const occupant = participants?.find(p => p.seatIndex === idx);
               const isLocked = room.lockedSeats?.includes(idx);
+              const isMod = room.moderatorIds?.includes(occupant?.uid || '');
               return (
                 <div key={idx} className="flex flex-col items-center gap-2 group">
                   <div className="relative">
@@ -616,6 +620,11 @@ export function RoomClient({ room }: { room: Room }) {
                         <MicOff className="h-3 w-3 text-white" />
                       </div>
                     )}
+                    {isMod && (
+                      <div className="absolute -top-1 -left-1 bg-blue-500 rounded-full p-0.5 border border-black shadow-lg">
+                        <ShieldCheck className="h-2 w-2 text-white fill-current" />
+                      </div>
+                    )}
                   </div>
                   <span className={cn(
                     "text-[9px] font-black uppercase truncate w-14 text-center transition-colors",
@@ -633,12 +642,12 @@ export function RoomClient({ room }: { room: Room }) {
               <div key={msg.id} className={cn(
                 "flex items-start gap-2 animate-in fade-in slide-in-from-left-2 duration-300", 
                 msg.type === 'gift' && "bg-primary/10 p-2 rounded-xl border border-primary/20 shadow-[0_0_15px_rgba(255,204,0,0.1)]",
-                msg.type === 'entrance' && "bg-blue-500/10 p-1.5 px-3 rounded-full border border-blue-500/20 justify-center w-fit mx-auto"
+                (msg.type === 'entrance' || msg.type === 'leave') && "bg-blue-500/10 p-1.5 px-3 rounded-full border border-blue-500/20 justify-center w-fit mx-auto"
               )}>
-                {msg.type === 'entrance' ? (
+                {msg.type === 'entrance' || msg.type === 'leave' ? (
                   <div className="flex items-center gap-2">
-                    <UserCheck className="h-3 w-3 text-blue-400" />
-                    <p className="text-[10px] font-black uppercase italic text-blue-400">
+                    {msg.type === 'entrance' ? <UserCheck className="h-3 w-3 text-blue-400" /> : <LogOut className="h-3 w-3 text-red-400" />}
+                    <p className={cn("text-[10px] font-black uppercase italic", msg.type === 'entrance' ? "text-blue-400" : "text-red-400")}>
                       {msg.user.name} <span className="opacity-60">{msg.text}</span>
                     </p>
                   </div>
@@ -742,7 +751,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500">
           <DialogHeader className="p-6 border-b border-gray-100">
             <DialogTitle className="text-center text-2xl text-gray-800 uppercase italic">
-              {selectedOccupant ? `Tribe: ${selectedOccupant.name}` : `Seat ${selectedSeatIndex}`}
+              {selectedOccupant ? `Tribe Member: ${selectedOccupant.name}` : `Seat ${selectedSeatIndex}`}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col divide-y divide-gray-100">
