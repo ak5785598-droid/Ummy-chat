@@ -10,7 +10,7 @@ interface EmojiReactionOverlayProps {
 
 /**
  * Animated Emoji Reaction Overlay.
- * Displays an "acting" emoji over the user's avatar with unique animations.
+ * Displays an "acting" emoji that FULLY COVERS the user's avatar.
  */
 export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -40,19 +40,24 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverla
   };
 
   const sizeClasses = {
-    sm: 'text-2xl -top-2',
-    md: 'text-4xl -top-4',
-    lg: 'text-5xl -top-6',
-    xl: 'text-6xl -top-8',
+    sm: 'text-3xl',
+    md: 'text-5xl',
+    lg: 'text-6xl',
+    xl: 'text-8xl',
   };
 
   return (
     <div className={cn(
-      "absolute left-1/2 -translate-x-1/2 z-50 pointer-events-none select-none drop-shadow-xl",
-      sizeClasses[size],
-      getAnimationClass(emoji)
+      "absolute inset-0 z-[60] flex items-center justify-center select-none rounded-full animate-in zoom-in duration-300",
+      "bg-black/60 backdrop-blur-[2px]"
     )}>
-      {emoji}
+      <span className={cn(
+        "drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
+        sizeClasses[size],
+        getAnimationClass(emoji)
+      )}>
+        {emoji}
+      </span>
     </div>
   );
 }
