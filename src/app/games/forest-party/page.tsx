@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -111,7 +110,6 @@ export default function WildPartyPage() {
     
     const extraSpins = 40; 
     const sliceAngle = 360 / ANIMALS.length;
-    // Align targetIdx to top yellow pointer (360 - index * slice)
     const landingAngle = (360 - (targetIdx * sliceAngle)) % 360;
     
     const baseRotation = Math.floor(rotation / 360) * 360;
@@ -340,7 +338,7 @@ export default function WildPartyPage() {
                             isWinner ? "scale-125 z-50 bg-yellow-400 border-white shadow-[0_0_40px_rgba(251,191,36,0.8)]" : "bg-black/20 border-white/10",
                           )}
                           style={{ 
-                            transform: `rotate(-${rotation + angle}deg)` 
+                            transform: `rotate(-${angle}deg)` 
                           }}
                         >
                            <span className="text-4xl drop-shadow-md">{animal.emoji}</span>
