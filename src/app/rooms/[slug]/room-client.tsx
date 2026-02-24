@@ -110,7 +110,7 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   useEffect(() => {
     if (audioRef.current) audioRef.current.srcObject = stream;
   }, [stream]);
-  return <audio ref={audioRef} autoPlay className="hidden" />;
+  return <audio audioRef={audioRef} autoPlay className="hidden" />;
 }
 
 export function RoomClient({ room }: { room: Room }) {
@@ -239,6 +239,7 @@ export function RoomClient({ room }: { room: Room }) {
       updatedAt: serverTimestamp()
     };
 
+    // 40% Return Logic
     const diamondReturn = Math.floor(gift.price * 0.4);
 
     if (isSelfGifting) {
@@ -246,14 +247,17 @@ export function RoomClient({ room }: { room: Room }) {
       walletUpdates['stats.fans'] = increment(gift.price);
     }
 
+    // Update Sender (or Self)
     updateDocumentNonBlocking(userRef, walletUpdates);
     updateDocumentNonBlocking(profileRef, walletUpdates);
 
+    // Update Room Stats
     updateDocumentNonBlocking(roomDocRef, { 
       'stats.totalGifts': increment(gift.price), 
       updatedAt: serverTimestamp() 
     });
 
+    // Update Recipient (if not self)
     if (!isSelfGifting) {
       const rRef = doc(firestore, 'users', finalRecipient.uid);
       const rpRef = doc(firestore, 'users', finalRecipient.uid, 'profile', finalRecipient.uid);
@@ -266,6 +270,7 @@ export function RoomClient({ room }: { room: Room }) {
       updateDocumentNonBlocking(rpRef, recipientUpdates);
     }
 
+    // Event-Driven Log for big gifts
     if (gift.price >= 1000) {
       logAuditAction('Big Gift', { gift: gift.name, price: gift.price, from: userProfile.username, to: finalRecipient.name });
     }
