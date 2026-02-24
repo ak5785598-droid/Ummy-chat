@@ -15,6 +15,9 @@ import {
   Volume2,
   VolumeX,
   History,
+  Settings,
+  HelpCircle,
+  X,
   Crown,
   Sparkles,
 } from 'lucide-react';
@@ -24,24 +27,27 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+// Items mapped to the 3x3 perimeter (skipping the center index 4)
+// Layout:
+// 0 1 2
+// 7 X 3
+// 6 5 4
 const ITEMS = [
-  { id: 'apple', emoji: '🍎', multiplier: 5, label: '5x', color: 'bg-white' },
-  { id: 'orange', emoji: '🍊', multiplier: 5, label: '5x', color: 'bg-white' },
-  { id: 'lemon', emoji: '🍋', multiplier: 5, label: '5x', color: 'bg-white' },
-  { id: 'cherry', emoji: '🍒', multiplier: 5, label: '5x', color: 'bg-white' },
-  { id: 'strawberry', emoji: '🍓', multiplier: 10, label: '10x', color: 'bg-white' },
-  { id: 'mango', emoji: '🥭', multiplier: 15, label: '15x', color: 'bg-white' },
-  { id: 'grape', emoji: '🍇', multiplier: 45, label: '45x', color: 'bg-white' },
+  { id: 'orange', emoji: '🍊', multiplier: 5, label: '5 TIMES', pos: 0 },
+  { id: 'tomato', emoji: '🍅', multiplier: 5, label: '5 TIMES', pos: 1 },
+  { id: 'banana', emoji: '🍌', multiplier: 5, label: '5 TIMES', pos: 2 },
+  { id: 'lemon', emoji: '🍋', multiplier: 5, label: '5 TIMES', pos: 3 },
+  { id: 'watermelon', emoji: '🍉', multiplier: 10, label: '10 TIMES', pos: 4 },
+  { id: 'strawberry', emoji: '🍓', multiplier: 15, label: '15 TIMES', pos: 5 },
+  { id: 'grapes', emoji: '🍇', multiplier: 25, label: '25 TIMES', pos: 6 },
+  { id: 'cherries', emoji: '🍒', multiplier: 45, label: '45 TIMES', pos: 7 },
 ];
 
 const CHIPS = [
-  { value: 100, color: 'bg-green-500', label: '100' },
-  { value: 1000, color: 'bg-blue-500', label: '1K' },
-  { value: 100000, color: 'bg-purple-500', label: '100K' },
-  { value: 500000, color: 'bg-emerald-600', label: '500K' },
-  { value: 1000000, color: 'bg-slate-900', label: '1M' },
-  { value: 10000000, color: 'bg-rose-600', label: '10M' },
-  { value: 100000000, color: 'bg-amber-600', label: '100M' },
+  { value: 100, label: '100', color: 'bg-[#FF4D4D]', shadow: 'shadow-[#CC0000]', border: 'border-[#FF8080]' },
+  { value: 1000, label: '1K', color: 'bg-[#2ECC71]', shadow: 'shadow-[#1E8449]', border: 'border-[#58D68D]' },
+  { value: 10000, label: '10K', color: 'bg-[#F1C40F]', shadow: 'shadow-[#B7950B]', border: 'border-[#F4D03F]' },
+  { value: 100000, label: '100K', color: 'bg-[#1ABC9C]', shadow: 'shadow-[#117A65]', border: 'border-[#48C9B0]' },
 ];
 
 type RoundWinner = {
@@ -63,28 +69,16 @@ export default function FruitPartyPage() {
   const [timeLeft, setTimeLeft] = useState(20);
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
-  const [rotation, setRotation] = useState(0);
-  const [spinningIndex, setSpinningIndex] = useState(0);
+  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [roundNumber, setRoundNumber] = useState(311);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [showWinOverlay, setShowWinOverlay] = useState(false);
   const [lastWinners, setLastWinners] = useState<RoundWinner[]>([]);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !activeRoom?.id || !currentUser) return null;
-    return query(collection(firestore, 'chatRooms', activeRoom.id, 'participants'));
-  }, [firestore, activeRoom?.id, currentUser]);
-
-  const { data: participants } = useCollection(participantsQuery);
-  const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
-  const activeSpeakers = participants?.filter(p => !p.isMuted && p.seatIndex > 0) || [];
-
   useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 2000);
+    const timer = setTimeout(() => setIsLaunching(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -96,8 +90,7 @@ export default function FruitPartyPage() {
         if (timeLeft > 0) {
           setTimeLeft(prev => prev - 1);
         } else {
-          const randomIndex = Math.floor(Math.random() * ITEMS.length);
-          startSpin(randomIndex);
+          startSpin();
         }
       }
     }, 1000);
@@ -105,257 +98,252 @@ export default function FruitPartyPage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = (targetIdx: number) => {
+  const startSpin = () => {
     setGameState('spinning');
-    
-    const extraSpins = 40; 
-    const sliceAngle = 360 / ITEMS.length;
-    const landingAngle = (360 - (targetIdx * sliceAngle)) % 360;
-    
-    const baseRotation = Math.floor(rotation / 360) * 360;
-    const totalRotation = baseRotation + (360 * extraSpins) + landingAngle;
-    
-    setTimeout(() => {
-      setRotation(totalRotation);
-      setResultId(ITEMS[targetIdx].id);
-    }, 50);
+    const targetIdx = Math.floor(Math.random() * ITEMS.length);
+    const totalSpins = 32 + targetIdx; // At least 4 full laps
+    let currentSpin = 0;
+    let speed = 50;
 
-    let cycleCount = 0;
-    const cycleInterval = setInterval(() => {
-      setSpinningIndex(prev => (prev + 1) % ITEMS.length);
-      cycleCount++;
-      if (cycleCount > 80) clearInterval(cycleInterval);
-    }, 60);
+    const runChase = () => {
+      setHighlightIdx(currentSpin % ITEMS.length);
+      currentSpin++;
 
-    setTimeout(() => {
-      clearInterval(cycleInterval);
-      setSpinningIndex(targetIdx);
-      showResult(ITEMS[targetIdx].id);
-    }, 5050);
+      if (currentSpin < totalSpins) {
+        // Slow down towards the end
+        if (totalSpins - currentSpin < 10) speed += 40;
+        setTimeout(runChase, speed);
+      } else {
+        setTimeout(() => showResult(ITEMS[targetIdx].id), 500);
+      }
+    };
+
+    runChase();
   };
 
   const showResult = (id: string) => {
     setGameState('result');
+    setResultId(id);
     setHistory(prev => [id, ...prev].slice(0, 12));
+    setRoundNumber(prev => prev + 1);
     
-    const winningItem = ITEMS.find(i => i.id === id);
-    const multiplier = winningItem?.multiplier || 0;
-    const winAmount = (myBets[id] || 0) * multiplier;
-    
-    const realWinners: RoundWinner[] = [];
+    const winItem = ITEMS.find(i => i.id === id);
+    const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
-      setShowWinOverlay(true);
-      const userRef = doc(firestore, 'users', currentUser.uid);
-      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       const updateData = { 'wallet.coins': increment(winAmount), updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
       
-      updateDocumentNonBlocking(userRef, updateData);
-      updateDocumentNonBlocking(profileRef, updateData);
-      
-      realWinners.push({ 
+      setLastWinners([{ 
         name: userProfile.username, 
         amount: winAmount, 
         avatar: userProfile.avatarUrl,
         isMe: true 
-      });
-
-      setTimeout(() => setShowWinOverlay(false), 3000);
+      }]);
     }
-
-    setLastWinners(realWinners);
 
     setTimeout(() => {
       setMyBets({});
       setGameState('betting');
       setTimeLeft(20);
       setResultId(null);
+      setHighlightIdx(null);
       setLastWinners([]);
-    }, 6000); 
+    }, 5000);
   };
 
-  const handlePlaceBet = (itemId: string) => {
-    if (gameState !== 'betting' || !currentUser || !firestore || !userProfile) return;
+  const handlePlaceBet = (id: string) => {
+    if (gameState !== 'betting' || !currentUser || !userProfile) return;
     if ((userProfile.wallet?.coins || 0) < selectedChip) {
       toast({ variant: 'destructive', title: 'Insufficient Coins' });
       return;
     }
 
-    const userRef = doc(firestore, 'users', currentUser.uid);
-    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
-    
-    updateDocumentNonBlocking(userRef, updateData);
-    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-    setMyBets(prev => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + selectedChip
-    }));
-  };
-
-  const formatAmount = (v: number) => {
-    if (v >= 1000000) return `${(v / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-    if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-    return v.toString();
+    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
   if (isLaunching) {
     return (
-      <div className="h-screen w-full bg-[#87CEEB] flex flex-col items-center justify-center space-y-6 overflow-hidden">
-        <div className="relative">
-           <div className="absolute inset-0 bg-white/40 rounded-full blur-3xl animate-pulse" />
-           <div className="text-9xl animate-bounce relative z-10">🍓</div>
-        </div>
-        <div className="text-center space-y-2">
-           <h1 className="text-6xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
-           <p className="text-white/80 text-xs font-black uppercase tracking-[0.5em] animate-pulse">Syncing Tribe Frequencies...</p>
-        </div>
+      <div className="h-screen w-full bg-[#4B0082] flex flex-col items-center justify-center space-y-6">
+        <div className="text-9xl animate-bounce">🍓</div>
+        <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">Fruit Party</h1>
       </div>
     );
   }
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-gradient-to-b from-[#87CEEB] via-[#B0E0E6] to-[#fad0c4] flex flex-col relative overflow-hidden font-headline">
-        <audio ref={audioRef} src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoPlay loop muted={isMuted} />
+      <div className="h-screen w-full bg-[#2D005E] flex flex-col items-center relative overflow-hidden font-headline p-4">
+        
+        {/* Top Header Controls */}
+        <header className="w-full flex items-center justify-between mb-4">
+           <div className="flex items-center gap-4">
+              <span className="text-white font-bold text-sm">ROUND: {roundNumber}</span>
+              <div className="flex items-center gap-1 text-green-400 text-xs">
+                 <Zap className="h-3 w-3 fill-current" />
+                 <span>60ms</span>
+              </div>
+           </div>
+           <div className="flex items-center gap-2">
+              <button className="bg-white/10 p-2 rounded-full text-white"><History className="h-4 w-4" /></button>
+              <button className="bg-white/10 p-2 rounded-full text-white"><HelpCircle className="h-4 w-4" /></button>
+              <button className="bg-white/10 p-2 rounded-full text-white"><Settings className="h-4 w-4" /></button>
+              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white"><X className="h-4 w-4" /></button>
+           </div>
+        </header>
 
+        {/* Balance & Profit Bar */}
+        <div className="w-full max-w-md bg-[#FFD700] p-0.5 rounded-xl shadow-lg mb-6">
+           <div className="bg-[#4B0082] rounded-lg px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black text-white/60">BALANCE:</span>
+                 <div className="flex items-center gap-1 text-white font-black text-sm">
+                    <div className="bg-yellow-500 rounded-full h-3 w-3 flex items-center justify-center text-[8px] text-black">S</div>
+                    {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black text-white/60">PROFIT:</span>
+                 <div className="flex items-center gap-1 text-white font-black text-sm">
+                    <div className="bg-yellow-500 rounded-full h-3 w-3 flex items-center justify-center text-[8px] text-black">S</div>
+                    0
+                 </div>
+              </div>
+              <button className="bg-[#F1C40F] p-1 rounded-md shadow-inner">
+                 <Trophy className="h-4 w-4 text-white" />
+              </button>
+           </div>
+        </div>
+
+        {/* Main 3x3 Machine Grid */}
+        <div className="relative w-full max-w-[340px] aspect-square bg-[#FFD700] p-2 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-b-[8px] border-[#B7950B]">
+           <div className="w-full h-full bg-[#4B0082] rounded-[1.5rem] grid grid-cols-3 grid-rows-3 gap-2 p-2">
+              
+              {/* Grid Mapping Logic */}
+              {[0, 1, 2, 7, 8, 3, 6, 5, 4].map((gridPos, i) => {
+                if (gridPos === 8) {
+                  // Center Digital Timer
+                  return (
+                    <div key="center" className="bg-[#1A0033] rounded-2xl flex items-center justify-center border-4 border-[#B7950B] shadow-inner overflow-hidden relative">
+                       {gameState === 'betting' ? (
+                         <div className="text-5xl font-black text-[#FFD700] italic tracking-tighter drop-shadow-[0_0_10px_rgba(241,196,15,0.5)]">
+                            {timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+                         </div>
+                       ) : (
+                         <div className="text-6xl animate-pulse">
+                            {ITEMS.find(item => item.id === (resultId || ITEMS[highlightIdx || 0].id))?.emoji}
+                         </div>
+                       )}
+                       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                    </div>
+                  );
+                }
+
+                const item = ITEMS.find(it => it.pos === (gridPos < 8 ? gridPos : i));
+                const isHighlighted = highlightIdx === gridPos;
+                const isWinner = resultId === item?.id;
+                const hasBet = item ? !!myBets[item.id] : false;
+
+                return (
+                  <button
+                    key={gridPos}
+                    onClick={() => item && handlePlaceBet(item.id)}
+                    disabled={gameState !== 'betting'}
+                    className={cn(
+                      "relative rounded-2xl flex flex-col items-center justify-center p-1 transition-all duration-150 overflow-hidden",
+                      "bg-gradient-to-b from-[#6A0DAD] to-[#4B0082] border-2 border-white/10",
+                      isHighlighted && "ring-4 ring-[#FFD700] z-10 scale-105 shadow-[0_0_20px_rgba(255,215,0,0.6)]",
+                      isWinner && "ring-4 ring-white animate-pulse z-20 scale-110",
+                      hasBet && "border-[#FFD700] shadow-inner",
+                      gameState !== 'betting' && !isHighlighted && "opacity-60"
+                    )}
+                  >
+                    <span className="text-3xl mb-1">{item?.emoji}</span>
+                    <span className="text-[8px] font-black text-white/80 uppercase tracking-tighter">{item?.label}</span>
+                    {hasBet && (
+                      <div className="absolute top-1 right-1 bg-[#FFD700] text-black text-[7px] font-black px-1.5 rounded-full border border-white">
+                        {myBets[item!.id] >= 1000 ? `${(myBets[item!.id] / 1000).toFixed(0)}K` : myBets[item!.id]}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+           </div>
+        </div>
+
+        {/* 3D Chip Platform */}
+        <div className="w-full max-w-md mt-auto pb-10">
+           <div className="relative bg-[#FFD700] h-24 rounded-t-[3rem] border-b-[6px] border-[#B7950B] flex items-center justify-center gap-4 px-6 pt-4 shadow-2xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#B7950B] h-2 w-32 rounded-full opacity-20" />
+              
+              {CHIPS.map(chip => (
+                <button
+                  key={chip.value}
+                  onClick={() => setSelectedChip(chip.value)}
+                  className={cn(
+                    "group relative h-14 w-14 rounded-full transition-all active:translate-y-1",
+                    chip.color, chip.shadow, chip.border,
+                    "border-b-4 border-t-2 shadow-[0_6px_0_0_rgba(0,0,0,0.2)] flex flex-col items-center justify-center",
+                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-white shadow-[0_10px_20px_rgba(0,0,0,0.4)]" : "hover:-translate-y-1"
+                  )}
+                >
+                  <div className="flex items-center gap-0.5 text-white">
+                    <div className="bg-yellow-500 rounded-full h-2 w-2 flex items-center justify-center text-[5px] text-black">S</div>
+                    <span className="text-[10px] font-black italic">{chip.label}</span>
+                  </div>
+                  {selectedChip === chip.value && <div className="absolute -bottom-1 w-8 h-1 bg-black/20 blur-md rounded-full" />}
+                </button>
+              ))}
+           </div>
+
+           {/* History Bar Bottom */}
+           <div className="bg-[#1A0033] w-full h-14 flex items-center gap-3 px-6 overflow-x-auto no-scrollbar border-t-2 border-[#FFD700]/20">
+              <History className="h-4 w-4 text-[#FFD700] shrink-0" />
+              <div className="flex gap-2">
+                 {history.map((id, i) => (
+                   <div key={i} className="h-8 w-8 bg-white/5 rounded-lg flex items-center justify-center text-lg relative shrink-0">
+                      {ITEMS.find(it => it.id === id)?.emoji}
+                      {i === 0 && <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-ping" />}
+                   </div>
+                 ))}
+                 {history.length === 0 && <span className="text-[8px] font-black text-white/20 uppercase italic">Waiting for round...</span>}
+              </div>
+           </div>
+        </div>
+
+        {/* Winner Overlay */}
         {gameState === 'result' && lastWinners.length > 0 && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-500">
-             <div className="bg-black/90 backdrop-blur-2xl absolute inset-0" />
-             <div className="relative z-10 text-center space-y-12 max-w-2xl w-full px-6">
-                <div className="relative space-y-2">
-                   <div className="absolute inset-0 bg-yellow-400/20 blur-[100px] animate-pulse rounded-full" />
-                   <div className="flex justify-center mb-4"><Trophy className="h-16 w-16 text-yellow-400 animate-bounce" /></div>
-                   <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl">Big Winner</h2>
-                   <p className="text-orange-400 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                      <Sparkles className="h-4 w-4" /> Party Legend Found <Sparkles className="h-4 w-4" />
-                   </p>
-                </div>
-                <div className="flex flex-col items-center w-full max-w-xs mx-auto space-y-4">
-                   <Avatar className="h-32 w-32 border-4 border-yellow-400 shadow-2xl">
+             <div className="bg-black/80 backdrop-blur-md absolute inset-0" />
+             <div className="relative z-10 text-center space-y-6">
+                <Trophy className="h-20 w-20 text-[#FFD700] mx-auto animate-bounce" />
+                <h2 className="text-5xl font-black text-white italic uppercase tracking-tighter">Big Win!</h2>
+                <div className="bg-[#4B0082] p-6 rounded-[2rem] border-4 border-[#FFD700] shadow-2xl min-w-[240px]">
+                   <Avatar className="h-20 w-20 mx-auto border-4 border-white mb-4">
                       <AvatarImage src={lastWinners[0].avatar} />
                       <AvatarFallback>U</AvatarFallback>
                    </Avatar>
-                   <div className="bg-yellow-400/20 border-2 border-yellow-400/50 p-6 rounded-t-[2.5rem] w-full text-center space-y-1 backdrop-blur-xl">
-                      <p className="text-lg font-black text-white uppercase italic tracking-tighter">{lastWinners[0].name}</p>
-                      <p className="text-2xl font-black text-yellow-400 italic">+{formatAmount(lastWinners[0].amount)}</p>
-                   </div>
+                   <p className="text-white font-black text-lg uppercase truncate">{lastWinners[0].name}</p>
+                   <p className="text-2xl font-black text-[#FFD700] italic">+{lastWinners[0].amount.toLocaleString()}</p>
                 </div>
              </div>
           </div>
         )}
 
-        <header className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between">
-           <button onClick={() => router.back()} className="bg-black/20 backdrop-blur-xl p-3 rounded-full border-2 border-white/30 text-white hover:scale-110 transition-all shadow-xl">
-              <ChevronLeft className="h-6 w-6" />
-           </button>
-           <div className="bg-yellow-400 text-black px-6 py-3 rounded-[1.5rem] border-4 border-white flex items-center gap-3 shadow-2xl">
-              <Zap className="h-5 w-5 fill-current" />
-              <span className="text-xl font-black italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-           </div>
-           <button onClick={() => setIsMuted(!isMuted)} className="rounded-full h-12 w-12 bg-white/20 backdrop-blur-md text-white border-2 border-white/30 flex items-center justify-center">
-              {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-           </button>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center pt-20 px-4 space-y-8">
-           <div className="relative w-[22rem] h-[22rem] flex items-center justify-center">
-              <div 
-                className={cn(
-                  "relative w-full h-full rounded-full border-[12px] border-white/40 shadow-2xl overflow-visible bg-white/10 backdrop-blur-md",
-                  gameState === 'spinning' ? "transition-transform duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1)" : "transition-none"
-                )}
-                style={{ transform: `rotate(${rotation}deg)` }}
-              >
-                 {ITEMS.map((item, index) => {
-                    const angle = (index / ITEMS.length) * 360;
-                    const isWinner = gameState === 'result' && resultId === item.id;
-                    const hasBet = !!myBets[item.id];
-                    return (
-                      <div 
-                        key={item.id}
-                        className="absolute w-24 h-24 flex items-center justify-center"
-                        style={{
-                          top: '50%',
-                          left: '50%',
-                          transform: `translate(-50%, -50%) rotate(${angle}deg) translate(140px)`
-                        }}
-                      >
-                        <div 
-                          className={cn(
-                            "w-full h-full rounded-full flex flex-col items-center justify-center transition-all duration-300 border-4 bg-white shadow-xl",
-                            gameState === 'spinning' ? "duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1)" : "duration-300",
-                            isWinner && "scale-125 z-50 ring-8 ring-yellow-400 border-white",
-                            hasBet && "border-yellow-400 ring-4 ring-yellow-400/20"
-                          )}
-                          style={{ transform: `rotate(-${rotation + angle}deg)` }}
-                        >
-                           <span className="text-4xl drop-shadow-md">{item.emoji}</span>
-                           <p className="text-[10px] font-black text-gray-500 uppercase italic">{item.label}</p>
-                        </div>
-                      </div>
-                    );
-                 })}
-              </div>
-
-              <div className="relative z-20 w-40 h-40 bg-white rounded-full shadow-2xl flex flex-col items-center justify-center border-[8px] border-[#FFB347] overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-br from-[#FFB347]/10 to-transparent" />
-                 {gameState === 'betting' ? (
-                   <div className="relative z-10 flex flex-col items-center">
-                    <span className="text-[10px] font-black text-[#FFB347] uppercase tracking-widest mb-1">Select Fruit</span>
-                    <span className="text-5xl font-black text-[#FFB347] italic tracking-tighter">{timeLeft}s</span>
-                   </div>
-                 ) : (
-                   <div className="relative z-10 flex flex-col items-center animate-in zoom-in">
-                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">Result</span>
-                      <span className="text-7xl animate-bounce drop-shadow-xl">{ITEMS[spinningIndex].emoji}</span>
-                   </div>
-                 )}
-              </div>
-           </div>
-
-           <div className="w-full max-w-lg bg-[#FFB347]/20 backdrop-blur-xl rounded-[3rem] border-4 border-white/40 p-6 space-y-4 shadow-2xl">
-              <div className="grid grid-cols-4 gap-3">
-                 {ITEMS.map(item => (
-                   <button 
-                    key={item.id} 
-                    onClick={() => handlePlaceBet(item.id)}
-                    disabled={gameState !== 'betting'}
-                    className={cn(
-                      "relative h-20 rounded-2xl bg-white border-2 flex flex-col items-center justify-center transition-all active:scale-95",
-                      gameState !== 'betting' && "opacity-60",
-                      myBets[item.id] && "border-yellow-400 ring-4 ring-yellow-400/20"
-                    )}
-                   >
-                      <span className="text-3xl">{item.emoji}</span>
-                      {myBets[item.id] && <div className="absolute -top-2 -right-2 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[8px] font-black border border-white">{formatAmount(myBets[item.id])}</div>}
-                   </button>
-                 ))}
-              </div>
-              
-              <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
-                 {CHIPS.map(chip => (
-                   <button 
-                    key={chip.value} 
-                    onClick={() => setSelectedChip(chip.value)}
-                    className={cn(
-                      "h-12 min-w-[48px] rounded-full flex items-center justify-center border-2 transition-all",
-                      selectedChip === chip.value ? "bg-white text-black border-yellow-400 scale-110 shadow-lg" : "bg-white/10 text-white border-white/20"
-                    )}
-                   >
-                      <span className="text-[10px] font-black italic">{chip.label}</span>
-                   </button>
-                 ))}
-              </div>
-           </div>
-        </main>
-
-        <footer className="p-8 flex justify-center items-center gap-10 relative z-50">
-           <Button onClick={toggleMic} className={cn("rounded-full h-16 w-16 shadow-2xl", currentUserParticipant?.isMuted ? "bg-rose-500 text-white" : "bg-white text-blue-500")}>
-             {currentUserParticipant?.isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6 animate-voice-wave" />}
-           </Button>
-        </footer>
+        <style jsx global>{`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
       </div>
     </AppLayout>
   );
