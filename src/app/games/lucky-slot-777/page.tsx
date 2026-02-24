@@ -22,7 +22,8 @@ import {
   Settings,
   MoreHorizontal,
   RefreshCw,
-  User as UserIcon
+  User as UserIcon,
+  Gamepad2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export default function LuckySlot777Page() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
-  const [timeLeft, setTimeLeft] = useState(20); // 20 second betting window
+  const [timeLeft, setTimeLeft] = useState(20);
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [spinningIndex, setSpinningIndex] = useState(0);
@@ -114,16 +115,15 @@ export default function LuckySlot777Page() {
 
   const startSpin = (targetIdx: number) => {
     let current = 0;
-    const spins = 48 + targetIdx; // More rotations for hyper-speed effect
-    let speed = 15; // Starting interval delay (very fast)
+    const spins = 40 + targetIdx; 
+    let speed = 15; 
 
     const runSpin = () => {
       setSpinningIndex(current % WHEEL_DISTRIBUTION.length);
       if (current < spins) {
         current++;
-        // Maintain maximum speed for most of the duration
-        if (current > spins - 12) {
-          speed += 15; // Sharp deceleration at the very end for suspense
+        if (current > spins - 10) {
+          speed += 20; 
         }
         setTimeout(runSpin, speed);
       } else {
@@ -167,7 +167,7 @@ export default function LuckySlot777Page() {
     setTimeout(() => {
       setMyBets({});
       setGameState('betting');
-      setTimeLeft(20); // Reset to 20 seconds
+      setTimeLeft(20);
       setResultId(null);
       setLastWinners([]);
     }, 4000);
@@ -331,10 +331,10 @@ export default function LuckySlot777Page() {
               <div className="absolute -inset-10 border-[16px] border-yellow-600/20 rounded-full shadow-[0_0_60px_rgba(234,179,8,0.2)]" />
               <div className="absolute -inset-6 border-[4px] border-yellow-500/40 rounded-full" />
               
-              {/* Spinning Container with Blur and Fast-Rotation Animation */}
+              {/* Spinning Container with High-Speed Rotation Animation (No Blur) */}
               <div className={cn(
                 "relative w-full h-full rounded-full border-[8px] border-yellow-500 shadow-2xl transition-all duration-[1500ms] cubic-bezier(0.15, 0, 0.15, 1) overflow-hidden",
-                gameState === 'spinning' && "animate-[spin_0.3s_linear_infinite] blur-[2px] scale-[1.02]"
+                gameState === 'spinning' && "animate-[spin_0.2s_linear_infinite] scale-[1.02] animate-pulse"
               )}>
                  <svg viewBox="0 0 100 100" className="w-full h-full">
                     {WHEEL_DISTRIBUTION.map((id, i) => {
