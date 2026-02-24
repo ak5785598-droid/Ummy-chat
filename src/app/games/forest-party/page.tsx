@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { CompactRoomView } from '@/components/compact-room-view';
 
 const ANIMALS = [
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: '5x', winText: 'Win 5 times' },
@@ -196,20 +197,6 @@ export default function WildPartyPage() {
     }));
   };
 
-  const toggleMic = () => {
-    if (!firestore || !activeRoom?.id || !currentUser || !currentUserParticipant) return;
-    updateDocumentNonBlocking(
-      doc(firestore, 'chatRooms', activeRoom.id, 'participants', currentUser.uid),
-      { isMuted: !currentUserParticipant.isMuted }
-    );
-  };
-
-  const formatAmount = (v: number) => {
-    if (v >= 1000000) return `${(v / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-    if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-    return v.toString();
-  };
-
   if (isLaunching) {
     return (
       <div className="h-screen w-full bg-[#7B6DA8] flex flex-col items-center justify-center space-y-6 overflow-hidden font-headline">
@@ -229,6 +216,8 @@ export default function WildPartyPage() {
     <AppLayout fullScreen>
       <div className="h-screen w-full bg-[#7B6DA8] flex flex-col relative overflow-hidden font-headline">
         
+        <CompactRoomView />
+
         <audio ref={audioRef} src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" autoPlay loop muted={isMuted} />
 
         {gameState === 'result' && lastWinners.length > 0 && (
@@ -264,7 +253,7 @@ export default function WildPartyPage() {
           </div>
         )}
 
-        <header className="absolute top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
+        <div className="absolute top-[40vh] left-0 right-0 p-4 flex items-center justify-between z-[40]">
            <div className="flex items-center gap-2">
               <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
                 <ChevronLeft className="h-5 w-5" />
@@ -272,120 +261,93 @@ export default function WildPartyPage() {
               <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
                 {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>
-              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white"><Maximize2 className="h-5 w-5" /></button>
-              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white"><HelpCircle className="h-5 w-5" /></button>
-              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white"><BarChart3 className="h-5 w-5" /></button>
            </div>
 
-           <div className="bg-black/40 backdrop-blur-xl px-6 py-1.5 rounded-full border border-white/10 flex items-center gap-4">
-              <div className="flex items-center gap-2 border-r border-white/10 pr-4">
-                 <History className="h-4 w-4 text-orange-400" />
-                 <span className="text-[10px] font-black text-white uppercase tracking-widest">History</span>
-              </div>
-              <div className="flex gap-2">
-                {history.map((id, i) => (
-                  <div key={i} className="h-6 w-6 bg-white/10 rounded-full flex items-center justify-center text-sm relative">
+           <div className="bg-black/40 backdrop-blur-xl px-4 py-1 rounded-full border border-white/10 flex items-center gap-3">
+              <History className="h-3 w-3 text-orange-400" />
+              <div className="flex gap-1.5">
+                {history.slice(0, 6).map((id, i) => (
+                  <div key={i} className="h-5 w-5 bg-white/10 rounded-full flex items-center justify-center text-xs">
                     {ANIMALS.find(item => item.id === id)?.emoji}
-                    {i === 0 && <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-[6px] h-3 px-1 font-black animate-bounce">NEW</Badge>}
                   </div>
                 ))}
               </div>
            </div>
+        </div>
 
-           <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 text-white"><Menu className="h-5 w-5" /></button>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center pt-16 px-4 space-y-8">
+        <main className="flex-1 flex flex-col items-center justify-center pt-4 px-4 space-y-4 overflow-y-auto pb-32">
            
-           <div className="relative w-[22rem] h-[22rem] flex items-center justify-center">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50">
-                 <div className="w-8 h-10 bg-yellow-500 clip-path-triangle shadow-2xl border-x-2 border-yellow-600" />
+           <div className="relative w-64 h-64 flex items-center justify-center scale-90 sm:scale-100">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-50">
+                 <div className="w-6 h-8 bg-yellow-500 clip-path-triangle shadow-2xl" />
               </div>
 
               <div 
                 className={cn(
-                  "relative w-full h-full rounded-full border-[16px] border-[#3d1a05] shadow-2xl overflow-visible bg-[#5d2a0a]",
+                  "relative w-full h-full rounded-full border-[12px] border-[#3d1a05] shadow-2xl bg-[#5d2a0a]",
                   gameState === 'spinning' ? "transition-transform duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1)" : "transition-none"
                 )}
                 style={{ transform: `rotate(${rotation}deg)` }}
               >
-                 {/* Spokes */}
-                 {Array.from({ length: 8 }).map((_, i) => (
-                   <div key={i} className="absolute top-1/2 left-1/2 w-[50%] h-1 bg-white/10 origin-left" style={{ transform: `rotate(${i * 45}deg)` }} />
-                 ))}
-                 
-                 {/* Pegs */}
-                 {Array.from({ length: 8 }).map((_, i) => (
-                   <div key={i} className="absolute w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(251,191,36,1)] z-50 border border-white/50" style={{ top: '50%', left: '50%', transform: `rotate(${i * 45 + 22.5}deg) translate(150px) translateY(-50%)` }} />
-                 ))}
-
                  {ANIMALS.map((animal, index) => {
                     const angle = index * 45;
                     const isWinner = gameState === 'result' && resultId === animal.id;
                     return (
                       <div 
                         key={animal.id}
-                        className="absolute w-20 h-20 flex items-center justify-center"
+                        className="absolute w-14 h-14 flex items-center justify-center"
                         style={{
                           top: '50%',
                           left: '50%',
-                          transform: `translate(-50%, -50%) rotate(${angle}deg) translate(135px)`
+                          transform: `translate(-50%, -50%) rotate(${angle}deg) translate(95px)`
                         }}
                       >
                         <div 
                           className={cn(
                             "w-full h-full rounded-full flex flex-col items-center justify-center transition-all border-2 backdrop-blur-md",
-                            isWinner ? "scale-125 z-50 bg-yellow-400 border-white shadow-[0_0_40px_rgba(251,191,36,0.8)]" : "bg-black/20 border-white/10",
+                            isWinner ? "scale-125 z-50 bg-yellow-400 border-white" : "bg-black/20 border-white/10",
                           )}
-                          style={{ 
-                            transform: `rotate(-${angle}deg)` 
-                          }}
+                          style={{ transform: `rotate(-${angle}deg)` }}
                         >
-                           <span className="text-4xl drop-shadow-md">{animal.emoji}</span>
-                           <div className="absolute -bottom-3 bg-[#3d1a05] text-white text-[6px] font-black px-2 py-0.5 rounded-full border border-white/20 whitespace-nowrap">
-                              {animal.winText}
-                           </div>
+                           <span className="text-2xl">{animal.emoji}</span>
                         </div>
                       </div>
                     );
                  })}
               </div>
 
-              <div className="absolute z-20 w-36 h-36 bg-[#1a0a05] rounded-full shadow-2xl flex flex-col items-center justify-center border-[8px] border-[#3d1a05] overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent" />
+              <div className="absolute z-20 w-24 h-24 bg-[#1a0a05] rounded-full shadow-2xl flex flex-col items-center justify-center border-[6px] border-[#3d1a05]">
                  {gameState === 'betting' ? (
                    <div className="relative z-10 flex flex-col items-center text-center">
-                    <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest mb-1">Select Animal<br/>now</span>
-                    <span className="text-5xl font-black text-white italic tracking-tighter drop-shadow-sm">{timeLeft}s</span>
+                    <span className="text-[6px] font-black text-orange-500 uppercase leading-none mb-1">Select Animal</span>
+                    <span className="text-3xl font-black text-white italic tracking-tighter">{timeLeft}s</span>
                    </div>
                  ) : (
                    <div className="relative z-10 flex flex-col items-center animate-in zoom-in">
-                      <span className="text-[8px] font-black uppercase text-orange-500/60 tracking-widest mb-1">Wild Result</span>
-                      <span className="text-7xl animate-pulse drop-shadow-xl">{ANIMALS[spinningIndex].emoji}</span>
+                      <span className="text-5xl drop-shadow-xl">{ANIMALS[spinningIndex].emoji}</span>
                    </div>
                  )}
               </div>
            </div>
 
-           {/* 2x4 Betting Grid */}
-           <div className="w-full max-w-lg grid grid-cols-4 gap-2 px-2">
+           <div className="w-full max-w-sm grid grid-cols-4 gap-1.5 px-2">
               {ANIMALS.map(animal => (
                 <button 
                   key={animal.id}
                   onClick={() => handlePlaceBet(animal.id)}
                   disabled={gameState !== 'betting'}
                   className={cn(
-                    "relative group h-20 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center p-2 shadow-lg",
-                    "bg-[#5d4a66] border-white/10 hover:bg-[#6d5a76]",
+                    "relative group h-16 rounded-xl border-2 transition-all flex flex-col items-center justify-center p-1",
+                    "bg-[#5d4a66] border-white/10",
                     gameState !== 'betting' && "opacity-60",
-                    myBets[animal.id] && "border-yellow-400 ring-2 ring-yellow-400/20"
+                    myBets[animal.id] && "border-yellow-400 bg-[#6d5a76]"
                   )}
                 >
-                   <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">{animal.emoji}</span>
-                   <span className="text-[10px] font-black text-yellow-500 uppercase italic tracking-widest">{animal.label}</span>
+                   <span className="text-2xl mb-0.5">{animal.emoji}</span>
+                   <span className="text-[8px] font-black text-yellow-500 uppercase tracking-tighter">{animal.label}</span>
                    
                    {myBets[animal.id] && (
-                     <div className="absolute -top-2 -right-2 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[8px] font-black shadow-lg animate-in zoom-in border border-white">
+                     <div className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-full text-[7px] font-black shadow-lg">
                         {formatAmount(myBets[animal.id])}
                      </div>
                    )}
@@ -393,43 +355,32 @@ export default function WildPartyPage() {
               ))}
            </div>
 
-           {/* Premium Savannah Dashboard */}
-           <div className="w-full max-w-xl bg-[#1a0a05] rounded-[3rem] border-4 border-[#3d1a05] p-4 flex items-center justify-between shadow-2xl">
-              <div className="flex items-center gap-3 bg-black/40 px-6 h-14 rounded-full border border-white/10">
-                 <div className="bg-yellow-500 p-1.5 rounded-lg shadow-lg">
-                    <Zap className="h-5 w-5 text-black fill-current" />
-                 </div>
-                 <div className="flex flex-col">
-                    <span className="text-xl font-black text-white italic tracking-tighter">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                    <span className="text-[8px] uppercase font-black text-white/40 tracking-widest leading-none">Coins Pool</span>
-                 </div>
+           <div className="w-full max-w-sm bg-[#1a0a05] rounded-[2rem] border-2 border-[#3d1a05] p-3 flex items-center justify-between shadow-2xl fixed bottom-4 left-1/2 -translate-x-1/2 z-[60]">
+              <div className="flex items-center gap-2 bg-black/40 px-4 h-10 rounded-full border border-white/5">
+                 <Zap className="h-3 w-3 text-yellow-500 fill-current" />
+                 <span className="text-sm font-black text-white italic tracking-tighter">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
               </div>
 
-              <div className="flex-1 flex items-center justify-center gap-2 overflow-x-auto no-scrollbar px-4">
+              <div className="flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
                  {CHIPS.map(chip => (
                    <button 
                     key={chip.value}
                     onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center transition-all border-4 active:scale-90 relative shrink-0",
-                      selectedChip === chip.value 
-                        ? "scale-110 z-10 shadow-[0_0_20px_rgba(255,255,255,0.4)] bg-slate-900 border-white"
-                        : "bg-black/40 border-white/10 text-white/60"
+                      "h-9 w-9 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
+                      selectedChip === chip.value ? "bg-slate-900 border-white scale-110" : "bg-black/40 border-white/10 text-white/60"
                     )}
                    >
-                      <span className="text-[8px] font-black italic">{chip.label}</span>
-                      {selectedChip === chip.value && <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse" />}
+                      <span className="text-[7px] font-black italic">{chip.label}</span>
                    </button>
                  ))}
               </div>
 
               <button 
-                className="h-16 w-16 bg-orange-500 rounded-full flex items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-110 active:scale-95 transition-all border-4 border-orange-400"
+                className="h-12 w-12 bg-orange-500 rounded-full flex items-center justify-center shadow-lg border-2 border-orange-400 active:scale-90 transition-all"
                 onClick={() => setMyBets({})}
               >
-                 <div className="h-10 w-10 rounded-full border-4 border-white/20 flex items-center justify-center">
-                    <div className="h-4 w-4 bg-white/40 rounded-full" />
-                 </div>
+                 <span className="text-[8px] font-black text-white uppercase leading-none">Rep</span>
               </button>
            </div>
         </main>
@@ -438,8 +389,17 @@ export default function WildPartyPage() {
           .clip-path-triangle {
             clip-path: polygon(50% 100%, 0 0, 100% 0);
           }
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
         `}</style>
       </div>
     </AppLayout>
   );
+}
+
+function formatAmount(v: number) {
+  if (v >= 1000000) return `${(v / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+  return v.toString();
 }

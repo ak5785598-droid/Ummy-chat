@@ -26,12 +26,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { CompactRoomView } from '@/components/compact-room-view';
 
-// Items mapped to the 3x3 perimeter (skipping the center index 4)
-// Layout:
-// 0 1 2
-// 7 X 3
-// 6 5 4
 const ITEMS = [
   { id: 'orange', emoji: '🍊', multiplier: 5, label: '5 TIMES', pos: 0 },
   { id: 'tomato', emoji: '🍅', multiplier: 5, label: '5 TIMES', pos: 1 },
@@ -101,7 +97,7 @@ export default function FruitPartyPage() {
   const startSpin = () => {
     setGameState('spinning');
     const targetIdx = Math.floor(Math.random() * ITEMS.length);
-    const totalSpins = 32 + targetIdx; // At least 4 full laps
+    const totalSpins = 32 + targetIdx; 
     let currentSpin = 0;
     let speed = 50;
 
@@ -110,7 +106,6 @@ export default function FruitPartyPage() {
       currentSpin++;
 
       if (currentSpin < totalSpins) {
-        // Slow down towards the end
         if (totalSpins - currentSpin < 10) speed += 40;
         setTimeout(runChase, speed);
       } else {
@@ -178,158 +173,138 @@ export default function FruitPartyPage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#2D005E] flex flex-col items-center relative overflow-hidden font-headline p-4">
+      <div className="h-screen w-full bg-[#2D005E] flex flex-col items-center relative overflow-hidden font-headline">
         
-        {/* Top Header Controls */}
-        <header className="w-full flex items-center justify-between mb-4">
-           <div className="flex items-center gap-4">
-              <span className="text-white font-bold text-sm">ROUND: {roundNumber}</span>
-              <div className="flex items-center gap-1 text-green-400 text-xs">
-                 <Zap className="h-3 w-3 fill-current" />
-                 <span>60ms</span>
-              </div>
-           </div>
-           <div className="flex items-center gap-2">
-              <button className="bg-white/10 p-2 rounded-full text-white"><History className="h-4 w-4" /></button>
-              <button className="bg-white/10 p-2 rounded-full text-white"><HelpCircle className="h-4 w-4" /></button>
-              <button className="bg-white/10 p-2 rounded-full text-white"><Settings className="h-4 w-4" /></button>
-              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white"><X className="h-4 w-4" /></button>
-           </div>
-        </header>
+        <CompactRoomView />
 
-        {/* Balance & Profit Bar */}
-        <div className="w-full max-w-md bg-[#FFD700] p-0.5 rounded-xl shadow-lg mb-6">
-           <div className="bg-[#4B0082] rounded-lg px-4 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                 <span className="text-[10px] font-black text-white/60">BALANCE:</span>
-                 <div className="flex items-center gap-1 text-white font-black text-sm">
-                    <div className="bg-yellow-500 rounded-full h-3 w-3 flex items-center justify-center text-[8px] text-black">S</div>
-                    {(userProfile?.wallet?.coins || 0).toLocaleString()}
-                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                 <span className="text-[10px] font-black text-white/60">PROFIT:</span>
-                 <div className="flex items-center gap-1 text-white font-black text-sm">
-                    <div className="bg-yellow-500 rounded-full h-3 w-3 flex items-center justify-center text-[8px] text-black">S</div>
-                    0
-                 </div>
-              </div>
-              <button className="bg-[#F1C40F] p-1 rounded-md shadow-inner">
-                 <Trophy className="h-4 w-4 text-white" />
-              </button>
-           </div>
-        </div>
+        <div className="flex-1 flex flex-col items-center w-full p-4 overflow-y-auto pb-32">
+          
+          <header className="w-full flex items-center justify-between mb-4 mt-2">
+             <div className="flex items-center gap-3">
+                <span className="text-white font-bold text-xs uppercase opacity-60">ROUND: {roundNumber}</span>
+                <div className="flex items-center gap-1 text-green-400 text-[10px] font-black">
+                   <Zap className="h-3 w-3 fill-current" />
+                   <span>60ms</span>
+                </div>
+             </div>
+             <div className="flex items-center gap-2">
+                <button className="bg-white/10 p-1.5 rounded-full text-white"><History className="h-3 w-3" /></button>
+                <button onClick={() => router.back()} className="bg-white/10 p-1.5 rounded-full text-white"><X className="h-3 w-3" /></button>
+             </div>
+          </header>
 
-        {/* Main 3x3 Machine Grid */}
-        <div className="relative w-full max-w-[340px] aspect-square bg-[#FFD700] p-2 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-b-[8px] border-[#B7950B]">
-           <div className="w-full h-full bg-[#4B0082] rounded-[1.5rem] grid grid-cols-3 grid-rows-3 gap-2 p-2">
-              
-              {/* Grid Mapping Logic */}
-              {[0, 1, 2, 7, 8, 3, 6, 5, 4].map((gridPos, i) => {
-                if (gridPos === 8) {
-                  // Center Digital Timer
+          <div className="w-full max-w-sm bg-[#FFD700] p-0.5 rounded-xl shadow-lg mb-4">
+             <div className="bg-[#4B0082] rounded-lg px-3 py-1.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                   <span className="text-[8px] font-black text-white/60">BALANCE:</span>
+                   <div className="flex items-center gap-1 text-white font-black text-xs">
+                      <div className="bg-yellow-500 rounded-full h-2.5 w-2.5 flex items-center justify-center text-[6px] text-black">S</div>
+                      {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                   </div>
+                </div>
+                <button className="bg-[#F1C40F] p-1 rounded-md">
+                   <Trophy className="h-3 w-3 text-white" />
+                </button>
+             </div>
+          </div>
+
+          <div className="relative w-full max-w-[280px] aspect-square bg-[#FFD700] p-1.5 rounded-[1.5rem] shadow-2xl border-b-[6px] border-[#B7950B] scale-90 sm:scale-100">
+             <div className="w-full h-full bg-[#4B0082] rounded-[1.2rem] grid grid-cols-3 grid-rows-3 gap-1.5 p-1.5">
+                {[0, 1, 2, 7, 8, 3, 6, 5, 4].map((gridPos, i) => {
+                  if (gridPos === 8) {
+                    return (
+                      <div key="center" className="bg-[#1A0033] rounded-xl flex items-center justify-center border-2 border-[#B7950B] shadow-inner relative overflow-hidden">
+                         {gameState === 'betting' ? (
+                           <div className="text-3xl font-black text-[#FFD700] italic tracking-tighter">
+                              {timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+                           </div>
+                         ) : (
+                           <div className="text-4xl animate-pulse">
+                              {ITEMS.find(item => item.id === (resultId || ITEMS[highlightIdx || 0].id))?.emoji}
+                           </div>
+                         )}
+                      </div>
+                    );
+                  }
+
+                  const item = ITEMS.find(it => it.pos === (gridPos < 8 ? gridPos : i));
+                  const isHighlighted = highlightIdx === gridPos;
+                  const isWinner = resultId === item?.id;
+                  const hasBet = item ? !!myBets[item.id] : false;
+
                   return (
-                    <div key="center" className="bg-[#1A0033] rounded-2xl flex items-center justify-center border-4 border-[#B7950B] shadow-inner overflow-hidden relative">
-                       {gameState === 'betting' ? (
-                         <div className="text-5xl font-black text-[#FFD700] italic tracking-tighter drop-shadow-[0_0_10px_rgba(241,196,15,0.5)]">
-                            {timeLeft < 10 ? `0${timeLeft}` : timeLeft}
-                         </div>
-                       ) : (
-                         <div className="text-6xl animate-pulse">
-                            {ITEMS.find(item => item.id === (resultId || ITEMS[highlightIdx || 0].id))?.emoji}
-                         </div>
-                       )}
-                       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-                    </div>
+                    <button
+                      key={gridPos}
+                      onClick={() => item && handlePlaceBet(item.id)}
+                      disabled={gameState !== 'betting'}
+                      className={cn(
+                        "relative rounded-xl flex flex-col items-center justify-center p-1 transition-all",
+                        "bg-gradient-to-b from-[#6A0DAD] to-[#4B0082] border border-white/5",
+                        isHighlighted && "ring-2 ring-[#FFD700] z-10 scale-105 shadow-xl",
+                        isWinner && "ring-2 ring-white animate-pulse z-20",
+                        hasBet && "border-[#FFD700]",
+                        gameState !== 'betting' && !isHighlighted && "opacity-60"
+                      )}
+                    >
+                      <span className="text-2xl mb-0.5">{item?.emoji}</span>
+                      <span className="text-[6px] font-black text-white/80 uppercase tracking-tighter leading-none">{item?.label}</span>
+                      {hasBet && (
+                        <div className="absolute top-0.5 right-0.5 bg-[#FFD700] text-black text-[6px] font-black px-1 rounded-full border border-white">
+                          {myBets[item!.id] >= 1000 ? `${(myBets[item!.id] / 1000).toFixed(0)}K` : myBets[item!.id]}
+                        </div>
+                      )}
+                    </button>
                   );
-                }
+                })}
+             </div>
+          </div>
 
-                const item = ITEMS.find(it => it.pos === (gridPos < 8 ? gridPos : i));
-                const isHighlighted = highlightIdx === gridPos;
-                const isWinner = resultId === item?.id;
-                const hasBet = item ? !!myBets[item.id] : false;
-
-                return (
+          <div className="w-full max-w-sm mt-auto fixed bottom-0 left-0 right-0 z-[60]">
+             <div className="relative bg-[#FFD700] h-20 rounded-t-[2.5rem] border-b-[4px] border-[#B7950B] flex items-center justify-center gap-3 px-4 pt-2 shadow-2xl">
+                {CHIPS.map(chip => (
                   <button
-                    key={gridPos}
-                    onClick={() => item && handlePlaceBet(item.id)}
-                    disabled={gameState !== 'betting'}
+                    key={chip.value}
+                    onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "relative rounded-2xl flex flex-col items-center justify-center p-1 transition-all duration-150 overflow-hidden",
-                      "bg-gradient-to-b from-[#6A0DAD] to-[#4B0082] border-2 border-white/10",
-                      isHighlighted && "ring-4 ring-[#FFD700] z-10 scale-105 shadow-[0_0_20px_rgba(255,215,0,0.6)]",
-                      isWinner && "ring-4 ring-white animate-pulse z-20 scale-110",
-                      hasBet && "border-[#FFD700] shadow-inner",
-                      gameState !== 'betting' && !isHighlighted && "opacity-60"
+                      "group relative h-11 w-11 rounded-full transition-all active:translate-y-1",
+                      chip.color, chip.shadow, chip.border,
+                      "border-b-2 border-t flex flex-col items-center justify-center",
+                      selectedChip === chip.value ? "scale-110 -translate-y-1 ring-2 ring-white shadow-xl" : "opacity-80"
                     )}
                   >
-                    <span className="text-3xl mb-1">{item?.emoji}</span>
-                    <span className="text-[8px] font-black text-white/80 uppercase tracking-tighter">{item?.label}</span>
-                    {hasBet && (
-                      <div className="absolute top-1 right-1 bg-[#FFD700] text-black text-[7px] font-black px-1.5 rounded-full border border-white">
-                        {myBets[item!.id] >= 1000 ? `${(myBets[item!.id] / 1000).toFixed(0)}K` : myBets[item!.id]}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-0.5 text-white">
+                      <span className="text-[8px] font-black italic">{chip.label}</span>
+                    </div>
                   </button>
-                );
-              })}
-           </div>
+                ))}
+             </div>
+
+             <div className="bg-[#1A0033] w-full h-10 flex items-center gap-2 px-4 overflow-x-auto no-scrollbar border-t border-[#FFD700]/20">
+                <History className="h-3 w-3 text-[#FFD700] shrink-0" />
+                <div className="flex gap-1.5">
+                   {history.slice(0, 8).map((id, i) => (
+                     <div key={i} className="h-6 w-6 bg-white/5 rounded-md flex items-center justify-center text-sm relative shrink-0">
+                        {ITEMS.find(it => it.id === id)?.emoji}
+                     </div>
+                   ))}
+                </div>
+             </div>
+          </div>
         </div>
 
-        {/* 3D Chip Platform */}
-        <div className="w-full max-w-md mt-auto pb-10">
-           <div className="relative bg-[#FFD700] h-24 rounded-t-[3rem] border-b-[6px] border-[#B7950B] flex items-center justify-center gap-4 px-6 pt-4 shadow-2xl">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#B7950B] h-2 w-32 rounded-full opacity-20" />
-              
-              {CHIPS.map(chip => (
-                <button
-                  key={chip.value}
-                  onClick={() => setSelectedChip(chip.value)}
-                  className={cn(
-                    "group relative h-14 w-14 rounded-full transition-all active:translate-y-1",
-                    chip.color, chip.shadow, chip.border,
-                    "border-b-4 border-t-2 shadow-[0_6px_0_0_rgba(0,0,0,0.2)] flex flex-col items-center justify-center",
-                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-white shadow-[0_10px_20px_rgba(0,0,0,0.4)]" : "hover:-translate-y-1"
-                  )}
-                >
-                  <div className="flex items-center gap-0.5 text-white">
-                    <div className="bg-yellow-500 rounded-full h-2 w-2 flex items-center justify-center text-[5px] text-black">S</div>
-                    <span className="text-[10px] font-black italic">{chip.label}</span>
-                  </div>
-                  {selectedChip === chip.value && <div className="absolute -bottom-1 w-8 h-1 bg-black/20 blur-md rounded-full" />}
-                </button>
-              ))}
-           </div>
-
-           {/* History Bar Bottom */}
-           <div className="bg-[#1A0033] w-full h-14 flex items-center gap-3 px-6 overflow-x-auto no-scrollbar border-t-2 border-[#FFD700]/20">
-              <History className="h-4 w-4 text-[#FFD700] shrink-0" />
-              <div className="flex gap-2">
-                 {history.map((id, i) => (
-                   <div key={i} className="h-8 w-8 bg-white/5 rounded-lg flex items-center justify-center text-lg relative shrink-0">
-                      {ITEMS.find(it => it.id === id)?.emoji}
-                      {i === 0 && <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-ping" />}
-                   </div>
-                 ))}
-                 {history.length === 0 && <span className="text-[8px] font-black text-white/20 uppercase italic">Waiting for round...</span>}
-              </div>
-           </div>
-        </div>
-
-        {/* Winner Overlay */}
         {gameState === 'result' && lastWinners.length > 0 && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-500">
              <div className="bg-black/80 backdrop-blur-md absolute inset-0" />
-             <div className="relative z-10 text-center space-y-6">
-                <Trophy className="h-20 w-20 text-[#FFD700] mx-auto animate-bounce" />
-                <h2 className="text-5xl font-black text-white italic uppercase tracking-tighter">Big Win!</h2>
-                <div className="bg-[#4B0082] p-6 rounded-[2rem] border-4 border-[#FFD700] shadow-2xl min-w-[240px]">
-                   <Avatar className="h-20 w-20 mx-auto border-4 border-white mb-4">
+             <div className="relative z-10 text-center space-y-4">
+                <Trophy className="h-16 w-16 text-[#FFD700] mx-auto animate-bounce" />
+                <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Big Win!</h2>
+                <div className="bg-[#4B0082] p-4 rounded-[1.5rem] border-2 border-[#FFD700] shadow-2xl min-w-[200px]">
+                   <Avatar className="h-16 w-16 mx-auto border-2 border-white mb-2">
                       <AvatarImage src={lastWinners[0].avatar} />
                       <AvatarFallback>U</AvatarFallback>
                    </Avatar>
-                   <p className="text-white font-black text-lg uppercase truncate">{lastWinners[0].name}</p>
-                   <p className="text-2xl font-black text-[#FFD700] italic">+{lastWinners[0].amount.toLocaleString()}</p>
+                   <p className="text-white font-black text-sm uppercase truncate">{lastWinners[0].name}</p>
+                   <p className="text-xl font-black text-[#FFD700] italic">+{lastWinners[0].amount.toLocaleString()}</p>
                 </div>
              </div>
           </div>
@@ -338,10 +313,6 @@ export default function FruitPartyPage() {
         <style jsx global>{`
           .no-scrollbar::-webkit-scrollbar {
             display: none;
-          }
-          .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
           }
         `}</style>
       </div>
