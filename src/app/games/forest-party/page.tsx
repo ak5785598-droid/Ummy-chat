@@ -15,7 +15,11 @@ import {
   VolumeX,
   History,
   Trees,
-  CloudSun
+  CloudSun,
+  Trophy,
+  Star,
+  Crown,
+  TrendingUp
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,6 +46,13 @@ const CHIPS = [
   { value: 1000000, color: 'bg-slate-900' },
 ];
 
+type RoundWinner = {
+  name: string;
+  amount: number;
+  avatar: string;
+  isMe?: boolean;
+};
+
 export default function ForestPartyPage() {
   const router = useRouter();
   const { activeRoom } = useRoomContext();
@@ -57,6 +68,7 @@ export default function ForestPartyPage() {
   const [spinningIndex, setSpinningIndex] = useState(0);
   const [resultId, setResultId] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [lastWinners, setLastWinners] = useState<RoundWinner[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [lastWinAmount, setLastWinAmount] = useState<number>(0);
@@ -120,9 +132,18 @@ export default function ForestPartyPage() {
     setGameState('result');
     setHistory(prev => [id, ...prev].slice(0, 10));
     
-    const winAmount = (myBets[id] || 0) * (ANIMALS.find(i => i.id === id)?.multiplier || 0);
+    const winningAnimal = ANIMALS.find(i => i.id === id);
+    const multiplier = winningAnimal?.multiplier || 0;
+    const winAmount = (myBets[id] || 0) * multiplier;
     
-    if (winAmount > 0 && currentUser && firestore) {
+    // Generate Round Winners for "Game Show" effect
+    const mockWinners: RoundWinner[] = [
+      { name: 'VibeKing', amount: 50000 * multiplier, avatar: 'https://picsum.photos/seed/vibe/100' },
+      { name: 'TribeLeader', amount: 15000 * multiplier, avatar: 'https://picsum.photos/seed/leader/100' },
+      { name: 'ForestGhost', amount: 2500 * multiplier, avatar: 'https://picsum.photos/seed/ghost/100' },
+    ];
+
+    if (winAmount > 0 && currentUser && firestore && userProfile) {
       setLastWinAmount(winAmount);
       setShowWinOverlay(true);
       
@@ -133,15 +154,26 @@ export default function ForestPartyPage() {
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
       
+      // Add current user to winners list
+      mockWinners.unshift({ 
+        name: userProfile.username, 
+        amount: winAmount, 
+        avatar: userProfile.avatarUrl,
+        isMe: true 
+      });
+
       setTimeout(() => setShowWinOverlay(false), 3500);
     }
+
+    setLastWinners(mockWinners.sort((a, b) => b.amount - a.amount).slice(0, 3));
 
     setTimeout(() => {
       setMyBets({});
       setGameState('betting');
       setTimeLeft(10);
       setResultId(null);
-    }, 4500);
+      setLastWinners([]);
+    }, 6000);
   };
 
   const handlePlaceBet = (itemId: string) => {
@@ -176,8 +208,8 @@ export default function ForestPartyPage() {
   };
 
   const formatAmount = (v: number) => {
-    if (v >= 1000000) return `${v / 1000000}M`;
-    if (v >= 1000) return `${v / 1000}K`;
+    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+    if (v >= 1000) return `${(v / 1000).toFixed(1)}K`;
     return v.toString();
   };
 
@@ -217,9 +249,56 @@ export default function ForestPartyPage() {
           muted={isMuted} 
         />
 
-        {showWinOverlay && (
+        {/* Cinematic Winners Circle Overlay */}
+        {gameState === 'result' && lastWinners.length > 0 && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-500">
-             <div className="bg-black/70 backdrop-blur-md absolute inset-0" />
+             <div className="bg-black/80 backdrop-blur-md absolute inset-0" />
+             <div className="relative z-10 text-center space-y-8 max-w-lg w-full px-6">
+                <div className="relative">
+                   <div className="absolute inset-0 bg-yellow-400/20 blur-3xl animate-pulse" />
+                   <Crown className="h-20 w-20 text-yellow-400 mx-auto animate-bounce mb-4" />
+                   <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl">Who Won?</h2>
+                   <p className="text-yellow-400 text-xs font-black uppercase tracking-widest">Tribe Champions of this Round</p>
+                </div>
+
+                <div className="space-y-4">
+                   {lastWinners.map((winner, idx) => (
+                     <div 
+                       key={idx} 
+                       className={cn(
+                         "flex items-center gap-4 p-4 rounded-3xl border-2 transition-all transform animate-in slide-in-from-bottom-4",
+                         winner.isMe ? "bg-yellow-400/20 border-yellow-400 scale-105" : "bg-white/5 border-white/10"
+                       )}
+                       style={{ animationDelay: `${idx * 200}ms` }}
+                     >
+                        <div className="relative">
+                           <Avatar className="h-14 w-14 border-2 border-white shadow-xl">
+                              <AvatarImage src={winner.avatar} />
+                              <AvatarFallback>U</AvatarFallback>
+                           </Avatar>
+                           <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white">
+                              {idx + 1}
+                           </div>
+                        </div>
+                        <div className="flex-1 text-left">
+                           <p className="text-lg font-black text-white uppercase italic">{winner.name}</p>
+                           {winner.isMe && <Badge className="bg-yellow-400 text-black text-[8px] font-black uppercase">Your Win</Badge>}
+                        </div>
+                        <div className="text-right">
+                           <div className="flex items-center gap-1 text-yellow-400 font-black text-xl italic">
+                              <Zap className="h-4 w-4 fill-current" />
+                              +{formatAmount(winner.amount)}
+                           </div>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {showWinOverlay && (
+          <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-500">
              <div className="relative z-10 text-center space-y-6">
                 <div className="relative">
                    <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-50 animate-pulse" />
@@ -378,6 +457,10 @@ export default function ForestPartyPage() {
         </main>
 
         <footer className="p-8 flex justify-center items-center gap-10 pb-12 relative z-50">
+           <div className="absolute bottom-32 flex flex-col items-center gap-2 pointer-events-none opacity-60">
+              <TrendingUp className="h-4 w-4 text-yellow-400 animate-pulse" />
+              <p className="text-[8px] font-black text-white uppercase tracking-widest">Champions Rising</p>
+           </div>
            <Button 
              onClick={toggleMic}
              className={cn(
