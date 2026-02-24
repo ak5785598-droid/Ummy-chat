@@ -109,7 +109,7 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
 ];
 
-const AVAILABLE_EMOJIS = ['🔥', '❤️', '😂', '😭', '😮', '🙌', '✨', '💯', '🎉', '🌟', '😎', '🎮'];
+const AVAILABLE_EMOJIS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -732,12 +732,12 @@ export function RoomClient({ room }: { room: Room }) {
               </DialogTrigger>
               <DialogContent className="sm:max-w-xs bg-slate-900 text-white border-white/10 rounded-[2.5rem] p-6">
                  <DialogHeader className="pb-4"><DialogTitle className="text-center font-black uppercase italic text-sm tracking-widest">Tribe Reactions</DialogTitle></DialogHeader>
-                 <div className="grid grid-cols-4 gap-4">
+                 <div className="grid grid-cols-3 gap-4">
                     {AVAILABLE_EMOJIS.map(emoji => (
                       <button 
                         key={emoji} 
                         onClick={() => handleSendEmoji(emoji)}
-                        className="text-3xl hover:scale-125 transition-transform active:scale-90 p-2 bg-white/5 rounded-2xl hover:bg-white/10"
+                        className="text-4xl hover:scale-125 transition-transform active:scale-90 p-3 bg-white/5 rounded-2xl hover:bg-white/10 flex items-center justify-center"
                       >
                         {emoji}
                       </button>

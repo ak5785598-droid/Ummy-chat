@@ -11,6 +11,7 @@ interface EmojiReactionOverlayProps {
 /**
  * Animated Emoji Reaction Overlay.
  * Displays an "acting" emoji that FULLY COVERS the user's avatar.
+ * Mapped to the specific tribe set: 😀, 😂, 😘, 🥰, 😎, 🤗, 😡, 😭, 💋.
  */
 export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -27,14 +28,15 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverla
 
   const getAnimationClass = (e: string) => {
     switch (e) {
-      case '🔥': return 'animate-reaction-pulse';
-      case '❤️': return 'animate-reaction-heartbeat';
+      case '😀': return 'animate-reaction-pulse';
       case '😂': return 'animate-reaction-bounce';
+      case '😘': return 'animate-reaction-heartbeat';
+      case '🥰': return 'animate-reaction-heartbeat';
+      case '😎': return 'animate-reaction-glitter';
+      case '🤗': return 'animate-reaction-float';
+      case '😡': return 'animate-reaction-shock';
       case '😭': return 'animate-reaction-cry';
-      case '😮': return 'animate-reaction-shock';
-      case '🙌': return 'animate-reaction-float';
-      case '✨': return 'animate-reaction-glitter';
-      case '🎉': return 'animate-reaction-party';
+      case '💋': return 'animate-reaction-pulse';
       default: return 'animate-bounce';
     }
   };
@@ -49,10 +51,10 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverla
   return (
     <div className={cn(
       "absolute inset-0 z-[60] flex items-center justify-center select-none rounded-full animate-in zoom-in duration-300",
-      "bg-black/60 backdrop-blur-[2px]"
+      "bg-black/60 backdrop-blur-[4px]"
     )}>
       <span className={cn(
-        "drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
+        "drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]",
         sizeClasses[size],
         getAnimationClass(emoji)
       )}>
