@@ -20,6 +20,12 @@ import {
   Gamepad2,
   RefreshCw,
   User as UserIcon,
+  Settings,
+  HelpCircle,
+  BarChart3,
+  Menu,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -28,9 +34,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 const ITEMS = [
-  { id: 'watermelon', emoji: '🍉', multiplier: 2, label: 'x2', color: 'from-blue-500 to-blue-600', shadow: 'shadow-blue-500/40' },
-  { id: 'peach', emoji: '🍑', multiplier: 2, label: 'x2', color: 'from-blue-500 to-blue-600', shadow: 'shadow-blue-500/40' },
-  { id: 'seven', emoji: '7️⃣7️⃣', multiplier: 8, label: 'x8', color: 'from-pink-500 to-rose-600', shadow: 'shadow-pink-500/40', isSpecial: true },
+  { id: 'peach', emoji: '🍑', multiplier: 2, label: 'x2', color: 'from-purple-600 to-purple-800', shadow: 'shadow-purple-500/40', order: 1 },
+  { id: 'seven', emoji: '777', multiplier: 8, label: 'x8', color: 'from-pink-500 to-rose-600', shadow: 'shadow-pink-500/40', isSpecial: true, order: 2 },
+  { id: 'watermelon', emoji: '🍉', multiplier: 2, label: 'x2', color: 'from-purple-600 to-purple-800', shadow: 'shadow-purple-500/40', order: 3 },
 ];
 
 const WHEEL_DISTRIBUTION = [
@@ -38,12 +44,12 @@ const WHEEL_DISTRIBUTION = [
 ];
 
 const CHIPS = [
-  { value: 100, color: 'bg-blue-600', label: '100' },
-  { value: 1000, color: 'bg-yellow-500', label: '1K' },
-  { value: 10000, color: 'bg-red-600', label: '10K' },
-  { value: 100000, color: 'bg-purple-600', label: '100K' },
-  { value: 500000, color: 'bg-emerald-600', label: '500K' },
-  { value: 1000000, color: 'bg-slate-900', label: '1M' },
+  { value: 100, color: 'bg-blue-600', label: '100', border: 'border-blue-400' },
+  { value: 1000, color: 'bg-yellow-500', label: '1K', border: 'border-yellow-300' },
+  { value: 10000, color: 'bg-red-600', label: '10K', border: 'border-red-400' },
+  { value: 100000, color: 'bg-purple-600', label: '100K', border: 'border-purple-400' },
+  { value: 500000, color: 'bg-emerald-600', label: '500K', border: 'border-emerald-400' },
+  { value: 1000000, color: 'bg-slate-900', label: '1M', border: 'border-slate-700' },
 ];
 
 type RoundWinner = {
@@ -107,13 +113,12 @@ export default function LuckySlot777Page() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  // Visual motion feedback: rapidly cycle emojis during the 5-second physical rotation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (gameState === 'spinning') {
       interval = setInterval(() => {
         setSpinningIndex(prev => (prev + 1) % WHEEL_DISTRIBUTION.length);
-      }, 60); // Fast cycling to match physical rotation energy
+      }, 60);
     }
     return () => clearInterval(interval);
   }, [gameState]);
@@ -121,19 +126,16 @@ export default function LuckySlot777Page() {
   const startSpin = (targetIdx: number) => {
     setGameState('spinning');
     
-    // Physical Rotation Logic:
-    // 8 slices, each 45 degrees.
     const sliceAngle = 360 / WHEEL_DISTRIBUTION.length;
-    const extraSpins = 50; // High-velocity physical turns over 5 seconds
+    const extraSpins = 50; 
     const landingAngle = (360 - (targetIdx * sliceAngle)) % 360;
     const totalRotation = rotation + (360 * extraSpins) + landingAngle;
     
     setRotation(totalRotation);
     setResultId(WHEEL_DISTRIBUTION[targetIdx]);
 
-    // Sustained 5s duration for hyper-velocity rotation
     setTimeout(() => {
-      setSpinningIndex(targetIdx); // Ensure center hub shows final result precisely
+      setSpinningIndex(targetIdx);
       showResult(WHEEL_DISTRIBUTION[targetIdx]);
     }, 5000);
   };
@@ -206,7 +208,7 @@ export default function LuckySlot777Page() {
 
   if (isLaunching) {
     return (
-      <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 overflow-hidden">
+      <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 overflow-hidden font-headline">
         <div className="relative">
            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
            <div className="text-8xl animate-bounce relative z-10">🎰</div>
@@ -221,13 +223,18 @@ export default function LuckySlot777Page() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-gradient-to-b from-[#1a0a2e] via-[#2d1b4e] to-[#1a0a2e] flex flex-col relative overflow-hidden font-headline">
+      <div className="h-screen w-full bg-[#1a0a2e] flex flex-col relative overflow-hidden font-headline">
         
-        {/* Theatrical Stage Elements */}
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-           <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-purple-900 to-transparent" />
-           <div className="absolute bottom-0 left-10 w-24 h-[80vh] bg-gradient-to-t from-purple-900/40 to-transparent rounded-t-full border-x border-white/5" />
-           <div className="absolute bottom-0 right-10 w-24 h-[80vh] bg-gradient-to-t from-purple-900/40 to-transparent rounded-t-full border-x border-white/5" />
+        {/* Theatrical Stage - Cinematic Curtains and Pillars */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+           <div className="absolute inset-0 bg-gradient-to-b from-[#2d1b4e] via-[#1a0a2e] to-[#0a0514]" />
+           {/* Pillars */}
+           <div className="absolute top-0 left-0 bottom-0 w-24 bg-gradient-to-r from-black/40 to-transparent border-r border-white/5" />
+           <div className="absolute top-0 right-0 bottom-0 w-24 bg-gradient-to-l from-black/40 to-transparent border-l border-white/5" />
+           <div className="absolute top-0 left-4 w-12 h-full bg-[#2d1b4e]/30 backdrop-blur-sm rounded-full blur-md opacity-20" />
+           <div className="absolute top-0 right-4 w-12 h-full bg-[#2d1b4e]/30 backdrop-blur-sm rounded-full blur-md opacity-20" />
+           
+           {/* Center Stage Spotlight */}
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
         </div>
 
@@ -239,7 +246,40 @@ export default function LuckySlot777Page() {
           muted={isMuted} 
         />
 
-        {/* Real-Time Winners Podium Overlay */}
+        <header className="absolute top-0 left-0 right-0 z-[60] p-4 flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 text-white hover:scale-110 transition-all shadow-xl">
+                <Menu className="h-5 w-5" />
+              </button>
+              <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                <HelpCircle className="h-5 w-5" />
+              </button>
+              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                <BarChart3 className="h-5 w-5" />
+              </button>
+           </div>
+
+           <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10">
+              <span className="text-sm font-black text-white uppercase italic tracking-tighter">Lucky 777</span>
+           </div>
+
+           <div className="flex items-center gap-2">
+              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                <Menu className="h-5 w-5" />
+              </button>
+              <button className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                <ChevronDown className="h-5 w-5" />
+              </button>
+              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 text-white">
+                <X className="h-5 w-5" />
+              </button>
+           </div>
+        </header>
+
+        {/* Real-Time Winner Podium */}
         {gameState === 'result' && lastWinners.length > 0 && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-500">
              <div className="bg-black/90 backdrop-blur-2xl absolute inset-0" />
@@ -252,94 +292,59 @@ export default function LuckySlot777Page() {
                       </div>
                    </div>
                    <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl">Big Winner</h2>
-                   <p className="text-yellow-400 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                      <Sparkles className="h-4 w-4" /> Frequency Legend <Sparkles className="h-4 w-4" />
-                   </p>
+                   <p className="text-yellow-400 text-sm font-black uppercase tracking-widest">Tribe MVP Found</p>
                 </div>
-
-                <div className="flex items-end justify-center gap-4">
-                   {lastWinners[0] && (
-                     <div className="flex flex-col items-center w-full max-w-xs space-y-4 animate-in slide-in-from-bottom-20 duration-1000">
-                        <div className="relative">
-                           <Crown className="absolute -top-10 left-1/2 -translate-x-1/2 h-12 w-12 text-yellow-400 animate-bounce" />
-                           <Avatar className="h-32 w-32 border-4 border-yellow-400 shadow-[0_0_40px_rgba(251,191,36,0.6)]">
-                              <AvatarImage src={lastWinners[0].avatar} />
-                              <AvatarFallback>U</AvatarFallback>
-                           </Avatar>
-                        </div>
-                        <div className="bg-yellow-400/20 border-2 border-yellow-400/50 p-6 rounded-t-[2.5rem] w-full text-center space-y-1 shadow-2xl backdrop-blur-xl">
-                           <p className="text-lg font-black text-white uppercase italic tracking-tighter">{lastWinners[0].name}</p>
-                           <p className="text-2xl font-black text-yellow-400 italic flex items-center justify-center gap-1">
-                              <Zap className="h-5 w-5 fill-current" />
-                              {formatAmount(lastWinners[0].amount)}
-                           </p>
-                        </div>
-                     </div>
-                   )}
-                </div>
+                {lastWinners[0] && (
+                  <div className="flex flex-col items-center w-full max-w-xs space-y-4 animate-in slide-in-from-bottom-20 duration-1000">
+                    <Avatar className="h-32 w-32 border-4 border-yellow-400 shadow-[0_0_40px_rgba(251,191,36,0.6)]">
+                      <AvatarImage src={lastWinners[0].avatar} />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <div className="bg-yellow-400/20 border-2 border-yellow-400/50 p-6 rounded-t-[2.5rem] w-full text-center space-y-1 shadow-2xl backdrop-blur-xl">
+                      <p className="text-lg font-black text-white uppercase italic tracking-tighter">{lastWinners[0].name}</p>
+                      <p className="text-2xl font-black text-yellow-400 italic flex items-center justify-center gap-1">
+                        <Zap className="h-5 w-5 fill-current" />
+                        {formatAmount(lastWinners[0].amount)}
+                      </p>
+                    </div>
+                  </div>
+                )}
              </div>
           </div>
         )}
 
-        <header className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between">
-           <div className="flex items-center gap-4">
-              <button onClick={() => router.back()} className="bg-white/5 backdrop-blur-xl p-3 rounded-full border border-white/10 text-white hover:scale-110 transition-all shadow-xl">
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <div className="bg-purple-900/40 backdrop-blur-xl px-6 py-3 rounded-[1.5rem] border border-purple-500/20 flex items-center gap-4 shadow-2xl">
-                 <div className="flex -space-x-3">
-                    {activeSpeakers.slice(0, 3).map(p => (
-                      <Avatar key={p.uid} className="h-8 w-8 border-2 border-purple-500 shadow-lg animate-voice-wave">
-                        <AvatarImage src={p.avatarUrl} />
-                        <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    ))}
-                 </div>
-                 <div className="hidden sm:block">
-                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest leading-none">Slot Tribe</p>
-                    <p className="text-xs font-black text-white uppercase truncate w-28 italic">{activeRoom?.title || 'Grand Hall'}</p>
-                 </div>
-              </div>
-           </div>
-
-           <div className="flex items-center gap-3">
-              <div className="bg-yellow-500 text-black px-6 py-3 rounded-[1.5rem] border-4 border-yellow-600 flex items-center gap-3 shadow-2xl">
-                 <Zap className="h-5 w-5 fill-current" />
-                 <span className="text-xl font-black italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-              </div>
-              <button onClick={() => setIsMuted(!isMuted)} className="rounded-full h-12 w-12 bg-white/5 backdrop-blur-md text-white border border-white/10 flex items-center justify-center hover:scale-110 transition-all shadow-xl">
-                {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-              </button>
-           </div>
-        </header>
-
-        {/* Grand History Ribbon */}
-        <div className="absolute top-24 left-0 right-0 z-40 px-6">
-           <div className="bg-black/40 backdrop-blur-xl border border-white/5 rounded-full py-2 px-6 flex items-center gap-4 max-w-lg mx-auto">
-              <History className="h-4 w-4 text-yellow-500 shrink-0" />
-              <div className="flex gap-3 overflow-x-auto no-scrollbar py-1 flex-1">
-                {history.map((id, i) => (
-                  <div key={i} className="h-8 w-8 bg-purple-500/10 rounded-full flex items-center justify-center text-xl border border-purple-500/20 relative">
-                    {id === 'seven' ? '7️⃣' : (id === 'peach' ? '🍑' : '🍉')}
-                    {i === 0 && <Badge className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[6px] h-3 px-1 font-black">NEW</Badge>}
-                  </div>
-                ))}
-                {history.length === 0 && <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Waiting for First Frequency...</span>}
-              </div>
-           </div>
-        </div>
-
-        {/* The Rotating Golden Wheel Stage */}
-        <main className="flex-1 flex flex-col items-center justify-center pt-32 px-4 space-y-12">
+        <main className="flex-1 flex flex-col items-center justify-center pt-20 px-4 space-y-6">
            
+           {/* Ornate Rotating Wheel */}
            <div className="relative w-[22rem] h-[22rem] flex items-center justify-center">
-              <div className="absolute -inset-10 border-[16px] border-yellow-600/20 rounded-full shadow-[0_0_60px_rgba(234,179,8,0.2)]" />
-              <div className="absolute -inset-6 border-[4px] border-yellow-500/40 rounded-full" />
-              
+              {/* Golden Decorative Wings (The "Fins" on side of machine) */}
+              <div className="absolute -left-12 top-1/2 -translate-y-1/2 w-20 h-40 flex flex-col gap-1 pointer-events-none opacity-80">
+                 <div className="h-8 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg" />
+                 <div className="h-10 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-2" />
+                 <div className="h-12 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-4" />
+                 <div className="h-10 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-2" />
+                 <div className="h-8 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg" />
+              </div>
+              <div className="absolute -right-12 top-1/2 -translate-y-1/2 w-20 h-40 flex flex-col gap-1 pointer-events-none opacity-80 rotate-180">
+                 <div className="h-8 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg" />
+                 <div className="h-10 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-2" />
+                 <div className="h-12 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-4" />
+                 <div className="h-10 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg ml-2" />
+                 <div className="h-8 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-l-2xl border-y border-l border-yellow-700/50 shadow-lg" />
+              </div>
+
+              {/* Top Gem Pointer */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
+                 <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-900 rotate-45 border-4 border-yellow-500 shadow-2xl relative">
+                    <div className="absolute inset-1 bg-white/20 rounded-full blur-sm animate-pulse" />
+                 </div>
+                 <div className="w-6 h-8 bg-yellow-500 clip-path-triangle -mt-2 shadow-lg" />
+              </div>
+
               {/* Physical Rotating Wheel Container */}
               <div 
                 className={cn(
-                  "relative w-full h-full rounded-full border-[8px] border-yellow-500 shadow-2xl overflow-hidden",
+                  "relative w-full h-full rounded-full border-[12px] border-yellow-500 shadow-2xl overflow-hidden ring-8 ring-black/40",
                   gameState === 'spinning' 
                     ? "transition-transform duration-[5000ms] cubic-bezier(0.15, 0, 0.15, 1) animate-pulse" 
                     : "transition-none"
@@ -347,25 +352,35 @@ export default function LuckySlot777Page() {
                 style={{ transform: `rotate(${rotation}deg)` }}
               >
                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <defs>
+                       <linearGradient id="sliceBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#0099ff" />
+                          <stop offset="100%" stopColor="#0066cc" />
+                       </linearGradient>
+                       <linearGradient id="slicePink" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ff00cc" />
+                          <stop offset="100%" stopColor="#cc0099" />
+                       </linearGradient>
+                    </defs>
                     {WHEEL_DISTRIBUTION.map((id, i) => {
                       const angle = i * 45;
                       return (
                         <g key={i} transform={`rotate(${angle} 50 50)`}>
                            <path 
                              d="M 50 50 L 50 0 A 50 50 0 0 1 85.35 14.65 Z" 
-                             fill={id === 'seven' ? '#ff006e' : (i % 2 === 0 ? '#0077b6' : '#00b4d8')}
+                             fill={id === 'seven' ? 'url(#slicePink)' : 'url(#sliceBlue)'}
                              stroke="#fbbf24"
-                             strokeWidth="0.5"
-                             className="opacity-90"
+                             strokeWidth="0.8"
+                             className="opacity-100"
                            />
                            <text 
-                             x="65" y="25" 
-                             transform="rotate(22.5 65 25)" 
-                             fontSize="8" 
+                             x="68" y="28" 
+                             transform="rotate(22.5 68 28)" 
+                             fontSize="10" 
                              textAnchor="middle" 
-                             className="pointer-events-none drop-shadow-md font-black fill-white"
+                             className="pointer-events-none drop-shadow-xl font-black fill-white select-none"
                            >
-                             {id === 'seven' ? '77' : (id === 'peach' ? '🍑' : '🍉')}
+                             {id === 'seven' ? '777' : (id === 'peach' ? '🍑' : '🍉')}
                            </text>
                         </g>
                       );
@@ -373,110 +388,128 @@ export default function LuckySlot777Page() {
                  </svg>
               </div>
 
-              {/* Central Non-Rotating Hub */}
-              <div className="absolute z-20 w-32 h-32 bg-black rounded-full shadow-2xl flex flex-col items-center justify-center border-[6px] border-yellow-500 group overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent" />
+              {/* Central Status Hub */}
+              <div className="absolute z-20 w-32 h-32 bg-black rounded-full shadow-2xl flex flex-col items-center justify-center border-[8px] border-yellow-500 overflow-hidden">
+                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/20 to-transparent" />
                  {gameState === 'betting' ? (
-                   <div className="relative z-10 flex flex-col items-center animate-in fade-in">
-                    <span className="text-[8px] font-black text-yellow-500 uppercase tracking-widest mb-1 text-center">Place<br/>Bets</span>
-                    <span className="text-4xl font-black text-white italic tracking-tighter drop-shadow-sm">{timeLeft}s</span>
-                   </div>
-                 ) : gameState === 'spinning' ? (
-                   <div className="relative z-10 flex flex-col items-center animate-pulse">
-                      <div className="relative flex items-center justify-center">
-                         <RefreshCw className="h-10 w-10 text-yellow-500 animate-spin" />
-                         <span className="absolute text-xl font-black">
-                            {WHEEL_DISTRIBUTION[spinningIndex] === 'seven' ? '77' : (WHEEL_DISTRIBUTION[spinningIndex] === 'peach' ? '🍑' : '🍉')}
-                         </span>
-                      </div>
-                      <span className="text-[8px] font-black uppercase text-yellow-500/60 tracking-widest mt-2">Rotating...</span>
+                   <div className="relative z-10 flex flex-col items-center">
+                    <span className="text-5xl font-black text-white italic tracking-tighter drop-shadow-sm">{timeLeft}</span>
                    </div>
                  ) : (
-                   <div className="relative z-10 flex flex-col items-center animate-in zoom-in">
-                      <span className="text-[8px] font-black uppercase text-yellow-500/60 tracking-widest mb-1">Result</span>
-                      <span className="text-5xl animate-bounce">
-                        {WHEEL_DISTRIBUTION[spinningIndex] === 'seven' ? '77' : (WHEEL_DISTRIBUTION[spinningIndex] === 'peach' ? '🍑' : '🍉')}
+                   <div className="relative z-10 flex flex-col items-center animate-pulse">
+                      <span className="text-4xl font-black text-yellow-500 drop-shadow-xl">
+                        {WHEEL_DISTRIBUTION[spinningIndex] === 'seven' ? '777' : (WHEEL_DISTRIBUTION[spinningIndex] === 'peach' ? '🍑' : '🍉')}
                       </span>
                    </div>
                  )}
               </div>
+           </div>
 
-              {/* Result Pointer Arrow */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
-                 <div className="w-8 h-10 bg-yellow-500 clip-path-triangle shadow-lg border-x border-b border-black/20" />
+           {/* Results Ribbon Strip */}
+           <div className="w-full max-w-lg bg-black/40 backdrop-blur-xl border border-white/5 rounded-full py-2 px-6 flex items-center gap-4 mx-auto">
+              <History className="h-4 w-4 text-yellow-500 shrink-0" />
+              <div className="flex gap-3 overflow-x-auto no-scrollbar py-1 flex-1">
+                {history.map((id, i) => (
+                  <div key={i} className="h-8 w-8 bg-purple-500/10 rounded-full flex items-center justify-center text-xl border border-purple-500/20 relative shrink-0">
+                    {id === 'seven' ? '7️⃣' : (id === 'peach' ? '🍑' : '🍉')}
+                    {i === 0 && <Badge className="absolute -top-3 -right-3 bg-red-500 text-white text-[6px] h-4 px-1 font-black shadow-lg animate-bounce border border-white">NEW</Badge>}
+                  </div>
+                ))}
+                {history.length === 0 && <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Waiting for Results...</span>}
               </div>
            </div>
 
-           {/* Three-Tier Betting Dashboard */}
-           <div className="w-full max-w-xl grid grid-cols-3 gap-4 px-2">
+           {/* High-Fidelity Triple Betting Dashboard */}
+           <div className="w-full max-w-xl grid grid-cols-3 gap-3 px-2">
               {ITEMS.map(item => (
                 <button 
                   key={item.id}
                   onClick={() => handlePlaceBet(item.id)}
                   disabled={gameState !== 'betting'}
                   className={cn(
-                    "relative group h-40 rounded-[2rem] border-4 transition-all duration-300 overflow-hidden flex flex-col items-center justify-center p-4",
-                    item.isSpecial ? "border-pink-500/50 bg-pink-900/20" : "border-blue-500/50 bg-blue-900/20",
-                    gameState === 'betting' ? "hover:scale-105 active:scale-95" : "opacity-60 grayscale-[0.2]",
+                    "relative group h-44 rounded-3xl border-4 transition-all duration-300 overflow-hidden flex flex-col items-center justify-center p-4",
+                    "bg-gradient-to-b from-[#4a1d96] to-[#2d0b5a]",
+                    gameState === 'betting' ? "hover:scale-105 active:scale-95 border-yellow-500/30" : "opacity-60 grayscale-[0.2] border-white/5",
                     myBets[item.id] && "border-yellow-400 ring-4 ring-yellow-400/20"
                   )}
                 >
-                   <div className="absolute inset-0 bg-gradient-to-br opacity-20 from-white/20 to-transparent" />
-                   <span className="text-5xl mb-2 drop-shadow-xl group-hover:scale-110 transition-transform">{item.emoji}</span>
-                   <span className="text-2xl font-black text-yellow-400 italic tracking-tighter">{item.label}</span>
+                   {/* Background Diamond Pattern Overlay */}
+                   <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+                   
+                   <div className="absolute top-2 right-2 text-[10px] font-black text-white/40 bg-black/20 px-2 py-0.5 rounded-full">
+                      {formatAmount(myBets[item.id] || 0)} / {item.id === 'seven' ? '6520' : (item.id === 'peach' ? '15670' : '20560')}
+                   </div>
+
+                   <span className="text-5xl mb-2 drop-shadow-2xl group-hover:scale-110 transition-transform">
+                      {item.id === 'seven' ? '🎰' : item.emoji}
+                   </span>
+                   
+                   <div className="flex items-center gap-1 mt-1">
+                      <span className="text-3xl font-black text-yellow-400 italic tracking-tighter drop-shadow-md">{item.label}</span>
+                   </div>
                    
                    {myBets[item.id] && (
-                     <div className="absolute -top-2 -right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-[10px] font-black shadow-xl animate-in zoom-in bounce-in border-2 border-white">
-                        {formatAmount(myBets[item.id])}
-                     </div>
+                     <div className="absolute inset-0 bg-yellow-400/5 animate-pulse" />
                    )}
                 </button>
               ))}
            </div>
 
            {/* High-Stakes Chip Selector */}
-           <div className="w-full max-w-lg bg-black/60 backdrop-blur-2xl rounded-full border-2 border-white/10 p-2 flex items-center justify-between shadow-2xl">
-              <div className="flex-1 flex justify-center gap-3 px-4">
+           <div className="w-full max-w-lg flex items-center justify-between gap-4 px-4 pb-10">
+              <div className="flex items-center gap-2">
+                 <Avatar className="h-10 w-10 border-2 border-yellow-500 shadow-lg">
+                    <AvatarImage src={userProfile?.avatarUrl} />
+                    <AvatarFallback>U</AvatarFallback>
+                 </Avatar>
+                 <div className="bg-black/40 backdrop-blur-md px-4 h-10 flex items-center gap-2 rounded-full border border-white/10">
+                    <Zap className="h-4 w-4 text-yellow-400 fill-current" />
+                    <span className="text-sm font-black italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
+                 <button 
+                   onClick={() => setMyBets({})}
+                   disabled={gameState !== 'betting'}
+                   className="h-12 px-6 rounded-full bg-white/10 border border-white/20 text-white font-black uppercase italic tracking-widest text-[10px] hover:bg-white/20 transition-all active:scale-95"
+                 >
+                    Repeat
+                 </button>
                  {CHIPS.map(chip => (
                    <button 
                     key={chip.value}
                     onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 active:scale-90 relative",
+                      "h-14 w-14 rounded-full flex items-center justify-center transition-all border-4 active:scale-90 relative shrink-0",
                       selectedChip === chip.value 
-                        ? "border-yellow-400 shadow-xl scale-110 z-10 " + chip.color
-                        : "bg-white/5 border-white/10 text-white/60"
+                        ? "scale-110 z-10 shadow-[0_0_20px_rgba(255,255,255,0.4)] " + chip.color + " " + chip.border
+                        : "bg-black/40 border-white/10 text-white/60"
                     )}
                    >
                       <span className="text-[10px] font-black italic">{chip.label}</span>
+                      {selectedChip === chip.value && <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse" />}
                    </button>
                  ))}
               </div>
-              <Button 
-                variant="ghost"
-                className="h-12 rounded-full px-8 bg-white text-black font-black uppercase italic tracking-widest hover:bg-gray-200"
-                onClick={() => setMyBets({})}
-                disabled={gameState !== 'betting'}
-              >
-                 Clear
-              </Button>
            </div>
         </main>
 
-        <footer className="p-8 flex justify-center items-center gap-10 pb-12 relative z-50">
+        {/* Voice Footer */}
+        <footer className="absolute bottom-6 left-0 right-0 z-50 flex justify-center pb-4">
            <Button 
              onClick={() => {
                if (!firestore || !activeRoom?.id || !currentUser || !currentUserParticipant) return;
                updateDocumentNonBlocking(doc(firestore, 'chatRooms', activeRoom.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant.isMuted });
              }}
              className={cn(
-               "rounded-full h-20 w-20 shadow-2xl transition-all scale-110 border-4",
+               "rounded-full h-16 w-16 shadow-2xl transition-all scale-110 border-4",
                currentUserParticipant?.isMuted 
                 ? "bg-rose-600 border-rose-400 text-white" 
                 : "bg-purple-600 border-purple-400 text-white hover:scale-125"
              )}
            >
-             {currentUserParticipant?.isMuted ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8 animate-voice-wave" />}
+             {currentUserParticipant?.isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6 animate-voice-wave" />}
            </Button>
         </footer>
 
