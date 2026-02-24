@@ -20,7 +20,9 @@ import {
   Info,
   Users,
   Settings,
-  MoreHorizontal
+  MoreHorizontal,
+  RefreshCw,
+  User as UserIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -63,7 +65,7 @@ export default function LuckySlot777Page() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
-  const [timeLeft, setTimeLeft] = useState(8); // Faster betting time
+  const [timeLeft, setTimeLeft] = useState(20); // 20 second betting window
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [spinningIndex, setSpinningIndex] = useState(0);
@@ -86,7 +88,7 @@ export default function LuckySlot777Page() {
   const activeSpeakers = participants?.filter(p => !p.isMuted && p.seatIndex > 0) || [];
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 1500); // Faster launch
+    const timer = setTimeout(() => setIsLaunching(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -112,17 +114,20 @@ export default function LuckySlot777Page() {
 
   const startSpin = (targetIdx: number) => {
     let current = 0;
-    const spins = 12 + targetIdx; // Reduced spins for speed
-    let speed = 40; // Faster initial speed
+    const spins = 48 + targetIdx; // More rotations for hyper-speed effect
+    let speed = 15; // Starting interval delay (very fast)
 
     const runSpin = () => {
       setSpinningIndex(current % WHEEL_DISTRIBUTION.length);
       if (current < spins) {
         current++;
-        speed += current * 1.2;
-        setTimeout(runSpin, speed > 150 ? 150 : speed); // Faster cap
+        // Maintain maximum speed for most of the duration
+        if (current > spins - 12) {
+          speed += 15; // Sharp deceleration at the very end for suspense
+        }
+        setTimeout(runSpin, speed);
       } else {
-        setTimeout(() => showResult(WHEEL_DISTRIBUTION[targetIdx]), 800);
+        setTimeout(() => showResult(WHEEL_DISTRIBUTION[targetIdx]), 600);
       }
     };
     runSpin();
@@ -162,10 +167,10 @@ export default function LuckySlot777Page() {
     setTimeout(() => {
       setMyBets({});
       setGameState('betting');
-      setTimeLeft(8);
+      setTimeLeft(20); // Reset to 20 seconds
       setResultId(null);
       setLastWinners([]);
-    }, 4000); // Shorter result time for faster rounds
+    }, 4000);
   };
 
   const handlePlaceBet = (itemId: string) => {
