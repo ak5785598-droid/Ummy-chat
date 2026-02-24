@@ -1,18 +1,25 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { GameControllerIcon } from "@/components/icons";
-import { Play, Sparkles, Zap, Flame, Star, Trophy, Users, Camera, Loader } from "lucide-react";
+import { Play, Sparkles, Zap, Flame, Star, Trophy, Users, Camera, Loader, Plus } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useUserProfile } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+
+const FALLBACK_GAMES = [
+  { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: 'https://picsum.photos/seed/ludo-pro/600/600', imageHint: 'ludo board' },
+  { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://picsum.photos/seed/fruit-party/600/600', imageHint: 'vibrant fruits' },
+  { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: 'https://picsum.photos/seed/forest-party/600/600', imageHint: 'forest animals' },
+  { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: 'https://picsum.photos/seed/lucky777/600/600', imageHint: 'lucky 777 slot' },
+];
 
 export default function GamesPage() {
   const { user } = useUser();
@@ -29,11 +36,20 @@ export default function GamesPage() {
     return query(collection(firestore, 'games'), orderBy('title', 'asc'));
   }, [firestore, user]);
 
-  const { data: games, isLoading: isGamesLoading } = useCollection(gamesQuery);
+  const { data: firestoreGames, isLoading: isGamesLoading } = useCollection(gamesQuery);
+
+  const activeGames = useMemo(() => {
+    if (firestoreGames && firestoreGames.length > 0) return firestoreGames;
+    return FALLBACK_GAMES;
+  }, [firestoreGames]);
 
   const handleLogoChangeClick = (e: React.MouseEvent, gameId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    if (gameId.startsWith('fallback-')) {
+      toast({ title: 'System Game', description: 'Initialize games in Admin Panel to edit logos.' });
+      return;
+    }
     setSelectedGameId(gameId);
     fileInputRef.current?.click();
   };
@@ -84,7 +100,7 @@ export default function GamesPage() {
                <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-10 w-10" /></div>
              ) : (
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {games?.map((game, i) => (
+                  {activeGames.map((game, i) => (
                     <div key={game.id} className="group relative flex flex-col">
                       <Link href={`/games/${game.slug}`} className="block">
                         <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/5 shadow-xl transition-all duration-500 group-hover:border-purple-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] group-hover:-translate-y-2">
