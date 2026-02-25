@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -8,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useUserProfile } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, Trophy, Info, Timer, Gamepad2 } from 'lucide-react';
+import { Crown, TrendingUp, Loader, ChevronLeft, Trophy, Info, Timer, User as UserIcon, Castle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -44,8 +43,8 @@ const RankingList = ({ items, type, isLoading }: any) => {
   };
 
   const getDisplayImage = (item: any) => {
-    if (type === 'rooms') return item.coverUrl || `https://picsum.photos/seed/${item.id}/400`;
-    return item.avatarUrl || `https://picsum.photos/seed/${item.id}/200`;
+    if (type === 'rooms') return item.coverUrl || '';
+    return item.avatarUrl || '';
   };
 
   const getProfileLink = (id: string) => type === 'rooms' ? `/rooms/${id}` : `/profile/${id}`;
@@ -73,7 +72,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
                    <Crown className="absolute -top-10 left-1/2 -translate-x-1/2 h-12 w-12 text-yellow-400 drop-shadow-2xl animate-bounce" />
                    <Avatar className="h-32 w-32 border-[6px] border-yellow-500 shadow-[0_0_40px_rgba(255,215,0,0.6)]">
                       <AvatarImage src={getDisplayImage(top1)} />
-                      <AvatarFallback className="bg-black text-4xl">{getDisplayName(top1).charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-black text-4xl">{type === 'rooms' ? <Castle className="h-12 w-12" /> : <UserIcon className="h-12 w-12" />}</AvatarFallback>
                    </Avatar>
                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-b from-yellow-300 to-yellow-600 text-black px-6 py-1 rounded-full font-black text-xs italic shadow-xl ring-4 ring-black">TOP 1</div>
                 </div>
@@ -94,7 +93,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
                 <div className="relative">
                    <Avatar className="h-20 w-20 border-4 border-blue-400/50">
                       <AvatarImage src={getDisplayImage(top2)} />
-                      <AvatarFallback className="bg-black">{getDisplayName(top2).charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-black">{type === 'rooms' ? <Castle className="h-8 w-8" /> : <UserIcon className="h-8 w-8" />}</AvatarFallback>
                    </Avatar>
                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white h-6 w-6 rounded-full flex items-center justify-center font-black text-xs italic shadow-lg ring-2 ring-black">2</div>
                 </div>
@@ -112,7 +111,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
                 <div className="relative">
                    <Avatar className="h-20 w-20 border-4 border-amber-400/50">
                       <AvatarImage src={getDisplayImage(top3)} />
-                      <AvatarFallback className="bg-black">{getDisplayName(top3).charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-black">{type === 'rooms' ? <Castle className="h-8 w-8" /> : <UserIcon className="h-8 w-8" />}</AvatarFallback>
                    </Avatar>
                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-amber-600 text-white h-6 w-6 rounded-full flex items-center justify-center font-black text-xs italic shadow-lg ring-2 ring-black">3</div>
                 </div>
@@ -135,7 +134,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
               <span className="w-8 text-center font-black text-white/20 italic">{index + 4}</span>
               <Avatar className="h-14 w-14 border-2 border-white/10">
                 <AvatarImage src={getDisplayImage(item)} />
-                <AvatarFallback>{getDisplayName(item).charAt(0)}</AvatarFallback>
+                <AvatarFallback>{type === 'rooms' ? <Castle className="h-6 w-6" /> : <UserIcon className="h-6 w-6" />}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <p className="font-black text-sm uppercase text-white/90 truncate italic tracking-tighter">{getDisplayName(item)}</p>
@@ -243,8 +242,7 @@ function LeaderboardContent() {
   return (
     <div className="min-h-screen bg-black text-white relative font-headline overflow-x-hidden">
         <div className="absolute inset-0 z-0">
-           <img src="https://images.unsplash.com/photo-1519750157634-b6d493a0f77c?q=80&w=2000" className="h-full w-full object-cover opacity-40 scale-110 blur-sm" alt="Palace Backdrop" />
-           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black" />
+           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-black/40 to-black" />
         </div>
 
         <header className="relative z-10 p-6 pt-10">

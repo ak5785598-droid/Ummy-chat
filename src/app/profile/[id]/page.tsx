@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   UserPlus,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  User as UserIcon
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -86,10 +87,8 @@ export default function ProfilePage() {
 
   const handleFollow = () => {
     if (!firestore || !currentUser || !myProfile || isOwnProfile) return;
-    
     const myProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const targetProfileRef = doc(firestore, 'users', profileId, 'profile', profileId);
-    
     if (isFollowing) {
       updateDocumentNonBlocking(myProfileRef, { tags: arrayRemove(`following:${profileId}`) });
       updateDocumentNonBlocking(targetProfileRef, { 'stats.followers': increment(-1) });
@@ -104,7 +103,6 @@ export default function ProfilePage() {
     const userRef = doc(firestore, 'users', currentUser.uid);
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const updateData = { 'wallet.coins': increment(100000000), updatedAt: serverTimestamp() };
-    
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
   };
@@ -150,8 +148,8 @@ export default function ProfilePage() {
         </div>
 
         <div className="relative bg-white pb-6 rounded-b-[3rem] shadow-sm overflow-hidden">
-          <div className="relative h-44 w-full">
-            <Image src={profile.coverUrl || "https://images.unsplash.com/photo-1501785888041-af3ef285b470"} alt="Banner" fill className="object-cover" />
+          <div className="relative h-44 w-full bg-gradient-to-br from-primary/20 via-primary/5 to-white">
+            {profile.coverUrl && <Image src={profile.coverUrl} alt="Banner" fill className="object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
           </div>
           <div className="px-6 -mt-12 flex items-end gap-4 relative z-10">
@@ -159,7 +157,7 @@ export default function ProfilePage() {
               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                 <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
                   <AvatarImage src={localAvatarPreview || profile.avatarUrl} />
-                  <AvatarFallback className="text-4xl font-black">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-4xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
               {isOwnProfile && (

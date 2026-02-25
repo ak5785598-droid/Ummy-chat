@@ -14,6 +14,7 @@ import Link from 'next/link';
 /**
  * Chat Room Entry Page Gateway.
  * Strict Production Mode: No auto-provisioning. Rooms must be created manually.
+ * Prototype images removed.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -22,14 +23,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { user: currentUser, isLoading: isAuthLoading } = useUser();
   const { setActiveRoom, setIsMinimized } = useRoomContext();
   
-  // Authentication Guard
   useEffect(() => {
     if (!isAuthLoading && !currentUser) {
       router.replace('/login');
     }
   }, [isAuthLoading, currentUser, router]);
 
-  // Memoized Document Reference
   const roomDocRef = useMemoFirebase(() => {
     if (!firestore || !slug || isAuthLoading || !currentUser) return null;
     return doc(firestore, 'chatRooms', slug);
@@ -37,7 +36,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
 
-  // Sync global room context
   useEffect(() => {
     if (firestoreRoom) {
       setActiveRoom({
@@ -47,7 +45,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         title: firestoreRoom.name || 'Frequency',
         topic: firestoreRoom.description || '',
         category: (firestoreRoom.category as any) || 'Chat',
-        coverUrl: firestoreRoom.coverUrl || `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
+        coverUrl: firestoreRoom.coverUrl || '', // Production: No Picsum
         ownerId: firestoreRoom.ownerId,
         moderatorIds: firestoreRoom.moderatorIds || [],
         lockedSeats: firestoreRoom.lockedSeats || [],
@@ -67,7 +65,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       title: firestoreRoom.name || 'Frequency',
       topic: firestoreRoom.description || '',
       category: (firestoreRoom.category as any) || 'Chat',
-      coverUrl: firestoreRoom.coverUrl || `https://picsum.photos/seed/${firestoreRoom.id}/1200/400`,
+      coverUrl: firestoreRoom.coverUrl || '', // Production: No Picsum
       ownerId: firestoreRoom.ownerId,
       moderatorIds: firestoreRoom.moderatorIds || [],
       lockedSeats: firestoreRoom.lockedSeats || [],
@@ -108,17 +106,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return (
       <AppLayout>
         <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center px-6 animate-in fade-in duration-700">
-            <div className="h-24 w-24 bg-secondary/20 rounded-full flex items-center justify-center">
-               <Ghost className="h-12 w-12 text-muted-foreground opacity-40" />
-            </div>
+            <div className="h-24 w-24 bg-secondary/20 rounded-full flex items-center justify-center"><Ghost className="h-12 w-12 text-muted-foreground opacity-40" /></div>
             <h1 className="text-3xl font-black uppercase italic tracking-tighter">Frequency Not Found</h1>
             <p className="text-muted-foreground max-w-xs font-body text-lg">This tribe has disbanded or the frequency has been terminated by an Admin.</p>
-            <button 
-              onClick={() => router.push('/rooms')} 
-              className="bg-primary text-white font-black uppercase italic tracking-widest text-xs px-10 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-            >
-              Back to Home
-            </button>
+            <button onClick={() => router.push('/rooms')} className="bg-primary text-white font-black uppercase italic tracking-widest text-xs px-10 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform">Back to Home</button>
         </div>
       </AppLayout>
     );

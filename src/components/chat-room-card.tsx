@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { BarChart2 } from 'lucide-react';
+import { Users, Castle } from 'lucide-react';
 import type { Room } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
@@ -15,7 +15,7 @@ interface ChatRoomCardProps {
 
 /**
  * Chat Room Card Component.
- * Stable seed for Picsum images prevents hydration flickering.
+ * Production Protocol: Shows only user-provided images or high-fidelity CSS fallbacks.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { user } = useUser();
@@ -29,21 +29,22 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { data: participants } = useCollection(participantsQuery);
   const onlineCount = participants?.length || 0;
 
-  // Use a stable seed derived from room ID
-  const displayImage = room.coverUrl || `https://picsum.photos/seed/room-${room.id}/400/400`;
-
   if (variant === 'modern') {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in zoom-in duration-500">
         <div className="space-y-2">
-          <div className="relative aspect-square w-full rounded-[1.5rem] overflow-hidden shadow-sm border-2 border-white">
-            <Image
-              src={displayImage}
-              alt={`Live community room: ${room.title}`}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              sizes="(max-width: 768px) 50vw, 33vw"
-            />
+          <div className="relative aspect-square w-full rounded-[1.5rem] overflow-hidden shadow-sm border-2 border-white bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+            {room.coverUrl ? (
+              <Image
+                src={room.coverUrl}
+                alt={room.title}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 768px) 50vw, 33vw"
+              />
+            ) : (
+              <Castle className="h-12 w-12 text-slate-300 group-hover:text-primary transition-colors" />
+            )}
             
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             
@@ -78,14 +79,18 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
     <Link href={`/rooms/${room.id}`} className="group block">
       <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1 bg-white border-none shadow-sm rounded-2xl">
         <div className="p-0">
-          <div className="relative h-40 w-full">
-            <Image
-              src={displayImage}
-              alt={`Chat room background for ${room.title}`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
+          <div className="relative h-40 w-full bg-slate-100 flex items-center justify-center">
+            {room.coverUrl ? (
+              <Image
+                src={room.coverUrl}
+                alt={room.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            ) : (
+              <Castle className="h-10 w-10 text-slate-300" />
+            )}
              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           </div>
         </div>

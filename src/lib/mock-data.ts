@@ -3,6 +3,7 @@ import type { User, Room, Game, CoinPackage, Task } from './types';
 /**
  * Production Data Source.
  * All mock users, rooms, and prototype games have been permanently removed.
+ * coverUrl fields for games set to empty strings; users/admins must upload them.
  */
 const users: User[] = [];
 const rooms: Room[] = []; 
@@ -12,7 +13,7 @@ const games: Game[] = [
     id: 'g1', 
     title: 'Ludo Masters', 
     slug: 'ludo', 
-    coverUrl: 'https://picsum.photos/seed/ludo-pro/600/600', 
+    coverUrl: '', // Production: User/Admin must upload
     cost: 0, 
     imageHint: 'ludo board' 
   },
@@ -20,7 +21,7 @@ const games: Game[] = [
     id: 'g2', 
     title: 'Fruit Party', 
     slug: 'fruit-party', 
-    coverUrl: 'https://picsum.photos/seed/fruit-party/600/600', 
+    coverUrl: '', // Production: User/Admin must upload
     cost: 0, 
     imageHint: 'vibrant fruits' 
   },
@@ -28,7 +29,7 @@ const games: Game[] = [
     id: 'g3', 
     title: 'Wild Party', 
     slug: 'forest-party', 
-    coverUrl: 'https://picsum.photos/seed/forest-party/600/600', 
+    coverUrl: '', // Production: User/Admin must upload
     cost: 0, 
     imageHint: 'forest animals' 
   },
@@ -36,7 +37,7 @@ const games: Game[] = [
     id: 'g4', 
     title: 'Lucky Slot 777', 
     slug: 'lucky-slot-777', 
-    coverUrl: 'https://picsum.photos/seed/lucky777/600/600', 
+    coverUrl: '', // Production: User/Admin must upload
     cost: 0, 
     imageHint: 'lucky 777 slot' 
   },
@@ -44,7 +45,7 @@ const games: Game[] = [
     id: 'g5', 
     title: 'Dragon Battle', 
     slug: 'teen-patti', 
-    coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', 
+    coverUrl: '', // Production: User/Admin must upload
     cost: 0, 
     imageHint: 'dragon card' 
   },

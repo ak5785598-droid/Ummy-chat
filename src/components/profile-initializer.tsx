@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -11,6 +10,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 /**
  * Production Profile Initializer.
  * Assigns a unique sequential 6-digit numeric ID (starting from 100,000).
+ * Prototype images removed from defaults.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -53,19 +53,19 @@ export function ProfileInitializer() {
             id: profileId,
             specialId: String(nextUserId),
             username: user.displayName || `Tribe_${String(nextUserId).substring(2)}`,
-            avatarUrl: user.photoURL || `https://picsum.photos/seed/${profileId}/400`,
+            avatarUrl: user.photoURL || '', // Production: No Picsum fallbacks
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
             wallet: { 
-              coins: 100000000, // Refilled to 100M for prototype testing
+              coins: 100000000, 
               diamonds: 0,
               totalSpent: 0,
-              dailySpent: 0 // Track daily rich leaderboard
+              dailySpent: 0 
             },
             inventory: { ownedItems: [], activeFrame: 'None', activeBubble: 'Default' },
             stats: { followers: 0, fans: 0 },
             level: { rich: 1, charm: 1 },
-            tags: ['Admin', 'Official', 'Tribe Member'], // Granted Admin for dev testing
+            tags: ['Admin', 'Official', 'Tribe Member'], 
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             details: {
@@ -78,7 +78,6 @@ export function ProfileInitializer() {
           return initialData;
         });
 
-        // Step 1: Set Root Identity (Essential for system-wide lookup)
         await setDoc(userRef, {
           id: profileId,
           specialId: finalData.specialId,
@@ -92,10 +91,8 @@ export function ProfileInitializer() {
           joinedAt: serverTimestamp(),
         }, { merge: true });
 
-        // Step 2: Set Detailed Profile
         await setDoc(profileRef, finalData, { merge: true });
 
-        // Step 3: Welcome Notification
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Welcome to the Tribe!',
           content: `Your unique Tribe ID is ${finalData.specialId}. We've gifted you 100,000,000 Gold Coins to explore the Boutique!`,
@@ -105,7 +102,7 @@ export function ProfileInitializer() {
         });
 
       } catch (e: any) {
-        hasInitialized.current = null; // Allow retry on failure
+        hasInitialized.current = null; 
         console.error("Initialization Error:", e);
         if (e.code === 'permission-denied') {
           errorEmitter.emit('permission-error', new FirestorePermissionError({

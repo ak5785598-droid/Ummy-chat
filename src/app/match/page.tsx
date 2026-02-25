@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sparkles, Loader, Zap, ArrowRight, UserCheck, Heart } from 'lucide-react';
+import { Sparkles, Loader, Zap, ArrowRight, UserCheck, Heart, User as UserIcon, Castle } from 'lucide-react';
 import { findVibeMatchAction } from '@/actions/find-vibe-match';
 import { useUser, useUserProfile } from '@/firebase';
 import Link from 'next/link';
@@ -14,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 /**
  * AI Vibe Match Page.
- * Uses Genkit to find the perfect user or room based on the user's interests.
+ * Prototype images removed.
  */
 export default function MatchPage() {
   const { user } = useUser();
@@ -90,8 +89,10 @@ export default function MatchPage() {
                      <div className="relative">
                         <div className="absolute inset-0 bg-primary/30 rounded-full blur-2xl animate-pulse" />
                         <Avatar className="h-40 w-40 border-4 border-primary shadow-2xl relative z-10">
-                           <AvatarImage src={`https://picsum.photos/seed/${matchResult.id}/400`} />
-                           <AvatarFallback>UM</AvatarFallback>
+                           <AvatarImage src="" /> 
+                           <AvatarFallback className="bg-black text-white">
+                              {matchResult.type === 'Room' ? <Castle className="h-16 w-16" /> : <UserIcon className="h-16 w-16" />}
+                           </AvatarFallback>
                         </Avatar>
                      </div>
                      <div className="flex-1 space-y-6 text-center md:text-left text-white">

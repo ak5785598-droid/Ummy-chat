@@ -14,11 +14,11 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 
 const FALLBACK_GAMES = [
-  { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: 'https://picsum.photos/seed/ludo-pro/600/600', imageHint: 'ludo board' },
-  { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://picsum.photos/seed/fruit-party/600/600', imageHint: 'vibrant fruits' },
-  { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: 'https://picsum.photos/seed/forest-party/600/600', imageHint: 'forest animals' },
-  { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: 'https://picsum.photos/seed/lucky777/600/600', imageHint: 'lucky 777 slot' },
-  { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', imageHint: 'dragon cards' },
+  { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', imageHint: 'ludo board' },
+  { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: '', imageHint: 'vibrant fruits' },
+  { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: '', imageHint: 'forest animals' },
+  { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: '', imageHint: 'lucky 777 slot' },
+  { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', imageHint: 'dragon cards' },
 ];
 
 export default function GamesPage() {
@@ -31,7 +31,6 @@ export default function GamesPage() {
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    // Generate random live counts on client side only to avoid hydration mismatch
     const counts: Record<string, number> = {};
     FALLBACK_GAMES.forEach(g => {
       counts[g.id] = Math.floor(Math.random() * 500) + 100;
@@ -109,14 +108,17 @@ export default function GamesPage() {
                   {activeGames.map((game, i) => (
                     <div key={game.id} className="group relative flex flex-col">
                       <Link href={`/games/${game.slug}`} className="block">
-                        <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/5 shadow-xl transition-all duration-500 group-hover:border-purple-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] group-hover:-translate-y-2">
-                           <Image 
-                             src={game.coverUrl} 
-                             alt={game.title} 
-                             fill 
-                             className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
-                             data-ai-hint={game.imageHint}
-                           />
+                        <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/5 shadow-xl transition-all duration-500 group-hover:border-purple-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] group-hover:-translate-y-2 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                           {game.coverUrl ? (
+                             <Image 
+                               src={game.coverUrl} 
+                               alt={game.title} 
+                               fill 
+                               className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
+                             />
+                           ) : (
+                             <GameControllerIcon className="h-16 w-16 text-white/20 group-hover:text-purple-500 transition-colors" />
+                           )}
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            
                            {isAdmin && (
