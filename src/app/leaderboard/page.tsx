@@ -45,6 +45,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-1000">
+      {/* Podiums for Top 3 */}
       <div className="flex justify-center items-end gap-4 py-16 relative">
         {top3[1] && (
           <div className="flex flex-col items-center order-1 w-1/3">
@@ -187,6 +188,7 @@ export default function LeaderboardPage() {
             {rankingType === 'rich' ? 'Wealth Ranking' : rankingType === 'charm' ? 'Charm Ranking' : 'Room Ranking'}
           </h1>
           <div className="flex gap-2">
+            {/* 🏆 Rewards Gateway Icon */}
             <Dialog>
               <DialogTrigger asChild>
                 <button className="bg-white/10 p-2 rounded-full backdrop-blur-md hover:bg-primary/20 transition-all border border-primary/20 animate-pulse">
