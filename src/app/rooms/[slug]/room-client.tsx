@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -49,6 +48,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -67,6 +67,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -101,7 +102,7 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
   { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
   { id: 'car', name: 'Luxury Car', emoji: '🏎️', price: 2000, animationType: 'bounce' },
-  { id: 'jet', name: 'Private Jet', emoji: '️', price: 5000, animationType: 'bounce' },
+  { id: 'jet', name: 'Private Jet', emoji: '🛩️', price: 5000, animationType: 'bounce' },
   { id: 'dragon', name: 'Dragon', emoji: '🐉', price: 10000, animationType: 'spin' },
   { id: 'rocket', name: 'Rocket', emoji: '🚀', price: 25000, animationType: 'zoom' },
   { id: 'castle', name: 'Castle', emoji: '🏰', price: 50000, animationType: 'bounce' },
@@ -502,6 +503,7 @@ export function RoomClient({ room }: { room: Room }) {
               <SheetContent side="bottom" className="bg-slate-900 border-none rounded-t-[3rem] text-white p-0 overflow-hidden h-[70vh]">
                  <SheetHeader className="p-8 pb-4">
                     <SheetTitle className="text-2xl font-black uppercase italic text-center">Frequency Members</SheetTitle>
+                    <SheetDescription className="sr-only">A list of all tribe members currently in this frequency.</SheetDescription>
                  </SheetHeader>
                  <ScrollArea className="h-full px-8 pb-20">
                     <div className="space-y-4">
@@ -744,7 +746,10 @@ export function RoomClient({ room }: { room: Room }) {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-xs bg-slate-900 text-white border-white/10 rounded-[2.5rem] p-6">
-                 <DialogHeader className="pb-4"><DialogTitle className="text-center font-black uppercase italic text-sm tracking-widest">Tribe Reactions</DialogTitle></DialogHeader>
+                 <DialogHeader className="pb-4">
+                    <DialogTitle className="text-center font-black uppercase italic text-sm tracking-widest">Tribe Reactions</DialogTitle>
+                    <DialogDescription className="sr-only">Select an animated emoji to express your vibe in the seat.</DialogDescription>
+                 </DialogHeader>
                  <div className="grid grid-cols-3 gap-4">
                     {AVAILABLE_EMOJIS.map(emoji => (
                       <button 
@@ -766,7 +771,10 @@ export function RoomClient({ room }: { room: Room }) {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
-                 <DialogHeader className="p-8 pb-0 text-center"><DialogTitle className="text-3xl font-black uppercase italic">Ummy Boutique</DialogTitle></DialogHeader>
+                 <DialogHeader className="p-8 pb-0 text-center">
+                    <DialogTitle className="text-3xl font-black uppercase italic">Ummy Boutique</DialogTitle>
+                    <DialogDescription className="sr-only">Choose a gift to send to a tribe member or the frequency host.</DialogDescription>
+                 </DialogHeader>
                  <div className="p-8 pt-6 space-y-6">
                     <div className="flex items-center justify-between bg-secondary/30 p-4 rounded-2xl border-2 border-dashed border-primary/20">
                        <div className="flex items-center gap-3">
@@ -831,6 +839,7 @@ export function RoomClient({ room }: { room: Room }) {
             <DialogTitle className="text-center text-2xl text-gray-800 uppercase italic">
               {selectedOccupant ? `Tribe Member: ${selectedOccupant.name}` : `Seat ${selectedSeatIndex}`}
             </DialogTitle>
+            <DialogDescription className="sr-only">Available actions for the selected tribe member or seat.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col divide-y divide-gray-100">
             {selectedOccupant && (

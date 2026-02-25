@@ -73,20 +73,23 @@ export function UserSearchDialog() {
         </button>
       </DialogTrigger>
       <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col animate-in slide-in-from-bottom duration-500">
-        <header className="p-6 flex items-center justify-between border-b border-gray-50">
+        <DialogHeader className="p-6 flex flex-row items-center justify-between border-b border-gray-50 space-y-0">
            <div className="flex items-center gap-2">
               <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
                  <Search className="h-5 w-5 text-primary" />
               </div>
-              <span className="font-black uppercase italic text-sm tracking-tighter">Locate Tribe</span>
+              <DialogTitle className="font-black uppercase italic text-sm tracking-tighter">Locate Tribe</DialogTitle>
            </div>
+           <DialogDescription className="sr-only">
+             Enter the unique 6-digit identity code to sync with your friend's frequency.
+           </DialogDescription>
            <button 
              onClick={() => setOpen(false)}
              className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-all"
            >
               <X className="h-6 w-6 text-gray-400" />
            </button>
-        </header>
+        </DialogHeader>
 
         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto w-full space-y-12">
           <div className="text-center space-y-4">

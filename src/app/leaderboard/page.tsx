@@ -15,6 +15,7 @@ import { GoldCoinIcon } from '@/components/icons';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -267,6 +268,7 @@ function LeaderboardContent() {
                       <Trophy className="h-8 w-8 text-yellow-400" />
                       Daily Rewards
                     </DialogTitle>
+                    <DialogDescription className="sr-only">Details about daily reward distribution and rankings.</DialogDescription>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mt-2">IST Throne Distribution Protocol</p>
                   </DialogHeader>
                   <div className="px-8 pb-12 space-y-4 h-full overflow-y-auto no-scrollbar">
