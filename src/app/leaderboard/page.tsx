@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useUserProfile } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, Trophy, Info, Timer } from 'lucide-react';
+import { Crown, TrendingUp, Loader, ChevronLeft, Trophy, Info, Timer, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
     if (type === 'rich') return item.wallet?.dailySpent || 0;
     if (type === 'charm') return item.stats?.dailyFans || 0;
     if (type === 'rooms') return item.stats?.dailyGifts || 0;
+    if (type === 'games') return item.stats?.dailyGameWins || 0;
     return 0;
   };
 
@@ -78,7 +79,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
                 </div>
              </div>
              <div className="mt-8 text-center space-y-1">
-                <h2 className="text-xl font-black text-cyan-400 uppercase italic tracking-tighter drop-shadow-md">{getDisplayName(top1)} 🇮🇳 ♂️</h2>
+                <h2 className="text-xl font-black text-cyan-400 uppercase italic tracking-tighter drop-shadow-md">{getDisplayName(top1)}</h2>
                 <div className="flex items-center justify-center gap-1">
                    <span className="text-lg font-black text-yellow-500 italic">{(getValue(top1)).toLocaleString()}</span>
                    <GoldCoinIcon className="h-4 w-4" />
@@ -143,7 +144,11 @@ const RankingList = ({ items, type, isLoading }: any) => {
                 </Badge>
               </div>
               <div className="text-right flex items-center gap-1">
-                <span className={cn("font-black text-sm", type === 'rich' ? "text-yellow-500" : type === 'charm' ? "text-pink-500" : "text-blue-400")}>
+                <span className={cn("font-black text-sm", 
+                  type === 'rich' ? "text-yellow-500" : 
+                  type === 'charm' ? "text-pink-500" : 
+                  type === 'games' ? "text-cyan-400" :
+                  "text-blue-400")}>
                   {getValue(item).toLocaleString()}
                 </span>
                 <GoldCoinIcon className="h-3 w-3" />
@@ -179,14 +184,12 @@ function LeaderboardContent() {
   const initialType = (searchParams.get('type') as any) || 'rich';
   
   const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [timeLeft, setTimeLeft] = useState('');
 
-  // Synchronize state with URL params
   useEffect(() => {
     if (initialType) setRankingMode(initialType);
   }, [initialType]);
@@ -194,8 +197,6 @@ function LeaderboardContent() {
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date();
-      // Target: Next 12:00 AM IST (GMT+5:30)
-      // 12:00 AM IST is 18:30:00 UTC of the previous day.
       let target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 18, 30, 0));
       if (now.getTime() >= target.getTime()) {
         target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 18, 30, 0));
@@ -221,6 +222,11 @@ function LeaderboardContent() {
     return query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50));
   }, [firestore, user]);
 
+  const gamesUsersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50));
+  }, [firestore, user]);
+
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50));
@@ -228,7 +234,11 @@ function LeaderboardContent() {
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richUsersQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmUsersQuery);
+  const { data: gamesUsers, isLoading: isLoadingGames } = useCollection(gamesUsersQuery);
   const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
+
+  const activeItems = rankingType === 'rich' ? richUsers : rankingType === 'charm' ? charmUsers : rankingType === 'games' ? gamesUsers : rankedRooms;
+  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'games' ? isLoadingGames : isLoadingRooms;
 
   return (
     <div className="min-h-screen bg-black text-white relative font-headline overflow-x-hidden">
@@ -238,16 +248,17 @@ function LeaderboardContent() {
         </div>
 
         <header className="relative z-10 p-6 pt-10">
-          <div className="flex items-center justify-between mb-8">
-             <Link href="/rooms" className="text-yellow-500 hover:scale-110 transition-transform"><ChevronLeft className="h-8 w-8" /></Link>
-             <div className="flex gap-8">
+          <div className="flex items-center justify-between mb-8 overflow-x-auto no-scrollbar pb-2">
+             <Link href="/rooms" className="text-yellow-500 hover:scale-110 transition-transform shrink-0"><ChevronLeft className="h-8 w-8" /></Link>
+             <div className="flex gap-6 px-4">
                 <button onClick={() => setRankingMode('rich')} className={cn("text-lg font-black uppercase italic tracking-tighter pb-1 border-b-2 transition-all", rankingType === 'rich' ? "text-yellow-500 border-yellow-500" : "text-white/40 border-transparent")}>Rich</button>
                 <button onClick={() => setRankingMode('charm')} className={cn("text-lg font-black uppercase italic tracking-tighter pb-1 border-b-2 transition-all", rankingType === 'charm' ? "text-yellow-500 border-yellow-500" : "text-white/40 border-transparent")}>Charm</button>
+                <button onClick={() => setRankingMode('games')} className={cn("text-lg font-black uppercase italic tracking-tighter pb-1 border-b-2 transition-all", rankingType === 'games' ? "text-yellow-500 border-yellow-500" : "text-white/40 border-transparent")}>Game</button>
                 <button onClick={() => setRankingMode('rooms')} className={cn("text-lg font-black uppercase italic tracking-tighter pb-1 border-b-2 transition-all", rankingType === 'rooms' ? "text-yellow-500 border-yellow-500" : "text-white/40 border-transparent")}>Room</button>
              </div>
              <Dialog>
                 <DialogTrigger asChild>
-                   <button className="bg-yellow-500/20 p-1 rounded-full border border-yellow-500/40 animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                   <button className="bg-yellow-500/20 p-1 rounded-full border border-yellow-500/40 animate-pulse shadow-[0_0_15px_rgba(234,179,8,0.3)] shrink-0">
                       <Trophy className="h-6 w-6 text-yellow-500" />
                    </button>
                 </DialogTrigger>
@@ -277,9 +288,9 @@ function LeaderboardContent() {
                         <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Rules of the Daily Throne</p>
                       </div>
                       <ul className="space-y-2">
-                        <li className="text-[10px] text-white/40 leading-relaxed">• Rewards apply to Rich, Charm, and Room categories.</li>
+                        <li className="text-[10px] text-white/40 leading-relaxed">• Rewards apply to all categories.</li>
                         <li className="text-[10px] text-white/40 leading-relaxed">• Dispatched daily at 12:00 AM IST (GMT+5:30).</li>
-                        <li className="text-[10px] text-white/40 leading-relaxed">• Counters reset instantly upon reward delivery.</li>
+                        <li className="text-[10px] text-white/40 leading-relaxed">• Game wins reset instantly upon delivery.</li>
                       </ul>
                     </div>
                   </div>
@@ -297,9 +308,9 @@ function LeaderboardContent() {
 
         <div className="relative z-10 px-4">
            <RankingList 
-             items={rankingType === 'rich' ? richUsers : rankingType === 'charm' ? charmUsers : rankedRooms} 
+             items={activeItems} 
              type={rankingType} 
-             isLoading={rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms} 
+             isLoading={isActiveLoading} 
            />
         </div>
 
@@ -307,32 +318,6 @@ function LeaderboardContent() {
            <Timer className="h-4 w-4 text-yellow-500" />
            <span className="text-xs font-mono font-bold text-yellow-500 tracking-widest">{timeLeft} (IST)</span>
         </div>
-
-        <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-b from-amber-900 to-black p-4 border-t border-yellow-500/30 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-           <div className="max-w-xl mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                 <span className="text-lg font-black text-yellow-500 italic">50+</span>
-                 <Avatar className="h-14 w-14 border-2 border-white shadow-xl">
-                    <AvatarImage src={userProfile?.avatarUrl} />
-                    <AvatarFallback>U</AvatarFallback>
-                 </Avatar>
-                 <div>
-                    <p className="font-black text-white uppercase italic text-sm">{userProfile?.username || 'Tribe Member'} 🇮🇳 ♂️</p>
-                    <div className="flex gap-1 mt-1">
-                       <div className="bg-amber-700/50 px-2 rounded h-4 flex items-center gap-1 border border-amber-500/30">
-                          <Trophy className="h-2 w-2 text-yellow-500" />
-                          <span className="text-[8px] font-bold">Lv.{(userProfile?.level?.rich || 1)}</span>
-                       </div>
-                       <p className="text-[10px] text-yellow-500/60 font-bold uppercase tracking-widest ml-2">Rank Invisible: OFF</p>
-                    </div>
-                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                 <span className="font-black text-yellow-500 text-lg italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                 <GoldCoinIcon className="h-5 w-5" />
-              </div>
-           </div>
-        </footer>
       </div>
   );
 }
