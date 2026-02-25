@@ -113,7 +113,7 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   useEffect(() => {
     if (audioRef.current) audioRef.current.srcObject = stream;
   }, [stream]);
-  return <audio ref={audioRef} autoPlay className="hidden" />;
+  return <audio audioRef={audioRef} autoPlay className="hidden" />;
 }
 
 export function RoomClient({ room }: { room: Room }) {
@@ -234,7 +234,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSendGift = async (gift: Gift) => {
     if (!currentUser || !firestore || !userProfile) return;
     if ((userProfile.wallet?.coins || 0) < gift.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the Boutique to top up.' });
       return;
     }
 
@@ -306,14 +306,8 @@ export function RoomClient({ room }: { room: Room }) {
       const batch = writeBatch(firestore);
       snap.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
-      toast({ title: 'Chat Cleared' });
     } catch (e: any) {
-      if (e.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: `chatRooms/${room.id}/messages`,
-          operation: 'delete',
-        }));
-      }
+      toast({ variant: 'destructive', title: 'Clear Failed', description: e.message });
     }
   };
 
@@ -410,7 +404,7 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
     if (currentUserParticipant?.isSilenced) {
-      toast({ variant: 'destructive', title: 'Silenced by Admin' });
+      toast({ variant: 'destructive', title: 'Silenced', description: 'An admin has muted your microphone.' });
       return;
     }
     const nextMuteState = !currentUserParticipant?.isMuted;
@@ -518,12 +512,12 @@ export function RoomClient({ room }: { room: Room }) {
                   <DropdownMenuItem onClick={handleClearChat} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear Chat
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { const link = `${window.location.origin}/rooms/${room.id}`; navigator.clipboard.writeText(link); toast({ title: 'Link Copied!' }); }}>
+                  <DropdownMenuItem onClick={() => { const link = `${window.location.origin}/rooms/${room.id}`; navigator.clipboard.writeText(link); }}>
                     <UserPlus className="mr-2 h-4 w-4" /> Invite Tribe
                   </DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuItem onClick={() => toast({ title: 'Room Shared!' })}>
+              <DropdownMenuItem onClick={() => {}}>
                 <Share2 className="mr-2 h-4 w-4" /> Share Room
               </DropdownMenuItem>
               

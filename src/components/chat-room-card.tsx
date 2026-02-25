@@ -15,7 +15,7 @@ interface ChatRoomCardProps {
 
 /**
  * Chat Room Card Component.
- * Redesigned to match the Yari high-density grid style.
+ * Stable seed for Picsum images prevents hydration flickering.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { user } = useUser();
@@ -29,31 +29,31 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { data: participants } = useCollection(participantsQuery);
   const onlineCount = participants?.length || 0;
 
+  // Use a stable seed derived from room ID
+  const displayImage = room.coverUrl || `https://picsum.photos/seed/room-${room.id}/400/400`;
+
   if (variant === 'modern') {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in zoom-in duration-500">
         <div className="space-y-2">
           <div className="relative aspect-square w-full rounded-[1.5rem] overflow-hidden shadow-sm border-2 border-white">
             <Image
-              src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/400`}
+              src={displayImage}
               alt={`Live community room: ${room.title}`}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-110"
               sizes="(max-width: 768px) 50vw, 33vw"
             />
             
-            {/* Status Overlays */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             
-            {/* Rocket/Level Overlay */}
             <div className="absolute bottom-2 left-2">
                <div className="bg-black/20 backdrop-blur-sm rounded-lg p-1 animate-pulse">
                   <span className="text-xl">🚀</span>
                </div>
             </div>
 
-            {/* Real-time Bars/Count Overlay */}
-            <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-white/10">
               <div className="flex items-end gap-0.5 h-3">
                  <div className="w-0.5 bg-white h-1 animate-bounce" style={{ animationDelay: '0.1s' }} />
                  <div className="w-0.5 bg-white h-2 animate-bounce" style={{ animationDelay: '0.2s' }} />
@@ -80,7 +80,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
         <div className="p-0">
           <div className="relative h-40 w-full">
             <Image
-              src={room.coverUrl || `https://picsum.photos/seed/${room.id}/400/225`}
+              src={displayImage}
               alt={`Chat room background for ${room.title}`}
               fill
               className="object-cover"

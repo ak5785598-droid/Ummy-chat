@@ -93,11 +93,9 @@ export default function ProfilePage() {
     if (isFollowing) {
       updateDocumentNonBlocking(myProfileRef, { tags: arrayRemove(`following:${profileId}`) });
       updateDocumentNonBlocking(targetProfileRef, { 'stats.followers': increment(-1) });
-      toast({ title: 'Unfollowed' });
     } else {
       updateDocumentNonBlocking(myProfileRef, { tags: arrayUnion(`following:${profileId}`) });
       updateDocumentNonBlocking(targetProfileRef, { 'stats.followers': increment(1) });
-      toast({ title: 'Following Tribe Member!' });
     }
   };
 
@@ -109,7 +107,6 @@ export default function ProfilePage() {
     
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    toast({ title: 'Wallet Refilled!', description: '100,000,000 Gold Coins added to your vault.' });
   };
 
   const isWaiting = isAuthLoading || isProfileLoading;

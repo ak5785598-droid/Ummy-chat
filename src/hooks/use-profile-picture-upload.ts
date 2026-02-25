@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { useToast } from './use-toast';
 
 /**
  * Hook to handle profile picture uploads to Firebase Storage and update Firestore.
- * Synchronizes identity across root summary and detailed profile.
+ * Success toasts removed per production guidelines.
  */
 export function useProfilePictureUpload() {
   const storage = useStorage();
@@ -31,13 +30,11 @@ export function useProfilePictureUpload() {
     setIsUploading(true);
 
     try {
-      // 1. Upload to Storage
       const storagePath = `users/${user.uid}/profile-picture.jpg`;
       const storageRef = ref(storage, storagePath);
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 2. Update Firestore Summary and Detailed documents
       const userSummaryRef = doc(firestore, 'users', user.uid);
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -48,11 +45,6 @@ export function useProfilePictureUpload() {
 
       updateDocumentNonBlocking(userSummaryRef, updateData);
       updateDocumentNonBlocking(userProfileRef, updateData);
-
-      toast({
-        title: 'Success!',
-        description: 'Your profile has been updated globally.',
-      });
     } catch (error: any) {
       console.error('Error uploading profile picture:', error);
       toast({

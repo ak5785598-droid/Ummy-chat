@@ -84,10 +84,6 @@ export default function LoginPage() {
       const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
       setConfirmationResult(result);
       setPhoneLoginStep('code');
-      toast({
-        title: 'Code Sent',
-        description: 'Check your phone for the 6-digit verification code.',
-      });
     } catch (error: any) {
       toast({
         variant: 'destructive',

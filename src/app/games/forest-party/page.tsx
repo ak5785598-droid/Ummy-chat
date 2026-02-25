@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, useUserProfile, updateDocumentNonBlocking } from '@/firebase';
@@ -52,47 +52,56 @@ export default function WildPartyPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
 
-  // Audio utility: Crisp Bet Sound
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const initAudioContext = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  }, []);
+
   const playBetSound = useCallback(() => {
     if (isMuted) return;
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
+      const ctx = initAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
       oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      gainNode.connect(ctx.destination);
       oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.1);
+      oscillator.stop(ctx.currentTime + 0.1);
     } catch (e) {}
-  }, [isMuted]);
+  }, [isMuted, initAudioContext]);
 
-  // Background Music Engine: Savannah Groove 2.0 (High Volume & Melodic)
   useEffect(() => {
     if (isMuted || isLaunching) return;
     
-    let audioCtx: AudioContext | null = null;
     let timer: any = null;
 
     try {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.4; // High master volume
-      masterGain.connect(audioCtx.destination);
+      const ctx = initAudioContext();
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = 0.4;
+      masterGain.connect(ctx.destination);
 
       let step = 0;
       const scheduleNextNote = () => {
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const noteGain = audioCtx.createGain();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const noteGain = ctx.createGain();
         
-        const bassNotes = [65.41, 73.42, 82.41, 98.00, 110.00]; // C2, D2, E2, G2, A2
-        const melodyNotes = [261.63, 293.66, 329.63, 392.00, 440.00]; // C4, D4, E4, G4, A4
+        const bassNotes = [65.41, 73.42, 82.41, 98.00, 110.00]; 
+        const melodyNotes = [261.63, 293.66, 329.63, 392.00, 440.00]; 
         
         const isBass = step % 2 === 0;
         const freq = isBass ? bassNotes[step % 5] : melodyNotes[Math.floor(Math.random() * 5)];
@@ -117,9 +126,8 @@ export default function WildPartyPage() {
 
     return () => {
       if (timer) clearInterval(timer);
-      if (audioCtx) audioCtx.close();
     };
-  }, [isMuted, isLaunching]);
+  }, [isMuted, isLaunching, initAudioContext]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 2000);

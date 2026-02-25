@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -68,9 +67,8 @@ export default function AdminPage() {
         batch.set(gameRef, { ...g, createdAt: serverTimestamp() });
       });
       await batch.commit();
-      toast({ title: 'Games Initialized!' });
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Initialization Failed' });
+      toast({ variant: 'destructive', title: 'Initialization Failed', description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -132,7 +130,6 @@ export default function AdminPage() {
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
       await logAdminAction(`Adjust ${type}`, targetUserId, { amount });
-      toast({ title: 'Balance Adjusted', description: `${amount} ${type} processed.` });
     } finally {
       setIsSaving(false);
     }
@@ -147,7 +144,6 @@ export default function AdminPage() {
       snap.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
       await logAdminAction('Wipe All Rooms', 'collection/chatRooms', { count: snap.size });
-      toast({ title: 'All Frequencies Terminated' });
     } catch (e: any) {
       if (e.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -167,7 +163,6 @@ export default function AdminPage() {
       const countersRef = doc(firestore, 'appConfig', 'counters');
       await setDoc(countersRef, { roomCounter: 0, userCounter: 1000 }, { merge: true });
       await logAdminAction('Reset Counters', 'config/counters', {});
-      toast({ title: 'System Counters Reset', description: 'IDs will restart from baseline.' });
     } catch (e: any) {
       if (e.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,16 @@ export default function GamesPage() {
   const { isUploading, uploadGameLogo } = useGameLogoUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Generate random live counts on client side only to avoid hydration mismatch
+    const counts: Record<string, number> = {};
+    FALLBACK_GAMES.forEach(g => {
+      counts[g.id] = Math.floor(Math.random() * 500) + 100;
+    });
+    setLiveCounts(counts);
+  }, []);
 
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
 
@@ -46,10 +55,6 @@ export default function GamesPage() {
   const handleLogoChangeClick = (e: React.MouseEvent, gameId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (gameId.startsWith('fallback-')) {
-      toast({ title: 'System Game', description: 'Initialize games in Admin Panel to edit logos.' });
-      return;
-    }
     setSelectedGameId(gameId);
     fileInputRef.current?.click();
   };
@@ -124,7 +129,7 @@ export default function GamesPage() {
 
                            <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
                               <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                              <span className="text-[10px] font-black text-white/80">{(Math.floor(Math.random() * 500) + 100).toLocaleString()}</span>
+                              <span className="text-[10px] font-black text-white/80">{(liveCounts[game.id] || 100).toLocaleString()}</span>
                            </div>
                         </div>
                         

@@ -27,7 +27,7 @@ interface EditProfileDialogProps {
 
 /**
  * Unified Identity Synchronization Dialog.
- * Hardened to ensure name and bio changes reflect on global leaderboards instantly.
+ * Success feedback handled via closure per production guidelines.
  */
 export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
@@ -54,7 +54,6 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
     setIsSubmitting(true);
     
-    // Identity Sync Logic: Root Document + Detailed Profile
     const userSummaryRef = doc(firestore, 'users', user.uid);
     const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     
@@ -65,22 +64,15 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
     };
 
     try {
-      // Sync to leaderboard source
       updateDocumentNonBlocking(userSummaryRef, {
         username: name,
         updatedAt: serverTimestamp()
       });
 
-      // Sync to detailed profile
       updateDocumentNonBlocking(userProfileRef, updateData);
-
-      toast({
-        title: 'Identity Synced!',
-        description: 'Your new persona is now live across the frequency.',
-      });
       setOpen(false);
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Sync Failed' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
     } finally {
       setIsSubmitting(false);
     }

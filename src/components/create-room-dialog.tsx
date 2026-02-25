@@ -30,7 +30,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Dialog component for creating a new voice chat room.
- * Assigns a unique sequential 6-digit room number (starting from 100,000).
+ * Success is indicated by automatic redirection per guidelines.
  */
 export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,6 @@ export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
     const countersRef = doc(firestore, 'appConfig', 'counters');
 
     try {
-      // Transaction to get next 6-digit room number
       const roomNumber = await runTransaction(firestore, async (transaction) => {
         const countersSnap = await transaction.get(countersRef);
         let nextRoomNum = 100000;
@@ -81,11 +80,6 @@ export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
 
       const docRef = await addDoc(collection(firestore, 'chatRooms'), roomData);
       
-      toast({
-        title: 'Room Created!',
-        description: `Room No. ${roomNumber} is now live!`,
-      });
-      
       setOpen(false);
       router.push(`/rooms/${docRef.id}`);
     } catch (error: any) {
@@ -96,6 +90,8 @@ export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
           requestResourceData: { name, topic, category }
         });
         errorEmitter.emit('permission-error', permissionError);
+      } else {
+        toast({ variant: 'destructive', title: 'Room Failed', description: error.message });
       }
     } finally {
       setIsSubmitting(false);

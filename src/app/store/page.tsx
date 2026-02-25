@@ -37,7 +37,7 @@ export default function StorePage() {
     
     const balance = userProfile.wallet?.coins || 0;
     if (balance < item.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the arena to earn more.' });
       return;
     }
 
@@ -55,8 +55,6 @@ export default function StorePage() {
       'wallet.coins': increment(-item.price),
       'updatedAt': serverTimestamp()
     });
-
-    toast({ title: 'Success!', description: `${item.name} added to inventory.` });
   };
 
   const handleEquip = (item: any) => {
@@ -74,8 +72,6 @@ export default function StorePage() {
 
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-
-    toast({ title: 'Equipped!', description: `${item.name} is now active.` });
   };
 
   if (isLoading) return (

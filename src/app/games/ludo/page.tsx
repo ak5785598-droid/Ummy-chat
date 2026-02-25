@@ -57,26 +57,32 @@ export default function LudoGamePage() {
         </header>
 
         <main className="flex-1 flex items-center justify-center p-2 relative z-10 pb-24">
-           <div className="relative w-[min(90vw,90vh)] aspect-square bg-[#7cb342] rounded-[2rem] p-3 shadow-2xl border-b-[8px] border-[#558b2f]">
-              <div className="grid grid-cols-15 grid-rows-15 h-full w-full gap-0.5">
-                 <div className="col-span-6 row-span-6 bg-[#d9534f] rounded-2xl shadow-inner" />
-                 <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 gap-0.5">
-                    {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
-                 </div>
-                 <div className="col-span-6 row-span-6 bg-[#5cb85c] rounded-2xl shadow-inner" />
-                 <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 gap-0.5">
-                    {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
-                 </div>
-                 <div className="col-span-3 row-span-3 bg-gradient-to-b from-[#ffeb3b] to-[#fbc02d] rounded-xl flex items-center justify-center p-1"><span className="text-white text-xs font-black italic uppercase">Play</span></div>
-                 <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 gap-0.5">
-                    {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
-                 </div>
-                 <div className="col-span-6 row-span-6 bg-[#0275d8] rounded-2xl shadow-inner" />
-                 <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 gap-0.5">
-                    {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
-                 </div>
-                 <div className="col-span-6 row-span-6 bg-[#fbc02d] rounded-2xl shadow-inner" />
+           <div 
+             className="relative w-[min(90vw,90vh)] aspect-square bg-[#7cb342] rounded-[2rem] p-3 shadow-2xl border-b-[8px] border-[#558b2f]"
+             style={{ 
+               display: 'grid', 
+               gridTemplateColumns: 'repeat(15, minmax(0, 1fr))', 
+               gridTemplateRows: 'repeat(15, minmax(0, 1fr))',
+               gap: '2px'
+             }}
+           >
+              <div className="col-span-6 row-span-6 bg-[#d9534f] rounded-2xl shadow-inner" />
+              <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 gap-0.5">
+                 {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
               </div>
+              <div className="col-span-6 row-span-6 bg-[#5cb85c] rounded-2xl shadow-inner" />
+              <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 gap-0.5">
+                 {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
+              </div>
+              <div className="col-span-3 row-span-3 bg-gradient-to-b from-[#ffeb3b] to-[#fbc02d] rounded-xl flex items-center justify-center p-1"><span className="text-white text-xs font-black italic uppercase">Play</span></div>
+              <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 gap-0.5">
+                 {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
+              </div>
+              <div className="col-span-6 row-span-6 bg-[#0275d8] rounded-2xl shadow-inner" />
+              <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 gap-0.5">
+                 {Array.from({ length: 18 }).map((_, i) => <div key={i} className="rounded-sm bg-[#9ccc65] border border-black/5" />)}
+              </div>
+              <div className="col-span-6 row-span-6 bg-[#fbc02d] rounded-2xl shadow-inner" />
            </div>
 
            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-[110]">
