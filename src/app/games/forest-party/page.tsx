@@ -216,7 +216,7 @@ export default function WildPartyPage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#7B6DA8] flex flex-col relative overflow-hidden font-headline animate-in fade-in duration-700">
+      <div className="h-screen w-full bg-[#7B6DA8] flex flex-col relative overflow-hidden font-headline animate-in fade-in duration-700" onClick={initAudioContext}>
         <CompactRoomView />
 
         <div className="absolute top-[30vh] left-0 right-0 p-4 flex items-center justify-between z-40">

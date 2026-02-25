@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, useUserProfile, updateDocumentNonBlocking } from '@/firebase';
@@ -55,42 +55,53 @@ export default function FruitPartyPage() {
   const [lastWin, setLastWin] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const initAudioContext = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  }, []);
+
   const playBetSound = useCallback(() => {
     if (isMuted) return;
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
+      const ctx = initAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
       oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
-      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.08);
+      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
       oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      gainNode.connect(ctx.destination);
       oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.08);
+      oscillator.stop(ctx.currentTime + 0.08);
     } catch (e) {}
-  }, [isMuted]);
+  }, [isMuted, initAudioContext]);
 
   useEffect(() => {
     if (isMuted || isLaunching) return;
     
-    let audioCtx: AudioContext | null = null;
     let timer: any = null;
 
     try {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const masterGain = audioCtx.createGain();
+      const ctx = initAudioContext();
+      const masterGain = ctx.createGain();
       masterGain.gain.value = 0.35; 
-      masterGain.connect(audioCtx.destination);
+      masterGain.connect(ctx.destination);
 
       let step = 0;
       const scheduleNextNote = () => {
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const noteGain = audioCtx.createGain();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const noteGain = ctx.createGain();
         
         const arpeggio = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
         const freq = arpeggio[step % 4];
@@ -114,9 +125,8 @@ export default function FruitPartyPage() {
 
     return () => {
       if (timer) clearInterval(timer);
-      if (audioCtx) audioCtx.close();
     };
-  }, [isMuted, isLaunching]);
+  }, [isMuted, isLaunching, initAudioContext]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -208,7 +218,7 @@ export default function FruitPartyPage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#9C27B0] flex flex-col items-center relative overflow-hidden font-headline animate-in fade-in duration-700">
+      <div className="h-screen w-full bg-[#9C27B0] flex flex-col items-center relative overflow-hidden font-headline animate-in fade-in duration-700" onClick={initAudioContext}>
         <CompactRoomView />
 
         <div className="flex-1 flex flex-col items-center w-full p-4 pt-32 pb-32 z-10 overflow-y-auto">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useUserProfile } from '@/firebase';
@@ -12,7 +12,6 @@ import {
   VolumeX,
   RefreshCw,
   Plus,
-  Star,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,11 +23,71 @@ export default function LudoGamePage() {
   const { userProfile } = useUserProfile();
   const [isLaunching, setIsLaunching] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const initAudioContext = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  }, []);
+
+  useEffect(() => {
+    if (isMuted || isLaunching) return;
+    
+    let timer: any = null;
+
+    try {
+      const ctx = initAudioContext();
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = 0.4;
+      masterGain.connect(ctx.destination);
+
+      let step = 0;
+      const scheduleNextNote = () => {
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const noteGain = ctx.createGain();
+        
+        // Playful Ludo pentatonic C-Major arpeggio
+        const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+        const freq = melody[step % melody.length];
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        
+        noteGain.gain.setValueAtTime(0.15, now);
+        noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        
+        osc.connect(noteGain);
+        noteGain.connect(masterGain);
+        
+        osc.start(now);
+        osc.stop(now + 0.4);
+        
+        step++;
+      };
+
+      timer = setInterval(scheduleNextNote, 250);
+    } catch (e) {}
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isMuted, isLaunching, initAudioContext]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleInteraction = () => {
+    initAudioContext();
+  };
 
   if (isLaunching) {
     return (
@@ -41,7 +100,7 @@ export default function LudoGamePage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-black flex flex-col relative overflow-hidden font-headline">
+      <div className="h-screen w-full bg-black flex flex-col relative overflow-hidden font-headline" onClick={handleInteraction}>
         <CompactRoomView />
 
         <header className="relative z-40 p-3 pt-32 px-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
@@ -91,7 +150,7 @@ export default function LudoGamePage() {
                     <Avatar className="h-8 w-8 border-2 border-[#00E5FF]"><AvatarImage src={userProfile?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                     <span className="text-[10px] font-black text-white uppercase italic">{userProfile?.username || 'Tribe'}</span>
                  </div>
-                 <button className="h-10 w-10 rounded-full bg-[#00E5FF] flex items-center justify-center"><Plus className="h-4 w-4 text-black" /></button>
+                 <button className="h-10 w-10 rounded-full bg-[#00E5FF] flex items-center justify-center" onClick={handleInteraction}><Plus className="h-4 w-4 text-black" /></button>
                  <Badge className="bg-yellow-500 text-black font-black uppercase text-[8px] italic px-3 py-1 rounded-lg">Quick Mode</Badge>
               </div>
            </div>
