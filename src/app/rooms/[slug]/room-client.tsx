@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -60,6 +59,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Sheet,
@@ -254,7 +254,7 @@ export function RoomClient({ room }: { room: Room }) {
     const walletUpdates: any = {
       'wallet.coins': increment(-gift.price),
       'wallet.totalSpent': increment(gift.price),
-      'wallet.dailySpent': increment(gift.price), // Tracking daily spend
+      'wallet.dailySpent': increment(gift.price), 
       updatedAt: serverTimestamp()
     };
 
@@ -527,18 +527,18 @@ export function RoomClient({ room }: { room: Room }) {
               
               {(isOwner || isGlobalAdmin) && (
                 <AlertDialog>
-                  <DialogTrigger asChild>
+                  <AlertDialogTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive font-black">
                       <AlertTriangle className="mr-2 h-4 w-4" /> Terminate Frequency
                     </DropdownMenuItem>
-                  </DialogTrigger>
+                  </AlertDialogTrigger>
                   <AlertDialogContent className="bg-white text-black border-none rounded-[2rem]">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-black uppercase italic">Terminate Frequency?</DialogTitle>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-2xl font-black uppercase italic">Terminate Frequency?</AlertDialogTitle>
                       <AlertDialogDescription className="text-muted-foreground font-body text-base">
                         This will permanently delete the tribe frequency.
                       </AlertDialogDescription>
-                    </DialogHeader>
+                    </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={handleDeleteRoom} className="bg-destructive text-white rounded-full">
@@ -606,7 +606,7 @@ export function RoomClient({ room }: { room: Room }) {
               const isMod = room.moderatorIds?.includes(occupant?.uid || '');
               return (
                 <div key={idx} className="relative flex flex-col items-center gap-2 group w-full h-24">
-                  <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="md" />
+                  <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
                   <div className="relative">
                     {occupant && !occupant.isMuted && (
                        <div className={cn("absolute -inset-2 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />
