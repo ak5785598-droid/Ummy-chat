@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -49,6 +48,8 @@
         "category": { "type": "string" },
         "lockedSeats": { "type": "array", "items": { "type": "number" } },
         "participantCount": { "type": "number", "description": "Number of users currently inside the room." },
+        "isChatMuted": { "type": "boolean", "description": "Whether room messages are disabled." },
+        "currentMusicUrl": { "type": "string", "description": "URL of the background music playing in the room." },
         "stats": {
           "type": "object",
           "properties": {

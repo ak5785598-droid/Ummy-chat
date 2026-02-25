@@ -30,6 +30,11 @@ import {
   ShieldCheck,
   Smile,
   Camera,
+  MessageSquareOff,
+  MessageSquare,
+  Music,
+  Play,
+  Square,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -37,6 +42,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +119,13 @@ const AVAILABLE_GIFTS: Gift[] = [
 
 const AVAILABLE_EMOJIS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
 
+const MUSIC_TRACKS = [
+  { id: 'lofi', name: 'Lofi Vibes', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { id: 'jazz', name: 'Midnight Jazz', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { id: 'ambient', name: 'Deep Space', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+  { id: 'chill', name: 'Ocean Breeze', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+];
+
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
@@ -120,12 +134,13 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={audioRef} autoPlay className="hidden" />;
 }
 
-export function RoomClient({ room }: { room: Room }) {
+export function RoomClient({ room: initialRoom }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
@@ -133,13 +148,28 @@ export function RoomClient({ room }: { room: Room }) {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const roomDpInputRef = useRef<HTMLInputElement>(null);
+  const roomAudioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const { setIsMinimized, setActiveRoom } = useRoomContext();
   const firestore = useFirestore();
-  const { isUploading: isRoomImageUploading, uploadRoomImage } = useRoomImageUpload(room.id);
+  const { isUploading: isRoomImageUploading, uploadRoomImage } = useRoomImageUpload(initialRoom.id);
+
+  // Real-time room doc for settings like music and chat mute
+  const roomRef = useMemoFirebase(() => initialRoom.id ? doc(firestore!, 'chatRooms', initialRoom.id) : null, [firestore, initialRoom.id]);
+  const { data: roomDoc } = useCollection(useMemoFirebase(() => query(collection(firestore!, 'chatRooms'), orderBy('createdAt')), [firestore])) as any;
+  // Note: using useDoc for single room instead of query for better consistency
+  const [room, setRoom] = useState<any>(initialRoom);
+  
+  useEffect(() => {
+    if (!firestore || !initialRoom.id) return;
+    const unsub = onSnapshot(doc(firestore, 'chatRooms', initialRoom.id), (snap) => {
+      if (snap.exists()) setRoom({ ...snap.data(), id: snap.id });
+    });
+    return () => unsub();
+  }, [firestore, initialRoom.id]);
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
   const isOwner = currentUser?.uid === room.ownerId;
@@ -195,9 +225,30 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [activeMessages]);
 
+  // Sync Room Music
+  useEffect(() => {
+    if (roomAudioRef.current) {
+      if (room.currentMusicUrl) {
+        roomAudioRef.current.src = room.currentMusicUrl;
+        roomAudioRef.current.play().catch(() => {
+          // Auto-play might be blocked until user interaction
+        });
+      } else {
+        roomAudioRef.current.pause();
+        roomAudioRef.current.src = '';
+      }
+    }
+  }, [room.currentMusicUrl]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
+    
+    if (room.isChatMuted && !canManageRoom) {
+      toast({ variant: 'destructive', title: 'Chat Disabled', description: 'The host has disabled room messages.' });
+      return;
+    }
+
     setIsSending(true);
     
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
@@ -323,6 +374,22 @@ export function RoomClient({ room }: { room: Room }) {
     const batch = writeBatch(firestore);
     snap.docs.forEach(d => batch.delete(d.ref));
     batch.commit();
+    toast({ title: 'Chat Cleared', description: 'All messages have been purged from the frequency.' });
+  };
+
+  const toggleRoomMessages = () => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      isChatMuted: !room.isChatMuted
+    });
+  };
+
+  const handleToggleMusic = (url: string) => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    const nextUrl = room.currentMusicUrl === url ? null : url;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      currentMusicUrl: nextUrl
+    });
   };
 
   const handleDeleteRoom = async () => {
@@ -443,6 +510,7 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl border border-white/5 animate-in fade-in duration-700">
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
+      <audio ref={roomAudioRef} loop crossOrigin="anonymous" />
       
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} />
@@ -719,8 +787,14 @@ export function RoomClient({ room }: { room: Room }) {
       <footer className="relative z-50 px-6 pb-12 pt-4 bg-gradient-to-t from-black via-black/80 to-transparent">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <form className="flex-1 flex items-center bg-blue-900/40 backdrop-blur-xl rounded-full border border-white/10 h-12 px-5 group focus-within:border-primary/50 transition-colors" onSubmit={handleSendMessage}>
-            <Input placeholder="Share a vibe..." className="bg-transparent border-none text-xs text-white placeholder:text-white/40 focus-visible:ring-0" value={messageText} onChange={(e) => setMessageText(e.target.value)} disabled={isSending} />
-            <button type="submit" disabled={isSending || !messageText.trim()} className="text-white hover:text-primary transition-colors"><Send className="h-5 w-5" /></button>
+            <Input 
+              placeholder={room.isChatMuted ? "Messages Disabled" : "Share a vibe..."} 
+              className="bg-transparent border-none text-xs text-white placeholder:text-white/40 focus-visible:ring-0" 
+              value={messageText} 
+              onChange={(e) => setMessageText(e.target.value)} 
+              disabled={isSending || (room.isChatMuted && !canManageRoom)} 
+            />
+            <button type="submit" disabled={isSending || !messageText.trim() || (room.isChatMuted && !canManageRoom)} className="text-white hover:text-primary transition-colors"><Send className="h-5 w-5" /></button>
           </form>
           <div className="flex items-center gap-2">
             <Button onClick={handleMicToggle} className={cn("rounded-full h-12 w-12 transition-all shadow-lg", isInSeat ? (isMicOn ? "bg-primary text-black scale-110" : "bg-white/10 text-white/40") : "bg-white/5")}>
@@ -825,9 +899,78 @@ export function RoomClient({ room }: { room: Room }) {
               </DialogContent>
             </Dialog>
 
-            <Button className="rounded-full h-12 w-12 bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-all hover:scale-110">
-               <Settings className="h-6 w-6" />
-            </Button>
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full h-12 w-12 bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-all hover:scale-110">
+                   <Settings className="h-6 w-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden">
+                 <DialogHeader className="p-8 pb-4 text-center">
+                    <DialogTitle className="text-2xl font-black uppercase italic">Frequency Settings</DialogTitle>
+                    <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Manage real-time room controls and entertainment.</DialogDescription>
+                 </DialogHeader>
+                 <div className="p-8 pt-4 space-y-8">
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-gray-100">
+                          <div className="flex items-center gap-3">
+                             <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                                {room.isChatMuted ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold uppercase tracking-tight">Room Messages</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">{room.isChatMuted ? 'Disabled' : 'Enabled'}</p>
+                             </div>
+                          </div>
+                          <Switch 
+                            checked={!room.isChatMuted} 
+                            onCheckedChange={toggleRoomMessages} 
+                            disabled={!canManageRoom}
+                          />
+                       </div>
+
+                       <button 
+                         onClick={handleClearChat}
+                         disabled={!canManageRoom}
+                         className="w-full flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                       >
+                          <div className="flex items-center gap-3">
+                             <div className="h-10 w-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+                                <Trash2 className="h-5 w-5" />
+                             </div>
+                             <p className="text-sm font-bold uppercase tracking-tight">Clear All Chat</p>
+                          </div>
+                          <ChevronDown className="h-4 w-4 -rotate-90 opacity-40" />
+                       </button>
+                    </div>
+
+                    <div className="space-y-4">
+                       <div className="flex items-center gap-2 px-2">
+                          <Music className="h-4 w-4 text-primary" />
+                          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">Room Radio</h3>
+                       </div>
+                       <div className="grid grid-cols-2 gap-3">
+                          {MUSIC_TRACKS.map(track => (
+                            <button 
+                              key={track.id} 
+                              onClick={() => handleToggleMusic(track.url)}
+                              disabled={!canManageRoom}
+                              className={cn(
+                                "p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95",
+                                room.currentMusicUrl === track.url 
+                                  ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                  : "bg-secondary/30 border-transparent hover:border-primary/20"
+                              )}
+                            >
+                               {room.currentMusicUrl === track.url ? <Square className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current" />}
+                               <span className="text-[10px] font-black uppercase truncate w-full text-center">{track.name}</span>
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+                 </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </footer>
