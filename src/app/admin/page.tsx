@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -66,7 +65,7 @@ export default function AdminPage() {
       const spenders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       if (spenders.length === 0) {
-        toast({ variant: 'destructive', title: 'No Activity', description: 'No spending detected today.' });
+        toast({ variant: 'destructive', title: 'No Activity', description: 'No IST spending detected today.' });
         return;
       }
 
@@ -83,7 +82,7 @@ export default function AdminPage() {
         batch.update(pRef, { 'wallet.coins': increment(reward) });
         batch.set(notifRef, {
           title: 'Rich Rewards Distribution',
-          content: `Congratulations! You ranked Top ${i+1} in today's wealth race. You've been rewarded ${reward.toLocaleString()} Gold Coins!`,
+          content: `Congratulations! You ranked Top ${i+1} in today's wealth race (IST Cycle). You've been rewarded ${reward.toLocaleString()} Gold Coins!`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false
@@ -101,8 +100,8 @@ export default function AdminPage() {
       batch.set(configRef!, { lastRewardReset: serverTimestamp() }, { merge: true });
 
       await batch.commit();
-      await logAdminAction('Daily Reward Distribution', 'tribe/economy', { recipients: spenders.length });
-      toast({ title: 'Rewards Dispatched', description: `Processed ${spenders.length} rankings.` });
+      await logAdminAction('Daily Reward Distribution (IST)', 'tribe/economy', { recipients: spenders.length });
+      toast({ title: 'Rewards Dispatched', description: `Processed ${spenders.length} rankings for the IST cycle.` });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Distribution Failed', description: e.message });
     } finally {
@@ -245,7 +244,7 @@ export default function AdminPage() {
              <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20"><Shield className="h-8 w-8 text-white" /></div>
              <div>
                 <h1 className="text-4xl font-bold uppercase italic tracking-tighter">Ummy Command Center</h1>
-                <p className="text-muted-foreground">System-wide authority and audit oversight.</p>
+                <p className="text-muted-foreground">System-wide authority and IST audit oversight.</p>
              </div>
           </div>
         </header>
@@ -263,7 +262,7 @@ export default function AdminPage() {
           <TabsContent value="overview" className="space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Economy Status</CardTitle></CardHeader><CardContent><p className="text-3xl font-black uppercase italic">{config?.economyEnabled ? 'Active' : 'Paused'}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Last Reset</CardTitle></CardHeader><CardContent><p className="text-3xl font-black uppercase italic">{config?.lastRewardReset ? format(config.lastRewardReset.toDate(), 'MMM d, HH:mm') : 'Pending'}</p></CardContent></Card>
+                <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Last Reset (IST)</CardTitle></CardHeader><CardContent><p className="text-3xl font-black uppercase italic">{config?.lastRewardReset ? format(config.lastRewardReset.toDate(), 'MMM d, HH:mm') : 'Pending'}</p></CardContent></Card>
              </div>
           </TabsContent>
 
@@ -273,11 +272,11 @@ export default function AdminPage() {
                    <CardTitle className="font-headline text-2xl uppercase italic flex items-center gap-2">
                       <Gift className="h-6 w-6 text-yellow-500" /> Rich Rewards Hub
                    </CardTitle>
-                   <CardDescription>Dispatch daily coin rewards to the Top 10 spenders and reset the frequency.</CardDescription>
+                   <CardDescription>Dispatch daily coin rewards to the Top 10 spenders and reset the IST frequency.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                    <div className="p-6 bg-white/5 rounded-3xl border-2 border-dashed border-yellow-500/20">
-                      <h3 className="font-black uppercase italic text-sm mb-4">Distribution Sequence:</h3>
+                      <h3 className="font-black uppercase italic text-sm mb-4">Distribution Sequence (GMT+5:30):</h3>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                          <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 1</p><p className="font-black text-yellow-500">10,000</p></div>
                          <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 2</p><p className="font-black text-slate-300">8,000</p></div>
@@ -294,7 +293,7 @@ export default function AdminPage() {
                       {isSaving ? <Loader className="animate-spin h-6 w-6 mr-2" /> : <CheckCircle2 className="h-6 w-6 mr-2" />}
                       Execute Daily Distribution & Reset
                    </Button>
-                   <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest italic">Note: This action clears all "Daily Spent" counters across the tribe.</p>
+                   <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest italic">Note: This action clears all "Daily Spent" counters across the tribe based on the 12AM IST cycle.</p>
                 </CardContent>
              </Card>
           </TabsContent>
@@ -392,7 +391,7 @@ export default function AdminPage() {
 
           <TabsContent value="logs">
              <Card className="border-none shadow-xl rounded-[2rem]">
-                <CardHeader><CardTitle className="font-headline text-2xl uppercase italic flex items-center gap-2"><ClipboardList className="h-6 w-6" /> Audit Logs</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="font-headline text-2xl uppercase italic flex items-center gap-2"><ClipboardList className="h-6 w-6" /> Audit Logs (IST)</CardTitle></CardHeader>
                 <CardContent><div className="space-y-2">{logs?.map((log: any) => (<div key={log.id} className="p-3 bg-muted/10 rounded-xl border flex items-center justify-between"><div className="flex-1"><p className="text-xs font-black uppercase italic">{log.action}</p><p className="text-[8px] text-muted-foreground">Admin: {log.adminName}</p></div><p className="text-[8px] opacity-50">{log.createdAt ? format(log.createdAt.toDate(), 'HH:mm') : '...'}</p></div>))}</div></CardContent>
              </Card>
           </TabsContent>

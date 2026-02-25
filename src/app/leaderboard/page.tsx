@@ -136,7 +136,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
               </Avatar>
               <div className="flex-1">
                 <p className="font-black text-sm uppercase text-white/90 truncate italic tracking-tighter">{getDisplayName(item)}</p>
-                <Badge variant="outline" className="text-[7px] border-yellow-500/20 text-yellow-500/60 font-black h-4 mt-1">
+                <Badge variant="outline" className="text-[8px] border-yellow-500/20 text-yellow-500/60 font-black h-4 mt-1">
                   {type === 'rooms' ? (item.category || 'Tribe') : `Lv.${(item.level?.rich || 1)}`}
                 </Badge>
               </div>
@@ -189,8 +189,16 @@ function LeaderboardContent() {
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date();
-      const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
-      const diff = nextReset.getTime() - now.getTime();
+      // Target: Next 12:00 AM IST (GMT+5:30)
+      // 12:00 AM IST is 18:30:00 UTC of the previous day.
+      let target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 18, 30, 0));
+      
+      // If current UTC time is already past 18:30 UTC today, the next 12 AM IST is tomorrow's 18:30 UTC
+      if (now.getTime() >= target.getTime()) {
+        target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 18, 30, 0));
+      }
+      
+      const diff = target.getTime() - now.getTime();
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
@@ -248,12 +256,12 @@ function LeaderboardContent() {
                       <Trophy className="h-8 w-8 text-yellow-400" />
                       Rich Rewards
                     </DialogTitle>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mt-2">Daily Throne Distribution</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mt-2">Daily IST Throne Distribution</p>
                   </DialogHeader>
                   <div className="px-8 pb-12 space-y-4 h-full overflow-y-auto no-scrollbar">
                     <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 flex items-center gap-3 mb-4">
                       <Timer className="h-4 w-4 text-primary" />
-                      <p className="text-[10px] font-bold text-primary/80 uppercase">Reset in {timeLeft} (GMT+5.5)</p>
+                      <p className="text-[10px] font-bold text-primary/80 uppercase">Reset in {timeLeft} (GMT+5:30)</p>
                     </div>
                     <RewardItem rank="Top 1" amount="10,000" color="bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]" />
                     <RewardItem rank="Top 2" amount="8,000" color="bg-slate-300 text-black" />
@@ -267,7 +275,7 @@ function LeaderboardContent() {
                       </div>
                       <ul className="space-y-2">
                         <li className="text-[10px] text-white/40 leading-relaxed">• Ranking is based on your total daily spending across all frequencies.</li>
-                        <li className="text-[10px] text-white/40 leading-relaxed">• Rewards are dispatched to your vault at 12:00 AM GMT daily.</li>
+                        <li className="text-[10px] text-white/40 leading-relaxed">• Rewards are dispatched to your vault at 12:00 AM IST daily.</li>
                         <li className="text-[10px] text-white/40 leading-relaxed">• The leaderboard resets instantly upon reward delivery for the next cycle.</li>
                       </ul>
                     </div>
@@ -280,7 +288,7 @@ function LeaderboardContent() {
              <button onClick={() => setTimePeriod('daily')} className={cn("flex-1 py-2 rounded-full font-black uppercase text-[10px] italic transition-all", timePeriod === 'daily' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black" : "text-white/40")}>Daily</button>
              <button onClick={() => setTimePeriod('weekly')} className={cn("flex-1 py-2 rounded-full font-black uppercase text-[10px] italic transition-all", timePeriod === 'weekly' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black" : "text-white/40")}>Weekly</button>
              <button onClick={() => setTimePeriod('monthly')} className={cn("flex-1 py-2 rounded-full font-black uppercase text-[10px] italic transition-all", timePeriod === 'monthly' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black" : "text-white/40")}>Monthly</button>
-             <button className="px-4 py-2 font-black uppercase text-[8px] text-yellow-500 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Today</button>
+             <button className="px-4 py-2 font-black uppercase text-[8px] text-yellow-500 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> IST Today</button>
           </div>
         </header>
 
@@ -294,7 +302,7 @@ function LeaderboardContent() {
 
         <div className="relative z-10 w-full py-2 bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent border-y border-yellow-500/10 flex justify-center items-center gap-2 mb-4">
            <Timer className="h-4 w-4 text-yellow-500" />
-           <span className="text-xs font-mono font-bold text-yellow-500 tracking-widest">{timeLeft} (GMT+5.5)</span>
+           <span className="text-xs font-mono font-bold text-yellow-500 tracking-widest">{timeLeft} (GMT+5:30)</span>
         </div>
 
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-b from-amber-900 to-black p-4 border-t border-yellow-500/30 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] backdrop-blur-xl">
