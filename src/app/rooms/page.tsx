@@ -13,6 +13,7 @@ import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/com
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * High-Fidelity Discovery Hub.
@@ -21,6 +22,7 @@ import Link from 'next/link';
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('All');
   const [navTab, setNavTab] = useState<'chatroom' | 'mine'>('chatroom');
   const [api, setApi] = useState<CarouselApi>();
@@ -56,6 +58,7 @@ export default function RoomsPage() {
   }, [firestore, user]);
 
   const { data: myRoomData } = useCollection(myRoomQuery);
+  const myRoomId = myRoomData?.[0]?.id;
 
   // Fetch Top Users for Ranking Cards
   const topRichQuery = useMemoFirebase(() => {
@@ -133,8 +136,21 @@ export default function RoomsPage() {
               </button>
             </div>
             <div className="flex items-center gap-4">
-               <Search className="h-6 w-6 text-gray-800" />
-               <Home className="h-6 w-6 text-gray-800" />
+               <button className="p-1 hover:scale-110 active:scale-90 transition-all">
+                  <Search className="h-6 w-6 text-gray-800" />
+               </button>
+               {myRoomId ? (
+                 <Link href={`/rooms/${myRoomId}`} className="p-1 hover:scale-110 active:scale-90 transition-all">
+                    <Home className="h-6 w-6 text-gray-800" />
+                 </Link>
+               ) : (
+                 <button 
+                   onClick={() => toast({ title: "No Frequency Found", description: "You need to launch a room in the 'Mine' tab first." })}
+                   className="p-1 opacity-20 hover:scale-110 active:scale-90 transition-all"
+                 >
+                    <Home className="h-6 w-6 text-gray-800" />
+                 </button>
+               )}
             </div>
           </div>
         </header>
