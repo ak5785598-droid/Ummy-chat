@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
@@ -30,9 +31,11 @@ export function useProfilePictureUpload() {
     setIsUploading(true);
 
     try {
-      // Create a unique path to ensure cache busting and permanent identification
-      const storagePath = `users/${user.uid}/profile_${Date.now()}.jpg`;
+      // Create a unique path with timestamp to ensure cache busting and permanent identification
+      const timestamp = Date.now();
+      const storagePath = `users/${user.uid}/profile_${timestamp}.jpg`;
       const storageRef = ref(storage, storagePath);
+      
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
@@ -44,9 +47,9 @@ export function useProfilePictureUpload() {
         updatedAt: serverTimestamp()
       };
 
-      // Atomically update both locations to ensure global consistency
-      updateDocumentNonBlocking(userSummaryRef, updateData);
-      updateDocumentNonBlocking(userProfileRef, updateData);
+      // Blocking updates to ensure persistence before completion UI
+      await updateDoc(userSummaryRef, updateData);
+      await updateDoc(userProfileRef, updateData);
       
       toast({
         title: 'Identity Synchronized',

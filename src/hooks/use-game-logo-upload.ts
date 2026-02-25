@@ -2,9 +2,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
@@ -31,8 +31,9 @@ export function useGameLogoUpload() {
     setIsUploading(true);
 
     try {
-      // 1. Upload to Storage
-      const storagePath = `games/${gameId}/logo.jpg`;
+      // 1. Upload to Storage with unique timestamp
+      const timestamp = Date.now();
+      const storagePath = `games/${gameId}/logo_${timestamp}.jpg`;
       const storageRef = ref(storage, storagePath);
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
@@ -45,7 +46,7 @@ export function useGameLogoUpload() {
         updatedAt: serverTimestamp()
       };
 
-      updateDocumentNonBlocking(gameRef, updateData);
+      await updateDoc(gameRef, updateData);
 
       toast({
         title: 'Game Logo Updated!',

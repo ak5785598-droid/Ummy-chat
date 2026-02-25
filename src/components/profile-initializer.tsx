@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -10,7 +11,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 /**
  * Production Profile Initializer.
  * Assigns a unique sequential 6-digit numeric ID (starting from 100,000).
- * Prototype images removed from defaults.
+ * Ensuring that once avatarUrl is set, it is NEVER overwritten by initializer defaults.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -24,10 +25,9 @@ export function ProfileInitializer() {
     const initProfile = async () => {
       const profileId = user.uid;
       const userRef = doc(firestore, 'users', profileId);
-      const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
-      const countersRef = doc(firestore, 'appConfig', 'counters');
       
       try {
+        // Critical: Check existence FIRST to prevent overwriting user-selected images or data
         const userSnap = await getDoc(userRef);
         
         if (userSnap.exists()) {
@@ -39,6 +39,7 @@ export function ProfileInitializer() {
 
         // Atomic Transaction for unique 6-digit ID assignment
         const finalData = await runTransaction(firestore, async (transaction) => {
+          const countersRef = doc(firestore, 'appConfig', 'counters');
           const countersSnap = await transaction.get(countersRef);
           let nextUserId = 100000;
 
@@ -53,7 +54,7 @@ export function ProfileInitializer() {
             id: profileId,
             specialId: String(nextUserId),
             username: user.displayName || `Tribe_${String(nextUserId).substring(2)}`,
-            avatarUrl: user.photoURL || '', // Production: No Picsum fallbacks
+            avatarUrl: user.photoURL || '', 
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
             wallet: { 
@@ -78,7 +79,11 @@ export function ProfileInitializer() {
           return initialData;
         });
 
-        await setDoc(userRef, {
+        // Split document for indexing vs full profile
+        const userSummaryRef = doc(firestore, 'users', profileId);
+        const userProfileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+
+        await setDoc(userSummaryRef, {
           id: profileId,
           specialId: finalData.specialId,
           username: finalData.username,
@@ -91,7 +96,7 @@ export function ProfileInitializer() {
           joinedAt: serverTimestamp(),
         }, { merge: true });
 
-        await setDoc(profileRef, finalData, { merge: true });
+        await setDoc(userProfileRef, finalData, { merge: true });
 
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Welcome to the Tribe!',

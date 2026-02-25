@@ -1,14 +1,15 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
  * Hook to handle room image uploads to Firebase Storage and update Firestore.
- * Synchronized with Ummy production non-blocking protocol.
+ * Synchronized with Ummy production persistence protocol.
  */
 export function useRoomImageUpload(roomId: string) {
   const storage = useStorage();
@@ -30,18 +31,15 @@ export function useRoomImageUpload(roomId: string) {
     setIsUploading(true);
 
     try {
-      // 1. Create a unique storage reference to avoid browser caching issues
+      // Create a unique storage reference with timestamp to avoid browser caching issues
       const fileExtension = file.name.split('.').pop() || 'jpg';
-      const storagePath = `chatRooms/${roomId}/cover_${Date.now()}.${fileExtension}`;
+      const timestamp = Date.now();
+      const storagePath = `chatRooms/${roomId}/cover_${timestamp}.${fileExtension}`;
       const storageRef = ref(storage, storagePath);
 
-      // 2. Upload the file
       const uploadResult = await uploadBytes(storageRef, file);
-
-      // 3. Get the download URL
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 4. Update Firestore room document (Non-Blocking)
       const roomRef = doc(firestore, 'chatRooms', roomId);
       
       const updateData = { 
@@ -49,7 +47,8 @@ export function useRoomImageUpload(roomId: string) {
         updatedAt: serverTimestamp()
       };
 
-      updateDocumentNonBlocking(roomRef, updateData);
+      // Blocking update for absolute persistence certainty
+      await updateDoc(roomRef, updateData);
 
       toast({
         title: 'Room DP Updated!',

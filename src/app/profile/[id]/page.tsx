@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
@@ -76,12 +77,12 @@ export default function ProfilePage() {
     if (!isAuthLoading && !currentUser) router.replace('/login');
   }, [currentUser, isAuthLoading, router]);
 
-  // Clear local preview once the global profile URL updates to ensure permanence
+  // Only clear local preview when the real-time profile avatar changes
   useEffect(() => {
-    if (!isUploading) {
+    if (profile?.avatarUrl) {
       setLocalAvatarPreview(null);
     }
-  }, [isUploading]);
+  }, [profile?.avatarUrl]);
 
   const isOwnProfile = currentUser?.uid === profileId;
   const isFollowing = myProfile?.tags?.includes(`following:${profileId}`);
