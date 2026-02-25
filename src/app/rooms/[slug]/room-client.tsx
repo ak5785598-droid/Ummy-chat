@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
 import {
   Mic,
   MicOff,
@@ -99,7 +101,7 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
   { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
   { id: 'car', name: 'Luxury Car', emoji: '🏎️', price: 2000, animationType: 'bounce' },
-  { id: 'jet', name: 'Private Jet', emoji: '🛩️', price: 5000, animationType: 'bounce' },
+  { id: 'jet', name: 'Private Jet', emoji: '️', price: 5000, animationType: 'bounce' },
   { id: 'dragon', name: 'Dragon', emoji: '🐉', price: 10000, animationType: 'spin' },
   { id: 'rocket', name: 'Rocket', emoji: '🚀', price: 25000, animationType: 'zoom' },
   { id: 'castle', name: 'Castle', emoji: '🏰', price: 50000, animationType: 'bounce' },
@@ -445,9 +447,23 @@ export function RoomClient({ room }: { room: Room }) {
         <RemoteAudio key={peerId} stream={stream} />
       ))}
 
-      <div className="absolute inset-0 z-0 opacity-60">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-blue-900/40 to-black z-10" />
-        <img src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?q=80&w=2070" className="h-full w-full object-cover scale-110" alt="Room Vibe" />
+      {/* High-Fidelity Emerald Geometric Theme */}
+      <div className="absolute inset-0 z-0">
+        {/* Main Emerald Gradient Base */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#065f46] via-[#022c22] to-black z-10 opacity-95" />
+        
+        {/* Geometric Prism Image */}
+        <Image 
+          src="https://picsum.photos/seed/emerald-vibe/1200/2400" 
+          alt="Emerald Theme" 
+          fill 
+          className="object-cover scale-110 opacity-30 mix-blend-overlay"
+          data-ai-hint="emerald geometric"
+        />
+
+        {/* Ambient Emerald Glows */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#10b981]/10 rounded-full blur-[120px] z-20 animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#059669]/10 rounded-full blur-[120px] z-20 animate-pulse delay-700" />
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-6 pb-2">

@@ -8,6 +8,12 @@
       "imageHint": "fruit party"
     },
     {
+      "id": "emerald-room-theme",
+      "description": "Deep emerald geometric room background",
+      "imageUrl": "https://picsum.photos/seed/emerald-vibe/1200/2400",
+      "imageHint": "emerald geometric"
+    },
+    {
       "id": "user-avatar-1",
       "description": "User avatar 1",
       "imageUrl": "https://picsum.photos/seed/user1/200/200",
