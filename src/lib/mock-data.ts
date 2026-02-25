@@ -42,7 +42,7 @@ const games: Game[] = [
   },
   { 
     id: 'g5', 
-    title: 'Teen Patti', 
+    title: 'Dragon Battle', 
     slug: 'teen-patti', 
     coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', 
     cost: 0, 

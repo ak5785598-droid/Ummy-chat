@@ -12,7 +12,12 @@ import {
   History,
   X,
   Trophy,
-  Loader
+  Loader,
+  HelpCircle,
+  BarChart2,
+  Maximize2,
+  Settings,
+  RefreshCcw
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -20,11 +25,11 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 
 const CHIPS = [
-  { value: 5, color: 'bg-emerald-500' },
-  { value: 10, color: 'bg-blue-500' },
-  { value: 100, color: 'bg-yellow-500' },
-  { value: 1000, color: 'bg-purple-500' },
-  { value: 5000, color: 'bg-rose-500' },
+  { value: 5, color: 'bg-[#00E676]' }, // Green
+  { value: 10, color: 'bg-[#2979FF]' }, // Blue
+  { value: 100, color: 'bg-[#FFD600]' }, // Yellow
+  { value: 1000, color: 'bg-[#FF9100]' }, // Orange
+  { value: 5000, color: 'bg-[#FF1744]' }, // Red
 ];
 
 const DRAGONS = [
@@ -59,7 +64,7 @@ export default function TeenPattiPage() {
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
@@ -75,7 +80,7 @@ export default function TeenPattiPage() {
     try {
       audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.3;
+      masterGain.gain.value = 1.0; // FULL VOLUME AS REQUESTED
       masterGain.connect(audioCtx.destination);
       let step = 0;
       const scheduleNextNote = () => {
@@ -86,7 +91,7 @@ export default function TeenPattiPage() {
         const frequencies = [146.83, 164.81, 174.61, 196.00]; // D3, E3, F3, G3
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(frequencies[step % 4], now);
-        noteGain.gain.setValueAtTime(0.1, now);
+        noteGain.gain.setValueAtTime(0.15, now);
         noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
         osc.connect(noteGain);
         noteGain.connect(masterGain);
@@ -165,8 +170,8 @@ export default function TeenPattiPage() {
     return (
       <div className="h-screen w-full bg-[#1a0a05] flex flex-col items-center justify-center space-y-6">
         <div className="text-8xl animate-bounce">🐲</div>
-        <h1 className="text-5xl font-black text-white uppercase italic tracking-tighter">Teen Patti</h1>
-        <p className="text-yellow-500 uppercase font-black tracking-widest text-[10px] animate-pulse">Loading Dragon Battle...</p>
+        <h1 className="text-5xl font-black text-white uppercase italic tracking-tighter">Dragon Battle</h1>
+        <p className="text-[#FFD600] uppercase font-black tracking-widest text-[10px] animate-pulse">Loading Elite Arena...</p>
       </div>
     );
   }
@@ -176,70 +181,70 @@ export default function TeenPattiPage() {
       <div className="h-screen w-full bg-[#1a0a05] flex flex-col relative overflow-hidden font-headline animate-in fade-in duration-1000">
         <CompactRoomView />
 
-        {/* Cinematic Backdrop */}
+        {/* Golden Vault Backdrop */}
         <div className="absolute inset-0 z-0">
-           <img src="https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000" className="h-full w-full object-cover opacity-20 scale-110" alt="Vault" />
-           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90" />
+           <img src="https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000" className="h-full w-full object-cover opacity-30 scale-110" alt="Vault" />
+           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
+           <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[#FFD600]/10 to-transparent" />
         </div>
 
         <div className="flex-1 flex flex-col pt-32 pb-32 px-4 relative z-10 overflow-y-auto no-scrollbar">
-           <header className="flex items-center justify-between mb-6">
-              <div className="flex gap-2">
-                 <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button>
-                 <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
+           <header className="flex items-center justify-between mb-2">
+              <div className="flex gap-1">
+                 <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><Maximize2 className="h-4 w-4" /></button>
+                 <button onClick={() => setIsMuted(!isMuted)} className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
+                 <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><HelpCircle className="h-4 w-4" /></button>
+                 <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><BarChart2 className="h-4 w-4" /></button>
               </div>
-              <div className="bg-black/40 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-3 shadow-2xl">
-                 <History className="h-3 w-3 text-pink-500" />
-                 <div className="flex gap-1">
-                    {history.map((h, i) => (
-                      <span key={i} className="text-[10px] font-black uppercase text-pink-400 animate-in zoom-in">{h}</span>
-                    ))}
-                 </div>
+              <h1 className="text-2xl font-black text-white italic drop-shadow-lg">Dragon Battle</h1>
+              <div className="flex gap-1">
+                 <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><Settings className="h-4 w-4" /></button>
+                 <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><ChevronLeft className="h-4 w-4" /></button>
+                 <button onClick={() => router.back()} className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><X className="h-4 w-4" /></button>
               </div>
-              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><X className="h-5 w-5" /></button>
            </header>
 
-           {/* Cards Layout */}
-           <div className="grid grid-cols-3 gap-4 mb-10 px-2 animate-in slide-in-from-top-10 duration-700">
+           {/* Cards Layout & Multipliers */}
+           <div className="grid grid-cols-3 gap-4 mb-6 px-2 animate-in slide-in-from-top-10 duration-700">
               {['A', 'B', 'C'].map((id) => (
-                <div key={id} className="space-y-2">
-                   <div className="flex gap-1 justify-center">
+                <div key={id} className="space-y-1 relative">
+                   <div className="flex gap-0.5 justify-center">
                       {[1, 2, 3].map(c => (
-                        <div key={c} className={cn("w-8 h-12 rounded-sm border border-yellow-500/30 transition-all", winner === id ? "bg-pink-600 shadow-[0_0_15px_#db2777] scale-110" : "bg-black/60 shadow-inner")}>
-                           {winner === id && <span className="flex items-center justify-center h-full text-xs">🎴</span>}
+                        <div key={c} className={cn("w-10 h-16 rounded-sm border-[1px] border-[#FFD600]/30 transition-all", winner === id ? "bg-[#FF1744] shadow-[0_0_15px_#FF1744] scale-110" : "bg-black/60 shadow-inner")}>
+                           <div className="h-full w-full bg-[url('https://images.unsplash.com/photo-1572021335469-31706a17aaef?q=80&w=400')] bg-cover bg-center opacity-40" />
                         </div>
                       ))}
                    </div>
-                   <p className="text-center text-[8px] font-black text-pink-500 uppercase tracking-widest italic drop-shadow-md">2.92x</p>
+                   <p className="text-center text-[10px] font-black text-[#FF1744] uppercase tracking-widest italic drop-shadow-md">2.92</p>
+                   {id === 'B' && (
+                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+                         <div className="h-12 w-12 rounded-full bg-[#FF1744] border-2 border-white/20 shadow-2xl flex items-center justify-center animate-pulse">
+                            {gameState === 'betting' ? (
+                              <span className="text-xl font-black text-white italic">{timeLeft}</span>
+                            ) : (
+                              <Loader className="h-6 w-6 text-white animate-spin" />
+                            )}
+                         </div>
+                      </div>
+                   )}
                 </div>
               ))}
            </div>
 
-           {/* Characters & Center Timer */}
-           <div className="relative flex items-center justify-between px-2 mb-12">
+           {/* Characters Section */}
+           <div className="relative flex items-center justify-between px-2 mb-8">
               {DRAGONS.map((drag, i) => (
-                <div key={drag.id} className={cn("flex flex-col items-center transition-all duration-500", winner === drag.id ? "scale-125 z-20" : "scale-100 z-10 opacity-80")}>
-                   <span className="text-4xl font-black text-yellow-500 italic mb-2 drop-shadow-lg">{drag.id}</span>
+                <div key={drag.id} className={cn("flex flex-col items-center transition-all duration-500", winner === drag.id ? "scale-125 z-20" : "scale-100 z-10 opacity-90")}>
+                   <span className="text-5xl font-serif text-[#FFD600] italic mb-2 drop-shadow-lg font-bold">{drag.id}</span>
                    <div className="relative group">
-                      {winner === drag.id && <div className="absolute -inset-4 bg-yellow-500/20 rounded-full blur-2xl animate-pulse" />}
-                      <img src={drag.image} className="h-24 w-24 object-contain drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]" alt={drag.name} />
+                      {winner === drag.id && <div className="absolute -inset-4 bg-[#FFD600]/20 rounded-full blur-2xl animate-pulse" />}
+                      <img src={drag.image} className="h-32 w-32 object-contain drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]" alt={drag.name} />
                    </div>
                 </div>
               ))}
-              
-              {/* Floating Timer */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-                 <div className="h-16 w-16 rounded-full bg-pink-600 border-4 border-white/20 shadow-2xl flex items-center justify-center animate-pulse">
-                    {gameState === 'betting' ? (
-                      <span className="text-2xl font-black text-white italic drop-shadow-md">{timeLeft}</span>
-                    ) : (
-                      <Loader className="h-8 w-8 text-white animate-spin" />
-                    )}
-                 </div>
-              </div>
            </div>
 
-           {/* Betting Pods */}
+           {/* Betting Pods - Dark Rectangles */}
            <div className="grid grid-cols-3 gap-3 px-2">
               {['A', 'B', 'C'].map((id) => (
                 <button 
@@ -247,19 +252,18 @@ export default function TeenPattiPage() {
                   onClick={() => handlePlaceBet(id)}
                   disabled={gameState !== 'betting'}
                   className={cn(
-                    "relative h-28 rounded-2xl border-2 transition-all overflow-hidden flex flex-col items-center justify-center p-2 bg-black/60 shadow-xl",
-                    gameState === 'betting' ? "hover:scale-105 active:scale-95 border-white/5" : "opacity-60 grayscale-[0.5]",
-                    winner === id ? "border-yellow-400 ring-4 ring-yellow-400/20" : "border-white/5",
-                    myBets[id] > 0 && "bg-white/5"
+                    "relative h-32 rounded-3xl border-none transition-all overflow-hidden flex flex-col items-center justify-center p-2 bg-[#2D0B0B]/90 shadow-xl",
+                    gameState === 'betting' ? "hover:scale-105 active:scale-95" : "opacity-60 grayscale-[0.5]",
+                    winner === id ? "ring-4 ring-[#FFD600]/50" : "",
                   )}
                 >
                    <div className="space-y-1 text-center">
-                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Pot: {totalPots[id].toLocaleString()}</p>
-                      <p className="text-xs font-black text-yellow-500 uppercase italic">You: {myBets[id].toLocaleString()}</p>
+                      <p className="text-sm font-black text-white uppercase">Pot: <span className={totalPots[id] > 0 ? "text-white" : "text-white"}>{totalPots[id].toLocaleString()}</span></p>
+                      <p className="text-sm font-black text-[#FFD600] uppercase italic">You: {myBets[id].toLocaleString()}</p>
                    </div>
                    {myBets[id] > 0 && (
-                     <div className="absolute top-1 right-1">
-                        <GoldCoinIcon className="h-3 w-3 animate-bounce" />
+                     <div className="absolute top-2 right-2">
+                        <GoldCoinIcon className="h-4 w-4 animate-bounce" />
                      </div>
                    )}
                 </button>
@@ -269,33 +273,31 @@ export default function TeenPattiPage() {
 
         {/* Production Footer Dashboard */}
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-[110] animate-in slide-in-from-bottom-10">
-           <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-3 flex items-center justify-between shadow-2xl">
-              <div className="flex items-center gap-2 bg-white/5 px-4 h-10 rounded-full border border-white/5">
-                 <GoldCoinIcon className="h-4 w-4" />
-                 <span className="text-xs font-black text-white italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+           <div className="bg-black/60 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] p-3 flex items-center justify-between shadow-2xl">
+              <div className="flex flex-col items-start px-2">
+                 <div className="flex items-center gap-1.5">
+                    <div className="bg-[#FFD600] p-0.5 rounded-full"><GoldCoinIcon className="h-3 w-3" /></div>
+                    <span className="text-xs font-black text-[#FFD600] italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+                    <button className="text-[#FFD600]"><RefreshCcw className="h-3 w-3" /></button>
+                 </div>
               </div>
               
-              <div className="flex gap-1 overflow-x-auto no-scrollbar px-2">
+              <button className="bg-white/10 px-4 py-1.5 rounded-full border border-white/10 text-xs font-black text-white italic uppercase tracking-tighter">Repeat</button>
+
+              <div className="flex gap-1 px-2">
                  {CHIPS.map(chip => (
                    <button 
                      key={chip.value} 
                      onClick={() => { setSelectedChip(chip.value); playBetSound(); }} 
                      className={cn(
-                       "h-9 w-9 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
-                       selectedChip === chip.value ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.5)] " + chip.color : "bg-black/40 border-white/10 text-white/60"
+                       "h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 border-white/20 shrink-0",
+                       selectedChip === chip.value ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.5)] " + chip.color : "bg-black/40" + " " + chip.color + " opacity-60"
                      )}
                    >
-                      <span className="text-[8px] font-black italic">{chip.value}</span>
+                      <span className="text-[10px] font-black text-white italic drop-shadow-md">{chip.value}</span>
                    </button>
                  ))}
               </div>
-
-              <button 
-                className="h-12 w-12 bg-pink-600 rounded-full flex items-center justify-center shadow-lg border-2 border-pink-400 active:scale-90 transition-all"
-                onClick={() => { setMyBets({ A: 0, B: 0, C: 0 }); playBetSound(); }}
-              >
-                 <span className="text-[8px] font-black text-white uppercase italic leading-none">Rep</span>
-              </button>
            </div>
         </div>
 

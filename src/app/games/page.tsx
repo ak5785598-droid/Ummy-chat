@@ -18,7 +18,7 @@ const FALLBACK_GAMES = [
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://picsum.photos/seed/fruit-party/600/600', imageHint: 'vibrant fruits' },
   { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: 'https://picsum.photos/seed/forest-party/600/600', imageHint: 'forest animals' },
   { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: 'https://picsum.photos/seed/lucky777/600/600', imageHint: 'lucky 777 slot' },
-  { id: 'fallback-teen', title: 'Teen Patti', slug: 'teen-patti', coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', imageHint: 'dragon card' },
+  { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', imageHint: 'dragon cards' },
 ];
 
 export default function GamesPage() {
