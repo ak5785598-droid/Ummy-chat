@@ -40,6 +40,14 @@ const games: Game[] = [
     cost: 0, 
     imageHint: 'lucky 777 slot' 
   },
+  { 
+    id: 'g5', 
+    title: 'Teen Patti', 
+    slug: 'teen-patti', 
+    coverUrl: 'https://picsum.photos/seed/teenpatti/600/600', 
+    cost: 0, 
+    imageHint: 'dragon card' 
+  },
 ];
 
 const coinPackages: CoinPackage[] = [
