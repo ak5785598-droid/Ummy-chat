@@ -1,16 +1,18 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, Star, ChevronLeft } from 'lucide-react';
+import { Crown, TrendingUp, Loader, Star, ChevronLeft, Gift, Zap, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { GoldCoinIcon } from '@/components/icons';
 
 const RankingList = ({ items, type, isLoading }: any) => {
   if (isLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
@@ -20,7 +22,7 @@ const RankingList = ({ items, type, isLoading }: any) => {
   const others = items.slice(3);
 
   const getValue = (item: any) => {
-    if (type === 'rich') return item.wallet?.totalSpent || 0;
+    if (type === 'rich') return item.wallet?.dailySpent || 0;
     if (type === 'charm') return item.stats?.fans || 0;
     return item.stats?.totalGifts || 0;
   };
@@ -114,18 +116,31 @@ const RankingList = ({ items, type, isLoading }: any) => {
   );
 };
 
-/**
- * Enterprise Leaderboard - Premium Podium Design.
- * Optimized performance by moving RankList subcomponent outside.
- */
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>('rich');
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const reset = new Date();
+      reset.setUTCHours(24, 0, 0, 0);
+      const diff = reset.getTime() - now.getTime();
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    };
+    const timer = setInterval(updateTimer, 1000);
+    updateTimer();
+    return () => clearInterval(timer);
+  }, []);
 
   const richUsersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'users'), orderBy('wallet.totalSpent', 'desc'), limit(50));
+    return query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50));
   }, [firestore, user]);
 
   const charmUsersQuery = useMemoFirebase(() => {
@@ -153,9 +168,47 @@ export default function LeaderboardPage() {
           <div className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Star className="h-6 w-6 text-yellow-400" /></div>
         </header>
 
+        {rankingType === 'rich' && (
+          <div className="px-6 mb-6">
+             <Card className="bg-gradient-to-br from-yellow-500/20 to-transparent border-yellow-500/20 rounded-[2rem] overflow-hidden">
+                <CardHeader className="pb-2">
+                   <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-yellow-400 font-black uppercase italic text-xs">
+                         <Zap className="h-4 w-4" /> Daily Rich Rewards
+                      </div>
+                      <div className="flex items-center gap-1.5 text-white/40 font-mono text-[10px]">
+                         <Timer className="h-3 w-3" /> {timeLeft}
+                      </div>
+                   </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                   <p className="text-[10px] text-white/60 font-medium">Top spenders at 12AM UTC receive exclusive coin batches:</p>
+                   <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                         <p className="text-[8px] font-black uppercase text-yellow-500">Top 1</p>
+                         <p className="text-xs font-black">10K <GoldCoinIcon className="h-2 w-2 inline" /></p>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                         <p className="text-[8px] font-black uppercase text-slate-300">Top 2</p>
+                         <p className="text-xs font-black">8K <GoldCoinIcon className="h-2 w-2 inline" /></p>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                         <p className="text-[8px] font-black uppercase text-amber-700">Top 3</p>
+                         <p className="text-xs font-black">5K <GoldCoinIcon className="h-2 w-2 inline" /></p>
+                      </div>
+                   </div>
+                   <div className="flex justify-between items-center px-2 pt-1 border-t border-white/5">
+                      <span className="text-[8px] font-black text-white/40 uppercase">Top 4: 3,000</span>
+                      <span className="text-[8px] font-black text-white/40 uppercase">Top 5-10: 1,000</span>
+                   </div>
+                </CardContent>
+             </Card>
+          </div>
+        )}
+
         <div className="px-6 space-y-8">
            <div className="flex justify-center gap-2 overflow-x-auto no-scrollbar py-2">
-             <button onClick={() => setRankingMode('rich')} className={cn("px-6 py-2 rounded-xl font-black uppercase italic transition-all shrink-0", rankingType === 'rich' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black border-b-4 border-yellow-700" : "bg-white/5 text-white/40")}>Rich</button>
+             <button onClick={() => setRankingMode('rich')} className={cn("px-6 py-2 rounded-xl font-black uppercase italic transition-all shrink-0", rankingType === 'rich' ? "bg-gradient-to-b from-yellow-100 to-yellow-500 text-black border-b-4 border-yellow-700" : "bg-white/5 text-white/40")}>Daily Rich</button>
              <button onClick={() => setRankingMode('charm')} className={cn("px-6 py-2 rounded-xl font-black uppercase italic transition-all shrink-0", rankingType === 'charm' ? "bg-gradient-to-b from-pink-100 to-pink-500 text-black border-b-4 border-pink-700" : "bg-white/5 text-white/40")}>Charm</button>
              <button onClick={() => setRankingMode('rooms')} className={cn("px-6 py-2 rounded-xl font-black uppercase italic transition-all shrink-0", rankingType === 'rooms' ? "bg-gradient-to-b from-blue-100 to-blue-500 text-black border-b-4 border-blue-700" : "bg-white/5 text-white/40")}>Rooms</button>
            </div>

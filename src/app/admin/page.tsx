@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useUserProfile, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch } from 'firebase/firestore';
-import { Shield, Loader, Search, ClipboardList, TrendingUp, AlertTriangle, Trash2, RefreshCw, Gamepad2 } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, TrendingUp, AlertTriangle, Trash2, RefreshCw, Gamepad2, Gift, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,6 +50,65 @@ export default function AdminPage() {
   const { data: games } = useCollection(gamesQuery);
 
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
+
+  const handleDistributeRichRewards = async () => {
+    if (!firestore || !isAdmin) return;
+    setIsSaving(true);
+    try {
+      // 1. Get Top 10 Spenders
+      const topSpendersQuery = query(
+        collection(firestore, 'users'),
+        where('wallet.dailySpent', '>', 0),
+        orderBy('wallet.dailySpent', 'desc'),
+        limit(10)
+      );
+      const snap = await getDocs(topSpendersQuery);
+      const spenders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (spenders.length === 0) {
+        toast({ variant: 'destructive', title: 'No Activity', description: 'No spending detected today.' });
+        return;
+      }
+
+      const batch = writeBatch(firestore);
+      const rewardConfig = [10000, 8000, 5000, 3000, 1000, 1000, 1000, 1000, 1000, 1000];
+
+      spenders.forEach((s: any, i) => {
+        const reward = rewardConfig[i] || 0;
+        const uRef = doc(firestore, 'users', s.id);
+        const pRef = doc(firestore, 'users', s.id, 'profile', s.id);
+        const notifRef = doc(collection(firestore, 'users', s.id, 'notifications'));
+
+        batch.update(uRef, { 'wallet.coins': increment(reward) });
+        batch.update(pRef, { 'wallet.coins': increment(reward) });
+        batch.set(notifRef, {
+          title: 'Rich Rewards Distribution',
+          content: `Congratulations! You ranked Top ${i+1} in today's wealth race. You've been rewarded ${reward.toLocaleString()} Gold Coins!`,
+          type: 'system',
+          timestamp: serverTimestamp(),
+          isRead: false
+        });
+      });
+
+      // 2. Reset dailySpent for ALL spenders
+      const allSpendersSnap = await getDocs(query(collection(firestore, 'users'), where('wallet.dailySpent', '>', 0)));
+      allSpendersSnap.docs.forEach(d => {
+        batch.update(d.ref, { 'wallet.dailySpent': 0 });
+        batch.update(doc(firestore, 'users', d.id, 'profile', d.id), { 'wallet.dailySpent': 0 });
+      });
+
+      // 3. Update Last Reset Timestamp
+      batch.set(configRef!, { lastRewardReset: serverTimestamp() }, { merge: true });
+
+      await batch.commit();
+      await logAdminAction('Daily Reward Distribution', 'tribe/economy', { recipients: spenders.length });
+      toast({ title: 'Rewards Dispatched', description: `Processed ${spenders.length} rankings.` });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Distribution Failed', description: e.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleInitGames = async () => {
     if (!firestore || !isAdmin) return;
@@ -191,8 +251,9 @@ export default function AdminPage() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-secondary/50 p-1 h-12 rounded-full border w-fit">
+          <TabsList className="bg-secondary/50 p-1.5 h-12 rounded-full border w-fit overflow-x-auto no-scrollbar">
             <TabsTrigger value="overview" className="rounded-full px-6 font-black uppercase text-[10px]">Overview</TabsTrigger>
+            <TabsTrigger value="rewards" className="rounded-full px-6 font-black uppercase text-[10px]">Rewards Hub</TabsTrigger>
             <TabsTrigger value="users" className="rounded-full px-6 font-black uppercase text-[10px]">Users</TabsTrigger>
             <TabsTrigger value="games" className="rounded-full px-6 font-black uppercase text-[10px]">Games</TabsTrigger>
             <TabsTrigger value="config" className="rounded-full px-6 font-black uppercase text-[10px]">Config</TabsTrigger>
@@ -202,8 +263,40 @@ export default function AdminPage() {
           <TabsContent value="overview" className="space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Economy Status</CardTitle></CardHeader><CardContent><p className="text-3xl font-black uppercase italic">{config?.economyEnabled ? 'Active' : 'Paused'}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Health</CardTitle></CardHeader><CardContent><div className="flex items-center gap-2 text-green-500 font-black uppercase italic"><TrendingUp className="h-5 w-5" /> Normal Frequency</div></CardContent></Card>
+                <Card><CardHeader><CardTitle className="text-xs uppercase opacity-50">Last Reset</CardTitle></CardHeader><CardContent><p className="text-3xl font-black uppercase italic">{config?.lastRewardReset ? format(config.lastRewardReset.toDate(), 'MMM d, HH:mm') : 'Pending'}</p></CardContent></Card>
              </div>
+          </TabsContent>
+
+          <TabsContent value="rewards" className="space-y-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-yellow-500/10 to-transparent">
+                <CardHeader>
+                   <CardTitle className="font-headline text-2xl uppercase italic flex items-center gap-2">
+                      <Gift className="h-6 w-6 text-yellow-500" /> Rich Rewards Hub
+                   </CardTitle>
+                   <CardDescription>Dispatch daily coin rewards to the Top 10 spenders and reset the frequency.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                   <div className="p-6 bg-white/5 rounded-3xl border-2 border-dashed border-yellow-500/20">
+                      <h3 className="font-black uppercase italic text-sm mb-4">Distribution Sequence:</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                         <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 1</p><p className="font-black text-yellow-500">10,000</p></div>
+                         <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 2</p><p className="font-black text-slate-300">8,000</p></div>
+                         <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 3</p><p className="font-black text-amber-700">5,000</p></div>
+                         <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 4</p><p className="font-black">3,000</p></div>
+                         <div className="text-center"><p className="text-[10px] font-bold opacity-40 uppercase">Top 5-10</p><p className="font-black">1,000</p></div>
+                      </div>
+                   </div>
+                   <Button 
+                      onClick={handleDistributeRichRewards} 
+                      disabled={isSaving} 
+                      className="w-full h-16 rounded-[1.5rem] bg-yellow-500 text-black font-black uppercase italic text-lg shadow-xl shadow-yellow-500/20 hover:scale-[1.02] transition-transform"
+                   >
+                      {isSaving ? <Loader className="animate-spin h-6 w-6 mr-2" /> : <CheckCircle2 className="h-6 w-6 mr-2" />}
+                      Execute Daily Distribution & Reset
+                   </Button>
+                   <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest italic">Note: This action clears all "Daily Spent" counters across the tribe.</p>
+                </CardContent>
+             </Card>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">

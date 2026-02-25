@@ -16,7 +16,8 @@
           "properties": {
             "coins": { "type": "number" },
             "diamonds": { "type": "number" },
-            "totalSpent": { "type": "number" }
+            "totalSpent": { "type": "number" },
+            "dailySpent": { "type": "number" }
           }
         },
         "inventory": {

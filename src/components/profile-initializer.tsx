@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -58,7 +59,8 @@ export function ProfileInitializer() {
             wallet: { 
               coins: 100000000, // Refilled to 100M for prototype testing
               diamonds: 0,
-              totalSpent: 0
+              totalSpent: 0,
+              dailySpent: 0 // Track daily rich leaderboard
             },
             inventory: { ownedItems: [], activeFrame: 'None', activeBubble: 'Default' },
             stats: { followers: 0, fans: 0 },
@@ -102,11 +104,6 @@ export function ProfileInitializer() {
           isRead: false
         });
 
-        toast({
-          title: 'Identity Synchronized!',
-          description: `Welcome to the tribe. ID: ${finalData.specialId}`,
-        });
-
       } catch (e: any) {
         hasInitialized.current = null; // Allow retry on failure
         console.error("Initialization Error:", e);
@@ -120,7 +117,7 @@ export function ProfileInitializer() {
     };
 
     initProfile();
-  }, [user, firestore, toast]);
+  }, [user, firestore]);
 
   return null;
 }

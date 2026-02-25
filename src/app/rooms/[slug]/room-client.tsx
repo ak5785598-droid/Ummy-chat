@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -113,7 +114,7 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   useEffect(() => {
     if (audioRef.current) audioRef.current.srcObject = stream;
   }, [stream]);
-  return <audio audioRef={audioRef} autoPlay className="hidden" />;
+  return <audio ref={audioRef} autoPlay className="hidden" />;
 }
 
 export function RoomClient({ room }: { room: Room }) {
@@ -253,6 +254,7 @@ export function RoomClient({ room }: { room: Room }) {
     const walletUpdates: any = {
       'wallet.coins': increment(-gift.price),
       'wallet.totalSpent': increment(gift.price),
+      'wallet.dailySpent': increment(gift.price), // Tracking daily spend
       updatedAt: serverTimestamp()
     };
 
