@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageSquare, User, Settings, LogOut, ShoppingBag, ShieldCheck, Zap, Mail, Crown, ScrollText } from "lucide-react";
+import { Home, MessageSquare, User, Settings, LogOut, ShoppingBag, ShieldCheck, Zap, Mail, Crown, ScrollText, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,7 @@ const MineIcon = (props: any) => (
 const navItems = [
   { href: "/rooms", label: "Rooms", icon: CastleIcon },
   { href: "/messages", label: "Message", icon: ScrollIcon },
+  { href: "/leaderboard", label: "Ranking", icon: Trophy },
   { href: "/profile", label: "Mine", icon: MineIcon },
 ];
 
@@ -180,7 +181,7 @@ export function AppLayout({
           {!hideSidebarOnMobile && (
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-50 px-8 py-2 flex justify-between items-center z-[70] h-20 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
               {navItems.map((item) => {
-                const active = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile')) || (item.href === '/rooms' && pathname.startsWith('/rooms'));
+                const active = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile')) || (item.href === '/rooms' && pathname.startsWith('/rooms')) || (item.href === '/leaderboard' && pathname.startsWith('/leaderboard'));
                 return (
                   <Link 
                     key={item.label} 

@@ -11,10 +11,12 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 /**
  * High-Fidelity Discovery Hub.
  * Matches reference image exactly with Ranking Cards and Chatroom/Mine tabs.
+ * Cards are now clickable links to the full Leaderboard.
  */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
@@ -33,7 +35,7 @@ export default function RoomsPage() {
   // Fetch Top Users for Ranking Cards
   const topRichQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'users'), orderBy('wallet.totalSpent', 'desc'), limit(3));
+    return query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(3));
   }, [firestore]);
   const { data: topRich } = useCollection(topRichQuery);
 
@@ -56,15 +58,20 @@ export default function RoomsPage() {
       return rooms.filter((r: any) => r.ownerId === user.uid);
     }
     if (activeTab !== 'All') {
-      // In a real app, these would be separate categories like "Hot" or "New"
       if (activeTab === 'Hot') return rooms.slice(0, 10);
       if (activeTab === 'New') return rooms.slice(0, 5);
     }
     return rooms;
   }, [roomsData, activeTab, navTab, user]);
 
-  const RankingCard = ({ title, color, items, icon: Icon }: any) => (
-    <div className={cn("relative flex-1 rounded-2xl p-3 h-28 overflow-hidden border border-white/10 shadow-lg", color)}>
+  const RankingCard = ({ title, color, items, icon: Icon, type }: any) => (
+    <Link 
+      href={`/leaderboard?type=${type}`} 
+      className={cn(
+        "relative flex-1 rounded-2xl p-3 h-28 overflow-hidden border border-white/10 shadow-lg block transition-transform active:scale-95 hover:scale-[1.02]", 
+        color
+      )}
+    >
        <div className="flex justify-between items-center mb-2">
           <span className="text-white font-black text-[10px] uppercase italic">{title}</span>
           <Icon className="h-3 w-3 text-white/40" />
@@ -75,7 +82,7 @@ export default function RoomsPage() {
           {items?.[2] && <Avatar className="h-8 w-8 border-2 border-amber-700/50"><AvatarImage src={items[2].avatarUrl || items[2].coverUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
        </div>
        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-    </div>
+    </Link>
   );
 
   return (
@@ -137,9 +144,9 @@ export default function RoomsPage() {
 
           {/* Ranking Triplets */}
           <div className="flex gap-2">
-             <RankingCard title="Rich" color="bg-gradient-to-br from-[#b88a44] to-[#63441a]" items={topRich} icon={Crown} />
-             <RankingCard title="Charm" color="bg-gradient-to-br from-[#9e1b32] to-[#4a0a16]" items={topCharm} icon={Heart} />
-             <RankingCard title="Room" color="bg-gradient-to-br from-[#2d5a27] to-[#143311]" items={topRoomsRanking} icon={Users} />
+             <RankingCard title="Rich" color="bg-gradient-to-br from-[#b88a44] to-[#63441a]" items={topRich} icon={Crown} type="rich" />
+             <RankingCard title="Charm" color="bg-gradient-to-br from-[#9e1b32] to-[#4a0a16]" items={topCharm} icon={Heart} type="charm" />
+             <RankingCard title="Room" color="bg-gradient-to-br from-[#2d5a27] to-[#143311]" items={topRoomsRanking} icon={Users} type="rooms" />
           </div>
 
           {/* Category Pills */}
