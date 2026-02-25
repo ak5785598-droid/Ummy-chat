@@ -450,10 +450,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       {/* High-Fidelity Emerald Geometric Theme */}
       <div className="absolute inset-0 z-0">
-        {/* Main Emerald Gradient Base */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#065f46] via-[#022c22] to-black z-10 opacity-95" />
-        
-        {/* Geometric Prism Image */}
         <Image 
           src="https://picsum.photos/seed/emerald-vibe/1200/2400" 
           alt="Emerald Theme" 
@@ -461,8 +458,6 @@ export function RoomClient({ room }: { room: Room }) {
           className="object-cover scale-110 opacity-30 mix-blend-overlay"
           data-ai-hint="emerald geometric"
         />
-
-        {/* Ambient Emerald Glows */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#10b981]/10 rounded-full blur-[120px] z-20 animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#059669]/10 rounded-full blur-[120px] z-20 animate-pulse delay-700" />
       </div>
@@ -829,6 +824,10 @@ export function RoomClient({ room }: { room: Room }) {
                  </div>
               </DialogContent>
             </Dialog>
+
+            <Button className="rounded-full h-12 w-12 bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-all hover:scale-110">
+               <Settings className="h-6 w-6" />
+            </Button>
           </div>
         </div>
       </footer>
