@@ -48,6 +48,7 @@
         "ownerId": { "type": "string" },
         "category": { "type": "string" },
         "lockedSeats": { "type": "array", "items": { "type": "number" } },
+        "participantCount": { "type": "number", "description": "Number of users currently inside the room." },
         "stats": {
           "type": "object",
           "properties": {

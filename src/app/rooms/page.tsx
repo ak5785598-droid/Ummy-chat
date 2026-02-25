@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -15,9 +16,7 @@ import Link from 'next/link';
 
 /**
  * High-Fidelity Discovery Hub.
- * Matches reference image exactly with Ranking Cards and Chatroom/Mine tabs.
- * Cards are now clickable links to the full Leaderboard.
- * Banner features a real-time 5-second auto-scroll engine.
+ * Features real-time presence-based visibility: Empty rooms are automatically hidden.
  */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
@@ -37,13 +36,18 @@ export default function RoomsPage() {
     return () => clearInterval(intervalId);
   }, [api]);
 
-  // Fetch rooms
-  const allRoomsQuery = useMemoFirebase(() => {
+  // Fetch rooms: Only show rooms with at least 1 active participant
+  const roomsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user) return null;
-    return query(collection(firestore, 'chatRooms'), orderBy('createdAt', 'desc'), limit(50));
+    return query(
+      collection(firestore, 'chatRooms'), 
+      where('participantCount', '>', 0),
+      orderBy('participantCount', 'desc'),
+      limit(50)
+    );
   }, [firestore, isUserLoading, user]);
 
-  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(allRoomsQuery);
+  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
   // Fetch Top Users for Ranking Cards
   const topRichQuery = useMemoFirebase(() => {
@@ -72,7 +76,7 @@ export default function RoomsPage() {
     }
     if (activeTab !== 'All') {
       if (activeTab === 'Hot') return rooms.slice(0, 10);
-      if (activeTab === 'New') return rooms.slice(0, 5);
+      if (activeTab === 'New') return rooms.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds).slice(0, 5);
     }
     return rooms;
   }, [roomsData, activeTab, navTab, user]);

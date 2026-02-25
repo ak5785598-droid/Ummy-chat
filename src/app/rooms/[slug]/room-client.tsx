@@ -136,7 +136,7 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
-  const isOwner = currentUser?.uid === room.ownerId;
+  const isOwner = currentUser?.uid === room.id || currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '');
   const canManageRoom = isGlobalAdmin || isOwner || isModerator;
 
@@ -150,7 +150,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
-  const isMicOn = isInSeat && !currentUserParticipant?.isMmuted;
+  const isMicOn = isInSeat && !currentUserParticipant?.isMuted;
 
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
@@ -346,12 +346,16 @@ export function RoomClient({ room }: { room: Room }) {
   const kickParticipant = (uid: string) => {
     if (!canManageRoom || !firestore || !room.id) return;
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
+    // Decrement count when kicking
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { participantCount: increment(-1) });
     setIsActionMenuOpen(false);
   };
 
   const leaveRoom = () => {
     if (firestore && currentUser && room.id) {
       deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid));
+      // Decrement count when leaving
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { participantCount: increment(-1) });
     }
     setActiveRoom(null);
     router.push('/rooms');
