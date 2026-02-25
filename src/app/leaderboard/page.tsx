@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,12 +6,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, Star, ChevronLeft, Gift, Zap, Timer } from 'lucide-react';
+import { Crown, TrendingUp, Loader, Star, ChevronLeft, Gift, Zap, Timer, Trophy, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { GoldCoinIcon } from '@/components/icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const RankingList = ({ items, type, isLoading }: any) => {
   if (isLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
@@ -116,6 +122,21 @@ const RankingList = ({ items, type, isLoading }: any) => {
   );
 };
 
+const RewardItem = ({ rank, amount, color }: { rank: string, amount: string, color: string }) => (
+  <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-white/5">
+    <div className="flex items-center gap-3">
+      <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center font-black text-xs italic", color)}>
+        {rank}
+      </div>
+      <p className="font-bold text-sm uppercase italic text-white/80">Daily Prize</p>
+    </div>
+    <div className="flex items-center gap-2">
+      <GoldCoinIcon className="h-5 w-5" />
+      <span className="font-black text-lg text-primary italic">{amount}</span>
+    </div>
+  </div>
+);
+
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -165,7 +186,49 @@ export default function LeaderboardPage() {
           <h1 className="font-headline text-3xl font-black italic uppercase tracking-tighter">
             {rankingType === 'rich' ? 'Wealth Ranking' : rankingType === 'charm' ? 'Charm Ranking' : 'Room Ranking'}
           </h1>
-          <div className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Star className="h-6 w-6 text-yellow-400" /></div>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="bg-white/10 p-2 rounded-full backdrop-blur-md hover:bg-primary/20 transition-all border border-primary/20 animate-pulse">
+                  <Trophy className="h-6 w-6 text-yellow-400" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-900 border-none rounded-t-[3rem] text-white p-0 overflow-hidden sm:max-w-md animate-in slide-in-from-bottom-10 duration-500">
+                <DialogHeader className="p-8 pb-4 text-center">
+                  <DialogTitle className="text-3xl font-black uppercase italic flex items-center justify-center gap-3">
+                    <Trophy className="h-8 w-8 text-yellow-400" />
+                    Rich Rewards
+                  </DialogTitle>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mt-2">Daily Throne Distribution</p>
+                </DialogHeader>
+                <div className="px-8 pb-12 space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+                  <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 flex items-center gap-3 mb-4">
+                    <Timer className="h-4 w-4 text-primary" />
+                    <p className="text-[10px] font-bold text-primary/80 uppercase">Cycle Resets in {timeLeft}</p>
+                  </div>
+                  
+                  <RewardItem rank="Top 1" amount="10,000" color="bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]" />
+                  <RewardItem rank="Top 2" amount="8,000" color="bg-slate-300 text-black" />
+                  <RewardItem rank="Top 3" amount="5,000" color="bg-amber-700 text-white" />
+                  <RewardItem rank="Top 4" amount="3,000" color="bg-slate-800 text-white" />
+                  <RewardItem rank="Top 5-10" amount="1,000" color="bg-slate-900 text-white border border-white/10" />
+
+                  <div className="pt-6 border-t border-white/5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Rules of the Throne</p>
+                    </div>
+                    <ul className="space-y-2">
+                      <li className="text-[10px] text-white/40 leading-relaxed">• Ranking is based on your total daily spending across all room frequencies.</li>
+                      <li className="text-[10px] text-white/40 leading-relaxed">• Rewards are automatically dispatched to your vault at 12:00 AM UTC daily.</li>
+                      <li className="text-[10px] text-white/40 leading-relaxed">• The leaderboard resets instantly upon reward delivery for the next 24-hour cycle.</li>
+                    </ul>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <div className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Star className="h-6 w-6 text-yellow-400" /></div>
+          </div>
         </header>
 
         {rankingType === 'rich' && (
