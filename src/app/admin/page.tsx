@@ -69,11 +69,13 @@ export default function AdminPage() {
           const pRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
           const notifRef = doc(collection(firestore, 'users', targetUid, 'notifications'));
 
+          const categoryName = field.includes('Spent') ? 'rich' : field.includes('Fans') ? 'charm' : 'room';
+
           batch.update(uRef, { 'wallet.coins': increment(reward) });
           batch.update(pRef, { 'wallet.coins': increment(reward) });
           batch.set(notifRef, {
-            title: `Daily ${field.includes('Spent') ? 'Rich' : field.includes('Fans') ? 'Charm' : 'Room'} Reward`,
-            content: `Congratulations! You ranked Top ${i+1} in today's ${type === 'User' ? 'identity' : 'room'} race (IST Cycle). Rewarded ${reward.toLocaleString()} Coins!`,
+            title: `Official ${categoryName.charAt(0).toUpperCase() + categoryName.slice(1)} Reward`,
+            content: `You receive....${categoryName} rewards______\n_______${reward.toLocaleString()} Coins...... ..... \n\nRegard UMMY OFFICIAL TEAM`,
             type: 'system',
             timestamp: serverTimestamp(),
             isRead: false
@@ -109,7 +111,7 @@ export default function AdminPage() {
 
       await batch.commit();
       await logAdminAction('Global Daily Reset (IST)', 'tribe/economy', { categories: ['Rich', 'Charm', 'Room'] });
-      toast({ title: 'Daily Sweep Complete', description: 'Rewards dispatched and counters reset for the IST cycle.' });
+      toast({ title: 'Daily Sweep Complete', description: 'Rewards dispatched and messages sent from Official Team.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Distribution Failed', description: e.message });
     } finally {
