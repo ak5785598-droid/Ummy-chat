@@ -70,16 +70,14 @@ export default function AdminPage() {
           const pRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
           const notifRef = doc(collection(firestore, 'users', targetUid, 'notifications'));
 
-          const categoryName = field.includes('Spent') ? 'Rich' : field.includes('Fans') ? 'Charm' : field.includes('Game') ? 'Game' : 'Room';
-
           // 1. Update Wallets
           batch.update(uRef, { 'wallet.coins': increment(reward) });
           batch.update(pRef, { 'wallet.coins': increment(reward) });
           
-          // 2. Official Notification Delivery
+          // 2. Official Notification Delivery - Updated with standard wording
           batch.set(notifRef, {
-            title: `Official ${categoryName} Reward Distribution`,
-            content: `Congratulations! Based on the latest 11:59:59 IST ranking cycle, you have been awarded ${reward.toLocaleString()} Gold Coins for your performance in the ${categoryName} category.\n\nKeep vibing!\n- UMMY OFFICIAL TEAM`,
+            title: `Official Notice`,
+            content: `Notice.. You receive ${reward.toLocaleString()} coins..... Best regard Ummy official`,
             type: 'system',
             timestamp: serverTimestamp(),
             isRead: false
@@ -170,6 +168,19 @@ export default function AdminPage() {
       const updateData = { [`wallet.${type}`]: increment(amount), updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
+      
+      // Also send notice for manual adjustments
+      const notifRef = doc(collection(firestore, 'users', targetUserId, 'notifications'));
+      const adjustBatch = writeBatch(firestore);
+      adjustBatch.set(notifRef, {
+        title: `Official Notice`,
+        content: `Notice.. You receive ${amount.toLocaleString()} ${type}..... Best regard Ummy official`,
+        type: 'system',
+        timestamp: serverTimestamp(),
+        isRead: false
+      });
+      await adjustBatch.commit();
+
       await logAdminAction(`Adjust ${type}`, targetUserId, { amount });
     } finally {
       setIsSaving(false);

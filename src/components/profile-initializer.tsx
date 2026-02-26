@@ -93,9 +93,10 @@ export function ProfileInitializer() {
 
         await setDoc(userProfileRef, finalData, { merge: true });
 
+        // Official Notice for initial rewards
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
-          title: 'Welcome to the Tribe!',
-          content: `Your unique Tribe ID is ${finalData.specialId}. You've been gifted 100,000,000 Gold Coins to explore the Boutique! Use this ID to connect with others in real-time.`,
+          title: 'Official Notice',
+          content: `Notice.. You receive 100,000,000 coins..... Best regard Ummy official`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false
