@@ -138,6 +138,19 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={audioRef} autoPlay className="hidden" />;
 }
 
+/**
+ * High-Fidelity Mixed Fruit Icon.
+ * Displays 🍊🍌🍉🍓 in a nice game icon grid.
+ */
+const FruitMixIcon = ({ className }: { className?: string }) => (
+  <div className={cn("grid grid-cols-2 gap-0.5 items-center justify-center p-0.5", className)}>
+    <span className="text-[10px] leading-none">🍊</span>
+    <span className="text-[10px] leading-none">🍌</span>
+    <span className="text-[10px] leading-none">🍉</span>
+    <span className="text-[10px] leading-none">🍓</span>
+  </div>
+);
+
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -837,7 +850,7 @@ export function RoomClient({ room }: { room: Room }) {
                  <ScrollArea className="h-full px-8 pb-20">
                     <div className="grid grid-cols-4 gap-4">
                        <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
-                       <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
+                       <ToolTile icon={FruitMixIcon} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
                        <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
                        <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
                     </div>
@@ -929,7 +942,7 @@ export function RoomClient({ room }: { room: Room }) {
                           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 ml-2">Room Play</h3>
                           <div className="grid grid-cols-4 gap-4">
                              <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
-                             <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
+                             <ToolTile icon={FruitMixIcon} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
                              <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
                              <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
                           </div>
@@ -1052,7 +1065,7 @@ export function RoomClient({ room }: { room: Room }) {
                         onClick={() => kickParticipant(selectedOccupant.uid)} 
                         className="py-5 font-black text-destructive uppercase tracking-widest text-xs italic hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
-                        <Ban className="h-4 w-4" /> Kick Tribe
+                        <span className="flex items-center gap-2"><Ban className="h-4 w-4" /> Kick Tribe</span>
                       </button>
                     )}
                   </>
