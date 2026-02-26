@@ -35,11 +35,6 @@ import {
   Music,
   Play,
   Square,
-  Swords,
-  Flame,
-  Car,
-  Sparkles,
-  VolumeX,
   Citrus,
   PawPrint,
   Dices,
@@ -50,8 +45,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,7 +96,6 @@ import {
   getDocs,
   arrayUnion,
   arrayRemove,
-  onSnapshot
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
@@ -844,13 +836,10 @@ export function RoomClient({ room }: { room: Room }) {
                  </DialogHeader>
                  <ScrollArea className="h-full px-8 pb-20">
                     <div className="grid grid-cols-4 gap-4">
-                       <ToolTile icon={Swords} label="Battle" onClick={() => router.push('/games/teen-patti')} />
                        <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
                        <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
                        <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
                        <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
-                       <ToolTile icon={Flame} label="Calculator" onClick={() => router.push('/games/teen-patti')} />
-                       <ToolTile icon={GoldCoinIcon} label="Lucky Bag" onClick={() => router.push('/store')} />
                     </div>
                  </ScrollArea>
               </DialogContent>
@@ -939,13 +928,10 @@ export function RoomClient({ room }: { room: Room }) {
                        <section className="space-y-4">
                           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 ml-2">Room Play</h3>
                           <div className="grid grid-cols-4 gap-4">
-                             <ToolTile icon={Swords} label="Battle" onClick={() => router.push('/games/teen-patti')} />
                              <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
                              <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
                              <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
                              <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
-                             <ToolTile icon={Flame} label="Calculator" onClick={() => router.push('/games/teen-patti')} />
-                             <ToolTile icon={GoldCoinIcon} label="Lucky Bag" onClick={() => router.push('/store')} />
                           </div>
                        </section>
 
