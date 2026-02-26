@@ -20,6 +20,7 @@ import { PublishMomentDialog } from '@/components/publish-moment-dialog';
 /**
  * High-Fidelity Discovery Hub.
  * Features Chatroom, Moments (Publish), and Mine command centers.
+ * Automatic Removal Protocol: Empty rooms are filtered out of public discovery in real-time.
  */
 export default function RoomsPage() {
   const { user, isLoading: isUserLoading } = useUser();
@@ -37,6 +38,7 @@ export default function RoomsPage() {
     return () => clearInterval(intervalId);
   }, [api]);
 
+  // Production Discovery Query: Only show rooms where participantCount > 0
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -49,6 +51,7 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
+  // Identity Hub Query: Always show the user's own room regardless of activity
   const myRoomQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
@@ -79,8 +82,12 @@ export default function RoomsPage() {
     if (navTab === 'mine') {
       return myRoomData || [];
     }
+    
     if (!roomsData) return [];
-    let rooms = [...roomsData];
+    
+    // Explicit client-side safety filter for participantCount
+    let rooms = roomsData.filter(r => (r.participantCount || 0) > 0);
+    
     if (activeTab !== 'All') {
       if (activeTab === 'Hot') return rooms.slice(0, 10);
       if (activeTab === 'New') return rooms.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 5);

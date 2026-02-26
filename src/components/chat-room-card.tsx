@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -5,8 +6,6 @@ import Link from 'next/link';
 import { Users, Castle } from 'lucide-react';
 import type { Room } from '@/lib/types';
 import { Card } from '@/components/ui/card';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
 
 interface ChatRoomCardProps {
   room: Room;
@@ -15,19 +14,12 @@ interface ChatRoomCardProps {
 
 /**
  * Chat Room Card Component.
- * Production Protocol: Shows only user-provided images or high-fidelity CSS fallbacks.
+ * Synchronized with the Discovery Hub: Uses the room's participantCount field directly for efficiency.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id || !user) return null;
-    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-  }, [firestore, room.id, user]);
-
-  const { data: participants } = useCollection(participantsQuery);
-  const onlineCount = participants?.length || 0;
+  // Use the participantCount field directly from the room document
+  // This ensures the list removal logic and the badge are perfectly aligned
+  const onlineCount = room.participantCount || 0;
 
   if (variant === 'modern') {
     return (
