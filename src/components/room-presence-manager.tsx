@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -9,6 +8,7 @@ import { doc, setDoc, serverTimestamp, collection, getDoc, increment } from 'fir
 /**
  * Maintains Firestore presence while a room is active.
  * Production Ready: Prevents seat loss on refresh and manages real-time participant count.
+ * Sole owner of room participantCount management to avoid race conditions.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -20,7 +20,10 @@ export function RoomPresenceManager() {
   const hasIncrementedCount = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!firestore || !activeRoom?.id || !user || !userProfile) return;
+    if (!firestore || !activeRoom?.id || !user || !userProfile) {
+      // Cleanup happens via the return function below
+      return;
+    }
 
     const roomId = activeRoom.id;
     const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
@@ -76,10 +79,11 @@ export function RoomPresenceManager() {
     performSync();
 
     return () => {
-      // Decrement Count when navigating away (best effort client-side cleanup)
+      // Decrement Count when navigating away or unsetting activeRoom
       if (hasIncrementedCount.current === roomId) {
         updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1) });
         hasIncrementedCount.current = null;
+        hasHandshakedForSession.current = false;
       }
     };
   }, [firestore, activeRoom?.id, user?.uid, userProfile]);

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, serverTimestamp, runTransaction, doc, query, where, getDocs } from 'firebase/firestore';
-import { Plus, Loader, AlertCircle } from 'lucide-react';
+import { Plus, Loader } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 /**
  * Enhanced Creation Dialog.
  * Enforces "One Room Per User" constraint.
+ * Initializes participantCount to 0 for strict discovery logic.
  */
 export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -89,8 +90,9 @@ export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
         createdAt: serverTimestamp(),
         category: category,
         tags: [],
-        stats: { totalGifts: 0 },
+        stats: { totalGifts: 0, dailyGifts: 0 },
         lockedSeats: [],
+        participantCount: 0, // Initial state: Hidden from public discovery
         announcement: 'Welcome to the frequency!'
       };
 

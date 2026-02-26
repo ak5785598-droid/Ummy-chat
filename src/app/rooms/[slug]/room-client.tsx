@@ -417,16 +417,13 @@ export function RoomClient({ room }: { room: Room }) {
 
   const kickParticipant = (uid: string) => {
     if (!canManageRoom || !firestore || !room.id) return;
+    // ParticipantCount decrement is handled by RoomPresenceManager cleanup on the kicked device
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { participantCount: increment(-1) });
     setIsActionMenuOpen(false);
   };
 
   const leaveRoom = () => {
-    if (firestore && currentUser && room.id) {
-      deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid));
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { participantCount: increment(-1) });
-    }
+    // setActiveRoom(null) below triggers RoomPresenceManager cleanup for the count decrement
     setActiveRoom(null);
     router.push('/rooms');
   };
