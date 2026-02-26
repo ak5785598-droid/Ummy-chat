@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ import {
 import { signOut } from 'firebase/auth';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import Image from 'next/image';
-import Link from 'next/link';
+import { GoldCoinIcon } from '@/components/icons';
 
 const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) => {
   const router = useRouter();
@@ -147,7 +148,7 @@ export default function SettingsPage() {
         <div className="px-4 space-y-3">
           <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 px-2">Vault & Assets</h2>
           <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
-            <MenuItem icon={Gem} label="Gold Coins" extra={(userProfile?.wallet?.coins || 0).toLocaleString()} iconColor="text-yellow-500" href="/store" />
+            <MenuItem icon={GoldCoinIcon} label="Gold Coins" extra={(userProfile?.wallet?.coins || 0).toLocaleString()} iconColor="text-yellow-500" href="/store" />
             <MenuItem icon={Sparkles} label="Blue Diamonds" extra={(userProfile?.wallet?.diamonds || 0).toLocaleString()} iconColor="text-blue-500" href="/store" />
             <MenuItem icon={Store} label="Ummy Boutique" href="/store" iconColor="text-orange-500" />
             <MenuItem icon={Trophy} label="Global Ranking" href="/leaderboard" iconColor="text-yellow-600" />

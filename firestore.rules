@@ -58,6 +58,12 @@ service cloud.firestore {
       }
     }
 
+    match /moments/{momentId} {
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
     match /adminLogs/{id} {
       allow create: if isSignedIn();
       allow read: if isAdmin();

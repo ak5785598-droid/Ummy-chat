@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -69,6 +70,19 @@
         "cost": { "type": "number" },
         "imageHint": { "type": "string" }
       }
+    },
+    "Moment": {
+      "title": "Moment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "likes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -98,6 +112,14 @@
           "entityName": "Game",
           "schema": { "$ref": "#/backend/entities/Game" },
           "description": "Dynamic game registry."
+        }
+      },
+      {
+        "path": "/moments/{momentId}",
+        "definition": {
+          "entityName": "Moment",
+          "schema": { "$ref": "#/backend/entities/Moment" },
+          "description": "Public status broadcasts."
         }
       }
     ]
