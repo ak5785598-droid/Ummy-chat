@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -42,6 +41,10 @@ export function PublishMomentDialog() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'File Too Large', description: 'Limit is 5MB for visual vibes.' });
+        return;
+      }
       setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -55,7 +58,8 @@ export function PublishMomentDialog() {
       let imageUrl = '';
       if (selectedImage && storage) {
         const timestamp = Date.now();
-        const storagePath = `moments/${user.uid}/${timestamp}_${selectedImage.name}`;
+        // Updated path to match new storage rules protocol
+        const storagePath = `moments/${user.uid}/${timestamp}_${selectedImage.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const sRef = ref(storage, storagePath);
         const result = await uploadBytes(sRef, selectedImage);
         imageUrl = await getDownloadURL(result.ref);
@@ -77,7 +81,12 @@ export function PublishMomentDialog() {
       setSelectedImage(null);
       setImagePreview(null);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Publish Failed', description: e.message });
+      console.error("Publish Error:", e);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Publish Failed', 
+        description: e.code === 'storage/unauthorized' ? 'Storage frequency denied. Please try again.' : e.message 
+      });
     } finally {
       setIsSubmitting(false);
     }
