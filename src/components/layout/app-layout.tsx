@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Home, MessageSquare, User, Settings, LogOut, ShoppingBag, ShieldCheck, Zap, Mail, Crown, ScrollText, Trophy } from "lucide-react";
@@ -77,7 +78,6 @@ export function AppLayout({
     if (!auth) return;
     try {
       await signOut(auth);
-      // Hard redirect to clear local cache and auth frequencies
       window.location.href = '/login';
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
@@ -88,7 +88,7 @@ export function AppLayout({
 
   if (isUserLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-background">
         <UmmyLogoIcon className="h-12 w-12 text-primary animate-pulse" />
       </div>
     );
@@ -96,8 +96,8 @@ export function AppLayout({
 
   if (fullScreen) {
     return (
-      <div className="min-h-screen w-full bg-black font-headline overflow-hidden relative">
-        <main className="h-screen w-full relative">
+      <div className="min-h-[100dvh] w-full bg-black font-headline overflow-hidden relative">
+        <main className="h-full w-full relative">
           {children}
         </main>
       </div>
@@ -106,7 +106,7 @@ export function AppLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background font-headline overflow-hidden relative">
+      <div className="flex min-h-[100dvh] w-full bg-background font-headline overflow-hidden relative">
         <Sidebar className="hidden md:flex">
           <SidebarHeader>
             <div className="flex items-center gap-2 p-2" aria-label="Ummy Home">
@@ -170,7 +170,7 @@ export function AppLayout({
 
         <div className="flex flex-1 flex-col overflow-hidden relative">
           <SidebarInset className="bg-background">
-            <main className="flex-1 overflow-y-auto h-screen pb-28 md:pb-4 bg-white">
+            <main className="flex-1 overflow-y-auto h-[100dvh] pb-28 md:pb-4 bg-white">
               {children}
             </main>
           </SidebarInset>

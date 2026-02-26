@@ -1,21 +1,28 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { UmmyLogoIcon } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 /**
  * Root Application Entry / Splash Screen.
- * Featuring cinematic reveal animations and smooth synchronization transitions.
+ * Featuring cinematic reveal animations and fail-safe mobile transitions.
  */
 export default function Home() {
   const router = useRouter();
   const { user, isLoading } = useUser();
   const [mounted, setMounted] = useState(false);
+  const [showFailSafe, setShowFailSafe] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Fail-safe: If loading takes too long on mobile, show manual entry button
+    const failSafeTimer = setTimeout(() => setShowFailSafe(true), 5000);
+    return () => clearTimeout(failSafeTimer);
   }, []);
 
   useEffect(() => {
@@ -26,15 +33,20 @@ export default function Home() {
         } else {
           router.replace('/login');
         }
-      }, 2000); // Optimized cinematic delay
+      }, 2000); 
       return () => clearTimeout(timer);
     }
   }, [isLoading, user, router, mounted]);
 
+  const handleManualEntry = () => {
+    if (user) router.push('/rooms');
+    else router.push('/login');
+  };
+
   if (!mounted) return null;
 
   return (
-    <div className="flex h-svh w-full flex-col items-center justify-center bg-[#FFCC00] overflow-hidden relative font-headline">
+    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#FFCC00] overflow-hidden relative font-headline">
       {/* Dynamic Background Pulse */}
       <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />
       
@@ -55,12 +67,23 @@ export default function Home() {
       </div>
       
       <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12">
-         <div className="h-[3px] w-56 bg-white/20 rounded-full overflow-hidden shadow-inner">
-            <div className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-loading-bar" style={{ width: '45%' }} />
-         </div>
-         <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest animate-pulse">
-            Syncing Social Graph...
-         </p>
+         {showFailSafe ? (
+           <Button 
+             onClick={handleManualEntry}
+             className="bg-white text-[#FFCC00] rounded-full px-10 h-14 font-black uppercase italic shadow-xl animate-in zoom-in duration-500"
+           >
+             Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
+           </Button>
+         ) : (
+           <>
+            <div className="h-[3px] w-56 bg-white/20 rounded-full overflow-hidden shadow-inner">
+                <div className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-loading-bar" style={{ width: '45%' }} />
+            </div>
+            <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest animate-pulse">
+                Syncing Social Graph...
+            </p>
+           </>
+         )}
       </div>
 
       <style jsx>{`
