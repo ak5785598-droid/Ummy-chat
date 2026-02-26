@@ -59,6 +59,35 @@
   }
 }
 
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .rotate-x-12 {
+    transform: rotateX(12deg);
+  }
+  .rotate-y-6 {
+    transform: rotateY(6deg);
+  }
+  .translate-z-[-20px] {
+    transform: translateZ(-20px);
+  }
+  .translate-z-[30px] {
+    transform: translateZ(30px);
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 @keyframes marquee {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
@@ -74,12 +103,4 @@
 }
 .animate-voice-wave {
   animation: voice-wave 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }

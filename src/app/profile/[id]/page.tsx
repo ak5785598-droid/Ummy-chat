@@ -25,8 +25,9 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useProfilePictureUpload, useAuth, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { cn } from '@/lib/utils';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { signOut } from 'firebase/auth';

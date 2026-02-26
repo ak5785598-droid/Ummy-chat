@@ -26,9 +26,9 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   useAuth, 
   useUser, 
-  useProfilePictureUpload, 
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { signOut } from 'firebase/auth';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import Image from 'next/image';
