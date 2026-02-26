@@ -25,7 +25,7 @@ import { FloatingRoomBar } from "../floating-room-bar";
 
 const CastleIcon = (props: any) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M2 22V7l2-2V2h3v3l2-2v4l2-2v4l2-2v4l2-2v4l2-2v3l3 3v15H2zm4-4h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z" />
+    <path d="M2 22V7l2-2V2h3v3l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v3l3 3v15H2zm4-4h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z" />
   </svg>
 );
 
@@ -77,7 +77,8 @@ export function AppLayout({
     if (!auth) return;
     try {
       await signOut(auth);
-      router.push('/login');
+      // Hard redirect to clear local cache and auth frequencies
+      window.location.href = '/login';
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
     }
