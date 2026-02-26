@@ -40,6 +40,9 @@ import {
   Car,
   Sparkles,
   VolumeX,
+  Citrus,
+  PawPrint,
+  Dices,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -834,18 +837,22 @@ export function RoomClient({ room }: { room: Room }) {
                    <Gamepad2 className="h-6 w-6" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-[#0a0a0a] text-white p-0 rounded-t-[3rem] border-none overflow-hidden h-[50vh] animate-in slide-in-from-bottom-full duration-500">
+              <DialogContent className="sm:max-w-md bg-[#0a0a0a] text-white p-0 rounded-t-[3rem] border-none overflow-hidden h-[60vh] animate-in slide-in-from-bottom-full duration-500">
                  <DialogHeader className="p-8 pb-4 text-center">
                     <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Room Play</DialogTitle>
                     <DialogDescription className="sr-only">Quick access to room games and entertainment.</DialogDescription>
                  </DialogHeader>
-                 <div className="px-8 pt-4">
+                 <ScrollArea className="h-full px-8 pb-20">
                     <div className="grid grid-cols-4 gap-4">
                        <ToolTile icon={Swords} label="Battle" onClick={() => router.push('/games/teen-patti')} />
+                       <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
+                       <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
+                       <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
+                       <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
                        <ToolTile icon={Flame} label="Calculator" onClick={() => router.push('/games/teen-patti')} />
                        <ToolTile icon={GoldCoinIcon} label="Lucky Bag" onClick={() => router.push('/store')} />
                     </div>
-                 </div>
+                 </ScrollArea>
               </DialogContent>
             </Dialog>
 
@@ -933,6 +940,10 @@ export function RoomClient({ room }: { room: Room }) {
                           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 ml-2">Room Play</h3>
                           <div className="grid grid-cols-4 gap-4">
                              <ToolTile icon={Swords} label="Battle" onClick={() => router.push('/games/teen-patti')} />
+                             <ToolTile icon={Gamepad2} label="Ludo" onClick={() => router.push('/games/ludo')} />
+                             <ToolTile icon={Citrus} label="Fruit" onClick={() => router.push('/games/fruit-party')} />
+                             <ToolTile icon={PawPrint} label="Wild" onClick={() => router.push('/games/forest-party')} />
+                             <ToolTile icon={Dices} label="Slot" onClick={() => router.push('/games/lucky-slot-777')} />
                              <ToolTile icon={Flame} label="Calculator" onClick={() => router.push('/games/teen-patti')} />
                              <ToolTile icon={GoldCoinIcon} label="Lucky Bag" onClick={() => router.push('/store')} />
                           </div>
