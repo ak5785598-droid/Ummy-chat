@@ -10,7 +10,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 /**
  * Root Application Gateway / Splash Screen.
  * Re-engineered for absolute Android mobile stability.
- * Uses hard redirection to bypass client-side routing hangs.
+ * Uses aggressive hard redirection to bypass client-side routing hangs.
  */
 export default function Home() {
   const { user, isLoading } = useUser();
@@ -18,23 +18,25 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Fail-safe: If auto-redirection doesn't trigger within 2s, show manual entry
-    const timer = setTimeout(() => setShowFailSafe(true), 2000);
+    // Fail-safe: If auto-redirection doesn't trigger within 1.5s, show manual entry
+    const timer = setTimeout(() => setShowFailSafe(true), 1500);
 
     if (!isLoading) {
       if (user) {
-        // Attempt fast navigation first
+        // Fast navigation attempt
         router.push('/rooms');
-        // Aggressive Hard Redirection for authenticated members as fallback
+        // Aggressive Hard Redirection fallback
         const hardTimer = setTimeout(() => {
           window.location.replace('/rooms');
-        }, 1000);
+        }, 800);
         return () => clearTimeout(hardTimer);
       } else {
+        // Fast navigation attempt
         router.push('/login');
+        // Aggressive Hard Redirection fallback
         const hardTimer = setTimeout(() => {
           window.location.replace('/login');
-        }, 1000);
+        }, 800);
         return () => clearTimeout(hardTimer);
       }
     }

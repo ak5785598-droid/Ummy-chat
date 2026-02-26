@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useUserProfile } from '@/firebase';
+import { useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   ChevronLeft, 
   Gamepad2, 
@@ -20,7 +21,8 @@ import { CompactRoomView } from '@/components/compact-room-view';
 
 export default function LudoGamePage() {
   const router = useRouter();
-  const { userProfile } = useUserProfile();
+  const { user: currentUser } = useUser();
+  const { userProfile } = useUserProfile(currentUser?.uid);
   const [isLaunching, setIsLaunching] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useUserProfile, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
   History,

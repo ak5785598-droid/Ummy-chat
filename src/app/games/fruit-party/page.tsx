@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useUserProfile, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
   History,
@@ -288,10 +289,10 @@ export default function FruitPartyPage() {
         </div>
         <div className="absolute top-44 right-4 z-40 opacity-80 animate-in slide-in-from-right-4 duration-1000">
            <div className="relative h-20 w-20 rounded-full border-2 border-white/20 bg-white/5 flex items-center justify-center gap-0.5 shadow-xl backdrop-blur-sm">
-              <span className="text-base">🍊</span>
-              <span className="text-base">🍉</span>
-              <span className="text-base">🍌</span>
-              <span className="text-base">🍓</span>
+              <span className="text-xl">🍊</span>
+              <span className="text-xl">🍉</span>
+              <span className="text-xl">🍌</span>
+              <span className="text-xl">🍓</span>
            </div>
         </div>
 
