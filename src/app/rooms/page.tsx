@@ -18,8 +18,7 @@ import { PublishMomentDialog } from '@/components/publish-moment-dialog';
 
 /**
  * High-Fidelity Discovery Hub.
- * Features Chatroom, Moments (Publish), and Mine command centers.
- * Automatic Removal Protocol: Empty rooms are strictly filtered out of public discovery in real-time.
+ * AUTOMATIC REMOVAL PROTOCOL: Rooms with participantCount 0 are strictly removed from public feed.
  */
 export default function RoomsPage() {
   const { user } = useUser();

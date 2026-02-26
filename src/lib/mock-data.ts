@@ -3,6 +3,7 @@ import type { User, Room, Game, CoinPackage, Task } from './types';
 /**
  * Production Data Source.
  * All hardcoded demonstration mock data has been permanently purged.
+ * Social graph is now 100% driven by live Firestore frequencies.
  */
 const users: User[] = [];
 const rooms: Room[] = []; 
