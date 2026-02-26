@@ -88,6 +88,26 @@ export default function TeenPattiPage() {
     osc.stop(ctx.currentTime + 0.1);
   }, [isMuted, initAudioContext]);
 
+  const playCalculatingSound = useCallback(() => {
+    if (isMuted) return;
+    const ctx = initAudioContext();
+    if (!ctx) return;
+    let startTime = ctx.currentTime;
+    for (let i = 0; i < 15; i++) {
+      const time = startTime + (i * 0.2);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800 + (i * 50), time);
+      gain.gain.setValueAtTime(0.05, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.1);
+    }
+  }, [isMuted, initAudioContext]);
+
   useEffect(() => {
     if (isMuted || isLaunching) return;
     let audioCtx: AudioContext | null = null;
@@ -141,6 +161,7 @@ export default function TeenPattiPage() {
 
   const transitionToCalculation = () => {
     setGameState('calculating');
+    playCalculatingSound();
     setTimeout(() => {
       const winId = DRAGONS[Math.floor(Math.random() * 3)].id;
       showResult(winId);

@@ -74,6 +74,27 @@ export default function LuckySlot777Page() {
     osc.stop(ctx.currentTime + 0.1);
   }, [isMuted, initAudioContext]);
 
+  const playSpinSound = useCallback(() => {
+    if (isMuted) return;
+    const ctx = initAudioContext();
+    if (!ctx) return;
+
+    let startTime = ctx.currentTime;
+    for (let i = 0; i < 40; i++) {
+      const time = startTime + (i * 0.12);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1000 + (Math.random() * 200), time);
+      gain.gain.setValueAtTime(0.02, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.08);
+    }
+  }, [isMuted, initAudioContext]);
+
   useEffect(() => {
     if (isMuted || isLaunching) return;
     
@@ -137,6 +158,7 @@ export default function LuckySlot777Page() {
 
   const startSpin = () => {
     setGameState('spinning');
+    playSpinSound();
     const targetIdx = Math.floor(Math.random() * WHEEL_DISTRIBUTION.length);
     const sliceAngle = 360 / WHEEL_DISTRIBUTION.length;
     const extraSpins = 50; 

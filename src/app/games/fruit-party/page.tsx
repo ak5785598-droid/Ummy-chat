@@ -92,6 +92,22 @@ export default function FruitPartyPage() {
     osc.stop(ctx.currentTime + 0.1);
   }, [isMuted, initAudioContext]);
 
+  const playTickSound = useCallback(() => {
+    if (isMuted) return;
+    const ctx = initAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1000, ctx.currentTime);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  }, [isMuted, initAudioContext]);
+
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 2000);
     return () => clearTimeout(timer);
@@ -118,6 +134,7 @@ export default function FruitPartyPage() {
 
     const runChase = () => {
       setHighlightIdx(currentStep % ITEMS.length);
+      playTickSound();
       currentStep++;
       if (currentStep < totalSteps) {
         if (totalSteps - currentStep < 10) speed += 30;
