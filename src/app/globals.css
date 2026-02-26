@@ -104,3 +104,20 @@
 .animate-voice-wave {
   animation: voice-wave 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+@keyframes wing-flap {
+  0%, 100% { transform: rotate(-5deg) scale(1); }
+  50% { transform: rotate(5deg) scale(1.05); }
+}
+.animate-wing-flap {
+  animation: wing-flap 3s ease-in-out infinite;
+}
+
+@keyframes shimmer-gold {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.4) contrast(1.2); }
+  100% { filter: brightness(1); }
+}
+.animate-shimmer-gold {
+  animation: shimmer-gold 2s infinite;
+}
