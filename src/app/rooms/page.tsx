@@ -55,21 +55,21 @@ export default function RoomsPage() {
   const myRoomId = myRoomData?.[0]?.id;
 
   const topRichQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(3));
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: topRich } = useCollection(topRichQuery);
 
   const topCharmQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(3));
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: topCharm } = useCollection(topCharmQuery);
 
   const topRoomsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(3));
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: topRoomsRanking } = useCollection(topRoomsQuery);
 
   const filteredRooms = useMemo(() => {

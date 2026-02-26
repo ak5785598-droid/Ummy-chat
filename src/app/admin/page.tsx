@@ -37,9 +37,9 @@ export default function AdminPage() {
   const { data: config } = useDoc(configRef);
 
   const logsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'adminLogs'), orderBy('createdAt', 'desc'), limit(20));
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: logs } = useCollection(logsQuery);
 
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
