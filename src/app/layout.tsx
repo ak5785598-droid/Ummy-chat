@@ -1,4 +1,3 @@
-
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -21,7 +20,8 @@ const fontBody = Alegreya({
 
 export const metadata: Metadata = {
   title: 'Ummy - Connect Your Tribe',
-  description: 'A professional real-time social voice chat experience.',
+  description: 'Elite real-time social voice chat frequency.',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -29,6 +29,10 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-touch-fullscreen': 'yes',
   },
 };
 
@@ -47,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="overflow-hidden">
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -56,7 +60,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          'min-h-screen bg-background antialiased touch-manipulation overscroll-none',
+          'min-h-[100dvh] bg-background antialiased touch-manipulation overscroll-none overflow-hidden select-none',
           fontHeadline.variable,
           fontBody.variable
         )}
