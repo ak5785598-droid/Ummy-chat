@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,8 +10,8 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 
 /**
  * Root Application Entry / Splash Screen.
- * Optimized for high-speed redirection to the Ummy Discovery Hub.
- * Hard-coded branded rendering to prevent Android white-screen flash.
+ * Re-engineered for high-speed Android redirection.
+ * Removes hydration blocks to prevent white-screen hangs on mobile.
  */
 export default function Home() {
   const router = useRouter();
@@ -18,15 +19,15 @@ export default function Home() {
   const [showFailSafe, setShowFailSafe] = useState(false);
 
   useEffect(() => {
-    // Fail-safe: If network synchronization is slow on mobile, show manual entry after 3s
-    const failSafeTimer = setTimeout(() => setShowFailSafe(true), 3000);
+    // Fail-safe: If synchronization is slow on mobile networks, show manual entry after 2.5s
+    const failSafeTimer = setTimeout(() => setShowFailSafe(true), 2500);
     
     if (!isLoading) {
       if (user) {
         router.replace('/rooms');
       } else {
-        // Snappy branding delay for anonymous/new users
-        const timer = setTimeout(() => router.replace('/login'), 1000);
+        // Snappy branding delay for new users
+        const timer = setTimeout(() => router.replace('/login'), 800);
         return () => {
           clearTimeout(timer);
           clearTimeout(failSafeTimer);
@@ -38,26 +39,26 @@ export default function Home() {
   }, [isLoading, user, router]);
 
   const handleManualEntry = () => {
-    if (user) router.push('/rooms');
-    else router.push('/login');
+    // Force direct window navigation to bypass any stuck client-side router frequencies
+    if (user) window.location.href = '/rooms';
+    else window.location.href = '/login';
   };
 
   return (
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#FFCC00] overflow-hidden relative font-headline select-none touch-none">
-      {/* Branded elements are rendered instantly on the server/client to avoid white flash */}
       <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />
       
-      <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 slide-in-from-bottom-8 relative z-10">
+      <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center group">
            <div className="absolute inset-0 bg-white/20 rounded-[3rem] blur-2xl group-hover:bg-white/40 transition-all duration-1000 animate-pulse" />
            <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10 transition-transform duration-1000 hover:scale-110" />
         </div>
         
         <div className="flex flex-col items-center gap-2 mt-4 text-center px-6">
-           <h1 className="text-6xl font-black text-white italic tracking-tighter uppercase drop-shadow-lg animate-in fade-in slide-in-from-top-4 duration-500 delay-200">
+           <h1 className="text-6xl font-black text-white italic tracking-tighter uppercase drop-shadow-lg">
              Ummy
            </h1>
-           <p className="text-white font-black uppercase tracking-[0.5em] text-[10px] opacity-80 animate-in fade-in duration-700 delay-400">
+           <p className="text-white font-black uppercase tracking-[0.5em] text-[10px] opacity-80">
              Connecting Your Tribe
            </p>
         </div>

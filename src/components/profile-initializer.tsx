@@ -4,19 +4,16 @@
 import { useEffect, useRef } from 'react';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Production Profile Initializer.
- * Assigns a unique sequential 6-digit numeric ID (starting from 100,000).
- * Ensuring that once avatarUrl is set, it is NEVER overwritten by initializer defaults.
+ * Assigns a unique sequential 6-digit numeric ID (e.g. 562980) starting from 100,000.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const { toast } = useToast();
   const hasInitialized = useRef<string | null>(null);
 
   useEffect(() => {
@@ -27,7 +24,6 @@ export function ProfileInitializer() {
       const userRef = doc(firestore, 'users', profileId);
       
       try {
-        // Critical: Check existence FIRST to prevent overwriting user-selected images or data
         const userSnap = await getDoc(userRef);
         
         if (userSnap.exists()) {
@@ -37,7 +33,7 @@ export function ProfileInitializer() {
 
         hasInitialized.current = profileId;
 
-        // Atomic Transaction for unique 6-digit ID assignment
+        // Atomic Transaction for unique 6-digit ID assignment (e.g. 100001, 100002...)
         const finalData = await runTransaction(firestore, async (transaction) => {
           const countersRef = doc(firestore, 'appConfig', 'counters');
           const countersSnap = await transaction.get(countersRef);
@@ -53,7 +49,7 @@ export function ProfileInitializer() {
           const initialData = {
             id: profileId,
             specialId: String(nextUserId),
-            username: user.displayName || `Tribe_${String(nextUserId).substring(2)}`,
+            username: user.displayName || `Tribe_${String(nextUserId)}`,
             avatarUrl: user.photoURL || '', 
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
@@ -79,7 +75,6 @@ export function ProfileInitializer() {
           return initialData;
         });
 
-        // Split document for indexing vs full profile
         const userSummaryRef = doc(firestore, 'users', profileId);
         const userProfileRef = doc(firestore, 'users', profileId, 'profile', profileId);
 
@@ -100,7 +95,7 @@ export function ProfileInitializer() {
 
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Welcome to the Tribe!',
-          content: `Your unique Tribe ID is ${finalData.specialId}. We've gifted you 100,000,000 Gold Coins to explore the Boutique!`,
+          content: `Your unique Tribe ID is ${finalData.specialId}. You've been gifted 100,000,000 Gold Coins to explore the Boutique! Use this ID to connect with others in real-time.`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false
