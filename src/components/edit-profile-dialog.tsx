@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
-import { Pencil, Loader, Camera, Globe, User2 } from 'lucide-react';
+import { Pen, Loader, Camera, Globe, User2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -93,7 +93,7 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-2 border-white/20 hover:bg-white/20 text-white h-10 w-10 shadow-xl backdrop-blur-md">
-          <Pencil className="h-5 w-5" />
+          <Pen className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">

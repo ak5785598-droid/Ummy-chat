@@ -137,7 +137,7 @@ export default function LoginPage() {
           Ummy
         </h1>
         <p className="text-muted-foreground font-body text-lg uppercase tracking-widest opacity-60">
-          Connecting Vibe
+        Welcome to Ummy Chat
         </p>
       </div>
 
@@ -152,7 +152,10 @@ export default function LoginPage() {
                   disabled={isSigningIn}
                 >
                   <FcGoogle className="h-7 w-7" />
-                  Continue with Google
+                  Login with Google
+                  <button className="bg-black text-white p-3 rounded-xl mt-4">
+  Enter Chat
+</button>
                 </Button>
             </div>
 
