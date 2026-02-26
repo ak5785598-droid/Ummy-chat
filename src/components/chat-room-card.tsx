@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -14,11 +13,9 @@ interface ChatRoomCardProps {
 
 /**
  * Chat Room Card Component.
- * Synchronized with the Discovery Hub: Uses the room's participantCount field directly for efficiency.
+ * Uses the room's participantCount field directly for discovery synchronization.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  // Use the participantCount field directly from the room document
-  // This ensures the list removal logic and the badge are perfectly aligned
   const onlineCount = room.participantCount || 0;
 
   if (variant === 'modern') {
@@ -40,12 +37,6 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             
-            <div className="absolute bottom-2 left-2">
-               <div className="bg-black/20 backdrop-blur-sm rounded-lg p-1 animate-pulse">
-                  <span className="text-xl">🚀</span>
-               </div>
-            </div>
-
             <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-white/10">
               <div className="flex items-end gap-0.5 h-3">
                  <div className="w-0.5 bg-white h-1 animate-bounce" style={{ animationDelay: '0.1s' }} />

@@ -42,5 +42,3 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-export { useUserProfile } from '@/hooks/use-user-profile';
-export { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';

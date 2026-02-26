@@ -296,7 +296,6 @@ export default function FruitPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
-           
            <div className="relative w-full max-sm aspect-square flex items-center justify-center">
               <div className="absolute inset-0 border-[6px] border-white/10 rounded-full m-12" />
               
@@ -308,18 +307,6 @@ export default function FruitPartyPage() {
                     {gameState === 'betting' ? 'waiting...' : 'Spinning'}
                  </p>
               </div>
-
-              <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 100">
-                 {Array.from({length: 8}).map((_, i) => {
-                   const angle = i * 45;
-                   return (
-                     <g key={i} transform={`rotate(${angle} 50 50)`}>
-                        <line x1="50" y1="50" x2="50" y2="10" stroke="white" strokeWidth="0.5" />
-                        <circle cx="50" cy="10" r="1.5" fill="#facc15" className="animate-pulse" />
-                     </g>
-                   );
-                 })}
-              </svg>
 
               {ITEMS.map((item, idx) => (
                 <button 
@@ -355,7 +342,6 @@ export default function FruitPartyPage() {
                 </button>
               ))}
            </div>
-
         </main>
 
         <footer className="relative z-50 p-4 pb-10 space-y-4">
@@ -364,7 +350,6 @@ export default function FruitPartyPage() {
                  <div className="bg-gradient-to-r from-[#ffd54f] to-[#ffca28] px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
                     <GoldCoinIcon className="h-4 w-4" />
                     <span className="text-sm font-black text-black">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                    <button className="text-black/40 ml-1"><RefreshCcwIcon className="h-3 w-3" /></button>
                  </div>
                  <p className="text-[10px] font-black uppercase text-white/60 italic">Choose wager then food</p>
                  <button onClick={handleRepeat} className="bg-white/10 px-6 py-1.5 rounded-xl font-black uppercase text-xs hover:bg-white/20 active:scale-95 transition-all">Repeat</button>
@@ -402,27 +387,5 @@ export default function FruitPartyPage() {
         <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
       </div>
     </AppLayout>
-  );
-}
-
-function RefreshCcwIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-      <path d="M16 21v-5h5" />
-    </svg>
   );
 }

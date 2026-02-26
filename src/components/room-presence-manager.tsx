@@ -7,8 +7,8 @@ import { doc, setDoc, serverTimestamp, collection, getDoc, increment } from 'fir
 
 /**
  * Maintains Firestore presence while a room is active.
- * Production Ready: Prevents seat loss on refresh and manages real-time participant count.
- * Sole owner of room participantCount management to avoid race conditions.
+ * Production Ready: Manages participantCount atomically.
+ * Sole owner of room participantCount management to ensure discovery visibility.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -21,7 +21,6 @@ export function RoomPresenceManager() {
 
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user || !userProfile) {
-      // Cleanup happens via the return function below
       return;
     }
 
@@ -30,7 +29,6 @@ export function RoomPresenceManager() {
     const roomDocRef = doc(firestore, 'chatRooms', roomId);
 
     const performSync = async () => {
-      // 1. Entrance Announcement (Only once per room switch)
       if (lastRoomId.current !== roomId) {
         lastRoomId.current = roomId;
         addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
@@ -43,14 +41,12 @@ export function RoomPresenceManager() {
           type: 'entrance'
         });
 
-        // Increment Participant Count for global list visibility
         if (hasIncrementedCount.current !== roomId) {
           updateDocumentNonBlocking(roomDocRef, { participantCount: increment(1) });
           hasIncrementedCount.current = roomId;
         }
       }
 
-      // 2. Seat Preservation Logic: Check if we are already in a seat
       let existingSeatIndex = 0;
       if (!hasHandshakedForSession.current) {
         try {
@@ -58,13 +54,10 @@ export function RoomPresenceManager() {
           if (snap.exists()) {
             existingSeatIndex = snap.data().seatIndex || 0;
           }
-        } catch (e) {
-          console.warn("Presence handshake delay:", e);
-        }
+        } catch (e) {}
         hasHandshakedForSession.current = true;
       }
 
-      // 3. Update Real-time Presence
       setDoc(participantRef, {
         uid: user.uid,
         name: userProfile.username || 'Guest',
@@ -72,14 +65,13 @@ export function RoomPresenceManager() {
         activeFrame: userProfile.inventory?.activeFrame || 'None',
         joinedAt: serverTimestamp(),
         isMuted: true,
-        seatIndex: existingSeatIndex, // Preserve seat across refreshes
+        seatIndex: existingSeatIndex,
       }, { merge: true });
     };
 
     performSync();
 
     return () => {
-      // Decrement Count when navigating away or unsetting activeRoom
       if (hasIncrementedCount.current === roomId) {
         updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1) });
         hasIncrementedCount.current = null;

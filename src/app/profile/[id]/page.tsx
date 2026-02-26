@@ -22,7 +22,6 @@ import {
   UserPlus,
   UserCheck,
   RefreshCw,
-  User as UserIcon
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -79,7 +78,6 @@ export default function ProfilePage() {
     if (!isAuthLoading && !currentUser) router.replace('/login');
   }, [currentUser, isAuthLoading, router]);
 
-  // Only clear local preview when the real-time profile avatar changes
   useEffect(() => {
     if (profile?.avatarUrl) {
       setLocalAvatarPreview(null);
@@ -93,7 +91,6 @@ export default function ProfilePage() {
     if (!auth) return;
     try {
       await signOut(auth);
-      // Hard redirect to clear any stale authentication frequencies
       window.location.href = '/login';
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Logout Failed', description: e.message });
@@ -113,18 +110,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRefillWallet = () => {
-    if (!firestore || !currentUser || !isOwnProfile) return;
-    const userRef = doc(firestore, 'users', currentUser.uid);
-    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-    const updateData = { 'wallet.coins': increment(100000000), updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(userRef, updateData);
-    updateDocumentNonBlocking(profileRef, updateData);
-  };
-
-  const isWaiting = isAuthLoading || isProfileLoading;
-
-  if (isWaiting) {
+  if (isAuthLoading || isProfileLoading) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -135,23 +121,10 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile && isOwnProfile) {
-    return (
-      <AppLayout>
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <Loader className="animate-spin text-primary h-10 w-10" />
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Initializing Tribe Identity...</p>
-        </div>
-      </AppLayout>
-    );
-  }
-
   if (!profile) {
     notFound();
     return null;
   }
-
-  if (!currentUser) return null;
 
   return (
     <AppLayout>
@@ -211,46 +184,13 @@ export default function ProfilePage() {
         </div>
 
         <div className="px-4 space-y-3">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-sm font-black uppercase tracking-widest font-headline text-gray-400">Vault & Identity</h2>
-            {isOwnProfile && (
-              <button 
-                onClick={handleRefillWallet}
-                className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1 hover:opacity-80 transition-opacity"
-              >
-                <RefreshCw className="h-3 w-3" /> Refill Wallet
-              </button>
-            )}
-          </div>
+          <h2 className="text-sm font-black uppercase tracking-widest font-headline text-gray-400 px-2">Vault & Identity</h2>
           <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
             <MenuItem icon={GoldCoinIcon} label="Gold Coins" extra={(profile.wallet?.coins || 0).toLocaleString()} iconColor="text-yellow-500" href="/store" />
             <MenuItem icon={Sparkles} label="Blue Diamonds" extra={(profile.wallet?.diamonds || 0).toLocaleString()} iconColor="text-blue-500" href="/store" />
             <MenuItem icon={Store} label="Ummy Boutique" href="/store" iconColor="text-orange-500" />
             <MenuItem icon={Trophy} label="Tribe Level" href="/leaderboard" extra={`Level ${profile.level?.rich || 1}`} iconColor="text-yellow-600" />
             <MenuItem icon={Shirt} label={isOwnProfile ? "My Assets" : "Collection"} href="/store" iconColor="text-cyan-500" />
-          </Card>
-        </div>
-
-        <div className="px-4 space-y-3">
-          <h2 className="text-sm font-black uppercase tracking-widest px-2 font-headline text-gray-400">Community Stats</h2>
-          <div className="grid grid-cols-2 gap-4 px-2">
-             <div className="bg-white p-4 rounded-3xl shadow-sm text-center">
-                <p className="text-xl font-black text-gray-900">{profile.stats?.followers || 0}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Followers</p>
-             </div>
-             <div className="bg-white p-4 rounded-3xl shadow-sm text-center">
-                <p className="text-xl font-black text-gray-900">{profile.stats?.fans || 0}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Fans</p>
-             </div>
-          </div>
-        </div>
-
-        <div className="px-4 space-y-3">
-          <h2 className="text-sm font-black uppercase tracking-widest px-2 font-headline text-gray-400">Region & Feedback</h2>
-          <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
-            <MenuItem icon={Globe} label="Region" extra="India / Official" iconColor="text-gray-400" />
-            <MenuItem icon={MessageSquare} label="Feedback" href="/help-center" iconColor="text-gray-400" />
-            <MenuItem icon={SettingsIcon} label="Preference" href={isOwnProfile ? "/settings" : undefined} iconColor="text-gray-400" />
           </Card>
         </div>
 

@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: 48 100% 50%; /* Primary Brand Yellow as default background to prevent flashes */
+    --background: 48 100% 50%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 48 100% 50%; /* Vibrant Yellow */
+    --primary: 48 100% 50%;
     --primary-foreground: 0 0% 0%;
     --secondary: 0 0% 95%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 343 100% 60%; /* Pink for CP */
+    --accent: 343 100% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -53,45 +53,18 @@
   * {
     @apply border-border;
     -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
   }
   body {
     @apply bg-background text-foreground overflow-hidden touch-manipulation overscroll-none;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
-  }
-}
-
-/* Custom scroll area logic */
-.overflow-y-auto {
-  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes marquee {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
-
 .animate-marquee {
   animation: marquee 15s linear infinite;
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
-}
-
-@keyframes glow-pulse {
-  0% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(251, 191, 36, 0.9); }
-  100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
-}
-.animate-glow {
-  animation: glow-pulse 2s infinite;
 }
 
 @keyframes voice-wave {

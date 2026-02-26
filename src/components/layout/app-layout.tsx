@@ -25,7 +25,7 @@ import { FloatingRoomBar } from "../floating-room-bar";
 
 const CastleIcon = (props: any) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M2 22V7l2-2V2h3v3l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v3l3 3v15H2zm4-4h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z" />
+    <path d="M2 22V7l2-2V2h3v3l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v3l3 3v15H2zm4-4h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z" />
   </svg>
 );
 
@@ -44,6 +44,7 @@ const MineIcon = (props: any) => (
 /**
  * Universal Tribe Navigation.
  * Finalized 3-tab layout: Rooms, Message, Mine.
+ * Simplified for high-fidelity mobile discovery.
  */
 const navItems = [
   { href: "/rooms", label: "Rooms", icon: CastleIcon },
@@ -69,7 +70,6 @@ export function AppLayout({
   fullScreen?: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, isLoading: isUserLoading } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();

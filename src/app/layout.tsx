@@ -21,7 +21,6 @@ const fontBody = Alegreya({
 export const metadata: Metadata = {
   title: 'Ummy - Connect Your Tribe',
   description: 'Elite real-time social voice chat frequency.',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

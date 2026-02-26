@@ -27,7 +27,7 @@ interface EditProfileDialogProps {
 
 /**
  * Unified Identity Synchronization Dialog.
- * Uses Pen icon for visual alignment with production UI.
+ * Uses professional Pen icon for visual alignment with production UI.
  */
 export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
@@ -145,21 +145,6 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                    disabled={isSubmitting}
                  />
                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 opacity-50">
-              <div className="grid gap-2">
-                <Label className="flex items-center gap-1.5 text-[10px] uppercase font-black text-gray-400 ml-1">
-                  <Globe className="h-3 w-3" /> Region
-                </Label>
-                <Input value={profile?.details?.hometown || 'India'} disabled className="bg-secondary/50 h-10 text-xs rounded-xl cursor-not-allowed border-none" />
-              </div>
-              <div className="grid gap-2">
-                <Label className="flex items-center gap-1.5 text-[10px] uppercase font-black text-gray-400 ml-1">
-                  <User2 className="h-3 w-3" /> Gender
-                </Label>
-                <Input value={profile?.details?.gender || 'Secret'} disabled className="bg-secondary/50 h-10 text-xs rounded-xl cursor-not-allowed border-none" />
-              </div>
             </div>
           </div>
           <DialogFooter className="p-8 pt-0">

@@ -1,47 +1,10 @@
-
 {
   "placeholderImages": [
-    {
-      "id": "fruit-party-logo",
-      "description": "Vibrant 3D Fruit Party Game Logo",
-      "imageUrl": "https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000",
-      "imageHint": "fruit party"
-    },
-    {
-      "id": "emerald-room-theme",
-      "description": "Deep emerald geometric room background",
-      "imageUrl": "https://picsum.photos/seed/emerald-vibe/1200/2400",
-      "imageHint": "emerald geometric"
-    },
     {
       "id": "user-avatar-1",
       "description": "User avatar 1",
       "imageUrl": "https://picsum.photos/seed/user1/200/200",
       "imageHint": "person portrait"
-    },
-    {
-      "id": "user-avatar-2",
-      "description": "User avatar 2",
-      "imageUrl": "https://picsum.photos/seed/user2/200/200",
-      "imageHint": "woman smiling"
-    },
-    {
-      "id": "user-avatar-3",
-      "description": "User avatar 3",
-      "imageUrl": "https://picsum.photos/seed/user3/200/200",
-      "imageHint": "man glasses"
-    },
-    {
-      "id": "user-avatar-4",
-      "description": "User avatar 4",
-      "imageUrl": "https://picsum.photos/seed/user4/200/200",
-      "imageHint": "person outdoors"
-    },
-    {
-      "id": "user-avatar-5",
-      "description": "User avatar 5",
-      "imageUrl": "https://picsum.photos/seed/user5/200/200",
-      "imageHint": "woman nature"
     },
     {
       "id": "room-cover-1",
@@ -50,34 +13,10 @@
       "imageHint": "abstract vibrant"
     },
     {
-      "id": "room-cover-2",
-      "description": "Chat room cover 2",
-      "imageUrl": "https://picsum.photos/seed/room2/400/225",
-      "imageHint": "cozy cafe"
-    },
-    {
-      "id": "room-cover-3",
-      "description": "Chat room cover 3",
-      "imageUrl": "https://picsum.photos/seed/room3/400/225",
-      "imageHint": "gaming setup"
-    },
-    {
-      "id": "room-cover-4",
-      "description": "Chat room cover 4",
-      "imageUrl": "https://picsum.photos/seed/room4/400/225",
-      "imageHint": "books library"
-    },
-    {
-      "id": "room-cover-5",
-      "description": "Chat room cover 5",
-      "imageUrl": "https://picsum.photos/seed/room5/400/225",
-      "imageHint": "mountain landscape"
-    },
-    {
-      "id": "profile-header",
-      "description": "Profile header background",
-      "imageUrl": "https://picsum.photos/seed/profilebg/1200/300",
-      "imageHint": "abstract gradient"
+      "id": "fruit-party-special-chicken",
+      "description": "Roast chicken special item for Fruit Party",
+      "imageUrl": "https://picsum.photos/seed/fruit-roast/200/200",
+      "imageHint": "roast chicken"
     },
     {
       "id": "wild-party-bg",
@@ -86,32 +25,20 @@
       "imageHint": "deep forest"
     },
     {
-      "id": "fruit-party-special-chicken",
-      "description": "Roast chicken special item for Fruit Party",
-      "imageUrl": "https://picsum.photos/seed/fruit-roast/200/200",
-      "imageHint": "roast chicken"
-    },
-    {
-      "id": "fruit-party-special-platter",
-      "description": "Fruit platter special item for Fruit Party",
-      "imageUrl": "https://picsum.photos/seed/fruit-plate/200/200",
-      "imageHint": "fruit platter"
-    },
-    {
       "id": "dragon-jade",
-      "description": "Jade Dragon mythic character",
+      "description": "Jade Dragon character",
       "imageUrl": "https://picsum.photos/seed/drag-jade/400/400",
       "imageHint": "jade dragon"
     },
     {
       "id": "dragon-ruby",
-      "description": "Ruby Dragon mythic character",
+      "description": "Ruby Dragon character",
       "imageUrl": "https://picsum.photos/seed/drag-ruby/400/400",
       "imageHint": "ruby dragon"
     },
     {
       "id": "dragon-azure",
-      "description": "Azure Dragon mythic character",
+      "description": "Azure Dragon character",
       "imageUrl": "https://picsum.photos/seed/drag-azure/400/400",
       "imageHint": "azure dragon"
     },

@@ -9,6 +9,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 /**
  * Production Profile Initializer.
  * Assigns a unique sequential 6-digit numeric ID (e.g. 562980) starting from 100,000.
+ * Provision 100M coins and Official tags instantly.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -103,12 +104,6 @@ export function ProfileInitializer() {
       } catch (e: any) {
         hasInitialized.current = null; 
         console.error("Initialization Error:", e);
-        if (e.code === 'permission-denied') {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `users/${user.uid}`,
-            operation: 'create',
-          }));
-        }
       }
     };
 
