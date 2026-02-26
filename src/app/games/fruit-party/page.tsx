@@ -13,34 +13,38 @@ import {
   VolumeX,
   HelpCircle,
   BarChart2,
-  Clock,
   Loader,
   Trophy,
-  Crown
+  Crown,
+  ChevronLeft,
+  Maximize2,
+  Settings,
+  MoreHorizontal,
+  ChevronDown
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
 
 const ITEMS = [
-  { id: 'grapes_blue', emoji: '🍇', multiplier: 5, label: '5 times', color: 'blue' },
-  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: '5 times', color: 'green' },
-  { id: 'grapes_purple', emoji: '🍇', multiplier: 5, label: '5 times', color: 'purple' },
-  { id: 'lemon', emoji: '🍋', multiplier: 5, label: '5 times', color: 'yellow' },
-  { id: 'orange', emoji: '🍊', multiplier: 10, label: '10 times', color: 'orange' },
-  { id: 'pear', emoji: '🍐', multiplier: 15, label: '15 times', color: 'lime' },
-  { id: 'cherry', emoji: '🍒', multiplier: 25, label: '25 times', color: 'red' },
-  { id: 'plum', emoji: '🫐', multiplier: 45, label: '45 times', color: 'violet' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times', pos: 'top' },
+  { id: 'bananas', emoji: '🍌', multiplier: 5, label: 'Win 5 times', pos: 'top-right' },
+  { id: 'oranges', emoji: '🍊', multiplier: 5, label: 'Win 5 times', pos: 'right' },
+  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: 'Win 5 times', pos: 'bottom-right' },
+  { id: 'pizza', emoji: '🍕', multiplier: 10, label: 'Win 10 times', pos: 'bottom' },
+  { id: 'burrito', emoji: '🌯', multiplier: 15, label: 'Win 15 times', pos: 'bottom-left' },
+  { id: 'skewers', emoji: '🍢', multiplier: 25, label: 'Win 25 times', pos: 'left' },
+  { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'Win 45 times', pos: 'top-left' },
 ];
 
 const CHIPS = [
+  { value: 5, label: '5' },
+  { value: 10, label: '10' },
   { value: 100, label: '100' },
   { value: 1000, label: '1K' },
-  { value: 10000, label: '10K' },
-  { value: 50000, label: '50K' },
+  { value: 5000, label: '5K' },
 ];
 
 export default function FruitPartyPage() {
@@ -51,77 +55,30 @@ export default function FruitPartyPage() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [selectedChip, setSelectedChip] = useState(100);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [selectedChip, setSelectedChip] = useState(10);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
+  const [lastBets, setLastBets] = useState<Record<string, number>>({});
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
-  const [resultId, setResultId] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
-  const [isLaunching, setIsLaunching] = useState(true);
-  const [todayWinnings, setTodayWinnings] = useState(0);
+  const [history, setHistory] = useState<string[]>(['watermelon', 'skewers', 'pizza', 'pizza', 'strawberry', 'oranges', 'oranges']);
   const [isMuted, setIsMuted] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   const initAudioContext = useCallback(() => {
-    if (typeof window === 'undefined') return null;
-    if (!audioCtxRef.current) {
+    if (!audioCtxRef.current && typeof window !== 'undefined') {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    if (audioCtxRef.current.state === 'suspended') {
+    if (audioCtxRef.current?.state === 'suspended') {
       audioCtxRef.current.resume();
     }
     return audioCtxRef.current;
   }, []);
 
   useEffect(() => {
-    if (isMuted || isLaunching) return;
-    
-    let timer: any = null;
-
-    try {
-      const ctx = initAudioContext();
-      if (!ctx) return;
-      
-      const masterGain = ctx.createGain();
-      masterGain.gain.value = 0.25; 
-      masterGain.connect(ctx.destination);
-
-      let step = 0;
-      const scheduleNextNote = () => {
-        if (!ctx || ctx.state !== 'running') return;
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const noteGain = ctx.createGain();
-        
-        const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; 
-        const freq = melody[step % melody.length];
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-        
-        noteGain.gain.setValueAtTime(0.1, now);
-        noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-        
-        osc.connect(noteGain);
-        noteGain.connect(masterGain);
-        
-        osc.start(now);
-        osc.stop(now + 0.2);
-        step++;
-      };
-
-      timer = setInterval(scheduleNextNote, 200);
-    } catch (e) {}
-
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isMuted, isLaunching, initAudioContext]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 2500);
+    const timer = setTimeout(() => setIsLaunching(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -141,39 +98,36 @@ export default function FruitPartyPage() {
     const targetIdx = Math.floor(Math.random() * ITEMS.length);
     
     let currentStep = 0;
-    const totalSteps = 24 + targetIdx;
-    let speed = 60;
+    const totalSteps = 32 + targetIdx;
+    let speed = 50;
 
     const runChase = () => {
       setHighlightIdx(currentStep % ITEMS.length);
       currentStep++;
       if (currentStep < totalSteps) {
-        if (totalSteps - currentStep < 8) speed += 40;
+        if (totalSteps - currentStep < 10) speed += 30;
         setTimeout(runChase, speed);
       } else {
-        setTimeout(() => showResult(ITEMS[targetIdx].id), 500);
+        setTimeout(() => showResult(ITEMS[targetIdx].id), 800);
       }
     };
     runChase();
   };
 
   const showResult = (id: string) => {
+    setHistory(prev => [id, ...prev].slice(0, 15));
     const winItem = ITEMS.find(i => i.id === id);
     const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
-    
-    const sessionWinners = [];
 
+    const sessionWinners = [];
     if (winAmount > 0 && userProfile) {
       sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
     }
 
     setWinners(sessionWinners);
     setGameState('result');
-    setResultId(id);
-    setHistory(prev => [id, ...prev].slice(0, 10));
-    
-    if (winAmount > 0 && currentUser && firestore) {
-      setTodayWinnings(prev => prev + winAmount);
+
+    if (winAmount > 0 && currentUser && firestore && userProfile) {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
@@ -184,13 +138,13 @@ export default function FruitPartyPage() {
     }
 
     setTimeout(() => {
+      setLastBets(myBets);
       setMyBets({});
       setWinners([]);
-      setGameState('betting');
-      setTimeLeft(20);
-      setResultId(null);
       setHighlightIdx(null);
-    }, 6000);
+      setGameState('betting');
+      setTimeLeft(15);
+    }, 5000);
   };
 
   const handlePlaceBet = (id: string) => {
@@ -207,210 +161,192 @@ export default function FruitPartyPage() {
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
+  const handleRepeat = () => {
+    if (gameState !== 'betting' || !currentUser || !userProfile) return;
+    const totalCost = Object.values(lastBets).reduce((a, b) => a + b, 0);
+    if (totalCost === 0) return;
+    if ((userProfile.wallet?.coins || 0) < totalCost) {
+      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      return;
+    }
+
+    const updateData = { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+    setMyBets(lastBets);
+  };
+
   if (isLaunching) {
     return (
-      <div className="h-screen w-full bg-[#2D0B0B] flex flex-col items-center justify-center space-y-8 p-6">
-        <div className="relative w-64 h-64 animate-in zoom-in duration-1000">
-           <Image 
-             src="https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000" 
-             alt="Fruit Party Logo" 
-             fill 
-             className="object-contain drop-shadow-[0_0_40px_rgba(255,214,0,0.4)]"
-             data-ai-hint="fruit party"
-           />
-        </div>
-        <h1 className="text-5xl font-black text-[#FFD600] uppercase italic tracking-tighter drop-shadow-2xl text-center">Lucky Fruit</h1>
-        <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden shadow-inner">
-           <div className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 animate-shimmer" style={{ width: '100%' }} />
-        </div>
-        <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.3em] animate-pulse">Syncing Arena...</p>
+      <div className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline">
+        <div className="text-8xl animate-bounce">🎡</div>
+        <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
+        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
       </div>
     );
   }
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#1a0505] flex flex-col items-center relative overflow-hidden font-headline animate-in fade-in duration-1000" onClick={initAudioContext}>
+      <div className="h-screen w-full bg-[#58319d] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
 
-        {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
-             <div className="relative mb-12">
-                <Crown className="absolute -top-12 left-1/2 -translate-x-1/2 h-16 w-16 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Round Winners</h2>
-             </div>
-             
-             <div className="flex items-end justify-center gap-4 px-6 w-full max-w-lg h-64">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-1000">
-                     <Avatar className={cn("border-4 shadow-xl", idx === 0 ? "h-24 w-24 border-yellow-400" : "h-20 w-20 border-slate-300")}>
-                        <AvatarImage src={winner.avatar}/><AvatarFallback>{idx + 1}</AvatarFallback>
-                     </Avatar>
-                     <div className={cn("w-32 rounded-t-2xl border-x border-t flex flex-col items-center justify-center", idx === 0 ? "bg-yellow-500/20 border-yellow-400 h-32" : "bg-slate-400/20 border-slate-300 h-24")}>
-                        <span className="text-3xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-sm font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-
-        <div className="flex-1 flex flex-col items-center w-full max-w-md p-4 pt-32 pb-32 z-10 overflow-y-auto no-scrollbar">
-          <header className="w-full flex items-center justify-between mb-4">
-             <div className="flex gap-2">
-                <button onClick={() => router.back()} className="bg-black/40 p-2 rounded-full text-[#FFD600] border border-[#FFD600]/20"><X className="h-4 w-4" /></button>
-                <button onClick={() => setIsMuted(!isMuted)} className="bg-black/40 p-2 rounded-full text-[#FFD600] border border-[#FFD600]/20">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
-                <button className="bg-black/40 p-2 rounded-full text-[#FFD600] border border-[#FFD600]/20"><BarChart2 className="h-4 w-4" /></button>
-             </div>
-             <div className="flex gap-2">
-                <button className="bg-black/40 p-2 rounded-full text-[#FFD600] border border-[#FFD600]/20"><Clock className="h-4 w-4" /></button>
-                <button className="bg-black/40 p-2 rounded-full text-[#FFD600] border border-[#FFD600]/20"><HelpCircle className="h-4 w-4" /></button>
-             </div>
-          </header>
-
-          <div className="relative w-full flex flex-col items-center mb-6">
-             <div className="relative z-20 -mb-4">
-                <div className="bg-gradient-to-b from-[#f59e0b] via-[#d97706] to-[#b45309] px-12 py-2 rounded-t-3xl border-x-4 border-t-4 border-[#FFD600] shadow-2xl relative overflow-hidden">
-                   <h2 className="text-3xl font-black text-white italic uppercase tracking-tight drop-shadow-md">Lucky Fruit</h2>
-                   <div className="absolute top-0 right-0 p-1"><div className="w-4 h-4 bg-white/20 rotate-45" /></div>
-                </div>
-             </div>
-             
-             <div className="w-full bg-[#4D0000] p-1.5 rounded-[2.5rem] border-4 border-[#B45309] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                <div className="bg-[#2D0B0B] rounded-[2rem] p-4 space-y-4">
-                   <div className="flex justify-center">
-                      <div className="bg-black/40 px-6 py-1 rounded-full border border-white/5">
-                         <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Round <span className="text-[#FFD600]">19016</span> of Today</p>
-                      </div>
-                   </div>
-
-                   <div className="grid grid-cols-4 gap-2">
-                      {ITEMS.slice(0, 4).map((item, idx) => (
-                        <button 
-                          key={item.id} 
-                          onClick={() => handlePlaceBet(item.id)}
-                          disabled={gameState !== 'betting'}
-                          className={cn(
-                            "relative aspect-square rounded-2xl flex flex-col items-center justify-center p-1 border-2 transition-all",
-                            highlightIdx === idx || resultId === item.id ? "border-[#FFD600] bg-[#FFD600]/20 scale-105 shadow-[0_0_15px_#FFD600]" : "border-white/5 bg-black/20",
-                            gameState !== 'betting' && resultId !== item.id && "opacity-60"
-                          )}
-                        >
-                           <span className="text-3xl drop-shadow-lg">{item.emoji}</span>
-                           <span className="text-[8px] font-black uppercase text-[#FFD600]">{item.label}</span>
-                           {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-[#FFD600] text-black text-[7px] font-black px-1 rounded-full border border-white">{(myBets[item.id]/1000).toFixed(0)}k</div>}
-                        </button>
-                      ))}
-                   </div>
-
-                   <div className="grid grid-cols-4 gap-2 h-20">
-                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center border-2 border-white/10 opacity-80">
-                         <span className="text-white font-black italic uppercase text-[10px] drop-shadow-md">Lucky</span>
-                      </div>
-                      <div className="col-span-2 bg-[#1a0505] rounded-2xl border-4 border-[#B45309] shadow-inner flex items-center justify-center overflow-hidden">
-                         {gameState === 'betting' ? (
-                           <div className="text-5xl font-mono font-black text-red-600 italic tracking-tighter drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">
-                              {timeLeft}
-                           </div>
-                         ) : (
-                           <div className="text-4xl animate-in zoom-in duration-300">
-                              {ITEMS[highlightIdx ?? 0]?.emoji || '🍓'}
-                           </div>
-                         )}
-                      </div>
-                      <div className="bg-gradient-to-br from-green-400 to-cyan-500 rounded-2xl flex items-center justify-center border-2 border-white/10 opacity-80">
-                         <span className="text-white font-black italic uppercase text-[10px] drop-shadow-md">Lucky</span>
-                      </div>
-                   </div>
-
-                   <div className="grid grid-cols-4 gap-2">
-                      {ITEMS.slice(4).map((item, idx) => (
-                        <button 
-                          key={item.id} 
-                          onClick={() => handlePlaceBet(item.id)}
-                          disabled={gameState !== 'betting'}
-                          className={cn(
-                            "relative aspect-square rounded-2xl flex flex-col items-center justify-center p-1 border-2 transition-all",
-                            highlightIdx === (idx + 4) || resultId === item.id ? "border-[#FFD600] bg-[#FFD600]/20 scale-105 shadow-[0_0_15px_#FFD600]" : "border-white/5 bg-black/20",
-                            gameState !== 'betting' && resultId !== item.id && "opacity-60"
-                          )}
-                        >
-                           <span className="text-3xl drop-shadow-lg">{item.emoji}</span>
-                           <span className="text-[8px] font-black uppercase text-[#FFD600]">{item.label}</span>
-                           {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-[#FFD600] text-black text-[7px] font-black px-1 rounded-full border border-white">{(myBets[item.id]/1000).toFixed(0)}k</div>}
-                        </button>
-                      ))}
-                   </div>
-                </div>
-             </div>
-          </div>
-
-          <div className="w-full space-y-4">
-             <div className="flex justify-between items-center px-4">
-                {CHIPS.map(chip => (
-                  <button 
-                    key={chip.value} 
-                    onClick={() => setSelectedChip(chip.value)}
-                    className={cn(
-                      "group flex flex-col items-center gap-1 transition-all active:scale-90",
-                      selectedChip === chip.value ? "scale-110" : "opacity-60 hover:opacity-100"
-                    )}
-                  >
-                     <div className={cn(
-                       "h-10 w-10 rounded-full border-2 flex items-center justify-center shadow-lg",
-                       selectedChip === chip.value ? "bg-[#FFD600] border-white shadow-[0_0_15px_#FFD600]" : "bg-black/40 border-white/20"
-                     )}>
-                        <span className={cn("text-[10px] font-black italic", selectedChip === chip.value ? "text-black" : "text-white")}>{chip.label}</span>
-                     </div>
-                     <div className={cn("h-4 w-4 rounded-full border-2", selectedChip === chip.value ? "bg-[#FFD600] border-white" : "bg-white/10 border-white/5")} />
-                  </button>
-                ))}
-             </div>
-          </div>
+        {/* Mandala Background Pattern Overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
+           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/mandala.png')] bg-center opacity-30" />
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-white/10 to-transparent" />
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 z-[110] bg-gradient-to-t from-black to-black/80 border-t border-white/10 px-6 pt-4 pb-10">
-           <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
-              <div className="bg-[#4D0000] p-3 rounded-2xl border border-white/5 flex flex-col items-center">
-                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Balance</span>
-                 <div className="flex items-center gap-2">
-                    <GoldCoinIcon className="h-4 w-4" />
-                    <span className="text-lg font-black text-[#FFD600] italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                 </div>
+        {/* Top Navigation */}
+        <div className="relative z-50 flex items-center justify-between p-4 pt-32">
+           <div className="flex gap-1">
+              <button className="bg-white/10 p-1.5 rounded-full"><Maximize2 className="h-4 w-4" /></button>
+              <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-1.5 rounded-full">
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+              <button className="bg-white/10 p-1.5 rounded-full"><HelpCircle className="h-4 w-4" /></button>
+              <button className="bg-white/10 p-1.5 rounded-full"><BarChart2 className="h-4 w-4" /></button>
+           </div>
+           <h1 className="text-2xl font-black text-white uppercase italic tracking-tight">Fruit Party</h1>
+           <div className="flex gap-1">
+              <button className="bg-white/10 p-1.5 rounded-full"><MoreHorizontal className="h-4 w-4" /></button>
+              <button className="bg-white/10 p-1.5 rounded-full"><ChevronDown className="h-4 w-4" /></button>
+              <button onClick={() => router.back()} className="bg-white/10 p-1.5 rounded-full"><X className="h-4 w-4" /></button>
+           </div>
+        </div>
+
+        {/* Bonus visual flairs at top corners */}
+        <div className="absolute top-44 left-6 z-10 w-24 h-24 bg-black/20 rounded-full blur-xl animate-pulse" />
+        <div className="absolute top-48 left-8 z-20 w-16 h-16 bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2">
+           <span className="text-4xl">🍗</span>
+        </div>
+        <div className="absolute top-44 right-6 z-10 w-24 h-24 bg-black/20 rounded-full blur-xl animate-pulse" />
+        <div className="absolute top-48 right-8 z-20 w-16 h-16 bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2">
+           <span className="text-4xl">🍉</span>
+        </div>
+
+        {/* The Ferris Wheel Betting Circle */}
+        <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
+           
+           <div className="relative w-full max-w-sm aspect-square flex items-center justify-center">
+              
+              {/* Outer Glow Ring */}
+              <div className="absolute inset-0 border-4 border-white/5 rounded-full m-10" />
+              
+              {/* The Central Timer Hub */}
+              <div className="relative z-20 w-36 h-36 bg-[#4c1d95] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
+                 <span className="text-7xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+                    {gameState === 'betting' ? timeLeft : '🎲'}
+                 </span>
+                 <p className="text-[10px] font-bold uppercase text-white/60 tracking-widest mt-1">
+                    {gameState === 'betting' ? 'waiting...' : 'Spinning'}
+                 </p>
               </div>
-              <div className="bg-[#4D0000] p-3 rounded-2xl border border-white/5 flex flex-col items-center">
-                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Today's Winnings</span>
-                 <div className="flex items-center gap-2">
+
+              {/* Ferris Wheel Spokes (SVG) */}
+              <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 100">
+                 {Array.from({length: 8}).map((_, i) => (
+                   <line key={i} x1="50" y1="50" x2="50" y2="5" transform={`rotate(${i * 45} 50 50)`} stroke="white" strokeWidth="0.5" />
+                 ))}
+                 {Array.from({length: 8}).map((_, i) => (
+                   <circle key={i} cx="50" cy="5" r="1.5" transform={`rotate(${i * 45} 50 50)`} fill="white" className="animate-pulse" />
+                 ))}
+              </svg>
+
+              {/* Items Grid */}
+              {ITEMS.map((item, idx) => (
+                <button 
+                  key={item.id}
+                  onClick={() => handlePlaceBet(item.id)}
+                  disabled={gameState !== 'betting'}
+                  className={cn(
+                    "absolute transition-all duration-300 flex flex-col items-center group active:scale-95",
+                    item.pos === 'top' && "top-0",
+                    item.pos === 'top-right' && "top-[12%] right-[12%]",
+                    item.pos === 'right' && "right-0",
+                    item.pos === 'bottom-right' && "bottom-[12%] right-[12%]",
+                    item.pos === 'bottom' && "bottom-0",
+                    item.pos === 'bottom-left' && "bottom-[12%] left-[12%]",
+                    item.pos === 'left' && "left-0",
+                    item.pos === 'top-left' && "top-[12%] left-[12%]",
+                    highlightIdx === idx && "scale-110 z-30 drop-shadow-[0_0_20px_#facc15]"
+                  )}
+                >
+                   <div className={cn(
+                     "h-20 w-20 rounded-2xl flex flex-col items-center justify-center p-1 transition-all border-2",
+                     highlightIdx === idx ? "bg-[#7c3aed] border-yellow-400" : "bg-black/30 border-white/5 group-hover:bg-black/40"
+                   )}>
+                      <span className="text-4xl drop-shadow-md">{item.emoji}</span>
+                      <span className="text-[8px] font-black text-white/60 uppercase mt-1 leading-tight">{item.label}</span>
+                   </div>
+                   {myBets[item.id] > 0 && (
+                     <div className="mt-1 bg-yellow-400 text-black px-2 py-0.5 rounded-full font-black text-[8px] shadow-lg animate-in zoom-in">
+                        {myBets[item.id]}
+                     </div>
+                   )}
+                </button>
+              ))}
+           </div>
+
+        </main>
+
+        {/* Footer Interaction Hub */}
+        <footer className="relative z-50 p-4 pb-10 space-y-4">
+           
+           {/* Wagering Panel */}
+           <div className="max-w-md mx-auto bg-[#7c3aed]/40 backdrop-blur-xl rounded-[2rem] p-4 border border-white/10 shadow-2xl">
+              
+              <div className="flex items-center justify-between mb-4 px-2">
+                 <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
                     <GoldCoinIcon className="h-4 w-4" />
-                    <span className="text-lg font-black text-[#FFD600] italic">{todayWinnings.toLocaleString()}</span>
+                    <span className="text-sm font-black text-black">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+                    <button className="text-black/40"><History className="h-3 w-3" /></button>
                  </div>
+                 <button 
+                   onClick={handleRepeat}
+                   className="bg-white/10 px-6 py-1.5 rounded-xl font-black uppercase text-xs hover:bg-white/20 active:scale-95 transition-all"
+                 >
+                    Repeat
+                 </button>
+              </div>
+
+              <p className="text-[10px] font-black text-white/60 uppercase tracking-widest text-center mb-4">Choose the amount of wager then choose food</p>
+
+              <div className="flex justify-between gap-2">
+                 {CHIPS.map(chip => (
+                   <button 
+                     key={chip.value} 
+                     onClick={() => setSelectedChip(chip.value)}
+                     className={cn(
+                       "flex-1 h-16 rounded-2xl flex flex-col items-center justify-center transition-all border-2 relative",
+                       selectedChip === chip.value ? "bg-white border-white text-[#7c3aed] scale-105 z-10 shadow-xl" : "bg-white/5 border-white/5 text-white/40"
+                     )}
+                   >
+                      <GoldCoinIcon className={cn("h-4 w-4 mb-1", selectedChip === chip.value ? "text-[#7c3aed]" : "text-yellow-500")} />
+                      <span className="text-xs font-black italic">{chip.label}</span>
+                      {selectedChip === chip.value && <div className="absolute -inset-1 rounded-2xl border-2 border-red-400 opacity-40 animate-pulse" />}
+                   </button>
+                 ))}
               </div>
            </div>
-           
-           <div className="max-w-md mx-auto mt-4 flex items-center gap-3 overflow-x-auto no-scrollbar">
-              <span className="text-[10px] font-black text-white/20 uppercase italic tracking-tighter shrink-0">Results:</span>
-              <div className="flex gap-2">
-                 {history.map((hid, i) => (
-                   <div key={i} className="relative">
-                      <span className="text-xl opacity-80">{ITEMS.find(it => it.id === hid)?.emoji}</span>
-                      {i === 0 && <div className="absolute -top-1 -right-1 bg-yellow-500 text-[6px] font-black text-black px-1 rounded-full animate-pulse">NEW</div>}
+
+           {/* Winning History */}
+           <div className="max-w-md mx-auto bg-black/40 backdrop-blur-md rounded-full border border-white/5 p-2 px-6 flex items-center gap-4">
+              <span className="text-[10px] font-black uppercase tracking-tighter text-white/40 shrink-0">Winning History</span>
+              <div className="flex-1 flex gap-3 overflow-x-auto no-scrollbar">
+                 {history.map((id, i) => (
+                   <div key={i} className="relative shrink-0 flex flex-col items-center">
+                      <span className="text-2xl">{ITEMS.find(it => it.id === id)?.emoji}</span>
+                      {i === 0 && <span className="absolute -bottom-1 bg-pink-500 text-[6px] px-1 rounded-full font-black animate-pulse">New</span>}
                    </div>
                  ))}
               </div>
            </div>
-        </div>
+
+        </footer>
 
         <style jsx global>{`
           .no-scrollbar::-webkit-scrollbar { display: none; }
-          @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-          .animate-shimmer {
-            animation: shimmer 2s infinite;
-          }
         `}</style>
       </div>
     </AppLayout>
