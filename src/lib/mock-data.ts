@@ -1,9 +1,8 @@
-
 import type { User, Room, Game, CoinPackage, Task } from './types';
 
 /**
  * Production Data Source.
- * All demonstration mock data has been permanently purged.
+ * All hardcoded demonstration mock data has been permanently purged.
  */
 const users: User[] = [];
 const rooms: Room[] = []; 
