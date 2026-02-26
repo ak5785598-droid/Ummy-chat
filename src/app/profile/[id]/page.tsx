@@ -22,10 +22,11 @@ import {
   UserPlus,
   UserCheck,
   RefreshCw,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useAuth, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, updateDocumentNonBlocking, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { cn } from '@/lib/utils';
@@ -33,8 +34,18 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { doc, increment, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { AvatarFrame } from '@/components/avatar-frame';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) => {
   const router = useRouter();
@@ -59,6 +70,89 @@ const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) =
     </div>
   );
 };
+
+/**
+ * Diamond to Coin Exchange Dialog.
+ * Implements 25% yield frequency: 100 Diamonds = 25 Coins.
+ */
+function ExchangeDiamondsDialog({ balance, onExchange }: { balance: number, onExchange: (amount: number) => void }) {
+  const [amount, setAmount] = useState<string>('');
+  const [open, setOpen] = useState(false);
+  
+  const diamonds = parseInt(amount) || 0;
+  const expectedCoins = Math.floor(diamonds * 0.25);
+
+  const handleConfirm = () => {
+    if (diamonds > 0 && diamonds <= balance) {
+      onExchange(diamonds);
+      setOpen(false);
+      setAmount('');
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <div className="hidden" id="trigger-diamond-exchange" />
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="p-8 pb-0 text-center">
+          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Vault Sync</DialogTitle>
+          <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
+            Exchange Rate: 25% (100 Diamonds = 25 Coins)
+          </DialogDescription>
+        </DialogHeader>
+        <div className="p-8 space-y-6">
+          <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center">
+             <span className="text-[10px] font-black uppercase text-muted-foreground">Available Diamonds</span>
+             <span className="font-black text-blue-500 italic">{balance.toLocaleString()}</span>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Diamonds to Exchange</Label>
+              <div className="relative">
+                <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-400" />
+                <Input 
+                  type="number" 
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  className="h-14 pl-12 rounded-2xl border-2 focus:border-blue-500 text-xl font-black italic"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-center py-2">
+               <ArrowRightLeft className="h-6 w-6 text-gray-300" />
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Gold Coins Received</Label>
+              <div className="relative">
+                <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" />
+                <Input 
+                  readOnly 
+                  value={expectedCoins.toLocaleString()}
+                  className="h-14 pl-12 rounded-2xl border-2 bg-gray-50 text-xl font-black italic text-yellow-600"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="p-8 pt-0">
+          <Button 
+            onClick={handleConfirm}
+            disabled={diamonds <= 0 || diamonds > balance}
+            className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-blue-500/20 bg-blue-600 hover:bg-blue-500"
+          >
+            Commit Exchange
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function ProfilePage() {
   const params = useParams();
@@ -110,6 +204,33 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(myProfileRef, { tags: arrayUnion(`following:${profileId}`) });
       updateDocumentNonBlocking(targetProfileRef, { 'stats.followers': increment(1) });
     }
+  };
+
+  const handleExchange = (diamondsToExchange: number) => {
+    if (!firestore || !currentUser || !profile || diamondsToExchange <= 0) return;
+    
+    const coinsToAdd = Math.floor(diamondsToExchange * 0.25);
+    const userSummaryRef = doc(firestore, 'users', currentUser.uid);
+    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+
+    const updateData = {
+      'wallet.diamonds': increment(-diamondsToExchange),
+      'wallet.coins': increment(coinsToAdd),
+      updatedAt: serverTimestamp()
+    };
+
+    updateDocumentNonBlocking(userSummaryRef, updateData);
+    updateDocumentNonBlocking(userProfileRef, updateData);
+    
+    toast({ 
+      title: 'Exchange Successful', 
+      description: `Synchronized ${diamondsToExchange.toLocaleString()} Diamonds into ${coinsToAdd.toLocaleString()} Gold Coins.` 
+    });
+  };
+
+  const triggerExchange = () => {
+    const el = document.getElementById('trigger-diamond-exchange');
+    if (el) el.click();
   };
 
   if (isAuthLoading || isProfileLoading) {
@@ -189,7 +310,14 @@ export default function ProfilePage() {
           <h2 className="text-sm font-black uppercase tracking-widest font-headline text-gray-400 px-2">Vault & Identity</h2>
           <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
             <MenuItem icon={GoldCoinIcon} label="Gold Coins" extra={(profile.wallet?.coins || 0).toLocaleString()} iconColor="text-yellow-500" href="/store" />
-            <MenuItem icon={Sparkles} label="Blue Diamonds" extra={(profile.wallet?.diamonds || 0).toLocaleString()} iconColor="text-blue-500" href="/store" />
+            <MenuItem 
+              icon={Sparkles} 
+              label="Blue Diamonds" 
+              extra={(profile.wallet?.diamonds || 0).toLocaleString()} 
+              iconColor="text-blue-500" 
+              onClick={isOwnProfile ? triggerExchange : undefined}
+              href={isOwnProfile ? undefined : "/store"}
+            />
             <MenuItem icon={Store} label="Ummy Boutique" href="/store" iconColor="text-orange-500" />
             <MenuItem icon={Trophy} label="Tribe Level" href="/leaderboard" extra={`Level ${profile.level?.rich || 1}`} iconColor="text-yellow-600" />
             <MenuItem icon={Shirt} label={isOwnProfile ? "My Assets" : "Collection"} href="/store" iconColor="text-cyan-500" />
@@ -204,6 +332,14 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      
+      {isOwnProfile && (
+        <ExchangeDiamondsDialog 
+          balance={profile.wallet?.diamonds || 0} 
+          onExchange={handleExchange} 
+        />
+      )}
+
       <input type="file" ref={fileInputRef} onChange={(e) => {
         const file = e.target.files?.[0];
         if (file) {
