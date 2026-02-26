@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 
 /**
- * Root Application Entry / Splash Screen.
- * Optimized for high-speed Android redirection.
- * Renders the brand environment immediately to prevent white-screen hangs.
+ * Root Application Gateway / Splash Screen.
+ * Re-engineered for absolute Android mobile stability.
+ * Uses hard redirection to bypass client-side routing hangs.
  */
 export default function Home() {
   const router = useRouter();
@@ -18,35 +18,32 @@ export default function Home() {
   const [showFailSafe, setShowFailSafe] = useState(false);
 
   useEffect(() => {
-    // Aggressive fail-safe: If synchronization is slow on mobile networks, show manual entry after 2s
-    const failSafeTimer = setTimeout(() => setShowFailSafe(true), 2000);
-    
+    // Fail-safe: If auto-redirection doesn't trigger within 1.5s, show manual entry
+    const timer = setTimeout(() => setShowFailSafe(true), 1500);
+
     if (!isLoading) {
       if (user) {
-        // Immediate redirection for authenticated tribe members
-        router.replace('/rooms');
-        // Secondary hard redirection for stubborn mobile routers
-        const hardSync = setTimeout(() => {
-          if (window.location.pathname === '/') window.location.href = '/rooms';
-        }, 1500);
-        return () => clearTimeout(hardSync);
+        // Aggressive Hard Redirection for authenticated members
+        window.location.href = '/rooms';
       } else {
-        // Snappy branding delay for new identities
-        const timer = setTimeout(() => router.replace('/login'), 800);
-        return () => {
-          clearTimeout(timer);
-          clearTimeout(failSafeTimer);
-        };
+        // Redirection to Login for new identities
+        const loginTimer = setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
+        return () => clearTimeout(loginTimer);
       }
     }
-    
-    return () => clearTimeout(failSafeTimer);
-  }, [isLoading, user, router]);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, user]);
 
   const handleManualEntry = () => {
-    // Force direct window navigation to bypass any stuck client-side router frequencies
-    if (user) window.location.href = '/rooms';
-    else window.location.href = '/login';
+    // Manual force entry protocol
+    if (user) {
+      window.location.href = '/rooms';
+    } else {
+      window.location.href = '/login';
+    }
   };
 
   return (
@@ -55,8 +52,8 @@ export default function Home() {
       
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center group">
-           <div className="absolute inset-0 bg-white/20 rounded-[3rem] blur-2xl group-hover:bg-white/40 transition-all duration-1000 animate-pulse" />
-           <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10 transition-transform duration-1000 hover:scale-110" />
+           <div className="absolute inset-0 bg-white/20 rounded-[3rem] blur-2xl animate-pulse" />
+           <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10" />
         </div>
         
         <div className="flex flex-col items-center gap-2 mt-4 text-center px-6">
@@ -78,17 +75,17 @@ export default function Home() {
              Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
            </Button>
          ) : (
-           <>
-            <div className="h-[4px] w-56 bg-white/20 rounded-full overflow-hidden shadow-inner">
-                <div className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-loading-bar" style={{ width: '45%' }} />
-            </div>
-            <div className="flex items-center gap-2">
-               <Loader2 className="h-3 w-3 text-white/60 animate-spin" />
-               <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest">
-                   Syncing Social Graph...
-               </p>
-            </div>
-           </>
+           <div className="flex flex-col items-center gap-4">
+              <div className="h-[4px] w-56 bg-white/20 rounded-full overflow-hidden shadow-inner">
+                  <div className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-loading-bar" style={{ width: '45%' }} />
+              </div>
+              <div className="flex items-center gap-2">
+                 <Loader2 className="h-3 w-3 text-white/60 animate-spin" />
+                 <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest">
+                     Syncing Social Graph...
+                 </p>
+              </div>
+           </div>
          )}
       </div>
 

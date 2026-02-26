@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,9 +39,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.replace('/rooms');
+      // Hard redirect to ensure browser commits navigation on mobile
+      window.location.href = '/rooms';
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading]);
 
   const handleGoogleSignIn = async () => {
     if (!auth) return;
@@ -53,6 +53,7 @@ export default function LoginPage() {
         prompt: 'select_account'
       });
       await signInWithPopup(auth, provider);
+      // Success will trigger the useEffect above
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -140,7 +141,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-sm space-y-6">
         {phoneLoginStep === 'number' ? (
            <>
             <div className="space-y-3">
