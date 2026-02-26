@@ -10,6 +10,7 @@ import { doc, setDoc, serverTimestamp, collection, getDoc, increment } from 'fir
  * Maintains Firestore presence while a room is active.
  * Production Ready: Manages participantCount atomically.
  * Sole owner of room participantCount management to ensure real-time discovery synchronization.
+ * AUTOMATIC REMOVAL PROTOCOL: When count hits 0, room disappears from homepage discovery.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -21,6 +22,7 @@ export function RoomPresenceManager() {
   const hasIncrementedCount = useRef<string | null>(null);
 
   useEffect(() => {
+    // Safety check for undefined identity states during mobile entrance
     if (!firestore || !activeRoom?.id || !user || !userProfile) {
       return;
     }
@@ -42,6 +44,7 @@ export function RoomPresenceManager() {
           type: 'entrance'
         });
 
+        // Atomic Entry Protocol
         if (hasIncrementedCount.current !== roomId) {
           updateDocumentNonBlocking(roomDocRef, { participantCount: increment(1) });
           hasIncrementedCount.current = roomId;
@@ -73,6 +76,7 @@ export function RoomPresenceManager() {
     performSync();
 
     return () => {
+      // Atomic Exit Protocol: Ensures room closes from discovery instantly if empty
       if (hasIncrementedCount.current === roomId) {
         updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1) });
         hasIncrementedCount.current = null;

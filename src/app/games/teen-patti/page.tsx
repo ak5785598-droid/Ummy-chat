@@ -19,7 +19,8 @@ import {
   Maximize2,
   Settings,
   RefreshCcw,
-  Crown
+  Crown,
+  Zap
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -232,7 +233,7 @@ export default function TeenPattiPage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#1a0a05] flex flex-col relative overflow-hidden font-headline animate-in fade-in duration-1000">
+      <div className="h-screen w-full bg-[#1a0a05] flex flex-col relative overflow-hidden font-headline animate-in fade-in duration-1000 perspective-1000">
         <CompactRoomView />
 
         {gameState === 'result' && winners.length > 0 && (
@@ -278,28 +279,32 @@ export default function TeenPattiPage() {
                  <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><HelpCircle className="h-4 w-4" /></button>
                  <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><BarChart2 className="h-4 w-4" /></button>
               </div>
-              <h1 className="text-2xl font-black text-white italic drop-shadow-lg">Dragon Battle</h1>
+              <h1 className="text-2xl font-black text-white italic drop-shadow-lg uppercase tracking-tight flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-500 fill-current" />
+                Dragon Battle
+              </h1>
               <div className="flex gap-1">
                  <button className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><Settings className="h-4 w-4" /></button>
                  <button onClick={() => router.back()} className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white border border-white/10"><X className="h-4 w-4" /></button>
               </div>
            </header>
 
-           <div className="grid grid-cols-3 gap-4 mb-6 px-2 animate-in slide-in-from-top-10 duration-700">
+           {/* 3D Visual Arena */}
+           <div className="grid grid-cols-3 gap-4 mb-6 px-2 animate-in slide-in-from-top-10 duration-700 pt-4">
               {['A', 'B', 'C'].map((id) => (
-                <div key={id} className="space-y-1 relative">
+                <div key={id} className="space-y-1 relative group preserve-3d transition-transform hover:rotate-x-12">
                    <div className="flex gap-0.5 justify-center">
                       {[1, 2, 3].map(c => (
-                        <div key={c} className={cn("w-10 h-16 rounded-sm border-[1px] border-[#FFD600]/30 transition-all", winner === id ? "bg-[#FF1744] shadow-[0_0_15px_#FF1744] scale-110" : "bg-black/60 shadow-inner")}>
+                        <div key={c} className={cn("w-10 h-16 rounded-sm border-[1px] border-[#FFD600]/30 transition-all shadow-2xl", winner === id ? "bg-[#FF1744] shadow-[0_0_25px_#FF1744] scale-110 -translate-y-2" : "bg-black/60 shadow-inner")}>
                            <div className="h-full w-full bg-[url('https://images.unsplash.com/photo-1572021335469-31706a17aaef?q=80&w=400')] bg-cover bg-center opacity-40" />
                         </div>
                       ))}
                    </div>
-                   <p className="text-center text-[10px] font-black text-[#FF1744] uppercase tracking-widest italic drop-shadow-md">2.92</p>
+                   <p className="text-center text-[10px] font-black text-[#FF1744] uppercase tracking-widest italic drop-shadow-md">2.92x Multiplier</p>
                    {id === 'B' && (
                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-                         <div className="h-12 w-12 rounded-full bg-[#FF1744] border-2 border-white/20 shadow-2xl flex items-center justify-center animate-pulse">
-                            {gameState === 'betting' ? <span className="text-xl font-black text-white italic">{timeLeft}</span> : <Loader className="h-6 w-6 text-white animate-spin" />}
+                         <div className="h-14 w-14 rounded-full bg-gradient-to-b from-[#FF1744] to-[#880e4f] border-4 border-white/20 shadow-[0_0_30px_rgba(255,23,68,0.6)] flex items-center justify-center animate-pulse">
+                            {gameState === 'betting' ? <span className="text-2xl font-black text-white italic drop-shadow-lg">{timeLeft}</span> : <Loader className="h-8 w-8 text-white animate-spin" />}
                          </div>
                       </div>
                    )}
@@ -307,21 +312,25 @@ export default function TeenPattiPage() {
               ))}
            </div>
 
-           <div className="relative flex items-center justify-between px-2 mb-8">
+           <div className="relative flex items-center justify-between px-2 mb-12 h-40">
               {DRAGONS.map((drag) => {
                 const asset = PlaceHolderImages.find(img => img.id === drag.imageId);
                 return (
-                  <div key={drag.id} className={cn("flex flex-col items-center transition-all duration-500", winner === drag.id ? "scale-125 z-20" : "scale-100 z-10 opacity-90")}>
-                    <span className="text-5xl font-serif text-[#FFD600] italic mb-2 drop-shadow-lg font-bold">{drag.id}</span>
+                  <div key={drag.id} className={cn("flex flex-col items-center transition-all duration-700 preserve-3d", winner === drag.id ? "scale-150 z-30 -translate-y-4" : "scale-100 z-10 opacity-80")}>
+                    <span className="text-6xl font-serif text-[#FFD600] italic mb-2 drop-shadow-[0_0_20px_rgba(255,214,0,0.8)] font-bold">{drag.id}</span>
                     <div className="relative group">
-                        {winner === drag.id && <div className="absolute -inset-4 bg-[#FFD600]/20 rounded-full blur-2xl animate-pulse" />}
+                        {winner === drag.id && (
+                          <div className="absolute -inset-10 bg-gradient-radial from-yellow-500/40 to-transparent rounded-full blur-2xl animate-ping" />
+                        )}
                         {asset && (
-                          <img 
-                            src={asset.imageUrl} 
-                            className="h-32 w-32 object-contain drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]" 
-                            alt={drag.name} 
-                            data-ai-hint={asset.imageHint}
-                          />
+                          <div className="relative preserve-3d group-hover:rotate-y-12 transition-transform duration-500">
+                            <img 
+                              src={asset.imageUrl} 
+                              className="h-36 w-36 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] filter brightness-110" 
+                              alt={drag.name} 
+                              data-ai-hint={asset.imageHint}
+                            />
+                          </div>
                         )}
                     </div>
                   </div>
@@ -329,40 +338,56 @@ export default function TeenPattiPage() {
               })}
            </div>
 
-           <div className="grid grid-cols-3 gap-3 px-2">
+           <div className="grid grid-cols-3 gap-4 px-2">
               {['A', 'B', 'C'].map((id) => (
-                <button key={id} onClick={() => handlePlaceBet(id)} disabled={gameState !== 'betting'} className={cn("relative h-32 rounded-3xl border-none transition-all overflow-hidden flex flex-col items-center justify-center p-2 bg-[#2D0B0B]/90 shadow-xl", gameState === 'betting' ? "hover:scale-105 active:scale-95" : "opacity-60 grayscale-[0.5]", winner === id ? "ring-4 ring-[#FFD600]/50" : "")}>
-                   <div className="space-y-1 text-center">
-                      <p className="text-sm font-black text-white uppercase">Pot: {totalPots[id].toLocaleString()}</p>
-                      <div className="flex items-center justify-center gap-1.5 animate-in zoom-in">
-                         {myBets[id] > 0 && <GoldCoinIcon className="h-3 w-3" />}
-                         <p className="text-sm font-black text-[#FFD600] uppercase italic">You: {myBets[id].toLocaleString()}</p>
+                <button key={id} onClick={() => handlePlaceBet(id)} disabled={gameState !== 'betting'} className={cn("relative h-36 rounded-3xl border-none transition-all overflow-hidden flex flex-col items-center justify-center p-2 bg-gradient-to-br from-[#2D0B0B] to-[#1a0505] shadow-[0_15px_35px_rgba(0,0,0,0.6)] preserve-3d", gameState === 'betting' ? "hover:scale-105 active:scale-95 active:rotate-x-12" : "opacity-60 grayscale-[0.5]", winner === id ? "ring-4 ring-[#FFD600] shadow-[0_0_40px_rgba(255,214,0,0.3)]" : "")}>
+                   <div className="space-y-2 text-center translate-z-[20px]">
+                      <div className="bg-black/40 px-3 py-1 rounded-full border border-white/5">
+                        <p className="text-[10px] font-black text-white/60 uppercase">Pot Balance</p>
+                        <p className="text-sm font-black text-white uppercase tracking-tighter italic">{totalPots[id].toLocaleString()}</p>
+                      </div>
+                      <div className="flex flex-col items-center justify-center gap-1 animate-in zoom-in">
+                         <p className="text-[10px] font-black text-[#FFD600]/60 uppercase tracking-widest">My Sync</p>
+                         <div className="flex items-center gap-1.5">
+                            {myBets[id] > 0 && <GoldCoinIcon className="h-4 w-4" />}
+                            <p className="text-base font-black text-[#FFD600] uppercase italic tracking-tighter">{myBets[id].toLocaleString()}</p>
+                         </div>
                       </div>
                    </div>
+                   {/* 3D Shimmer Effect */}
+                   <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-transparent opacity-30" />
                 </button>
               ))}
            </div>
         </div>
 
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-[110] animate-in slide-in-from-bottom-10">
-           <div className="bg-black/60 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] p-3 flex items-center justify-between shadow-2xl">
+           <div className="bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-3 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
               <div className="flex flex-col items-start px-2">
-                 <div className="flex items-center gap-1.5">
-                    <div className="bg-[#FFD600] p-0.5 rounded-full"><GoldCoinIcon className="h-3 w-3" /></div>
-                    <span className="text-xs font-black text-[#FFD600] italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                    <button className="text-[#FFD600]"><RefreshCcw className="h-3 w-3" /></button>
+                 <div className="flex items-center gap-2">
+                    <div className="bg-[#FFD600] p-1 rounded-full shadow-[0_0_10px_rgba(255,214,0,0.5)]"><GoldCoinIcon className="h-4 w-4" /></div>
+                    <span className="text-sm font-black text-[#FFD600] italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+                    <button className="text-[#FFD600] hover:rotate-180 transition-transform duration-500"><RefreshCcw className="h-4 w-4" /></button>
                  </div>
               </div>
-              <div className="flex gap-1 px-2">
+              <div className="flex gap-1.5 px-2">
                  {CHIPS.map(chip => (
-                   <button key={chip.value} onClick={() => { setSelectedChip(chip.value); }} className={cn("h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 border-white/20 shrink-0", selectedChip === chip.value ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.5)] " + chip.color : "bg-black/40" + " " + chip.color + " opacity-60")}>
-                      <span className="text-[10px] font-black text-white italic drop-shadow-md">{chip.value}</span>
+                   <button key={chip.value} onClick={() => { setSelectedChip(chip.value); }} className={cn("h-11 w-11 rounded-full flex items-center justify-center transition-all border-2 border-white/20 shrink-0 shadow-lg preserve-3d", selectedChip === chip.value ? "border-white scale-110 shadow-[0_0_20px_rgba(255,255,255,0.4)] translate-z-[10px] " + chip.color : "bg-black/40 " + chip.color + " opacity-60")}>
+                      <span className="text-[11px] font-black text-white italic drop-shadow-md">{chip.value}</span>
                    </button>
                  ))}
               </div>
            </div>
         </div>
       </div>
+      <style jsx global>{`
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .translate-z-[10px] { transform: translateZ(10px); }
+        .translate-z-[20px] { transform: translateZ(20px); }
+        .rotate-x-12 { transform: rotateX(12deg); }
+        .rotate-y-12 { transform: rotateY(12deg); }
+      `}</style>
     </AppLayout>
   );
 }
