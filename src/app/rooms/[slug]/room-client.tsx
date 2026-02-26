@@ -146,6 +146,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isGamesDialogOpen, setIsGamesDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
@@ -823,6 +824,27 @@ export function RoomClient({ room }: { room: Room }) {
                         {emoji}
                       </button>
                     ))}
+                 </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isGamesDialogOpen} onOpenChange={setIsGamesDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full h-12 w-12 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 shadow-lg transition-all hover:scale-110">
+                   <Gamepad2 className="h-6 w-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-[#0a0a0a] text-white p-0 rounded-t-[3rem] border-none overflow-hidden h-[50vh] animate-in slide-in-from-bottom-full duration-500">
+                 <DialogHeader className="p-8 pb-4 text-center">
+                    <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Room Play</DialogTitle>
+                    <DialogDescription className="sr-only">Quick access to room games and entertainment.</DialogDescription>
+                 </DialogHeader>
+                 <div className="px-8 pt-4">
+                    <div className="grid grid-cols-4 gap-4">
+                       <ToolTile icon={Swords} label="Battle" onClick={() => router.push('/games/teen-patti')} />
+                       <ToolTile icon={Flame} label="Calculator" onClick={() => router.push('/games/teen-patti')} />
+                       <ToolTile icon={GoldCoinIcon} label="Lucky Bag" onClick={() => router.push('/store')} />
+                    </div>
                  </div>
               </DialogContent>
             </Dialog>
