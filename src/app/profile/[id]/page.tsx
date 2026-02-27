@@ -20,6 +20,9 @@ import {
   Share2,
   Trophy,
   Activity,
+  CreditCard,
+  Smartphone,
+  Wallet,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -52,6 +55,70 @@ const DiamondIcon = ({ className }: { className?: string }) => (
     <span className="text-sm">💎</span>
   </div>
 );
+
+/**
+ * Purchase Coins Dialog.
+ * Supporting Paytm, PhonePe, and Google Pay integrations for high-speed wealth sync.
+ */
+function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
+  const packages = [
+    { amount: 1000, price: '₹99' },
+    { amount: 5000, price: '₹450' },
+    { amount: 10000, price: '₹850' },
+    { amount: 50000, price: '₹4000' },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="p-8 pb-0 text-center">
+          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Gold Recharge</DialogTitle>
+          <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
+            Official Ummy Secure Payment Portal
+          </DialogDescription>
+        </DialogHeader>
+        <div className="p-8 space-y-6">
+          <div className="grid grid-cols-2 gap-3">
+            {packages.map((pkg, i) => (
+              <button key={i} className="flex flex-col items-center gap-1 p-4 bg-gray-50 border-2 border-transparent hover:border-primary rounded-2xl transition-all active:scale-95">
+                <div className="flex items-center gap-1 text-primary font-black italic">
+                  <GoldCoinIcon className="h-4 w-4" />
+                  {pkg.amount.toLocaleString()}
+                </div>
+                <span className="text-[10px] font-black text-gray-400">{pkg.price}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Secure Payment Methods</p>
+            <div className="grid grid-cols-3 gap-3">
+              <button className="flex flex-col items-center gap-2 p-3 bg-white border-2 border-gray-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                <div className="h-10 w-full bg-blue-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">Paytm</div>
+                <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">Paytm</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 p-3 bg-white border-2 border-gray-100 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all group">
+                <div className="h-10 w-full bg-purple-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">PhonePe</div>
+                <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">PhonePe</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 p-3 bg-white border-2 border-gray-100 rounded-2xl hover:border-green-500 hover:bg-green-50 transition-all group">
+                <div className="h-10 w-full bg-green-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">GPay</div>
+                <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">G Pay</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="p-8 pt-0">
+          <Button 
+            className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90"
+          >
+            Recharge Wealth
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  * Diamond to Coin Exchange Dialog.
@@ -162,6 +229,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -224,12 +292,9 @@ export default function ProfilePage() {
                 </Avatar>
               </AvatarFrame>
               {isOwnProfile && (
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 text-gray-600"
-                >
-                  <Camera className="h-4 w-4" />
-                </button>
+                <div className="absolute bottom-0 right-0">
+                   <EditProfileDialog profile={profile} />
+                </div>
               )}
             </div>
             <div className="pb-2 flex-1 space-y-1">
@@ -283,7 +348,10 @@ export default function ProfilePage() {
 
           {/* Balance Cards */}
           <div className="grid grid-cols-2 gap-4">
-             <div className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20">
+             <div 
+               onClick={() => isOwnProfile && setIsPurchaseOpen(true)}
+               className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"
+             >
                 <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
                 <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
                 
@@ -360,24 +428,30 @@ export default function ProfilePage() {
       </div>
       
       {isOwnProfile && (
-        <ExchangeDiamondsDialog 
-          balance={profile.wallet?.diamonds || 0} 
-          onExchange={(amt) => {
-            const coinsToAdd = Math.floor(amt * 0.25);
-            const userRef = doc(firestore!, 'users', currentUser!.uid);
-            const profileRef = doc(firestore!, 'users', currentUser!.uid, 'profile', currentUser!.uid);
-            const updateData = {
-              'wallet.diamonds': increment(-amt),
-              'wallet.coins': increment(coinsToAdd),
-              updatedAt: serverTimestamp()
-            };
-            updateDocumentNonBlocking(userRef, updateData);
-            updateDocumentNonBlocking(profileRef, updateData);
-            toast({ title: 'Exchange Successful', description: `Received ${coinsToAdd.toLocaleString()} Gold Coins.` });
-          }} 
-          open={isExchangeOpen}
-          setOpen={setIsExchangeOpen}
-        />
+        <>
+          <PurchaseCoinsDialog 
+            open={isPurchaseOpen} 
+            setOpen={setIsPurchaseOpen} 
+          />
+          <ExchangeDiamondsDialog 
+            balance={profile.wallet?.diamonds || 0} 
+            onExchange={(amt) => {
+              const coinsToAdd = Math.floor(amt * 0.25);
+              const userRef = doc(firestore!, 'users', currentUser!.uid);
+              const profileRef = doc(firestore!, 'users', currentUser!.uid, 'profile', currentUser!.uid);
+              const updateData = {
+                'wallet.diamonds': increment(-amt),
+                'wallet.coins': increment(coinsToAdd),
+                updatedAt: serverTimestamp()
+              };
+              updateDocumentNonBlocking(userRef, updateData);
+              updateDocumentNonBlocking(profileRef, updateData);
+              toast({ title: 'Exchange Successful', description: `Received ${coinsToAdd.toLocaleString()} Gold Coins.` });
+            }} 
+            open={isExchangeOpen}
+            setOpen={setIsExchangeOpen}
+          />
+        </>
       )}
 
       <input type="file" ref={fileInputRef} onChange={(e) => {
