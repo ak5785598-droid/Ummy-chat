@@ -26,6 +26,10 @@ service cloud.firestore {
         allow read: if isSignedIn() && request.auth.uid == userId;
         allow create: if isSignedIn();
       }
+      match /diamondExchanges/{id} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /appConfig/{id} {
@@ -62,7 +66,7 @@ service cloud.firestore {
       allow read, list: if isSignedIn();
       // Allow only the author to broadcast or terminate a moment
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && request.resource.data.userId == request.auth.uid;
     }
 
     match /adminLogs/{id} {

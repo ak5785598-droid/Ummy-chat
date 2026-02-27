@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -83,6 +82,16 @@
         "likes": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "DiamondExchange": {
+      "title": "DiamondExchange",
+      "type": "object",
+      "properties": {
+        "diamondAmount": { "type": "number" },
+        "coinAmount": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "type": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -96,6 +105,14 @@
           "entityName": "UserProfile",
           "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "User root identity."
+        }
+      },
+      {
+        "path": "/users/{userId}/diamondExchanges/{exchangeId}",
+        "definition": {
+          "entityName": "DiamondExchange",
+          "schema": { "$ref": "#/backend/entities/DiamondExchange" },
+          "description": "History of diamond-to-coin conversions."
         }
       },
       {
