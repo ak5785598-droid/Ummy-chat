@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
@@ -29,6 +28,8 @@ import {
   X,
   History,
   TrendingDown,
+  Landmark,
+  CreditCard as CardIcon,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -84,7 +85,6 @@ const DiamondIcon = ({ className }: { className?: string }) => (
 
 /**
  * Rich Level Guide Dialog.
- * Explains how spending Gold Coins on gifts increases the user's Rich Level.
  */
 function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
   const levels = [
@@ -92,11 +92,11 @@ function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolea
     { lvl: '2 🏆', coins: '1,00,000' },
     { lvl: '3 🏆', coins: '10,00,000' },
     { lvl: '4 🏆', coins: '50,00,000' },
-    { lvl: '5-10 🏆', coins: '100,00,000' },
-    { lvl: '10-20 🏆', coins: '100,00,00,000' },
-    { lvl: '20-30 🏆', coins: '100,00,00,00,00' },
-    { lvl: '30-40 🏆', coins: '500,00,00,00,000' },
-    { lvl: '40-50 🏆', coins: '900,00,00,00,0000' },
+    { lvl: '5-10 🏆', coins: '100,00,00,000' },
+    { lvl: '10-20 🏆', coins: '100,00,00,00,000' },
+    { lvl: '20-30 🏆', coins: '100,00,00,00,00,00' },
+    { lvl: '30-40 🏆', coins: '500,00,00,00,00,000' },
+    { lvl: '40-50 🏆', coins: '900,00,00,00,00,0000' },
   ];
 
   return (
@@ -154,7 +154,6 @@ function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolea
 
 /**
  * Invite Friends Dialog.
- * Allows users to share the app link and earn a 5000 coin reward.
  */
 function InviteFriendsDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
   const { user } = useUser();
@@ -179,7 +178,6 @@ function InviteFriendsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 
     window.open(url, '_blank');
 
-    // Simulate Reward Protocol for Sharing
     setTimeout(() => {
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
@@ -278,7 +276,7 @@ function InviteFriendsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 }
 
 /**
- * Purchase Coins Dialog.
+ * Enhanced Gold Recharge Dialog with Real-Time Options.
  */
 function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
   const { user } = useUser();
@@ -289,12 +287,21 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState<'select' | 'gateway'>('select');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [upiId, setUpiId] = useState('');
 
   const packages = [
     { id: 1, amount: 1000, price: '₹99' },
     { id: 2, amount: 5000, price: '₹450' },
     { id: 3, amount: 10000, price: '₹850' },
     { id: 4, amount: 50000, price: '₹4000' },
+  ];
+
+  const methods = [
+    { id: 'Paytm', label: 'Paytm', color: 'bg-blue-600', icon: Smartphone },
+    { id: 'PhonePe', label: 'PhonePe', color: 'bg-purple-600', icon: Smartphone },
+    { id: 'GPay', label: 'G Pay', color: 'bg-green-600', icon: Smartphone },
+    { id: 'Card', label: 'Card', color: 'bg-slate-800', icon: CardIcon },
+    { id: 'NetBanking', label: 'Banking', color: 'bg-indigo-700', icon: Landmark },
   ];
 
   const handleStartPayment = () => {
@@ -329,7 +336,7 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 
       setIsProcessing(false);
       resetDialog();
-    }, 1500);
+    }, 2000);
   };
 
   const handlePaymentCancel = () => {
@@ -348,10 +355,12 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
       setSelectedPkg(null);
       setSelectedMethod(null);
       setIsProcessing(false);
+      setUpiId('');
     }, 300);
   };
 
   const currentPkg = packages.find(p => p.id === selectedPkg);
+  const currentMethod = methods.find(m => m.id === selectedMethod);
 
   return (
     <Dialog open={open} onOpenChange={(val) => !isProcessing && setOpen(val)}>
@@ -361,7 +370,7 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
             <DialogHeader className="p-8 pb-0 text-center">
               <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Gold Recharge</DialogTitle>
               <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-                Official Ummy Secure Payment Portal
+                Official Ummy Real-Time Payment Portal
               </DialogDescription>
             </DialogHeader>
             <div className="p-8 space-y-6">
@@ -385,38 +394,23 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
               </div>
 
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Secure Payment Methods</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <button 
-                    onClick={() => setSelectedMethod('Paytm')}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 bg-white border-2 rounded-2xl transition-all group",
-                      selectedMethod === 'Paytm' ? "border-blue-500 bg-blue-50 shadow-md" : "border-gray-100 hover:border-blue-300"
-                    )}
-                  >
-                    <div className="h-10 w-full bg-blue-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">Paytm</div>
-                    <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">Paytm</span>
-                  </button>
-                  <button 
-                    onClick={() => setSelectedMethod('PhonePe')}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 bg-white border-2 rounded-2xl transition-all group",
-                      selectedMethod === 'PhonePe' ? "border-purple-500 bg-purple-50 shadow-md" : "border-gray-100 hover:border-purple-300"
-                    )}
-                  >
-                    <div className="h-10 w-full bg-purple-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">PhonePe</div>
-                    <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">PhonePe</span>
-                  </button>
-                  <button 
-                    onClick={() => setSelectedMethod('GPay')}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 bg-white border-2 rounded-2xl transition-all group",
-                      selectedMethod === 'GPay' ? "border-green-500 bg-green-50 shadow-md" : "border-gray-100 hover:border-green-300"
-                    )}
-                  >
-                    <div className="h-10 w-full bg-green-600 rounded-lg flex items-center justify-center text-[10px] text-white font-black italic">GPay</div>
-                    <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">G Pay</span>
-                  </button>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Real-Time Payment Options</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {methods.map((m) => (
+                    <button 
+                      key={m.id}
+                      onClick={() => setSelectedMethod(m.id)}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 bg-white border-2 rounded-2xl transition-all group",
+                        selectedMethod === m.id ? "border-primary bg-primary/5 shadow-md" : "border-gray-100 hover:border-gray-300"
+                      )}
+                    >
+                      <div className={cn("h-10 w-full rounded-lg flex items-center justify-center text-[8px] text-white font-black italic", m.color)}>
+                        <m.icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-[8px] font-bold uppercase opacity-40 group-hover:opacity-100">{m.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -427,7 +421,7 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
                 className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90"
               >
                 <Wallet className="h-6 w-6 mr-2" />
-                Initialize Payment
+                Initialize Sync
               </Button>
             </DialogFooter>
           </>
@@ -435,16 +429,28 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
           <div className="p-8 space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="flex flex-col items-center text-center space-y-4">
                <div className={cn(
-                 "h-20 w-20 rounded-full flex items-center justify-center shadow-2xl",
-                 selectedMethod === 'Paytm' ? "bg-blue-600" : selectedMethod === 'PhonePe' ? "bg-purple-600" : "bg-green-600"
+                 "h-20 w-20 rounded-full flex items-center justify-center shadow-2xl text-white",
+                 currentMethod?.color
                )}>
-                  <Smartphone className="h-10 w-10 text-white" />
+                  {currentMethod && <currentMethod.icon className="h-10 w-10" />}
                </div>
                <div>
                   <h3 className="text-2xl font-black uppercase italic">{selectedMethod} Gateway</h3>
-                  <p className="text-muted-foreground text-sm font-body">Waiting for transaction authorization...</p>
+                  <p className="text-muted-foreground text-xs font-body">Verifying transaction with your bank frequency...</p>
                </div>
             </div>
+
+            {(selectedMethod === 'Paytm' || selectedMethod === 'PhonePe' || selectedMethod === 'GPay') && (
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Manual UPI ID Sync</Label>
+                <Input 
+                  placeholder="tribe@upi" 
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  className="h-12 rounded-xl border-2 focus:border-primary font-black italic"
+                />
+              </div>
+            )}
 
             <div className="bg-gray-50 rounded-3xl p-6 border-2 border-dashed border-gray-200">
                <div className="flex justify-between items-center mb-4">
@@ -463,18 +469,19 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
             <div className="space-y-3">
                <div className="flex items-center gap-2 justify-center text-[10px] font-bold text-muted-foreground uppercase mb-4">
                   <ShieldCheck className="h-4 w-4 text-green-500" />
-                  <span>256-Bit SSL Encrypted Connection</span>
+                  <span>256-Bit SSL Secured Frequency</span>
                </div>
                <Button 
                  onClick={handlePaymentSuccess}
                  disabled={isProcessing}
                  className={cn(
                    "w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl",
-                   selectedMethod === 'Paytm' ? "bg-blue-600 hover:bg-blue-700" : selectedMethod === 'PhonePe' ? "bg-purple-600 hover:bg-purple-700" : "bg-green-600 hover:bg-green-700"
+                   currentMethod?.color,
+                   "hover:brightness-110"
                  )}
                >
                  {isProcessing ? <Loader className="animate-spin h-6 w-6 mr-2" /> : <Check className="h-6 w-6 mr-2" />}
-                 {isProcessing ? 'Verifying...' : 'Confirm Paid'}
+                 {isProcessing ? 'Synchronizing...' : 'Confirm Paid'}
                </Button>
                <button 
                  onClick={handlePaymentCancel}
@@ -492,7 +499,7 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 }
 
 /**
- * Diamond to Coin Exchange Dialog.
+ * ExchangeDiamondsDialog handles diamond to coin conversions.
  */
 function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen, userId }: { balance: number, onExchange: (amount: number) => void, open: boolean, setOpen: (o: boolean) => void, userId: string }) {
   const [amount, setAmount] = useState<string>('');
@@ -674,7 +681,6 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <div className="min-h-screen bg-[#f8f9fa] font-headline pb-32">
-        {/* Header Background */}
         <div className="relative h-64 w-full">
           <Image 
             src="https://picsum.photos/seed/ummy-bg/1200/600" 
@@ -698,7 +704,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Card */}
         <div className="px-6 -mt-32 relative z-10 space-y-6">
           <div className="flex items-end gap-4">
             <div className="relative shrink-0">
@@ -736,7 +741,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Stats Bar */}
           <div className="flex items-center justify-between py-4 bg-white/50 backdrop-blur-sm rounded-3xl">
              <StatItem label="Friends" count={2} />
              <StatItem label="Following" count={3} />
@@ -744,7 +748,6 @@ export default function ProfilePage() {
              <StatItem label="Visitors" count={0} showBorder={false} />
           </div>
 
-          {/* Balance Cards */}
           <div className="grid grid-cols-2 gap-4">
              <div 
                onClick={() => isOwnProfile && setIsPurchaseOpen(true)}
@@ -777,7 +780,6 @@ export default function ProfilePage() {
              </div>
           </div>
 
-          {/* Action Grid */}
           <Card className="border-none shadow-sm rounded-3xl p-6 bg-white">
              <div className="grid grid-cols-4 gap-4">
                 <ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} />
@@ -787,7 +789,6 @@ export default function ProfilePage() {
              </div>
           </Card>
 
-          {/* List Menu */}
           <div className="space-y-4">
              <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50">
                 <div className="flex items-center justify-between py-3 cursor-pointer group">
