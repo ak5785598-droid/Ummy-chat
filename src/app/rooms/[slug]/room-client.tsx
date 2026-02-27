@@ -109,6 +109,15 @@ import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 
 /**
+ * Custom Sofa Icon for high-fidelity empty seats.
+ */
+const SofaIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M19,7H5C3.34,7,2,8.34,2,10v5c0,1.1,0.9,2,2,2h1v1c0,0.55,0.45,1,1,1s1-0.45,1-1v-1h10v1c0,0.55,0.45,1,1,1s1-0.45,1-1v-1h1c1.1,0,2-0.9,2-2v-5C22,8.34,20.66,7,19,7z M4,15v-5c0-0.55,0.45-1,1-1h14c0.55,0,1,0.45,1,1v5H4z" />
+  </svg>
+);
+
+/**
  * Rich Level Calculation Engine.
  */
 function calculateRichLevel(spent: number = 0) {
@@ -344,8 +353,8 @@ export function RoomClient({ room }: { room: Room }) {
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => <RemoteAudio key={peerId} stream={stream} />)}
       
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#065f46] via-[#022c22] to-black z-10 opacity-95" />
-        <Image src="https://picsum.photos/seed/emerald-vibe/1200/2400" alt="Emerald Theme" fill className="object-cover scale-110 opacity-30 mix-blend-overlay" data-ai-hint="emerald geometric" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#064e3b] via-[#022c22] to-black z-10 opacity-95" />
+        <Image src="https://picsum.photos/seed/geometric-emerald/1200/2400" alt="Emerald Theme" fill className="object-cover scale-110 opacity-30 mix-blend-overlay" data-ai-hint="green geometric" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#10b981]/10 rounded-full blur-[120px] z-20 animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#059669]/10 rounded-full blur-[120px] z-20 animate-pulse delay-700" />
       </div>
@@ -449,42 +458,57 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <main className="relative z-10 flex-1 flex flex-col overflow-hidden">
-        {/* Fixed Arena Section */}
-        <div className="shrink-0 py-4 px-4 overflow-y-auto no-scrollbar max-h-[50%]">
-          <div className="flex justify-center mb-6">
-             <div className="relative flex flex-col items-center gap-2 w-28 h-36">
+        {/* Fixed Arena Section - Synchronized with Blueprint Sofa Design */}
+        <div className="shrink-0 py-6 px-4 overflow-y-auto no-scrollbar max-h-[55%]">
+          <div className="flex justify-center mb-10">
+             <div className="relative flex flex-col items-center gap-2">
                 <EmojiReactionOverlay emoji={hostParticipant?.activeEmoji} size="lg" />
                 <div className="relative">
                   {hostParticipant && !hostParticipant.isMuted && (<div className={cn("absolute -inset-2 rounded-full border-2 animate-voice-wave", getWaveColor(hostParticipant.activeWave))} />)}
                   <AvatarFrame frameId={hostParticipant?.activeFrame} size="lg">
-                    <div onClick={() => handleSeatClick(1, hostParticipant)} className={cn("h-24 w-24 rounded-full flex items-center justify-center transition-all cursor-pointer bg-black/40 backdrop-blur-md border-2", hostParticipant ? "border-primary shadow-lg" : "border-white/10")}>
-                      {hostParticipant ? (<Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>) : <Crown className="h-8 w-8 text-white/10" />}
+                    <div onClick={() => handleSeatClick(1, hostParticipant)} className={cn(
+                      "h-20 w-20 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px]",
+                      hostParticipant ? "border-primary shadow-[0_0_15px_rgba(250,204,21,0.4)]" : "border-[#fbbf24] shadow-inner"
+                    )}>
+                      {hostParticipant ? (<Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>) : <SofaIcon className="h-10 w-10 text-[#fbbf24] opacity-80" />}
                     </div>
                   </AvatarFrame>
                 </div>
-                <Badge className="bg-primary text-black text-[8px] font-black uppercase italic px-2">Host</Badge>
+                <span className="text-[10px] font-black uppercase italic text-white tracking-widest">1</span>
              </div>
           </div>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-6 max-w-sm mx-auto">
+          <div className="grid grid-cols-3 gap-x-2 gap-y-10 max-w-sm mx-auto">
             {Array.from({ length: 12 }).map((_, i) => {
               const idx = i + 2; 
               const occupant = participants?.find(p => p.seatIndex === idx); 
               const isLocked = room.lockedSeats?.includes(idx); 
               const isMod = room.moderatorIds?.includes(occupant?.uid || '');
               return (
-                <div key={idx} className="relative flex flex-col items-center gap-1 group w-full h-20">
+                <div key={idx} className="relative flex flex-col items-center gap-2 group w-full animate-in zoom-in duration-300">
                   <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
                   <div className="relative">
                     {occupant && !occupant.isMuted && (<div className={cn("absolute -inset-1.5 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />)}
                     <AvatarFrame frameId={occupant?.activeFrame} size="sm">
-                      <div onClick={() => handleSeatClick(idx, occupant)} className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all cursor-pointer bg-black/30 backdrop-blur-lg border-2", isLocked ? "border-red-500/20" : "border-white/5", occupant && "border-primary shadow-sm")}>
-                        {isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : occupant ? (<Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>) : <Mic className="h-4 w-4 text-white/10" />}
+                      <div onClick={() => handleSeatClick(idx, occupant)} className={cn(
+                        "h-16 w-16 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px]",
+                        occupant ? "border-primary shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "border-[#fbbf24] shadow-inner",
+                        isLocked && "border-red-500/40"
+                      )}>
+                        {occupant ? (
+                          <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                        ) : isLocked ? (
+                          <Lock className="h-6 w-6 text-red-500/40" />
+                        ) : (
+                          <SofaIcon className="h-8 w-8 text-[#fbbf24] opacity-80" />
+                        )}
                       </div>
                     </AvatarFrame>
-                    {occupant?.isMuted && (<div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-2 w-2 text-white" /></div>)}
-                    {isMod && (<div className="absolute -top-0.5 -left-0.5 bg-blue-500 rounded-full p-0.5 border border-black shadow-lg"><ShieldCheck className="h-2 w-2 text-white fill-current" /></div>)}
+                    {occupant?.isMuted && (<div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-3 w-3 text-white" /></div>)}
+                    {isMod && (<div className="absolute -top-0.5 -left-0.5 bg-blue-500 rounded-full p-0.5 border border-black shadow-lg"><ShieldCheck className="h-3 w-3 text-white fill-current" /></div>)}
                   </div>
-                  <span className={cn("text-[8px] font-black uppercase truncate w-14 text-center", occupant ? "text-primary" : "text-white/20")}>{occupant ? occupant.name : idx}</span>
+                  <span className={cn("text-[10px] font-black uppercase text-center", occupant ? "text-primary truncate w-16" : "text-white/60")}>
+                    {occupant ? occupant.name : idx}
+                  </span>
                 </div>
               );
             })}
@@ -550,7 +574,7 @@ export function RoomClient({ room }: { room: Room }) {
             </Dialog>
 
             <Dialog open={isGamesDialogOpen} onOpenChange={setIsGamesDialogOpen}>
-              <DialogTrigger asChild><Button className="rounded-full h-12 w-12 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 shadow-lg"><Gamepad2 className="h-6 w-6" /></Button></DialogTrigger>
+              <DialogTrigger asChild><Button className="rounded-full h-12 w-12 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-yellow-500/30 shadow-lg"><Gamepad2 className="h-6 w-6" /></Button></DialogTrigger>
               <DialogContent className="sm:max-w-md bg-[#0a0a0a] text-white p-0 rounded-t-[3rem] border-none overflow-hidden h-[60vh]">
                 <DialogHeader className="p-8 pb-4 text-center">
                   <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Room Play</DialogTitle>
