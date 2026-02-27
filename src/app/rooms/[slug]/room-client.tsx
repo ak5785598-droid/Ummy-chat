@@ -110,6 +110,7 @@ import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 
 /**
  * Custom Sofa Icon for high-fidelity empty seats.
+ * Synchronized with the Provided Blueprint.
  */
 const SofaIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -458,31 +459,41 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <main className="relative z-10 flex-1 flex flex-col overflow-hidden">
-        {/* Fixed Arena Section - Synchronized with Blueprint Sofa Design */}
-        <div className="shrink-0 py-6 px-4 overflow-y-auto no-scrollbar max-h-[55%]">
-          <div className="flex justify-center mb-10">
+        {/* Blueprint Seat Arena - Re-engineered for Pixel Perfect Synchronization */}
+        <div className="shrink-0 py-8 px-4 overflow-y-auto no-scrollbar max-h-[60%]">
+          {/* Seat 1 - Anchor Host */}
+          <div className="flex justify-center mb-8">
              <div className="relative flex flex-col items-center gap-2">
                 <EmojiReactionOverlay emoji={hostParticipant?.activeEmoji} size="lg" />
                 <div className="relative">
                   {hostParticipant && !hostParticipant.isMuted && (<div className={cn("absolute -inset-2 rounded-full border-2 animate-voice-wave", getWaveColor(hostParticipant.activeWave))} />)}
                   <AvatarFrame frameId={hostParticipant?.activeFrame} size="lg">
                     <div onClick={() => handleSeatClick(1, hostParticipant)} className={cn(
-                      "h-20 w-20 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px]",
-                      hostParticipant ? "border-primary shadow-[0_0_15px_rgba(250,204,21,0.4)]" : "border-[#fbbf24] shadow-inner"
+                      "h-20 w-20 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px] shadow-[0_0_0_1px_#fbbf24]",
+                      hostParticipant ? "border-primary shadow-xl" : "border-[#fbbf24]"
                     )}>
-                      {hostParticipant ? (<Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>) : <SofaIcon className="h-10 w-10 text-[#fbbf24] opacity-80" />}
+                      {hostParticipant ? (
+                        <Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full">
+                           <SofaIcon className="h-10 w-10 text-[#fbbf24] drop-shadow-md" />
+                        </div>
+                      )}
                     </div>
                   </AvatarFrame>
                 </div>
-                <span className="text-[10px] font-black uppercase italic text-white tracking-widest">1</span>
+                <span className="text-[14px] font-black text-white italic tracking-tighter drop-shadow-md">1</span>
              </div>
           </div>
+
+          {/* Seats 2–13 Grid - High-Fidelity 3-Column Layout */}
           <div className="grid grid-cols-3 gap-x-2 gap-y-10 max-w-sm mx-auto">
             {Array.from({ length: 12 }).map((_, i) => {
               const idx = i + 2; 
               const occupant = participants?.find(p => p.seatIndex === idx); 
               const isLocked = room.lockedSeats?.includes(idx); 
               const isMod = room.moderatorIds?.includes(occupant?.uid || '');
+              
               return (
                 <div key={idx} className="relative flex flex-col items-center gap-2 group w-full animate-in zoom-in duration-300">
                   <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
@@ -490,23 +501,25 @@ export function RoomClient({ room }: { room: Room }) {
                     {occupant && !occupant.isMuted && (<div className={cn("absolute -inset-1.5 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />)}
                     <AvatarFrame frameId={occupant?.activeFrame} size="sm">
                       <div onClick={() => handleSeatClick(idx, occupant)} className={cn(
-                        "h-16 w-16 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px]",
-                        occupant ? "border-primary shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "border-[#fbbf24] shadow-inner",
-                        isLocked && "border-red-500/40"
+                        "h-16 w-16 rounded-full flex items-center justify-center transition-all cursor-pointer bg-[#0a1a0a] border-[3px] shadow-[0_0_0_1px_#fbbf24]",
+                        occupant ? "border-primary shadow-lg" : "border-[#fbbf24]",
+                        isLocked && "border-red-500 shadow-[0_0_0_1px_#ef4444]"
                       )}>
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                         ) : isLocked ? (
-                          <Lock className="h-6 w-6 text-red-500/40" />
+                          <Lock className="h-6 w-6 text-red-500/60" />
                         ) : (
-                          <SofaIcon className="h-8 w-8 text-[#fbbf24] opacity-80" />
+                          <div className="flex items-center justify-center w-full h-full">
+                             <SofaIcon className="h-8 w-8 text-[#fbbf24] drop-shadow-sm" />
+                          </div>
                         )}
                       </div>
                     </AvatarFrame>
                     {occupant?.isMuted && (<div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-3 w-3 text-white" /></div>)}
                     {isMod && (<div className="absolute -top-0.5 -left-0.5 bg-blue-500 rounded-full p-0.5 border border-black shadow-lg"><ShieldCheck className="h-3 w-3 text-white fill-current" /></div>)}
                   </div>
-                  <span className={cn("text-[10px] font-black uppercase text-center", occupant ? "text-primary truncate w-16" : "text-white/60")}>
+                  <span className={cn("text-[14px] font-black italic text-center drop-shadow-md", occupant ? "text-primary truncate w-16" : "text-white")}>
                     {occupant ? occupant.name : idx}
                   </span>
                 </div>
@@ -515,8 +528,8 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
 
-        {/* Independent Message Feed Section */}
-        <ScrollArea className="flex-1 px-6 mt-4" ref={scrollRef}>
+        {/* Scrollable Message Feed */}
+        <ScrollArea className="flex-1 px-6 mt-2" ref={scrollRef}>
           <div className="max-w-lg mx-auto space-y-3 pb-4">
             {activeMessages.map((msg) => (
               <div key={msg.id} className={cn(
