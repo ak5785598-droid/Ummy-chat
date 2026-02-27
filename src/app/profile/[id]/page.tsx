@@ -66,6 +66,77 @@ const DiamondIcon = ({ className }: { className?: string }) => (
 );
 
 /**
+ * Rich Level Guide Dialog.
+ * Explains how spending Gold Coins on gifts increases the user's Rich Level.
+ * Based on the tribal ranking frequency provided.
+ */
+function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
+  const levels = [
+    { lvl: '1 🏆', coins: '50,000' },
+    { lvl: '2 🏆', coins: '1,00,000' },
+    { lvl: '3 🏆', coins: '10,00,000' },
+    { lvl: '4 🏆', coins: '50,00,000' },
+    { lvl: '5-10 🏆', coins: '100,00,000' },
+    { lvl: '10-20 🏆', coins: '100,00,00,000' },
+    { lvl: '20-30 🏆', coins: '100,00,00,00,00' },
+    { lvl: '30-40 🏆', coins: '500,00,00,00,000' },
+    { lvl: '40-50 🏆', coins: '900,00,00,00,0000' },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="p-8 pb-4 text-center">
+          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Rich Level Guide</DialogTitle>
+          <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
+            Spend Gold Coins on gifts to ascend the throne
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="px-8 pb-8 space-y-6 h-[60vh] overflow-y-auto no-scrollbar">
+           <div className="bg-primary/10 p-4 rounded-2xl border-2 border-primary/20 flex items-center gap-3">
+              <Trophy className="h-6 w-6 text-primary shrink-0" />
+              <p className="text-xs font-bold text-primary leading-relaxed">
+                By spending Gold Coins on gifts, you increase your Rich Level and status within the social graph.
+              </p>
+           </div>
+
+           <div className="rounded-[2rem] border-2 border-gray-100 overflow-hidden bg-white">
+              <table className="w-full text-sm">
+                 <thead>
+                    <tr className="bg-gray-50 border-b-2 border-gray-100 text-[10px] font-black uppercase text-gray-400">
+                       <th className="py-3 px-4 text-left">Level</th>
+                       <th className="py-3 px-4 text-right">Required Coins</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100">
+                    {levels.map((item, i) => (
+                      <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                         <td className="py-3 px-4 font-black italic text-gray-700">{item.lvl}</td>
+                         <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1 font-black text-yellow-600 italic">
+                               {item.coins}
+                               <GoldCoinIcon className="h-3 w-3" />
+                            </div>
+                         </td>
+                      </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
+        </div>
+        
+        <footer className="p-6 bg-gray-50 text-center border-t border-gray-100">
+           <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">
+              Levels are calculated in real-time based on spending frequencies.
+           </p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
  * Invite Friends Dialog.
  * Allows users to share the app link and earn a 5000 coin reward.
  */
@@ -563,6 +634,7 @@ export default function ProfilePage() {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isRichLevelOpen, setIsRichLevelOpen] = useState(false);
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -715,7 +787,7 @@ export default function ProfilePage() {
           {/* Action Grid */}
           <Card className="border-none shadow-sm rounded-3xl p-6 bg-white">
              <div className="grid grid-cols-4 gap-4">
-                <ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-b from-gray-200 to-gray-400" onClick={() => router.push('/leaderboard')} />
+                <ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} />
                 <ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} />
                 <ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} />
                 <ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} />
@@ -801,6 +873,10 @@ export default function ProfilePage() {
           <InviteFriendsDialog
             open={isInviteOpen}
             setOpen={setIsInviteOpen}
+          />
+          <RichLevelDialog
+            open={isRichLevelOpen}
+            setOpen={setIsRichLevelOpen}
           />
         </>
       )}
