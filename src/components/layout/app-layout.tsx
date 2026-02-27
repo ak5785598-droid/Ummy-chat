@@ -28,17 +28,15 @@ import Image from "next/image";
  * 3D-ish Navigation Icons using emojis/assets to match standard tribe apps.
  */
 const CastleEmoji = () => <span className="text-2xl">🏰</span>;
-const CompassEmoji = () => <span className="text-2xl">🧭</span>;
 const MessageEmoji = () => <span className="text-2xl">📑</span>;
 const CrownEmoji = () => <span className="text-2xl">👑</span>;
 
 /**
  * Universal Tribe Navigation.
- * Redesigned to match the high-fidelity mobile discovery layout (Rooms, Discover, Message, Mine).
+ * Synchronized to "Home", "Message", "Mine" as requested.
  */
 const navItems = [
-  { href: "/rooms", label: "Rooms", icon: CastleEmoji },
-  { href: "/rooms", label: "Discover", icon: CompassEmoji },
+  { href: "/rooms", label: "Home", icon: CastleEmoji },
   { href: "/messages", label: "Message", icon: MessageEmoji },
   { href: "/profile", label: "Mine", icon: CrownEmoji },
 ];

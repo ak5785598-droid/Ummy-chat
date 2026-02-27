@@ -187,7 +187,7 @@ export default function ProfilePage() {
   const isOwnProfile = currentUser?.uid === profileId;
 
   return (
-    <AppLayout hideSidebarOnMobile>
+    <AppLayout>
       <div className="min-h-screen bg-[#f8f9fa] font-headline pb-32">
         {/* Header Background */}
         <div className="relative h-64 w-full">
