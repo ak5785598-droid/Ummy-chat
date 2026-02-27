@@ -121,3 +121,11 @@
 .animate-shimmer-gold {
   animation: shimmer-gold 2s infinite;
 }
+
+@keyframes shine {
+  0% { transform: translateX(-200%) skewX(-30deg); }
+  100% { transform: translateX(200%) skewX(-30deg); }
+}
+.animate-shine {
+  animation: shine 3s infinite;
+}

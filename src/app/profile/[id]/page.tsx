@@ -283,25 +283,31 @@ export default function ProfilePage() {
 
           {/* Balance Cards */}
           <div className="grid grid-cols-2 gap-4">
-             <div className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-lg active:scale-95 transition-transform">
-                <div className="flex items-center gap-3">
-                   <div className="bg-yellow-400 rounded-full p-1.5 shadow-inner">
+             <div className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20">
+                <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+                
+                <div className="flex items-center gap-3 relative z-10">
+                   <div className="bg-yellow-400 rounded-full p-1.5 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse">
                       <GoldCoinIcon className="h-5 w-5 text-green-900" />
                    </div>
-                   <span className="text-xl font-black text-white italic">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+                   <span className="text-xl font-black text-white italic drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-white/40" />
+                <ChevronRight className="h-4 w-4 text-white/60 relative z-10" />
              </div>
              
              <div 
                onClick={() => isOwnProfile && setIsExchangeOpen(true)}
-               className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-lg active:scale-95 transition-transform"
+               className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"
              >
-                <div className="flex items-center gap-3">
-                   <DiamondIcon className="h-8 w-8" />
-                   <span className="text-xl font-black text-white italic">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
+                <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+
+                <div className="flex items-center gap-3 relative z-10">
+                   <DiamondIcon className="h-8 w-8 shadow-[0_0_15px_rgba(236,72,153,0.5)]" />
+                   <span className="text-xl font-black text-white italic drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-white/40" />
+                <ChevronRight className="h-4 w-4 text-white/60 relative z-10" />
              </div>
           </div>
 
