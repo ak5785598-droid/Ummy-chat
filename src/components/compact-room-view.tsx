@@ -7,24 +7,24 @@ import { collection, query } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Users, ChevronDown, Crown, ShieldCheck } from 'lucide-react';
+import { Mic, MicOff, Users, ChevronDown, Crown, ShieldCheck, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 
 /**
  * Custom Sofa Icon for high-fidelity empty seats.
- * Synchronized with the Provided Blueprint silhouette.
+ * Precise silhouette matching the provided blueprint.
  */
 const SofaIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M19,10c-1.1,0-2,0.9-2,2v1H7v-1c0-1.1-0.9-2-2-2s-2,0.9-2,2v5c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2v-5C21,10.9,20.1,10,19,10z M18,17H6v-3h12V17z M17,6H7C5.3,6,4,7.3,4,9v1h16V9C20,7.3,18.7,6,17,6z" />
+    <path d="M17 9V8c0-1.7-1.3-3-3-3h-4c-1.7 0-3 1.3-3 3v1c-1.1 0-2 .9-2 2v3c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3c0-1.1-.9-2-2-2zM9 8c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1H9V8z" />
   </svg>
 );
 
 /**
  * High-Fidelity Compact Room Overlay.
- * Designed to mirror the new "Double Gold Ring" seat design in games.
+ * Mirroring the glossy, double-gold ring seat design.
  */
 export function CompactRoomView() {
   const { activeRoom, setIsMinimized } = useRoomContext();
@@ -89,16 +89,22 @@ export function CompactRoomView() {
                   )}
                   <AvatarFrame frameId={occupant?.activeFrame} size="sm">
                     <div className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center transition-all bg-[#0a1a0a] border-[2px] border-[#fbbf24] shadow-[0_0_0_1px_#fbbf24]",
-                      "relative overflow-visible"
+                      "h-12 w-12 rounded-full flex items-center justify-center transition-all bg-[#050f05] border-[2px] border-[#fbbf24] shadow-[inset_0_0_4px_rgba(0,0,0,0.6),0_0_0_1px_#fbbf24]",
+                      "relative overflow-hidden"
                     )}>
-                      <div className="absolute inset-0.5 rounded-full border border-white/5 pointer-events-none" />
+                      {/* Glossy Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-full h-1/2 pointer-events-none z-10" />
+                      
                       {occupant ? (
                         <Avatar className="h-full w-full p-0.5">
                           <AvatarImage src={occupant.avatarUrl} />
                           <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                      ) : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : <SofaIcon className="h-6 w-6 text-[#fbbf24] opacity-80" />}
+                      ) : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : (
+                        <div className="flex items-center justify-center w-full h-full">
+                           <SofaIcon className="h-6 w-6 text-[#fbbf24] drop-shadow-[0_0_4px_rgba(251,191,36,0.4)] fill-current" />
+                        </div>
+                      )}
                     </div>
                   </AvatarFrame>
                   {occupant?.isMuted && (
