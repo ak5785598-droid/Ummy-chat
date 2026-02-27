@@ -13,18 +13,27 @@ import { useRouter } from 'next/navigation';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 
 /**
- * Custom Sofa Icon for high-fidelity empty seats.
- * Precise silhouette matching the provided blueprint.
+ * High-Fidelity Golden Mic Icon for shining empty seats.
  */
-const SofaIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M17 9V8c0-1.7-1.3-3-3-3h-4c-1.7 0-3 1.3-3 3v1c-1.1 0-2 .9-2 2v3c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3c0-1.1-.9-2-2-2zM9 8c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v1H9V8z" />
+const GoldenMicIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="micGoldGradCompact" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FFF281" />
+        <stop offset="50%" stopColor="#FFD700" />
+        <stop offset="100%" stopColor="#B8860B" />
+      </linearGradient>
+    </defs>
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="url(#micGoldGradCompact)" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="url(#micGoldGradCompact)" strokeWidth="2" strokeLinecap="round" />
+    <line x1="12" y1="19" x2="12" y2="23" stroke="url(#micGoldGradCompact)" strokeWidth="2" strokeLinecap="round" />
+    <line x1="8" y1="23" x2="16" y2="23" stroke="url(#micGoldGradCompact)" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
 /**
  * High-Fidelity Compact Room Overlay.
- * Mirroring the glossy, double-gold ring seat design.
+ * Mirroring the glossy, double-gold ring seat design with mic icons.
  */
 export function CompactRoomView() {
   const { activeRoom, setIsMinimized } = useRoomContext();
@@ -89,11 +98,11 @@ export function CompactRoomView() {
                   )}
                   <AvatarFrame frameId={occupant?.activeFrame} size="sm">
                     <div className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center transition-all bg-[#050f05] border-[2px] border-[#fbbf24] shadow-[inset_0_0_4px_rgba(0,0,0,0.6),0_0_0_1px_#fbbf24]",
+                      "h-12 w-12 rounded-full flex items-center justify-center transition-all bg-gradient-to-br from-[#0a1a0a] to-[#020502] border-[3px] border-[#fbbf24] shadow-[0_0_8px_rgba(251,191,36,0.3),inset_0_0_4px_rgba(0,0,0,0.6),0_0_0_1px_#fbbf24]",
                       "relative overflow-hidden"
                     )}>
-                      {/* Glossy Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-full h-1/2 pointer-events-none z-10" />
+                      {/* Glossy High-Fidelity Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-full h-1/2 pointer-events-none z-10" />
                       
                       {occupant ? (
                         <Avatar className="h-full w-full p-0.5">
@@ -102,7 +111,7 @@ export function CompactRoomView() {
                         </Avatar>
                       ) : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : (
                         <div className="flex items-center justify-center w-full h-full">
-                           <SofaIcon className="h-6 w-6 text-[#fbbf24] drop-shadow-[0_0_4px_rgba(251,191,36,0.4)] fill-current" />
+                           <GoldenMicIcon className="h-6 w-6 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]" />
                         </div>
                       )}
                     </div>
