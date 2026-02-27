@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageSquare, User, Settings, LogOut, ShoppingBag, ShieldCheck, Mail, Crown, Gamepad2 } from "lucide-react";
+import { Home, MessageSquare, User, Settings, LogOut, ShoppingBag, ShieldCheck, Mail, Crown, Gamepad2, Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -22,34 +22,25 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { FloatingRoomBar } from "../floating-room-bar";
+import Image from "next/image";
 
-const CastleIcon = (props: any) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M2 22V7l2-2V2h3v3l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v4l2-2v3l3 3v15H2zm4-4h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm4 8h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z" />
-  </svg>
-);
-
-const ScrollIcon = (props: any) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z" />
-  </svg>
-);
-
-const MineIcon = (props: any) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M5 16L3 5l5.5 5L12 2l3.5 8L21 5l-2 11H5zm14 3c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-1h16v1z" />
-  </svg>
-);
+/**
+ * 3D-ish Navigation Icons using emojis/assets to match standard tribe apps.
+ */
+const CastleEmoji = () => <span className="text-2xl">🏰</span>;
+const CompassEmoji = () => <span className="text-2xl">🧭</span>;
+const MessageEmoji = () => <span className="text-2xl">📑</span>;
+const CrownEmoji = () => <span className="text-2xl">👑</span>;
 
 /**
  * Universal Tribe Navigation.
- * Finalized 3-tab layout: Rooms, Message, Mine.
- * Simplified for high-fidelity mobile discovery.
+ * Redesigned to match the high-fidelity mobile discovery layout (Rooms, Discover, Message, Mine).
  */
 const navItems = [
-  { href: "/rooms", label: "Rooms", icon: CastleIcon },
-  { href: "/messages", label: "Message", icon: ScrollIcon },
-  { href: "/profile", label: "Mine", icon: MineIcon },
+  { href: "/rooms", label: "Rooms", icon: CastleEmoji },
+  { href: "/rooms", label: "Discover", icon: CompassEmoji },
+  { href: "/messages", label: "Message", icon: MessageEmoji },
+  { href: "/profile", label: "Mine", icon: CrownEmoji },
 ];
 
 const sidebarItems = [
@@ -179,9 +170,13 @@ export function AppLayout({
           <FloatingRoomBar />
 
           {!hideSidebarOnMobile && (
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-50 px-4 py-2 flex justify-between items-center z-[70] h-20 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-2 flex justify-between items-center z-[70] h-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
               {navItems.map((item) => {
-                const active = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile')) || (item.href === '/rooms' && pathname.startsWith('/rooms')) || (item.href === '/messages' && pathname.startsWith('/messages'));
+                const isMine = item.href === '/profile' && pathname.startsWith('/profile');
+                const isRooms = item.href === '/rooms' && pathname.startsWith('/rooms');
+                const isMessages = item.href === '/messages' && pathname.startsWith('/messages');
+                const active = pathname === item.href || isMine || isRooms || isMessages;
+                
                 return (
                   <Link 
                     key={item.label} 
@@ -191,7 +186,9 @@ export function AppLayout({
                       active ? "text-gray-900" : "text-gray-300"
                     )}
                   >
-                    <item.icon className={cn("h-6 w-6", active ? "scale-110" : "scale-100")} />
+                    <div className={cn("transition-transform", active ? "scale-110" : "scale-100 grayscale")}>
+                       <item.icon />
+                    </div>
                     <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
                   </Link>
                 );
