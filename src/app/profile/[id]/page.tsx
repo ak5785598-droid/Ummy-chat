@@ -27,17 +27,19 @@ import {
   Check,
   ShieldAlert,
   X,
+  History,
+  TrendingDown,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useAuth, updateDocumentNonBlocking, useFirestore } from '@/firebase';
+import { useUser, useAuth, updateDocumentNonBlocking, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { cn } from '@/lib/utils';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, query, collection, orderBy, limit } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import {
   Dialog,
@@ -50,6 +52,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 /**
  * High-Fidelity Maroon Diamond Icon.
@@ -280,17 +285,25 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 /**
  * Diamond to Coin Exchange Dialog.
  * Implements 25% yield frequency: 100 Diamonds = 25 Coins.
+ * Now features an integrated Exchange History ledger.
  */
-function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen }: { balance: number, onExchange: (amount: number) => void, open: boolean, setOpen: (o: boolean) => void }) {
+function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen, userId }: { balance: number, onExchange: (amount: number) => void, open: boolean, setOpen: (o: boolean) => void, userId: string }) {
   const [amount, setAmount] = useState<string>('');
+  const firestore = useFirestore();
   
+  const historyQuery = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return query(collection(firestore, 'users', userId, 'diamondExchanges'), orderBy('timestamp', 'desc'), limit(20));
+  }, [firestore, userId]);
+  
+  const { data: historyItems, isLoading: isHistoryLoading } = useCollection(historyQuery);
+
   const diamonds = parseInt(amount) || 0;
   const expectedCoins = Math.floor(diamonds * 0.25);
 
   const handleConfirm = () => {
     if (diamonds > 0 && diamonds <= balance) {
       onExchange(diamonds);
-      setOpen(false);
       setAmount('');
     }
   };
@@ -298,59 +311,96 @@ function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen }: { balanc
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
-        <DialogHeader className="p-8 pb-0 text-center">
-          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Exchange Center</DialogTitle>
-          <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-            Exchange Rate: 25% (100 Diamonds = 25 Coins)
-          </DialogDescription>
-        </DialogHeader>
-        <div className="p-8 space-y-6">
-          <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center">
-             <span className="text-[10px] font-black uppercase text-muted-foreground">Available Diamonds</span>
-             <span className="font-black text-pink-600 italic">{balance.toLocaleString()}</span>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Diamonds to Exchange</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">💎</span>
-                <Input 
-                  type="number" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0"
-                  className="h-14 pl-12 rounded-2xl border-2 focus:border-pink-500 text-xl font-black italic"
-                />
+        <Tabs defaultValue="exchange" className="w-full">
+          <DialogHeader className="p-8 pb-0 text-center">
+            <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Exchange Center</DialogTitle>
+            <TabsList className="bg-secondary/50 p-1 h-10 rounded-full mt-4 flex justify-center w-fit mx-auto">
+              <TabsTrigger value="exchange" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Exchange</TabsTrigger>
+              <TabsTrigger value="history" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">History</TabsTrigger>
+            </TabsList>
+          </DialogHeader>
+
+          <TabsContent value="exchange" className="p-8 pt-6 space-y-6 m-0 animate-in fade-in duration-300">
+            <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
+               <span className="text-[10px] font-black uppercase text-muted-foreground">Available Diamonds</span>
+               <span className="font-black text-pink-600 italic">{balance.toLocaleString()}</span>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Diamonds to Exchange</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">💎</span>
+                  <Input 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0"
+                    className="h-14 pl-12 rounded-2xl border-2 focus:border-pink-500 text-xl font-black italic shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-center py-2">
+                 <ArrowRightLeft className="h-6 w-6 text-gray-300" />
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Gold Coins Received</Label>
+                <div className="relative">
+                  <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" />
+                  <Input 
+                    readOnly 
+                    value={expectedCoins.toLocaleString()}
+                    className="h-14 pl-12 rounded-2xl border-2 bg-gray-50 text-xl font-black italic text-yellow-600"
+                  />
+                </div>
               </div>
             </div>
+            
+            <Button 
+              onClick={handleConfirm}
+              disabled={diamonds <= 0 || diamonds > balance}
+              className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-pink-500/20 bg-pink-600 hover:bg-pink-500 transition-all active:scale-95"
+            >
+              Commit Exchange
+            </Button>
+          </TabsContent>
 
-            <div className="flex justify-center py-2">
-               <ArrowRightLeft className="h-6 w-6 text-gray-300" />
-            </div>
-
-            <div className="grid gap-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Gold Coins Received</Label>
-              <div className="relative">
-                <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" />
-                <Input 
-                  readOnly 
-                  value={expectedCoins.toLocaleString()}
-                  className="h-14 pl-12 rounded-2xl border-2 bg-gray-50 text-xl font-black italic text-yellow-600"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter className="p-8 pt-0">
-          <Button 
-            onClick={handleConfirm}
-            disabled={diamonds <= 0 || diamonds > balance}
-            className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-pink-500/20 bg-pink-600 hover:bg-pink-500"
-          >
-            Commit Exchange
-          </Button>
-        </DialogFooter>
+          <TabsContent value="history" className="p-8 pt-4 m-0 h-[450px] animate-in fade-in duration-300">
+            <ScrollArea className="h-full pr-2">
+               {isHistoryLoading ? (
+                 <div className="flex flex-col items-center justify-center py-20 gap-2 opacity-40">
+                    <Loader className="animate-spin h-6 w-6" />
+                    <span className="text-[10px] font-black uppercase italic">Syncing Ledger...</span>
+                 </div>
+               ) : !historyItems || historyItems.length === 0 ? (
+                 <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-20 italic">
+                    <TrendingDown className="h-12 w-12" />
+                    <p className="text-sm font-black uppercase tracking-widest">No Exchanges Found</p>
+                 </div>
+               ) : (
+                 <div className="space-y-3">
+                    {historyItems.map((item: any) => (
+                      <div key={item.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-white hover:shadow-md transition-all">
+                         <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                               <span className="text-xs font-black text-pink-600 italic">-{item.diamondAmount.toLocaleString()} 💎</span>
+                               <ArrowRightLeft className="h-3 w-3 text-gray-300" />
+                               <span className="text-xs font-black text-yellow-600 italic">+{item.coinAmount.toLocaleString()} 🪙</span>
+                            </div>
+                            <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                               {item.timestamp ? format(item.timestamp.toDate(), 'MMM d, HH:mm') : 'Just now'}
+                            </span>
+                         </div>
+                         <Check className="h-4 w-4 text-green-500 opacity-40" />
+                      </div>
+                    ))}
+                 </div>
+               )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -592,18 +642,32 @@ export default function ProfilePage() {
           />
           <ExchangeDiamondsDialog 
             balance={profile.wallet?.diamonds || 0} 
+            userId={currentUser!.uid}
             onExchange={(amt) => {
               const coinsToAdd = Math.floor(amt * 0.25);
               const userRef = doc(firestore!, 'users', currentUser!.uid);
               const profileRef = doc(firestore!, 'users', currentUser!.uid, 'profile', currentUser!.uid);
+              const historyRef = collection(firestore!, 'users', currentUser!.uid, 'diamondExchanges');
+              
               const updateData = {
                 'wallet.diamonds': increment(-amt),
                 'wallet.coins': increment(coinsToAdd),
                 updatedAt: serverTimestamp()
               };
+              
               updateDocumentNonBlocking(userRef, updateData);
               updateDocumentNonBlocking(profileRef, updateData);
+              
+              // Log transaction frequency
+              addDocumentNonBlocking(historyRef, {
+                diamondAmount: amt,
+                coinAmount: coinsToAdd,
+                timestamp: serverTimestamp(),
+                type: 'exchange'
+              });
+
               toast({ title: 'Exchange Successful', description: `Received ${coinsToAdd.toLocaleString()} Gold Coins.` });
+              setIsExchangeOpen(false);
             }} 
             open={isExchangeOpen}
             setOpen={setIsExchangeOpen}
