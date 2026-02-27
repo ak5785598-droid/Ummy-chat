@@ -17,7 +17,9 @@ import {
   Users,
   RefreshCcw,
   MessageCircle,
-  Plus
+  Plus,
+  Clock,
+  LayoutGrid
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -27,11 +29,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const CHIPS = [
-  { value: 20, color: 'from-blue-400 to-blue-600', shadow: 'shadow-blue-500/50' },
-  { value: 100, color: 'from-green-400 to-green-600', shadow: 'shadow-green-500/50' },
-  { value: 1000, label: '1K', color: 'from-orange-400 to-orange-600', shadow: 'shadow-orange-500/50' },
-  { value: 10000, label: '10K', color: 'from-red-400 to-red-600', shadow: 'shadow-red-500/50' },
-  { value: 100000, label: '100K', color: 'from-purple-400 to-purple-600', shadow: 'shadow-purple-500/50' },
+  { value: 20, color: 'bg-[#00E5FF] shadow-[#00E5FF]/50' },
+  { value: 100, color: 'bg-[#4CAF50] shadow-[#4CAF50]/50' },
+  { value: 1000, label: '1K', color: 'bg-[#FF9800] shadow-[#FF9800]/50' },
+  { value: 10000, label: '10K', color: 'bg-[#F44336] shadow-[#F44336]/50' },
+  { value: 100000, label: '100K', color: 'bg-[#9C27B0] shadow-[#9C27B0]/50' },
 ];
 
 const SECTIONS = [
@@ -202,7 +204,7 @@ export default function TeenPattiPalacePage() {
                data-ai-hint={backgroundAsset.imageHint}
              />
            )}
-           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
+           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/95" />
         </div>
 
         {/* Top Header UI */}
@@ -215,103 +217,117 @@ export default function TeenPattiPalacePage() {
               <button className="bg-black/40 p-2 rounded-full border border-white/10 backdrop-blur-md"><HelpCircle className="h-5 w-5" /></button>
            </div>
            <div className="flex gap-2">
-              <button className="bg-black/40 p-2 rounded-full border border-white/10 backdrop-blur-md"><MessageCircle className="h-5 w-5" /></button>
-              <button className="bg-black/40 p-2 rounded-full border border-white/10 backdrop-blur-md"><History className="h-5 w-5" /></button>
-              <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-3 px-4 py-1.5 shadow-xl">
+              <button className="bg-black/40 p-2 rounded-full border border-white/10 backdrop-blur-md"><LayoutGrid className="h-5 w-5" /></button>
+              <button className="bg-black/40 p-2 rounded-full border border-white/10 backdrop-blur-md"><Clock className="h-5 w-5" /></button>
+              <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 pl-2 pr-1 py-1 shadow-xl">
                 <GoldCoinIcon className="h-5 w-5" />
                 <span className="text-sm font-black text-yellow-500 italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                <button className="bg-yellow-500 text-black rounded-full h-5 w-5 flex items-center justify-center"><Plus className="h-3 w-3" /></button>
+                <button className="bg-yellow-500 text-black rounded-full h-6 w-6 flex items-center justify-center ml-1"><Plus className="h-4 w-4" /></button>
               </div>
            </div>
         </div>
 
-        {/* Game Title */}
-        <div className="relative z-10 text-center mt-2">
-           <h1 className="text-3xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 drop-shadow-lg">
-             Teenpatti
-           </h1>
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-500/60 -mt-1">Palace Ball</p>
+        {/* Game Title Logo */}
+        <div className="relative z-10 text-center flex flex-col items-center mt-2">
+           <div className="relative">
+              <h1 className="text-4xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-500 to-yellow-700 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                Teenpatti
+              </h1>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+           </div>
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-yellow-500/60 mt-1">Palace Ball</p>
         </div>
 
         {/* Central Arena */}
-        <main className="flex-1 relative z-10 flex flex-col items-center pt-4">
+        <main className="flex-1 relative z-10 flex flex-col items-center pt-6">
            
            {/* Cards Layout */}
-           <div className="w-full flex justify-around px-4 mb-8">
+           <div className="w-full flex justify-around px-4 mb-10">
               {SECTIONS.map(s => (
                 <div key={s.id} className="flex flex-col items-center gap-2">
                    <div className="flex gap-0.5">
                       {[1, 2, 3].map(i => (
                         <div key={i} className={cn(
-                          "w-10 h-14 rounded-md border border-yellow-500/30 transition-all duration-500 bg-[#3d2b1f] flex items-center justify-center overflow-hidden",
-                          winner === s.id && "bg-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.6)] scale-110 -translate-y-2"
+                          "w-11 h-16 rounded-md border border-yellow-500/30 transition-all duration-500 bg-[#2a1a15] flex items-center justify-center overflow-hidden shadow-lg",
+                          winner === s.id && "bg-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.6)] scale-110 -translate-y-2 border-white"
                         )}>
-                           <div className="w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+                           <div className="w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-6 h-6 border-2 border-yellow-500/20 rounded-full flex items-center justify-center">
-                                 <div className="w-3 h-3 bg-yellow-500/10 rounded-full" />
+                              <div className="w-8 h-8 border-2 border-yellow-500/20 rounded-full flex items-center justify-center">
+                                 <div className="w-4 h-4 bg-yellow-500/10 rounded-full animate-pulse" />
                               </div>
                            </div>
                         </div>
                       ))}
                    </div>
                    <div className="flex items-center gap-3">
-                      <span className="text-2xl italic font-serif font-black text-yellow-500">{s.label}</span>
-                      <span className="text-sm font-black text-white/60">2.95</span>
+                      <span className="text-2xl italic font-serif font-black text-yellow-500 drop-shadow-md">{s.label}</span>
+                      <span className="text-xs font-black text-white/60">2.95</span>
                    </div>
                 </div>
               ))}
            </div>
 
-           {/* Circular Timer */}
-           <div className="relative mb-8">
-              <div className="w-20 h-20 rounded-full border-4 border-white/5 flex items-center justify-center bg-black/40 backdrop-blur-md">
-                 <div className="absolute inset-0 border-4 border-yellow-500 rounded-full" style={{ clipPath: `inset(0 0 ${100 - (timeLeft/15)*100}% 0)` }} />
-                 <span className="text-2xl font-black italic">{timeLeft}s</span>
+           {/* Circular Timer Centerpiece */}
+           <div className="relative mb-10">
+              <div className="w-20 h-20 rounded-full border-4 border-white/5 flex items-center justify-center bg-black/60 backdrop-blur-xl shadow-2xl overflow-hidden group">
+                 <div 
+                   className="absolute inset-0 border-4 border-yellow-500 rounded-full transition-all duration-1000" 
+                   style={{ clipPath: `inset(0 0 ${100 - (timeLeft/15)*100}% 0)` }} 
+                 />
+                 <div className="relative z-10 flex flex-col items-center">
+                    <span className="text-2xl font-black italic tracking-tighter leading-none">{timeLeft}s</span>
+                 </div>
+                 {/* Inner Glow */}
+                 <div className="absolute inset-0 bg-yellow-500/10 animate-pulse" />
               </div>
            </div>
 
-           {/* Character & Betting Areas */}
-           <div className="flex-1 w-full flex items-end justify-between px-4 pb-32 relative">
-              {SECTIONS.map(s => {
+           {/* Character & Betting Boxes Area */}
+           <div className="flex-1 w-full flex items-end justify-between px-4 pb-28 relative">
+              {SECTIONS.map((s, idx) => {
                 const asset = PlaceHolderImages.find(img => img.id === s.characterId);
                 return (
                   <div key={s.id} className="relative w-1/3 h-full flex flex-col justify-end group">
-                     {/* 3D Character Visual */}
+                     {/* 3D Character Visual Stand */}
                      <div className={cn(
-                       "absolute bottom-24 left-1/2 -translate-x-1/2 w-48 h-72 transition-all duration-700 pointer-events-none transform-gpu",
-                       winner === s.id ? "scale-125 z-20" : "scale-100 z-10 opacity-80"
+                       "absolute bottom-24 left-1/2 -translate-x-1/2 w-56 h-80 transition-all duration-1000 pointer-events-none transform-gpu flex items-end justify-center",
+                       winner === s.id ? "scale-115 z-20" : "scale-100 z-10 opacity-90 grayscale-[0.1]"
                      )}>
                         {asset && (
                           <img 
                             src={asset.imageUrl} 
-                            className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                            className="w-full h-full object-contain filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.9)]" 
                             alt={s.label} 
                             data-ai-hint={asset.imageHint}
                           />
                         )}
                      </div>
 
-                     {/* Bet Area Box */}
+                     {/* Glass Betting Box */}
                      <button 
                        onClick={() => handlePlaceBet(s.id)}
                        disabled={gameState !== 'betting'}
                        className={cn(
-                         "relative h-32 rounded-2xl border-2 transition-all duration-300 p-3 bg-black/40 backdrop-blur-md flex flex-col justify-between overflow-hidden active:scale-95 active:bg-yellow-500/10",
+                         "relative h-32 rounded-2xl border-2 transition-all duration-300 p-3 bg-black/50 backdrop-blur-md flex flex-col justify-between overflow-hidden active:scale-95 active:bg-yellow-500/10 z-30 shadow-2xl",
                          s.color,
-                         winner === s.id ? "border-yellow-500 ring-4 ring-yellow-500/20" : "hover:border-white/40"
+                         winner === s.id ? "border-yellow-500 ring-4 ring-yellow-500/20" : "hover:border-white/20"
                        )}
                      >
-                        {/* Coin Animation Container */}
-                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-full flex flex-wrap justify-center gap-0.5 opacity-80 pointer-events-none">
-                           {Array.from({ length: Math.min(15, Math.ceil((totalPots[s.id] || 0) / 100)) }).map((_, i) => (
-                             <GoldCoinIcon key={i} className="h-2.5 w-2.5 text-yellow-500" />
+                        {/* Realistic Coin Scatter Simulation */}
+                        <div className="absolute inset-0 flex flex-wrap items-end justify-center p-2 opacity-80 pointer-events-none gap-0.5 overflow-hidden">
+                           {Array.from({ length: Math.min(25, Math.ceil((totalPots[s.id] || 0) / 100)) }).map((_, i) => (
+                             <GoldCoinIcon 
+                               key={i} 
+                               className="h-3 w-3 text-yellow-500 filter drop-shadow-sm animate-in zoom-in slide-in-from-top-4" 
+                               style={{ animationDelay: `${i * 0.05}s` }}
+                             />
                            ))}
                         </div>
 
-                        <div className="mt-auto space-y-0.5">
-                           <p className="text-[10px] font-black uppercase text-white/40">Pot: <span className="text-white">{totalPots[s.id].toLocaleString()}</span></p>
-                           <p className="text-[10px] font-black uppercase text-white/40">You: <span className="text-yellow-500">{myBets[s.id].toLocaleString()}</span></p>
+                        <div className="mt-auto relative z-40 text-center sm:text-left">
+                           <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Pot: <span className="text-white">{totalPots[s.id].toLocaleString()}</span></p>
+                           <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">You: <span className="text-yellow-500">{myBets[s.id].toLocaleString()}</span></p>
                         </div>
                      </button>
                   </div>
@@ -320,51 +336,59 @@ export default function TeenPattiPalacePage() {
            </div>
         </main>
 
-        {/* Footer Interaction Bar */}
-        <footer className="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent z-[120]">
-           <div className="max-w-md mx-auto flex items-center gap-2">
+        {/* Footer Navigation & Controls */}
+        <footer className="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-gradient-to-t from-black via-black/90 to-transparent z-[120]">
+           <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
+              {/* Chip Selector Bar */}
               <div className="bg-black/60 backdrop-blur-2xl p-2 rounded-full border border-white/10 flex items-center gap-2 flex-1 overflow-x-auto no-scrollbar shadow-2xl">
                  {CHIPS.map(chip => (
                    <button 
                     key={chip.value} 
                     onClick={() => setSelectedChip(chip.value)} 
                     className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 border-white/20 shrink-0 shadow-lg relative bg-gradient-to-b",
+                      "h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-lg relative group",
                       chip.color,
-                      selectedChip === chip.value ? "scale-110 border-white ring-4 ring-white/20 z-10 " + chip.shadow : "opacity-60 grayscale-[0.3]"
+                      selectedChip === chip.value ? "scale-115 border-white ring-4 ring-white/30 z-10" : "opacity-60 hover:opacity-100"
                     )}
                    >
-                      <span className="text-[11px] font-black text-white italic drop-shadow-md">{chip.label || chip.value}</span>
+                      <span className="text-[11px] font-black text-white italic drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{chip.label || chip.value}</span>
+                      {selectedChip === chip.value && (
+                        <div className="absolute -top-1 -right-1 bg-white rounded-full h-4 w-4 flex items-center justify-center shadow-md animate-in zoom-in">
+                           <RefreshCcw className="h-2 w-2 text-black" />
+                        </div>
+                      )}
                    </button>
                  ))}
               </div>
               
-              <button className="bg-white/10 p-3 rounded-full border border-white/10 backdrop-blur-md">
-                 <Users className="h-6 w-6 text-white" />
+              {/* Participant List Access */}
+              <button className="bg-white/10 p-3.5 rounded-full border border-white/10 backdrop-blur-md text-white hover:bg-white/20 active:scale-90 transition-all">
+                 <Users className="h-6 w-6" />
               </button>
 
+              {/* Repeat Action */}
               <button 
                 onClick={handleRepeat}
-                className="bg-gradient-to-b from-gray-200 to-gray-400 px-6 h-12 rounded-full font-black uppercase italic text-xs text-black shadow-xl active:scale-90 transition-all"
+                className="bg-[#dcdcdc] px-8 h-12 rounded-full font-black uppercase italic text-sm text-black shadow-xl active:scale-95 transition-all border-b-4 border-gray-400 hover:brightness-110"
               >
                 Repeat
               </button>
            </div>
         </footer>
 
-        {/* Win Overlay */}
+        {/* Tribe Winner Overlay */}
         {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <Trophy className="h-20 w-20 text-yellow-400 animate-bounce mb-4" />
-             <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center mb-8">Tribe Winner</h2>
-             <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-24 w-24 border-4 border-yellow-400 shadow-2xl">
+          <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/85 backdrop-blur-md animate-in zoom-in duration-500 p-6">
+             <Trophy className="h-24 w-24 text-yellow-400 animate-bounce mb-6 filter drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
+             <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter text-center mb-8 drop-shadow-lg">Tribe Winner</h2>
+             <div className="flex flex-col items-center gap-6 p-8 bg-white/5 rounded-[3rem] border-2 border-yellow-500/20 shadow-2xl">
+                <Avatar className="h-32 w-32 border-4 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
                    <AvatarImage src={winners[0].avatar} />
-                   <AvatarFallback>W</AvatarFallback>
+                   <AvatarFallback className="bg-slate-800 text-4xl">W</AvatarFallback>
                 </Avatar>
-                <div className="text-center">
-                   <p className="text-2xl font-black text-white uppercase italic">{winners[0].name}</p>
-                   <p className="text-3xl font-black text-yellow-500">+{winners[0].win.toLocaleString()} Coins</p>
+                <div className="text-center space-y-2">
+                   <p className="text-3xl font-black text-white uppercase italic tracking-tight">{winners[0].name}</p>
+                   <p className="text-4xl font-black text-yellow-500 italic drop-shadow-sm">+{winners[0].win.toLocaleString()} Coins</p>
                 </div>
              </div>
           </div>
