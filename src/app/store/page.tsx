@@ -17,7 +17,7 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const STORE_ITEMS = [
-  { id: 'f5', name: 'The Wings', type: 'Frame', price: 200000, description: 'Divine golden wings and celestial gems for the chosen ones.', icon: Sparkles, color: 'text-yellow-400' },
+  { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, description: 'Ultra-detailed 3D luxury angelic frame with gemstone inlays.', icon: Sparkles, color: 'text-yellow-400' },
   { id: 'f4', name: 'Imperial Bloom', type: 'Frame', price: 20000, description: 'Exquisite purple roses and a majestic golden crown.', icon: Crown, color: 'text-purple-600' },
   { id: 'f1', name: 'Golden Official', type: 'Frame', price: 15000, description: 'The mark of ultimate authority.', icon: Star, color: 'text-yellow-500' },
   { id: 'f2', name: 'Cyberpunk Red', type: 'Frame', price: 8000, description: 'Neon glow for the tech-savvy.', icon: Star, color: 'text-red-500' },

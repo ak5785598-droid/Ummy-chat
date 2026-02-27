@@ -12,7 +12,7 @@ interface AvatarFrameProps {
 
 /**
  * High-fidelity Avatar Frame component.
- * Expanded to support f1, f2, f3, f4 and the elite f5 'The Wings' frame.
+ * Expanded to support f1, f2, f3, f4 and the elite f5 'Golden wings' frame.
  */
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   if (!frameId || frameId === 'None' || frameId === 'Default') {
@@ -23,53 +23,74 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   const isGolden = frameId === 'f1' || frameId === 'Official'; // Golden Official
   const isCyber = frameId === 'f2'; // Cyberpunk Red
   const isRoyal = frameId === 'f3'; // Royal Purple
-  const isWings = frameId === 'f5'; // The Wings
+  const isWings = frameId === 'f5'; // Golden wings
 
   return (
     <div className={cn('relative flex items-center justify-center p-1', className)}>
       {/* Frame Layer */}
       <div className="absolute inset-0 z-20 pointer-events-none scale-110">
         {isWings && (
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000">
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
             <defs>
               <linearGradient id="goldWings" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#FFF281" />
-                <stop offset="50%" stopColor="#FFD700" />
+                <stop offset="20%" stopColor="#FFD700" />
+                <stop offset="50%" stopColor="#FFFFFF" />
+                <stop offset="80%" stopColor="#FFD700" />
                 <stop offset="100%" stopColor="#B8860B" />
               </linearGradient>
-              <linearGradient id="wingGemPink" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ff00cc" />
-                <stop offset="100%" stopColor="#ff66ff" />
-              </linearGradient>
-              <linearGradient id="wingGemBlue" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0099ff" />
-                <stop offset="100%" stopColor="#66ccff" />
-              </linearGradient>
+              <filter id="goldGlow">
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <radialGradient id="rubyGem" cx="30%" cy="30%" r="50%">
+                <stop offset="0%" stopColor="#ff4d4d" />
+                <stop offset="100%" stopColor="#800000" />
+              </radialGradient>
+              <radialGradient id="sapphireGem" cx="30%" cy="30%" r="50%">
+                <stop offset="0%" stopColor="#4d4dff" />
+                <stop offset="100%" stopColor="#000080" />
+              </radialGradient>
+              <radialGradient id="emeraldGem" cx="30%" cy="30%" r="50%">
+                <stop offset="0%" stopColor="#4dff4d" />
+                <stop offset="100%" stopColor="#008000" />
+              </radialGradient>
             </defs>
             
-            {/* Base Golden Ring with ornaments */}
-            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldWings)" strokeWidth="4" className="animate-shimmer-gold" />
-            
-            {/* The Wings (Left & Right) */}
+            {/* Angelic Wings (Attached to sides, large and majestic) */}
             <g className="animate-wing-flap origin-center">
               {/* Left Wing */}
-              <path d="M20 60 C 5 50, 0 30, 10 15 L 25 40 Z" fill="url(#goldWings)" opacity="0.9" />
-              <path d="M15 55 C 5 45, 5 35, 12 25 L 22 45 Z" fill="url(#goldWings)" opacity="0.7" />
+              <g transform="translate(15, 50) rotate(-15)">
+                <path d="M0 0 C -25 -10, -45 -45, -35 -65 C -30 -75, -15 -65, 0 -45 Z" fill="url(#goldWings)" opacity="0.9" filter="url(#goldGlow)" />
+                <path d="M-5 -5 C -25 -15, -40 -40, -30 -55 C -25 -65, -10 -55, -5 -40 Z" fill="url(#goldWings)" opacity="0.7" />
+                <path d="M-10 -10 C -30 -25, -45 -35, -35 -45 C -30 -50, -15 -45, -10 -35 Z" fill="url(#goldWings)" opacity="0.5" />
+              </g>
               {/* Right Wing */}
-              <path d="M80 60 C 95 50, 100 30, 90 15 L 75 40 Z" fill="url(#goldWings)" opacity="0.9" />
-              <path d="M85 55 C 95 45, 95 35, 88 25 L 78 45 Z" fill="url(#goldWings)" opacity="0.7" />
+              <g transform="translate(85, 50) rotate(15)">
+                <path d="M0 0 C 25 -10, 45 -45, 35 -65 C 30 -75, 15 -65, 0 -45 Z" fill="url(#goldWings)" opacity="0.9" filter="url(#goldGlow)" />
+                <path d="M5 -5 C 25 -15, 40 -40, 30 -55 C 25 -65, 10 -55, 5 -40 Z" fill="url(#goldWings)" opacity="0.7" />
+                <path d="M10 -10 C 30 -25, 45 -35, 35 -45 C 30 -50, 15 -45, 10 -35 Z" fill="url(#goldWings)" opacity="0.5" />
+              </g>
             </g>
 
-            {/* Gems */}
-            <circle cx="50" cy="6" r="4" fill="url(#wingGemPink)" className="animate-pulse" />
-            <circle cx="15" cy="25" r="3" fill="url(#wingGemBlue)" className="animate-pulse" />
-            <circle cx="85" cy="25" r="3" fill="url(#wingGemBlue)" className="animate-pulse" />
-            <circle cx="10" cy="50" r="2.5" fill="url(#wingGemPink)" className="animate-pulse" />
-            <circle cx="90" cy="50" r="2.5" fill="url(#wingGemPink)" className="animate-pulse" />
+            {/* Main Gold Frame Ring */}
+            <circle cx="50" cy="50" r="46" fill="none" stroke="url(#goldWings)" strokeWidth="4.5" className="animate-shimmer-gold" />
+            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.5" />
+            
+            {/* Gemstone Inlays */}
+            <circle cx="50" cy="4" r="3.2" fill="url(#rubyGem)" className="animate-pulse" />
+            <circle cx="15" cy="15" r="2.2" fill="url(#sapphireGem)" />
+            <circle cx="85" cy="15" r="2.2" fill="url(#sapphireGem)" />
+            <circle cx="4" cy="50" r="2.2" fill="url(#emeraldGem)" />
+            <circle cx="96" cy="50" r="2.2" fill="url(#emeraldGem)" />
+            <circle cx="15" cy="85" r="2.2" fill="url(#sapphireGem)" />
+            <circle cx="85" cy="85" r="2.2" fill="url(#sapphireGem)" />
 
-            {/* Bottom Shield/Ornament */}
-            <path d="M40 85 L50 98 L60 85 L50 80 Z" fill="url(#goldWings)" stroke="#000" strokeWidth="0.5" />
-            <text x="50" y="93" fontSize="5" textAnchor="middle" fill="black" fontWeight="black">V</text>
+            {/* Bottom Elite VIP Emblem */}
+            <g transform="translate(50, 92)">
+              <path d="M-8 -8 L0 4 L8 -8 L0 -12 Z" fill="url(#goldWings)" stroke="#000" strokeWidth="0.3" filter="url(#goldGlow)" />
+              <text y="-2" fontSize="5.5" textAnchor="middle" fill="black" fontWeight="black" style={{fontFamily: 'serif'}}>VIP</text>
+            </g>
           </svg>
         )}
 
