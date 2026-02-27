@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -107,6 +108,22 @@ import { useWebRTC } from '@/hooks/use-webrtc';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 
+/**
+ * Rich Level Calculation Engine.
+ */
+function calculateRichLevel(spent: number = 0) {
+  if (spent < 50000) return 1;
+  if (spent < 100000) return 2;
+  if (spent < 1000000) return 3;
+  if (spent < 5000000) return 4;
+  if (spent < 10000000) return Math.floor(5 + ((spent - 5000000) / 5000000) * 5);
+  if (spent < 100000000) return Math.floor(10 + ((spent - 10000000) / 90000000) * 10);
+  if (spent < 1000000000) return Math.floor(20 + ((spent - 100000000) / 900000000) * 10);
+  if (spent < 5000000000) return Math.floor(30 + ((spent - 1000000000) / 4000000000) * 10);
+  if (spent < 90000000000) return Math.floor(40 + ((spent - 5000000000) / 85000000000) * 10);
+  return 50;
+}
+
 const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
@@ -140,7 +157,6 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
 
 /**
  * High-Fidelity Mixed Fruit Icon.
- * Displays 🍊🍉🍌🍓 in a professional game icon grid.
  */
 const FruitMixIcon = ({ className }: { className?: string }) => (
   <div className={cn("grid grid-cols-2 gap-0.5 items-center justify-center p-0.5", className)}>
@@ -320,10 +336,15 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     const isSelfGifting = finalRecipient.uid === currentUser.uid;
+    const currentTotalSpent = userProfile.wallet?.totalSpent || 0;
+    const newTotalSpent = currentTotalSpent + gift.price;
+    const newRichLevel = calculateRichLevel(newTotalSpent);
+
     const walletUpdates: any = {
       'wallet.coins': increment(-gift.price),
       'wallet.totalSpent': increment(gift.price),
       'wallet.dailySpent': increment(gift.price), 
+      'level.rich': newRichLevel,
       updatedAt: serverTimestamp()
     };
 

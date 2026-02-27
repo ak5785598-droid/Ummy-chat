@@ -57,6 +57,23 @@ import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 /**
+ * Rich Level Calculation Engine.
+ * Following the tribal thresholds: 50k, 100k, 1M, 5M, 10M... up to 90B+.
+ */
+function calculateRichLevel(spent: number = 0) {
+  if (spent < 50000) return 1;
+  if (spent < 100000) return 2;
+  if (spent < 1000000) return 3;
+  if (spent < 5000000) return 4;
+  if (spent < 10000000) return Math.floor(5 + ((spent - 5000000) / 5000000) * 5);
+  if (spent < 100000000) return Math.floor(10 + ((spent - 10000000) / 90000000) * 10);
+  if (spent < 1000000000) return Math.floor(20 + ((spent - 100000000) / 900000000) * 10);
+  if (spent < 5000000000) return Math.floor(30 + ((spent - 1000000000) / 4000000000) * 10);
+  if (spent < 90000000000) return Math.floor(40 + ((spent - 5000000000) / 85000000000) * 10);
+  return 50;
+}
+
+/**
  * High-Fidelity Maroon Diamond Icon.
  */
 const DiamondIcon = ({ className }: { className?: string }) => (
@@ -68,7 +85,6 @@ const DiamondIcon = ({ className }: { className?: string }) => (
 /**
  * Rich Level Guide Dialog.
  * Explains how spending Gold Coins on gifts increases the user's Rich Level.
- * Based on the tribal ranking frequency provided.
  */
 function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
   const levels = [
@@ -263,8 +279,6 @@ function InviteFriendsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 
 /**
  * Purchase Coins Dialog.
- * Supporting simulated real-time payments via Paytm, PhonePe, and Google Pay.
- * STRICT PROTOCOL: Coins are ONLY credited after explicit confirmation in the Gateway step.
  */
 function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
   const { user } = useUser();
@@ -296,7 +310,6 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 
     setIsProcessing(true);
     
-    // Simulate final bank synchronization
     setTimeout(() => {
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
@@ -480,8 +493,6 @@ function PurchaseCoinsDialog({ open, setOpen }: { open: boolean, setOpen: (o: bo
 
 /**
  * Diamond to Coin Exchange Dialog.
- * Implements 25% yield frequency: 100 Diamonds = 25 Coins.
- * Now features an integrated Exchange History ledger.
  */
 function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen, userId }: { balance: number, onExchange: (amount: number) => void, open: boolean, setOpen: (o: boolean) => void, userId: string }) {
   const [amount, setAmount] = useState<string>('');
@@ -658,6 +669,7 @@ export default function ProfilePage() {
   }
 
   const isOwnProfile = currentUser?.uid === profileId;
+  const richLevel = calculateRichLevel(profile.wallet?.totalSpent || 0);
 
   return (
     <AppLayout>
@@ -715,10 +727,10 @@ export default function ProfilePage() {
                </div>
                <div className="flex items-center gap-2">
                   <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-                     <span className="text-[8px] font-black text-white italic">🛡️ {profile.level?.rich || 4}</span>
+                     <span className="text-[8px] font-black text-white italic">🛡️ {richLevel}</span>
                   </div>
                   <div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-                     <span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 4}</span>
+                     <span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 1}</span>
                   </div>
                </div>
             </div>
@@ -730,25 +742,6 @@ export default function ProfilePage() {
              <StatItem label="Following" count={3} />
              <StatItem label="Followers" count={profile.stats?.followers || 56} />
              <StatItem label="Visitors" count={0} showBorder={false} />
-          </div>
-
-          {/* SVIP Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#004d40] to-[#1b5e20] p-4 border-[3px] border-[#ffd700]/30 shadow-xl group">
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/mandala.png')] opacity-10" />
-             <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-3">
-                   <div className="h-12 w-12 rounded-full border-2 border-yellow-500 overflow-hidden bg-black/40">
-                      <Image src="https://picsum.photos/seed/dragon/100/100" alt="Dragon" width={48} height={48} className="object-cover" />
-                   </div>
-                   <div>
-                      <h3 className="text-xl font-black text-white italic">SVIP Club <span className="text-yellow-400">.</span></h3>
-                      <p className="text-[10px] text-white/60 font-bold uppercase italic">Enjoy distinguished privileges</p>
-                   </div>
-                </div>
-                <button className="bg-gradient-to-b from-yellow-300 to-yellow-600 text-black font-black uppercase italic text-[10px] h-8 rounded-full px-4 shadow-lg border-b-2 border-yellow-800">
-                   Get SVIP
-                </button>
-             </div>
           </div>
 
           {/* Balance Cards */}
@@ -856,7 +849,6 @@ export default function ProfilePage() {
               updateDocumentNonBlocking(userRef, updateData);
               updateDocumentNonBlocking(profileRef, updateData);
               
-              // Log transaction frequency
               addDocumentNonBlocking(historyRef, {
                 diamondAmount: amt,
                 coinAmount: coinsToAdd,
