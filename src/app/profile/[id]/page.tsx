@@ -75,7 +75,7 @@ function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen }: { balanc
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
         <DialogHeader className="p-8 pb-0 text-center">
-          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Vault Sync</DialogTitle>
+          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Exchange Center</DialogTitle>
           <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
             Exchange Rate: 25% (100 Diamonds = 25 Coins)
           </DialogDescription>
