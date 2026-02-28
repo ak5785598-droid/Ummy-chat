@@ -381,17 +381,17 @@ function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen, userId }: 
 
 const StatItem = ({ label, count, showBorder = true }: { label: string, count: number, showBorder?: boolean }) => (
   <div className={cn("flex-1 flex flex-col items-center", showBorder && "border-r border-gray-100")}>
-    <span className="text-xl font-bold text-gray-900">{count}</span>
-    <span className="text-[10px] font-bold text-gray-400 uppercase">{label}</span>
+    <span className="text-base sm:text-xl font-bold text-gray-900">{count}</span>
+    <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase">{label}</span>
   </div>
 );
 
 const ActionIcon = ({ icon: Icon, label, color, onClick }: any) => (
   <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={onClick}>
-    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-active:scale-95", color)}>
-      <Icon className="h-8 w-8 text-white" />
+    <div className={cn("h-12 sm:h-14 w-12 sm:w-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-active:scale-95", color)}>
+      <Icon className="h-6 sm:h-8 w-6 sm:w-8 text-white" />
     </div>
-    <span className="text-xs font-bold text-gray-600">{label}</span>
+    <span className="text-[10px] sm:text-xs font-bold text-gray-600 truncate w-full text-center px-1">{label}</span>
   </div>
 );
 
@@ -422,8 +422,8 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-[#f8f9fa] font-headline pb-32">
-        <div className="relative h-64 w-full">
+      <div className="min-h-full bg-[#f8f9fa] font-headline pb-32 flex flex-col">
+        <div className="relative h-48 sm:h-64 w-full shrink-0">
           <Image src="https://picsum.photos/seed/ummy-bg/1200/600" alt="Mountain Header" fill className="object-cover opacity-20" data-ai-hint="mountain landscape" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#f8f9fa]" />
           <div className="absolute top-6 left-4 flex items-center gap-4">
@@ -439,19 +439,19 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <div className="px-6 -mt-32 relative z-10 space-y-6">
+        <div className="px-6 -mt-24 sm:-mt-32 relative z-10 space-y-6 flex-1">
           <div className="flex items-end gap-4">
-            <div className="relative shrink-0"><AvatarFrame frameId={profile.inventory?.activeFrame} size="xl"><Avatar className="h-24 w-24 border-4 border-white shadow-xl"><AvatarImage src={localAvatarPreview || profile.avatarUrl} /><AvatarFallback className="text-4xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback></Avatar></AvatarFrame>{isOwnProfile && <div className="absolute bottom-0 right-0"><EditProfileDialog profile={profile} /></div>}</div>
-            <div className="pb-2 flex-1 space-y-1">
+            <div className="relative shrink-0"><AvatarFrame frameId={profile.inventory?.activeFrame} size="xl"><Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white shadow-xl"><AvatarImage src={localAvatarPreview || profile.avatarUrl} /><AvatarFallback className="text-4xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback></Avatar></AvatarFrame>{isOwnProfile && <div className="absolute bottom-0 right-0"><EditProfileDialog profile={profile} /></div>}</div>
+            <div className="pb-2 flex-1 space-y-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">{profile.username}</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase italic tracking-tight truncate">{profile.username}</h1>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground"><span className="text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div>
+              <div className="flex items-center gap-2 text-muted-foreground"><span className="text-[10px] sm:text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div>
               <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm shrink-0">
                   <span className="text-[8px] font-black text-white italic">🛡️ {richLevel}</span>
                 </div>
-                <div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                <div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm shrink-0">
                   <span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 1}</span>
                 </div>
                 {isOfficial && <OfficialTag size="sm" />}
@@ -459,14 +459,14 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex items-center justify-between py-4 bg-white/50 backdrop-blur-sm rounded-3xl"><StatItem label="Friends" count={2} /><StatItem label="Following" count={3} /><StatItem label="Followers" count={profile.stats?.followers || 56} /><StatItem label="Visitors" count={0} showBorder={false} /></div>
-          <div className="grid grid-cols-2 gap-4">
-             <div onClick={() => isOwnProfile && setIsPurchaseOpen(true)} className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-3 relative z-10"><div className="bg-yellow-400 rounded-full p-1.5 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse"><GoldCoinIcon className="h-5 w-5 text-green-900" /></div><span className="text-xl font-black text-white italic drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10" /></div>
-             <div onClick={() => isOwnProfile && setIsExchangeOpen(true)} className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-3xl p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-3 relative z-10"><DiamondIcon className="h-8 w-8 shadow-[0_0_15px_rgba(236,72,153,0.5)]" /><span className="text-xl font-black text-white italic drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10" /></div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+             <div onClick={() => isOwnProfile && setIsPurchaseOpen(true)} className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 sm:gap-3 relative z-10 min-w-0"><div className="bg-yellow-400 rounded-full p-1 sm:p-1.5 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse shrink-0"><GoldCoinIcon className="h-4 sm:h-5 w-4 sm:w-5 text-green-900" /></div><span className="text-sm sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.coins || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
+             <div onClick={() => isOwnProfile && setIsExchangeOpen(true)} className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-3xl p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 sm:gap-3 relative z-10 min-w-0"><DiamondIcon className="h-5 w-5 sm:h-8 sm:w-8 shadow-[0_0_15px_rgba(236,72,153,0.5)] shrink-0" /><span className="text-sm sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.diamonds || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
           </div>
-          <Card className="border-none shadow-sm rounded-3xl p-6 bg-white"><div className="grid grid-cols-4 gap-4"><ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} /><ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} /><ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} /><ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} /></div></Card>
+          <Card className="border-none shadow-sm rounded-3xl p-4 sm:p-6 bg-white"><div className="grid grid-cols-4 gap-2 sm:gap-4"><ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} /><ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} /><ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} /><ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} /></div></Card>
           <div className="space-y-4">
-             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800">COMBINED CP 💕</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div><div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div><span className="font-bold text-gray-800">Invite Friends</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
-             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800">Network Test</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
+             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">COMBINED CP 💕</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div><div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">Invite Friends</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
+             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">Network Test</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
           </div>
         </div>
       </div>
