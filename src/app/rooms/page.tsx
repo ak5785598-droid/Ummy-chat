@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Flame, Crown, Heart, Users, Home, Plus, Star } from 'lucide-react';
+import { Loader, Flame, Crown, Heart, Users, Home, Plus, Star, Search } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
@@ -18,7 +18,7 @@ import { PublishMomentDialog } from '@/components/publish-moment-dialog';
 
 /**
  * High-Fidelity Discovery Hub.
- * AUTOMATIC REMOVAL PROTOCOL: Rooms with participantCount 0 are strictly removed from public feed.
+ * Optimized for Android Real-Time Screen Arrangement.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -36,7 +36,6 @@ export default function RoomsPage() {
     return () => clearInterval(intervalId);
   }, [api]);
 
-  // Production Discovery Query: Strictly filter rooms with participantCount > 0
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -49,7 +48,6 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
-  // Identity Hub Query: Always show user's own room regardless of count
   const myRoomQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
@@ -92,34 +90,34 @@ export default function RoomsPage() {
     <Link 
       href={`/leaderboard?type=${type}`} 
       className={cn(
-        "relative flex-1 rounded-2xl p-3 h-28 overflow-hidden border border-white/10 shadow-lg block transition-transform active:scale-95 hover:scale-[1.02]", 
+        "relative flex-1 min-w-0 rounded-2xl p-2 h-24 overflow-hidden border border-white/10 shadow-lg block transition-transform active:scale-95", 
         color
       )}
     >
-       <div className="flex justify-between items-center mb-2">
-          <span className="text-white font-black text-[10px] uppercase italic">{title}</span>
-          <Icon className="h-3 w-3 text-white/40" />
+       <div className="flex justify-between items-center mb-1">
+          <span className="text-white font-black text-[8px] uppercase italic opacity-80">{title}</span>
+          <Icon className="h-2.5 w-2.5 text-white/40" />
        </div>
-       <div className="flex justify-center items-end gap-1 mt-2">
-          {items?.[1] && <Avatar className="h-8 w-8 border-2 border-slate-300/50"><AvatarImage src={items[1].avatarUrl || items[1].coverUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
-          {items?.[0] && <Avatar className="h-10 w-10 border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,214,0,0.5)] -mt-2"><AvatarImage src={items[0].avatarUrl || items[0].coverUrl} /><AvatarFallback>1</AvatarFallback></Avatar>}
-          {items?.[2] && <Avatar className="h-8 w-8 border-2 border-amber-700/50"><AvatarImage src={items[2].avatarUrl || items[2].coverUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
+       <div className="flex justify-center items-end gap-0.5 mt-1">
+          {items?.[1] && <Avatar className="h-6 w-6 border border-slate-300/50"><AvatarImage src={items[1].avatarUrl || items[1].coverUrl} /><AvatarFallback className="text-[8px]">2</AvatarFallback></Avatar>}
+          {items?.[0] && <Avatar className="h-8 w-8 border-2 border-yellow-400 shadow-[0_0_8px_rgba(255,214,0,0.5)] -mt-1"><AvatarImage src={items[0].avatarUrl || items[0].coverUrl} /><AvatarFallback className="text-[10px]">1</AvatarFallback></Avatar>}
+          {items?.[2] && <Avatar className="h-6 w-6 border border-amber-700/50"><AvatarImage src={items[2].avatarUrl || items[2].coverUrl} /><AvatarFallback className="text-[8px]">3</AvatarFallback></Avatar>}
        </div>
-       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
     </Link>
   );
 
   return (
     <AppLayout>
       <div className="min-h-screen bg-white">
-        <header className="px-4 pt-10 pb-4 sticky top-0 z-50 bg-white/80 backdrop-blur-md">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button onClick={() => setNavTab('chatroom')} className={cn("text-2xl font-black transition-all", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
-              <button onClick={() => setNavTab('moments')} className={cn("text-2xl font-black transition-all", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
-              <button onClick={() => setNavTab('mine')} className={cn("text-2xl font-black transition-all", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
+        <header className="px-4 pt-6 pb-2 sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-50">
+          <div className="flex items-center justify-between gap-2 max-w-full">
+            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
+              <button onClick={() => setNavTab('chatroom')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
+              <button onClick={() => setNavTab('moments')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
+              <button onClick={() => setNavTab('mine')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 shrink-0">
                <UserSearchDialog />
                {navTab === 'moments' && <PublishMomentDialog />}
                {myRoomId ? (
@@ -131,7 +129,7 @@ export default function RoomsPage() {
           </div>
         </header>
 
-        <div className="px-4 space-y-6">
+        <div className="px-4 space-y-6 pt-4">
           {navTab === 'chatroom' && (
             <>
               <div className="w-full overflow-hidden rounded-[2rem] shadow-xl">
@@ -141,7 +139,7 @@ export default function RoomsPage() {
                       <CarouselItem key={i}>
                         <div className="relative aspect-[16/7] rounded-[2rem] overflow-hidden bg-gradient-to-br from-primary via-primary/80 to-accent flex flex-col justify-center px-8 border-4 border-white shadow-inner">
                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                           <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg relative z-10">Rising Host<br/><span className="text-black">Contest</span></h2>
+                           <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg relative z-10 leading-none">Rising Host<br/><span className="text-black">Contest</span></h2>
                            <div className="flex gap-1 mt-4 relative z-10">
                               {Array.from({length: 8}).map((_, dot) => (
                                 <div key={dot} className={cn("h-1.5 w-1.5 rounded-full bg-white/40", dot === 0 && "bg-white w-4")} />
@@ -154,10 +152,10 @@ export default function RoomsPage() {
                 </Carousel>
               </div>
 
-              <div className="flex gap-2">
-                 <RankingCard title="Rich" color="bg-gradient-to-br from-[#b88a44] to-[#63441a]" items={topRich} icon={Crown} type="rich" />
-                 <RankingCard title="Charm" color="bg-gradient-to-br from-[#9e1b32] to-[#4a0a16]" items={topCharm} icon={Heart} type="charm" />
-                 <RankingCard title="Room" color="bg-gradient-to-br from-[#2d5a27] to-[#143311]" items={topRoomsRanking} icon={Users} type="rooms" />
+              <div className="flex gap-2 px-1">
+                 <RankingCard title="RICH" color="bg-gradient-to-br from-[#b88a44] to-[#63441a]" items={topRich} icon={Crown} type="rich" />
+                 <RankingCard title="CHARM" color="bg-gradient-to-br from-[#9e1b32] to-[#4a0a16]" items={topCharm} icon={Heart} type="charm" />
+                 <RankingCard title="ROOM" color="bg-gradient-to-br from-[#2d5a27] to-[#143311]" items={topRoomsRanking} icon={Users} type="rooms" />
               </div>
 
               <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">

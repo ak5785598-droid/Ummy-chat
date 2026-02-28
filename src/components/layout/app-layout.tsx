@@ -26,9 +26,9 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 
 const navItems = [
-  { href: "/rooms", label: "Home", icon: () => <span className="text-2xl">🏰</span> },
-  { href: "/messages", label: "Message", icon: () => <span className="text-2xl">📑</span> },
-  { href: "/profile", label: "Mine", icon: () => <span className="text-2xl">👑</span> },
+  { href: "/rooms", label: "HOME", icon: () => <span className="text-2xl">🏰</span> },
+  { href: "/messages", label: "MESSAGE", icon: () => <span className="text-2xl">📑</span> },
+  { href: "/profile", label: "MINE", icon: () => <span className="text-2xl">👑</span> },
 ];
 
 const sidebarItems = [
@@ -169,7 +169,7 @@ export function AppLayout({
           <SidebarInset className="bg-[#FFCC00] flex-1 overflow-hidden">
             <main className={cn(
               "h-full w-full overflow-y-auto bg-white rounded-t-[2.5rem] md:rounded-none transition-all",
-              !hideSidebarOnMobile ? "pb-20" : "pb-0"
+              !hideSidebarOnMobile ? "pb-[calc(72px+env(safe-area-inset-bottom,16px))]" : "pb-0"
             )}>
               {children}
             </main>
