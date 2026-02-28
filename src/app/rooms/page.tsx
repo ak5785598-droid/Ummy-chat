@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Flame, Crown, Heart, Users, Home, Plus, Star, Search } from 'lucide-react';
+import { Loader, Flame, Crown, Heart, Users, Home, Plus, Star } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
