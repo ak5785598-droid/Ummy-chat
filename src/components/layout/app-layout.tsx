@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, Settings, LogOut, ShoppingBag, Mail, Crown, Gamepad2 } from "lucide-react";
+import { Home, Settings, LogOut, ShoppingBag, Mail, Crown, Gamepad2, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useUser, useAuth } from "@/firebase";
 import { UmmyLogoIcon } from "@/components/icons";
@@ -38,6 +39,21 @@ const sidebarItems = [
   { href: "/leaderboard", label: "Rankings", icon: Crown },
   { href: "/games", label: "Game Zone", icon: Gamepad2 },
 ];
+
+function MoreNavButton() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button 
+      onClick={toggleSidebar}
+      className="flex flex-col items-center gap-1 transition-all flex-1 py-1 text-gray-300"
+    >
+      <div className="scale-100 grayscale">
+        <Menu className="h-6 w-6" />
+      </div>
+      <span className="text-[9px] font-black uppercase tracking-tighter">MORE</span>
+    </button>
+  );
+}
 
 export function AppLayout({ 
   children, 
@@ -178,7 +194,7 @@ export function AppLayout({
           <FloatingRoomBar />
 
           {!hideSidebarOnMobile && (
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 pt-2 pb-[env(safe-area-inset-bottom,16px)] flex justify-between items-center z-[70] h-auto min-h-[72px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-2 pt-2 pb-[env(safe-area-inset-bottom,16px)] flex justify-between items-center z-[70] h-auto min-h-[72px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
               {navItems.map((item) => {
                 const isMine = item.href === '/profile' && pathname.startsWith('/profile');
                 const isRooms = item.href === '/rooms' && pathname.startsWith('/rooms');
@@ -201,6 +217,7 @@ export function AppLayout({
                   </Link>
                 );
               })}
+              <MoreNavButton />
             </nav>
           )}
         </div>

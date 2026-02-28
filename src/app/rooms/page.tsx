@@ -91,18 +91,18 @@ export default function RoomsPage() {
     <Link 
       href={`/leaderboard?type=${type}`} 
       className={cn(
-        "relative flex-1 min-w-0 rounded-2xl p-2 h-20 sm:h-24 overflow-hidden border border-white/10 shadow-lg block transition-transform active:scale-95", 
+        "relative flex-1 min-w-0 rounded-2xl p-2 h-24 overflow-hidden border border-white/10 shadow-lg block transition-transform active:scale-95", 
         color
       )}
     >
        <div className="flex justify-between items-center mb-1">
-          <span className="text-white font-black text-[7px] sm:text-[8px] uppercase italic opacity-80">{title}</span>
-          <Icon className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-white/40" />
+          <span className="text-white font-black text-[9px] uppercase italic opacity-80">{title}</span>
+          <Icon className="h-3 w-3 text-white/40" />
        </div>
-       <div className="flex justify-center items-end gap-px sm:gap-0.5 mt-1">
-          {items?.[1] && <Avatar className="h-5 w-5 sm:h-6 sm:w-6 border border-slate-300/50"><AvatarImage src={items[1].avatarUrl || items[1].coverUrl} /><AvatarFallback className="text-[7px]">2</AvatarFallback></Avatar>}
-          {items?.[0] && <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-yellow-400 shadow-[0_0_8px_rgba(255,214,0,0.5)] -mt-1"><AvatarImage src={items[0].avatarUrl || items[0].coverUrl} /><AvatarFallback className="text-[9px]">1</AvatarFallback></Avatar>}
-          {items?.[2] && <Avatar className="h-5 w-5 sm:h-6 sm:w-6 border border-amber-700/50"><AvatarImage src={items[2].avatarUrl || items[2].coverUrl} /><AvatarFallback className="text-[7px]">3</AvatarFallback></Avatar>}
+       <div className="flex justify-center items-end gap-1 mt-1">
+          {items?.[1] && <Avatar className="h-6 w-6 border border-slate-300/50"><AvatarImage src={items[1].avatarUrl || items[1].coverUrl} /><AvatarFallback className="text-[8px]">2</AvatarFallback></Avatar>}
+          {items?.[0] && <Avatar className="h-9 w-9 border-2 border-yellow-400 shadow-[0_0_8px_rgba(255,214,0,0.5)] -mt-1"><AvatarImage src={items[0].avatarUrl || items[0].coverUrl} /><AvatarFallback className="text-[10px]">1</AvatarFallback></Avatar>}
+          {items?.[2] && <Avatar className="h-6 w-6 border border-amber-700/50"><AvatarImage src={items[2].avatarUrl || items[2].coverUrl} /><AvatarFallback className="text-[8px]">3</AvatarFallback></Avatar>}
        </div>
        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
     </Link>
@@ -110,20 +110,20 @@ export default function RoomsPage() {
 
   return (
     <div className="min-h-full bg-white flex flex-col">
-      <header className="px-4 pt-6 pb-2 sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-50 shrink-0">
+      <header className="px-4 pt-8 pb-3 sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-50 shrink-0">
         <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
-          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar flex-1 min-w-0">
-            <button onClick={() => setNavTab('chatroom')} className={cn("text-base sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
-            <button onClick={() => setNavTab('moments')} className={cn("text-base sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
-            <button onClick={() => setNavTab('mine')} className={cn("text-base sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
+          <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar flex-1 min-w-0">
+            <button onClick={() => setNavTab('chatroom')} className={cn("text-lg sm:text-2xl font-black transition-all whitespace-nowrap", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
+            <button onClick={() => setNavTab('moments')} className={cn("text-lg sm:text-2xl font-black transition-all whitespace-nowrap", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
+            <button onClick={() => setNavTab('mine')} className={cn("text-lg sm:text-2xl font-black transition-all whitespace-nowrap", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 pr-1">
              <UserSearchDialog />
              {navTab === 'moments' && <PublishMomentDialog />}
              {myRoomId ? (
-               <Link href={`/rooms/${myRoomId}`} className="p-1 hover:scale-110 active:scale-90 transition-all"><Home className="h-5 w-5 sm:h-6 sm:w-6 text-gray-800" /></Link>
+               <Link href={`/rooms/${myRoomId}`} className="p-1 hover:scale-110 active:scale-90 transition-all"><Home className="h-6 w-6 text-gray-800" /></Link>
              ) : (
-               <button onClick={() => toast({ title: "No Frequency Found", description: "You need to launch a room in the 'Mine' tab first." })} className="p-1 opacity-20 hover:scale-110 active:scale-90 transition-all"><Home className="h-5 w-5 sm:h-6 sm:w-6 text-gray-800" /></button>
+               <button onClick={() => toast({ title: "No Frequency Found", description: "You need to launch a room in the 'Mine' tab first." })} className="p-1 opacity-20 hover:scale-110 active:scale-90 transition-all"><Home className="h-6 w-6 text-gray-800" /></button>
              )}
           </div>
         </div>
@@ -132,17 +132,17 @@ export default function RoomsPage() {
       <div className="flex-1 px-4 space-y-6 pt-4">
         {navTab === 'chatroom' && (
           <>
-            <div className="w-full overflow-hidden rounded-[2rem] shadow-xl">
+            <div className="w-full overflow-hidden rounded-[2.5rem] shadow-xl">
               <Carousel setApi={setApi} className="w-full" opts={{ loop: true }}>
                 <CarouselContent>
                   {[1, 2, 3].map((i) => (
                     <CarouselItem key={i}>
-                      <div className="relative aspect-[16/7] rounded-[2rem] overflow-hidden bg-gradient-to-br from-primary via-primary/80 to-accent flex flex-col justify-center px-8 border-4 border-white shadow-inner">
+                      <div className="relative aspect-[16/7] rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-primary via-primary/80 to-accent flex flex-col justify-center px-8 border-4 border-white shadow-inner">
                          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                         <h2 className="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg relative z-10 leading-none">Rising Host<br/><span className="text-black">Contest</span></h2>
-                         <div className="flex gap-1 mt-4 relative z-10">
+                         <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg relative z-10 leading-none">Rising Host<br/><span className="text-black">Contest</span></h2>
+                         <div className="flex gap-1.5 mt-4 relative z-10">
                             {Array.from({length: 8}).map((_, dot) => (
-                              <div key={dot} className={cn("h-1.5 w-1.5 rounded-full bg-white/40", dot === 0 && "bg-white w-4")} />
+                              <div key={dot} className={cn("h-2 w-2 rounded-full bg-white/40", dot === 0 && "bg-white w-5")} />
                             ))}
                          </div>
                       </div>
@@ -159,13 +159,13 @@ export default function RoomsPage() {
             </div>
 
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
-              <button onClick={() => setActiveTab('All')} className={cn("flex items-center gap-2 px-6 h-9 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-md", activeTab === 'All' ? "bg-gradient-to-r from-[#ffe082] to-[#ffca28] text-gray-900 border-2 border-white" : "bg-gray-100 text-gray-400")}><div className="bg-white/40 p-0.5 rounded-full"><Star className="h-3 w-3 fill-yellow-600 text-yellow-600" /></div>All</button>
-              <button onClick={() => setActiveTab('Hot')} className={cn("px-8 h-9 rounded-full text-xs font-bold transition-all whitespace-nowrap", activeTab === 'Hot' ? "bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-400")}>Hot</button>
-              <button onClick={() => setActiveTab('New')} className={cn("px-8 h-9 rounded-full text-xs font-bold transition-all whitespace-nowrap", activeTab === 'New' ? "bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-400")}>New</button>
+              <button onClick={() => setActiveTab('All')} className={cn("flex items-center gap-2 px-6 h-10 rounded-full text-sm font-bold transition-all whitespace-nowrap shadow-md", activeTab === 'All' ? "bg-gradient-to-r from-[#ffe082] to-[#ffca28] text-gray-900 border-2 border-white" : "bg-gray-100 text-gray-400")}><div className="bg-white/40 p-0.5 rounded-full"><Star className="h-3 w-3 fill-yellow-600 text-yellow-600" /></div>All</button>
+              <button onClick={() => setActiveTab('Hot')} className={cn("px-8 h-10 rounded-full text-sm font-bold transition-all whitespace-nowrap", activeTab === 'Hot' ? "bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-400")}>Hot</button>
+              <button onClick={() => setActiveTab('New')} className={cn("px-8 h-10 rounded-full text-sm font-bold transition-all whitespace-nowrap", activeTab === 'New' ? "bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-400")}>New</button>
             </div>
 
             {isRoomsLoading ? (
-              <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>
+              <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-10 w-10" /></div>
             ) : (
               <div className="grid grid-cols-2 gap-x-3 gap-y-6 pb-32">
                 {filteredRooms.length > 0 ? (

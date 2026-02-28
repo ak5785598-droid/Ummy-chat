@@ -381,8 +381,8 @@ function ExchangeDiamondsDialog({ balance, onExchange, open, setOpen, userId }: 
 
 const StatItem = ({ label, count, showBorder = true }: { label: string, count: number, showBorder?: boolean }) => (
   <div className={cn("flex-1 flex flex-col items-center", showBorder && "border-r border-gray-100")}>
-    <span className="text-base sm:text-xl font-bold text-gray-900">{count}</span>
-    <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase">{label}</span>
+    <span className="text-lg sm:text-xl font-black text-gray-900 leading-tight">{count}</span>
+    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{label}</span>
   </div>
 );
 
@@ -391,7 +391,7 @@ const ActionIcon = ({ icon: Icon, label, color, onClick }: any) => (
     <div className={cn("h-12 sm:h-14 w-12 sm:w-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-active:scale-95", color)}>
       <Icon className="h-6 sm:h-8 w-6 sm:w-8 text-white" />
     </div>
-    <span className="text-[10px] sm:text-xs font-bold text-gray-600 truncate w-full text-center px-1">{label}</span>
+    <span className="text-[10px] font-black uppercase italic tracking-tighter text-gray-600 truncate w-full text-center px-1">{label}</span>
   </div>
 );
 
@@ -418,7 +418,7 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === profileId;
   const richLevel = calculateRichLevel(profile.wallet?.totalSpent || 0);
-  const isOfficial = profile.tags?.includes('Official') || profile.tags?.includes('Admin');
+  const isOfficial = profile.tags?.includes('Admin') || profile.tags?.includes('Official');
 
   return (
     <AppLayout>
@@ -449,24 +449,24 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2 text-muted-foreground"><span className="text-[10px] sm:text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div>
               <div className="flex items-center gap-2">
                 <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm shrink-0">
-                  <span className="text-[8px] font-black text-white italic">🛡️ {richLevel}</span>
+                  <span className="text-[10px] font-black text-white italic">🛡️ {richLevel}</span>
                 </div>
                 <div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm shrink-0">
-                  <span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 1}</span>
+                  <span className="text-[10px] font-black text-white italic">💎 {profile.level?.charm || 1}</span>
                 </div>
                 {isOfficial && <OfficialTag size="sm" />}
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between py-4 bg-white/50 backdrop-blur-sm rounded-3xl"><StatItem label="Friends" count={2} /><StatItem label="Following" count={3} /><StatItem label="Followers" count={profile.stats?.followers || 56} /><StatItem label="Visitors" count={0} showBorder={false} /></div>
+          <div className="flex items-center justify-between py-4 bg-white/50 backdrop-blur-sm rounded-[2rem] shadow-sm"><StatItem label="Friends" count={2} /><StatItem label="Following" count={3} /><StatItem label="Followers" count={profile.stats?.followers || 56} /><StatItem label="Visitors" count={0} showBorder={false} /></div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-             <div onClick={() => isOwnProfile && setIsPurchaseOpen(true)} className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-3xl p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 sm:gap-3 relative z-10 min-w-0"><div className="bg-yellow-400 rounded-full p-1 sm:p-1.5 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse shrink-0"><GoldCoinIcon className="h-4 sm:h-5 w-4 sm:w-5 text-green-900" /></div><span className="text-sm sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.coins || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
-             <div onClick={() => isOwnProfile && setIsExchangeOpen(true)} className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-3xl p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 sm:gap-3 relative z-10 min-w-0"><DiamondIcon className="h-5 w-5 sm:h-8 sm:w-8 shadow-[0_0_15px_rgba(236,72,153,0.5)] shrink-0" /><span className="text-sm sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.diamonds || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
+             <div onClick={() => isOwnProfile && setIsPurchaseOpen(true)} className="bg-gradient-to-br from-[#43a047] to-[#2e7d32] rounded-[2rem] p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 relative z-10 min-w-0 flex-1"><div className="bg-yellow-400 rounded-full p-1 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse shrink-0"><GoldCoinIcon className="h-4 sm:h-5 w-4 sm:w-5 text-green-900" /></div><span className="text-base sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.coins || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
+             <div onClick={() => isOwnProfile && setIsExchangeOpen(true)} className="bg-gradient-to-br from-[#ad1457] to-[#880e4f] rounded-[2rem] p-3 sm:p-4 flex items-center justify-between group cursor-pointer shadow-xl active:scale-95 transition-transform relative overflow-hidden border border-white/20"><div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" /><div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" /><div className="flex items-center gap-2 relative z-10 min-w-0 flex-1"><DiamondIcon className="h-6 w-6 sm:h-8 sm:w-8 shadow-[0_0_15px_rgba(236,72,153,0.5)] shrink-0" /><span className="text-base sm:text-xl font-black text-white italic drop-shadow-lg truncate">{(profile.wallet?.diamonds || 0).toLocaleString()}</span></div><ChevronRight className="h-4 w-4 text-white/60 relative z-10 shrink-0" /></div>
           </div>
-          <Card className="border-none shadow-sm rounded-3xl p-4 sm:p-6 bg-white"><div className="grid grid-cols-4 gap-2 sm:gap-4"><ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} /><ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} /><ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} /><ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} /></div></Card>
+          <Card className="border-none shadow-sm rounded-[2rem] p-4 sm:p-6 bg-white"><div className="grid grid-cols-4 gap-2 sm:gap-4"><ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} /><ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} /><ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} /><ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} /></div></Card>
           <div className="space-y-4">
-             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">COMBINED CP 💕</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div><div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">Invite Friends</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
-             <Card className="border-none shadow-sm rounded-3xl p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div><span className="font-bold text-gray-800 uppercase text-xs sm:text-sm">Network Test</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
+             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">COMBINED CP 💕</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div><div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Invite Friends</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
+             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Network Test</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
           </div>
         </div>
       </div>
