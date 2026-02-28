@@ -179,13 +179,6 @@ export function AppLayout({
         </Sidebar>
 
         <div className="flex flex-1 flex-col overflow-hidden relative bg-[#FFCC00]">
-          {/* Floating High-Fidelity Sidebar Trigger */}
-          {!hideSidebarOnMobile && (
-            <div className="absolute top-4 left-4 z-[60] md:hidden">
-              <SidebarTrigger className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-lg border border-white/10 flex items-center justify-center" />
-            </div>
-          )}
-
           <SidebarInset className="bg-[#FFCC00]">
             <main className={cn(
               "flex-1 overflow-y-auto h-svh bg-white rounded-t-[2.5rem] md:rounded-none",
