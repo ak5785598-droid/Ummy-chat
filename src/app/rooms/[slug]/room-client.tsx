@@ -195,8 +195,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [showGiftEffects, setShowGiftEffects] = useState(true);
-  const [showEntryEffects, setShowEntryEffects] = useState(true);
-  const [isMusicMenuOpen, setIsMusicMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -208,7 +206,7 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const { isUploading: isRoomImageUploading, uploadRoomImage } = useRoomImageUpload(room.id);
-  const { setActiveRoom, setIsMinimized } = useRoomContext();
+  const { setActiveRoom } = useRoomContext();
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
   const isOwner = currentUser?.uid === room.ownerId;
@@ -339,7 +337,6 @@ export function RoomClient({ room }: { room: Room }) {
   const silenceParticipant = (uid: string, currentState: boolean) => { if (!canManageRoom || !firestore || !room.id) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !currentState, isMuted: true }); };
   const kickParticipant = (uid: string) => { if (!canManageRoom || !firestore || !room.id) return; deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid)); setIsActionMenuOpen(false); };
   const leaveRoom = () => { setActiveRoom(null); router.push('/rooms'); };
-  const minimizeRoom = () => { setIsMinimized(true); router.push('/rooms'); };
   const takeSeat = (index: number) => { if (!firestore || !room.id || !currentUser || !userProfile) return; if (room.lockedSeats?.includes(index)) { toast({ variant: 'destructive', title: 'Slot Locked' }); return; } updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index, isMuted: true, activeWave: userProfile.inventory?.activeWave || 'Default' }); };
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); };
   const handleMicToggle = () => { if (!isInSeat) { const first = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i)); if (first) takeSeat(first); return; } if (currentUserParticipant?.isSilenced) { toast({ variant: 'destructive', title: 'Silenced' }); return; } if (firestore && currentUser && room.id) { updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); } };
@@ -384,7 +381,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-6 pb-2">
         <div className="flex items-center gap-3">
-          <button onClick={minimizeRoom} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20 transition-all"><ChevronDown className="h-5 w-5" /></button>
+          <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20 transition-all"><ChevronDown className="h-5 w-5" /></button>
           <div className="flex items-center gap-3 cursor-pointer group">
             <div className="relative group/avatar">
               <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-lg group-hover/avatar:scale-105 transition-transform"><AvatarImage key={room.coverUrl} src={room.coverUrl} /><AvatarFallback>UM</AvatarFallback></Avatar>
@@ -681,7 +678,6 @@ export function RoomClient({ room }: { room: Room }) {
                         <ToolTile icon={!currentUserParticipant?.isMuted && isInSeat ? Mic : MicOff} label="Voice" active={!currentUserParticipant?.isMuted && isInSeat} onClick={handleMicToggle} disabled={!isInSeat} />
                         <ToolTile icon={GiftIcon} label="Gift Effect" active={showGiftEffects} onClick={() => setShowGiftEffects(!showGiftEffects)} />
                         <ToolTile icon={Sparkles} label="Lucky Gift" onClick={() => setIsGiftPickerOpen(true)} />
-                        <ToolTile icon={Car} label="Entry Effect" active={showEntryEffects} onClick={() => setShowEntryEffects(!showEntryEffects)} />
                         <ToolTile icon={Trash2} label="Clean" onClick={() => setIsClearChatConfirmOpen(true)} disabled={!canManageRoom} />
                         <ToolTile icon={room.isChatMuted ? MessageSquareOff : MessageSquare} label="Public Msg" active={!room.isChatMuted} onClick={toggleRoomMessages} disabled={!canManageRoom} />
                         <ToolTile icon={Music} label="Music" active={!!room.currentMusicUrl} onClick={() => setIsMusicMenuOpen(!isMusicMenuOpen)} />

@@ -260,7 +260,7 @@
   10%, 30%, 50%, 70%, 90% { transform: scale(1.1) translateX(-5px); }
   20%, 40%, 60%, 80% { transform: scale(1.1) translateX(5px); }
 }
-.animate-reaction-shock { animation: reaction-shock 0.5s infinite; }
+.animate-reaction-shock { animation: reaction-shock 0.5 infinite; }
 
 @keyframes reaction-cry {
   0% { transform: scale(1); }

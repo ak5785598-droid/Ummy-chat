@@ -61,9 +61,6 @@ import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 
-/**
- * Rich Level Calculation Engine.
- */
 function calculateRichLevel(spent: number = 0) {
   if (spent < 50000) return 1;
   if (spent < 100000) return 2;
@@ -140,79 +137,6 @@ function RichLevelDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolea
            <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">
               Levels are calculated in real-time based on spending frequencies.
            </p>
-        </footer>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function InviteFriendsDialog({ open, setOpen }: { open: boolean, setOpen: (o: boolean) => void }) {
-  const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  
-  const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio-7826224327-e0efc.web.app';
-  const inviteLink = `${appUrl}/login?ref=${userProfile?.specialId || user?.uid}`;
-
-  const handleShare = (platform: 'whatsapp' | 'facebook') => {
-    if (!user || !firestore) return;
-    const message = encodeURIComponent(`Join me on Ummy! Use my link to join the tribe: ${inviteLink}`);
-    let url = platform === 'whatsapp' ? `https://wa.me/?text=${message}` : `https://www.facebook.com/sharer/sharer.php?u=${inviteLink}`;
-    window.open(url, '_blank');
-    setTimeout(() => {
-      const updateData = { 'wallet.coins': increment(5000), updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), updateData);
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid, 'profile', user.uid), updateData);
-      addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'notifications'), {
-        title: 'Invite Reward',
-        content: `Notice.. You receive 5,000 coins for sharing the tribe link..... Best regard Ummy official`,
-        type: 'system',
-        timestamp: serverTimestamp(),
-        isRead: false
-      });
-      toast({ title: 'Reward Synchronized', description: `Synced 5,000 Gold Coins for growing the tribe.` });
-      setOpen(false);
-    }, 1000);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
-        <DialogHeader className="p-8 pb-0 text-center">
-          <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Invite Tribe</DialogTitle>
-          <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-            Grow the social graph and earn rewards
-          </DialogDescription>
-        </DialogHeader>
-        <div className="p-8 space-y-8">
-           <div className="bg-primary/10 p-6 rounded-[2rem] border-2 border-dashed border-primary/30 flex flex-col items-center text-center gap-2">
-              <div className="bg-primary text-white p-3 rounded-2xl shadow-lg"><GoldCoinIcon className="h-8 w-8" /></div>
-              <div>
-                 <h3 className="text-xl font-black uppercase italic text-primary">5,000 COINS</h3>
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reward for every share</p>
-              </div>
-           </div>
-           <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Your Personal Frequency Link</Label>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border-2 border-gray-100">
-                 <p className="flex-1 text-[10px] font-bold text-gray-400 truncate">{inviteLink}</p>
-                 <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast({ title: 'Link Copied' }); }} className="p-2 bg-white rounded-xl shadow-sm text-primary hover:scale-110 transition-transform"><Copy className="h-4 w-4" /></button>
-              </div>
-           </div>
-           <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => handleShare('whatsapp')} className="flex flex-col items-center gap-2 p-4 bg-[#25D366]/10 border-2 border-[#25D366]/20 rounded-[2rem] hover:bg-[#25D366]/20 transition-all group active:scale-95">
-                 <div className="h-12 w-12 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg shadow-[#25D366]/20"><span className="text-white text-2xl">📱</span></div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-[#25D366]">WhatsApp</span>
-              </button>
-              <button onClick={() => handleShare('facebook')} className="flex flex-col items-center gap-2 p-4 bg-[#1877F2]/10 border-2 border-[#1877F2]/20 rounded-[2rem] hover:bg-[#1877F2]/20 transition-all group active:scale-95">
-                 <div className="h-12 w-12 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-lg shadow-[#1877F2]/20"><span className="text-white text-2xl">👥</span></div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Facebook</span>
-              </button>
-           </div>
-        </div>
-        <footer className="p-8 pt-0 text-center">
-           <p className="text-[8px] text-muted-foreground uppercase font-black tracking-[0.2em] italic">Rewards are distributed atomically upon link broadcast.</p>
         </footer>
       </DialogContent>
     </Dialog>
@@ -410,7 +334,6 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isRichLevelOpen, setIsRichLevelOpen] = useState(false);
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
 
@@ -486,7 +409,7 @@ export default function ProfilePage() {
                    </div>
                    <ChevronRight className="h-4 w-4 text-gray-300" />
                 </div>
-                <div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group">
+                <div onClick={() => router.push('/help-center')} className="flex items-center justify-between py-3 cursor-pointer group">
                    <div className="flex items-center gap-4">
                       <div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div>
                       <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Invite Friends</span>
@@ -543,7 +466,6 @@ export default function ProfilePage() {
               toast({ title: 'Exchange Successful', description: `Received ${coinsToAdd.toLocaleString()} Gold Coins.` });
               setIsExchangeOpen(false);
             }} open={isExchangeOpen} setOpen={setIsExchangeOpen} />
-          <InviteFriendsDialog open={isInviteOpen} setOpen={setIsInviteOpen} />
           <RichLevelDialog open={isRichLevelOpen} setOpen={setIsRichLevelOpen} />
         </>
       )}
