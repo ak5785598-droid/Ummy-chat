@@ -441,7 +441,7 @@ export default function ProfilePage() {
                     className="w-full flex items-center justify-between py-3 group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><LogOut className="h-5 w-5" /></div>
+                      <div className="h-10 w-10 bg-red-100 rounded-2xl flex items-center justify-center text-red-600"><LogOut className="h-5 w-5" /></div>
                       <span className="font-black text-red-600 uppercase italic text-[10px] sm:text-xs">Exit Frequency (Logout)</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-300" />

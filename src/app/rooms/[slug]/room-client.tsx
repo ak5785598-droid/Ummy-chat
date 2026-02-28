@@ -171,15 +171,6 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={audioRef} autoPlay className="hidden" />;
 }
 
-const FruitMixIcon = ({ className }: { className?: string }) => (
-  <div className={cn("grid grid-cols-2 gap-0.5 items-center justify-center p-0.5", className)}>
-    <span className="text-[10px] leading-none">🍊</span>
-    <span className="text-[10px] leading-none">🍉</span>
-    <span className="text-[10px] leading-none">🍌</span>
-    <span className="text-[10px] leading-none">🍓</span>
-  </div>
-);
-
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -381,7 +372,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-6 pb-2">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20 transition-all"><ChevronDown className="h-5 w-5" /></button>
+          <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full mr-1 hover:bg-white/20 transition-all"><ChevronDown className="h-4 w-4 text-white" /></button>
           <div className="flex items-center gap-3 cursor-pointer group">
             <div className="relative group/avatar">
               <Avatar className="h-12 w-12 rounded-xl border-2 border-primary/50 shadow-lg group-hover/avatar:scale-105 transition-transform"><AvatarImage key={room.coverUrl} src={room.coverUrl} /><AvatarFallback>UM</AvatarFallback></Avatar>
