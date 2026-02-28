@@ -111,13 +111,13 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-screen bg-white">
         <header className="px-4 pt-6 pb-2 sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-50">
-          <div className="flex items-center justify-between gap-2 max-w-full">
-            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
-              <button onClick={() => setNavTab('chatroom')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
-              <button onClick={() => setNavTab('moments')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
-              <button onClick={() => setNavTab('mine')} className={cn("text-xl font-black transition-all whitespace-nowrap", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
+          <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar flex-1 min-w-0">
+              <button onClick={() => setNavTab('chatroom')} className={cn("text-lg sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'chatroom' ? "text-gray-900" : "text-gray-300")}>Chatroom</button>
+              <button onClick={() => setNavTab('moments')} className={cn("text-lg sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'moments' ? "text-gray-900" : "text-gray-300")}>Moments</button>
+              <button onClick={() => setNavTab('mine')} className={cn("text-lg sm:text-xl font-black transition-all whitespace-nowrap", navTab === 'mine' ? "text-gray-900" : "text-gray-300")}>Mine</button>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 pr-1">
                <UserSearchDialog />
                {navTab === 'moments' && <PublishMomentDialog />}
                {myRoomId ? (

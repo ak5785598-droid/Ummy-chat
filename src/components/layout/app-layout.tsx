@@ -80,7 +80,7 @@ export function AppLayout({
 
   if (isUserLoading) {
     return (
-      <div className="flex h-dvh w-full items-center justify-center bg-[#FFCC00]">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]">
         <UmmyLogoIcon className="h-16 w-16 text-white animate-pulse" />
       </div>
     );
@@ -90,7 +90,7 @@ export function AppLayout({
 
   if (fullScreen) {
     return (
-      <div className="h-dvh w-full bg-black font-headline overflow-hidden relative">
+      <div className="h-[100dvh] w-full bg-black font-headline overflow-hidden relative">
         <main className="h-full w-full relative">
           {children}
         </main>
@@ -106,7 +106,7 @@ export function AppLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex h-dvh w-full bg-[#FFCC00] font-headline overflow-hidden relative">
+      <div className="flex h-[100dvh] w-full bg-[#FFCC00] font-headline overflow-hidden relative">
         <Sidebar className="bg-white border-r">
           <SidebarHeader className="border-b bg-white p-4">
             <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export function AppLayout({
                       <Settings className="h-5 w-5" />
                       <span>Admin Control</span>
                     </Link>
-                  </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenuItem>
               )}
               <SidebarMenuItem>
