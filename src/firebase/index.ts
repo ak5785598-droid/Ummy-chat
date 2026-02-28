@@ -22,7 +22,7 @@ export function initializeFirebase() {
 
   const auth = getAuth(app);
   
-  // High-Fidelity Connectivity fix for restricted environments
+  // High-Fidelity Connectivity fix for restricted environments (Mobile/Android stability)
   const firestore = initializeFirestore(app, {
     experimentalForceLongPolling: true,
   });
