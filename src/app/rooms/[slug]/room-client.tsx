@@ -40,7 +40,7 @@ import {
   Sparkles,
   Car,
 } from 'lucide-react';
-import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
+import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -108,9 +108,6 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 
-/**
- * High-Fidelity Golden Mic Icon for shining empty seats.
- */
 const GoldenMicIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -127,9 +124,6 @@ const GoldenMicIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-/**
- * Rich Level Calculation Engine.
- */
 function calculateRichLevel(spent: number = 0) {
   if (spent < 50000) return 1;
   if (spent < 100000) return 2;
@@ -210,6 +204,7 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const { isUploading: isRoomImageUploading, uploadRoomImage } = useRoomImageUpload(room.id);
+  const { setActiveRoom, setIsMinimized } = useRoomContext();
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
   const isOwner = currentUser?.uid === room.ownerId;
@@ -468,9 +463,7 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <main className="relative z-10 flex-1 flex flex-col overflow-hidden">
-        {/* Blueprint Seat Arena - Increased Size Protocols */}
         <div className="shrink-0 py-8 px-4 overflow-y-auto no-scrollbar max-h-[60%]">
-          {/* Seat 1 - Anchor Host (Scaled up) */}
           <div className="flex justify-center mb-8">
              <div className="relative flex flex-col items-center gap-2">
                 <EmojiReactionOverlay emoji={hostParticipant?.activeEmoji} size="xl" />
@@ -481,9 +474,7 @@ export function RoomClient({ room }: { room: Room }) {
                       "h-32 w-32 rounded-full flex items-center justify-center transition-all cursor-pointer bg-gradient-to-br from-[#0a1a0a] to-[#020502] border-[4px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.4),inset_0_0_15px_rgba(0,0,0,0.8),0_0_0_2px_rgba(251,191,36,0.2)]",
                       "relative overflow-hidden"
                     )}>
-                      {/* Glossy High-Fidelity Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-full h-3/4 pointer-events-none z-10" />
-                      
                       {hostParticipant ? (
                         <Avatar className="h-full w-full p-1"><AvatarImage src={hostParticipant.avatarUrl} /><AvatarFallback>H</AvatarFallback></Avatar>
                       ) : (
@@ -498,7 +489,6 @@ export function RoomClient({ room }: { room: Room }) {
              </div>
           </div>
 
-          {/* Seats 2–13 Grid - Increased Size 3-Column Layout */}
           <div className="grid grid-cols-3 gap-x-4 gap-y-12 max-w-md mx-auto">
             {Array.from({ length: 12 }).map((_, i) => {
               const idx = i + 2; 
@@ -517,9 +507,7 @@ export function RoomClient({ room }: { room: Room }) {
                         "relative overflow-hidden",
                         isLocked && "border-red-500 shadow-[0_0_0_1px_#ef4444]"
                       )}>
-                        {/* Glossy High-Fidelity Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-full h-3/4 pointer-events-none z-10" />
-                        
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                         ) : isLocked ? (
@@ -543,7 +531,6 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
 
-        {/* Scrollable Message Feed */}
         <ScrollArea className="flex-1 px-6 mt-2" ref={scrollRef}>
           <div className="max-w-lg mx-auto space-y-3 pb-4">
             {activeMessages.map((msg) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Home, User, Settings, LogOut, ShoppingBag, ShieldCheck, Mail, Crown, Gamepad2, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,17 +26,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 
-/**
- * 3D-ish Navigation Icons using emojis/assets to match standard tribe apps.
- */
 const CastleEmoji = () => <span className="text-2xl">🏰</span>;
 const MessageEmoji = () => <span className="text-2xl">📑</span>;
 const CrownEmoji = () => <span className="text-2xl">👑</span>;
 
-/**
- * Universal Tribe Navigation.
- * Synchronized to "Home", "Message", "Mine" as requested.
- */
 const navItems = [
   { href: "/rooms", label: "Home", icon: CastleEmoji },
   { href: "/messages", label: "Message", icon: MessageEmoji },
@@ -72,7 +66,6 @@ export function AppLayout({
   }, []);
 
   useEffect(() => {
-    // Global Authentication Guard
     if (!isUserLoading && !user && !pathname.startsWith('/login') && pathname !== '/') {
       router.replace('/login');
     }
@@ -82,7 +75,6 @@ export function AppLayout({
     if (!auth) return;
     try {
       await signOut(auth);
-      // Hard redirect to ensure clean state
       window.location.href = '/login';
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Logout Failed', description: error.message });
@@ -91,7 +83,6 @@ export function AppLayout({
 
   const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
 
-  // Avoid hydration mismatch by waiting for mount
   if (!mounted) return null;
 
   if (isUserLoading) {
@@ -102,7 +93,6 @@ export function AppLayout({
     );
   }
 
-  // Allow login page and root splash without protection
   const isAuthExempt = pathname.startsWith('/login') || pathname === '/';
 
   if (!user && !isAuthExempt) {
@@ -123,7 +113,6 @@ export function AppLayout({
     );
   }
 
-  // If on login or root, just render children without sidebar/nav
   if (isAuthExempt) {
     return <>{children}</>;
   }
@@ -133,7 +122,7 @@ export function AppLayout({
       <div className="flex min-h-[100dvh] w-full bg-[#FFCC00] font-headline overflow-hidden relative">
         <Sidebar className="bg-white border-r">
           <SidebarHeader className="border-b bg-white">
-            <div className="flex items-center gap-2 p-2" aria-label="Ummy Home">
+            <div className="flex items-center gap-2 p-2">
               <UmmyLogoIcon className="h-7 w-7"/>
               <span className="font-headline text-2xl font-bold tracking-tight text-foreground">
                 Ummy
@@ -159,11 +148,11 @@ export function AppLayout({
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="border-t bg-white">
+          <SidebarFooter className="border-t bg-white p-4">
             <SidebarMenu>
               {isAdmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Official Panel" size="lg" className="bg-primary/5 text-primary border border-primary/20 rounded-xl mb-2">
+                  <SidebarMenuButton asChild size="lg" className="bg-primary/5 text-primary border border-primary/20 rounded-xl mb-2">
                     <Link href="/admin">
                       <ShieldCheck className="h-5 w-5" />
                       <span>Admin Control</span>
@@ -172,16 +161,15 @@ export function AppLayout({
                 </SidebarMenuItem>
               )}
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" asChild isActive={pathname.startsWith('/settings')} size="lg">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} size="lg">
                   <Link href="/settings">
                     <Settings />
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sign Out" onClick={handleLogout} className="text-destructive hover:bg-destructive/10" size="lg">
+                <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:bg-destructive/10" size="lg">
                   <LogOut />
                   <span>Sign Out</span>
                 </SidebarMenuButton>
@@ -191,7 +179,6 @@ export function AppLayout({
         </Sidebar>
 
         <div className="flex flex-1 flex-col overflow-hidden relative bg-[#FFCC00]">
-          {/* Universal Header with Sidebar Trigger */}
           <header className="h-14 bg-[#FFCC00] flex items-center px-4 md:px-6 relative z-50">
              <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
