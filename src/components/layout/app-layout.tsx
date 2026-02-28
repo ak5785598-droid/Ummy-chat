@@ -169,16 +169,14 @@ export function AppLayout({
                     <Settings />
                     <span>Settings</span>
                   </Link>
-                </SidebarMenuItem>
-              </SidebarMenu>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:bg-destructive/10" size="lg">
-                    <LogOut />
-                    <span>Sign Out</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:bg-destructive/10" size="lg">
+                  <LogOut />
+                  <span>Sign Out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>

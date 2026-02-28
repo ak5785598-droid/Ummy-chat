@@ -422,7 +422,7 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-[#f8f9fa] font-headline pb-32 flex flex-col">
+      <div className="flex flex-col min-h-full bg-[#f8f9fa] font-headline pb-32">
         <div className="relative h-48 sm:h-64 w-full shrink-0">
           <Image src="https://picsum.photos/seed/ummy-bg/1200/600" alt="Mountain Header" fill className="object-cover opacity-20" data-ai-hint="mountain landscape" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#f8f9fa]" />
@@ -439,7 +439,7 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <div className="px-6 -mt-24 sm:-mt-32 relative z-10 space-y-6 flex-1">
+        <div className="flex-1 px-6 -mt-24 sm:-mt-32 relative z-10 space-y-6">
           <div className="flex items-end gap-4">
             <div className="relative shrink-0"><AvatarFrame frameId={profile.inventory?.activeFrame} size="xl"><Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white shadow-xl"><AvatarImage src={localAvatarPreview || profile.avatarUrl} /><AvatarFallback className="text-4xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback></Avatar></AvatarFrame>{isOwnProfile && <div className="absolute bottom-0 right-0"><EditProfileDialog profile={profile} /></div>}</div>
             <div className="pb-2 flex-1 space-y-1 min-w-0">
@@ -447,7 +447,7 @@ export default function ProfilePage() {
                 <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase italic tracking-tight truncate">{profile.username}</h1>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground"><span className="text-[10px] sm:text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm shrink-0">
                   <span className="text-[10px] font-black text-white italic">🛡️ {richLevel}</span>
                 </div>
