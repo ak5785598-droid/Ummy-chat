@@ -431,7 +431,17 @@ export default function ProfilePage() {
                 <h1 className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">{profile.username}</h1>
                 {isOfficial && <OfficialTag size="sm" />}
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground"><span className="text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div><div className="flex items-center gap-2"><div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm"><span className="text-[8px] font-black text-white italic">🛡️ {richLevel}</span></div><div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm"><span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 1}</span></div></div></div>
+              <div className="flex items-center gap-2 text-muted-foreground"><span className="text-xs font-bold">ID:{profile.specialId || '563021252'}</span><button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3" /></button></div>
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-r from-orange-400 to-orange-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                  <span className="text-[8px] font-black text-white italic">🛡️ {richLevel}</span>
+                </div>
+                <div className="bg-gradient-to-r from-cyan-400 to-cyan-600 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                  <span className="text-[8px] font-black text-white italic">💎 {profile.level?.charm || 1}</span>
+                </div>
+                {isOfficial && <OfficialTag size="sm" className="ml-1" />}
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-between py-4 bg-white/50 backdrop-blur-sm rounded-3xl"><StatItem label="Friends" count={2} /><StatItem label="Following" count={3} /><StatItem label="Followers" count={profile.stats?.followers || 56} /><StatItem label="Visitors" count={0} showBorder={false} /></div>
           <div className="grid grid-cols-2 gap-4">
