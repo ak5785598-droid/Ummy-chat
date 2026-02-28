@@ -144,7 +144,7 @@ export function AppLayout({
                       <Settings className="h-5 w-5" />
                       <span>Admin Control</span>
                     </Link>
-                  </SidebarMenuItem>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               <SidebarMenuItem>
