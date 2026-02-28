@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
 import * as React from "react";
-import { Home, Settings, LogOut, ShoppingBag, Mail, Crown, Gamepad2 } from "lucide-react";
+import { Home, Settings, LogOut, ShoppingBag, Mail, Crown, Gamepad2, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useUser, useAuth } from "@/firebase";
 import { UmmyLogoIcon } from "@/components/icons";
@@ -167,6 +168,13 @@ export function AppLayout({
 
         <div className="flex flex-1 flex-col overflow-hidden relative bg-[#FFCC00]">
           <SidebarInset className="bg-[#FFCC00] flex-1 overflow-hidden">
+            <header className="md:hidden flex items-center justify-between p-4 bg-white/10 backdrop-blur-md h-14 shrink-0 relative z-50">
+               <div className="flex items-center gap-2">
+                  <UmmyLogoIcon className="h-6 w-6" />
+                  <span className="font-black text-white italic uppercase tracking-tighter">Ummy</span>
+               </div>
+               <SidebarTrigger className="text-white hover:bg-white/20 p-2 rounded-full" />
+            </header>
             <main className={cn(
               "h-full w-full overflow-y-auto bg-white rounded-t-[2.5rem] md:rounded-none transition-all",
               !hideSidebarOnMobile ? "pb-[calc(72px+env(safe-area-inset-bottom,16px))]" : "pb-0"
