@@ -71,9 +71,22 @@
   * {
     @apply border-border;
     -webkit-tap-highlight-color: transparent;
+    outline: none !important;
   }
+  
+  html, body {
+    @apply h-full w-full overflow-hidden;
+    position: fixed;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+
   body {
-    @apply bg-background text-foreground overflow-hidden touch-manipulation overscroll-none;
+    @apply bg-background text-foreground antialiased;
+    /* Respect hardware notches and Android navigation bars automatically */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
 

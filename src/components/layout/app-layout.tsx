@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -88,7 +87,7 @@ export function AppLayout({
 
   if (isUserLoading) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]">
+      <div className="flex h-svh w-full items-center justify-center bg-[#FFCC00]">
         <UmmyLogoIcon className="h-12 w-12 text-white animate-pulse" />
       </div>
     );
@@ -98,7 +97,7 @@ export function AppLayout({
 
   if (!user && !isAuthExempt) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]">
+      <div className="flex h-svh w-full items-center justify-center bg-[#FFCC00]">
         <UmmyLogoIcon className="h-12 w-12 text-white animate-pulse" />
       </div>
     );
@@ -106,7 +105,7 @@ export function AppLayout({
 
   if (fullScreen) {
     return (
-      <div className="min-h-[100dvh] w-full bg-black font-headline overflow-hidden relative">
+      <div className="min-h-svh w-full bg-black font-headline overflow-hidden relative">
         <main className="h-full w-full relative">
           {children}
         </main>
@@ -120,7 +119,7 @@ export function AppLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-[100dvh] w-full bg-[#FFCC00] font-headline overflow-hidden relative">
+      <div className="flex min-h-svh w-full bg-[#FFCC00] font-headline overflow-hidden relative">
         <Sidebar className="bg-white border-r">
           <SidebarHeader className="border-b bg-white">
             <div className="flex items-center gap-2 p-2">
