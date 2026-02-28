@@ -30,6 +30,7 @@ import {
   TrendingDown,
   Landmark,
   CreditCard as CardIcon,
+  Headset,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -465,8 +466,39 @@ export default function ProfilePage() {
           </div>
           <Card className="border-none shadow-sm rounded-[2rem] p-4 sm:p-6 bg-white"><div className="grid grid-cols-4 gap-2 sm:gap-4"><ActionIcon icon={Trophy} label="Level" color="bg-gradient-to-br from-[#ffd700] via-[#ffa500] to-[#ff4500]" onClick={() => setIsRichLevelOpen(true)} /><ActionIcon icon={GoldCoinIcon} label="Store" color="bg-gradient-to-b from-yellow-400 to-yellow-600" onClick={() => router.push('/store')} /><ActionIcon icon={ShieldCheck} label="Badge" color="bg-gradient-to-b from-orange-400 to-orange-600" onClick={() => router.push('/store')} /><ActionIcon icon={Activity} label="Task" color="bg-gradient-to-b from-yellow-300 to-yellow-500" onClick={() => router.push('/tasks')} /></div></Card>
           <div className="space-y-4">
-             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">COMBINED CP 💕</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div><div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Invite Friends</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
-             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50"><div className="flex items-center justify-between py-3 cursor-pointer group"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div><span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Network Test</span></div><ChevronRight className="h-4 w-4 text-gray-300" /></div></Card>
+             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50">
+                <div className="flex items-center justify-between py-3 cursor-pointer group">
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600"><Activity className="h-5 w-5" /></div>
+                      <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">COMBINED CP 💕</span>
+                   </div>
+                   <ChevronRight className="h-4 w-4 text-gray-300" />
+                </div>
+                <div onClick={() => isOwnProfile && setIsInviteOpen(true)} className="flex items-center justify-between py-3 cursor-pointer group">
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600"><UserPlus className="h-5 w-5" /></div>
+                      <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Invite Friends</span>
+                   </div>
+                   <ChevronRight className="h-4 w-4 text-gray-300" />
+                </div>
+             </Card>
+             <Card className="border-none shadow-sm rounded-[2rem] p-4 bg-white divide-y divide-gray-50">
+                <div className="flex items-center justify-between py-3 cursor-pointer group">
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Activity className="h-5 w-5" /></div>
+                      <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Network Test</span>
+                   </div>
+                   <ChevronRight className="h-4 w-4 text-gray-300" />
+                </div>
+                {/* Customer Support Portal */}
+                <div className="flex items-center justify-between py-3 cursor-pointer group" onClick={() => router.push('/help-center')}>
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600"><Headset className="h-5 w-5" /></div>
+                      <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Customer Support</span>
+                   </div>
+                   <ChevronRight className="h-4 w-4 text-gray-300" />
+                </div>
+             </Card>
           </div>
         </div>
       </div>
