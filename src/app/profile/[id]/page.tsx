@@ -490,8 +490,7 @@ export default function ProfilePage() {
                    </div>
                    <ChevronRight className="h-4 w-4 text-gray-300" />
                 </div>
-                {/* Customer Support Portal */}
-                <div className="flex items-center justify-between py-3 cursor-pointer group" onClick={() => router.push('/help-center')}>
+                <div onClick={() => router.push('/help-center')} className="flex items-center justify-between py-3 cursor-pointer group">
                    <div className="flex items-center gap-4">
                       <div className="h-10 w-10 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600"><Headset className="h-5 w-5" /></div>
                       <span className="font-black text-gray-800 uppercase italic text-[10px] sm:text-xs">Customer Support</span>

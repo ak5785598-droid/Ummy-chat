@@ -58,6 +58,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -524,7 +525,7 @@ export function RoomClient({ room }: { room: Room }) {
                         "relative overflow-hidden",
                         isLocked && "border-red-500 shadow-[0_0_0_1px_#ef4444]"
                       )}>
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-full h-3/4 pointer-events-none z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-full h-1/2 pointer-events-none z-10" />
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                         ) : isLocked ? (
@@ -711,7 +712,7 @@ export function RoomClient({ room }: { room: Room }) {
             {canManageRoom && (<>
               {selectedOccupant ? (<>
                 <button onClick={() => silenceParticipant(selectedOccupant.uid, selectedOccupant.isSilenced ?? false)} className="py-5 font-bold text-gray-700 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{selectedOccupant.isSilenced ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}{selectedOccupant.isSilenced ? 'Unsilence Tribe' : 'Silence Tribe'}</button>
-                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs italic hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><和大 className="h-4 w-4" /> Kick Tribe</span></button>)}
+                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs italic hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><Ban className="h-4 w-4" /> Kick Tribe</span></button>)}
               </>) : (
                 <button onClick={() => toggleSeatLock(selectedSeatIndex!)} className="py-5 font-bold text-purple-600 uppercase tracking-widest text-xs hover:bg-purple-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{room.lockedSeats?.includes(selectedSeatIndex!) ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{room.lockedSeats?.includes(selectedSeatIndex!) ? 'Unlock Slot' : 'Lock Slot'}</button>
               )}
