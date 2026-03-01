@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -38,7 +39,8 @@
             "dailyGameWins": { "type": "number" }
           }
         },
-        "isNewUser": { "type": "boolean" }
+        "isNewUser": { "type": "boolean" },
+        "lastMoneyTreeClaimAt": { "type": "string", "format": "date-time" }
       }
     },
     "ChatRoom": {
@@ -97,6 +99,15 @@
         "timestamp": { "type": "string", "format": "date-time" },
         "type": { "type": "string" }
       }
+    },
+    "RoomBan": {
+      "title": "RoomBan",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -114,6 +125,10 @@
     "/chatRooms/{roomId}": {
       "schema": { "$ref": "#/backend/entities/ChatRoom" },
       "description": "Voice room metadata."
+    },
+    "/chatRooms/{roomId}/bans/{userId}": {
+      "schema": { "$ref": "#/backend/entities/RoomBan" },
+      "description": "Temporary removed members."
     },
     "/games/{gameId}": {
       "schema": { "$ref": "#/backend/entities/Game" },

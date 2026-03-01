@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -356,7 +357,31 @@ export function RoomClient({ room }: { room: Room }) {
   const handleDeleteRoom = async () => { if (!firestore || !room.id || (!isOwner && !isGlobalAdmin)) return; setIsDeleting(true); try { const participantsSnap = await getDocs(collection(firestore, 'chatRooms', room.id, 'participants')); const batch = writeBatch(firestore); participantsSnap.docs.forEach(d => batch.delete(d.ref)); batch.delete(doc(firestore, 'chatRooms', room.id)); await batch.commit(); setActiveRoom(null); router.push('/rooms'); } finally { setIsDeleting(false); } };
   const toggleSeatLock = (index: number) => { if (!canManageRoom || !firestore || !room.id) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { lockedSeats: room.lockedSeats?.includes(index) ? arrayRemove(index) : arrayUnion(index) }); };
   const silenceParticipant = (uid: string, currentState: boolean) => { if (!canManageRoom || !firestore || !room.id) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !currentState, isMuted: true }); };
-  const kickParticipant = (uid: string) => { if (!canManageRoom || !firestore || !room.id) return; deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid)); setIsActionMenuOpen(false); };
+  
+  const kickParticipant = async (uid: string) => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    const batch = writeBatch(firestore);
+    const pRef = doc(firestore, 'chatRooms', room.id, 'participants', uid);
+    const banRef = doc(firestore, 'chatRooms', room.id, 'bans', uid);
+    
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    
+    batch.delete(pRef);
+    batch.set(banRef, {
+      uid,
+      expiresAt: expiresAt,
+      createdAt: serverTimestamp()
+    });
+    
+    try {
+      await batch.commit();
+      setIsActionMenuOpen(false);
+      toast({ title: 'Tribe Removed', description: 'Member banned from frequency for 1 hour.' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
+    }
+  };
+
   const leaveRoom = () => { setActiveRoom(null); router.push('/rooms'); };
   const takeSeat = (index: number) => { if (!firestore || !room.id || !currentUser || !userProfile) return; if (room.lockedSeats?.includes(index)) { toast({ variant: 'destructive', title: 'Slot Locked' }); return; } updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index, isMuted: true, activeWave: userProfile.inventory?.activeWave || 'Default' }); };
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); };

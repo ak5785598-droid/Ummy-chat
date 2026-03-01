@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,13 +19,18 @@ service cloud.firestore {
         )) || isAdmin()
       );
     }
+
+    function isBanned(roomId) {
+      let banPath = /databases/$(database)/documents/chatRooms/$(roomId)/bans/$(request.auth.uid);
+      return exists(banPath) && get(banPath).data.expiresAt > request.time;
+    }
     
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (
         request.auth.uid == userId || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt', 'lastSignInAt', 'inventory', 'level', 'username', 'bio', 'avatarUrl', 'isNewUser'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt', 'lastSignInAt', 'inventory', 'level', 'username', 'bio', 'avatarUrl', 'isNewUser', 'lastMoneyTreeClaimAt'])
       );
       
       match /profile/{profileId} {
@@ -61,7 +67,8 @@ service cloud.firestore {
     }
 
     match /chatRooms/{roomId} {
-      allow read, list, create: if isSignedIn();
+      allow read: if isSignedIn() && !isBanned(roomId);
+      allow list, create: if isSignedIn();
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.ownerId ||
         request.auth.uid in resource.data.get('moderatorIds', []) ||
@@ -86,6 +93,10 @@ service cloud.firestore {
       match /messages/{id} {
         allow read, list, create: if isSignedIn();
         allow delete: if isSignedIn() && isRoomAdmin(roomId);
+      }
+      match /bans/{id} {
+        allow read: if isSignedIn();
+        allow write: if isRoomAdmin(roomId);
       }
     }
 
