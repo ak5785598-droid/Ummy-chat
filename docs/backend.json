@@ -6,7 +6,7 @@
       "description": "Represents a user profile in the Ummy app.",
       "properties": {
         "id": { "type": "string" },
-        "specialId": { "type": "string", "description": "Unique 6-digit numeric ID." },
+        "specialId": { "type": "string", "description": "Unique sequential numeric ID starting 001." },
         "username": { "type": "string" },
         "avatarUrl": { "type": "string", "format": "uri" },
         "bio": { "type": "string" },
@@ -24,6 +24,7 @@
           "properties": {
             "activeFrame": { "type": "string" },
             "activeBubble": { "type": "string" },
+            "activeWave": { "type": "string" },
             "ownedItems": { "type": "array", "items": { "type": "string" } }
           }
         },
@@ -33,9 +34,11 @@
           "properties": {
             "followers": { "type": "number" },
             "fans": { "type": "number" },
-            "dailyFans": { "type": "number", "description": "Fans received in the current IST cycle." }
+            "dailyFans": { "type": "number" },
+            "dailyGameWins": { "type": "number" }
           }
-        }
+        },
+        "isNewUser": { "type": "boolean" }
       }
     },
     "ChatRoom": {
@@ -45,16 +48,18 @@
         "name": { "type": "string" },
         "roomNumber": { "type": "string" },
         "ownerId": { "type": "string" },
+        "moderatorIds": { "type": "array", "items": { "type": "string" } },
         "category": { "type": "string" },
         "lockedSeats": { "type": "array", "items": { "type": "number" } },
-        "participantCount": { "type": "number", "description": "Number of users currently inside the room." },
-        "isChatMuted": { "type": "boolean", "description": "Whether room messages are disabled." },
-        "currentMusicUrl": { "type": "string", "description": "URL of the background music playing in the room." },
+        "participantCount": { "type": "number" },
+        "isChatMuted": { "type": "boolean" },
+        "announcement": { "type": "string" },
+        "currentMusicUrl": { "type": "string" },
         "stats": {
           "type": "object",
           "properties": {
             "totalGifts": { "type": "number" },
-            "dailyGifts": { "type": "number", "description": "Gifts received in the current IST cycle." }
+            "dailyGifts": { "type": "number" }
           }
         }
       }
@@ -98,47 +103,25 @@
     "providers": ["google.com", "phone"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": { "$ref": "#/backend/entities/UserProfile" },
-          "description": "User root identity."
-        }
-      },
-      {
-        "path": "/users/{userId}/diamondExchanges/{exchangeId}",
-        "definition": {
-          "entityName": "DiamondExchange",
-          "schema": { "$ref": "#/backend/entities/DiamondExchange" },
-          "description": "History of diamond-to-coin conversions."
-        }
-      },
-      {
-        "path": "/chatRooms/{roomId}",
-        "definition": {
-          "entityName": "ChatRoom",
-          "schema": { "$ref": "#/backend/entities/ChatRoom" },
-          "description": "Voice room metadata."
-        }
-      },
-      {
-        "path": "/games/{gameId}",
-        "definition": {
-          "entityName": "Game",
-          "schema": { "$ref": "#/backend/entities/Game" },
-          "description": "Dynamic game registry."
-        }
-      },
-      {
-        "path": "/moments/{momentId}",
-        "definition": {
-          "entityName": "Moment",
-          "schema": { "$ref": "#/backend/entities/Moment" },
-          "description": "Public status broadcasts."
-        }
-      }
-    ]
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "User root identity."
+    },
+    "/users/{userId}/diamondExchanges/{exchangeId}": {
+      "schema": { "$ref": "#/backend/entities/DiamondExchange" },
+      "description": "History of diamond-to-coin conversions."
+    },
+    "/chatRooms/{roomId}": {
+      "schema": { "$ref": "#/backend/entities/ChatRoom" },
+      "description": "Voice room metadata."
+    },
+    "/games/{gameId}": {
+      "schema": { "$ref": "#/backend/entities/Game" },
+      "description": "Dynamic game registry."
+    },
+    "/moments/{momentId}": {
+      "schema": { "$ref": "#/backend/entities/Moment" },
+      "description": "Public status broadcasts."
+    }
   }
 }
