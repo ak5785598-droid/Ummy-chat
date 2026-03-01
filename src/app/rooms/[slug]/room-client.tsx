@@ -45,7 +45,8 @@ import {
   Mail,
   LayoutGrid,
   ChevronRight,
-  Armchair
+  Armchair,
+  Crown
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -252,7 +253,6 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
     if (room.isChatMuted && !canManageRoom) { toast({ variant: 'destructive', title: 'Chat Disabled' }); return; }
-    setIsSending(true);
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || '', chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
@@ -352,8 +352,8 @@ export function RoomClient({ room }: { room: Room }) {
   const Seat = ({ index }: { index: number }) => {
     const occupant = participants?.find(p => p.seatIndex === index);
     const isLocked = room.lockedSeats?.includes(index);
-    const isMod = room.moderatorIds?.includes(occupant?.uid || '');
     const isPOwner = occupant?.uid === room.ownerId;
+    const isPMod = room.moderatorIds?.includes(occupant?.uid || '') && !isPOwner;
 
     return (
       <div className="flex flex-col items-center gap-1.5 w-full">
@@ -381,6 +381,14 @@ export function RoomClient({ room }: { room: Room }) {
             </AvatarFrame>
             {occupant?.isMuted && (<div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-3 w-3 text-white" /></div>)}
             {!occupant?.isMuted && occupant && (<div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-0.5 border border-black shadow-lg"><Mic className="h-3 w-3 text-white" /></div>)}
+            
+            {/* Status Badge */}
+            {(isPOwner || isPMod) && (
+              <div className="absolute -top-0.5 -left-0.5 bg-yellow-500 rounded-full p-0.5 border border-black shadow-lg z-[45]">
+                {isPOwner ? <Crown className="h-2 w-2 text-black fill-current" /> : <ShieldCheck className="h-2 w-2 text-white fill-current" />}
+              </div>
+            )}
+
             {canManageRoom && (
               <button 
                 onClick={(e) => { e.stopPropagation(); handleSeatClick(index, occupant); }}
