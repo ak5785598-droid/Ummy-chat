@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 /**
  * Tribal Vault - Economic Control Center.
  * Handles high-fidelity coin recharge and diamond-to-coin exchange frequencies.
- * Now includes real-time calculation and synchronization history.
+ * Synchronized with a 25% exchange rate (100 Diamonds = 25 Coins).
  */
 export default function WalletPage() {
   const router = useRouter();
@@ -57,7 +57,8 @@ export default function WalletPage() {
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
-      const coinsGained = amount; // High-fidelity 1:1 conversion protocol
+      // Elite 25% Exchange Rate (4 Diamonds = 1 Gold Coin)
+      const coinsGained = Math.floor(amount * 0.25);
 
       const updateData = {
         'wallet.diamonds': increment(-amount),
@@ -117,7 +118,8 @@ export default function WalletPage() {
     { id: 5, amount: 100000, price: '₹9000', bonus: 10000 },
   ];
 
-  const calculatedCoins = exchangeAmount ? parseInt(exchangeAmount) : 0;
+  // Real-time 25% Calculation
+  const calculatedCoins = exchangeAmount ? Math.floor(parseInt(exchangeAmount) * 0.25) : 0;
 
   return (
     <AppLayout>
@@ -200,7 +202,7 @@ export default function WalletPage() {
                              <div className="text-center"><GoldCoinIcon className="h-10 w-10" /><p className="text-[8px] font-black text-gray-400 uppercase mt-1">Output</p></div>
                           </div>
                           <div className="text-center">
-                             <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest italic">1 Diamond = 1 Gold Coin</p>
+                             <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest italic">4 Diamonds = 1 Gold Coin (25% Rate)</p>
                              {calculatedCoins > 0 && (
                                <p className="text-lg font-black text-green-600 uppercase italic mt-2 animate-in zoom-in">
                                  You get +{calculatedCoins.toLocaleString()} Gold Coins
@@ -210,7 +212,7 @@ export default function WalletPage() {
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Sync Amount</label>
+                          <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Sync Amount (Diamonds)</label>
                           <div className="relative">
                              <Input 
                                 type="number" 
