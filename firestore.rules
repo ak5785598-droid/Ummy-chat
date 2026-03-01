@@ -24,7 +24,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (
         request.auth.uid == userId || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt', 'lastSignInAt', 'inventory', 'level'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'wallet', 'updatedAt', 'lastSignInAt', 'inventory', 'level', 'username', 'bio', 'avatarUrl', 'isNewUser'])
       );
       
       match /profile/{profileId} {
@@ -65,7 +65,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.ownerId ||
         request.auth.uid in resource.data.get('moderatorIds', []) ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'stats', 'updatedAt', 'currentMusicUrl', 'lockedSeats', 'isChatMuted', 'coverUrl', 'announcement']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'stats', 'updatedAt', 'currentMusicUrl', 'lockedSeats', 'isChatMuted', 'coverUrl', 'announcement', 'moderatorIds']) ||
         isAdmin()
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());

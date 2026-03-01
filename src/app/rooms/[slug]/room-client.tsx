@@ -39,6 +39,7 @@ import {
   Dices,
   Sparkles,
   MoreHorizontal,
+  UserCog,
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -333,6 +334,15 @@ export function RoomClient({ room }: { room: Room }) {
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); };
   const handleMicToggle = () => { if (!isInSeat) { const first = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i)); if (first) takeSeat(first); return; } if (currentUserParticipant?.isSilenced) { toast({ variant: 'destructive', title: 'Silenced' }); return; } if (firestore && currentUser && room.id) { updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); } };
 
+  const toggleModerator = (targetUid: string) => {
+    if (!isOwner || !firestore || !room.id) return;
+    const isPMod = room.moderatorIds?.includes(targetUid);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      moderatorIds: isPMod ? arrayRemove(targetUid) : arrayUnion(targetUid)
+    });
+    toast({ title: isPMod ? 'Admin Revoked' : 'Admin Granted', description: 'Tribe role has been synchronized.' });
+  };
+
   const handleTutorialComplete = () => {
     if (currentUser && firestore) {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), { isNewUser: false });
@@ -411,13 +421,26 @@ export function RoomClient({ room }: { room: Room }) {
                                 {(isPOwner || isPMod) && <OfficialTag size="sm" />}
                               </div>
                               <div className="flex items-center gap-2">
-                                {isPOwner && <Badge className="bg-yellow-500 text-black text-[8px] h-4">OWNER</Badge>}
-                                {isPMod && <Badge className="bg-blue-500 text-[8px] h-4">MOD</Badge>}
+                                {isPOwner && <Badge className="bg-yellow-500 text-black text-[8px] h-4">ROOM OWNER</Badge>}
+                                {isPMod && !isPOwner && <Badge className="bg-blue-500 text-[8px] h-4">ADMIN</Badge>}
                                 {p.seatIndex > 0 && <Badge variant="outline" className="text-[8px] h-4 text-primary border-primary/20">SEAT {p.seatIndex}</Badge>}
                               </div>
                             </div>
                           </div>
-                          {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
+                          <div className="flex items-center gap-3">
+                            {isOwner && !isPOwner && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => toggleModerator(p.uid)}
+                                className="rounded-full h-8 px-4 bg-white/5 border-white/10 hover:bg-white/10 text-[10px] font-black uppercase italic"
+                              >
+                                <UserCog className="h-3 w-3 mr-1.5" />
+                                {isPMod ? 'Revoke Admin' : 'Set Admin'}
+                              </Button>
+                            )}
+                            {p.isMuted && <MicOff className="h-4 w-4 text-red-500/50" />}
+                          </div>
                         </div>
                       ); 
                     })}
@@ -710,6 +733,15 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <div className="flex flex-col divide-y divide-gray-100">
             {selectedOccupant && (<button onClick={() => { setGiftRecipient({ uid: selectedOccupant.uid, name: selectedOccupant.name, avatarUrl: selectedOccupant.avatarUrl }); setIsGiftPickerOpen(true); setIsActionMenuOpen(false); }} className="py-5 font-black text-primary uppercase tracking-widest text-xs italic hover:bg-gray-50 active:scale-95 transition-all">Send Gift</button>)}
+            {isOwner && selectedOccupant && selectedOccupant.uid !== currentUser?.uid && (
+              <button 
+                onClick={() => { toggleModerator(selectedOccupant.uid); setIsActionMenuOpen(false); }} 
+                className="py-5 font-bold text-blue-600 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
+                <UserCog className="h-4 w-4" />
+                {room.moderatorIds?.includes(selectedOccupant.uid) ? 'Revoke Admin Status' : 'Make Admin'}
+              </button>
+            )}
             {canManageRoom && (<>
               {selectedOccupant ? (<>
                 <button onClick={() => silenceParticipant(selectedOccupant.uid, selectedOccupant.isSilenced ?? false)} className="py-5 font-bold text-gray-700 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{selectedOccupant.isSilenced ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}{selectedOccupant.isSilenced ? 'Unsilence Tribe' : 'Silence Tribe'}</button>
