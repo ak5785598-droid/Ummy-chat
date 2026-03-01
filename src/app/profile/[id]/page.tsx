@@ -159,14 +159,20 @@ export default function ProfilePage() {
 
             {/* Wallet Cards */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl p-3 bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md flex items-center justify-between group active:scale-95 transition-transform cursor-pointer">
+              <div 
+                onClick={() => router.push('/wallet')}
+                className="rounded-2xl p-3 bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md flex items-center justify-between group active:scale-95 transition-transform cursor-pointer"
+              >
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center"><GoldCoinIcon className="h-4 w-4" /></div>
                   <span className="text-[10px] font-black italic truncate w-16">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                 </div>
                 <ChevronRight className="h-3 w-3 opacity-60" />
               </div>
-              <div className="rounded-2xl p-3 bg-gradient-to-r from-[#9d174d] to-[#701a75] text-white shadow-md flex items-center justify-between group active:scale-95 transition-transform cursor-pointer">
+              <div 
+                onClick={() => router.push('/wallet')}
+                className="rounded-2xl p-3 bg-gradient-to-r from-[#9d174d] to-[#701a75] text-white shadow-md flex items-center justify-between group active:scale-95 transition-transform cursor-pointer"
+              >
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center text-xs">💎</div>
                   <span className="text-[10px] font-black italic truncate w-16">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
@@ -178,9 +184,9 @@ export default function ProfilePage() {
             {/* Tool Tiles */}
             <div className="bg-white rounded-[1.5rem] p-4 shadow-sm border border-gray-100 flex justify-between gap-2">
               <ToolTile label="Level" icon={Trophy} />
-              <ToolTile label="Store" icon={Crown} />
+              <ToolTile label="Store" icon={Crown} onClick={() => router.push('/store')} />
               <ToolTile label="Badge" icon={ShieldIcon} />
-              <ToolTile label="Task" icon={Activity} />
+              <ToolTile label="Task" icon={Activity} onClick={() => router.push('/tasks')} />
             </div>
 
             {/* Menu Sections */}

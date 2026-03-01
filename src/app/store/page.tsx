@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
 
 const STORE_ITEMS = [
   { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, description: 'Ultra-detailed 3D luxury angelic frame with gemstone inlays.', icon: Sparkles, color: 'text-yellow-400' },
@@ -29,6 +30,7 @@ const STORE_ITEMS = [
 ];
 
 export default function StorePage() {
+  const router = useRouter();
   const { user } = useUser();
   const { userProfile, isLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -39,7 +41,7 @@ export default function StorePage() {
     
     const balance = userProfile.wallet?.coins || 0;
     if (balance < item.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the arena to earn more.' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
       return;
     }
 
@@ -89,9 +91,9 @@ export default function StorePage() {
       <div className="space-y-8 max-w-6xl mx-auto pb-24 animate-in fade-in duration-700">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
           <div className="flex items-center gap-4">
-             <Link href="/settings" className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-colors">
+             <button onClick={() => router.back()} className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-colors">
                 <ChevronLeft className="h-6 w-6" />
-             </Link>
+             </button>
              <div>
                 <h1 className="text-4xl font-bold font-headline uppercase italic tracking-tighter flex items-center gap-3">
                   <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
@@ -99,11 +101,14 @@ export default function StorePage() {
                 <p className="text-muted-foreground font-body text-lg">Customize your frequency identity.</p>
              </div>
           </div>
-          <div className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl">
+          <div 
+            onClick={() => router.push('/wallet')}
+            className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl cursor-pointer hover:scale-[1.02] transition-transform active:scale-95"
+          >
             <GoldCoinIcon className="h-10 w-10" />
             <div className="flex flex-col">
               <span className="text-3xl font-black text-primary">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-              <span className="text-[10px] uppercase font-black tracking-widest text-primary/60">Current Balance</span>
+              <span className="text-[10px] uppercase font-black tracking-widest text-primary/60">Tap to Recharge</span>
             </div>
           </div>
         </header>
