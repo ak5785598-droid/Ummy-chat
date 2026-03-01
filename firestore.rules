@@ -5,7 +5,8 @@ service cloud.firestore {
     
     function isAdmin() {
       return isSignedIn() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tags', []).hasAny(['Admin', 'Official']));
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tags', []).hasAny(['Admin', 'Official']));
     }
 
     function isRoomAdmin(roomId) {
