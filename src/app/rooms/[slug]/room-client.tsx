@@ -356,7 +356,7 @@ export function RoomClient({ room }: { room: Room }) {
     const isPMod = room.moderatorIds?.includes(occupant?.uid || '') && !isPOwner;
 
     return (
-      <div className="flex flex-col items-center gap-1.5 w-full">
+      <div className="flex flex-col items-center gap-1 w-full">
         <div className="relative">
           <EmojiReactionOverlay emoji={occupant?.activeEmoji} size={index === 1 ? "xl" : "lg"} />
           <div className="relative">
@@ -366,23 +366,22 @@ export function RoomClient({ room }: { room: Room }) {
                 onClick={() => handleSeatClick(index, occupant)}
                 className={cn(
                   "rounded-full flex items-center justify-center transition-all bg-black/40 border-2 border-white/10 backdrop-blur-sm shadow-xl relative overflow-hidden",
-                  index === 1 ? "h-20 w-20" : "h-16 w-16",
+                  index === 1 ? "h-16 w-16" : "h-14 w-14",
                   isLocked && "border-red-500/50 bg-red-500/10"
                 )}
               >
                 {occupant ? (
                   <Avatar className="h-full w-full"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar>
                 ) : isLocked ? (
-                  <Lock className="h-6 w-6 text-red-500/60" />
+                  <Lock className="h-5 w-5 text-red-500/60" />
                 ) : (
-                  <Armchair className={cn("text-white/20", index === 1 ? "h-10 w-10" : "h-8 w-8")} />
+                  <Armchair className={cn("text-white/20", index === 1 ? "h-8 w-8" : "h-6 w-6")} />
                 )}
               </button>
             </AvatarFrame>
-            {occupant?.isMuted && (<div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-3 w-3 text-white" /></div>)}
-            {!occupant?.isMuted && occupant && (<div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-0.5 border border-black shadow-lg"><Mic className="h-3 w-3 text-white" /></div>)}
+            {occupant?.isMuted && (<div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-2.5 w-2.5 text-white" /></div>)}
+            {!occupant?.isMuted && occupant && (<div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-0.5 border border-black shadow-lg"><Mic className="h-2.5 w-2.5 text-white" /></div>)}
             
-            {/* Status Badge */}
             {(isPOwner || isPMod) && (
               <div className="absolute -top-0.5 -left-0.5 bg-yellow-500 rounded-full p-0.5 border border-black shadow-lg z-[45]">
                 {isPOwner ? <Crown className="h-2 w-2 text-black fill-current" /> : <ShieldCheck className="h-2 w-2 text-white fill-current" />}
@@ -394,12 +393,12 @@ export function RoomClient({ room }: { room: Room }) {
                 onClick={(e) => { e.stopPropagation(); handleSeatClick(index, occupant); }}
                 className="absolute -top-1 -right-1 bg-black/60 rounded-full p-0.5 border border-white/10 z-40"
               >
-                <MoreHorizontal className="h-3 w-3 text-white" />
+                <MoreHorizontal className="h-2.5 w-2.5 text-white" />
               </button>
             )}
           </div>
         </div>
-        <span className={cn("text-[10px] font-black uppercase drop-shadow-md truncate w-16 text-center", occupant ? "text-yellow-400" : "text-white/60")}>
+        <span className={cn("text-[9px] font-black uppercase drop-shadow-md truncate w-14 text-center", occupant ? "text-yellow-400" : "text-white/60")}>
           {occupant ? occupant.name : `No.${index}`}
         </span>
       </div>
@@ -414,7 +413,6 @@ export function RoomClient({ room }: { room: Room }) {
       <audio ref={roomAudioRef} loop crossOrigin="anonymous" />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => <RemoteAudio key={peerId} stream={stream} />)}
       
-      {/* Immersive Background Layer */}
       <div className="absolute inset-0 z-0">
         <Image 
           src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000" 
@@ -426,8 +424,7 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* Header UI */}
-      <header className="relative z-50 flex items-center justify-between p-6 pt-10">
+      <header className="relative z-50 flex items-center justify-between p-4 pt-8">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 rounded-xl border border-white/20"><AvatarImage src={room.coverUrl} /><AvatarFallback>UM</AvatarFallback></Avatar>
           <div>
@@ -446,8 +443,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      {/* Trophy / Wealth Pill */}
-      <div className="relative z-50 px-6 mt-2">
+      <div className="relative z-50 px-4 mt-1">
         <div className="bg-yellow-500/20 backdrop-blur-md border border-yellow-500/30 rounded-full py-1 px-3 w-fit flex items-center gap-2">
           <Trophy className="h-3 w-3 text-yellow-500" />
           <span className="text-[10px] font-black text-yellow-500 uppercase">{(room.stats?.totalGifts || 0).toLocaleString()}</span>
@@ -455,78 +451,68 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </div>
 
-      {/* Floating Money Tree */}
-      <div className="absolute top-32 right-6 z-40 animate-bounce" style={{ animationDuration: '4s' }}>
-        <div className="relative h-16 w-16">
+      <div className="absolute top-24 right-4 z-40 animate-bounce" style={{ animationDuration: '4s' }}>
+        <div className="relative h-12 w-12">
           <Image src="https://img.icons8.com/color/96/money-tree.png" alt="Money Tree" fill className="object-contain" />
         </div>
       </div>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden">
-        {/* Seat Layout: 1-4-4 arrangement */}
-        <div className="px-6 space-y-8 flex flex-col items-center">
-          {/* King Seat (Slot 1) */}
-          <div className="w-24">
+      <main className="relative z-10 flex-1 flex flex-col pt-2 overflow-hidden">
+        <div className="px-4 space-y-2 flex flex-col items-center">
+          <div className="w-20">
             <Seat index={1} />
           </div>
 
-          {/* Row 1: Slots 2-5 */}
-          <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
+          <div className="grid grid-cols-4 gap-2 w-full max-w-sm">
             {[2, 3, 4, 5].map(i => <Seat key={i} index={i} />)}
           </div>
 
-          {/* Row 2: Slots 6-9 */}
-          <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
+          <div className="grid grid-cols-4 gap-2 w-full max-w-sm">
             {[6, 7, 8, 9].map(i => <Seat key={i} index={i} />)}
           </div>
         </div>
 
-        {/* Floating Side Support Card */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-40">
-          <div className="bg-gradient-to-b from-amber-200 to-amber-600 p-1 rounded-xl shadow-2xl">
-            <div className="bg-black/80 rounded-lg p-2 flex flex-col items-center gap-1 border border-white/5">
-              <Trophy className="h-8 w-8 text-yellow-500" />
-              <p className="text-[8px] font-black uppercase text-center text-white/60">Room<br/>Support</p>
-              <div className="flex gap-0.5 mt-1">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-40">
+          <div className="bg-gradient-to-b from-amber-200 to-amber-600 p-0.5 rounded-xl shadow-2xl">
+            <div className="bg-black/80 rounded-lg p-1.5 flex flex-col items-center gap-1 border border-white/5">
+              <Trophy className="h-6 w-6 text-yellow-500" />
+              <p className="text-[7px] font-black uppercase text-center text-white/60 leading-none">Room<br/>Support</p>
+              <div className="flex gap-0.5 mt-0.5">
                 {[1, 2, 3, 4, 5].map(i => <div key={i} className={cn("h-1 w-1 rounded-full", i === 1 ? "bg-white" : "bg-white/20")} />)}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Message Area */}
-        <div className="flex-1 flex flex-col mt-10 px-6 pb-20 justify-end">
-          <div className="space-y-4">
-            {/* Static Announcement */}
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl animate-in fade-in duration-1000">
-              <p className="text-emerald-400 text-xs font-black uppercase leading-relaxed">
+        <div className="flex-1 flex flex-col mt-4 px-4 pb-4 justify-end">
+          <div className="space-y-2">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl animate-in fade-in duration-1000">
+              <p className="text-emerald-400 text-[10px] font-black uppercase leading-relaxed text-center">
                 Welcome to Ummy! Please show respect to one another and be courteous.
               </p>
             </div>
 
-            {/* Join Voice Button */}
             {!isInSeat && (
               <Button 
                 onClick={handleMicToggle}
-                className="w-fit bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-2xl h-12 px-8 font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-xl h-10 px-8 font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all text-xs"
               >
-                Join Voice Chat <ChevronRight className="ml-2 h-4 w-4" />
+                Join Voice Chat <ChevronRight className="ml-2 h-3 w-3" />
               </Button>
             )}
 
-            {/* Live Chat / Entry Messages */}
-            <ScrollArea className="h-32" ref={scrollRef}>
-              <div className="space-y-2">
+            <ScrollArea className="h-24" ref={scrollRef}>
+              <div className="space-y-1.5">
                 {activeMessages.map((msg) => (
                   <div key={msg.id} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
                     {msg.type === 'entrance' ? (
-                      <p className="text-[10px] font-black uppercase text-white/60">
+                      <p className="text-[9px] font-black uppercase text-white/60">
                         welcome <span className="text-yellow-400">{msg.user.name}</span> entered the room
                       </p>
                     ) : (
-                      <div className="bg-black/20 backdrop-blur-sm px-3 py-1 rounded-xl border border-white/5 flex gap-2 max-w-[80%]">
-                        <span className="text-[10px] font-black text-blue-400 shrink-0 uppercase">{msg.user.name}:</span>
-                        <p className="text-[10px] font-medium text-white/80">{msg.text}</p>
+                      <div className="bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-white/5 flex gap-2 max-w-[90%]">
+                        <span className="text-[9px] font-black text-blue-400 shrink-0 uppercase">{msg.user.name}:</span>
+                        <p className="text-[9px] font-medium text-white/80">{msg.text}</p>
                       </div>
                     )}
                   </div>
@@ -537,52 +523,37 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      {/* Floating User Profile Widget */}
-      <div className="absolute bottom-32 right-6 z-40">
-        <div className="relative h-14 w-14 group">
-          <Avatar className="h-full w-full border-2 border-white/40 shadow-xl group-hover:scale-110 transition-transform">
-            <AvatarImage src="https://picsum.photos/seed/tribe-user/200/200" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-            {[1, 2, 3, 4, 5].map(i => <div key={i} className={cn("h-1 w-1 rounded-full", i === 1 ? "bg-white" : "bg-white/20")} />)}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Interface */}
-      <footer className="relative z-50 px-6 pb-10 flex items-center justify-between gap-4 bg-gradient-to-t from-black via-black/80 to-transparent pt-4">
+      <footer className="relative z-50 px-4 pb-6 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-2">
         <form 
-          className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-12 px-5 flex items-center border border-white/5"
+          className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-10 px-4 flex items-center border border-white/5"
           onSubmit={handleSendMessage}
         >
           <Input 
             placeholder="Say Hi" 
-            className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full"
+            className="bg-transparent border-none text-[9px] font-black uppercase tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
           />
         </form>
         
-        <div className="flex items-center gap-3">
-          <button className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-all"><Volume2 className="h-5 w-5" /></button>
-          <button className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-all"><Mail className="h-5 w-5" /></button>
+        <div className="flex items-center gap-2">
+          <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"><Volume2 className="h-4 w-4" /></button>
+          <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"><Mail className="h-4 w-4" /></button>
           <button 
-            className="bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 p-2.5 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all"
+            className="bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 p-2 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all"
             onClick={() => setIsGiftPickerOpen(true)}
           >
-            <GiftIcon className="h-5 w-5 text-white" />
+            <GiftIcon className="h-4 w-4 text-white" />
           </button>
           <button 
-            className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-all"
+            className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"
             onClick={() => setIsGamesDialogOpen(true)}
           >
-            <LayoutGrid className="h-5 w-5" />
+            <LayoutGrid className="h-4 w-4" />
           </button>
         </div>
       </footer>
 
-      {/* Seat Action Menu Dialog */}
       <Dialog open={isActionMenuOpen} onOpenChange={setIsActionMenuOpen}>
         <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500">
           <DialogHeader className="p-6 border-b border-gray-100">
@@ -617,7 +588,6 @@ export function RoomClient({ room }: { room: Room }) {
         </DialogContent>
       </Dialog>
 
-      {/* Gift Picker Dialog */}
       <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
           <DialogHeader className="p-8 pb-0 text-center">
@@ -646,7 +616,6 @@ export function RoomClient({ room }: { room: Room }) {
         </DialogContent>
       </Dialog>
 
-      {/* Frequency Portal / Settings Dialog */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="sm:max-w-md bg-[#0a0a0a] text-white p-0 rounded-t-[3rem] border-none overflow-hidden h-[85vh]">
           <DialogHeader className="p-8 pb-4 text-center">
