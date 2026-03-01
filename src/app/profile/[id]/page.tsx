@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
+import { OfficialTag } from '@/components/official-tag';
 
 const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
   <div className="relative group cursor-pointer active:scale-95 transition-transform shrink-0">
@@ -146,6 +147,7 @@ export default function ProfilePage() {
                   <Badge className="bg-orange-500 text-white text-[8px] h-4 font-black italic px-2 border-none">Sr.</Badge>
                   <Badge className="bg-blue-500 text-white text-[8px] h-4 font-black italic px-2 border-none">SVIP</Badge>
                   <Badge className="bg-cyan-500 text-white text-[8px] h-4 font-black italic px-2 border-none">CP</Badge>
+                  <OfficialTag size="sm" />
                 </div>
               </div>
             </div>
@@ -249,7 +251,10 @@ export default function ProfilePage() {
            </div>
 
            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-black italic tracking-tighter drop-shadow-lg">{profile.username}</h1>
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-black italic tracking-tighter drop-shadow-lg">{profile.username}</h1>
+                {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+              </div>
               <div className="flex items-center justify-center gap-2">
                  <span className="text-xl">🇮🇳</span>
                  <div className="flex items-center gap-1.5 text-white/80 bg-black/20 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/10">
