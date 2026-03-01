@@ -198,6 +198,7 @@ export default function ProfilePage() {
 
               <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white">
                 <MenuItem label="Network Test" icon={Activity} />
+                <MenuItem label="Seller" icon={ShieldIcon} extra="Apply" />
               </Card>
             </div>
           </div>
