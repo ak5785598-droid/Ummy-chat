@@ -67,7 +67,7 @@ service cloud.firestore {
     }
 
     match /chatRooms/{roomId} {
-      // Allow reading room metadata to prevent crash, but block content if banned
+      // Allow reading room metadata to prevent crash
       allow read: if isSignedIn();
       allow list, create: if isSignedIn();
       allow update: if isSignedIn() && (
@@ -97,7 +97,7 @@ service cloud.firestore {
         allow delete: if isSignedIn() && isRoomAdmin(roomId);
       }
       match /bans/{userId} {
-        // Allow user to read their own ban status and admins to manage it
+        // Allow user to read their own ban status regardless of room access
         allow read: if isSignedIn() && (request.auth.uid == userId || isRoomAdmin(roomId));
         allow write: if isRoomAdmin(roomId);
       }
