@@ -181,6 +181,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [showGiftEffects, setShowGiftEffects] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [isClaimingTree, setIsClaimingTree] = useState(false);
+  const [hasJoined, setHasJoined] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const roomDpInputRef = useRef<HTMLInputElement>(null);
@@ -231,6 +232,25 @@ export function RoomClient({ room }: { room: Room }) {
       setShowTutorial(true);
     }
   }, [userProfile, showTutorial]);
+
+  // KICK DETECTION PROTOCOL
+  useEffect(() => {
+    if (participants && currentUser && !isOwner) {
+      const isStillInRoom = participants.some(p => p.uid === currentUser.uid);
+      if (isStillInRoom) {
+        setHasJoined(true);
+      } else if (hasJoined) {
+        // Doc was present, now missing. User was removed by a manager.
+        toast({ 
+          variant: 'destructive', 
+          title: 'Connection Lost', 
+          description: 'You have been removed from the frequency by a manager.' 
+        });
+        setActiveRoom(null);
+        router.push('/rooms');
+      }
+    }
+  }, [participants, currentUser, hasJoined, isOwner, router, toast, setActiveRoom]);
 
   useEffect(() => {
     if (!showGiftEffects) return;
@@ -630,7 +650,7 @@ export function RoomClient({ room }: { room: Room }) {
             {canManageRoom && (<>
               {selectedOccupant ? (<>
                 <button onClick={() => silenceParticipant(selectedOccupant.uid, selectedOccupant.isSilenced ?? false)} className="py-5 font-bold text-gray-700 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{selectedOccupant.isSilenced ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}{selectedOccupant.isSilenced ? 'Unsilence Tribe' : 'Silence Tribe'}</button>
-                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><Trash2 className="h-4 w-4" /> Remove Tribe</span></button>)}
+                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><Ban className="h-4 w-4" /> Kick Tribe</span></button>)}
               </>) : (
                 <button onClick={() => toggleSeatLock(selectedSeatIndex!)} className="py-5 font-bold text-purple-600 uppercase tracking-widest text-xs hover:bg-purple-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{room.lockedSeats?.includes(selectedSeatIndex!) ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{room.lockedSeats?.includes(selectedSeatIndex!) ? 'Unlock Slot' : 'Lock Slot'}</button>
               )}
