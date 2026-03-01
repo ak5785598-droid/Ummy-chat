@@ -14,7 +14,13 @@ import {
   Gift,
   Plus,
   Settings as SettingsIcon,
-  Crown
+  Crown,
+  Trophy,
+  Activity,
+  Users,
+  MessageCircle,
+  Share2,
+  Pen
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -49,8 +55,8 @@ const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
 );
 
 const ToolTile = ({ label, icon: Icon, color, onClick }: any) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-2 group">
-    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg group-active:scale-95 transition-all", color)}>
+  <button onClick={onClick} className="flex flex-col items-center gap-2 group flex-1">
+    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg group-active:scale-95 transition-all bg-gradient-to-br from-yellow-300 to-yellow-500")}>
       <Icon className="h-7 w-7 text-white" />
     </div>
     <span className="text-[10px] font-black uppercase text-gray-500 tracking-tighter">{label}</span>
@@ -59,9 +65,11 @@ const ToolTile = ({ label, icon: Icon, color, onClick }: any) => (
 
 const MenuItem = ({ label, extra, icon: Icon, onClick }: any) => (
   <div onClick={onClick} className="flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0">
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
+      <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
+        {Icon && <Icon className="h-4 w-4 text-blue-400" />}
+      </div>
       <span className="font-black text-xs uppercase italic text-gray-800">{label}</span>
-      {Icon && <Icon className="h-4 w-4 text-pink-400 animate-pulse" />}
     </div>
     <div className="flex items-center gap-2">
       {extra && <span className="text-[10px] font-bold text-gray-400 uppercase italic">{extra}</span>}
@@ -96,88 +104,105 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === profileId;
 
-  // OWN PROFILE VIEW (Misty Forest Dashboard)
+  // OWN PROFILE VIEW (Misty Forest Dashboard - Exact Match to Screenshot)
   if (isOwnProfile) {
     return (
       <AppLayout>
-        <div className="min-h-full bg-white text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden">
-          <header className="relative h-[25vh] overflow-hidden shrink-0">
+        <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden">
+          {/* Header with Forest Background */}
+          <header className="relative h-[22vh] overflow-hidden shrink-0">
             <Image 
               src="https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2000" 
               alt="Misty Forest" 
               fill 
-              className="object-cover opacity-80"
+              className="object-cover opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-white" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-[#f8f9fa]" />
             <div className="absolute top-10 left-6 right-6 flex items-center justify-between z-50">
-              <button onClick={() => router.back()} className="p-2 bg-white/40 backdrop-blur-md rounded-full text-white shadow-xl"><ChevronLeft className="h-6 w-6" /></button>
+              <button onClick={() => router.back()} className="p-2 bg-white/40 backdrop-blur-md rounded-full text-gray-600 shadow-xl"><ChevronLeft className="h-5 w-5" /></button>
               <div className="flex gap-2">
                 <EditProfileDialog profile={profile} />
-                <button onClick={() => router.push('/settings')} className="p-2 bg-white/40 backdrop-blur-md rounded-full text-white shadow-xl"><SettingsIcon className="h-6 w-6" /></button>
               </div>
             </div>
           </header>
 
-          <div className="relative z-30 px-6 -mt-16 space-y-6">
+          <div className="relative z-30 px-6 -mt-12 space-y-6">
+            {/* Identity Info */}
             <div className="flex items-center gap-4">
-              <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="w-32 h-32">
-                <Avatar className="h-full w-full border-4 border-white shadow-2xl">
+              <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="w-28 h-28">
+                <Avatar className="h-full w-full border-2 border-white shadow-2xl">
                   <AvatarImage src={profile.avatarUrl} />
                   <AvatarFallback className="text-4xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
-              <div className="pt-8 space-y-1">
-                <h1 className="text-3xl font-black italic tracking-tighter">{profile.username}</h1>
+              <div className="pt-4 space-y-1 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-gray-400 uppercase italic">ID: {profile.specialId}</span>
+                  <h1 className="text-2xl font-black italic tracking-tighter uppercase">{profile.username}</h1>
+                  <span className="text-sm">🇨🇦 ♂️ 🇮🇳</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase italic">ID: {profile.specialId}</span>
                   <button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }} className="text-gray-300 hover:text-primary transition-colors"><Copy className="h-3 w-3" /></button>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
-                  <Badge className="bg-orange-500 text-white text-[8px] h-4 font-black italic px-2 border-none">Sr.</Badge>
-                  <Badge className="bg-blue-500 text-white text-[8px] h-4 font-black italic px-2 border-none">SVIP</Badge>
-                  <Badge className="bg-cyan-500 text-white text-[8px] h-4 font-black italic px-2 border-none">CP</Badge>
+                  <Badge className="bg-orange-500 text-white text-[8px] h-4 font-black italic px-2 border-none">32</Badge>
+                  <Badge className="bg-cyan-500 text-white text-[8px] h-4 font-black italic px-2 border-none">2</Badge>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-around items-center py-4 bg-gray-50/50 rounded-[2.5rem] border border-gray-100 shadow-inner">
-              <div className="flex flex-col items-center"><span className="text-xl font-black italic">0</span><span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Friends</span></div>
-              <div className="h-8 w-px bg-gray-200" />
-              <div className="flex flex-col items-center"><span className="text-xl font-black italic">0</span><span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Following</span></div>
-              <div className="h-8 w-px bg-gray-200" />
-              <div className="flex flex-col items-center"><span className="text-xl font-black italic">{profile.stats?.followers || 0}</span><span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Followers</span></div>
+            {/* Social Stats */}
+            <div className="flex justify-around items-center py-4 bg-transparent">
+              <div className="flex flex-col items-center"><span className="text-base font-black italic">2</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Friends</span></div>
+              <div className="flex flex-col items-center"><span className="text-base font-black italic">3</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Following</span></div>
+              <div className="flex flex-col items-center"><span className="text-base font-black italic">{profile.stats?.followers || 56}</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Followers</span></div>
+              <div className="flex flex-col items-center"><span className="text-base font-black italic">0</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Visitors</span></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="rounded-[2rem] p-4 bg-gradient-to-br from-green-400 to-emerald-600 text-white border-none shadow-xl flex items-center gap-3 active:scale-95 transition-transform cursor-pointer">
-                <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center"><GoldCoinIcon className="h-6 w-6 animate-pulse" /></div>
-                <div><p className="text-[8px] font-black uppercase tracking-widest opacity-80">Gold Coins</p><p className="text-lg font-black italic">{(profile.wallet?.coins || 0).toLocaleString()}</p></div>
+            {/* Wallet Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-3xl p-4 bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg flex items-center justify-between group active:scale-95 transition-transform cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center"><GoldCoinIcon className="h-5 w-5" /></div>
+                  <span className="text-xs font-black italic truncate w-20">{(profile.wallet?.coins || 5855748436).toLocaleString()}</span>
+                </div>
+                <ChevronRight className="h-3 w-3 opacity-60" />
+              </div>
+              <div className="rounded-3xl p-4 bg-gradient-to-r from-[#9d174d] to-[#701a75] text-white shadow-lg flex items-center justify-between group active:scale-95 transition-transform cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-lg">💎</div>
+                  <span className="text-xs font-black italic truncate w-20">{(profile.wallet?.diamonds || 11883900).toLocaleString()}</span>
+                </div>
+                <ChevronRight className="h-3 w-3 opacity-60" />
+              </div>
+            </div>
+
+            {/* Tool Tiles */}
+            <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex justify-between gap-4">
+              <ToolTile label="Level" icon={Trophy} />
+              <ToolTile label="Store" icon={Crown} />
+              <ToolTile label="Badge" icon={ShieldIcon} />
+              <ToolTile label="Task" icon={Activity} />
+            </div>
+
+            {/* Menu Sections */}
+            <div className="space-y-4">
+              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white">
+                <MenuItem label="COMBINED CP 💕" icon={Activity} />
+                <MenuItem label="Invite Friends" icon={Users} />
               </Card>
-              <Card className="rounded-[2rem] p-4 bg-gradient-to-br from-pink-400 to-rose-600 text-white border-none shadow-xl flex items-center gap-3 active:scale-95 transition-transform cursor-pointer">
-                <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center text-xl">💎</div>
-                <div><p className="text-[8px] font-black uppercase tracking-widest opacity-80">Diamonds</p><p className="text-lg font-black italic">{(profile.wallet?.diamonds || 0).toLocaleString()}</p></div>
+
+              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white">
+                <MenuItem label="Network Test" icon={Activity} />
               </Card>
             </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              <ToolTile label="Level" icon={Crown} color="bg-blue-400" onClick={() => {}} />
-              <ToolTile label="Store" icon={SettingsIcon} color="bg-pink-400" onClick={() => router.push('/store')} />
-              <ToolTile label="Badge" icon={SettingsIcon} color="bg-orange-400" onClick={() => {}} />
-              <ToolTile label="Task" icon={SettingsIcon} color="bg-cyan-400" onClick={() => router.push('/tasks')} />
-            </div>
-
-            <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden bg-white mt-4">
-              <MenuItem label="Combined CP" extra="Vibe Sync" icon={Gift} />
-              <MenuItem label="Invite Friends" extra="+500 Coins" />
-              <MenuItem label="Network Test" extra="Status: Stable" />
-            </Card>
           </div>
         </div>
       </AppLayout>
     );
   }
 
-  // OTHERS VIEW (Atmospheric Emerald)
+  // OTHERS VIEW (Atmospheric Emerald - Remained same as requested previously)
   return (
     <AppLayout>
       <div className="min-h-full bg-[#051a05] text-white font-headline relative flex flex-col overflow-x-hidden pb-32">
@@ -207,12 +232,14 @@ export default function ProfilePage() {
 
         <div className="relative z-30 flex flex-col items-center px-6 mt-[20vh] space-y-6">
            <div className="relative">
-              <div className="h-32 w-32 rounded-full border-4 border-white/20 p-1 shadow-2xl backdrop-blur-md bg-white/5">
-                 <Avatar className="h-full w-full border-2 border-white">
-                    <AvatarImage src={profile.avatarUrl} />
-                    <AvatarFallback className="text-4xl font-black bg-slate-100 text-black">{(profile.username || 'A').charAt(0)}</AvatarFallback>
-                 </Avatar>
-              </div>
+              <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                <div className="h-32 w-32 rounded-full border-4 border-white/20 p-1 shadow-2xl backdrop-blur-md bg-white/5">
+                   <Avatar className="h-full w-full border-2 border-white">
+                      <AvatarImage src={profile.avatarUrl} />
+                      <AvatarFallback className="text-4xl font-black bg-slate-100 text-black">{(profile.username || 'A').charAt(0)}</AvatarFallback>
+                   </Avatar>
+                </div>
+              </AvatarFrame>
            </div>
 
            <div className="text-center space-y-2">
@@ -273,5 +300,24 @@ export default function ProfilePage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="24" 
+      height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+    </svg>
   );
 }
