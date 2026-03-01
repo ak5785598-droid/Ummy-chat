@@ -360,26 +360,10 @@ export function RoomClient({ room }: { room: Room }) {
   
   const kickParticipant = async (uid: string) => {
     if (!canManageRoom || !firestore || !room.id) return;
-    const batch = writeBatch(firestore);
     const pRef = doc(firestore, 'chatRooms', room.id, 'participants', uid);
-    const banRef = doc(firestore, 'chatRooms', room.id, 'bans', uid);
-    
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-    
-    batch.delete(pRef);
-    batch.set(banRef, {
-      uid,
-      expiresAt: expiresAt,
-      createdAt: serverTimestamp()
-    });
-    
-    try {
-      await batch.commit();
-      setIsActionMenuOpen(false);
-      toast({ title: 'Tribe Removed', description: 'Member banned from frequency for 1 hour.' });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
-    }
+    deleteDocumentNonBlocking(pRef);
+    setIsActionMenuOpen(false);
+    toast({ title: 'Tribe Removed', description: 'Member removed from frequency.' });
   };
 
   const leaveRoom = () => { setActiveRoom(null); router.push('/rooms'); };
@@ -646,7 +630,7 @@ export function RoomClient({ room }: { room: Room }) {
             {canManageRoom && (<>
               {selectedOccupant ? (<>
                 <button onClick={() => silenceParticipant(selectedOccupant.uid, selectedOccupant.isSilenced ?? false)} className="py-5 font-bold text-gray-700 uppercase tracking-widest text-xs hover:bg-gray-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{selectedOccupant.isSilenced ? <Volume2 className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}{selectedOccupant.isSilenced ? 'Unsilence Tribe' : 'Silence Tribe'}</button>
-                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><Ban className="h-4 w-4" /> Kick Tribe</span></button>)}
+                {selectedOccupant.uid !== currentUser?.uid && (<button onClick={() => kickParticipant(selectedOccupant.uid)} className="py-5 font-black text-destructive uppercase tracking-widest text-xs hover:bg-red-50 flex items-center justify-center gap-2 active:scale-95 transition-all"><span className="flex items-center gap-2"><Trash2 className="h-4 w-4" /> Remove Tribe</span></button>)}
               </>) : (
                 <button onClick={() => toggleSeatLock(selectedSeatIndex!)} className="py-5 font-bold text-purple-600 uppercase tracking-widest text-xs hover:bg-purple-50 flex items-center justify-center gap-2 active:scale-95 transition-all">{room.lockedSeats?.includes(selectedSeatIndex!) ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{room.lockedSeats?.includes(selectedSeatIndex!) ? 'Unlock Slot' : 'Lock Slot'}</button>
               )}

@@ -19,11 +19,6 @@ service cloud.firestore {
         )) || isAdmin()
       );
     }
-
-    function isBanned(roomId) {
-      let banPath = /databases/$(database)/documents/chatRooms/$(roomId)/bans/$(request.auth.uid);
-      return exists(banPath) && get(banPath).data.get('expiresAt', request.time) > request.time;
-    }
     
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -78,9 +73,9 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
 
       match /participants/{userId} {
-        allow read, list: if isSignedIn() && !isBanned(roomId);
-        allow create: if isSignedIn() && request.auth.uid == userId && !isBanned(roomId);
-        allow update: if isSignedIn() && !isBanned(roomId);
+        allow read, list: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow update: if isSignedIn();
         allow delete: if isSignedIn() && (
           request.auth.uid == userId || 
           isRoomAdmin(roomId)
@@ -91,16 +86,10 @@ service cloud.firestore {
         }
       }
       match /messages/{id} {
-        allow read, list: if isSignedIn() && !isBanned(roomId);
-        allow create: if isSignedIn() && !isBanned(roomId);
+        allow read, list: if isSignedIn();
+        allow create: if isSignedIn();
         allow delete: if isSignedIn() && isRoomAdmin(roomId);
       }
-    }
-
-    // Top-level match for bans to avoid nesting/shadowing issues
-    match /chatRooms/{roomId}/bans/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isRoomAdmin(roomId));
-      allow write: if isRoomAdmin(roomId);
     }
 
     match /moments/{momentId} {
