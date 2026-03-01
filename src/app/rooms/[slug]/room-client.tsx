@@ -233,14 +233,12 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [userProfile, showTutorial]);
 
-  // KICK DETECTION PROTOCOL
   useEffect(() => {
     if (participants && currentUser && !isOwner) {
       const isStillInRoom = participants.some(p => p.uid === currentUser.uid);
       if (isStillInRoom) {
         setHasJoined(true);
       } else if (hasJoined) {
-        // Doc was present, now missing. User was removed by a manager.
         toast({ 
           variant: 'destructive', 
           title: 'Connection Lost', 
@@ -397,7 +395,7 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
       moderatorIds: isPMod ? arrayRemove(targetUid) : arrayUnion(targetUid)
     });
-    toast({ title: isPMod ? 'Admin Revoked' : 'Admin Granted', description: 'Tribe role has been synchronized.' });
+    toast({ title: isPMod ? 'Admin Granted' : 'Admin Granted', description: 'Tribe role has been synchronized.' });
   };
 
   const handleTutorialComplete = () => {

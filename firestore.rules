@@ -10,8 +10,8 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tags', []).hasAny(['Admin', 'Official']));
     }
 
-    function isRoomAdmin(roomId) {
-      let roomPath = /databases/$(database)/documents/chatRooms/$(roomId);
+    function isRoomAdmin(rId) {
+      let roomPath = /databases/$(database)/documents/chatRooms/$(rId);
       return isSignedIn() && (
         (exists(roomPath) && (
           get(roomPath).data.ownerId == request.auth.uid || 
