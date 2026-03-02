@@ -47,12 +47,12 @@ import {
   ChevronRight,
   Armchair,
   Crown,
+  Heart,
   ChevronLeft,
   X,
   Settings as SettingsIcon,
   Copy,
-  Info,
-  Heart
+  Info
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -97,8 +97,8 @@ import {
   getDocs,
   arrayUnion,
   arrayRemove,
-  setDoc,
   getDoc,
+  setDoc,
   deleteDoc
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
