@@ -34,12 +34,16 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  // Production Protocol: Explicitly register the storage bucket with gs:// prefix for maximum resilience
+  const storageBucket = firebaseConfig.storageBucket.startsWith('gs://') 
+    ? firebaseConfig.storageBucket 
+    : `gs://${firebaseConfig.storageBucket}`;
+
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp),
-    // Explicitly pass the bucket URL to ensure "No default bucket found" errors are eliminated
-    storage: getStorage(firebaseApp, firebaseConfig.storageBucket)
+    storage: getStorage(firebaseApp, storageBucket)
   };
 }
 

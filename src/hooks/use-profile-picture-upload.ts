@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser } from '@/firebase';
+import { useStorage, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
  * Hook to handle profile picture uploads to Firebase Storage and update Firestore.
- * Ensures the visual identity is permanent and synchronized across summary and profile docs.
- * Optimized with setDoc merge protocol for maximum resilience.
+ * Re-engineered with Non-Blocking Protocol to eliminate infinite loading spinners.
  */
 export function useProfilePictureUpload() {
   const storage = useStorage();
@@ -31,7 +30,7 @@ export function useProfilePictureUpload() {
     setIsUploading(true);
 
     try {
-      // Create a unique path with timestamp to ensure cache busting and permanent identification
+      // 1. Storage Upload (Must be awaited to get the URL)
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const storagePath = `users/${user.uid}/profile_${timestamp}.${fileExtension}`;
@@ -40,6 +39,7 @@ export function useProfilePictureUpload() {
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
+      // 2. Firestore Sync (Non-Blocking)
       const userSummaryRef = doc(firestore, 'users', user.uid);
       const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -48,15 +48,13 @@ export function useProfilePictureUpload() {
         updatedAt: serverTimestamp()
       };
 
-      // Atomic updates using setDoc with merge to ensure visual synchronization even if docs don't exist
-      await Promise.all([
-        setDoc(userSummaryRef, updateData, { merge: true }),
-        setDoc(userProfileRef, updateData, { merge: true })
-      ]);
+      // Atomic updates without await to leverage optimistic UI speed
+      setDocumentNonBlocking(userSummaryRef, updateData, { merge: true });
+      setDocumentNonBlocking(userProfileRef, updateData, { merge: true });
       
       toast({
         title: 'Identity Synchronized',
-        description: 'Your new persona is now permanent across the tribe.',
+        description: 'Your new persona is now broadcast to the tribe.',
       });
     } catch (error: any) {
       console.error('Error uploading profile picture:', error);
@@ -66,6 +64,7 @@ export function useProfilePictureUpload() {
         description: error.message || 'Could not broadcast your new identity.',
       });
     } finally {
+      // Reset state immediately after writes are initiated to hide the spinner
       setIsUploading(false);
     }
   };
