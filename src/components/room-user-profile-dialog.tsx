@@ -119,19 +119,11 @@ export function RoomUserProfileDialog({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                     {canManage && !isMe && (
-                       <>
-                         <DropdownMenuItem onClick={() => onKick(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-red-400 cursor-pointer">
-                            <Ban className="h-4 w-4" />
-                            <span className="font-black uppercase text-[10px]">Kick from Room</span>
-                         </DropdownMenuItem>
-                         {isOwner && (
-                           <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
-                              {isPMod ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-                              <span className="font-black uppercase text-[10px]">{isPMod ? 'Revoke Admin' : 'Make Admin'}</span>
-                           </DropdownMenuItem>
-                         )}
-                       </>
+                     {isOwner && !isMe && (
+                       <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
+                          {isPMod ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                          <span className="font-black uppercase text-[10px]">{isPMod ? 'Revoke Admin' : 'Make Admin'}</span>
+                       </DropdownMenuItem>
                      )}
                      <DropdownMenuItem className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
                         <ShieldAlert className="h-4 w-4 text-gray-400" />
