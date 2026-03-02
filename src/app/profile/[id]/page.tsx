@@ -107,9 +107,14 @@ export default function ProfilePage() {
     if (isOwnProfile) {
       return (
         <AppLayout>
-          <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
-            <Loader className="animate-spin h-8 w-8 text-primary" />
-            <p className="text-[10px] font-black uppercase tracking-widest animate-pulse text-gray-400">Establishing Identity Dimensions...</p>
+          <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-24 overflow-x-hidden">
+            <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+               <Loader className="h-12 w-12 animate-spin text-primary" />
+               <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-black uppercase italic tracking-tighter">Identity Establishing</h2>
+                  <p className="text-muted-foreground font-body text-base max-w-xs mx-auto">Please wait while we synchronize your frequency with the tribal social graph.</p>
+               </div>
+            </div>
           </div>
         </AppLayout>
       );
@@ -142,16 +147,16 @@ export default function ProfilePage() {
           <div className="relative z-30 px-6 -mt-10 space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center gap-1">
-                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="lg" className="w-24 h-24">
+                <AvatarFrame frameId={profile?.inventory?.activeFrame || 'f5'} size="lg" className="w-24 h-24">
                   <div className="relative">
                     <Avatar className="h-full w-full border-2 border-white shadow-xl">
-                      <AvatarImage src={profile.avatarUrl || undefined} />
-                      <AvatarFallback className="text-3xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                      <AvatarImage src={profile?.avatarUrl || undefined} />
+                      <AvatarFallback className="text-3xl font-black bg-slate-100">{(profile?.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                     {/* Activity Indicator */}
                     <div className={cn(
                       "absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white shadow-lg",
-                      profile.isOnline ? "bg-green-500" : "bg-black"
+                      profile?.isOnline ? "bg-green-500" : "bg-black"
                     )} />
                   </div>
                 </AvatarFrame>
@@ -162,12 +167,12 @@ export default function ProfilePage() {
               </div>
               <div className="pt-2 space-y-0.5 flex-1">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-black tracking-tighter uppercase">{profile.username}</h1>
+                  <h1 className="text-xl font-black tracking-tighter uppercase">{profile?.username}</h1>
                   <span className="text-xs">♂️ 🇮🇳</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-gray-400 uppercase">ID: {profile.specialId}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }} className="text-gray-300 hover:text-primary transition-colors"><Copy className="h-3 w-3" /></button>
+                  <span className="text-[10px] font-black text-gray-400 uppercase">ID: {profile?.specialId}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(profile?.specialId || ''); toast({ title: 'ID Copied' }); }} className="text-gray-300 hover:text-primary transition-colors"><Copy className="h-3 w-3" /></button>
                 </div>
                 <div className="flex items-center gap-1 mt-1 flex-wrap">
                   <Badge className="bg-orange-500 text-white text-[8px] h-4 font-black px-2 border-none">Sr.</Badge>
@@ -181,7 +186,7 @@ export default function ProfilePage() {
             <div className="flex justify-around items-center py-2 bg-transparent">
               <div className="flex flex-col items-center"><span className="text-sm font-black">0</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Friends</span></div>
               <div className="flex flex-col items-center"><span className="text-sm font-black">0</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Following</span></div>
-              <div className="flex flex-col items-center"><span className="text-sm font-black">{profile.stats?.followers || 0}</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Followers</span></div>
+              <div className="flex flex-col items-center"><span className="text-sm font-black">{profile?.stats?.followers || 0}</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Followers</span></div>
               <div className="flex flex-col items-center"><span className="text-sm font-black">0</span><span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Visitors</span></div>
             </div>
 
@@ -192,7 +197,7 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center"><GoldCoinIcon className="h-4 w-4" /></div>
-                  <span className="text-[10px] font-black truncate w-16">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+                  <span className="text-[10px] font-black truncate w-16">{(profile?.wallet?.coins || 0).toLocaleString()}</span>
                 </div>
                 <ChevronRight className="h-3 w-3 opacity-60" />
               </div>
@@ -202,7 +207,7 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center text-xs">💎</div>
-                  <span className="text-[10px] font-black truncate w-16">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
+                  <span className="text-[10px] font-black truncate w-16">{(profile?.wallet?.diamonds || 0).toLocaleString()}</span>
                 </div>
                 <ChevronRight className="h-3 w-3 opacity-60" />
               </div>
