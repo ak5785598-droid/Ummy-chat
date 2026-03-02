@@ -236,6 +236,14 @@ export function RoomClient({ room }: { room: Room }) {
   }, [userProfile, showTutorial]);
 
   useEffect(() => {
+    if (participants && currentUser && !participants.some(p => p.uid === currentUser.uid)) {
+      toast({ title: 'Removed from Frequency', description: 'Your identity has been synchronized out of this room.' });
+      setActiveRoom(null);
+      router.replace('/rooms');
+    }
+  }, [participants, currentUser, router, setActiveRoom, toast]);
+
+  useEffect(() => {
     if (!showGiftEffects) return;
     const lastMsg = firestoreMessages?.[firestoreMessages.length - 1];
     if (lastMsg?.type === 'gift' && lastMsg.giftId) {
@@ -615,6 +623,10 @@ export function RoomClient({ room }: { room: Room }) {
       {/* Frequency Identity Portal (Room Info Dialog) */}
       <Dialog open={isRoomInfoOpen} onOpenChange={setIsRoomInfoOpen}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 backdrop-blur-xl text-white p-0 flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden font-headline">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Room Information</DialogTitle>
+            <DialogDescription>Detailed identity and management portal for this frequency.</DialogDescription>
+          </DialogHeader>
           <div className="relative flex-1 flex flex-col items-center pt-20 px-6">
             
             {/* Command Corners */}
@@ -672,7 +684,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <h3 className="text-xs font-black uppercase tracking-widest text-white/40">Announcement</h3>
               </div>
               <div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 min-h-[120px]">
-                <p className="text-lg font-medium italic text-white/80 leading-relaxed">
+                <p className="text-lg font-medium text-white/80 leading-relaxed">
                   {room.announcement || "Welcome to the tribe! Enjoy the frequency."}
                 </p>
               </div>
@@ -813,3 +825,5 @@ const ToolTile = ({ icon: Icon, label, active, onClick, disabled }: any) => (
     <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">{label}</span>
   </button>
 );
+
+    
