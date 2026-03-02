@@ -33,6 +33,7 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SellerTag } from '@/components/seller-tag';
+import { CustomerServiceTag } from '@/components/customer-service-tag';
 
 const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
   <div className="relative group cursor-pointer active:scale-95 transition-transform shrink-0">
@@ -158,6 +159,7 @@ export default function ProfilePage() {
                   <Badge className="bg-orange-500 text-white text-[8px] h-4 font-black px-2 border-none">Sr.</Badge>
                   <Badge className="bg-blue-500 text-white text-[8px] h-4 font-black px-2 border-none">SVIP</Badge>
                   <Badge className="bg-cyan-500 text-white text-[8px] h-4 font-black px-2 border-none">CP</Badge>
+                  <CustomerServiceTag size="sm" />
                 </div>
               </div>
             </div>
