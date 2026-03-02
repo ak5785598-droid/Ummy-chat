@@ -8,17 +8,14 @@ import { Loader } from 'lucide-react';
 /**
  * Root Profile Gateway
  * Safely redirects the user to their specific profile or the login screen.
- * Synchronized with the correct isUserLoading frequency.
  */
 export default function ProfileGateway() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    // Only perform navigation once authentication state is definitive.
     if (!isUserLoading) {
       if (user) {
-        // Use replace to prevent back-button loops
         router.replace(`/profile/${user.uid}`);
       } else {
         router.replace('/login');

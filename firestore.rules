@@ -2,14 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * CORE PHILOSOPHY:
-     * This ruleset implements a robust, identity-centric authorization model designed for a high-interaction 
-     * voice/text chat platform. It prioritizes document ownership and explicit membership for access control.
-     */
-
-    // --- Global Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
     }
@@ -22,16 +14,13 @@ service cloud.firestore {
       return resource != null && isOwner(ownerId);
     }
 
-    // Helper to check if the current user is an admin or owner of a room
     function isRoomAdmin(chatRoomId) {
       let room = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
       return isSignedIn() && (request.auth.uid == room.ownerId || (room.moderatorIds != null && request.auth.uid in room.moderatorIds));
     }
 
-    // --- Collection Rules ---
-
     match /users/{userId} {
-      allow get, list: if isSignedIn(); // Allow discovery
+      allow get, list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
@@ -58,7 +47,6 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       
-      // Allow update if owner, admin, or for participantCount synchronization
       allow update: if isSignedIn() && (
         isOwner(resource.data.ownerId) || 
         (resource.data.moderatorIds != null && request.auth.uid in resource.data.moderatorIds) ||
@@ -69,7 +57,6 @@ service cloud.firestore {
 
       match /participants/{participantId} {
         allow get, list: if isSignedIn();
-        // Allow write if it's the user's own presence, or if the requester is a room admin/owner
         allow write: if isSignedIn() && (
           request.auth.uid == participantId || 
           isRoomAdmin(chatRoomId)
@@ -83,7 +70,6 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow get, list: if isSignedIn();
         allow create: if isSignedIn();
-        // Allow delete if owner or moderator
         allow delete: if isRoomAdmin(chatRoomId);
       }
     }

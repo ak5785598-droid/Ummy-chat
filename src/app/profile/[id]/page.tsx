@@ -111,7 +111,7 @@ export default function ProfilePage() {
             <div className="flex-1 flex flex-col items-center justify-center space-y-6">
                <Loader className="h-12 w-12 animate-spin text-primary" />
                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-black uppercase italic tracking-tighter">Identity Establishing</h2>
+                  <h2 className="text-2xl font-black uppercase italic tracking-tighter">Establishing Identity</h2>
                   <p className="text-muted-foreground font-body text-base max-w-xs mx-auto">Please wait while we synchronize your frequency with the tribal social graph.</p>
                </div>
             </div>
@@ -153,14 +153,12 @@ export default function ProfilePage() {
                       <AvatarImage src={profile?.avatarUrl || undefined} />
                       <AvatarFallback className="text-3xl font-black bg-slate-100">{(profile?.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
-                    {/* Activity Indicator */}
                     <div className={cn(
                       "absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white shadow-lg",
                       profile?.isOnline ? "bg-green-500" : "bg-black"
                     )} />
                   </div>
                 </AvatarFrame>
-                {/* Vertically Stacked Tags with Minimal Gap */}
                 <div className="flex flex-col -space-y-3.5 h-[48px] justify-start mt-1">
                   <SellerTag size="sm" />
                 </div>
@@ -275,7 +273,6 @@ export default function ProfilePage() {
                         <AvatarFallback className="text-4xl font-black bg-slate-100 text-black">{(profile.username || 'A').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
-                  {/* Activity Indicator */}
                   <div className={cn(
                     "absolute bottom-2 right-2 h-6 w-6 rounded-full border-4 border-[#051a05] shadow-lg",
                     profile.isOnline ? "bg-green-500" : "bg-black"

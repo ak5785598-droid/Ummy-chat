@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +9,7 @@ import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 /**
  * High-Fidelity Home / Discovery Hub.

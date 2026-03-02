@@ -72,7 +72,7 @@ export function AppLayout({
   if (isUserLoading) return <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]"><UmmyLogoIcon className="h-16 w-16 text-white animate-pulse" /></div>;
   if (fullScreen || pathname.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
-  // Check if we are inside a specific room to hide navigation frequencies
+  // Detect if we are inside a specific room frequency to hide navigation Section
   const isInsideRoom = pathname.startsWith('/rooms/') && pathname !== '/rooms';
 
   return (
@@ -106,7 +106,7 @@ export function AppLayout({
           </header>
           <main className="flex-1 w-full overflow-y-auto bg-white rounded-tl-[2.5rem] shadow-2xl relative no-scrollbar">{children}</main>
           
-          {/* Suppress bottom nav if inside a specific frequency (room) */}
+          {/* Hide bottom mobile nav when inside a room frequency */}
           {!isInsideRoom && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-20 pb-safe shrink-0 relative z-50 px-4">
               {mobileNavItems.map((item) => {
