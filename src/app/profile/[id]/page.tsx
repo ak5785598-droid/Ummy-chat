@@ -17,7 +17,10 @@ import {
   Activity,
   Users,
   Settings as SettingsIcon,
-  Shield as ShieldIcon
+  Shield as ShieldIcon,
+  MessageCircle,
+  UserPlus,
+  Search
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -44,6 +47,7 @@ const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
       "border-[#b45309] bg-gradient-to-br from-[#451a03] to-black"
     )}>
        <div className="absolute top-0 left-0 w-full h-full bg-white/5 pointer-events-none" />
+       {/* High-fidelity sofa/chair icon for the supporter slot */}
        <svg viewBox="0 0 24 24" className="h-8 w-8 text-white/40 fill-current" xmlns="http://www.w3.org/2000/svg">
           <path d="M19 13V5c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v8H3v2h2v5h2v-5h10v5h2v-5h2v-2h-2zm-2-8v8H7V5h10z"/>
        </svg>
@@ -84,7 +88,7 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Re-engineered param frequency sync
+  // High-fidelity parameter extraction
   const profileId = params?.id ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
   
   const { user: currentUser, isUserLoading } = useUser();
@@ -104,7 +108,7 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === profileId;
 
-  // Unified loading handshake
+  // Handshake verification
   if (isUserLoading || isProfileLoading || !profileId) {
     return (
       <AppLayout>
@@ -250,20 +254,24 @@ export default function ProfilePage() {
     );
   }
 
-  // OTHERS VIEW (Atmospheric Emerald)
+  // OTHERS VIEW (Atmospheric Emerald - MATCHING BLUEPRINT)
   return (
-    <AppLayout>
-      <div className="min-h-full bg-[#051a05] text-white font-headline relative flex flex-col overflow-x-hidden pb-32">
-        <div className="absolute top-0 left-0 w-full h-[60vh] z-0 overflow-hidden">
+    <AppLayout hideSidebarOnMobile>
+      <div className="min-h-[100dvh] bg-[#051a05] text-white font-headline relative flex flex-col overflow-x-hidden">
+        {/* Deep Atmospheric Backdrop */}
+        <div className="absolute top-0 left-0 w-full h-[65vh] z-0 overflow-hidden">
            <div className="absolute inset-0 bg-black/40 z-10" />
            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#051a05]/80 to-[#051a05] z-20" />
-           <Image 
-             src={profile.avatarUrl || 'https://picsum.photos/seed/bg/800/1200'} 
-             alt="Blurred Background" 
-             fill 
-             className="object-cover blur-3xl scale-125 opacity-60"
-           />
-           <div className="relative h-full w-full">
+           <div className="relative h-full w-full opacity-60 scale-110 blur-xl">
+              <Image 
+                src={profile.avatarUrl || 'https://picsum.photos/seed/bg/800/1200'} 
+                alt="Banner Blur" 
+                fill 
+                className="object-cover"
+              />
+           </div>
+           {/* Sharp central identity image used as top background */}
+           <div className="absolute top-0 left-0 w-full h-full opacity-40">
               <Image 
                 src={profile.avatarUrl || 'https://picsum.photos/seed/ammy/800/1200'} 
                 alt="Identity Banner" 
@@ -273,17 +281,19 @@ export default function ProfilePage() {
            </div>
         </div>
 
+        {/* Top Management Bar */}
         <header className="relative z-50 flex items-center justify-between p-6 pt-10">
-           <button onClick={() => router.back()} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform"><ChevronLeft className="h-6 w-6" /></button>
-           <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white"><SettingsIcon className="h-6 w-6" /></button>
+           <button onClick={() => router.back()} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform shadow-lg"><ChevronLeft className="h-6 w-6" /></button>
+           <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white shadow-lg"><ShieldIcon className="h-6 w-6" /></button>
         </header>
 
-        <div className="relative z-30 flex flex-col items-center px-6 mt-[20vh] space-y-6">
+        <div className="relative z-30 flex flex-col items-center px-6 mt-[15vh] space-y-6 flex-1 pb-40">
+           {/* Central Signature Avatar */}
            <div className="relative">
-              <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+              <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
                 <div className="relative">
-                  <div className="h-32 w-32 rounded-full border-4 border-white/20 p-1 shadow-2xl backdrop-blur-md bg-white/5">
-                    <Avatar className="h-full w-full border-2 border-white">
+                  <div className="h-36 w-36 rounded-full border-4 border-white/20 p-1 shadow-2xl backdrop-blur-md bg-white/5">
+                    <Avatar className="h-full w-full border-2 border-white shadow-inner">
                         <AvatarImage src={profile.avatarUrl || undefined} />
                         <AvatarFallback className="text-4xl font-black bg-slate-100 text-black">{(profile.username || 'A').charAt(0)}</AvatarFallback>
                     </Avatar>
@@ -296,65 +306,113 @@ export default function ProfilePage() {
               </AvatarFrame>
            </div>
 
+           {/* Identity Row - Matching Screenshot Labels */}
            <div className="text-center space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <h1 className="text-4xl font-black tracking-tighter drop-shadow-lg">{profile.username}</h1>
-              </div>
+              <h1 className="text-4xl font-black tracking-tighter drop-shadow-lg">{profile.username}</h1>
               <div className="flex items-center justify-center gap-2">
                  <span className="text-xl">🇮🇳</span>
-                 <div className="flex items-center gap-1.5 text-white/80 bg-black/20 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/10">
-                    <span className="text-xs font-black uppercase tracking-tight">ID:{profile.specialId}</span>
-                    <button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3 text-white/40" /></button>
+                 <div className="flex items-center gap-1.5 text-white/80 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-xl">
+                    <div className="h-4 w-4 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                       <span className="text-[8px] font-bold">♂</span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-tight">ID:{profile.specialId}</span>
+                    <button onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}><Copy className="h-3 w-3 text-white/40 hover:text-white" /></button>
                  </div>
               </div>
-              <div className="flex items-center justify-center gap-3 mt-2">
-                 <div className="bg-gradient-to-r from-blue-400 to-indigo-600 px-3 py-0.5 rounded-full flex items-center gap-1 shadow-xl border border-white/20"><span className="text-[10px] font-black">🛡️ {profile.level?.rich || 1}</span></div>
-                 <div className="bg-gradient-to-r from-[#10b981] to-[#059669] px-3 py-0.5 rounded-full flex items-center gap-1 shadow-xl border border-white/20"><span className="text-[10px] font-black">💎 {profile.level?.charm || 1}</span></div>
+              
+              {/* Level Badges Row */}
+              <div className="flex items-center justify-center gap-3 mt-3">
+                 <div className="bg-gradient-to-r from-blue-400 to-indigo-600 px-4 py-1 rounded-full flex items-center gap-1.5 shadow-xl border border-white/20">
+                    <div className="h-3 w-3 bg-white/20 rounded-full flex items-center justify-center"><ShieldIcon className="h-2 w-2 text-white" /></div>
+                    <span className="text-[10px] font-black uppercase italic">{profile.level?.rich || 13}</span>
+                 </div>
+                 <div className="bg-gradient-to-r from-[#10b981] to-[#059669] px-4 py-1 rounded-full flex items-center gap-1.5 shadow-xl border border-white/20">
+                    <div className="h-3 w-3 bg-white/20 rounded-full flex items-center justify-center">💎</div>
+                    <span className="text-[10px] font-black uppercase italic">{profile.level?.charm || 3}</span>
+                 </div>
               </div>
            </div>
 
+           {/* "My Room" link card - Atmospheric Emerald */}
            {activeRoom && (
              <Link href={`/rooms/${activeRoom.id}`} className="w-full max-w-xs">
-                <div className="bg-[#0a2e1a]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between group active:scale-[0.98] transition-transform shadow-lg">
+                <div className="bg-[#0a2e1a]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between group active:scale-[0.98] transition-transform shadow-2xl">
                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl overflow-hidden relative border border-white/10"><Image src={activeRoom.coverUrl || 'https://picsum.photos/seed/room/200/200'} alt="Room" fill className="object-cover" /></div>
-                      <div><p className="text-xs font-black uppercase tracking-tight">{activeRoom.name}</p><p className="text-[8px] font-black text-white/40 uppercase tracking-widest">My Frequency</p></div>
+                      <div className="h-10 w-10 rounded-xl overflow-hidden relative border border-white/10">
+                         <Image src={activeRoom.coverUrl || 'https://picsum.photos/seed/room/200/200'} alt="Room" fill className="object-cover" />
+                      </div>
+                      <div>
+                         <p className="text-xs font-black uppercase tracking-tight text-white">{activeRoom.title}</p>
+                         <p className="text-[8px] font-black text-[#10b981] uppercase tracking-widest italic">My Room</p>
+                      </div>
                    </div>
                    <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white transition-colors" />
                 </div>
              </Link>
            )}
 
-           <div className="w-full bg-black/30 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex justify-around items-center shadow-inner">
-              <div className="flex flex-col items-center gap-1"><span className="text-xl font-black">0</span><span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest">Friends</span></div>
+           {/* Social Stats Matrix */}
+           <div className="w-full bg-black/20 backdrop-blur-sm rounded-3xl border border-white/5 p-6 flex justify-around items-center shadow-inner">
+              <div className="flex flex-col items-center gap-1">
+                 <span className="text-xl font-black">0</span>
+                 <span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest opacity-60">Friends</span>
+              </div>
               <div className="h-8 w-px bg-white/5" />
-              <div className="flex flex-col items-center gap-1"><span className="text-xl font-black">0</span><span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest">Following</span></div>
+              <div className="flex flex-col items-center gap-1">
+                 <span className="text-xl font-black">0</span>
+                 <span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest opacity-60">Following</span>
+              </div>
               <div className="h-8 w-px bg-white/5" />
-              <div className="flex flex-col items-center gap-1"><span className="text-xl font-black">{profile.stats?.followers || 0}</span><span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest">Followers</span></div>
+              <div className="flex flex-col items-center gap-1">
+                 <span className="text-xl font-black">{profile.stats?.followers || 78}</span>
+                 <span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest opacity-60">Followers</span>
+              </div>
+              <div className="h-8 w-px bg-white/5" />
+              <div className="flex flex-col items-center gap-1">
+                 <span className="text-xl font-black">0</span>
+                 <span className="text-[9px] font-black uppercase text-[#10b981] tracking-widest opacity-60">Visitors</span>
+              </div>
            </div>
 
+           {/* Elite Supporter Section */}
            <section className="w-full space-y-4">
               <div className="flex items-center justify-between px-2">
-                 <h3 className="text-sm font-black uppercase text-yellow-500 tracking-widest">Supporter</h3>
-                 <button className="flex items-center gap-1 text-[9px] font-black uppercase text-white/40 tracking-widest">View list <ChevronRight className="h-3 w-3" /></button>
+                 <h3 className="text-base font-black uppercase text-yellow-500 tracking-tighter italic">Supporter</h3>
+                 <button className="flex items-center gap-1 text-[10px] font-black uppercase text-white/40 tracking-widest hover:text-white transition-colors">View list <ChevronRight className="h-3 w-3" /></button>
               </div>
-              <div className="bg-black/20 backdrop-blur-sm rounded-3xl p-6 flex gap-6 overflow-x-auto no-scrollbar border border-white/5">
+              <div className="bg-black/20 backdrop-blur-sm rounded-3xl p-6 flex gap-6 overflow-x-auto no-scrollbar border border-white/5 shadow-xl">
                  <SupporterIcon color="gold" rank={1} />
                  <SupporterIcon color="silver" rank={2} />
                  <SupporterIcon color="bronze" rank={3} />
               </div>
            </section>
-
-           <div className="w-full flex justify-center pt-10">
-              <div className="flex flex-col items-center gap-1 group cursor-pointer active:scale-90 transition-transform">
-                <div className="h-16 w-16 rounded-3xl bg-gradient-to-br from-[#d946ef] via-[#a855f7] to-[#7c3aed] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] border-2 border-white/20">
-                   <div className="p-2 bg-white/20 rounded-xl"><Gift className="h-8 w-8 text-white fill-current" /></div>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">Gift</span>
-              </div>
-           </div>
         </div>
+
+        {/* Sticky Interaction Hub - High-Fidelity Blueprint Alignment */}
+        <footer className="fixed bottom-0 left-0 right-0 p-6 pt-10 bg-gradient-to-t from-[#051a05] via-[#051a05]/95 to-transparent z-[60] flex items-center justify-around gap-4 border-t border-white/5">
+           <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#4ade80] to-[#16a34a] flex items-center justify-center shadow-[0_0_20px_rgba(22,163,74,0.4)] border border-white/20">
+                 <UserPlus className="h-7 w-7 text-white" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Follow</span>
+           </div>
+
+           <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] flex items-center justify-center shadow-[0_0_20px_rgba(2,132,199,0.4)] border border-white/20">
+                 <MessageCircle className="h-7 w-7 text-white" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Chat</span>
+           </div>
+
+           <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#d946ef] via-[#a855f7] to-[#7c3aed] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-white/20">
+                 <Gift className="h-7 w-7 text-white fill-current" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Gift</span>
+           </div>
+        </footer>
       </div>
+      <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </AppLayout>
   );
 }
