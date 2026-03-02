@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -155,7 +154,7 @@ const ModeratorItem = ({ userId }: { userId: string }) => {
   return (
     <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
       <Avatar className="h-12 w-12 border-2 border-white/10">
-        <AvatarImage src={userProfile.avatarUrl} />
+        <AvatarImage src={userProfile.avatarUrl || undefined} />
         <AvatarFallback>U</AvatarFallback>
       </Avatar>
       <div className="flex-1">
@@ -176,7 +175,7 @@ const TribeMemberItem = ({ participant, ownerId }: { participant: RoomParticipan
       <div className="flex items-center gap-4">
         <div className="relative">
           <Avatar className="h-14 w-14 border-2 border-white/10">
-            <AvatarImage src={participant.avatarUrl} />
+            <AvatarImage src={participant.avatarUrl || undefined} />
             <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className={cn(
@@ -386,8 +385,15 @@ export function RoomClient({ room }: { room: Room }) {
 
   useEffect(() => {
     if (roomAudioRef.current) {
-      if (room.currentMusicUrl) { roomAudioRef.current.src = room.currentMusicUrl; roomAudioRef.current.play().catch(() => {}); }
-      else { roomAudioRef.current.pause(); roomAudioRef.current.src = ''; }
+      if (room.currentMusicUrl) { 
+        roomAudioRef.current.src = room.currentMusicUrl; 
+        roomAudioRef.current.play().catch(() => {}); 
+      }
+      else { 
+        roomAudioRef.current.pause(); 
+        roomAudioRef.current.removeAttribute('src');
+        roomAudioRef.current.load();
+      }
     }
   }, [room.currentMusicUrl]);
 
@@ -456,9 +462,9 @@ export function RoomClient({ room }: { room: Room }) {
       const reward = 1000;
       const userRef = doc(firestore, 'users', currentUser.uid);
       const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      const updateData = { 'wallet.coins': increment(reward), 'lastMoneyTreeClaimAt': serverTimestamp(), 'updatedAt': serverTimestamp() };
-      updateDocumentNonBlocking(userRef, updateData);
-      updateDocumentNonBlocking(profileRef, updateData);
+      const data = { 'wallet.coins': increment(reward), 'lastMoneyTreeClaimAt': serverTimestamp(), 'updatedAt': serverTimestamp() };
+      updateDocumentNonBlocking(userRef, data);
+      updateDocumentNonBlocking(profileRef, data);
       toast({ title: 'Sync Successful', description: `Received 1,000 Gold Coins.` });
     } catch (e: any) { toast({ variant: 'destructive', title: 'Sync Failed', description: e.message }); } finally { setIsClaimingTree(false); }
   };
@@ -554,7 +560,7 @@ export function RoomClient({ room }: { room: Room }) {
                 )}
               >
                 {occupant ? (
-                  <Avatar className="h-full w-full"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar>
+                  <Avatar className="h-full w-full"><AvatarImage src={occupant.avatarUrl || undefined} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar>
                 ) : isLocked ? (<Lock className="h-4 w-4 text-red-500/60" />) : (<Armchair className={cn("text-white/20", index === 1 ? "h-6 w-6" : "h-5 w-5")} />)}
               </button>
             </AvatarFrame>
@@ -586,7 +592,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3 cursor-pointer group active:scale-[0.98] transition-transform" onClick={() => setIsRoomInfoOpen(true)}>
-          <Avatar className="h-10 w-10 rounded-xl border border-white/20 group-hover:border-primary transition-colors"><AvatarImage src={room.coverUrl} /><AvatarFallback>UM</AvatarFallback></Avatar>
+          <Avatar className="h-10 w-10 rounded-xl border border-white/20 group-hover:border-primary transition-colors"><AvatarImage src={room.coverUrl || undefined} /><AvatarFallback>UM</AvatarFallback></Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2"><h1 className="font-black text-sm uppercase tracking-tight">{room.title}</h1><ChevronRight className="h-3 w-3 text-white/40 group-hover:text-primary" /></div>
             <p className="text-[10px] font-bold text-white/60 uppercase">ID:{room.roomNumber}</p>
@@ -740,11 +746,11 @@ export function RoomClient({ room }: { room: Room }) {
             <div className="absolute top-8 left-6"><button onClick={handleCopyInvite} className="p-3 bg-white/10 rounded-full hover:bg-white/20 active:scale-90 transition-all"><Share2 className="h-6 w-6" /></button></div>
             <div className="absolute top-8 right-6"><button onClick={() => { setIsRoomInfoOpen(false); setIsSettingsOpen(true); }} className="p-3 bg-white/10 rounded-full hover:bg-white/20 active:scale-90 transition-all"><SettingsIcon className="h-6 w-6" /></button></div>
             <div className="flex flex-col items-center gap-4 mb-8">
-              <div className="relative"><Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl"><AvatarImage src={ownerProfile?.avatarUrl} /><AvatarFallback className="bg-slate-800 text-4xl">{(ownerProfile?.username || 'U').charAt(0)}</AvatarFallback></Avatar><div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-500 rounded-full p-1.5 shadow-lg"><Crown className="h-6 w-6 text-black fill-current" /></div></div>
+              <div className="relative"><Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl"><AvatarImage src={ownerProfile?.avatarUrl || undefined} /><AvatarFallback className="bg-slate-800 text-4xl">{(ownerProfile?.username || 'U').charAt(0)}</AvatarFallback></Avatar><div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-500 rounded-full p-1.5 shadow-lg"><Crown className="h-6 w-6 text-black fill-current" /></div></div>
               <div className="text-center space-y-1"><h2 className="text-3xl font-black uppercase tracking-tighter">{ownerProfile?.username || room.title}</h2><div className="flex items-center justify-center gap-2 text-white/60"><span className="text-xs font-bold uppercase tracking-widest">ID:{room.roomNumber}</span><button onClick={() => { navigator.clipboard.writeText(room.roomNumber); toast({ title: 'ID Copied' }); }} className="p-1 hover:text-white transition-colors"><Copy className="h-3 w-3" /></button></div></div>
             </div>
             <div className="flex gap-12 border-b border-white/10 w-full justify-center mb-8"><button onClick={() => setInfoTab('profile')} className={cn("pb-4 text-lg font-black uppercase tracking-widest border-b-4 transition-all", infoTab === 'profile' ? "border-primary text-white" : "border-transparent text-white/40")}>Profile</button><button onClick={() => setInfoTab('members')} className={cn("pb-4 text-lg font-black uppercase tracking-widest border-b-4 transition-all", infoTab === 'members' ? "border-primary text-white" : "border-transparent text-white/40")}>Member</button></div>
-            <ScrollArea className="w-full max-w-sm flex-1 no-scrollbar"><div className="space-y-8 pb-20">{infoTab === 'profile' ? (<><div className="w-full bg-white/5 rounded-[2rem] p-4 flex items-center gap-4 border border-white/5 shadow-inner"><Avatar className="h-14 w-14 rounded-2xl border-2 border-white/10"><AvatarImage src={ownerProfile?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar><div className="flex-1"><p className="font-black text-lg uppercase tracking-tight">{ownerProfile?.username || 'Host'}</p><p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Room Owner</p></div><div className="flex items-center gap-1 bg-primary/20 px-3 py-1 rounded-full border border-primary/30"><Crown className="h-3 w-3 text-primary" /><span className="text-[10px] font-black text-primary uppercase">Elite</span></div></div><div className="w-full space-y-4"><div className="flex items-center gap-2 px-2"><Info className="h-4 w-4 text-white/40" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Announcement</h3></div><div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 min-h-[120px]"><p className="text-lg font-medium text-white/80 leading-relaxed">{room.announcement || "Welcome to the frequency!"}</p></div></div></>) : (<div className="w-full space-y-3"><div className="flex items-center gap-2 px-2 mb-2"><ShieldCheck className="h-4 w-4 text-blue-400" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Room Administrators</h3></div><div className="space-y-3">{room.moderatorIds?.map(id => (<ModeratorItem key={id} userId={id} />))}{(!room.moderatorIds || room.moderatorIds.length === 0) && (<p className="text-center py-10 text-white/20 uppercase font-black text-xs italic">No admins assigned</p>)}</div></div>)}</div></ScrollArea>
+            <ScrollArea className="w-full max-w-sm flex-1 no-scrollbar"><div className="space-y-8 pb-20">{infoTab === 'profile' ? (<><div className="w-full bg-white/5 rounded-[2rem] p-4 flex items-center gap-4 border border-white/5 shadow-inner"><Avatar className="h-14 w-14 rounded-2xl border-2 border-white/10"><AvatarImage src={ownerProfile?.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar><div className="flex-1"><p className="font-black text-lg uppercase tracking-tight">{ownerProfile?.username || 'Host'}</p><p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Room Owner</p></div><div className="flex items-center gap-1 bg-primary/20 px-3 py-1 rounded-full border border-primary/30"><Crown className="h-3 w-3 text-primary" /><span className="text-[10px] font-black text-primary uppercase">Elite</span></div></div><div className="w-full space-y-4"><div className="flex items-center gap-2 px-2"><Info className="h-4 w-4 text-white/40" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Announcement</h3></div><div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 min-h-[120px]"><p className="text-lg font-medium text-white/80 leading-relaxed">{room.announcement || "Welcome to the frequency!"}</p></div></div></>) : (<div className="w-full space-y-3"><div className="flex items-center gap-2 px-2 mb-2"><ShieldCheck className="h-4 w-4 text-blue-400" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Room Administrators</h3></div><div className="space-y-3">{room.moderatorIds?.map(id => (<ModeratorItem key={id} userId={id} />))}{(!room.moderatorIds || room.moderatorIds.length === 0) && (<p className="text-center py-10 text-white/20 uppercase font-black text-xs italic">No admins assigned</p>)}</div></div>)}</div></ScrollArea>
             <button onClick={() => setIsRoomInfoOpen(false)} className="mt-auto mb-8 text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-white transition-colors">Tap anywhere to close</button>
           </div>
         </DialogContent>
@@ -758,7 +764,7 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                    <AvatarImage src={giftRecipient?.avatarUrl || hostParticipant?.avatarUrl || userProfile?.avatarUrl} />
+                    <AvatarImage src={giftRecipient?.avatarUrl || hostParticipant?.avatarUrl || userProfile?.avatarUrl || undefined} />
                     <AvatarFallback><UserIcon className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full ring-2 ring-white"><UserCheck className="h-3 w-3" /></div>
@@ -821,7 +827,7 @@ export function RoomClient({ room }: { room: Room }) {
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <div className="flex flex-col items-center gap-3">
               <Avatar className="h-20 w-20 border-4 border-secondary shadow-xl">
-                <AvatarImage src={selectedOccupant?.avatarUrl} />
+                <AvatarImage src={selectedOccupant?.avatarUrl || undefined} />
                 <AvatarFallback className="text-2xl">{(selectedOccupant?.name || 'U').charAt(0)}</AvatarFallback>
               </Avatar>
               <DialogTitle className="text-2xl font-black uppercase tracking-tighter">{selectedOccupant ? selectedOccupant.name : `Slot ${selectedSeatIndex}`}</DialogTitle>

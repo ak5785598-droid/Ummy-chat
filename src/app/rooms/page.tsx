@@ -112,7 +112,7 @@ export default function RoomsPage() {
        </div>
        <div className="flex justify-center items-center h-10">
           <Avatar className="h-10 w-10 border-2 border-yellow-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]">
-             <AvatarImage src={items?.[0]?.avatarUrl || items?.[0]?.coverUrl} />
+             <AvatarImage src={items?.[0]?.avatarUrl || items?.[0]?.coverUrl || undefined} />
              <AvatarFallback className="bg-black/20 text-white font-black">{items?.[0]?.username?.charAt(0) || 'A'}</AvatarFallback>
           </Avatar>
        </div>
