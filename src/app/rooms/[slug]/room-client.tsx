@@ -333,7 +333,7 @@ export function RoomClient({ room }: { room: Room }) {
     const userRef = doc(firestore, 'users', currentUser.uid);
     const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const roomDocRef = doc(firestore, 'chatRooms', room.id);
-    let finalRecipient = giftRecipient || (participants?.find(p => p.seatIndex === 1) ? { uid: participants.find(p => p.seatIndex === 1)!.uid, name: participants.find(p => p.seatIndex === 1)!.name, avatarUrl: participants.find(p => p.seatIndex === 1)!.avatarUrl } : { uid: currentUser.uid, name: userProfile.username, avatarUrl: userProfile.avatarUrl });
+    let finalRecipient = giftRecipient || (hostParticipant ? { uid: hostParticipant.uid, name: hostParticipant.name, avatarUrl: hostParticipant.avatarUrl } : { uid: currentUser.uid, name: userProfile.username, avatarUrl: userProfile.avatarUrl });
     const isSelfGifting = finalRecipient.uid === currentUser.uid;
     const newTotalSpent = (userProfile.wallet?.totalSpent || 0) + gift.price;
     const walletUpdates: any = { 'wallet.coins': increment(-gift.price), 'wallet.totalSpent': increment(gift.price), 'wallet.dailySpent': increment(gift.price), 'level.rich': calculateRichLevel(newTotalSpent), updatedAt: serverTimestamp() };
@@ -568,7 +568,7 @@ export function RoomClient({ room }: { room: Room }) {
       </Dialog>
 
       <Dialog open={!!editingField} onOpenChange={(open) => !open && setEditingField(null)}>
-        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden">
+        <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Edit Room {editingField}</DialogTitle>
           </DialogHeader>
@@ -615,7 +615,7 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="text-center space-y-1"><h2 className="text-3xl font-black uppercase tracking-tighter">{ownerProfile?.username || room.title}</h2><div className="flex items-center justify-center gap-2 text-white/60"><span className="text-xs font-bold uppercase tracking-widest">ID:{room.roomNumber}</span><button onClick={() => { navigator.clipboard.writeText(room.roomNumber); toast({ title: 'ID Copied' }); }} className="p-1 hover:text-white transition-colors"><Copy className="h-3 w-3" /></button></div></div>
             </div>
             <div className="flex gap-12 border-b border-white/10 w-full justify-center mb-8"><button onClick={() => setInfoTab('profile')} className={cn("pb-4 text-lg font-black uppercase tracking-widest border-b-4 transition-all", infoTab === 'profile' ? "border-primary text-white" : "border-transparent text-white/40")}>Profile</button><button onClick={() => setInfoTab('members')} className={cn("pb-4 text-lg font-black uppercase tracking-widest border-b-4 transition-all", infoTab === 'members' ? "border-primary text-white" : "border-transparent text-white/40")}>Member</button></div>
-            <ScrollArea className="w-full max-w-sm flex-1 no-scrollbar"><div className="space-y-8 pb-20">{infoTab === 'profile' ? (<><div className="w-full bg-white/5 rounded-[2rem] p-4 flex items-center gap-4 border border-white/5 shadow-inner"><Avatar className="h-14 w-14 rounded-2xl border-2 border-white/10"><AvatarImage src={ownerProfile?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar><div className="flex-1"><p className="font-black text-lg uppercase tracking-tight">{ownerProfile?.username || 'Host'}</p><p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Room owner</p></div><div className="flex items-center gap-1 bg-primary/20 px-3 py-1 rounded-full border border-primary/30"><Crown className="h-3 w-3 text-primary" /><span className="text-[10px] font-black text-primary uppercase">Elite</span></div></div><div className="w-full space-y-4"><div className="flex items-center gap-2 px-2"><Info className="h-4 w-4 text-white/40" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Announcement</h3></div><div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 min-h-[120px]"><p className="text-lg font-medium text-white/80 leading-relaxed">{room.announcement || "Welcome to the tribe!"}</p></div></div></>) : (<div className="w-full space-y-3"><div className="flex items-center gap-2 px-2 mb-2"><ShieldCheck className="h-4 w-4 text-blue-400" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Room Administrators</h3></div><div className="space-y-3">{room.moderatorIds?.map(id => (<ModeratorItem key={id} userId={id} />))}{(!room.moderatorIds || room.moderatorIds.length === 0) && (<p className="text-center py-10 text-white/20 uppercase font-black text-xs italic">No admins assigned</p>)}</div></div>)}</div></ScrollArea>
+            <ScrollArea className="w-full max-w-sm flex-1 no-scrollbar"><div className="space-y-8 pb-20">{infoTab === 'profile' ? (<><div className="w-full bg-white/5 rounded-[2rem] p-4 flex items-center gap-4 border border-white/5 shadow-inner"><Avatar className="h-14 w-14 rounded-2xl border-2 border-white/10"><AvatarImage src={ownerProfile?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar><div className="flex-1"><p className="font-black text-lg uppercase tracking-tight">{ownerProfile?.username || 'Host'}</p><p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Room owner</p></div><div className="flex items-center gap-1 bg-primary/20 px-3 py-1 rounded-full border border-primary/30"><Crown className="h-3 w-3 text-primary" /><span className="text-[10px] font-black text-primary uppercase">Elite</span></div></div><div className="w-full space-y-4"><div className="flex items-center gap-2 px-2"><Info className="h-4 w-4 text-white/40" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Announcement</h3></div><div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 min-h-[120px]"><p className="text-lg font-medium text-white/80 leading-relaxed">{room.announcement || "Welcome to the frequency!"}</p></div></div></>) : (<div className="w-full space-y-3"><div className="flex items-center gap-2 px-2 mb-2"><ShieldCheck className="h-4 w-4 text-blue-400" /><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Room Administrators</h3></div><div className="space-y-3">{room.moderatorIds?.map(id => (<ModeratorItem key={id} userId={id} />))}{(!room.moderatorIds || room.moderatorIds.length === 0) && (<p className="text-center py-10 text-white/20 uppercase font-black text-xs italic">No admins assigned</p>)}</div></div>)}</div></ScrollArea>
             <button onClick={() => setIsRoomInfoOpen(false)} className="mt-auto mb-8 text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-white transition-colors">Tap anywhere to close</button>
           </div>
         </DialogContent>
@@ -650,6 +650,45 @@ export function RoomClient({ room }: { room: Room }) {
       <AlertDialog open={isClearChatConfirmOpen} onOpenChange={setIsClearChatConfirmOpen}>
         <AlertDialogContent className="bg-white text-black border-none rounded-[2rem]"><AlertDialogHeader><AlertDialogTitle className="text-2xl font-black uppercase tracking-tighter">Purge Frequency Chat?</AlertDialogTitle><AlertDialogDescription className="text-muted-foreground font-body text-base">This will permanently delete all messages from this frequency for all tribe members.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-full font-black uppercase tracking-widest text-xs">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleClearChat} className="bg-destructive text-white rounded-full font-black uppercase tracking-widest text-xs">Purge Now</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isActionMenuOpen} onOpenChange={setIsActionMenuOpen}>
+        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-full duration-500">
+          <DialogHeader className="p-8 pb-4 text-center border-b">
+            <div className="flex flex-col items-center gap-3">
+              <Avatar className="h-20 w-20 border-4 border-secondary shadow-xl">
+                <AvatarImage src={selectedOccupant?.avatarUrl} />
+                <AvatarFallback className="text-2xl">{(selectedOccupant?.name || 'U').charAt(0)}</AvatarFallback>
+              </Avatar>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">{selectedOccupant ? selectedOccupant.name : `Slot ${selectedSeatIndex}`}</DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="p-8 grid grid-cols-3 gap-6">
+            {!selectedOccupant ? (
+              <ToolTile icon={Armchair} label="Take Seat" onClick={() => { if (selectedSeatIndex) takeSeat(selectedSeatIndex); setIsActionMenuOpen(false); }} />
+            ) : selectedOccupant.uid === currentUser?.uid ? (
+              <ToolTile icon={LogOut} label="Leave Seat" onClick={leaveSeat} />
+            ) : null}
+            
+            {canManageRoom && (
+              <ToolTile icon={room.lockedSeats?.includes(selectedSeatIndex || 0) ? Unlock : Lock} label={room.lockedSeats?.includes(selectedSeatIndex || 0) ? "Unlock" : "Lock Seat"} onClick={() => { if (selectedSeatIndex) toggleSeatLock(selectedSeatIndex); setIsActionMenuOpen(false); }} />
+            )}
+
+            {selectedOccupant && canManageRoom && selectedOccupant.uid !== currentUser?.uid && (
+              <>
+                <ToolTile icon={selectedOccupant.isSilenced ? Volume2 : MicOff} label={selectedOccupant.isSilenced ? "Unsilence" : "Silence"} onClick={() => silenceParticipant(selectedOccupant.uid, !!selectedOccupant.isSilenced)} />
+                <ToolTile icon={Ban} label="Kick Tribe" onClick={() => kickParticipant(selectedOccupant.uid)} />
+                {isOwner && (
+                  <ToolTile 
+                    icon={room.moderatorIds?.includes(selectedOccupant.uid) ? ShieldCheck : UserPlus} 
+                    label={room.moderatorIds?.includes(selectedOccupant.uid) ? "Revoke Admin" : "Make Admin"} 
+                    onClick={() => { toggleModerator(selectedOccupant.uid); setIsActionMenuOpen(false); }} 
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <input type="file" ref={roomDpInputRef} onChange={(e) => { if (e.target.files?.[0]) { uploadRoomImage(e.target.files[0]); e.target.value = ''; } }} className="hidden" accept="image/*" />
     </div>
