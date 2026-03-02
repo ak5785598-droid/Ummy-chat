@@ -1,12 +1,14 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, deleteDoc, increment, writeBatch } from 'firebase/firestore';
 
 /**
  * Production Profile Initializer.
  * Assigns a unique sequential 3-digit numeric ID (e.g. 001, 002...) starting from 1.
+ * STALE IDENTITY PURGE: Detects if the user was in a room during a crash and cleans up.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -22,11 +24,36 @@ export function ProfileInitializer() {
       
       try {
         const userSnap = await getDoc(userRef);
+        
+        // 1. STALE IDENTITY PURGE PROTOCOL
         if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const staleRoomId = userData.currentRoomId;
+          
+          if (staleRoomId) {
+            // User was abruptly disconnected from a room. Clean up tribal graph.
+            try {
+              const batch = writeBatch(firestore);
+              const roomRef = doc(firestore, 'chatRooms', staleRoomId);
+              const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
+              
+              batch.update(roomRef, { participantCount: increment(-1) });
+              batch.delete(participantRef);
+              batch.update(userRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+              batch.update(doc(firestore, 'users', profileId, 'profile', profileId), { currentRoomId: null, updatedAt: serverTimestamp() });
+              
+              await batch.commit();
+              console.log(`[Identity Sync] Purged stale presence from room: ${staleRoomId}`);
+            } catch (e) {
+              // Silently fail if room no longer exists
+            }
+          }
+          
           hasInitialized.current = profileId;
           return;
         }
 
+        // 2. NEW IDENTITY CREATION
         hasInitialized.current = profileId;
 
         const finalData = await runTransaction(firestore, async (transaction) => {
@@ -49,6 +76,7 @@ export function ProfileInitializer() {
             avatarUrl: user.photoURL || '', 
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
+            currentRoomId: null,
             wallet: { 
               coins: 1000000, 
               diamonds: 0,

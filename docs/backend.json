@@ -11,6 +11,8 @@
         "username": { "type": "string" },
         "avatarUrl": { "type": "string", "format": "uri" },
         "bio": { "type": "string" },
+        "currentRoomId": { "type": "string", "description": "ID of the room the user is currently in." },
+        "isOnline": { "type": "boolean" },
         "wallet": {
           "type": "object",
           "properties": {
@@ -40,7 +42,8 @@
           }
         },
         "isNewUser": { "type": "boolean" },
-        "lastMoneyTreeClaimAt": { "type": "string", "format": "date-time" }
+        "lastMoneyTreeClaimAt": { "type": "string", "format": "date-time" },
+        "lastSignInAt": { "type": "string", "format": "date-time" }
       }
     },
     "ChatRoom": {
