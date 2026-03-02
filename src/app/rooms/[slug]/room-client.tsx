@@ -184,7 +184,6 @@ const TribeMemberItem = ({ participant, ownerId }: { participant: RoomParticipan
             <AvatarImage src={participant.avatarUrl} />
             <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          {/* Online Presence Indicator */}
           <div className={cn(
             "absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-black",
             userProfile?.isOnline ? "bg-green-500" : "bg-black"
@@ -219,9 +218,6 @@ const SettingsListItem = ({ label, value, onClick, icon: Icon, showChevron = tru
   </div>
 );
 
-/**
- * Functional Calculator Component for in-room utility.
- */
 function CalculatorPortal() {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
@@ -290,7 +286,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowingLoading, setIsFollowingLoading] = useState(true);
 
-  // Room Settings States
   const [editingField, setEditingField] = useState<'name' | 'announcement' | 'welcome' | 'music' | 'admins' | null>(null);
   const [fieldValue, setEditingFieldValue] = useState('');
 
@@ -756,24 +751,26 @@ export function RoomClient({ room }: { room: Room }) {
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Tools</DialogTitle>
           </DialogHeader>
           <div className="p-8 grid grid-cols-3 gap-6">
-            <ToolTile icon={CalculatorIcon} label="Calculator" onClick={() => { setIsCalculatorOpen(true); setIsGamesDialogOpen(false); }} />
+            <ToolTile icon={CalculatorIcon} label="Calculator" color="text-blue-400" onClick={() => { setIsCalculatorOpen(true); setIsGamesDialogOpen(false); }} />
             {canManageRoom && (
               <>
                 <ToolTile 
                   icon={room.isChatMuted ? MessageSquare : MessageSquareOff} 
                   label={room.isChatMuted ? "Open Msg" : "Close Msg"} 
+                  color="text-orange-400"
                   onClick={toggleRoomMessages} 
                   active={room.isChatMuted}
                 />
                 <ToolTile 
                   icon={Trash2} 
                   label="Clear Chat" 
+                  color="text-red-400"
                   onClick={() => { setIsClearChatConfirmOpen(true); setIsGamesDialogOpen(false); }} 
                 />
               </>
             )}
-            <ToolTile icon={Music} label="Music" onClick={() => { setIsMusicMenuOpen(true); setIsGamesDialogOpen(false); }} />
-            <ToolTile icon={Gamepad2} label="Games" onClick={() => { router.push('/games'); setIsGamesDialogOpen(false); }} />
+            <ToolTile icon={Music} label="Music" color="text-purple-400" onClick={() => { setIsMusicMenuOpen(true); setIsGamesDialogOpen(false); }} />
+            <ToolTile icon={Gamepad2} label="Games" color="text-green-400" onClick={() => { router.push('/games'); setIsGamesDialogOpen(false); }} />
           </div>
         </DialogContent>
       </Dialog>
@@ -801,23 +798,24 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <div className="p-8 grid grid-cols-3 gap-6">
             {!selectedOccupant ? (
-              <ToolTile icon={Armchair} label="Take Seat" onClick={() => { if (selectedSeatIndex) takeSeat(selectedSeatIndex); setIsActionMenuOpen(false); }} />
+              <ToolTile icon={Armchair} label="Take Seat" color="text-blue-400" onClick={() => { if (selectedSeatIndex) takeSeat(selectedSeatIndex); setIsActionMenuOpen(false); }} />
             ) : selectedOccupant.uid === currentUser?.uid ? (
-              <ToolTile icon={LogOut} label="Leave Seat" onClick={leaveSeat} />
+              <ToolTile icon={LogOut} label="Leave Seat" color="text-red-400" onClick={leaveSeat} />
             ) : null}
             
             {canManageRoom && (
-              <ToolTile icon={room.lockedSeats?.includes(selectedSeatIndex || 0) ? Unlock : Lock} label={room.lockedSeats?.includes(selectedSeatIndex || 0) ? "Unlock" : "Lock Seat"} onClick={() => { if (selectedSeatIndex) toggleSeatLock(selectedSeatIndex); setIsActionMenuOpen(false); }} />
+              <ToolTile icon={room.lockedSeats?.includes(selectedSeatIndex || 0) ? Unlock : Lock} label={room.lockedSeats?.includes(selectedSeatIndex || 0) ? "Unlock" : "Lock Seat"} color="text-orange-400" onClick={() => { if (selectedSeatIndex) toggleSeatLock(selectedSeatIndex); setIsActionMenuOpen(false); }} />
             )}
 
             {selectedOccupant && canManageRoom && selectedOccupant.uid !== currentUser?.uid && (
               <>
-                <ToolTile icon={selectedOccupant.isSilenced ? Volume2 : MicOff} label={selectedOccupant.isSilenced ? "Unsilence" : "Silence"} onClick={() => silenceParticipant(selectedOccupant.uid, !!selectedOccupant.isSilenced)} />
-                <ToolTile icon={Ban} label="Kick Tribe" onClick={() => kickParticipant(selectedOccupant.uid)} />
+                <ToolTile icon={selectedOccupant.isSilenced ? Volume2 : MicOff} label={selectedOccupant.isSilenced ? "Unsilence" : "Silence"} color="text-orange-400" onClick={() => silenceParticipant(selectedOccupant.uid, !!selectedOccupant.isSilenced)} />
+                <ToolTile icon={Ban} label="Kick Tribe" color="text-red-400" onClick={() => kickParticipant(selectedOccupant.uid)} />
                 {isOwner && (
                   <ToolTile 
                     icon={room.moderatorIds?.includes(selectedOccupant.uid) ? ShieldCheck : UserPlus} 
                     label={room.moderatorIds?.includes(selectedOccupant.uid) ? "Revoke Admin" : "Make Admin"} 
+                    color="text-blue-400"
                     onClick={() => { toggleModerator(selectedOccupant.uid); setIsActionMenuOpen(false); }} 
                   />
                 )}
@@ -832,9 +830,14 @@ export function RoomClient({ room }: { room: Room }) {
   );
 }
 
-const ToolTile = ({ icon: Icon, label, active, onClick, disabled }: any) => (
+const ToolTile = ({ icon: Icon, label, active, onClick, disabled, color }: any) => (
   <button onClick={onClick} disabled={disabled} className={cn("flex flex-col items-center gap-2 transition-all active:scale-95", disabled && "opacity-30 grayscale cursor-not-allowed")}>
-    <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center border-2 transition-colors", active ? "bg-primary/20 border-primary text-primary" : "bg-slate-800/50 border-white/5 text-white/60 hover:bg-slate-800")}><Icon className="h-7 w-7" /></div>
+    <div className={cn(
+      "h-16 w-16 rounded-2xl flex items-center justify-center border-2 transition-colors shadow-sm", 
+      active ? "bg-primary/20 border-primary text-primary" : "bg-slate-800/50 border-white/5 text-white/60 hover:bg-slate-800"
+    )}>
+      <Icon className={cn("h-7 w-7", !active && color ? color : "")} />
+    </div>
     <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">{label}</span>
   </button>
 );
