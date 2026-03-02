@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useStorage, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
  * Elite Visual Identity Sync Hook.
- * Handles profile picture uploads with high-fidelity resilience.
+ * Re-engineered with Resumable Upload Protocol for high-fidelity resilience.
  */
 export function useProfilePictureUpload() {
   const storage = useStorage();
@@ -28,16 +28,39 @@ export function useProfilePictureUpload() {
     }
 
     setIsUploading(true);
+    console.log(`[Visual Sync] Starting profile upload for: ${user.uid}`);
 
     try {
-      // 1. Storage Upload
+      // 1. Storage Upload Handshake
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const storagePath = `users/${user.uid}/profile_${timestamp}.${fileExtension}`;
       const storageRef = ref(storage, storagePath);
       
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Create completion promise
+      const downloadURL = await new Promise<string>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log(`[Visual Sync] Upload is ${progress}% complete`);
+          },
+          (error) => {
+            console.error('[Visual Sync] Upload Task Error:', error);
+            reject(error);
+          },
+          async () => {
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            } catch (urlError) {
+              reject(urlError);
+            }
+          }
+        );
+      });
 
       // 2. Firestore Sync (Non-Blocking)
       const userSummaryRef = doc(firestore, 'users', user.uid);
@@ -56,7 +79,7 @@ export function useProfilePictureUpload() {
         description: 'Your new persona is now live.',
       });
     } catch (error: any) {
-      console.error('[Visual Sync] Upload Failed:', error);
+      console.error('[Visual Sync] Identity Upload Failed:', error);
       toast({
         variant: 'destructive',
         title: 'Sync Failed',

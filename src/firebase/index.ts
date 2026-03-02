@@ -9,6 +9,7 @@ import { getStorage } from 'firebase/storage';
 /**
  * PRODUCTION FIREBASE INITIALIZATION
  * Re-engineered to simplify service retrieval and ensure absolute storage bucket stability.
+ * Explicitly resolves the storage bucket URI to prevent connection hangs.
  */
 export function initializeFirebase() {
   if (!getApps().length) {
@@ -20,12 +21,15 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  // Use default service initialization to inherit config signatures correctly
+  const bucket = firebaseConfig.storageBucket;
+  const storageUrl = bucket && !bucket.startsWith('gs://') ? `gs://${bucket}` : bucket;
+  
+  // Use explicit bucket initialization to ensure high-fidelity storage sync
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp),
-    storage: getStorage(firebaseApp)
+    storage: getStorage(firebaseApp, storageUrl)
   };
 }
 
