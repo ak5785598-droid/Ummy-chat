@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,11 +37,21 @@ export default function AdminPage() {
   const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   
+  const isCreator = user?.uid === CREATOR_ID;
+  const isAdmin = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'].includes(t)) || isCreator;
+
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Automatically switch to Authority Hub for the Creator
+  useEffect(() => {
+    if (isCreator) {
+      setActiveTab('authority');
+    }
+  }, [isCreator]);
 
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -54,9 +64,6 @@ export default function AdminPage() {
     return query(collection(firestore, 'adminLogs'), orderBy('createdAt', 'desc'), limit(20));
   }, [firestore, user]);
   const { data: logs } = useCollection(logsQuery);
-
-  const isCreator = user?.uid === CREATOR_ID;
-  const isAdmin = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'].includes(t)) || isCreator;
 
   const handleDistributeDailyRewards = async () => {
     if (!firestore || !isAdmin) return;
@@ -237,7 +244,6 @@ export default function AdminPage() {
     
     toast({ title: 'Authority Updated', description: `${roleId} ${hasRole ? 'revoked' : 'granted'} successfully.` });
     
-    // Refresh local list
     setFoundUsers(prev => prev.map(u => {
       if (u.id === targetUid) {
         const nextTags = hasRole ? u.tags.filter((t: string) => t !== roleId) : [...(u.tags || []), roleId];
@@ -267,10 +273,10 @@ export default function AdminPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-secondary/50 p-1.5 h-12 rounded-full border w-fit overflow-x-auto no-scrollbar">
+            {isCreator && <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] bg-red-500/10 text-red-500 data-[state=active]:bg-red-500 data-[state=active]:text-white">Authority Hub</TabsTrigger>}
             <TabsTrigger value="overview" className="rounded-full px-6 font-black uppercase text-[10px]">Overview</TabsTrigger>
             <TabsTrigger value="rewards" className="rounded-full px-6 font-black uppercase text-[10px]">Rewards Hub</TabsTrigger>
             <TabsTrigger value="users" className="rounded-full px-6 font-black uppercase text-[10px]">Users</TabsTrigger>
-            {isCreator && <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] bg-red-500/10 text-red-500">Authority Hub</TabsTrigger>}
             <TabsTrigger value="logs" className="rounded-full px-6 font-black uppercase text-[10px]">Audit Logs</TabsTrigger>
           </TabsList>
 

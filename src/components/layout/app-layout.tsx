@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { Home, Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, Zap } from "lucide-react";
+import { Home, Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, Zap, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useUser, useAuth } from "@/firebase";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +40,8 @@ const mobileNavItems = [
   { href: "/profile", label: "MINE", icon: Crown },
 ];
 
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+
 export function AppLayout({ 
   children, 
   hideSidebarOnMobile = false,
@@ -51,6 +54,7 @@ export function AppLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -68,11 +72,13 @@ export function AppLayout({
     try { await signOut(auth); window.location.href = '/login'; } catch (error: any) { toast({ variant: 'destructive', title: 'Logout Failed', description: error.message }); }
   };
 
+  const isCreator = user?.uid === CREATOR_ID;
+  const isAdmin = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'].includes(t)) || isCreator;
+
   if (!mounted) return null;
   if (isUserLoading) return <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]"><UmmyLogoIcon className="h-16 w-16 text-white animate-pulse" /></div>;
   if (fullScreen || pathname.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
-  // Detect if we are inside a specific room frequency to hide navigation Section
   const isInsideRoom = pathname.startsWith('/rooms/') && pathname !== '/rooms';
 
   return (
@@ -89,6 +95,13 @@ export function AppLayout({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}>
+                    <Link href="/admin" className="flex items-center gap-4"><ShieldAlert className="h-6 w-6 text-red-600" /><span className="text-base font-black uppercase italic text-red-600">Command Center</span></Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="bg-transparent p-6">
@@ -106,7 +119,6 @@ export function AppLayout({
           </header>
           <main className="flex-1 w-full overflow-y-auto bg-white rounded-tl-[2.5rem] shadow-2xl relative no-scrollbar">{children}</main>
           
-          {/* Hide bottom mobile nav when inside a room frequency */}
           {!isInsideRoom && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-20 pb-safe shrink-0 relative z-50 px-4">
               {mobileNavItems.map((item) => {
