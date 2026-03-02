@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { 
   Dialog, 
@@ -46,12 +46,20 @@ export function SellerTransferDialog() {
     setIsProcessing(true);
 
     try {
-      // 1. Find Recipient by Special ID
       const usersRef = collection(firestore, 'users');
-      // Ensure we pad the ID if it's less than 3 digits to match initializer protocol
       const paddedId = recipientId.padStart(3, '0');
       const q = query(usersRef, where('specialId', '==', paddedId));
-      const snap = await getDocs(q);
+      
+      let snap;
+      try {
+        snap = await getDocs(q);
+      } catch (serverError: any) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: usersRef.path,
+          operation: 'list',
+        }));
+        throw serverError;
+      }
 
       if (snap.empty) {
         toast({ 
@@ -76,37 +84,18 @@ export function SellerTransferDialog() {
         return;
       }
 
-      // 2. Perform Atomic Tribal Transfer
       const batch = writeBatch(firestore);
-      
       const senderRef = doc(firestore, 'users', user.uid);
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const receiverRef = doc(firestore, 'users', recipientUid);
       const receiverProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
       const receiverNotifRef = doc(collection(firestore, 'users', recipientUid, 'notifications'));
 
-      // Validate Sender Balance (Batch will fail if negative values result in rules violation, but we check here too)
-      // Note: Rules allow updates to wallet.coins.
-      
-      batch.update(senderRef, { 
-        'wallet.coins': increment(-coinsToTransfer), 
-        updatedAt: serverTimestamp() 
-      });
-      batch.update(senderProfileRef, { 
-        'wallet.coins': increment(-coinsToTransfer), 
-        updatedAt: serverTimestamp() 
-      });
+      batch.update(senderRef, { 'wallet.coins': increment(-coinsToTransfer), updatedAt: serverTimestamp() });
+      batch.update(senderProfileRef, { 'wallet.coins': increment(-coinsToTransfer), updatedAt: serverTimestamp() });
+      batch.update(receiverRef, { 'wallet.coins': increment(coinsToTransfer), updatedAt: serverTimestamp() });
+      batch.update(receiverProfileRef, { 'wallet.coins': increment(coinsToTransfer), updatedAt: serverTimestamp() });
 
-      batch.update(receiverRef, { 
-        'wallet.coins': increment(coinsToTransfer), 
-        updatedAt: serverTimestamp() 
-      });
-      batch.update(receiverProfileRef, { 
-        'wallet.coins': increment(coinsToTransfer), 
-        updatedAt: serverTimestamp() 
-      });
-
-      // Recipient Acknowledgement
       batch.set(receiverNotifRef, {
         title: 'Dispatch Received',
         content: `You received ${coinsToTransfer.toLocaleString()} Gold Coins from an Official Seller.`,
@@ -115,23 +104,20 @@ export function SellerTransferDialog() {
         isRead: false
       });
 
-      await batch.commit();
+      batch.commit().then(() => {
+        toast({ title: 'Sync Successful', description: `Successfully dispatched ${coinsToTransfer.toLocaleString()} Gold Coins to ID ${recipientId}.` });
+        setOpen(false);
+        setRecipientId('');
+        setAmount('');
+      }).catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch/commit',
+          operation: 'write',
+        }));
+      });
 
-      toast({ 
-        title: 'Sync Successful', 
-        description: `Successfully dispatched ${coinsToTransfer.toLocaleString()} Gold Coins to ID ${recipientId}.` 
-      });
-      
-      setOpen(false);
-      setRecipientId('');
-      setAmount('');
     } catch (e: any) {
-      console.error("Transfer Error:", e);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Dispatch Failed', 
-        description: e.message || 'The economic handshake was interrupted.' 
-      });
+      // Logic errors handled, permissions handled by emitter
     } finally {
       setIsProcessing(false);
     }

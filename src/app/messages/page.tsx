@@ -101,29 +101,25 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
     }
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !firestore || !currentUid) return;
 
     const msgText = text.trim();
     setText('');
 
-    try {
-      const chatRef = doc(firestore, 'privateChats', chatId);
-      updateDocumentNonBlocking(chatRef, {
-        lastMessage: msgText,
-        lastSenderId: currentUid,
-        updatedAt: serverTimestamp()
-      });
+    const chatRef = doc(firestore, 'privateChats', chatId);
+    updateDocumentNonBlocking(chatRef, {
+      lastMessage: msgText,
+      lastSenderId: currentUid,
+      updatedAt: serverTimestamp()
+    });
 
-      await addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), {
-        text: msgText,
-        senderId: currentUid,
-        timestamp: serverTimestamp()
-      });
-    } catch (e) {
-      console.error("Message Sync Error:", e);
-    }
+    addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), {
+      text: msgText,
+      senderId: currentUid,
+      timestamp: serverTimestamp()
+    });
   };
 
   return (

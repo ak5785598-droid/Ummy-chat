@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch } from 'firebase/firestore';
 import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2 } from 'lucide-react';
@@ -47,9 +47,9 @@ export default function AdminPage() {
   const handleDistributeDailyRewards = async () => {
     if (!firestore || !isAdmin) return;
     setIsSaving(true);
+    
     try {
       const batch = writeBatch(firestore);
-      // Prize Map: Top 1: 100K, Top 2: 80K, Top 3: 50K, Top 4: 35K, Top 5-10: 20K
       const rewardConfig = [100000, 80000, 50000, 35000, 20000, 20000, 20000, 20000, 20000, 20000];
       
       const processRankings = async (colPath: string, field: string, type: 'User' | 'Room') => {
@@ -59,7 +59,18 @@ export default function AdminPage() {
           orderBy(field, 'desc'),
           limit(10)
         );
-        const snap = await getDocs(q);
+        
+        let snap;
+        try {
+          snap = await getDocs(q);
+        } catch (serverError: any) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: collection(firestore, colPath).path,
+            operation: 'list',
+          }));
+          throw serverError;
+        }
+
         snap.docs.forEach((d, i) => {
           const reward = rewardConfig[i] || 0;
           const targetUid = type === 'User' ? d.id : d.data().ownerId;
@@ -112,11 +123,18 @@ export default function AdminPage() {
 
       batch.set(configRef!, { lastRewardReset: serverTimestamp() }, { merge: true });
 
-      await batch.commit();
-      await logAdminAction('Official 11:59:59 IST Distribution & Reset', 'tribe/economy', { rewards: 'Top 10 Tiered' });
-      toast({ title: 'Daily Sweep & Reset Complete', description: 'Rewards dispatched and leaderboard reset for the new IST cycle.' });
+      batch.commit().then(async () => {
+        await logAdminAction('Official 11:59:59 IST Distribution & Reset', 'tribe/economy', { rewards: 'Top 10 Tiered' });
+        toast({ title: 'Daily Sweep & Reset Complete', description: 'Rewards dispatched and leaderboard reset for the new IST cycle.' });
+      }).catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch/commit',
+          operation: 'write',
+        }));
+      });
+
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Distribution Failed', description: e.message });
+      // Logic errors handled here, permission errors handled by emitter
     } finally {
       setIsSaving(false);
     }
@@ -124,16 +142,14 @@ export default function AdminPage() {
 
   const logAdminAction = async (action: string, targetId: string, details: any) => {
     if (!firestore || !user) return;
-    try {
-      await addDoc(collection(firestore, 'adminLogs'), {
-        adminId: user.uid,
-        adminName: userProfile?.username || 'Admin',
-        targetId,
-        action,
-        details,
-        createdAt: serverTimestamp()
-      });
-    } catch (e: any) {}
+    addDoc(collection(firestore, 'adminLogs'), {
+      adminId: user.uid,
+      adminName: userProfile?.username || 'Admin',
+      targetId,
+      action,
+      details,
+      createdAt: serverTimestamp()
+    }).catch(() => {});
   };
 
   const handleSearchUsers = async () => {
@@ -148,36 +164,46 @@ export default function AdminPage() {
       );
       const snap = await getDocs(q);
       setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    } catch (serverError: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'users',
+        operation: 'list',
+      }));
     } finally {
       setIsSearching(false);
     }
   };
 
-  const adjustBalance = async (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
+  const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore || !user) return;
     setIsSaving(true);
-    try {
-      const userRef = doc(firestore, 'users', targetUserId);
-      const profileRef = doc(firestore, 'users', targetUserId, 'profile', targetUserId);
-      const updateData = { [`wallet.${type}`]: increment(amount), updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(userRef, updateData);
-      updateDocumentNonBlocking(profileRef, updateData);
-      
-      const notifRef = doc(collection(firestore, 'users', targetUserId, 'notifications'));
-      const adjustBatch = writeBatch(firestore);
-      adjustBatch.set(notifRef, {
-        title: `Official Notice`,
-        content: `Notice.. You receive ${amount.toLocaleString()} ${type}..... Best regard Ummy official`,
-        type: 'system',
-        timestamp: serverTimestamp(),
-        isRead: false
-      });
-      await adjustBatch.commit();
-
-      await logAdminAction(`Adjust ${type}`, targetUserId, { amount });
-    } finally {
-      setIsSaving(false);
-    }
+    
+    const userRef = doc(firestore, 'users', targetUserId);
+    const profileRef = doc(firestore, 'users', targetUserId, 'profile', targetUserId);
+    const updateData = { [`wallet.${type}`]: increment(amount), updatedAt: serverTimestamp() };
+    
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    
+    const notifRef = doc(collection(firestore, 'users', targetUserId, 'notifications'));
+    const adjustBatch = writeBatch(firestore);
+    adjustBatch.set(notifRef, {
+      title: `Official Notice`,
+      content: `Notice.. You receive ${amount.toLocaleString()} ${type}..... Best regard Ummy official`,
+      type: 'system',
+      timestamp: serverTimestamp(),
+      isRead: false
+    });
+    
+    adjustBatch.commit()
+      .then(() => logAdminAction(`Adjust ${type}`, targetUserId, { amount }))
+      .catch(() => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch/commit',
+          operation: 'write',
+        }));
+      })
+      .finally(() => setIsSaving(false));
   };
 
   if (!isAdmin) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive"><Shield className="h-12 w-12 mr-2" /> Unauthorized</div></AppLayout>;

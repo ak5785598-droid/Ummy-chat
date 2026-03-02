@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, useUser, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Camera, Loader, Send, X, Sparkles } from 'lucide-react';
@@ -58,14 +58,14 @@ export function PublishMomentDialog() {
       let imageUrl = '';
       if (selectedImage && storage) {
         const timestamp = Date.now();
-        // Updated path to match new storage rules protocol
         const storagePath = `moments/${user.uid}/${timestamp}_${selectedImage.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const sRef = ref(storage, storagePath);
         const result = await uploadBytes(sRef, selectedImage);
         imageUrl = await getDownloadURL(result.ref);
       }
 
-      await addDoc(collection(firestore, 'moments'), {
+      const momentRef = collection(firestore, 'moments');
+      addDoc(momentRef, {
         userId: user.uid,
         username: userProfile?.username || 'Tribe Member',
         avatarUrl: userProfile?.avatarUrl || '',
@@ -73,20 +73,22 @@ export function PublishMomentDialog() {
         imageUrl,
         likes: 0,
         createdAt: serverTimestamp()
+      }).then(() => {
+        toast({ title: 'Moment Broadcasted', description: 'Your vibe is now live on the social graph.' });
+        setOpen(false);
+        setContent('');
+        setSelectedImage(null);
+        setImagePreview(null);
+      }).catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: momentRef.path,
+          operation: 'create',
+          requestResourceData: { content: content.trim(), imageUrl }
+        }));
       });
 
-      toast({ title: 'Moment Broadcasted', description: 'Your vibe is now live on the social graph.' });
-      setOpen(false);
-      setContent('');
-      setSelectedImage(null);
-      setImagePreview(null);
     } catch (e: any) {
       console.error("Publish Error:", e);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Publish Failed', 
-        description: e.code === 'storage/unauthorized' ? 'Storage frequency denied. Please try again.' : e.message 
-      });
     } finally {
       setIsSubmitting(false);
     }

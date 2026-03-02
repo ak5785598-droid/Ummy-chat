@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GoldCoinIcon } from '@/components/icons';
-import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, addDoc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, RefreshCw, History, Loader, ArrowRightLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -41,7 +41,7 @@ export default function WalletPage() {
 
   const { data: exchangeHistory, isLoading: isHistoryLoading } = useCollection(historyQuery);
 
-  const handleExchange = async () => {
+  const handleExchange = () => {
     if (!user || !firestore) return;
     const amount = parseInt(exchangeAmount);
     if (!amount || amount <= 0) return;
@@ -51,35 +51,30 @@ export default function WalletPage() {
     }
 
     setIsProcessing(true);
-    try {
-      const userRef = doc(firestore, 'users', user.uid);
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      
-      const coinsGained = Math.floor(amount * 0.25);
+    const userRef = doc(firestore, 'users', user.uid);
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    
+    const coinsGained = Math.floor(amount * 0.25);
+    const updateData = {
+      'wallet.diamonds': increment(-amount),
+      'wallet.coins': increment(coinsGained),
+      updatedAt: serverTimestamp()
+    };
 
-      const updateData = {
-        'wallet.diamonds': increment(-amount),
-        'wallet.coins': increment(coinsGained),
-        updatedAt: serverTimestamp()
-      };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
 
-      updateDocumentNonBlocking(userRef, updateData);
-      updateDocumentNonBlocking(profileRef, updateData);
-
-      await addDoc(collection(firestore, 'users', user.uid, 'diamondExchanges'), {
-        diamondAmount: amount,
-        coinAmount: coinsGained,
-        timestamp: serverTimestamp(),
-        type: 'conversion'
-      });
-
+    addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'diamondExchanges'), {
+      diamondAmount: amount,
+      coinAmount: coinsGained,
+      timestamp: serverTimestamp(),
+      type: 'conversion'
+    }).then(() => {
       toast({ title: 'Exchange Successful', description: `Converted ${amount} Diamonds to ${coinsGained} Gold Coins.` });
       setExchangeAmount('');
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Exchange Failed', description: e.message });
-    } finally {
+    }).finally(() => {
       setIsProcessing(false);
-    }
+    });
   };
 
   const handleRecharge = (pkg: any) => {
