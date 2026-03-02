@@ -46,6 +46,21 @@ export type Message = {
   recipientName?: string;
 };
 
+export type PrivateChat = {
+  id: string;
+  participantIds: string[];
+  lastMessage: string;
+  lastSenderId: string;
+  updatedAt: any;
+};
+
+export type PrivateMessage = {
+  id: string;
+  text: string;
+  senderId: string;
+  timestamp: any;
+};
+
 export type RoomParticipant = {
   uid: string;
   name: string;

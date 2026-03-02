@@ -37,6 +37,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
+import { DirectMessageDialog } from '@/components/direct-message-dialog';
 
 const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
   <div className="relative group cursor-pointer active:scale-95 transition-transform shrink-0">
@@ -370,12 +371,17 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Follow</span>
            </div>
 
-           <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] flex items-center justify-center shadow-[0_0_20px_rgba(2,132,199,0.4)] border border-white/20">
-                 <MessageCircle className="h-7 w-7 text-white" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Chat</span>
-           </div>
+           <DirectMessageDialog 
+             recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl }} 
+             trigger={
+               <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
+                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] flex items-center justify-center shadow-[0_0_20px_rgba(2,132,199,0.4)] border border-white/20">
+                     <MessageCircle className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Chat</span>
+               </div>
+             }
+           />
 
            <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#d946ef] via-[#a855f7] to-[#7c3aed] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-white/20">
