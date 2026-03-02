@@ -2,14 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, setDoc, serverTimestamp, collection, getDoc, increment } from 'firebase/firestore';
 
 /**
  * Maintains Firestore presence while a room is active.
  * Production Ready: Manages participantCount atomically.
- * AUTOMATIC REMOVAL PROTOCOL: When count hits 0, room disappears from public discovery in real-time.
+ * AUTOMATIC REMOVAL PROTOCOL: When user goes offline, they are purged from the participant list 
+ * and the count is decremented instantly.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -21,7 +22,7 @@ export function RoomPresenceManager() {
   const hasIncrementedCount = useRef<string | null>(null);
 
   useEffect(() => {
-    // Identity Sync Check: Wait until user AND userProfile are both synchronized from social graph
+    // Identity Sync Check: Wait until user AND userProfile are both synchronized
     if (!firestore || !activeRoom?.id || !user || !userProfile) {
       return;
     }
@@ -76,13 +77,24 @@ export function RoomPresenceManager() {
 
     performSync();
 
-    return () => {
-      // 3. Atomic Exit Protocol: Decrement count to ensure room closes if empty
+    const handleExit = () => {
       if (hasIncrementedCount.current === roomId) {
+        // Atomic Exit Protocol
         updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1) });
+        deleteDocumentNonBlocking(participantRef);
+        
         hasIncrementedCount.current = null;
         hasHandshakedForSession.current = false;
+        lastRoomId.current = null;
       }
+    };
+
+    // Ensure exit on window close or navigation
+    window.addEventListener('beforeunload', handleExit);
+
+    return () => {
+      handleExit();
+      window.removeEventListener('beforeunload', handleExit);
     };
   }, [firestore, activeRoom?.id, user?.uid, userProfile]);
 

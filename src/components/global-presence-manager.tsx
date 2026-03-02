@@ -32,7 +32,6 @@ export function GlobalPresenceManager() {
         setPresence(true);
       } else {
         // Maintain online status while tab is open but backgrounded
-        // Status is fully revoked on close or manual sign-out
       }
     };
 
