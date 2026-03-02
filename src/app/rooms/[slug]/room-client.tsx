@@ -566,6 +566,7 @@ export function RoomClient({ room }: { room: Room }) {
   const getWaveColor = (waveId?: string) => waveId === 'w1' ? 'text-cyan-500' : waveId === 'w2' ? 'text-orange-600' : 'text-primary';
 
   const currentTheme = ROOM_THEMES.find(t => t.id === (room as any).roomThemeId) || ROOM_THEMES[0];
+  const maxMics = room.maxActiveMics || 9;
 
   const Seat = ({ index }: { index: number }) => {
     const occupant = participants?.find(p => p.seatIndex === index);
@@ -604,8 +605,6 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
     );
   };
-
-  const maxMics = room.maxActiveMics || 9;
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl animate-in fade-in duration-700">
@@ -721,16 +720,23 @@ export function RoomClient({ room }: { room: Room }) {
               <section className="mt-2 bg-white px-6">
                 <SettingsListItem label="Room Name" value={room.title} onClick={() => { setEditingField('name'); setEditingFieldValue(room.title); }} />
                 <SettingsListItem label="Room Announcement" value={room.announcement} onClick={() => { setEditingField('announcement'); setEditingFieldValue(room.announcement || ''); }} />
-                <SettingsListItem label="Theme" value={currentTheme.name} icon={Palette} onClick={() => setIsThemePickerOpen(true)} />
-                <SettingsListItem label="Music" value={room.currentMusicUrl ? "Active" : "None"} onClick={() => setIsMusicMenuOpen(true)} />
-                <SettingsListItem label="Admin" value={`${room.moderatorIds?.length || 0} Managed`} onClick={() => setEditingField('admins')} />
-                <SettingsListItem label="Room Lock" onClick={toggleRoomLock} showChevron={false} icon={(room as any).isLocked ? Lock : Unlock} />
+                
+                {canManageRoom && (
+                  <>
+                    <SettingsListItem label="Theme" value={currentTheme.name} icon={Palette} onClick={() => setIsThemePickerOpen(true)} />
+                    <SettingsListItem label="Music" value={room.currentMusicUrl ? "Active" : "None"} onClick={() => setIsMusicMenuOpen(true)} />
+                    <SettingsListItem label="Admin" value={`${room.moderatorIds?.length || 0} Managed`} onClick={() => setEditingField('admins')} />
+                    <SettingsListItem label="Room Lock" onClick={toggleRoomLock} showChevron={false} icon={(room as any).isLocked ? Lock : Unlock} />
+                  </>
+                )}
               </section>
 
-              <section className="mt-2 bg-white px-6">
-                <SettingsListItem label="Welcome Message" value={(room as any).welcomeMessage} onClick={() => { setEditingField('welcome'); setEditingFieldValue((room as any).welcomeMessage || ''); }} />
-                <SettingsListItem label="Mic Mode" value={`${maxMics} mics`} onClick={() => setIsMicOptionPickerOpen(true)} />
-              </section>
+              {canManageRoom && (
+                <section className="mt-2 bg-white px-6">
+                  <SettingsListItem label="Welcome Message" value={(room as any).welcomeMessage} onClick={() => { setEditingField('welcome'); setEditingFieldValue((room as any).welcomeMessage || ''); }} />
+                  <SettingsListItem label="Mic Mode" value={`${maxMics} mics`} onClick={() => setIsMicOptionPickerOpen(true)} />
+                </section>
+              )}
 
               <section className="mt-2 bg-white px-6 py-2">
                 <button onClick={() => setIsClearChatConfirmOpen(true)} className="w-full py-4 text-left font-bold text-red-500 text-sm tracking-tight flex items-center gap-3"><Trash2 className="h-4 w-4" /> Clean frequency messages</button>

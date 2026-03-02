@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect } from 'react';
@@ -52,7 +51,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         createdAt: firestoreRoom.createdAt,
         stats: firestoreRoom.stats,
         isChatMuted: firestoreRoom.isChatMuted,
-        currentMusicUrl: firestoreRoom.currentMusicUrl
+        currentMusicUrl: firestoreRoom.currentMusicUrl,
+        maxActiveMics: firestoreRoom.maxActiveMics,
+        roomThemeId: firestoreRoom.roomThemeId
       } as any);
       setIsMinimized(false);
     }
@@ -75,7 +76,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       createdAt: firestoreRoom.createdAt,
       stats: firestoreRoom.stats,
       isChatMuted: firestoreRoom.isChatMuted,
-      currentMusicUrl: firestoreRoom.currentMusicUrl
+      currentMusicUrl: firestoreRoom.currentMusicUrl,
+      maxActiveMics: firestoreRoom.maxActiveMics,
+      roomThemeId: firestoreRoom.roomThemeId
     } as any;
   }, [firestoreRoom]);
 
