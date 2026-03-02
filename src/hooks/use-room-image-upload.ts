@@ -1,15 +1,15 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useStorage, useFirestore, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
  * Hook to handle room image uploads to Firebase Storage and update Firestore.
  * Synchronized with Ummy production persistence protocol.
+ * Optimized with setDoc merge to support fallback room updates.
  */
 export function useRoomImageUpload(roomId: string) {
   const storage = useStorage();
@@ -22,8 +22,8 @@ export function useRoomImageUpload(roomId: string) {
     if (!user || !storage || !firestore || !roomId) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Authorization context missing.',
+        title: 'Sync Error',
+        description: 'Authorization context or Room ID missing.',
       });
       return;
     }
@@ -43,12 +43,13 @@ export function useRoomImageUpload(roomId: string) {
       const roomRef = doc(firestore, 'chatRooms', roomId);
       
       const updateData = { 
+        id: roomId, // Required for setDoc
         coverUrl: downloadURL,
         updatedAt: serverTimestamp()
       };
 
-      // Blocking update for absolute persistence certainty
-      await updateDoc(roomRef, updateData);
+      // Atomic update using setDoc with merge to ensure visual synchronization even for new or fallback rooms
+      await setDoc(roomRef, updateData, { merge: true });
 
       toast({
         title: 'Room DP Updated!',
@@ -59,7 +60,7 @@ export function useRoomImageUpload(roomId: string) {
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: error.message || 'Could not upload the new image. Check owner permissions.',
+        description: error.message || 'Could not broadcast the new visual vibe.',
       });
     } finally {
       setIsUploading(false);

@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface CameraCaptureDialogProps {
   open: boolean;
@@ -71,27 +72,39 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, title = "Ca
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
+      
+      // Ensure canvas matches video aspect ratio for high-fidelity capture
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      
       const context = canvas.getContext('2d');
       if (context) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // High-quality JPEG snapshot
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedImage(dataUrl);
         stopCamera();
       }
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (capturedImage) {
-      fetch(capturedImage)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
-          onCapture(file);
-          handleClose();
+      try {
+        // Robust Data URL to Blob conversion for tribal storage
+        const response = await fetch(capturedImage);
+        const blob = await response.blob();
+        const file = new File([blob], `camera_${Date.now()}.jpg`, { type: "image/jpeg" });
+        
+        onCapture(file);
+        handleClose();
+      } catch (e) {
+        toast({
+          variant: 'destructive',
+          title: 'Capture Failed',
+          description: 'Could not process the visual vibe. Please try again.',
         });
+      }
     }
   };
 
@@ -107,7 +120,7 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, title = "Ca
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px] rounded-t-[2.5rem] md:rounded-[2.5rem] bg-white text-black p-0 overflow-hidden font-headline border-none shadow-2xl">
         <DialogHeader className="p-6 border-b border-gray-50">
           <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-center">{title}</DialogTitle>
@@ -123,7 +136,7 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, title = "Ca
               playsInline
             />
             {capturedImage && (
-              <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
+              <img src={capturedImage} alt="Captured" className="w-full h-full object-cover animate-in fade-in duration-300" />
             )}
             
             {hasCameraPermission === false && (
@@ -170,5 +183,3 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, title = "Ca
     </Dialog>
   );
 }
-
-import { cn } from '@/lib/utils';
