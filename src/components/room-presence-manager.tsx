@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -51,7 +50,17 @@ export function RoomPresenceManager() {
       });
 
       // Atomic Entry Protocol
-      batch.update(roomDocRef, { participantCount: increment(1) });
+      // RESILIENCE: Use set with merge for the official help room to ensure it exists
+      if (roomId === 'ummy-help-center') {
+        batch.set(roomDocRef, { 
+          id: 'ummy-help-center',
+          participantCount: increment(1),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        batch.update(roomDocRef, { participantCount: increment(1) });
+      }
+
       batch.update(userRef, { currentRoomId: roomId, updatedAt: serverTimestamp() });
       batch.update(profileRef, { currentRoomId: roomId, updatedAt: serverTimestamp() });
 
@@ -85,7 +94,16 @@ export function RoomPresenceManager() {
         const profileRef = doc(firestore, 'users', uid, 'profile', uid);
         const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-        batch.update(roomDocRef, { participantCount: increment(-1) });
+        // RESILIENCE: Use set with merge for exit too
+        if (roomId === 'ummy-help-center') {
+          batch.set(roomDocRef, { 
+            participantCount: increment(-1),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } else {
+          batch.update(roomDocRef, { participantCount: increment(-1) });
+        }
+
         batch.delete(participantRef);
         batch.update(userRef, { currentRoomId: null, updatedAt: serverTimestamp() });
         batch.update(profileRef, { currentRoomId: null, updatedAt: serverTimestamp() });
@@ -104,7 +122,7 @@ export function RoomPresenceManager() {
       handleExit();
       window.removeEventListener('beforeunload', handleExit);
     };
-  }, [firestore, activeRoom?.id, user?.uid]); 
+  }, [firestore, activeRoom?.id, user?.uid, userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame]); 
 
   // 2. IDENTITY SYNCHRONIZATION
   // Updates participant card details if user changes them while in the room.

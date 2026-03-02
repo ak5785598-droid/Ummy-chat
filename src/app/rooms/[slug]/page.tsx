@@ -51,7 +51,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         lockedSeats: firestoreRoom.lockedSeats || [],
         announcement: firestoreRoom.announcement || "Enjoy the vibe!",
         createdAt: firestoreRoom.createdAt,
-        stats: firestoreRoom.stats,
+        stats: firestoreRoom.stats || { totalGifts: 0, dailyGifts: 0 },
         isChatMuted: firestoreRoom.isChatMuted,
         currentMusicUrl: firestoreRoom.currentMusicUrl,
         maxActiveMics: firestoreRoom.maxActiveMics,
@@ -75,6 +75,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         announcement: 'Welcome to official support! How can we help you today?',
         createdAt: new Date(),
         participantCount: 0,
+        stats: { totalGifts: 0, dailyGifts: 0 },
         maxActiveMics: 9,
         roomThemeId: 'royal'
       } as any;
