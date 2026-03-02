@@ -23,7 +23,8 @@ import { cn } from '@/lib/utils';
 
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   // Logic to find the other user's ID with safety checks
-  const otherUid = chat.participantIds?.find((id: string) => id !== currentUid) || currentUid;
+  const participantIds = chat.participantIds || [];
+  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
   const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
 
   if (isLoading) return (

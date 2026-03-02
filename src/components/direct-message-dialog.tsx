@@ -49,7 +49,7 @@ export function DirectMessageDialog({ recipient, trigger }: DirectMessageDialogP
 
       // 2. Initialize Chat Metadata
       const chatRef = doc(firestore, 'privateChats', chatId);
-      setDocumentNonBlocking(chatRef, {
+      await setDocumentNonBlocking(chatRef, {
         id: chatId,
         participantIds,
         lastMessage: text.trim(),
