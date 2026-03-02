@@ -24,11 +24,11 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { doc, query, collection, where, limit } from 'firebase/firestore';
+import { doc, query, collection, where, limit, increment, serverTimestamp } from 'firebase/firestore';
 import { useCollection } from '@/firebase';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,42 @@ import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import type { Gift as GiftType } from '@/lib/types';
+
+const AVAILABLE_GIFTS: GiftType[] = [
+  { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
+  { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
+  { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
+  { id: 'car', name: 'Luxury Car', emoji: '🏎️', price: 2000, animationType: 'bounce' },
+  { id: 'jet', name: 'Private Jet', emoji: '🛩️', price: 5000, animationType: 'bounce' },
+  { id: 'dragon', name: 'Dragon', emoji: '🐉', price: 10000, animationType: 'spin' },
+  { id: 'rocket', name: 'Rocket', emoji: '🚀', price: 25000, animationType: 'zoom' },
+  { id: 'castle', name: 'Castle', emoji: '🏰', price: 50000, animationType: 'bounce' },
+  { id: 'galaxy', name: 'Galaxy', emoji: '🌌', price: 100000, animationType: 'zoom' },
+  { id: 'supernova', name: 'Supernova', emoji: '💥', price: 250000, animationType: 'zoom' },
+  { id: 'rolex', name: 'Rolex', emoji: '⌚', price: 500000, animationType: 'zoom' },
+  { id: 'celebration', name: 'Celebration', emoji: '🥳', price: 1000000, animationType: 'zoom' },
+];
+
+function calculateRichLevel(spent: number = 0) {
+  if (spent < 50000) return 1;
+  if (spent < 100000) return 2;
+  if (spent < 1000000) return 3;
+  if (spent < 5000000) return 4;
+  if (spent < 10000000) return Math.floor(5 + ((spent - 5000000) / 5000000) * 5);
+  if (spent < 100000000) return Math.floor(10 + ((spent - 10000000) / 90000000) * 10);
+  if (spent < 1000000000) return Math.floor(20 + ((spent - 100000000) / 900000000) * 10);
+  if (spent < 5000000000) return Math.floor(30 + ((spent - 1000000000) / 4000000000) * 10);
+  if (spent < 90000000000) return Math.floor(40 + ((spent - 5000000000) / 85000000000) * 10);
+  return 50;
+}
 
 const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
   <div className="relative group cursor-pointer active:scale-95 transition-transform shrink-0">
@@ -90,6 +126,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
+  const { userProfile: senderProfile } = useUserProfile(currentUser?.uid);
+
+  const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -107,6 +146,60 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   // Handshake verification - Ensure we wait for data if we have an ID
   const isWait = isUserLoading || isProfileLoading || (!!profileId && !profile && !isProfileLoading);
+
+  const handleSendGift = async (gift: GiftType) => {
+    if (!currentUser || !firestore || !senderProfile || !profile) return;
+    
+    if ((senderProfile.wallet?.coins || 0) < gift.price) {
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
+      return;
+    }
+
+    try {
+      const senderRef = doc(firestore, 'users', currentUser.uid);
+      const senderProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      const recipientRef = doc(firestore, 'users', profile.id);
+      const recipientProfileRef = doc(firestore, 'users', profile.id, 'profile', profile.id);
+
+      const diamondReturn = Math.floor(gift.price * 0.4);
+      const newTotalSpent = (senderProfile.wallet?.totalSpent || 0) + gift.price;
+
+      // Update Sender
+      const senderUpdates = {
+        'wallet.coins': increment(-gift.price),
+        'wallet.totalSpent': increment(gift.price),
+        'wallet.dailySpent': increment(gift.price),
+        'level.rich': calculateRichLevel(newTotalSpent),
+        updatedAt: serverTimestamp()
+      };
+      updateDocumentNonBlocking(senderRef, senderUpdates);
+      updateDocumentNonBlocking(senderProfileRef, senderUpdates);
+
+      // Update Recipient
+      const recipientUpdates = {
+        'stats.fans': increment(gift.price),
+        'stats.dailyFans': increment(gift.price),
+        'wallet.diamonds': increment(diamondReturn),
+        updatedAt: serverTimestamp()
+      };
+      updateDocumentNonBlocking(recipientRef, recipientUpdates);
+      updateDocumentNonBlocking(recipientProfileRef, recipientUpdates);
+
+      // Log the gift in recipient's notifications
+      addDocumentNonBlocking(collection(firestore, 'users', profile.id, 'notifications'), {
+        title: 'Gift Received',
+        content: `${senderProfile.username} sent you a ${gift.name} ${gift.emoji}!`,
+        type: 'system',
+        timestamp: serverTimestamp(),
+        isRead: false
+      });
+
+      toast({ title: 'Gift Sent!', description: `Successfully synchronized ${gift.name} vibe.` });
+      setIsGiftPickerOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Gift Failed', description: e.message });
+    }
+  };
 
   if (isWait) {
     return (
@@ -397,13 +490,64 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              }
            />
 
-           <div className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all">
+           <div 
+             onClick={() => setIsGiftPickerOpen(true)}
+             className="flex flex-col items-center gap-1.5 group cursor-pointer active:scale-95 transition-all"
+           >
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#d946ef] via-[#a855f7] to-[#7c3aed] flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-white/20">
                  <Gift className="h-7 w-7 text-white fill-current" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-tighter text-white/80">Gift</span>
            </div>
         </footer>
+
+        <Dialog open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen}>
+          <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-10 duration-500 font-headline">
+            <DialogHeader className="p-8 pb-0 text-center">
+              <DialogTitle className="text-3xl font-black uppercase tracking-tighter">Send Vibe</DialogTitle>
+              <DialogDescription className="sr-only">Select a gift to send to {profile.username}</DialogDescription>
+            </DialogHeader>
+            <div className="p-8 pt-6 space-y-6">
+              <div className="flex items-center justify-between bg-secondary/30 p-4 rounded-2xl border-2 border-dashed border-primary/20">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                    <AvatarImage src={profile.avatarUrl} />
+                    <AvatarFallback>{profile.username?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Recipient</p>
+                    <p className="text-sm font-black uppercase text-primary tracking-tighter">{profile.username}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto p-2 no-scrollbar">
+                {AVAILABLE_GIFTS.map(g => (
+                  <button 
+                    key={g.id} 
+                    onClick={() => handleSendGift(g)} 
+                    className="flex flex-col items-center gap-2 p-4 rounded-3xl bg-secondary/50 hover:bg-primary/20 transition-all border-2 border-transparent hover:border-primary group active:scale-90"
+                  >
+                    <span className="text-4xl group-hover:scale-125 transition-transform duration-300">{g.emoji}</span>
+                    <div className="text-center">
+                      <p className="text-[10px] font-black uppercase truncate w-20 tracking-tighter">{g.name}</p>
+                      <div className="flex items-center justify-center gap-1 text-[10px] font-black text-primary">
+                        <GoldCoinIcon className="h-3 w-3" />
+                        {g.price}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="bg-secondary/30 p-4 rounded-2xl flex items-center justify-between shadow-inner">
+                <span className="text-xs font-black uppercase opacity-60 tracking-widest">Your Balance</span>
+                <div className="flex items-center gap-2 font-black text-primary text-xl">
+                  <GoldCoinIcon className="h-5 w-5" />
+                  {senderProfile?.wallet?.coins || 0}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </AppLayout>
