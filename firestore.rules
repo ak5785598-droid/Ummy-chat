@@ -20,9 +20,9 @@ service cloud.firestore {
 
     function isAdmin() {
       // High-fidelity authority check via tribal summary profile
-      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
-        user.tags.hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager']) || 
+        (exists(userPath) && get(userPath).data.tags.hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'])) || 
         isCreator()
       );
     }
@@ -99,13 +99,13 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId} {
-      allow list: if isSignedIn(); 
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow list: if isSignedIn() && (resource.data.participantIds.hasAny([request.auth.uid]) || isCreator()); 
+      allow get: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isCreator());
+      allow create: if isSignedIn() && (request.auth.uid in request.resource.data.participantIds || isCreator());
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isCreator());
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds;
+        allow read, write: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds || isCreator());
       }
     }
 
