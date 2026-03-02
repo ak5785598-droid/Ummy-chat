@@ -50,6 +50,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         lockedSeats: firestoreRoom.lockedSeats || [],
         announcement: firestoreRoom.announcement || "Enjoy the vibe!",
         createdAt: firestoreRoom.createdAt,
+        stats: firestoreRoom.stats,
+        isChatMuted: firestoreRoom.isChatMuted,
+        currentMusicUrl: firestoreRoom.currentMusicUrl
       } as any);
       setIsMinimized(false);
     }
@@ -70,6 +73,9 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       lockedSeats: firestoreRoom.lockedSeats || [],
       announcement: firestoreRoom.announcement || "Enjoy the vibe!",
       createdAt: firestoreRoom.createdAt,
+      stats: firestoreRoom.stats,
+      isChatMuted: firestoreRoom.isChatMuted,
+      currentMusicUrl: firestoreRoom.currentMusicUrl
     } as any;
   }, [firestoreRoom]);
 

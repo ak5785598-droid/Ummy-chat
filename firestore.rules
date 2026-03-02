@@ -11,10 +11,10 @@ service cloud.firestore {
     }
 
     function isRoomAdmin(rId) {
-      let roomPath = /databases/$(database)/documents/chatRooms/$(rId);
-      return isSignedIn() && exists(roomPath) && (
-        get(roomPath).data.ownerId == request.auth.uid || 
-        request.auth.uid in get(roomPath).data.get('moderatorIds', []) || 
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/chatRooms/$(rId)) && 
+         (get(/databases/$(database)/documents/chatRooms/$(rId)).data.ownerId == request.auth.uid || 
+          request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(rId)).data.get('moderatorIds', []))) ||
         isAdmin()
       );
     }
@@ -35,6 +35,10 @@ service cloud.firestore {
       match /followingRooms/{roomId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
+      match /diamondExchanges/{id} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /appConfig/{id} {
@@ -48,7 +52,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.ownerId ||
         request.auth.uid in resource.data.get('moderatorIds', []) ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'stats', 'updatedAt', 'currentMusicUrl', 'lockedSeats', 'isChatMuted', 'coverUrl', 'announcement']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'stats', 'updatedAt', 'currentMusicUrl', 'lockedSeats', 'isChatMuted', 'coverUrl', 'announcement', 'moderatorIds']) ||
         isAdmin()
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
@@ -74,6 +78,16 @@ service cloud.firestore {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && (request.resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /adminLogs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+    }
+    
+    match /games/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

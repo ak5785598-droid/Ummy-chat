@@ -47,10 +47,10 @@ import {
   ChevronRight,
   Armchair,
   Crown,
+  Heart,
   Settings as SettingsIcon,
   Copy,
-  Info,
-  Heart
+  Info
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -97,7 +97,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   collection, 
@@ -112,8 +112,8 @@ import {
   arrayUnion,
   arrayRemove,
   getDoc,
-  deleteDoc,
-  setDoc
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { OfficialTag } from '@/components/official-tag';
@@ -424,7 +424,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (!isOwner || !firestore || !room.id) return;
     const isPMod = room.moderatorIds?.includes(targetUid);
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
-      moderatorIds: iPMod ? arrayRemove(targetUid) : arrayUnion(targetUid)
+      moderatorIds: isPMod ? arrayRemove(targetUid) : arrayUnion(targetUid)
     });
     toast({ title: isPMod ? 'Admin Revoked' : 'Admin Granted', description: 'Tribe role has been synchronized.' });
   };
@@ -462,7 +462,9 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="relative">
           <EmojiReactionOverlay emoji={occupant?.activeEmoji} size={index === 1 ? "xl" : "lg"} />
           <div className="relative">
-            {occupant && !occupant.isMuted && (<div className={cn("absolute -inset-1 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />)}
+            {occupant && !occupant.isMuted && (
+              <div className={cn("absolute -inset-1 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />
+            )}
             <AvatarFrame frameId={occupant?.activeFrame} size={index === 1 ? "lg" : "md"}>
               <button 
                 onClick={() => handleSeatClick(index, occupant)}
@@ -545,7 +547,6 @@ export function RoomClient({ room }: { room: Room }) {
           {!isOwner && (
             <button 
               onClick={handleToggleFollow}
-              disabled={isFollowingLoading}
               className={cn(
                 "h-8 px-4 rounded-full font-black uppercase text-[10px] transition-all flex items-center gap-1.5 shadow-lg",
                 isFollowing ? "bg-white/20 text-white border border-white/10" : "bg-primary text-white shadow-primary/20"
