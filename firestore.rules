@@ -6,105 +6,97 @@ service cloud.firestore {
      * CORE PHILOSOPHY:
      * This ruleset implements a robust, identity-centric authorization model designed for a high-interaction 
      * voice/text chat platform. It prioritizes document ownership and explicit membership for access control.
-     * 
-     * DATA STRUCTURE:
-     * 1. /users/{userId}: Private user profiles secured by UID matching.
-     * 2. /chatRooms/{chatRoomId}: Root-level rooms managed by owners and accessible by members.
-     * 3. /chatRooms/{chatRoomId}/messages/{messageId}: Subcollection messages secured via parent room lookups.
-     * 4. /roomThemes/{themeId}: Globally readable configuration for visual customization.
-     * 
-     * KEY SECURITY DECISIONS:
-     * - Ownership Model: Root user documents and chat rooms are strictly controlled by the creator.
-     * - Shared Access: Chat room access is restricted to UIDs present in the 'memberIds' or 'moderatorIds' list.
-     * - Denormalization for Performance: Authorization data (like member lists) is preferred on the document 
-     *   being secured to minimize 'get()' calls, though 'get()' is used for subcollection listing to comply 
-     *   with query security constraints.
-     * - Immutability: Critical relational fields (like 'ownerId' and 'id') are protected against modification 
-     *   to prevent "account hijacking" or data orphaned from its owner.
-     * - Prototyping Flexibility: Data types and non-relational fields are not validated to allow for 
-     *   rapid UI and feature iteration (e.g., adding new mic options or theme settings).
      */
 
     // --- Global Helper Functions ---
 
-    /** @description Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the authenticated user's UID matches the provided userId. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if a document exists and the current user is the owner stored in the data. */
     function isExistingOwner(ownerId) {
       return resource != null && isOwner(ownerId);
     }
 
-    /** @description Checks if the user is a member or moderator of a chat room based on a list. */
     function isRoomParticipant(participantIds) {
       return isSignedIn() && (request.auth.uid in participantIds);
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for the User profile collection. Access is restricted to the owner of the UID.
-     * @path /users/{userId}
-     * @allow get, list, create, update, delete if user is owner (request.auth.uid == userId).
-     * @deny Any request where request.auth.uid does not match the document ID {userId}.
-     * @principle Enforces path-based ownership and validates relational integrity on creation.
-     */
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
+      allow get, list: if isSignedIn(); // Allow discovery
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
-    }
 
-    /**
-     * @description Rules for ChatRooms. Supports ownership-based management and member-based reading.
-     * @path /chatRooms/{chatRoomId}
-     * @allow create if signed in and setting self as owner.
-     * @allow update if existing owner (to change mic settings or themes).
-     * @allow get if user is in memberIds or moderatorIds.
-     * @deny Updates to the ownerId or unauthorized modification of room settings.
-     * @principle Uses Shared Access (Closed Collaborators) and owner-only write permissions.
-     */
-    match /chatRooms/{chatRoomId} {
-      allow get: if isRoomParticipant(resource.data.memberIds) || isRoomParticipant(resource.data.moderatorIds) || isOwner(resource.data.ownerId);
-      allow list: if false; // Prohibited at root to prevent user discovery; listing handled via specific client queries.
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isExistingOwner(resource.data.ownerId);
+      match /profile/{profileId} {
+        allow get: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
+      
+      match /notifications/{notifId} {
+        allow get, list, write: if isOwner(userId);
+      }
 
-      /**
-       * @description Messages within a chat room. Access is determined by the parent room's membership.
-       * @path /chatRooms/{chatRoomId}/messages/{messageId}
-       * @allow create if the sender is a member of the room (verified via incoming data).
-       * @allow list if the user is a member of the parent room (verified via get() lookup).
-       * @principle Relies on parent-document lookup for list security and denormalized data for individual access.
-       */
-      match /messages/{messageId} {
-        allow get: if isRoomParticipant(resource.data.roomMemberIds);
-        allow list: if isRoomParticipant(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.memberIds);
-        allow create: if isRoomParticipant(request.resource.data.roomMemberIds) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isExistingOwner(resource.data.senderId) && request.resource.data.senderId == resource.data.senderId;
-        allow delete: if isExistingOwner(resource.data.senderId) || isRoomParticipant(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.moderatorIds);
+      match /followingRooms/{roomId} {
+        allow get, list, write: if isOwner(userId);
+      }
+      
+      match /diamondExchanges/{exchangeId} {
+        allow get, list, write: if isOwner(userId);
       }
     }
 
-    /**
-     * @description Visual themes for chat rooms. Publicly readable for selection by any user.
-     * @path /roomThemes/{themeId}
-     * @allow get, list if user is signed in.
-     * @deny Any client-side write operation.
-     * @principle Provides public read access with owner-only (system/admin) writes.
-     */
+    match /chatRooms/{chatRoomId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn(); // Broaden for simple participantCount and settings sync
+      allow delete: if isExistingOwner(resource.data.ownerId);
+
+      match /participants/{participantId} {
+        allow get, list: if isSignedIn();
+        allow write: if isSignedIn() && (request.auth.uid == participantId || isRoomParticipant(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.moderatorIds));
+        
+        match /signaling/{signalId} {
+          allow get, list, write: if isSignedIn();
+        }
+      }
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn();
+        allow delete: if isSignedIn();
+      }
+    }
+
     match /roomThemes/{themeId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if false; // Themes are managed by administrative processes.
+      allow write: if false;
+    }
+
+    match /moments/{momentId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /appConfig/{configId} {
+      allow get: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+    
+    match /adminLogs/{logId} {
+      allow get, list, create: if isSignedIn();
+    }
+    
+    match /games/{gameId} {
+      allow get, list: if isSignedIn();
+      allow write: if isSignedIn();
     }
   }
 }

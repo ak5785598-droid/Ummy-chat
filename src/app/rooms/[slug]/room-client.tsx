@@ -43,7 +43,8 @@ import {
   Info,
   Calculator as CalculatorIcon,
   Camera,
-  MessageSquare
+  MessageSquare,
+  Palette
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -101,6 +102,16 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { VoiceTutorial } from '@/components/voice-tutorial';
+
+const ROOM_THEMES = [
+  { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
+  { id: 'neon', name: 'Neon Party', url: 'https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=2000' },
+  { id: 'zen', name: 'Zen Garden', url: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?q=80&w=2000' },
+  { id: 'cosmic', name: 'Cosmic Void', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2000' },
+  { id: 'royal', name: 'Royal Palace', url: 'https://images.unsplash.com/photo-1562664377-709f2c337eb2?q=80&w=2000' },
+];
+
+const MIC_OPTIONS = [4, 8, 9, 12, 15];
 
 function calculateRichLevel(spent: number = 0) {
   if (spent < 50000) return 1;
@@ -201,7 +212,7 @@ const TribeMemberItem = ({ participant, ownerId }: { participant: RoomParticipan
 const SettingsListItem = ({ label, value, onClick, icon: Icon, showChevron = true }: any) => (
   <div 
     onClick={onClick}
-    className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0 group cursor-pointer active:bg-gray-50 transition-colors"
+    className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0 px-6 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
   >
     <span className="font-bold text-gray-800 text-sm tracking-tight">{label}</span>
     <div className="flex items-center gap-2">
@@ -269,6 +280,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isMusicMenuOpen, setIsMusicMenuOpen] = useState(false);
   const [isParticipantListOpen, setIsParticipantListOpen] = useState(false);
+  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
+  const [isMicOptionPickerOpen, setIsMicOptionPickerOpen] = useState(false);
   const [selectedSeatIndex, setSelectedSeatIndex] = useState<number | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
@@ -346,7 +359,6 @@ export function RoomClient({ room }: { room: Room }) {
   const hostParticipant = participants?.find(p => p.seatIndex === 1);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  // REAL-TIME VOICE: Initialize WebRTC frequency for everyone
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
@@ -488,8 +500,9 @@ export function RoomClient({ room }: { room: Room }) {
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); };
   
   const handleMicToggle = () => { 
+    const max = room.maxActiveMics || 9;
     if (!isInSeat) { 
-      const first = [1, 2, 3, 4, 5, 6, 7, 8, 9].find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i)); 
+      const first = Array.from({ length: max }).map((_, i) => i + 1).find(i => !participants?.some(p => p.seatIndex === i) && !room.lockedSeats?.includes(i)); 
       if (first) takeSeat(first); 
       return; 
     } 
@@ -524,6 +537,20 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { isLocked: !(room as any).isLocked });
   };
 
+  const handleSetTheme = (themeId: string) => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { roomThemeId: themeId });
+    setIsThemePickerOpen(false);
+    toast({ title: 'Theme Updated' });
+  };
+
+  const handleSetMicMode = (count: number) => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { maxActiveMics: count });
+    setIsMicOptionPickerOpen(false);
+    toast({ title: 'Mic Mode Updated' });
+  };
+
   const handleTutorialComplete = () => {
     if (currentUser && firestore) { updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), { isNewUser: false }); }
     setShowTutorial(false);
@@ -537,6 +564,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   const selectedOccupant = participants?.find(p => p.seatIndex === selectedSeatIndex);
   const getWaveColor = (waveId?: string) => waveId === 'w1' ? 'text-cyan-500' : waveId === 'w2' ? 'text-orange-600' : 'text-primary';
+
+  const currentTheme = ROOM_THEMES.find(t => t.id === (room as any).roomThemeId) || ROOM_THEMES[0];
 
   const Seat = ({ index }: { index: number }) => {
     const occupant = participants?.find(p => p.seatIndex === index);
@@ -576,17 +605,18 @@ export function RoomClient({ room }: { room: Room }) {
     );
   };
 
+  const maxMics = room.maxActiveMics || 9;
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem] shadow-2xl animate-in fade-in duration-700">
       {showTutorial && <VoiceTutorial onComplete={handleTutorialComplete} />}
       <DailyRewardDialog />
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <audio ref={roomAudioRef} loop crossOrigin="anonymous" />
-      {/* Remote Audio Handshakes */}
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => <RemoteAudio key={peerId} stream={stream} />)}
       
       <div className="absolute inset-0 z-0">
-        <Image src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000" alt="Background" fill className="object-cover opacity-60" priority />
+        <Image src={currentTheme.url} alt="Background" fill className="object-cover opacity-60 transition-all duration-1000" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
@@ -612,9 +642,18 @@ export function RoomClient({ room }: { room: Room }) {
       <button onClick={handleMoneyTreeClick} disabled={isClaimingTree} className="absolute top-20 right-4 z-40 animate-bounce hover:scale-110 active:scale-95 transition-transform" style={{ animationDuration: '4s' }}><div className="relative h-10 w-10">{isClaimingTree ? (<Loader className="h-full w-full animate-spin text-yellow-500" />) : (<Image src="https://img.icons8.com/color/96/money-tree.png" alt="Money Tree" fill className="object-contain" />)}</div></button>
 
       <main className="relative z-10 flex-1 flex flex-col pt-1 overflow-hidden">
-        <div className="px-4 space-y-1 flex flex-col items-center"><div className="w-16"><Seat index={1} /></div><div className="grid grid-cols-4 gap-1 w-full max-w-sm">{[2, 3, 4, 5].map(i => <Seat key={i} index={i} />)}</div><div className="grid grid-cols-4 gap-1 w-full max-w-sm">{[6, 7, 8, 9].map(i => <Seat key={i} index={i} />)}</div></div>
+        <ScrollArea className="flex-1">
+          <div className="px-4 py-2 flex flex-wrap justify-center gap-x-2 gap-y-4 max-w-sm mx-auto">
+            {Array.from({ length: maxMics }).map((_, i) => (
+              <div key={i+1} className={cn(i === 0 ? "w-full flex justify-center mb-2" : "w-[22%]")}>
+                <Seat index={i + 1} />
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        
         <div className="absolute right-2 top-1/2 -translate-y-1/2 z-40"><div className="bg-gradient-to-b from-amber-200 to-amber-600 p-0.5 rounded-xl shadow-2xl"><div className="bg-black/80 rounded-lg p-1 flex flex-col items-center gap-0.5 border border-white/5"><Trophy className="h-5 w-5 text-yellow-500" /><p className="text-[6px] font-black uppercase text-center text-white/60 leading-none">Room Support</p><div className="flex gap-0.5 mt-0.5">{[1, 2, 3, 4, 5].map(i => <div key={i} className={cn("h-1 w-1 rounded-full", i === 1 ? "bg-white" : "bg-white/20")} />)}</div></div></div></div>
-        <div className="flex-1 flex flex-col mt-2 px-4 pb-2 justify-end"><div className="space-y-1"><div className="bg-emerald-500/10 border border-emerald-500/20 p-1.5 rounded-xl animate-in fade-in duration-1000"><p className="text-emerald-400 text-[9px] font-black uppercase leading-relaxed text-center">Welcome to Ummy! Please show respect to one another and be courteous.</p></div>{!isInSeat && (<Button onClick={handleMicToggle} className="w-full bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-xl h-9 px-8 font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all text-[10px]">Join Voice Chat <ChevronRight className="ml-2 h-3 w-3" /></Button>)}<ScrollArea className="h-20" ref={scrollRef}><div className="space-y-1">{activeMessages.map((msg) => (<div key={msg.id} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">{msg.type === 'entrance' ? (<p className="text-[8px] font-black uppercase text-white/60">welcome <span className="text-yellow-400">{msg.user.name}</span> entered the room</p>) : (<div className="bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-white/5 flex gap-2 max-w-[90%]"><span className="text-[8px] font-black text-blue-400 shrink-0 uppercase">{msg.user.name}:</span><p className="text-[8px] font-medium text-white/80">{msg.text}</p></div>)}</div>))}</div></ScrollArea></div></div>
+        <div className="px-4 pb-2 justify-end"><div className="space-y-1"><div className="bg-emerald-500/10 border border-emerald-500/20 p-1.5 rounded-xl animate-in fade-in duration-1000"><p className="text-emerald-400 text-[9px] font-black uppercase leading-relaxed text-center">Welcome to Ummy! Please show respect to one another and be courteous.</p></div>{!isInSeat && (<Button onClick={handleMicToggle} className="w-full bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-xl h-9 px-8 font-black uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all text-[10px]">Join Voice Chat <ChevronRight className="ml-2 h-3 w-3" /></Button>)}<ScrollArea className="h-20" ref={scrollRef}><div className="space-y-1">{activeMessages.map((msg) => (<div key={msg.id} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">{msg.type === 'entrance' ? (<p className="text-[8px] font-black uppercase text-white/60">welcome <span className="text-yellow-400">{msg.user.name}</span> entered the room</p>) : (<div className="bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-white/5 flex gap-2 max-w-[90%]"><span className="text-[8px] font-black text-blue-400 shrink-0 uppercase">{msg.user.name}:</span><p className="text-[8px] font-medium text-white/80">{msg.text}</p></div>)}</div>))}</div></ScrollArea></div></div>
       </main>
 
       <footer className="relative z-50 px-4 pb-4 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-1">
@@ -682,7 +721,7 @@ export function RoomClient({ room }: { room: Room }) {
               <section className="mt-2 bg-white px-6">
                 <SettingsListItem label="Room Name" value={room.title} onClick={() => { setEditingField('name'); setEditingFieldValue(room.title); }} />
                 <SettingsListItem label="Room Announcement" value={room.announcement} onClick={() => { setEditingField('announcement'); setEditingFieldValue(room.announcement || ''); }} />
-                <SettingsListItem label="Theme" value="Misty Forest" />
+                <SettingsListItem label="Theme" value={currentTheme.name} icon={Palette} onClick={() => setIsThemePickerOpen(true)} />
                 <SettingsListItem label="Music" value={room.currentMusicUrl ? "Active" : "None"} onClick={() => setIsMusicMenuOpen(true)} />
                 <SettingsListItem label="Admin" value={`${room.moderatorIds?.length || 0} Managed`} onClick={() => setEditingField('admins')} />
                 <SettingsListItem label="Room Lock" onClick={toggleRoomLock} showChevron={false} icon={(room as any).isLocked ? Lock : Unlock} />
@@ -690,7 +729,7 @@ export function RoomClient({ room }: { room: Room }) {
 
               <section className="mt-2 bg-white px-6">
                 <SettingsListItem label="Welcome Message" value={(room as any).welcomeMessage} onClick={() => { setEditingField('welcome'); setEditingFieldValue((room as any).welcomeMessage || ''); }} />
-                <SettingsListItem label="Mic Mode" value="9 mics" />
+                <SettingsListItem label="Mic Mode" value={`${maxMics} mics`} onClick={() => setIsMicOptionPickerOpen(true)} />
               </section>
 
               <section className="mt-2 bg-white px-6 py-2">
@@ -699,6 +738,55 @@ export function RoomClient({ room }: { room: Room }) {
               </section>
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Theme Picker */}
+      <Dialog open={isThemePickerOpen} onOpenChange={setIsThemePickerOpen}>
+        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden">
+          <DialogHeader className="p-8 pb-4 text-center border-b">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Themes</DialogTitle>
+          </DialogHeader>
+          <div className="p-8 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+            {ROOM_THEMES.map(t => (
+              <button 
+                key={t.id} 
+                onClick={() => handleSetTheme(t.id)}
+                className={cn(
+                  "relative aspect-square rounded-2xl overflow-hidden border-4 transition-all",
+                  (room as any).roomThemeId === t.id ? "border-primary scale-105" : "border-transparent"
+                )}
+              >
+                <Image src={t.url} alt={t.name} fill className="object-cover" />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="text-white font-black text-xs uppercase text-center px-2">{t.name}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mic Option Picker */}
+      <Dialog open={isMicOptionPickerOpen} onOpenChange={setIsMicOptionPickerOpen}>
+        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden">
+          <DialogHeader className="p-8 pb-4 text-center border-b">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Mic Mode</DialogTitle>
+          </DialogHeader>
+          <div className="p-8 grid grid-cols-2 gap-4">
+            {MIC_OPTIONS.map(opt => (
+              <button 
+                key={opt} 
+                onClick={() => handleSetMicMode(opt)}
+                className={cn(
+                  "h-16 rounded-2xl font-black text-xl transition-all flex items-center justify-center gap-2",
+                  maxMics === opt ? "bg-primary text-white" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                )}
+              >
+                {opt} <Mic className="h-5 w-5" />
+              </button>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
 
