@@ -22,8 +22,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
-  // Logic to find the other user's ID
-  const otherUid = chat.participantIds.find((id: string) => id !== currentUid) || currentUid;
+  // Logic to find the other user's ID with safety checks
+  const otherUid = chat.participantIds?.find((id: string) => id !== currentUid) || currentUid;
   const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
 
   if (isLoading) return (
@@ -46,7 +46,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
       <div className="relative">
         <Avatar className="h-12 w-12 border-2 border-primary/10">
           <AvatarImage src={otherUser.avatarUrl} />
-          <AvatarFallback>{otherUser.username?.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{otherUser.username?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         {otherUser.isOnline && (
           <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white shadow-sm" />
@@ -60,7 +60,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
           </span>
         </div>
         <p className="text-xs text-muted-foreground truncate">
-          {chat.lastSenderId === currentUid ? 'You: ' : ''}{chat.lastMessage}
+          {chat.lastSenderId === currentUid ? 'You: ' : ''}{chat.lastMessage || 'Sent a vibe'}
         </p>
       </div>
       <ChevronRight className="h-4 w-4 self-center text-gray-300" />
@@ -102,7 +102,7 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
 
     try {
       const chatRef = doc(firestore, 'privateChats', chatId);
-      // Non-blocking update for the chat metadata
+      // Update the chat metadata for both users
       updateDocumentNonBlocking(chatRef, {
         lastMessage: msgText,
         lastSenderId: currentUid,
@@ -126,7 +126,7 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
         <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="h-5 w-5 text-gray-600" /></button>
         <Avatar className="h-8 w-8">
           <AvatarImage src={otherUser.avatarUrl} />
-          <AvatarFallback>{otherUser.username?.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{otherUser.username?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <p className="font-black text-xs uppercase italic tracking-tight">{otherUser.username}</p>

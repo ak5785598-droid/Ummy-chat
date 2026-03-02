@@ -43,7 +43,7 @@ export function DirectMessageDialog({ recipient, trigger }: DirectMessageDialogP
     setIsSubmitting(true);
 
     try {
-      // 1. Generate unique chatId protocol
+      // 1. Generate unique chatId protocol (Sorted UIDs ensures single frequency)
       const participantIds = [user.uid, recipient.uid].sort();
       const chatId = participantIds.join('_');
 

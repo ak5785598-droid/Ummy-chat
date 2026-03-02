@@ -75,15 +75,15 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId} {
-      // Allow participants to list and get their own chats
-      allow get, list: if isSignedIn() && (request.auth.uid in resource.data.participantIds);
-      allow create: if isSignedIn() && (request.auth.uid in request.resource.data.participantIds);
-      allow update: if isSignedIn() && (request.auth.uid in resource.data.participantIds);
+      // Robust access control for private frequencies
+      allow get, list: if isSignedIn() && (resource.data.participantIds.hasAny([request.auth.uid]));
+      allow create: if isSignedIn() && (request.resource.data.participantIds.hasAny([request.auth.uid]));
+      allow update: if isSignedIn() && (resource.data.participantIds.hasAny([request.auth.uid]));
 
       match /messages/{messageId} {
-        // Messages are readable by chat participants
-        allow get, list: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds);
-        allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+        // Messages are readable only by verified chat participants
+        allow get, list: if isSignedIn() && (get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds.hasAny([request.auth.uid]));
+        allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId && (get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds.hasAny([request.auth.uid]));
       }
     }
 
