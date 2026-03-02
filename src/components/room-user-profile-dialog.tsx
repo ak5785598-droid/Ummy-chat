@@ -63,8 +63,8 @@ interface RoomUserProfileDialogProps {
 /**
  * High-Fidelity Room User Card.
  * Mirroring the blueprint with dark translucent overlays, large counts, and bottom action portals.
- * Management row (Kick, Seat Leave, Mute) is visible only to Owner/Admin.
- * Upgraded "Kick Out" with Timed Ban selection menu (5m, 1h, 24h).
+ * Management row (Kick, Seat Leave, Mute) is strictly visible to Room Owner/Admin.
+ * Normal users can only see "Leave Seat" on their own profile.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -93,7 +93,7 @@ export function RoomUserProfileDialog({
     }
   };
 
-  const isPMod = roomModeratorIds.includes(userId);
+  const isTargetPMod = roomModeratorIds.includes(userId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,8 +123,8 @@ export function RoomUserProfileDialog({
                   <DropdownMenuContent className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
                      {isOwner && !isMe && (
                        <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
-                          {isPMod ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-                          <span className="font-black uppercase text-[10px]">{isPMod ? 'Revoke Admin' : 'Make Admin'}</span>
+                          {isTargetPMod ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                          <span className="font-black uppercase text-[10px]">{isTargetPMod ? 'Revoke Admin' : 'Make Admin'}</span>
                        </DropdownMenuItem>
                      )}
                      <DropdownMenuItem className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
@@ -246,25 +246,34 @@ export function RoomUserProfileDialog({
                     </div>
                   </div>
 
-                  {/* Management Row: Only for Owner/Admin */}
+                  {/* Management Row: Conditional rendering based on Authority */}
                   {(canManage || isMe) && (
                     <div className="grid grid-cols-3 gap-4 px-2 pt-4 border-t border-white/10">
-                       <div 
-                         onClick={() => onSilence(userId, isSilenced)}
-                         className={cn(
-                           "flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer",
-                           (isMe || !canManage) && "opacity-30 pointer-events-none"
-                         )}
-                       >
-                          <div className={cn(
-                            "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10",
-                            isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600"
-                          )}>
-                             {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
-                          </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
-                       </div>
+                       
+                       {/* Mute: Admin only, never on self */}
+                       {canManage && !isMe ? (
+                         <div 
+                           onClick={() => onSilence(userId, isSilenced)}
+                           className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
+                         >
+                            <div className={cn(
+                              "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10",
+                              isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600"
+                            )}>
+                               {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
+                         </div>
+                       ) : (
+                         <div className="flex flex-col items-center gap-2 opacity-20 pointer-events-none">
+                            <div className="h-14 w-14 rounded-2xl bg-slate-800 flex items-center justify-center border border-white/10">
+                               <MicOff className="h-7 w-7 text-white/40" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-white/20 tracking-tight">Mute</span>
+                         </div>
+                       )}
 
+                       {/* Seat Leave: Admin on others, OR Self on self */}
                        <div 
                          onClick={() => onLeaveSeat(userId)}
                          className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
@@ -272,11 +281,13 @@ export function RoomUserProfileDialog({
                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
                              <LogOut className="h-7 w-7 text-black" />
                           </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Seat Leave</span>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">
+                            {isMe ? 'Leave Seat' : 'Seat Leave'}
+                          </span>
                        </div>
 
-                       {/* UPGRADED KICK OUT PORTAL */}
-                       {!isMe && canManage ? (
+                       {/* Kick Out: Admin only, never on self */}
+                       {canManage && !isMe ? (
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
@@ -305,7 +316,7 @@ export function RoomUserProfileDialog({
                             </DropdownMenuContent>
                          </DropdownMenu>
                        ) : (
-                         <div className="opacity-30 pointer-events-none flex flex-col items-center gap-2">
+                         <div className="opacity-20 pointer-events-none flex flex-col items-center gap-2">
                             <div className="h-14 w-14 rounded-2xl bg-slate-800 flex items-center justify-center border border-white/10">
                                <Ban className="h-7 w-7 text-white/40" />
                             </div>
