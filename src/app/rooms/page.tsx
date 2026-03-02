@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -14,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { MomentsFeed } from '@/components/moments-feed';
+import { Badge } from '@/components/ui/badge';
 
 export default function RoomsPage() {
   const { user } = useUser();
@@ -69,9 +69,9 @@ export default function RoomsPage() {
   const { data: topCharm } = useCollection(topCharmQuery);
 
   const topRoomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(3));
-  }, [firestore, user]);
+  }, [firestore]);
   const { data: topRoomsRanking } = useCollection(topRoomsQuery);
 
   const filteredRooms = useMemo(() => {
