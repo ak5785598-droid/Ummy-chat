@@ -16,7 +16,9 @@ import {
   Ban,
   Crown,
   ShieldCheck,
-  Loader
+  Loader,
+  LogOut,
+  Mic
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -50,14 +52,17 @@ interface RoomUserProfileDialogProps {
   roomModeratorIds: string[];
   onSilence: (uid: string, current: boolean) => void;
   onKick: (uid: string) => void;
+  onLeaveSeat: (uid: string) => void;
   onToggleMod: (uid: string) => void;
   onOpenGiftPicker: (recipient: any) => void;
   isSilenced: boolean;
+  isMe: boolean;
 }
 
 /**
  * High-Fidelity Room User Card.
  * Mirroring the blueprint with dark translucent overlays, large counts, and bottom action portals.
+ * Management row (Kick, Seat Leave, Mute) is visible only to Owner/Admin.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -68,9 +73,11 @@ export function RoomUserProfileDialog({
   roomModeratorIds,
   onSilence,
   onKick,
+  onLeaveSeat,
   onToggleMod,
   onOpenGiftPicker,
-  isSilenced
+  isSilenced,
+  isMe
 }: RoomUserProfileDialogProps) {
   const { userProfile: profile, isLoading } = useUserProfile(userId || undefined);
   const { toast } = useToast();
@@ -112,7 +119,7 @@ export function RoomUserProfileDialog({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                     {canManage && (
+                     {canManage && !isMe && (
                        <>
                          <DropdownMenuItem onClick={() => onSilence(userId, isSilenced)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
                             {isSilenced ? <Volume2 className="h-4 w-4 text-green-400" /> : <MicOff className="h-4 w-4 text-orange-400" />}
@@ -210,42 +217,88 @@ export function RoomUserProfileDialog({
                </div>
 
                {/* Bottom High-Fidelity Action Portals */}
-               <div className="w-full grid grid-cols-4 gap-4 px-2">
-                  <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
-                        <UserPlus className="h-7 w-7 text-white" />
-                     </div>
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Follow</span>
+               <div className="w-full space-y-4">
+                  <div className="grid grid-cols-4 gap-4 px-2">
+                    <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
+                          <UserPlus className="h-7 w-7 text-white" />
+                       </div>
+                       <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Follow</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 border border-white/10">
+                          <Bell className="h-7 w-7 text-white" />
+                       </div>
+                       <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Reminder</span>
+                    </div>
+
+                    <DirectMessageDialog 
+                      recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl }} 
+                      trigger={
+                        <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
+                              <MessageCircle className="h-7 w-7 text-white" />
+                           </div>
+                           <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Message</span>
+                        </div>
+                      }
+                    />
+
+                    <div 
+                      onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl }); }}
+                      className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
+                    >
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">
+                          <GiftIcon className="h-7 w-7 text-white fill-current" />
+                       </div>
+                       <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Send Gift</span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 border border-white/10">
-                        <Bell className="h-7 w-7 text-white" />
-                     </div>
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Reminder</span>
-                  </div>
+                  {/* Management Row: Only for Owner/Admin */}
+                  {(canManage || isMe) && (
+                    <div className="grid grid-cols-3 gap-4 px-2 pt-4 border-t border-white/10">
+                       <div 
+                         onClick={() => onSilence(userId, isSilenced)}
+                         className={cn(
+                           "flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer",
+                           (isMe || !canManage) && "opacity-30 pointer-events-none"
+                         )}
+                       >
+                          <div className={cn(
+                            "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10",
+                            isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600"
+                          )}>
+                             {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
+                       </div>
 
-                  <DirectMessageDialog 
-                    recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl }} 
-                    trigger={
-                      <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                         <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
-                            <MessageCircle className="h-7 w-7 text-white" />
-                         </div>
-                         <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Message</span>
-                      </div>
-                    }
-                  />
+                       <div 
+                         onClick={() => onLeaveSeat(userId)}
+                         className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
+                       >
+                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
+                             <LogOut className="h-7 w-7 text-black" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Seat Leave</span>
+                       </div>
 
-                  <div 
-                    onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl }); }}
-                    className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
-                  >
-                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">
-                        <GiftIcon className="h-7 w-7 text-white fill-current" />
-                     </div>
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Send Gift</span>
-                  </div>
+                       <div 
+                         onClick={() => onKick(userId)}
+                         className={cn(
+                           "flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer",
+                           (isMe || !canManage) && "opacity-30 pointer-events-none"
+                         )}
+                       >
+                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20 border border-white/10">
+                             <Ban className="h-7 w-7 text-white" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick Out</span>
+                       </div>
+                    </div>
+                  )}
                </div>
             </div>
           </div>

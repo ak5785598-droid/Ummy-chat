@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -518,6 +517,15 @@ export function RoomClient({ room }: { room: Room }) {
     setIsActionMenuOpen(false);
     setIsUserProfileCardOpen(false);
     toast({ title: 'Member Kicked' });
+  };
+
+  const forceLeaveSeat = async (uid: string) => {
+    if (!firestore || !room.id) return;
+    const pRef = doc(firestore, 'chatRooms', room.id, 'participants', uid);
+    updateDocumentNonBlocking(pRef, { seatIndex: 0, isMuted: true });
+    setIsActionMenuOpen(false);
+    setIsUserProfileCardOpen(false);
+    toast({ title: 'Seat Cleared' });
   };
 
   const handleMinimize = () => {
@@ -1136,9 +1144,11 @@ export function RoomClient({ room }: { room: Room }) {
         roomModeratorIds={room.moderatorIds || []}
         onSilence={silenceParticipant}
         onKick={kickParticipant}
+        onLeaveSeat={forceLeaveSeat}
         onToggleMod={toggleModerator}
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
         isSilenced={participants?.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
+        isMe={selectedParticipantUid === currentUser?.uid}
       />
 
       <CameraCaptureDialog 
