@@ -42,7 +42,9 @@ import {
   Settings as SettingsIcon,
   Copy,
   Info,
-  Calculator as CalculatorIcon
+  Calculator as CalculatorIcon,
+  Camera,
+  MessageSquare
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
