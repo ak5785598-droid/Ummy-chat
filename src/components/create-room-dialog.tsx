@@ -85,7 +85,7 @@ export function CreateRoomDialog({ iconOnly = false }: { iconOnly?: boolean }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {iconOnly ? (
-          <button className="bg-primary text-black p-1.5 rounded-xl border-2 border-white shadow-lg flex items-center justify-center"><Plus className="h-4 w-4" /></button>
+          <button className="bg-primary text-black p-1.5 rounded-xl border-2 border-white shadow-lg flex items-center justify-center text-sm leading-none">🏠</button>
         ) : (
           <Button className="rounded-full font-black uppercase italic tracking-widest text-[10px] px-6 h-10"><Plus className="h-4 w-4 mr-2" />Create</Button>
         )}
