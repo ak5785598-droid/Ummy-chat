@@ -27,12 +27,12 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room.isOfficial ? undefined : room.ownerId);
 
   // Elite Official Support Logic
-  const ownerName = room.isOfficial ? 'Ummy Official' : (owner?.username || 'Tribe Member');
+  const ownerName = room.isOfficial ? 'Ummy Help Desk' : (owner?.username || 'Tribe Member');
   const regionalFlag = room.isOfficial ? '🌐' : '🇮🇳';
 
   if (variant === 'modern') {
     return (
-      <Link href={room.isOfficial ? '/help-center' : `/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline">
+      <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline">
         <div className="space-y-2">
           {/* Main Image Container */}
           <div className={cn(
