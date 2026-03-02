@@ -7,21 +7,21 @@ import {
   collection, 
   doc, 
   onSnapshot, 
-  setDoc, 
   deleteDoc, 
-  query, 
-  where,
   serverTimestamp,
   addDoc
 } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * PRODUCTION WEBRTC HOOK
  * Handles P2P Audio Mesh via Firestore Signaling.
+ * Synchronized with tribal security protocols.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean) {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -52,8 +52,15 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           track.enabled = !isMuted;
         });
         setLocalStream(stream);
-      } catch (err) {
-        console.error("Mic Access Error:", err);
+      } catch (err: any) {
+        // Handle permission denial gracefully without crashing the app
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          toast({
+            variant: 'destructive',
+            title: 'Microphone Access Denied',
+            description: 'Please enable microphone permissions in your browser settings to speak in the frequency.',
+          });
+        }
       }
     };
 
