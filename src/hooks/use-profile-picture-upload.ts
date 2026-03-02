@@ -28,7 +28,7 @@ export function useProfilePictureUpload() {
     }
 
     setIsUploading(true);
-    console.log(`[Visual Sync] Starting profile upload for: ${user.uid}`);
+    console.log(`[Visual Sync] Starting profile upload for: ${user.uid}`, file.name);
 
     try {
       // 1. Storage Upload Handshake
@@ -45,7 +45,7 @@ export function useProfilePictureUpload() {
           'state_changed',
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`[Visual Sync] Upload is ${progress}% complete`);
+            console.log(`[Visual Sync] Upload is ${progress.toFixed(2)}% complete`);
           },
           (error) => {
             console.error('[Visual Sync] Upload Task Error:', error);
@@ -53,9 +53,11 @@ export function useProfilePictureUpload() {
           },
           async () => {
             try {
+              console.log('[Visual Sync] Task finished, resolving URL...');
               const url = await getDownloadURL(uploadTask.snapshot.ref);
               resolve(url);
             } catch (urlError) {
+              console.error('[Visual Sync] getDownloadURL Error:', urlError);
               reject(urlError);
             }
           }
@@ -71,6 +73,7 @@ export function useProfilePictureUpload() {
         updatedAt: serverTimestamp()
       };
 
+      console.log('[Visual Sync] Dispatching metadata update to Firestore');
       setDocumentNonBlocking(userSummaryRef, updateData, { merge: true });
       setDocumentNonBlocking(userProfileRef, updateData, { merge: true });
       

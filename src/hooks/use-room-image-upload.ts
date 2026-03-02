@@ -28,7 +28,7 @@ export function useRoomImageUpload(roomId: string) {
     }
 
     setIsUploading(true);
-    console.log(`[Visual Sync] Starting room cover upload for: ${roomId}`);
+    console.log(`[Visual Sync] Starting room cover upload for: ${roomId}`, file.name);
 
     try {
       // 1. Storage Upload Handshake
@@ -45,7 +45,7 @@ export function useRoomImageUpload(roomId: string) {
           'state_changed',
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`[Visual Sync] Room upload is ${progress}% complete`);
+            console.log(`[Visual Sync] Room upload is ${progress.toFixed(2)}% complete`);
           },
           (error) => {
             console.error('[Visual Sync] Room Upload Task Error:', error);
@@ -53,9 +53,11 @@ export function useRoomImageUpload(roomId: string) {
           },
           async () => {
             try {
+              console.log('[Visual Sync] Task finished, resolving URL...');
               const url = await getDownloadURL(uploadTask.snapshot.ref);
               resolve(url);
             } catch (urlError) {
+              console.error('[Visual Sync] getDownloadURL Error:', urlError);
               reject(urlError);
             }
           }
@@ -71,6 +73,7 @@ export function useRoomImageUpload(roomId: string) {
         updatedAt: serverTimestamp()
       };
 
+      console.log('[Visual Sync] Dispatching room cover metadata to Firestore');
       setDocumentNonBlocking(roomRef, updateData, { merge: true });
 
       toast({

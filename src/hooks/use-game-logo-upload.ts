@@ -29,7 +29,7 @@ export function useGameLogoUpload() {
     }
 
     setIsUploading(true);
-    console.log(`[Visual Sync] Starting game logo upload for: ${game.id}`);
+    console.log(`[Visual Sync] Starting game logo upload for: ${game.id}`, file.name);
 
     try {
       // 1. Storage Upload Handshake
@@ -46,7 +46,7 @@ export function useGameLogoUpload() {
           'state_changed',
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`[Visual Sync] Game upload is ${progress}% complete`);
+            console.log(`[Visual Sync] Game upload is ${progress.toFixed(2)}% complete`);
           },
           (error) => {
             console.error('[Visual Sync] Game Upload Task Error:', error);
@@ -54,9 +54,11 @@ export function useGameLogoUpload() {
           },
           async () => {
             try {
+              console.log('[Visual Sync] Task finished, resolving URL...');
               const url = await getDownloadURL(uploadTask.snapshot.ref);
               resolve(url);
             } catch (urlError) {
+              console.error('[Visual Sync] getDownloadURL Error:', urlError);
               reject(urlError);
             }
           }
@@ -74,6 +76,7 @@ export function useGameLogoUpload() {
         updatedAt: serverTimestamp()
       };
 
+      console.log('[Visual Sync] Dispatching game logo metadata to Firestore');
       setDocumentNonBlocking(gameRef, updateData, { merge: true });
 
       toast({

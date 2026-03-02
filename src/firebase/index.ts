@@ -24,12 +24,14 @@ export function getSdks(firebaseApp: FirebaseApp) {
   const bucket = firebaseConfig.storageBucket;
   const storageUrl = bucket && !bucket.startsWith('gs://') ? `gs://${bucket}` : bucket;
   
+  console.log(`[Firebase Init] Storage Bucket: ${storageUrl}`);
+  
   // Use explicit bucket initialization to ensure high-fidelity storage sync
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp),
-    storage: getStorage(firebaseApp, storageUrl)
+    storage: getStorage(firebaseApp, storageUrl || undefined)
   };
 }
 
