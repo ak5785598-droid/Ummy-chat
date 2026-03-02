@@ -650,7 +650,7 @@ export function RoomClient({ room }: { room: Room }) {
                 )}
               >
                 {occupant ? (
-                  <Avatar className="h-full w-full"><AvatarImage src={occupant.avatarUrl || undefined} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar>
+                  <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl || undefined} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar>
                 ) : isLocked ? (<Lock className="h-4 w-4 text-red-500/60" />) : (<Armchair className={cn("text-white/20", index === 1 ? "h-6 w-6" : "h-5 w-5")} />)}
               </button>
             </AvatarFrame>
@@ -771,6 +771,10 @@ export function RoomClient({ room }: { room: Room }) {
       {/* Exit Dimension Portal */}
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
         <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden animate-in fade-in duration-500">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exit Protocol</DialogTitle>
+            <DialogDescription>Choose between minimizing the frequency or completely exiting the room.</DialogDescription>
+          </DialogHeader>
           <div className="p-12 flex items-center justify-around gap-8">
             <button 
               onClick={handleMinimize}
@@ -800,6 +804,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <Dialog open={isParticipantListOpen} onOpenChange={setIsParticipantListOpen}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 backdrop-blur-xl text-white p-0 flex flex-col animate-in slide-in-from-bottom duration-500 font-headline overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Tribe Member List</DialogTitle>
+            <DialogDescription>View all currently synchronized tribe members in this frequency.</DialogDescription>
+          </DialogHeader>
           <header className="flex items-center p-4 border-b border-white/10 mt-10">
             <button onClick={() => setIsParticipantListOpen(false)} className="p-2 -ml-2 text-white/60"><ChevronLeft className="h-6 w-6" /></button>
             <DialogTitle className="flex-1 text-center font-black uppercase text-lg -ml-4">Tribe List ({onlineCount})</DialogTitle>
@@ -821,6 +829,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Tribal Reactions</DialogTitle>
+            <DialogDescription className="sr-only">Select an emoji reaction to broadcast to your seat.</DialogDescription>
           </DialogHeader>
           <div className="p-8 grid grid-cols-3 gap-6">
             {TRIBE_EMOJIS.map(emoji => (
@@ -841,6 +850,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col animate-in slide-in-from-right duration-300 font-headline overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Frequency Settings</DialogTitle>
+            <DialogDescription>Modify room identity, administrative permissions, and theme aesthetics.</DialogDescription>
+          </DialogHeader>
           <header className="flex items-center p-4 border-b">
             <button onClick={() => setIsSettingsOpen(false)} className="p-2 -ml-2 text-gray-600"><ChevronLeft className="h-6 w-6" /></button>
             <DialogTitle className="flex-1 text-center font-bold text-lg -ml-4">Room Settings</DialogTitle>
@@ -914,6 +927,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Themes</DialogTitle>
+            <DialogDescription className="sr-only">Select a visual theme for the frequency background.</DialogDescription>
           </DialogHeader>
           <div className="p-8 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
             {ROOM_THEMES.map(t => (
@@ -940,6 +954,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Mic Mode</DialogTitle>
+            <DialogDescription className="sr-only">Select the maximum number of active microphones allowed in this frequency.</DialogDescription>
           </DialogHeader>
           <div className="p-8 grid grid-cols-2 gap-4">
             {MIC_OPTIONS.map(opt => (
@@ -962,6 +977,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Edit Room {editingField}</DialogTitle>
+            <DialogDescription className="sr-only">Modify the specified field for this room frequency.</DialogDescription>
           </DialogHeader>
           <div className="p-8 space-y-6">
             {editingField === 'admins' ? (
@@ -988,7 +1004,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <Dialog open={isMusicMenuOpen} onOpenChange={setIsMusicMenuOpen}>
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden">
-          <DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Radio</DialogTitle></DialogHeader>
+          <DialogHeader className="p-8 pb-4 text-center border-b">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Radio</DialogTitle>
+            <DialogDescription className="sr-only">Select a background music track to play for all tribe members.</DialogDescription>
+          </DialogHeader>
           <div className="p-8 grid grid-cols-2 gap-3">
             {MUSIC_TRACKS.map(track => (<button key={track.id} onClick={() => handleToggleMusic(track.url)} className={cn("p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all", room.currentMusicUrl === track.url ? "bg-primary border-primary text-white shadow-lg" : "bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100")}>{room.currentMusicUrl === track.url ? <Square className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}<span className="text-[10px] font-black uppercase truncate w-full">{track.name}</span></button>))}
           </div>
@@ -1058,6 +1077,7 @@ export function RoomClient({ room }: { room: Room }) {
         <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none overflow-hidden animate-in slide-in-from-bottom-full duration-500">
           <DialogHeader className="p-8 pb-4 text-center border-b">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Tools</DialogTitle>
+            <DialogDescription className="sr-only">Access calculators, music, and social games for this frequency.</DialogDescription>
           </DialogHeader>
           <div className="p-8 grid grid-cols-3 gap-6">
             <ToolTile icon={CalculatorIcon} label="Calculator" color="text-blue-400" onClick={() => { setIsCalculatorOpen(true); setIsGamesDialogOpen(false); }} />
@@ -1086,6 +1106,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <Dialog open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
         <DialogContent className="sm:max-w-xs bg-transparent border-none p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exchange Calculator</DialogTitle>
+            <DialogDescription>Calculate diamond to coin exchange rates instantly.</DialogDescription>
+          </DialogHeader>
           <CalculatorPortal />
         </DialogContent>
       </Dialog>
@@ -1103,6 +1127,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <AvatarFallback className="text-2xl">{(selectedOccupant?.name || 'U').charAt(0)}</AvatarFallback>
               </Avatar>
               <DialogTitle className="text-2xl font-black uppercase tracking-tighter">{selectedOccupant ? selectedOccupant.name : `Slot ${selectedSeatIndex}`}</DialogTitle>
+              <DialogDescription className="sr-only">Administrative actions for the selected slot occupant.</DialogDescription>
             </div>
           </DialogHeader>
           <div className="p-8 grid grid-cols-3 gap-6">
