@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
 import { Loader, Search, Plus, Trophy, Users, Heart } from 'lucide-react';
@@ -15,6 +15,7 @@ import Link from 'next/link';
 /**
  * High-Fidelity Home / Discovery Hub.
  * Re-engineered to match the "Popular" grid layout exactly.
+ * Includes a persistent "Official Help" frequency at the apex of the grid.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -32,6 +33,25 @@ export default function RoomsPage() {
   }, [firestore, user]);
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
+
+  // Elite Help Room Protocol: Ensures Ummy Official Help is always first.
+  const displayRooms = useMemo(() => {
+    const helpRoom: any = {
+      id: 'ummy-help-center',
+      roomNumber: '0000',
+      title: 'Ummy Official Help',
+      topic: 'Ask any app related question quick and fast.',
+      category: 'Chat',
+      coverUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000',
+      ownerId: 'official-support-bot',
+      participantCount: 99,
+      isOfficial: true
+    };
+
+    if (!roomsData) return [helpRoom];
+    // Filter out the help room if it already exists in data to avoid duplicates
+    return [helpRoom, ...roomsData.filter(r => r.id !== helpRoom.id)];
+  }, [roomsData]);
 
   const CategoryCard = ({ title, label, gradient, onClick }: { title: string, label: string, gradient: string, onClick?: () => void }) => (
     <div 
@@ -103,16 +123,13 @@ export default function RoomsPage() {
           </div>
 
           {/* Grid View */}
-          {isRoomsLoading ? (
+          {isRoomsLoading && !roomsData ? (
             <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6">
-              {roomsData?.map((room: any) => (
+              {displayRooms.map((room: any) => (
                 <ChatRoomCard key={room.id} room={room} variant="modern" />
               ))}
-              {(!roomsData || roomsData.length === 0) && (
-                <div className="col-span-2 text-center py-20 opacity-30 italic uppercase font-black text-xs">No active frequencies found</div>
-              )}
             </div>
           )}
         </div>
