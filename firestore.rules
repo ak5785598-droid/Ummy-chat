@@ -42,10 +42,10 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       
-      // Only the Creator can modify tags or specialId. Owners can modify other profile data.
+      // Only the Creator can modify tags or specialId. Owners can modify other profile data including wallet for rewards.
       allow update: if isCreator() || (
         isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tags', 'specialId', 'wallet'])
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tags', 'specialId'])
       ) || (
         isAdmin() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'updatedAt'])
