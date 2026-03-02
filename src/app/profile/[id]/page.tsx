@@ -83,9 +83,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const profileId = Array.isArray(params?.id) ? params.id[0] : params?.id as string;
+  
+  // Re-engineered param frequency sync
+  const profileId = params?.id ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
+  
   const { user: currentUser, isUserLoading } = useUser();
-  const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId);
+  const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -101,7 +104,19 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === profileId;
 
-  if (isUserLoading || isProfileLoading) return <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase tracking-widest animate-pulse text-gray-400">Syncing Tribal Identity...</p></div></AppLayout>;
+  // Unified loading handshake
+  if (isUserLoading || isProfileLoading || !profileId) {
+    return (
+      <AppLayout>
+        <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
+          <Loader className="animate-spin h-8 w-8 text-primary" />
+          <p className="text-[10px] font-black uppercase tracking-widest animate-pulse text-gray-400">
+            Syncing Tribal Identity...
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
   
   if (!profile) { 
     if (isOwnProfile) {
@@ -300,7 +315,7 @@ export default function ProfilePage() {
 
            {activeRoom && (
              <Link href={`/rooms/${activeRoom.id}`} className="w-full max-w-xs">
-                <div className="bg-[#0a2e1a]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between group active:scale-95 transition-transform shadow-lg">
+                <div className="bg-[#0a2e1a]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between group active:scale-[0.98] transition-transform shadow-lg">
                    <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl overflow-hidden relative border border-white/10"><Image src={activeRoom.coverUrl || 'https://picsum.photos/seed/room/200/200'} alt="Room" fill className="object-cover" /></div>
                       <div><p className="text-xs font-black uppercase tracking-tight">{activeRoom.name}</p><p className="text-[8px] font-black text-white/40 uppercase tracking-widest">My Frequency</p></div>
