@@ -75,7 +75,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   collection, 
@@ -310,7 +310,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const isGlobalAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
   const isOwner = currentUser?.uid === room.ownerId;
-  const isModerator = room.moderatorIds?.includes(currentUser?.uid || '');
+  const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isGlobalAdmin || isOwner || isModerator;
 
   useEffect(() => {
@@ -496,7 +496,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const leaveRoom = () => { setActiveRoom(null); router.push('/rooms'); };
-  const takeSeat = (index: number) => { if (!firestore || !room.id || !currentUser || !userProfile) return; if (room.lockedSeats?.includes(index)) { toast({ variant: 'destructive', title: 'Seat Locked' }); return; } updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index, isMuted: true, activeWave: userProfile.inventory?.activeWave || 'Default' }); };
+  const takeSeat = (index: number) => { if (!firestore || !room.id || !currentUser || !userProfile) return; if (room.lockedSeats?.includes(index)) { toast({ variant: 'destructive', title: 'Seat Locked' }); return; } updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { uid: currentUser.uid, name: userProfile.username || 'Guest', avatarUrl: userProfile.avatarUrl || '', seatIndex: index, isMuted: true, activeWave: userProfile.inventory?.activeWave || 'Default' }); };
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); };
   
   const handleMicToggle = () => { 

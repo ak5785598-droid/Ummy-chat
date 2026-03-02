@@ -22,8 +22,10 @@ service cloud.firestore {
       return resource != null && isOwner(ownerId);
     }
 
-    function isRoomParticipant(participantIds) {
-      return isSignedIn() && (request.auth.uid in participantIds);
+    // Helper to check if the current user is an admin or owner of a room
+    function isRoomAdmin(chatRoomId) {
+      let room = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
+      return isSignedIn() && (request.auth.uid == room.ownerId || (room.moderatorIds != null && request.auth.uid in room.moderatorIds));
     }
 
     // --- Collection Rules ---
@@ -55,12 +57,23 @@ service cloud.firestore {
     match /chatRooms/{chatRoomId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn(); // Broaden for simple participantCount and settings sync
+      
+      // Allow update if owner, admin, or for participantCount synchronization
+      allow update: if isSignedIn() && (
+        isOwner(resource.data.ownerId) || 
+        (resource.data.moderatorIds != null && request.auth.uid in resource.data.moderatorIds) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount'])
+      );
+      
       allow delete: if isExistingOwner(resource.data.ownerId);
 
       match /participants/{participantId} {
         allow get, list: if isSignedIn();
-        allow write: if isSignedIn() && (request.auth.uid == participantId || isRoomParticipant(get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.moderatorIds));
+        // Allow write if it's the user's own presence, or if the requester is a room admin/owner
+        allow write: if isSignedIn() && (
+          request.auth.uid == participantId || 
+          isRoomAdmin(chatRoomId)
+        );
         
         match /signaling/{signalId} {
           allow get, list, write: if isSignedIn();
@@ -70,7 +83,8 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow get, list: if isSignedIn();
         allow create: if isSignedIn();
-        allow delete: if isSignedIn();
+        // Allow delete if owner or moderator
+        allow delete: if isRoomAdmin(chatRoomId);
       }
     }
 
