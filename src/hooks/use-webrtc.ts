@@ -2,22 +2,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useFirestore, useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { 
   collection, 
   onSnapshot, 
   deleteDoc, 
   serverTimestamp,
   addDoc,
-  doc
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 /**
  * PRODUCTION WEBRTC HOOK
  * Handles P2P Audio Mesh via Firestore Signaling.
- * Synchronized with tribal security protocols.
- * Allows Listeners (seatIndex 0) to hear Speakers (seatIndex > 0).
+ * Re-engineered for high-fidelity synchronization:
+ * - Deterministic offering to prevent glare.
+ * - Dynamic track addition when local stream becomes ready.
+ * - Automatic reconnection on identity sync changes.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean) {
   const { user } = useUser();
@@ -31,6 +32,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
     ],
   };
 
@@ -46,11 +48,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
+        console.log('[WebRTC] Requesting Microphone...');
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         stream.getAudioTracks().forEach(track => {
           track.enabled = !isMuted;
         });
         setLocalStream(stream);
+        console.log('[WebRTC] Local Stream Synchronized');
       } catch (err: any) {
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           toast({
@@ -80,7 +84,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
   }, [isMuted, localStream]);
 
-  // 2. Global Mesh & Signaling
+  // 2. Global Mesh & Signaling Handshake
+  // DEPENDENCY: localStream is critical. If we get a stream, we MUST re-initiate connections.
   useEffect(() => {
     if (!user || !roomId || !firestore) return;
 
@@ -108,17 +113,92 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       });
     });
 
-    // Signaling Listener for incoming handshakes
+    // Signaling Listener for incoming handshakes (Offer/Answer/ICE)
     const signalingRef = collection(firestore, 'chatRooms', roomId, 'participants', user.uid, 'signaling');
     const unsubSignaling = onSnapshot(signalingRef, (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
         if (change.type === 'added') {
           const signal = change.doc.data();
           handleSignal(signal);
-          await deleteDoc(change.doc.ref);
+          // Delete signal after processing to keep the queue clean
+          deleteDoc(change.doc.ref).catch(() => {});
         }
       });
     });
+
+    const initiateConnection = async (peerId: string) => {
+      console.log(`[WebRTC] Initiating P2P with: ${peerId}`);
+      const pc = new RTCPeerConnection(iceConfig);
+      peerConnections.current.set(peerId, pc);
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      }
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal(peerId, { type: 'candidate', candidate: event.candidate.toJSON(), from: user.uid });
+        }
+      };
+
+      pc.ontrack = (event) => {
+        console.log(`[WebRTC] Received Remote Track from: ${peerId}`);
+        setRemoteStreams(prev => {
+          const next = new Map(prev);
+          next.set(peerId, event.streams[0]);
+          return next;
+        });
+      };
+
+      // Glare protection: Deterministic offerer selection
+      if (user.uid < peerId) {
+        try {
+          const offer = await pc.createOffer({ offerToReceiveAudio: true });
+          await pc.setLocalDescription(offer);
+          sendSignal(peerId, { type: 'offer', sdp: offer.sdp, from: user.uid });
+        } catch (e) {
+          console.error('[WebRTC] Offer failed:', e);
+        }
+      }
+    };
+
+    const handleSignal = async (signal: any) => {
+      const peerId = signal.from;
+      let pc = peerConnections.current.get(peerId);
+
+      if (!pc) {
+        pc = new RTCPeerConnection(iceConfig);
+        peerConnections.current.set(peerId, pc);
+        if (localStream) {
+          localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        }
+        pc.onicecandidate = (event) => {
+          if (event.candidate) sendSignal(peerId, { type: 'candidate', candidate: event.candidate.toJSON(), from: user.uid });
+        };
+        pc.ontrack = (event) => {
+          setRemoteStreams(prev => {
+            const next = new Map(prev);
+            next.set(peerId, event.streams[0]);
+            return next;
+          });
+        };
+      }
+
+      try {
+        if (signal.type === 'offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          sendSignal(peerId, { type: 'answer', sdp: answer.sdp, from: user.uid });
+        } else if (signal.type === 'answer') {
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+        } else if (signal.type === 'candidate') {
+          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        }
+      } catch (e) {
+        console.error('[WebRTC] Signaling Error:', e);
+      }
+    };
 
     return () => {
       unsubscribe();
@@ -127,84 +207,12 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       peerConnections.current.clear();
       setRemoteStreams(new Map());
     };
-  }, [roomId, user?.uid, isInSeat]);
-
-  // 3. Connection Helpers
-  const initiateConnection = async (peerId: string) => {
-    if (!user || !roomId || !firestore) return;
-
-    const pc = new RTCPeerConnection(iceConfig);
-    peerConnections.current.set(peerId, pc);
-
-    if (localStream) {
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    }
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        sendSignal(peerId, { type: 'candidate', candidate: event.candidate.toJSON(), from: user.uid });
-      }
-    };
-
-    pc.ontrack = (event) => {
-      setRemoteStreams(prev => {
-        const next = new Map(prev);
-        next.set(peerId, event.streams[0]);
-        return next;
-      });
-    };
-
-    // Smaller UID offers to ensure single connection in P2P mesh
-    if (user.uid < peerId) {
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendSignal(peerId, { type: 'offer', sdp: offer.sdp, from: user.uid });
-      } catch (e) {}
-    }
-  };
-
-  const handleSignal = async (signal: any) => {
-    if (!user) return;
-    const peerId = signal.from;
-    let pc = peerConnections.current.get(peerId);
-
-    if (!pc) {
-      pc = new RTCPeerConnection(iceConfig);
-      peerConnections.current.set(peerId, pc);
-      if (localStream) {
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-      }
-      pc.onicecandidate = (event) => {
-        if (event.candidate) sendSignal(peerId, { type: 'candidate', candidate: event.candidate.toJSON(), from: user.uid });
-      };
-      pc.ontrack = (event) => {
-        setRemoteStreams(prev => {
-          const next = new Map(prev);
-          next.set(peerId, event.streams[0]);
-          return next;
-        });
-      };
-    }
-
-    try {
-      if (signal.type === 'offer') {
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        sendSignal(peerId, { type: 'answer', sdp: answer.sdp, from: user.uid });
-      } else if (signal.type === 'answer') {
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
-      } else if (signal.type === 'candidate') {
-        await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-      }
-    } catch (e) {}
-  };
+  }, [roomId, user?.uid, isInSeat, localStream]); 
 
   const sendSignal = (toPeerId: string, payload: any) => {
     if (!firestore || !roomId) return;
     const ref = collection(firestore, 'chatRooms', roomId, 'participants', toPeerId, 'signaling');
-    addDoc(ref, { ...payload, timestamp: serverTimestamp() });
+    addDoc(ref, { ...payload, timestamp: serverTimestamp() }).catch(() => {});
   };
 
   const closeConnection = (peerId: string) => {

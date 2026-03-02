@@ -157,15 +157,27 @@ const MUSIC_TRACKS = [
   { id: 'chill', name: 'Ocean Breeze', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
 ];
 
+/**
+ * High-Fidelity Remote Audio Sync.
+ * Handles autoplay restrictions and hardware synchronization for tribe members.
+ */
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     if (audioRef.current) {
+      console.log('[RemoteAudio] Attaching Stream Tracks');
       audioRef.current.srcObject = stream;
-      audioRef.current.play().catch(e => console.log('Audio Autoplay Blocked:', e));
+      
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('[RemoteAudio] Autoplay restricted. User interaction required:', error);
+        });
+      }
     }
   }, [stream]);
-  return <audio ref={audioRef} autoPlay className="hidden" />;
+  
+  return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 
 const ModeratorItem = ({ userId }: { userId: string }) => {
@@ -697,7 +709,11 @@ export function RoomClient({ room }: { room: Room }) {
       <DailyRewardDialog />
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <audio ref={roomAudioRef} loop crossOrigin="anonymous" />
-      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => <RemoteAudio key={peerId} stream={stream} />)}
+      
+      {/* Remote Voice Channels */}
+      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+        <RemoteAudio key={peerId} stream={stream} />
+      ))}
       
       <div className="absolute inset-0 z-0">
         <Image src={currentTheme.url} alt="Background" fill className="object-cover opacity-60 transition-all duration-1000" priority />
