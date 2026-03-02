@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -27,6 +27,12 @@ const AUTHORITY_ROLES = [
   { id: 'Assistant', label: 'Assistant', icon: UserCheck, color: 'text-green-500' },
 ];
 
+const ELITE_TAGS = [
+  { id: 'Official', label: 'Official', color: 'bg-green-500', icon: BadgeCheck },
+  { id: 'Customer Service', label: 'Customer Service', color: 'bg-blue-500', icon: MessageSquare },
+  { id: 'Seller', label: 'Seller', color: 'bg-purple-500', icon: Heart },
+];
+
 /**
  * Ummy Command Center - Supreme Authority Oversight.
  * Restricted exclusively to the Supreme Creator.
@@ -41,7 +47,9 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState('authority');
   const [searchQuery, setSearchQuery] = useState('');
+  const [tagSearchId, setTagSearchId] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
+  const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -194,6 +202,33 @@ export default function AdminPage() {
     }
   };
 
+  const handleSearchByTagId = async () => {
+    if (!firestore || !tagSearchId || !isCreator) return;
+    setIsSearching(true);
+    try {
+      const paddedId = tagSearchId.padStart(3, '0');
+      const q = query(
+        collection(firestore, 'users'),
+        where('specialId', '==', paddedId),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setTargetUserForTags({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found', description: `No user with ID ${paddedId}.` });
+        setTargetUserForTags(null);
+      }
+    } catch (serverError: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'users',
+        operation: 'list',
+      }));
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore || !isCreator) return;
     setIsSaving(true);
@@ -243,15 +278,25 @@ export default function AdminPage() {
     
     toast({ title: 'Authority Updated', description: `${roleId} ${hasRole ? 'revoked' : 'granted'} successfully.` });
     
-    setFoundUsers(prev => prev.map(u => {
-      if (u.id === targetUid) {
-        const nextTags = hasRole ? u.tags.filter((t: string) => t !== roleId) : [...(u.tags || []), roleId];
-        return { ...u, tags: nextTags };
-      }
-      return u;
-    }));
+    if (activeTab === 'authority') {
+      setFoundUsers(prev => prev.map(u => {
+        if (u.id === targetUid) {
+          const nextTags = hasRole ? u.tags.filter((t: string) => t !== roleId) : [...(u.tags || []), roleId];
+          return { ...u, tags: nextTags };
+        }
+        return u;
+      }));
+    } else if (activeTab === 'tags') {
+      setTargetUserForTags((prev: any) => {
+        if (prev?.id === targetUid) {
+          const nextTags = hasRole ? prev.tags.filter((t: string) => t !== roleId) : [...(prev.tags || []), roleId];
+          return { ...prev, tags: nextTags };
+        }
+        return prev;
+      });
+    }
 
-    await logAdminAction(`Toggle Role: ${roleId}`, targetUid, { action: hasRole ? 'revoke' : 'grant' });
+    await logAdminAction(`Toggle Role/Tag: ${roleId}`, targetUid, { action: hasRole ? 'revoke' : 'grant' });
   };
 
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Unauthorized Portal Access Restricted</div></AppLayout>;
@@ -276,6 +321,7 @@ export default function AdminPage() {
             <TabsTrigger value="overview" className="rounded-full px-6 font-black uppercase text-[10px]">Overview</TabsTrigger>
             <TabsTrigger value="rewards" className="rounded-full px-6 font-black uppercase text-[10px]">Rewards Hub</TabsTrigger>
             <TabsTrigger value="users" className="rounded-full px-6 font-black uppercase text-[10px]">Users</TabsTrigger>
+            <TabsTrigger value="tags" className="rounded-full px-6 font-black uppercase text-[10px]">Assign Tags</TabsTrigger>
             <TabsTrigger value="logs" className="rounded-full px-6 font-black uppercase text-[10px]">Audit Logs</TabsTrigger>
           </TabsList>
 
@@ -342,6 +388,65 @@ export default function AdminPage() {
                         </div>
                       ))}
                    </div>
+                </CardContent>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="tags" className="space-y-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-green-500/10 to-transparent">
+                <CardHeader>
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-green-600">
+                      <Tag className="h-6 w-6" /> Elite Identity Sync
+                   </CardTitle>
+                   <CardDescription>Assign prestigious tribal tags by entering the unique User ID.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                   <div className="flex gap-4">
+                      <div className="relative flex-1">
+                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                         <Input placeholder="Enter User ID (e.g. 001)" className="pl-10 h-12 rounded-xl" value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId()} />
+                      </div>
+                      <Button onClick={handleSearchByTagId} className="h-12 rounded-xl bg-green-600 text-white hover:bg-green-700" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Find Tribe Member'}</Button>
+                   </div>
+
+                   {targetUserForTags && (
+                     <div className="p-8 bg-white rounded-[2.5rem] border-2 border-green-100 shadow-lg space-y-8 animate-in zoom-in duration-300">
+                        <div className="flex flex-col items-center text-center gap-4">
+                           <Avatar className="h-24 w-24 border-4 border-green-500 shadow-xl">
+                              <AvatarImage src={targetUserForTags.avatarUrl} />
+                              <AvatarFallback className="text-2xl">{(targetUserForTags.username || 'U').charAt(0)}</AvatarFallback>
+                           </Avatar>
+                           <div>
+                              <h3 className="text-2xl font-black uppercase italic tracking-tighter">{targetUserForTags.username}</h3>
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">ID: {targetUserForTags.specialId}</p>
+                           </div>
+                           <div className="flex flex-wrap justify-center gap-2">
+                              {targetUserForTags.tags?.map((t: string) => (
+                                <Badge key={t} className="bg-secondary text-foreground text-[10px] px-3 font-black uppercase">{t}</Badge>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                           {ELITE_TAGS.map(tag => {
+                             const active = targetUserForTags.tags?.includes(tag.id);
+                             return (
+                               <Button 
+                                 key={tag.id}
+                                 onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}
+                                 className={cn(
+                                   "h-20 rounded-3xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 border-2",
+                                   active ? `${tag.color} text-white border-transparent shadow-xl` : "bg-white border-gray-100 text-gray-400 hover:bg-gray-50"
+                                 )}
+                               >
+                                 <tag.icon className={cn("h-6 w-6", active ? "text-white" : "text-gray-300")} />
+                                 <span className="font-black uppercase text-[10px] tracking-tight">{tag.label}</span>
+                               </Button>
+                             );
+                           })}
+                        </div>
+                     </div>
+                   )}
                 </CardContent>
              </Card>
           </TabsContent>
