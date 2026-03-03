@@ -237,7 +237,12 @@ export default function RoomsPage() {
                    onClick={() => router.push('/leaderboard')}
                  />
                  <CategoryCard title="Family" label="Family" gradient="bg-gradient-to-br from-blue-400 to-indigo-600" />
-                 <CategoryCard title="CP" label="CP" gradient="bg-gradient-to-br from-pink-400 to-purple-600" />
+                 <CategoryCard 
+                   title="CP" 
+                   label="CP" 
+                   gradient="bg-gradient-to-br from-pink-400 to-purple-600" 
+                   onClick={() => router.push('/cp-challenge')}
+                 />
               </div>
 
               {isRoomsLoading && !roomsData ? (
