@@ -11,6 +11,7 @@ interface GiftAnimationOverlayProps {
 
 /**
  * High-Fidelity Propose Ring SVGA-style Animation component.
+ * Re-engineered to match the red heart jewelry box visual.
  */
 const ProposeRingAnimation = () => {
   return (
@@ -22,69 +23,83 @@ const ProposeRingAnimation = () => {
         
         {/* Sparkles / Particles */}
         <div className="absolute inset-0 overflow-visible">
-           {Array.from({ length: 15 }).map((_, i) => (
+           {Array.from({ length: 25 }).map((_, i) => (
              <div 
                key={i} 
-               className="absolute h-2 w-2 bg-white rounded-full animate-ping opacity-0"
+               className="absolute h-3 w-3 bg-white rounded-full animate-ping opacity-0"
                style={{ 
                  top: `${Math.random() * 100}%`, 
                  left: `${Math.random() * 100}%`,
-                 animationDelay: `${2.5 + Math.random() * 2}s`,
+                 animationDelay: `${2.0 + Math.random() * 2.5}s`,
                  animationFillMode: 'forwards'
                }} 
-             />
+             >
+                <svg viewBox="0 0 24 24" className="w-full h-full text-white fill-current">
+                   <path d="M12 2l2 8 8 2-8 2-2 8-2-8-8-2 8-2 2-8z" />
+                </svg>
+             </div>
            ))}
         </div>
 
         {/* The Heart Box - Base */}
         <div className="relative animate-in zoom-in duration-1000">
-           <div className="relative w-64 h-64">
-              {/* Bottom Box Piece */}
-              <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-2xl">
+           <div className="relative w-72 h-72">
+              {/* Bottom Box Piece (Red Heart) */}
+              <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
                  <path 
                    d="M 50 95 C 20 80, 0 50, 0 35 C 0 15, 20 5, 50 30 C 80 5, 100 15, 100 35 C 100 50, 80 80, 50 95" 
-                   fill="#cc0000" 
-                   stroke="#800000" 
-                   strokeWidth="2" 
+                   fill="#e11d48" 
+                   stroke="#991b1b" 
+                   strokeWidth="1.5" 
                  />
+                 {/* Cushioned White Interior */}
                  <path 
-                   d="M 50 85 C 25 75, 10 50, 10 40 C 10 25, 25 15, 50 40 C 75 15, 90 25, 90 40 C 90 50, 75 75, 50 85" 
-                   fill="#f0f0f0" 
+                   d="M 50 88 C 25 78, 10 50, 10 40 C 10 28, 25 18, 50 42 C 75 18, 90 28, 90 40 C 90 50, 75 78, 50 88" 
+                   fill="#ffffff" 
+                   opacity="0.9"
                  />
+                 <ellipse cx="50" cy="65" rx="20" ry="10" fill="#f3f4f6" opacity="0.5" />
               </svg>
 
-              {/* The Ring - Floating Hidden beneath lid initially */}
-              <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-ring-reveal">
-                 <svg viewBox="0 0 100 100" className="w-24 h-24 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">
-                    <circle cx="50" cy="65" r="25" fill="none" stroke="#fbbf24" strokeWidth="6" />
+              {/* The Diamond Ring - Floating Reveal */}
+              <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-ring-reveal">
+                 <svg viewBox="0 0 100 100" className="w-32 h-32 drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]">
+                    {/* Gold Band */}
+                    <circle cx="50" cy="65" r="22" fill="none" stroke="#fbbf24" strokeWidth="5" />
+                    {/* Diamond */}
                     <path 
-                      d="M 50 40 L 65 25 L 50 10 L 35 25 Z" 
-                      fill="url(#diamondGrad)" 
+                      d="M 50 45 L 68 28 L 50 10 L 32 28 Z" 
+                      fill="url(#diamondShinyGrad)" 
                       stroke="#fff" 
-                      strokeWidth="1" 
+                      strokeWidth="0.5" 
                     />
+                    <path d="M 50 10 L 50 45" stroke="white" strokeWidth="0.5" opacity="0.5" />
+                    <path d="M 32 28 L 68 28" stroke="white" strokeWidth="0.5" opacity="0.5" />
+                    
                     <defs>
-                      <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#fff" />
-                        <stop offset="50%" stopColor="#e0f2fe" />
+                      <linearGradient id="diamondShinyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ffffff" />
+                        <stop offset="40%" stopColor="#e0f2fe" />
+                        <stop offset="70%" stopColor="#bae6fd" />
                         <stop offset="100%" stopColor="#0ea5e9" />
                       </linearGradient>
                     </defs>
                  </svg>
               </div>
 
-              {/* The Box Lid - Animating Open */}
+              {/* The Box Lid (Red Heart) - Animating Open */}
               <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full z-30 animate-box-lid-open origin-[50%_35%]">
                  <path 
                    d="M 50 95 C 20 80, 0 50, 0 35 C 0 15, 20 5, 50 30 C 80 5, 100 15, 100 35 C 100 50, 80 80, 50 95" 
-                   fill="#ff0000" 
-                   stroke="#800000" 
+                   fill="#f43f5e" 
+                   stroke="#991b1b" 
                    strokeWidth="1" 
                  />
                  <path 
                    d="M 50 25 L 55 15 L 50 5 L 45 15 Z" 
                    fill="white" 
                    className="animate-pulse"
+                   opacity="0.3"
                  />
               </svg>
            </div>
@@ -94,21 +109,21 @@ const ProposeRingAnimation = () => {
       <style jsx>{`
         @keyframes box-lid-open {
           0% { transform: scale(1) rotateX(0deg); opacity: 1; }
-          30% { transform: scale(1.1) rotateX(0deg); }
-          60% { transform: scale(1.1) rotateX(-110deg) translateY(-20px); opacity: 0.9; }
-          100% { transform: scale(1.1) rotateX(-110deg) translateY(-40px); opacity: 0; }
+          25% { transform: scale(1.05) rotateX(0deg); }
+          50% { transform: scale(1.05) rotateX(-120deg) translateY(-30px); opacity: 0.9; }
+          100% { transform: scale(1.05) rotateX(-120deg) translateY(-60px); opacity: 0; }
         }
         @keyframes ring-reveal {
-          0% { opacity: 0; transform: scale(0.5) translateY(20px); }
-          60% { opacity: 0; transform: scale(0.5) translateY(20px); }
-          80% { opacity: 1; transform: scale(1.2) translateY(-10px); }
-          100% { opacity: 1; transform: scale(1) translateY(-20px); }
+          0% { opacity: 0; transform: scale(0.4) translateY(30px); }
+          50% { opacity: 0; transform: scale(0.4) translateY(30px); }
+          75% { opacity: 1; transform: scale(1.3) translateY(-15px); }
+          100% { opacity: 1; transform: scale(1.1) translateY(-25px); }
         }
         .animate-box-lid-open {
-          animation: box-lid-open 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: box-lid-open 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         .animate-ring-reveal {
-          animation: ring-reveal 5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: ring-reveal 5.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
     </div>
@@ -118,7 +133,6 @@ const ProposeRingAnimation = () => {
 /**
  * High-Fidelity Gift Animation Overlay.
  * Features full-screen cinematic visual effects, screen flashes, and unique high-tier animations.
- * Added "Celebration" and "Propose Ring" cinematic sequences.
  */
 export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -145,10 +159,10 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       };
 
       // Romantic Harpeggio Sync
-      playNote(523.25, now + 1.5, 0.5); // C5
-      playNote(659.25, now + 1.8, 0.5); // E5
-      playNote(783.99, now + 2.1, 0.5); // G5
-      playNote(1046.50, now + 2.4, 1.0, 'triangle'); // C6 Shine
+      playNote(523.25, now + 1.2, 0.6); // C5
+      playNote(659.25, now + 1.5, 0.6); // E5
+      playNote(783.99, now + 1.8, 0.6); // G5
+      playNote(1046.50, now + 2.2, 1.2, 'triangle'); // C6 Shine
     } catch (e) {}
   };
 
@@ -171,7 +185,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
         osc.stop(start + duration);
       };
 
-      // Elite Party Horn Sequence (A-C#-E Chord)
+      // Elite Party Horn Sequence
       const now = ctx.currentTime;
       playNote(440, now, 0.3);
       playNote(554.37, now + 0.3, 0.3);
@@ -192,7 +206,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       
       let duration = 3000;
       if (['supernova', 'galaxy', 'rolex'].includes(giftId)) duration = 4000;
-      if (['dragon', 'celebration', 'propose-ring'].includes(giftId)) duration = 5500;
+      if (['dragon', 'celebration', 'propose-ring'].includes(giftId)) duration = 6000;
 
       const timer = setTimeout(() => {
         setIsVisible(false);
