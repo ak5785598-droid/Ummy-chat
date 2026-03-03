@@ -21,9 +21,11 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   useAuth, 
   useUser, 
+  useFirestore
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { signOut } from 'firebase/auth';
+import { doc, getDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
 
 const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) => {
   const router = useRouter();
@@ -51,18 +53,55 @@ const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) =
 
 export default function SettingsPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    if (!auth) return;
+    if (!auth || !user || !firestore) return;
     try {
+      // 1. Pro-active Identity Disconnect Handshake
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      const userSnap = await getDoc(userRef);
+      const currentRoomId = userSnap.data()?.currentRoomId;
+
+      const batch = writeBatch(firestore);
+      
+      // 2. Set Identity to Completely Off
+      batch.update(userRef, { 
+        isOnline: false, 
+        currentRoomId: null, 
+        updatedAt: serverTimestamp() 
+      });
+      batch.update(profileRef, { 
+        isOnline: false, 
+        currentRoomId: null, 
+        updatedAt: serverTimestamp() 
+      });
+
+      // 3. Atomic Removal from Frequencies
+      if (currentRoomId) {
+        const roomRef = doc(firestore, 'chatRooms', currentRoomId);
+        const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
+        batch.delete(participantRef);
+        batch.update(roomRef, { 
+          participantCount: increment(-1),
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
       await signOut(auth);
       window.location.href = '/login';
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Logout Failed', description: e.message });
+      console.error("[Identity Sync] Logout Cleanup Error:", e);
+      // Fallback: Hard sign out regardless of cleanup success
+      await signOut(auth);
+      window.location.href = '/login';
     }
   };
 

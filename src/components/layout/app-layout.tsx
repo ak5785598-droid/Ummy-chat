@@ -19,12 +19,13 @@ import {
   SidebarFooter,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore } from "@/firebase";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
+import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/firestore";
 
 const sidebarItems = [
   { href: "/rooms", label: "Home", icon: Home },
@@ -56,6 +57,7 @@ export function AppLayout({
   const { user, isUserLoading } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
@@ -68,8 +70,48 @@ export function AppLayout({
   }, [user, isUserLoading, pathname, router]);
 
   const handleLogout = async () => {
-    if (!auth) return;
-    try { await signOut(auth); window.location.href = '/login'; } catch (error: any) { toast({ variant: 'destructive', title: 'Logout Failed', description: error.message }); }
+    if (!auth || !user || !firestore) return;
+    try {
+      // 1. Pro-active Identity Disconnect Handshake
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      const userSnap = await getDoc(userRef);
+      const currentRoomId = userSnap.data()?.currentRoomId;
+
+      const batch = writeBatch(firestore);
+      
+      // 2. Set Identity to Completely Off
+      batch.update(userRef, { 
+        isOnline: false, 
+        currentRoomId: null, 
+        updatedAt: serverTimestamp() 
+      });
+      batch.update(profileRef, { 
+        isOnline: false, 
+        currentRoomId: null, 
+        updatedAt: serverTimestamp() 
+      });
+
+      // 3. Atomic Removal from Frequencies
+      if (currentRoomId) {
+        const roomRef = doc(firestore, 'chatRooms', currentRoomId);
+        const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
+        batch.delete(participantRef);
+        batch.update(roomRef, { 
+          participantCount: increment(-1),
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+      await signOut(auth);
+      window.location.href = '/login';
+    } catch (error: any) {
+      console.error("[Identity Sync] Sidebar Logout Error:", error);
+      await signOut(auth);
+      window.location.href = '/login';
+    }
   };
 
   const isCreator = user?.uid === CREATOR_ID;
