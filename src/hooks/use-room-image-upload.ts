@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
@@ -10,6 +10,7 @@ import { useToast } from './use-toast';
 /**
  * Elite Frequency Cover Sync Hook.
  * Optimized for High-Speed uploads by utilizing the direct uploadBytes protocol.
+ * Re-engineered to use Atomic Merge (setDoc) to ensure reliability for virtual frequencies.
  */
 export function useRoomImageUpload(roomId: string) {
   const storage = useStorage();
@@ -42,7 +43,7 @@ export function useRoomImageUpload(roomId: string) {
       const result = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(result.ref);
 
-      // 2. Firestore Sync (Non-Blocking)
+      // 2. Firestore Sync (Atomic Merge Protocol)
       const roomRef = doc(firestore, 'chatRooms', roomId);
       
       const updateData = { 
@@ -50,8 +51,8 @@ export function useRoomImageUpload(roomId: string) {
         updatedAt: serverTimestamp()
       };
 
-      console.log('[Visual Sync] Dispatching room cover metadata to Firestore');
-      updateDocumentNonBlocking(roomRef, updateData);
+      console.log('[Visual Sync] Dispatching room cover metadata to Firestore via Atomic Merge');
+      setDocumentNonBlocking(roomRef, updateData, { merge: true });
 
       toast({
         title: 'Frequency Cover Updated!',

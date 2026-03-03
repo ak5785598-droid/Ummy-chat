@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorage, useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
@@ -10,7 +10,7 @@ import type { Game } from '@/lib/types';
 
 /**
  * Hook to handle game logo/cover uploads to Firebase Storage and update Firestore.
- * Re-engineered with high-speed direct upload protocol.
+ * Re-engineered with high-speed direct upload protocol and Atomic Merge reliability.
  */
 export function useGameLogoUpload() {
   const storage = useStorage();
@@ -42,7 +42,7 @@ export function useGameLogoUpload() {
       const result = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(result.ref);
 
-      // 2. Firestore Sync (Non-Blocking)
+      // 2. Firestore Sync (Atomic Merge Protocol)
       const gameRef = doc(firestore, 'games', game.id);
       
       const updateData = { 
@@ -50,8 +50,8 @@ export function useGameLogoUpload() {
         updatedAt: serverTimestamp()
       };
 
-      console.log('[Visual Sync] Dispatching game logo metadata to Firestore');
-      updateDocumentNonBlocking(gameRef, updateData);
+      console.log('[Visual Sync] Dispatching game logo metadata to Firestore via Atomic Merge');
+      setDocumentNonBlocking(gameRef, updateData, { merge: true });
 
       toast({
         title: 'Game Logo Updated!',
