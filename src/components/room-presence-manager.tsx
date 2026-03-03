@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, collection, increment, writeBatch } from 'firebase/firestore';
 
