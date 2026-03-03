@@ -235,7 +235,7 @@ export default function MessagesPage() {
                  { icon: Bell, label: 'Alerts', color: 'bg-blue-500' },
                  { icon: Star, label: 'Moments', color: 'bg-pink-500' },
                  { icon: UserPlus, label: 'Friends', color: 'bg-yellow-500' },
-                 { icon: ShieldCheck, label: 'Groups', color: 'bg-purple-500' }
+                 { icon: UserPlus, label: 'Groups', color: 'bg-purple-500' }
                ].map((item, i) => (
                  <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
                     <div className={cn("h-14 w-14 rounded-[1.2rem] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", item.color, `shadow-${item.color.split('-')[1]}-500/20`)}>
@@ -267,28 +267,51 @@ export default function MessagesPage() {
                  />
                ) : (
                  <div className="pb-32">
-                   {isChatsLoading ? (
-                     <div className="flex flex-col items-center py-20 gap-4">
-                        <Loader className="animate-spin text-primary h-8 w-8" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Syncing Frequencies...</p>
+                   <div className="divide-y divide-gray-50">
+                     {/* Ummy Official Persistent Identity */}
+                     <div className="px-6 py-4 flex gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group">
+                        <div className="relative shrink-0">
+                          <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 shadow-sm overflow-hidden">
+                            <UmmyLogoIcon className="h-10 w-10" />
+                          </div>
+                          <div className="absolute bottom-0 right-0 h-4 w-4 bg-green-500 rounded-full border-2 border-white shadow-sm" />
+                        </div>
+                        <div className="flex-1 min-w-0 pt-1">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <h3 className="font-black text-[15px] text-gray-900 truncate tracking-tight">
+                              Ummy Official_In
+                            </h3>
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                              Official
+                            </span>
+                          </div>
+                          <p className="text-[13px] text-gray-400 truncate italic font-body">
+                            Welcome to the frequency!
+                          </p>
+                        </div>
                      </div>
-                   ) : !chats || chats.length === 0 ? (
-                     <div className="flex flex-col items-center justify-center py-32 text-center opacity-10">
-                        <MessageCircle className="h-20 w-20 mb-4" />
-                        <p className="font-black uppercase tracking-widest text-xs">No active vibes</p>
-                     </div>
-                   ) : (
-                     <div className="divide-y divide-gray-50">
-                       {chats.map(chat => (
+
+                     {isChatsLoading ? (
+                       <div className="flex flex-col items-center py-20 gap-4">
+                          <Loader className="animate-spin text-primary h-8 w-8" />
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Syncing Frequencies...</p>
+                       </div>
+                     ) : !chats || chats.length === 0 ? (
+                       <div className="flex flex-col items-center justify-center py-32 text-center opacity-10">
+                          <MessageCircle className="h-20 w-20 mb-4" />
+                          <p className="font-black uppercase tracking-widest text-xs">No active vibes</p>
+                       </div>
+                     ) : (
+                       chats.map(chat => (
                          <ChatListItem 
                            key={chat.id} 
                            chat={chat} 
                            currentUid={user?.uid} 
                            onSelect={(id: string, other: any) => setActiveChat({ id, otherUser: other })} 
                          />
-                       ))}
-                     </div>
-                   )}
+                       ))
+                     )}
+                   </div>
                  </div>
                )}
             </TabsContent>
