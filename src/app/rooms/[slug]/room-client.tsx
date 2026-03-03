@@ -49,7 +49,7 @@ import {
   Minimize2,
   Smile
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -116,6 +116,19 @@ const ROOM_THEMES = [
   { id: 'zen', name: 'Zen Garden', url: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?q=80&w=2000' },
   { id: 'cosmic', name: 'Cosmic Void', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2000' },
   { id: 'royal', name: 'Royal Palace', url: 'https://images.unsplash.com/photo-1562664377-709f2c337eb2?q=80&w=2000' },
+];
+
+const OFFICIAL_THEMES = [
+  { id: 'ummy-diamond', name: 'Ummy Diamond', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2000' },
+  { id: 'ummy-gold', name: 'Ummy Gold', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2000' },
+  { id: 'ummy-sapphire', name: 'Ummy Sapphire', url: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000' },
+  { id: 'ummy-ruby', name: 'Ummy Ruby', url: 'https://images.unsplash.com/photo-1550684847-75bdda21cc95?q=80&w=2000' },
+  { id: 'ummy-emerald', name: 'Ummy Emerald', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2000' },
+  { id: 'ummy-midnight', name: 'Ummy Midnight', url: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2000' },
+  { id: 'ummy-aurora', name: 'Ummy Aurora', url: 'https://images.unsplash.com/photo-1531306728370-e2efbd18b951?q=80&w=2000' },
+  { id: 'ummy-sunset', name: 'Ummy Sunset', url: 'https://images.unsplash.com/photo-1472120482482-d43ba79ff510?q=80&w=2000' },
+  { id: 'ummy-galaxy', name: 'Ummy Galaxy', url: 'https://images.unsplash.com/photo-1464802686167-b939a6910659?q=80&w=2000' },
+  { id: 'ummy-platinum', name: 'Ummy Platinum', url: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2000' },
 ];
 
 const MIC_OPTIONS = [4, 8, 9, 12, 15];
@@ -341,6 +354,7 @@ export function RoomClient({ room }: { room: Room }) {
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isGlobalAdmin || isOwner || isModerator;
+  const isOfficialRoom = room.id === 'ummy-help-center' || isGlobalAdmin;
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -678,7 +692,7 @@ export function RoomClient({ room }: { room: Room }) {
   const selectedOccupant = participants?.find(p => p.seatIndex === selectedSeatIndex);
   const getWaveColor = (waveId?: string) => waveId === 'w1' ? 'text-cyan-500' : waveId === 'w2' ? 'text-orange-600' : 'text-primary';
 
-  const currentTheme = ROOM_THEMES.find(t => t.id === (room as any).roomThemeId) || ROOM_THEMES[0];
+  const currentTheme = [...ROOM_THEMES, ...OFFICIAL_THEMES].find(t => t.id === (room as any).roomThemeId) || ROOM_THEMES[0];
   const maxMics = room.maxActiveMics || 9;
 
   const moneyTreeAsset = PlaceHolderImages.find(img => img.id === 'money-tree');
@@ -744,6 +758,15 @@ export function RoomClient({ room }: { room: Room }) {
       <div className="absolute inset-0 z-0">
         <Image src={currentTheme.url} alt="Background" fill className="object-cover opacity-60 transition-all duration-1000" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
+        
+        {/* Elite Official Branding Overlay */}
+        {isOfficialRoom && (
+          <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center pointer-events-none opacity-[0.07] animate-in zoom-in duration-[2000ms]">
+             <UmmyLogoIcon className="h-64 w-64 grayscale brightness-200" />
+             <h1 className="text-9xl font-black uppercase italic tracking-tighter text-white mt-4">UMMY</h1>
+             <p className="text-3xl font-black uppercase tracking-[1em] text-white mt-2">OFFICIAL</p>
+          </div>
+        )}
       </div>
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3 cursor-pointer group active:scale-[0.98] transition-transform" onClick={() => setIsRoomInfoOpen(true)}>
@@ -836,7 +859,7 @@ export function RoomClient({ room }: { room: Room }) {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-      <Dialog open={isThemePickerOpen} onOpenChange={setIsThemePickerOpen}><DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden"><DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Themes</DialogTitle><DialogDescription className="sr-only">Select a visual theme for the frequency background.</DialogDescription></DialogHeader><div className="p-8 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">{ROOM_THEMES.map(t => (<button key={t.id} onClick={() => handleSetTheme(t.id)} className={cn("relative aspect-square rounded-2xl overflow-hidden border-4 transition-all", (room as any).roomThemeId === t.id ? "border-primary scale-105" : "border-transparent")}><Image src={t.url} alt={t.name} fill className="object-cover" /><div className="absolute inset-0 bg-black/40 flex items-center justify-center"><span className="text-white font-black text-xs uppercase text-center px-2">{t.name}</span></div></button>))}</div></DialogContent></Dialog>
+      <Dialog open={isThemePickerOpen} onOpenChange={setIsThemePickerOpen}><DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden"><DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Themes</DialogTitle><DialogDescription className="sr-only">Select a visual theme for the frequency background.</DialogDescription></DialogHeader><div className="p-8 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">{[...(isOfficialRoom ? OFFICIAL_THEMES : []), ...ROOM_THEMES].map(t => (<button key={t.id} onClick={() => handleSetTheme(t.id)} className={cn("relative aspect-square rounded-2xl overflow-hidden border-4 transition-all", (room as any).roomThemeId === t.id ? "border-primary scale-105" : "border-transparent")}><Image src={t.url} alt={t.name} fill className="object-cover" /><div className="absolute inset-0 bg-black/40 flex items-center justify-center"><span className="text-white font-black text-[10px] uppercase text-center px-2 italic">{t.name}</span></div></button>))}</div></DialogContent></Dialog>
       <Dialog open={isMicOptionPickerOpen} onOpenChange={setIsMicOptionPickerOpen}><DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] overflow-hidden"><DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Mic Mode</DialogTitle><DialogDescription className="sr-only">Select the maximum number of active microphones allowed in this frequency.</DialogDescription></DialogHeader><div className="p-8 grid grid-cols-2 gap-4">{MIC_OPTIONS.map(opt => (<button key={opt} onClick={() => handleSetMicMode(opt)} className={cn("h-16 rounded-2xl font-black text-xl transition-all flex items-center justify-center gap-2", maxMics === opt ? "bg-primary text-white" : "bg-gray-100 text-gray-400 hover:bg-gray-200")}>{opt} <Mic className="h-5 w-5" /></button>))}</div></DialogContent></Dialog>
       <Dialog open={!!editingField} onOpenChange={(open) => !open && setEditingField(null)}><DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden"><DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Edit Room {editingField}</DialogTitle><DialogDescription className="sr-only">Modify the specified field for this room frequency.</DialogDescription></DialogHeader><div className="p-8 space-y-6">{editingField === 'admins' ? (<div className="space-y-4">{room.moderatorIds?.map(id => (<ModeratorItem key={id} userId={id} />))}{(!room.moderatorIds || room.moderatorIds.length === 0) && (<p className="text-center py-10 text-gray-300 uppercase font-black text-xs">No admins assigned</p>)}</div>) : (<div className="space-y-4"><Label className="text-[10px] font-black uppercase text-gray-400">New Value</Label>{editingField === 'announcement' || editingField === 'welcome' ? (<Textarea value={fieldValue} onChange={(e) => setEditingFieldValue(e.target.value)} className="h-32 rounded-2xl border-2" />) : (<Input value={fieldValue} onChange={(e) => setEditingFieldValue(e.target.value)} className="h-14 rounded-2xl border-2" />)}</div>)}</div><DialogFooter className="p-8 pt-0"><Button onClick={handleUpdateRoomField} className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase">Sync Frequency</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={isMusicMenuOpen} onOpenChange={setIsMusicMenuOpen}><DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] overflow-hidden"><DialogHeader className="p-8 pb-4 text-center border-b"><DialogTitle className="text-2xl font-black uppercase tracking-tighter">Room Radio</DialogTitle><DialogDescription className="sr-only">Select a background music track to play for all tribe members.</DialogDescription></DialogHeader><div className="p-8 grid grid-cols-2 gap-3">{MUSIC_TRACKS.map(track => (<button key={track.id} onClick={() => handleToggleMusic(track.url)} className={cn("p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all", room.currentMusicUrl === track.url ? "bg-primary border-primary text-white shadow-lg" : "bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100")}>{room.currentMusicUrl === track.url ? <Square className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}<span className="text-[10px] font-black uppercase truncate w-full">{track.name}</span></button>))}</div></DialogContent></Dialog>
