@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Users, Castle } from 'lucide-react';
@@ -8,6 +9,8 @@ import { Card } from '@/components/ui/card';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 interface ChatRoomCardProps {
   room: Room & { isOfficial?: boolean };
@@ -16,16 +19,33 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Chat Room Card Component.
- * Mirroring the reference blueprint:
- * - Top-Right: Participant count pill (Floored at zero).
- * - Bottom-Left: Owner identity overlay.
- * - Bottom-Right: Level/Emblem icon.
- * - Below: Flag + Regional Identity.
+ * RE-ENGINEERED: Uses real-time active heartbeat counting to eliminate ghost counts.
+ * Filters participants by a 90-second activity threshold.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  // ZERO-FLOOR PROTOCOL: Ensure the social graph never displays negative identities
-  const onlineCount = Math.max(0, room.participantCount || 0);
+  const firestore = useFirestore();
   const { userProfile: owner } = useUserProfile(room.isOfficial ? undefined : room.ownerId);
+
+  // REAL-TIME ACTIVE SYNC: Fetch actual participants to ensure display accuracy
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+  }, [firestore, room.id]);
+
+  const { data: participants } = useCollection(participantsQuery);
+
+  const onlineCount = useMemo(() => {
+    if (!participants) return Math.max(0, room.participantCount || 0);
+    
+    // GHOST PURGE: Only count users seen in the last 90 seconds
+    const now = Date.now();
+    const activeOnes = participants.filter(p => {
+      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
+      return (now - lastSeen) < 90000;
+    });
+    
+    return activeOnes.length;
+  }, [participants, room.participantCount]);
 
   // Elite Official Support Logic
   const ownerName = room.isOfficial ? 'Ummy Help Desk' : (owner?.username || 'Tribe Member');
@@ -57,7 +77,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               </div>
             )}
             
-            {/* Top-Right Participant Count */}
+            {/* Top-Right Participant Count (Zero-Floor Enforced) */}
             <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/30 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 z-20">
               <div className="flex items-end gap-0.5 h-2">
                  <div className="w-0.5 bg-white h-1" />
