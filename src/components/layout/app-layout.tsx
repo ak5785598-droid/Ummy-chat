@@ -74,7 +74,6 @@ export function AppLayout({
     try {
       console.log("[Identity Sync] Sidebar: Initiating cleanup...");
       
-      // 1. Pro-active Identity Disconnect Handshake
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -83,7 +82,6 @@ export function AppLayout({
 
       const batch = writeBatch(firestore);
       
-      // 2. Set Identity to Completely Off
       batch.update(userRef, { 
         isOnline: false, 
         currentRoomId: null, 
@@ -95,7 +93,6 @@ export function AppLayout({
         updatedAt: serverTimestamp() 
       });
 
-      // 3. Atomic Removal from Frequencies
       if (currentRoomId) {
         console.log(`[Identity Sync] Sidebar: Purging presence from room ${currentRoomId}`);
         const roomRef = doc(firestore, 'chatRooms', currentRoomId);
@@ -119,7 +116,9 @@ export function AppLayout({
     }
   };
 
-  const isCreator = user?.uid === CREATOR_ID;
+  const isOfficial = userProfile?.tags?.some(tag => 
+    ['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'].includes(tag)
+  ) || user?.uid === CREATOR_ID;
 
   if (!mounted) return null;
   if (isUserLoading) return <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]"><UmmyLogoIcon className="h-16 w-16 text-white animate-pulse" /></div>;
@@ -131,19 +130,35 @@ export function AppLayout({
     <SidebarProvider defaultOpen={false}>
       <div className="flex h-[100dvh] w-full bg-[#FFCC00] font-headline overflow-hidden relative">
         <Sidebar className="bg-[#FFCC00] border-none text-black">
-          <SidebarHeader className="bg-transparent p-6 pb-10"><div className="flex items-center gap-3"><UmmyLogoIcon className="h-10 w-10" /><span className="font-black text-3xl italic tracking-tighter uppercase">Ummy</span></div></SidebarHeader>
+          <SidebarHeader className="bg-transparent p-6 pb-10">
+            <div className="flex items-center gap-3">
+              <UmmyLogoIcon className="h-10 w-10" />
+              <span className="font-black text-3xl italic tracking-tighter uppercase">Ummy</span>
+            </div>
+          </SidebarHeader>
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} className={cn("h-14 rounded-xl px-4", pathname.startsWith(item.href) && "bg-black/10 font-black")}>
-                    <Link href={item.href} className="flex items-center gap-4"><item.icon className="h-6 w-6" /><span className="text-base font-black uppercase italic">{item.label}</span></Link>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={pathname.startsWith(item.href)} 
+                    className={cn("h-14 rounded-xl px-4", pathname.startsWith(item.href) && "bg-black/10 font-black")}
+                  >
+                    <Link href={item.href} className="flex items-center gap-4">
+                      <item.icon className="h-6 w-6" />
+                      <span className="text-base font-black uppercase italic">{item.label}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              {isCreator && (
+              {isOfficial && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={pathname === '/admin'} 
+                    className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}
+                  >
                     <Link href="/admin" className="flex items-center gap-4">
                       <ShieldAlert className="h-6 w-6 text-red-600" />
                       <span className="text-base font-black uppercase italic text-red-600">Command Center</span>
@@ -155,8 +170,26 @@ export function AppLayout({
           </SidebarContent>
           <SidebarFooter className="bg-transparent p-6">
             <SidebarMenu>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} className="h-14 rounded-xl mb-2"><Link href="/settings" className="flex items-center gap-4"><Settings className="h-6 w-6" /><span className="text-base font-black uppercase italic">Settings</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-black transition-all group"><div className="h-10 w-10 bg-black rounded-full flex items-center justify-center text-[#FFCC00] group-active:scale-90 transition-transform"><Power className="h-5 w-5" /></div><span className="text-base font-black uppercase italic">Sign Out</span></button></SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname.startsWith('/settings')} 
+                  className="h-14 rounded-xl mb-2"
+                >
+                  <Link href="/settings" className="flex items-center gap-4">
+                    <Settings className="h-6 w-6" />
+                    <span className="text-base font-black uppercase italic">Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-black transition-all group">
+                  <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center text-[#FFCC00] group-active:scale-90 transition-transform">
+                    <Power className="h-5 w-5" />
+                  </div>
+                  <span className="text-base font-black uppercase italic">Sign Out</span>
+                </button>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
@@ -172,7 +205,12 @@ export function AppLayout({
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-14 pb-safe shrink-0 relative z-50 px-4">
               {mobileNavItems.map((item) => {
                 const isActive = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
-                return (<Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-primary" : "text-gray-300")}><item.icon className={cn("h-6 w-6", isActive && "fill-current")} /><span className="text-[10px] font-black uppercase italic tracking-widest">{item.label}</span></Link>);
+                return (
+                  <Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-primary" : "text-gray-300")}>
+                    <item.icon className={cn("h-6 w-6", isActive && "fill-current")} />
+                    <span className="text-[10px] font-black uppercase italic tracking-widest">{item.label}</span>
+                  </Link>
+                );
               })}
             </nav>
           )}
