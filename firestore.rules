@@ -29,14 +29,21 @@ service cloud.firestore {
       // High-fidelity authority check via tribal summary profile
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
-        (exists(userPath) && get(userPath).data.tags.hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'])) || 
-        isCreator()
+        isCreator() || 
+        (exists(userPath) && get(userPath).data.tags.hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager']))
       );
     }
 
     function isRoomAdmin(chatRoomId) {
-      let room = get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data;
-      return isSignedIn() && (request.auth.uid == room.ownerId || (room.moderatorIds != null && request.auth.uid in room.moderatorIds) || isAdmin());
+      let roomPath = /databases/$(database)/documents/chatRooms/$(chatRoomId);
+      return isSignedIn() && (
+        isCreator() || 
+        isAdmin() ||
+        (exists(roomPath) && (
+          request.auth.uid == get(roomPath).data.ownerId || 
+          (get(roomPath).data.moderatorIds != null && request.auth.uid in get(roomPath).data.moderatorIds)
+        ))
+      );
     }
 
     match /users/{userId} {
@@ -79,7 +86,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isOwner(resource.data.ownerId) || 
         (resource.data.moderatorIds != null && request.auth.uid in resource.data.moderatorIds) ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt', 'isChatMuted', 'currentMusicUrl', 'roomThemeId', 'maxActiveMics']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt', 'isChatMuted', 'currentMusicUrl', 'roomThemeId', 'maxActiveMics', 'isLocked', 'announcement', 'welcomeMessage', 'name']) ||
         chatRoomId == 'ummy-help-center' ||
         isAdmin()
       );
@@ -111,13 +118,13 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId} {
-      allow list: if isSignedIn() && (resource.data.participantIds.hasAny([request.auth.uid]) || isCreator()); 
-      allow get: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isCreator());
-      allow create: if isSignedIn() && (request.auth.uid in request.resource.data.participantIds || isCreator());
-      allow update: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isCreator());
+      allow list: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds); 
+      allow get: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds);
+      allow create: if isSignedIn() && (isCreator() || request.auth.uid in request.resource.data.participantIds);
+      allow update: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds);
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds || isCreator());
+        allow read, write: if isSignedIn() && (isCreator() || request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds);
       }
     }
 
@@ -135,10 +142,6 @@ service cloud.firestore {
     match /appConfig/{configId} {
       allow get: if isSignedIn();
       allow write: if isAdmin();
-    }
-    
-    match /adminLogs/{logId} {
-      allow get, list, create: if isAdmin();
     }
     
     match /adminLogs/{logId} {
