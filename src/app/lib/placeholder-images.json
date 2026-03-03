@@ -1,70 +1,69 @@
-
 {
   "placeholderImages": [
     {
       "id": "user-avatar-1",
       "description": "User avatar 1",
-      "imageUrl": "https://picsum.photos/seed/user1/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzcyMzYxNTczfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person portrait"
     },
     {
       "id": "user-avatar-2",
       "description": "User avatar 2",
-      "imageUrl": "https://picsum.photos/seed/user2/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1598625873873-52f9aefd7d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx3b21hbiUyMHNtaWxpbmd8ZW58MHx8fHwxNzcyNDMzMzMzfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman smiling"
     },
     {
       "id": "user-avatar-3",
       "description": "User avatar 3",
-      "imageUrl": "https://picsum.photos/seed/user3/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "man glasses"
     },
     {
       "id": "user-avatar-4",
       "description": "User avatar 4",
-      "imageUrl": "https://picsum.photos/seed/user4/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1737642872807-9669a744de5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwb3V0ZG9vcnN8ZW58MHx8fHwxNzcyMzY3NTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person outdoors"
     },
     {
       "id": "user-avatar-5",
       "description": "User avatar 5",
-      "imageUrl": "https://picsum.photos/seed/user5/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman nature"
     },
     {
       "id": "room-cover-1",
       "description": "Chat room cover 1",
-      "imageUrl": "https://picsum.photos/seed/room1/400/225",
+      "imageUrl": "https://images.unsplash.com/photo-1705254613735-1abb457f8a60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHZpYnJhbnR8ZW58MHx8fHwxNzcyNDY2ODUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "abstract vibrant"
     },
     {
       "id": "room-cover-2",
       "description": "Chat room cover 2",
-      "imageUrl": "https://picsum.photos/seed/room2/400/225",
+      "imageUrl": "https://images.unsplash.com/photo-1511081692775-05d0f180a065?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwY2FmZXxlbnwwfHx8fDE3NzIzODQ4ODN8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "cozy cafe"
     },
     {
       "id": "room-cover-3",
       "description": "Chat room cover 3",
-      "imageUrl": "https://picsum.photos/seed/room3/400/225",
+      "imageUrl": "https://images.unsplash.com/photo-1632064824547-e77c36851495?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z2FtaW5nJTIwc2V0dXB8ZW58MHx8fHwxNzcyMzk1NjIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "gaming setup"
     },
     {
       "id": "room-cover-4",
       "description": "Chat room cover 4",
-      "imageUrl": "https://picsum.photos/seed/room4/400/225",
+      "imageUrl": "https://images.unsplash.com/photo-1728734704163-3d13e0c86f5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Ym9va3MlMjBsaWJyYXJ5fGVufDB8fHx8MTc3MjQwNDY2MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "books library"
     },
     {
       "id": "room-cover-5",
       "description": "Chat room cover 5",
-      "imageUrl": "https://picsum.photos/seed/room5/400/225",
+      "imageUrl": "https://images.unsplash.com/photo-1612539473441-dfc1cefd5e1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW91bnRhaW4lMjBsYW5kc2NhcGV8ZW58MHx8fHwxNzcyNDA5MTM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "mountain landscape"
     },
     {
       "id": "profile-header",
       "description": "Profile header background",
-      "imageUrl": "https://picsum.photos/seed/profilebg/1200/300",
+      "imageUrl": "https://images.unsplash.com/photo-1604076913837-52ab5629fba9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhYnN0cmFjdCUyMGdyYWRpZW50fGVufDB8fHx8MTc3MjQxOTQ2NXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "abstract gradient"
     },
     {
@@ -76,19 +75,19 @@
     {
       "id": "fruit-party-special-chicken",
       "description": "Roast chicken special item for Fruit Party",
-      "imageUrl": "https://picsum.photos/seed/fruit-roast/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1615557960916-5f4791effe9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyb2FzdCUyMGNoaWNrZW58ZW58MHx8fHwxNzcyNDY2ODUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "roast chicken"
     },
     {
       "id": "wild-party-bg",
       "description": "Deep forest ruins background for Wild Party",
-      "imageUrl": "https://picsum.photos/seed/forest-ruins/1200/2400",
+      "imageUrl": "https://images.unsplash.com/photo-1526025202335-cf944dc3f799?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxkZWVwJTIwZm9yZXN0fGVufDB8fHx8MTc3MjQ2Njg1MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "deep forest"
     },
     {
       "id": "dragon-jade",
       "description": "Jade Dragon character",
-      "imageUrl": "https://picsum.photos/seed/drag-jade/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1691315026384-ba52125c2f05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxqYWRlJTIwZHJhZ29ufGVufDB8fHx8MTc3MjQ2Njg1MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "jade dragon"
     },
     {
@@ -100,7 +99,7 @@
     {
       "id": "dragon-azure",
       "description": "Azure Dragon character",
-      "imageUrl": "https://picsum.photos/seed/drag-azure/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1594968549077-43f0a90bd7aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhenVyZSUyMGRyYWdvbnxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "azure dragon"
     },
     {
@@ -112,13 +111,13 @@
     {
       "id": "tp-char-a",
       "description": "3D Anime princess in elegant white/blue dress",
-      "imageUrl": "https://picsum.photos/seed/tp-char-a/400/600",
+      "imageUrl": "https://images.unsplash.com/photo-1681714552617-fe3f4cf4be47?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHwzZCUyMHByaW5jZXNzJTIwd2hpdGV8ZW58MHx8fHwxNzcyNDY2ODUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "3d princess white"
     },
     {
       "id": "tp-char-b",
       "description": "3D Anime princess in regal gold dress",
-      "imageUrl": "https://picsum.photos/seed/tp-char-b/400/600",
+      "imageUrl": "https://images.unsplash.com/photo-1532328076801-a862c9d5a74a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHwzZCUyMHByaW5jZXNzJTIwZ29sZHxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "3d princess gold"
     },
     {
@@ -142,50 +141,56 @@
     {
       "id": "anubis-char",
       "description": "3D Anubis character guardian",
-      "imageUrl": "https://picsum.photos/seed/anubis-ummy/600/800",
+      "imageUrl": "https://images.unsplash.com/photo-1583502070509-cd721e268b0a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YW51YmlzJTIwY2hhcmFjdGVyfGVufDB8fHx8MTc3MjQ2Njg1MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "anubis character"
     },
     {
       "id": "horus-char",
       "description": "3D Horus falcon god character guardian",
-      "imageUrl": "https://picsum.photos/seed/horus-ummy/600/800",
+      "imageUrl": "https://images.unsplash.com/photo-1738601077026-0adb32ee2291?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxob3J1cyUyMGNoYXJhY3RlcnxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "horus character"
     },
     {
       "id": "egypt-card",
       "description": "Golden Egyptian pharaoh card back",
-      "imageUrl": "https://picsum.photos/seed/egypt-card/300/450",
+      "imageUrl": "https://images.unsplash.com/photo-1768914308444-7555a191b78b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxnb2xkZW4lMjBwaGFyYW9ofGVufDB8fHx8MTc3MjQ2Njg1MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "golden pharaoh"
     },
     {
       "id": "money-tree",
       "description": "Golden money tree giving rewards",
-      "imageUrl": "https://picsum.photos/seed/moneytree/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1616220797937-f64f159935b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtb25leSUyMHRyZWV8ZW58MHx8fHwxNzcyNDY2ODUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "money tree"
     },
     {
       "id": "task-list",
       "description": "Icon for daily tribe tasks",
-      "imageUrl": "https://picsum.photos/seed/tasks/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1644329771977-0a8c6e3928ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0b2RvJTIwbGlzdHxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "todo list"
     },
     {
       "id": "official-shield",
       "description": "Shield for official tribe frequencies",
-      "imageUrl": "https://picsum.photos/seed/shield/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1561156772-a44477f220a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzaGllbGR8ZW58MHx8fHwxNzcyNDY2ODUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "shield"
     },
     {
       "id": "elite-jet",
       "description": "Private jet emblem for elite rooms",
-      "imageUrl": "https://picsum.photos/seed/jet/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1583133269464-b721db5345f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmaWdodGVyJTIwamV0fGVufDB8fHx8MTc3MjQ1ODA4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "fighter jet"
     },
     {
       "id": "winner-crown",
       "description": "Golden crown for winners",
-      "imageUrl": "https://picsum.photos/seed/crown/200/200",
+      "imageUrl": "https://images.unsplash.com/photo-1646769762753-565020b3bb2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnb2xkZW4lMjBjcm93bnxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "golden crown"
+    },
+    {
+      "id": "discovery-banner",
+      "description": "Textured orange and red banner for room discovery",
+      "imageUrl": "https://picsum.photos/seed/banner1/800/200",
+      "imageHint": "red orange texture"
     }
   ]
 }

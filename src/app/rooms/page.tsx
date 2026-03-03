@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Search, Plus, Trophy, Users, Heart, MessageCircle } from 'lucide-react';
+import { Loader, Search, Plus, Trophy, Users, Heart, MessageCircle, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
@@ -11,6 +11,8 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Home / Discovery Hub.
@@ -44,6 +46,8 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
   const { data: followedRooms, isLoading: isFollowingLoading } = useCollection(followingQuery);
+
+  const discoveryBanner = PlaceHolderImages.find(img => img.id === 'discovery-banner');
 
   // Elite Help Room Protocol: Ensures Ummy Official Help is always first.
   const displayRooms = useMemo(() => {
@@ -146,8 +150,32 @@ export default function RoomsPage() {
                 <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>
               ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6">
-                  {displayRooms.map((room: any) => (
-                    <ChatRoomCard key={room.id} room={room} variant="modern" />
+                  {displayRooms.map((room: any, index: number) => (
+                    <React.Fragment key={room.id}>
+                      <ChatRoomCard room={room} variant="modern" />
+                      {index === 3 && (
+                        <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer">
+                           {discoveryBanner && (
+                             <Image 
+                               src={discoveryBanner.imageUrl} 
+                               alt="Discovery Banner" 
+                               fill 
+                               className="object-cover group-hover:scale-105 transition-transform duration-700"
+                               data-ai-hint={discoveryBanner.imageHint}
+                             />
+                           )}
+                           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent flex flex-col justify-center px-8">
+                              <h4 className="text-white font-black uppercase italic text-xl tracking-tighter leading-none drop-shadow-lg">Tribe Events</h4>
+                              <p className="text-white/80 font-bold uppercase text-[8px] tracking-[0.3em] mt-1 drop-shadow-md">Global Frequency Sync</p>
+                           </div>
+                           <div className="absolute top-1/2 right-6 -translate-y-1/2">
+                              <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                                 <ArrowRight className="h-5 w-5 text-white" />
+                              </div>
+                           </div>
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))}
                 </div>
               )}
