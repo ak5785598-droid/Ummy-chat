@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -769,17 +770,25 @@ export function RoomClient({ room }: { room: Room }) {
         )}
       </div>
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
-        <div className="flex items-center gap-3 cursor-pointer group active:scale-[0.98] transition-transform" onClick={() => setIsRoomInfoOpen(true)}>
-          <div className="relative">
-            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 group-hover:border-primary transition-colors shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="relative group cursor-pointer" onClick={() => canManageRoom ? roomDpInputRef.current?.click() : setIsRoomInfoOpen(true)}>
+            <Avatar className={cn(
+              "h-12 w-12 rounded-xl border-2 border-white/20 transition-colors shadow-lg",
+              canManageRoom ? "group-hover:border-primary" : ""
+            )}>
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
+            {canManageRoom && (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                <Camera className="h-5 w-5 text-white" />
+              </div>
+            )}
             <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-0.5 border border-black shadow-lg">
               <Crown className="h-2.5 w-2.5 text-black fill-current" />
             </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 cursor-pointer group active:scale-[0.98] transition-transform" onClick={() => setIsRoomInfoOpen(true)}>
             <div className="flex items-center gap-2">
               <h1 className="font-black text-[15px] uppercase tracking-tighter text-white drop-shadow-md">{room.title}</h1>
               <ChevronRight className="h-3 w-3 text-white/40 group-hover:text-primary" />
