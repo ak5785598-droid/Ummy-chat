@@ -10,6 +10,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch } from 'firebas
  * Maintains Firestore presence while a room is active.
  * RE-ENGINEERED: Includes a High-Fidelity Heartbeat to prevent ghost identities.
  * GHOST PREVENTION: Updates lastSeen every 30 seconds to allow UI filtering of dead connections.
+ * COUNT STABILITY: Atomic batch operations for increments and decrements.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -106,6 +107,9 @@ export function RoomPresenceManager() {
       }
 
       if (lastRoomId.current === roomId) {
+        // DETACH LOCK IMMEDIATELY to prevent double-decrement race conditions
+        lastRoomId.current = null;
+        
         console.log(`[Presence Sync] Deactivating presence for room: ${roomId}`);
         const batch = writeBatch(firestore);
         const roomDocRef = doc(firestore, 'chatRooms', roomId);
@@ -128,8 +132,6 @@ export function RoomPresenceManager() {
         } catch (e) {
           console.warn("[Presence Sync] Exit batch failed:", e);
         }
-        
-        lastRoomId.current = null;
       }
     };
 

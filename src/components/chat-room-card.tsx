@@ -17,14 +17,14 @@ interface ChatRoomCardProps {
 /**
  * High-Fidelity Chat Room Card Component.
  * Mirroring the reference blueprint:
- * - Top-Right: Participant count pill.
+ * - Top-Right: Participant count pill (Floored at zero).
  * - Bottom-Left: Owner identity overlay.
  * - Bottom-Right: Level/Emblem icon.
  * - Below: Flag + Regional Identity.
- * - NEW: Special handling for Official Help Room with stable assets.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  const onlineCount = room.participantCount || 0;
+  // ZERO-FLOOR PROTOCOL: Ensure the social graph never displays negative identities
+  const onlineCount = Math.max(0, room.participantCount || 0);
   const { userProfile: owner } = useUserProfile(room.isOfficial ? undefined : room.ownerId);
 
   // Elite Official Support Logic
