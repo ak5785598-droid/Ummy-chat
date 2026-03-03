@@ -52,7 +52,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
               </filter>
             </defs>
 
-            {/* Bronze Laurel Wreath (Symmetrical paths) */}
+            {/* Bronze Laurel Wreath */}
             <g fill="url(#bronzeLeaf)" stroke="#451a03" strokeWidth="0.2">
                {/* Left Wreath */}
                <path d="M50 90 C30 90 10 75 5 50 C5 25 25 10 45 5 L48 8 C30 12 15 25 15 50 C15 70 30 85 50 85 Z" />
@@ -60,7 +60,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
                <path d="M50 90 C70 90 90 75 95 50 C95 25 75 10 55 5 L52 8 C70 12 85 25 85 50 C85 70 70 85 50 85 Z" />
                
                {/* Individual Leaf Accents */}
-               {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg, i) => (
+               {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
                  <g key={deg} transform={`rotate(${deg}, 50, 50)`}>
                     <path d="M50 4 L54 12 L50 10 L46 12 Z" opacity={0.8} />
                  </g>
@@ -78,11 +78,21 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             <circle cx="10" cy="55" r="2.5" fill="url(#cyanGemGrad)" opacity="0.8" />
             <circle cx="90" cy="55" r="2.5" fill="url(#cyanGemGrad)" opacity="0.8" />
 
-            {/* Bottom Sovereign Pink Gem */}
-            <g transform="translate(50, 88)" className="animate-reaction-heartbeat">
-               <path d="M-8 -8 L0 4 L8 -8 L0 -12 Z" fill="url(#pinkGemGrad)" stroke="#880e4f" strokeWidth="0.5" filter="url(#gemGlow)" />
-               <circle cx="0" cy="-6" r="6" fill="url(#pinkGemGrad)" />
-               <path d="M-2 -8 L0 -10 L2 -8 L0 -6 Z" fill="white" opacity="0.4" />
+            {/* Bottom Sovereign Pink Diamond - Positioned and Fitted at Bottom Middle */}
+            <g transform="translate(50, 90)" className="animate-reaction-heartbeat">
+               {/* Outer Diamond Glow */}
+               <circle cx="0" cy="0" r="10" fill="#f472b6" opacity="0.2" className="animate-pulse" />
+               {/* High-Fidelity Diamond Cut Path */}
+               <path 
+                 d="M 0 8 L -7 0 L 0 -8 L 7 0 Z" 
+                 fill="url(#pinkGemGrad)" 
+                 stroke="#880e4f" 
+                 strokeWidth="0.5" 
+                 filter="url(#gemGlow)" 
+               />
+               {/* Specular Facet Highlights */}
+               <path d="M -3 0 L 0 -5 L 3 0 L 0 5 Z" fill="white" opacity="0.3" />
+               <path d="M 0 -8 L 2 -2 L 0 0 L -2 -2 Z" fill="white" opacity="0.2" />
             </g>
           </svg>
         )}
@@ -115,7 +125,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
               </radialGradient>
             </defs>
             
-            {/* Angelic Wings (Attached to sides, large and majestic) */}
+            {/* Angelic Wings */}
             <g className="animate-wing-flap origin-center">
               {/* Left Wing */}
               <g transform="translate(15, 50) rotate(-15)">
