@@ -187,6 +187,7 @@ export default function MessagesPage() {
   const firestore = useFirestore();
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [activeChat, setActiveChat] = useState<{ id: string; otherUser: any } | null>(null);
+  const [activeTabValue, setActiveTabValue] = useState('chats');
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -214,6 +215,14 @@ export default function MessagesPage() {
       return timeB - timeA;
     });
   }, [rawChats]);
+
+  const latestOfficialMsg = systemMessages?.[0];
+  const officialSubtext = latestOfficialMsg?.content || 'Welcome to the frequency!';
+  const officialTime = latestOfficialMsg?.timestamp 
+    ? (isToday(latestOfficialMsg.timestamp.toDate()) 
+        ? format(latestOfficialMsg.timestamp.toDate(), 'HH:mm') 
+        : format(latestOfficialMsg.timestamp.toDate(), 'MMM d')) 
+    : 'Official';
 
   const taskListAsset = PlaceHolderImages.find(img => img.id === 'task-list');
 
@@ -249,7 +258,7 @@ export default function MessagesPage() {
         )}
 
         <div className="flex-1 bg-white">
-          <Tabs defaultValue="chats" className="w-full">
+          <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="w-full">
             {!activeChat && (
               <TabsList className="bg-transparent border-b border-gray-50 rounded-none w-full h-12 justify-start gap-10 px-6 p-0">
                 <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none font-black uppercase text-xs tracking-widest px-0 pb-3 h-full transition-all">Chats</TabsTrigger>
@@ -269,7 +278,10 @@ export default function MessagesPage() {
                  <div className="pb-32">
                    <div className="divide-y divide-gray-50">
                      {/* Ummy Official Persistent Identity */}
-                     <div className="px-6 py-4 flex gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group">
+                     <div 
+                       onClick={() => setActiveTabValue('official')}
+                       className="px-6 py-4 flex gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group"
+                     >
                         <div className="relative shrink-0">
                           <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 shadow-sm overflow-hidden">
                             <UmmyLogoIcon className="h-10 w-10" />
@@ -282,11 +294,11 @@ export default function MessagesPage() {
                               Ummy Official_In
                             </h3>
                             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
-                              Official
+                              {officialTime}
                             </span>
                           </div>
                           <p className="text-[13px] text-gray-400 truncate italic font-body">
-                            Welcome to the frequency!
+                            {officialSubtext}
                           </p>
                         </div>
                      </div>
