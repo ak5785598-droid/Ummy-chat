@@ -144,7 +144,10 @@ export function AppLayout({
               {isCreator && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === '/admin'} className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}>
-                    <Link href="/admin" className="flex items-center gap-4"><ShieldAlert className="h-6 w-6 text-red-600" /><span className="text-base font-black uppercase italic text-red-600">Command Center</span></Link>
+                    <Link href="/admin" className="flex items-center gap-4">
+                      <ShieldAlert className="h-6 w-6 text-red-600" />
+                      <span className="text-base font-black uppercase italic text-red-600">Command Center</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -166,7 +169,7 @@ export function AppLayout({
           <main className="flex-1 w-full overflow-y-auto bg-white rounded-tl-[2.5rem] shadow-2xl relative no-scrollbar">{children}</main>
           
           {!isInsideRoom && (
-            <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-20 pb-safe shrink-0 relative z-50 px-4">
+            <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-14 pb-safe shrink-0 relative z-50 px-4">
               {mobileNavItems.map((item) => {
                 const isActive = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
                 return (<Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-primary" : "text-gray-300")}><item.icon className={cn("h-6 w-6", isActive && "fill-current")} /><span className="text-[10px] font-black uppercase italic tracking-widest">{item.label}</span></Link>);
