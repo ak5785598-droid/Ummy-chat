@@ -2,15 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, collection, increment, writeBatch } from 'firebase/firestore';
 
 /**
  * Maintains Firestore presence while a room is active.
- * RE-ENGINEERED: Separates Join/Leave lifecycle from Identity updates to prevent auto-kick loops.
- * GHOST PREVENTION: Uses an atomic batch for entry and exit to ensure counts and presence stay synced.
- * ACTIVATED: Explicitly handles immediate cleanup on component unmount and beforeunload.
+ * RE-ENGINEERED: Includes a High-Fidelity Heartbeat to prevent ghost identities.
+ * GHOST PREVENTION: Updates lastSeen every 30 seconds to allow UI filtering of dead connections.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -18,6 +17,7 @@ export function RoomPresenceManager() {
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const lastRoomId = useRef<string | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   // 1. PRIMARY PRESENCE LIFECYCLE (Join/Leave)
   useEffect(() => {
@@ -70,19 +70,27 @@ export function RoomPresenceManager() {
       batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
       batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
 
-      // Initial Participant Document
+      // Initial Participant Document with Heartbeat
       batch.set(participantRef, {
         uid: uid,
         name: userProfile?.username || 'Guest',
         avatarUrl: userProfile?.avatarUrl || '',
         activeFrame: userProfile?.inventory?.activeFrame || 'None',
         joinedAt: serverTimestamp(),
+        lastSeen: serverTimestamp(),
         isMuted: true,
         seatIndex: 0,
       }, { merge: true });
 
       try {
         await batch.commit();
+        
+        // Start Heartbeat Frequency
+        if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = setInterval(() => {
+          updateDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() });
+        }, 30000); // 30s Heartbeat
+
       } catch (e) {
         console.error("[Presence Sync] Join failed:", e);
         lastRoomId.current = null;
@@ -92,6 +100,11 @@ export function RoomPresenceManager() {
     performJoin();
 
     const handleExit = async () => {
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+
       if (lastRoomId.current === roomId) {
         console.log(`[Presence Sync] Deactivating presence for room: ${roomId}`);
         const batch = writeBatch(firestore);
@@ -101,17 +114,10 @@ export function RoomPresenceManager() {
         const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
         // Atomic Exit Protocol
-        if (roomId === 'ummy-help-center') {
-          batch.set(roomDocRef, { 
-            participantCount: increment(-1),
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-        } else {
-          batch.update(roomDocRef, { 
-            participantCount: increment(-1),
-            updatedAt: serverTimestamp()
-          });
-        }
+        batch.update(roomDocRef, { 
+          participantCount: increment(-1),
+          updatedAt: serverTimestamp()
+        });
 
         batch.delete(participantRef);
         batch.update(userRef, { currentRoomId: null, updatedAt: serverTimestamp() });
@@ -135,25 +141,6 @@ export function RoomPresenceManager() {
       window.removeEventListener('beforeunload', handleExit);
     };
   }, [firestore, activeRoom?.id, user?.uid, userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame]); 
-
-  // 2. IDENTITY SYNCHRONIZATION
-  useEffect(() => {
-    if (!firestore || !activeRoom?.id || !user || !userProfile) return;
-
-    const participantRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
-    setDocumentNonBlocking(participantRef, {
-      name: userProfile.username || 'Guest',
-      avatarUrl: userProfile.avatarUrl || '',
-      activeFrame: userProfile.inventory?.activeFrame || 'None',
-    }, { merge: true });
-  }, [
-    userProfile?.username, 
-    userProfile?.avatarUrl, 
-    userProfile?.inventory?.activeFrame, 
-    firestore, 
-    activeRoom?.id, 
-    user?.uid
-  ]);
 
   return null;
 }

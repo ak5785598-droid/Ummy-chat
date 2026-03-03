@@ -313,6 +313,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [infoTab, setInfoTab] = useState<'profile' | 'members'>('profile');
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowingLoading, setIsFollowingLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
 
   // Precision Crop States
   const [selectedFileUrl, setSelectedFileUrl] = useState<string | null>(null);
@@ -337,6 +338,11 @@ export function RoomClient({ room }: { room: Room }) {
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isGlobalAdmin || isOwner || isModerator;
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!firestore || !currentUser || !room.id) return;
@@ -381,7 +387,20 @@ export function RoomClient({ room }: { room: Room }) {
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
   }, [firestore, room.id, currentUser]);
 
-  const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
+  const { data: rawParticipants } = useCollection<RoomParticipant>(participantsQuery);
+  
+  // HIGH-FIDELITY GHOST FILTER: Only show users seen in the last 90 seconds
+  const participants = useMemo(() => {
+    if (!rawParticipants) return [];
+    return rawParticipants.filter(p => {
+      if (!p.joinedAt) return true;
+      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
+      // If lastSeen is missing, give them a grace period based on joinedAt
+      const referenceTime = lastSeen || p.joinedAt?.toDate?.()?.getTime?.() || 0;
+      return (now - referenceTime) < 90000; // 90 seconds limit
+    });
+  }, [rawParticipants, now]);
+
   const onlineCount = participants?.length || 0;
 
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRoomContext } from '@/components/room-provider';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -33,20 +33,37 @@ const GoldenMicIcon = ({ className }: { className?: string }) => (
 
 /**
  * High-Fidelity Compact Room Overlay.
- * Mirroring the glossy, double-gold ring seat design with mic icons.
+ * RE-ENGINEERED: Includes Anti-Ghost Filtering to remove inactive participants automatically.
  */
 export function CompactRoomView() {
   const { activeRoom, setIsMinimized } = useRoomContext();
   const { user: currentUser } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !activeRoom?.id || !currentUser) return null;
     return query(collection(firestore, 'chatRooms', activeRoom.id, 'participants'));
   }, [firestore, activeRoom?.id, currentUser]);
 
-  const { data: participants } = useCollection(participantsQuery);
+  const { data: rawParticipants } = useCollection(participantsQuery);
+  
+  const participants = useMemo(() => {
+    if (!rawParticipants) return [];
+    return rawParticipants.filter(p => {
+      if (!p.joinedAt) return true;
+      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
+      const referenceTime = lastSeen || p.joinedAt?.toDate?.()?.getTime?.() || 0;
+      return (now - referenceTime) < 90000;
+    });
+  }, [rawParticipants, now]);
+
   const onlineCount = participants?.length || 0;
 
   if (!activeRoom) return null;
