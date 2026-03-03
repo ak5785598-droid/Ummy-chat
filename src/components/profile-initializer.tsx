@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -38,15 +37,17 @@ export function ProfileInitializer() {
               const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
               const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
               
-              batch.update(roomRef, { participantCount: increment(-1) });
+              // We use set/update with merge/increment to be safe
+              batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
               batch.delete(participantRef);
-              batch.update(userRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-              batch.update(profileRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+              batch.update(userRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
+              batch.update(profileRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
               
               await batch.commit();
               console.log(`[Identity Sync] Purged stale presence from room: ${staleRoomId}`);
             } catch (e) {
-              // Silently fail if room no longer exists
+              // Silently fail if room no longer exists or permissions were lost
+              console.warn(`[Identity Sync] Cleanup failed for room ${staleRoomId}:`, e);
             }
           }
           
@@ -78,6 +79,7 @@ export function ProfileInitializer() {
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
             currentRoomId: null,
+            isOnline: true,
             wallet: { 
               coins: 1000000, 
               diamonds: 0,
@@ -108,6 +110,7 @@ export function ProfileInitializer() {
           stats: finalData.stats,
           level: finalData.level,
           tags: finalData.tags, 
+          isOnline: true,
           updatedAt: serverTimestamp(),
           joinedAt: serverTimestamp(),
         }, { merge: true });

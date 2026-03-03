@@ -9,7 +9,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch } from 'firebas
 /**
  * Maintains Firestore presence while a room is active.
  * RE-ENGINEERED: Separates Join/Leave lifecycle from Identity updates to prevent auto-kick loops.
- * IDENTITY SYNC: Uses setDocumentNonBlocking with merge: true to avoid race condition denials.
+ * GHOST PREVENTION: Uses an atomic batch for entry and exit to ensure counts and presence stay synced.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -19,7 +19,6 @@ export function RoomPresenceManager() {
   const lastRoomId = useRef<string | null>(null);
 
   // 1. PRIMARY PRESENCE LIFECYCLE (Join/Leave)
-  // Only depends on Room ID and User ID to ensure stability.
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user) {
       return;
@@ -50,7 +49,6 @@ export function RoomPresenceManager() {
       });
 
       // Atomic Entry Protocol
-      // RESILIENCE: Use set with merge for the official help room to ensure it exists
       if (roomId === 'ummy-help-center') {
         batch.set(roomDocRef, { 
           id: 'ummy-help-center',
@@ -67,8 +65,8 @@ export function RoomPresenceManager() {
         });
       }
 
-      batch.update(userRef, { currentRoomId: roomId, updatedAt: serverTimestamp() });
-      batch.update(profileRef, { currentRoomId: roomId, updatedAt: serverTimestamp() });
+      batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+      batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
 
       // Initial Participant Document
       batch.set(participantRef, {
@@ -93,14 +91,13 @@ export function RoomPresenceManager() {
 
     const handleExit = async () => {
       if (lastRoomId.current === roomId) {
-        // Atomic Exit Protocol
         const batch = writeBatch(firestore);
         const roomDocRef = doc(firestore, 'chatRooms', roomId);
         const userRef = doc(firestore, 'users', uid);
         const profileRef = doc(firestore, 'users', uid, 'profile', uid);
         const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-        // RESILIENCE: Use set with merge for exit too
+        // Atomic Exit Protocol
         if (roomId === 'ummy-help-center') {
           batch.set(roomDocRef, { 
             participantCount: increment(-1),
@@ -119,12 +116,15 @@ export function RoomPresenceManager() {
         
         try {
           await batch.commit();
-        } catch (e) {}
+        } catch (e) {
+          console.warn("[Presence Sync] Exit batch failed:", e);
+        }
         
         lastRoomId.current = null;
       }
     };
 
+    // Attempt to cleanup on tab close
     window.addEventListener('beforeunload', handleExit);
 
     return () => {
@@ -134,7 +134,6 @@ export function RoomPresenceManager() {
   }, [firestore, activeRoom?.id, user?.uid, userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame]); 
 
   // 2. IDENTITY SYNCHRONIZATION
-  // Updates participant card details if user changes them while in the room.
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user || !userProfile) return;
 
