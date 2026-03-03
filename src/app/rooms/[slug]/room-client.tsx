@@ -163,6 +163,7 @@ const MUSIC_TRACKS = [
  */
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  
   useEffect(() => {
     if (audioRef.current) {
       console.log('[RemoteAudio] Attaching Stream Tracks');
@@ -385,6 +386,7 @@ export function RoomClient({ room }: { room: Room }) {
   const hostParticipant = participants?.find(p => p.seatIndex === 1);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
+  // Real-Time Voice Synchronization
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
@@ -432,6 +434,16 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || isSending || !userProfile) return;
     if (room.isChatMuted && !canManageRoom) { toast({ variant: 'destructive', title: 'Chat Disabled' }); return; }
+    
+    // Resume Audio Context on Interaction to satisfy browser frequency policies
+    if (typeof window !== 'undefined') {
+      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+      }
+    }
+
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || '', chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
@@ -474,7 +486,6 @@ export function RoomClient({ room }: { room: Room }) {
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     updateDocumentNonBlocking(participantRef, { activeEmoji: emoji });
     
-    // Automatic cleanup of active state after animation completes
     setTimeout(() => {
       updateDocumentNonBlocking(participantRef, { activeEmoji: null });
     }, 4000);
@@ -527,19 +538,10 @@ export function RoomClient({ room }: { room: Room }) {
     if (!canManageRoom || !firestore || !room.id) return;
     const pRef = doc(firestore, 'chatRooms', room.id, 'participants', uid);
     const banRef = doc(firestore, 'chatRooms', room.id, 'bans', uid);
-    
     const expiresAt = new Date(Date.now() + durationMinutes * 60000);
-    
     deleteDocumentNonBlocking(pRef);
-    setDocumentNonBlocking(banRef, {
-      uid,
-      expiresAt,
-      kickedAt: serverTimestamp(),
-      kickedBy: currentUser?.uid
-    }, { merge: true });
-
-    setIsActionMenuOpen(false);
-    setIsUserProfileCardOpen(false);
+    setDocumentNonBlocking(banRef, { uid, expiresAt, kickedAt: serverTimestamp(), kickedBy: currentUser?.uid }, { merge: true });
+    setIsActionMenuOpen(false); setIsUserProfileCardOpen(false);
     toast({ title: 'Member Kicked & Restricted' });
   };
 
@@ -547,38 +549,28 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id) return;
     const pRef = doc(firestore, 'chatRooms', room.id, 'participants', uid);
     updateDocumentNonBlocking(pRef, { seatIndex: 0, isMuted: true });
-    setIsActionMenuOpen(false);
-    setIsUserProfileCardOpen(false);
+    setIsActionMenuOpen(false); setIsUserProfileCardOpen(false);
     toast({ title: 'Seat Cleared' });
   };
 
-  const handleMinimize = () => {
-    setIsMinimized(true);
-    router.push('/rooms');
-  };
-
-  const handleExit = () => {
-    if (firestore && currentUser && room.id) {
-      const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-      deleteDocumentNonBlocking(participantRef);
-    }
-    setActiveRoom(null);
-    setIsMinimized(false);
-    router.push('/rooms');
-  };
+  const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
+  const handleExit = () => { if (firestore && currentUser && room.id) { const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid); deleteDocumentNonBlocking(participantRef); } setActiveRoom(null); setIsMinimized(false); router.push('/rooms'); };
 
   const takeSeat = (index: number) => { 
     if (!firestore || !room.id || !currentUser || !userProfile) return; 
-    if (room.lockedSeats?.includes(index)) { 
-      toast({ variant: 'destructive', title: 'Seat Locked' }); 
-      return; 
-    } 
+    if (room.lockedSeats?.includes(index)) { toast({ variant: 'destructive', title: 'Seat Locked' }); return; } 
+    
+    // Resume Audio on interaction
+    if (typeof window !== 'undefined') {
+      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+      }
+    }
+
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-    updateDocumentNonBlocking(participantRef, { 
-      seatIndex: index, 
-      isMuted: true,
-      updatedAt: serverTimestamp() 
-    }); 
+    updateDocumentNonBlocking(participantRef, { seatIndex: index, isMuted: true, updatedAt: serverTimestamp() }); 
   };
 
   const leaveSeat = () => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true }); setIsActionMenuOpen(false); setIsUserProfileCardOpen(false); };
@@ -590,10 +582,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (first) takeSeat(first); 
       return; 
     } 
-    if (currentUserParticipant?.isSilenced) { 
-      toast({ variant: 'destructive', title: 'Silenced' }); 
-      return; 
-    } 
+    if (currentUserParticipant?.isSilenced) { toast({ variant: 'destructive', title: 'Silenced' }); return; } 
     if (firestore && currentUser && room.id) { 
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
     } 
@@ -710,7 +699,7 @@ export function RoomClient({ room }: { room: Room }) {
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <audio ref={roomAudioRef} loop crossOrigin="anonymous" />
       
-      {/* Remote Voice Channels */}
+      {/* Remote Audio Frequencies Synchronization */}
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} />
       ))}

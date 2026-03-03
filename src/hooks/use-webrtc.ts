@@ -48,19 +48,29 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
-        console.log('[WebRTC] Requesting Microphone...');
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        console.log('[WebRTC] Requesting Microphone Frequency...');
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }, 
+          video: false 
+        });
+        
         stream.getAudioTracks().forEach(track => {
           track.enabled = !isMuted;
         });
+        
         setLocalStream(stream);
-        console.log('[WebRTC] Local Stream Synchronized');
+        console.log('[WebRTC] Local Frequency Synchronized');
       } catch (err: any) {
+        console.error('[WebRTC] Media Error:', err);
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           toast({
             variant: 'destructive',
             title: 'Microphone Denied',
-            description: 'Enable permissions to speak in the frequency.',
+            description: 'Please enable microphone permissions to join the frequency.',
           });
         }
       }
@@ -84,14 +94,29 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
   }, [isMuted, localStream]);
 
-  // 2. Global Mesh & Signaling Handshake
-  // DEPENDENCY: localStream is critical. If we get a stream, we MUST re-initiate connections.
+  // 2. Late Track Synchronization
+  // Ensures that if localStream is acquired after a peer connection is made, tracks are added.
+  useEffect(() => {
+    if (!localStream) return;
+    
+    peerConnections.current.forEach((pc, peerId) => {
+      const senders = pc.getSenders();
+      localStream.getTracks().forEach(track => {
+        const alreadyAdded = senders.find(s => s.track?.id === track.id);
+        if (!alreadyAdded) {
+          console.log(`[WebRTC] Adding late track to peer frequency: ${peerId}`);
+          pc.addTrack(track, localStream);
+        }
+      });
+    });
+  }, [localStream]);
+
+  // 3. Global Mesh & Signaling Handshake
   useEffect(() => {
     if (!user || !roomId || !firestore) return;
 
     const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
     
-    // Listen for other participants to connect
     const unsubscribe = onSnapshot(participantsRef, (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
         const peerId = change.doc.id;
@@ -100,7 +125,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         const peerData = change.doc.data();
         const isPeerSpeaker = peerData.seatIndex > 0;
         
-        // Protocol: Connections are made if AT LEAST one side is a speaker
+        // Protocol: Connections are made if AT LEAST one side is a speaker (in seat)
         if (isPeerSpeaker || isInSeat) {
           if (change.type === 'added' || change.type === 'modified') {
             if (!peerConnections.current.has(peerId)) {
@@ -113,21 +138,19 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       });
     });
 
-    // Signaling Listener for incoming handshakes (Offer/Answer/ICE)
     const signalingRef = collection(firestore, 'chatRooms', roomId, 'participants', user.uid, 'signaling');
     const unsubSignaling = onSnapshot(signalingRef, (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
         if (change.type === 'added') {
           const signal = change.doc.data();
           handleSignal(signal);
-          // Delete signal after processing to keep the queue clean
           deleteDoc(change.doc.ref).catch(() => {});
         }
       });
     });
 
     const initiateConnection = async (peerId: string) => {
-      console.log(`[WebRTC] Initiating P2P with: ${peerId}`);
+      console.log(`[WebRTC] Initiating P2P Handshake with: ${peerId}`);
       const pc = new RTCPeerConnection(iceConfig);
       peerConnections.current.set(peerId, pc);
 
@@ -142,7 +165,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       };
 
       pc.ontrack = (event) => {
-        console.log(`[WebRTC] Received Remote Track from: ${peerId}`);
+        console.log(`[WebRTC] Received Remote Frequency from: ${peerId}`);
         setRemoteStreams(prev => {
           const next = new Map(prev);
           next.set(peerId, event.streams[0]);
@@ -150,14 +173,26 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         });
       };
 
-      // Glare protection: Deterministic offerer selection
+      pc.onnegotiationneeded = async () => {
+        if (user.uid < peerId) { // Deterministic Offerer
+          try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            sendSignal(peerId, { type: 'offer', sdp: offer.sdp, from: user.uid });
+          } catch (e) {
+            console.error('[WebRTC] Negotiation Failed:', e);
+          }
+        }
+      };
+
+      // Initial Offer if we are the deterministic offerer
       if (user.uid < peerId) {
         try {
-          const offer = await pc.createOffer({ offerToReceiveAudio: true });
+          const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           sendSignal(peerId, { type: 'offer', sdp: offer.sdp, from: user.uid });
         } catch (e) {
-          console.error('[WebRTC] Offer failed:', e);
+          console.error('[WebRTC] Initial Offer Failed:', e);
         }
       }
     };
@@ -196,7 +231,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
         }
       } catch (e) {
-        console.error('[WebRTC] Signaling Error:', e);
+        console.error('[WebRTC] Signaling Handshake Error:', e);
       }
     };
 
