@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -49,7 +50,7 @@ import {
   Minimize2,
   Smile
 } from 'lucide-react';
-import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
+import { GoldCoinIcon, UmmyLogoIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -833,7 +834,12 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={() => setIsEmojiPickerOpen(true)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"><Smile className="h-4 w-4" /></button>
           <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"><Mail className="h-4 w-4" /></button>
           <button className="bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 p-2 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-4 w-4 text-white" /></button>
-          <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all" onClick={() => setIsGamesDialogOpen(true)}><LayoutGrid className="h-4 w-4" /></button>
+          <div className="relative">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-10 h-10 pointer-events-none animate-bounce" style={{ animationDuration: '3s' }}>
+              <GameControllerIcon className="w-full h-full drop-shadow-xl" />
+            </div>
+            <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all" onClick={() => setIsGamesDialogOpen(true)}><LayoutGrid className="h-4 w-4" /></button>
+          </div>
         </div>
       </footer>
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}><DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden animate-in fade-in duration-500"><DialogHeader className="sr-only"><DialogTitle>Exit Protocol</DialogTitle><DialogDescription>Choose between minimizing the frequency or completely exiting the room.</DialogDescription></DialogHeader><div className="p-12 flex items-center justify-around gap-8"><button onClick={handleMinimize} className="flex flex-col items-center gap-4 group active:scale-95 transition-all"><div className="h-24 w-24 rounded-full bg-white flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.3)]"><Minimize2 className="h-10 w-10 text-black" /></div><span className="text-white font-black uppercase italic tracking-widest text-sm">Minimize</span></button><button onClick={handleExit} className="flex flex-col items-center gap-4 group active:scale-95 transition-all"><div className="h-24 w-24 rounded-full bg-white flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.3)]"><LogOut className="h-10 w-10 text-pink-500" /></div><span className="text-white font-black uppercase italic tracking-widest text-sm">Exit</span></button></div><div className="pb-8 text-center"><button onClick={() => setIsExitPortalOpen(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-white transition-colors">Cancel</button></div></DialogContent></Dialog>
