@@ -229,7 +229,7 @@ export default function MessagesPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-white flex flex-col relative font-headline">
-        {!activeChat && (
+        {!activeChat && activeTabValue === 'chats' && (
           <header className="px-6 pt-10 pb-6 bg-white shrink-0">
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-4xl font-black uppercase italic tracking-tighter">Messages</h1>
@@ -259,7 +259,7 @@ export default function MessagesPage() {
 
         <div className="flex-1 bg-white">
           <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="w-full">
-            {!activeChat && (
+            {activeTabValue === 'chats' && !activeChat && (
               <TabsList className="bg-transparent border-b border-gray-50 rounded-none w-full h-12 justify-start gap-10 px-6 p-0">
                 <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none font-black uppercase text-xs tracking-widest px-0 pb-3 h-full transition-all">Chats</TabsTrigger>
               </TabsList>
@@ -327,46 +327,49 @@ export default function MessagesPage() {
                )}
             </TabsContent>
 
-            <TabsContent value="official" className="m-0 divide-y divide-gray-50 pb-32">
-               <header className="p-4 border-b border-gray-50 flex items-center gap-3 bg-white/80 backdrop-blur-md">
+            <TabsContent value="official" className="m-0 bg-gray-50/30 min-h-[70vh] font-headline">
+               <header className="p-4 border-b border-gray-100 flex items-center gap-3 bg-white sticky top-0 z-10">
                  <button onClick={() => setActiveTabValue('chats')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="h-6 w-6 text-gray-600" /></button>
                  <div className="flex-1">
-                   <p className="font-black text-sm uppercase italic tracking-tight">Official Broadcasts</p>
-                   <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Ummy Support Channel</p>
+                   <p className="font-black text-sm uppercase italic tracking-tight">Official Inbox</p>
+                   <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Ummy Global Support</p>
                  </div>
                </header>
-               {isSysLoading ? (
-                 <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>
-               ) : systemMessages?.length === 0 ? (
-                 <div className="py-32 text-center text-gray-200 uppercase font-black text-[10px] tracking-widest italic">No System Broadcasts</div>
-               ) : (
-                 systemMessages?.map((msg: any) => (
-                   <div 
-                     key={msg.id} 
-                     onClick={() => setSelectedMessage(msg)}
-                     className="px-6 py-5 bg-white flex gap-4 hover:bg-gray-50 transition-colors cursor-pointer active:scale-[0.98]"
-                   >
-                      <div className="h-14 w-14 bg-primary/10 rounded-[1.2rem] flex items-center justify-center text-primary shrink-0">
-                         <UmmyLogoIcon className="h-10 w-10" />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-1">
-                         <div className="flex items-center justify-between mb-0.5">
-                            <h3 className="font-black text-[15px] text-gray-900 uppercase italic tracking-tighter">{msg.title || 'Ummy Assistant'}</h3>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">
-                              {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d') : 'Now'}
-                            </span>
-                         </div>
-                         <p className="text-[13px] text-gray-400 line-clamp-1 italic font-body">{msg.content}</p>
-                      </div>
-                   </div>
-                 ))
-               )}
+               
+               <div className="p-4 space-y-4 pb-32">
+                 {isSysLoading ? (
+                   <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>
+                 ) : systemMessages?.length === 0 ? (
+                   <div className="py-32 text-center text-gray-200 uppercase font-black text-[10px] tracking-widest italic">No System Broadcasts</div>
+                 ) : (
+                   systemMessages?.map((msg: any) => (
+                     <div 
+                       key={msg.id} 
+                       onClick={() => setSelectedMessage(msg)}
+                       className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+                     >
+                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                           <UmmyLogoIcon className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1 min-w-0 pt-0.5">
+                           <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-black text-sm text-gray-900 uppercase italic tracking-tighter">{msg.title || 'Official Notice'}</h3>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">
+                                {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : 'Sync'}
+                              </span>
+                           </div>
+                           <p className="text-[12px] text-gray-500 line-clamp-2 italic font-body leading-relaxed">{msg.content}</p>
+                        </div>
+                     </div>
+                   ))
+                 )}
+               </div>
             </TabsContent>
           </Tabs>
         </div>
 
         {/* Floating Task Hub Portal */}
-        {!activeChat && (
+        {activeTabValue === 'chats' && !activeChat && (
           <div className="fixed bottom-24 right-6 z-[100] animate-in zoom-in duration-500">
              <div className="relative group">
                 <button className="h-16 w-16 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border-2 border-gray-50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
