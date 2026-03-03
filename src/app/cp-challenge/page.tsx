@@ -4,9 +4,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { ChevronLeft, RefreshCw, Heart, Award, Star, Trophy, Users } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Heart, Trophy, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -25,7 +24,7 @@ const Petal = ({ style }: { style: React.CSSProperties }) => (
 
 /**
  * Couple Challenge - High-Fidelity CP Leaderboard.
- * Matches the "Couple Challenge" blueprint exactly with SVGA elements.
+ * Re-engineered to handle empty states after clearing demo data.
  */
 export default function CpChallengePage() {
   const router = useRouter();
@@ -46,11 +45,8 @@ export default function CpChallengePage() {
 
   const heroAsset = PlaceHolderImages.find(img => img.id === 'cp-challenge-hero');
 
-  const couples = [
-    { rank: 1, name1: 'CHAND...', name2: 'Supriya...', score: '8,530,000', status: 'hearts' },
-    { rank: 2, name1: 'SaRdAr✌️', name2: 'kitKat🍫', score: '970,000', status: 'lock' },
-    { rank: 3, name1: 'Tribe_001', name2: 'Tribe_002', score: '450,000', status: 'hearts' },
-  ];
+  // LEADERBOARD CLEAR PROTOCOL: Removing all hardcoded users.
+  const couples: any[] = [];
 
   return (
     <AppLayout fullScreen>
@@ -120,47 +116,56 @@ export default function CpChallengePage() {
 
               {/* No. 1 Couple Visual Synchronization */}
               <div className="relative z-10 flex-1 flex items-center justify-center w-full px-8">
-                 <div className="flex items-center gap-12">
-                    {/* User 1 */}
-                    <div className="flex flex-col items-center gap-2">
-                       <div className="relative">
-                          <div className="h-24 w-24 rounded-full border-4 border-yellow-400 shadow-2xl overflow-hidden bg-white/10 backdrop-blur-md">
-                             <Avatar className="h-full w-full">
-                                <AvatarImage src={couples[0].name1 === 'CHAND...' ? "https://picsum.photos/seed/c1/200" : undefined} />
-                                <AvatarFallback className="bg-slate-100 text-black">C</AvatarFallback>
-                             </Avatar>
-                          </div>
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black h-6 w-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-white shadow-lg">1</div>
-                       </div>
-                       <div className="bg-black/40 backdrop-blur-md px-4 py-0.5 rounded-full border border-white/10">
-                          <p className="text-[10px] font-black uppercase tracking-tight">{couples[0].name1}</p>
-                       </div>
-                    </div>
+                 {couples.length > 0 ? (
+                   <div className="flex items-center gap-12 animate-in fade-in duration-700">
+                      {/* User 1 */}
+                      <div className="flex flex-col items-center gap-2">
+                         <div className="relative">
+                            <div className="h-24 w-24 rounded-full border-4 border-yellow-400 shadow-2xl overflow-hidden bg-white/10 backdrop-blur-md">
+                               <Avatar className="h-full w-full">
+                                  <AvatarImage src={`https://picsum.photos/seed/u1_0/200`} />
+                                  <AvatarFallback className="bg-slate-100 text-black">U</AvatarFallback>
+                               </Avatar>
+                            </div>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black h-6 w-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-white shadow-lg">1</div>
+                         </div>
+                         <div className="bg-black/40 backdrop-blur-md px-4 py-0.5 rounded-full border border-white/10">
+                            <p className="text-[10px] font-black uppercase tracking-tight">{couples[0].name1}</p>
+                         </div>
+                      </div>
 
-                    {/* Animated Pulse Hearts */}
-                    <div className="relative">
-                       <div className="absolute inset-0 bg-pink-500 blur-2xl opacity-40 scale-150 animate-pulse" />
-                       <span className="text-5xl drop-shadow-2xl animate-reaction-heartbeat block relative z-10">💕</span>
-                    </div>
+                      {/* Animated Pulse Hearts */}
+                      <div className="relative">
+                         <div className="absolute inset-0 bg-pink-500 blur-2xl opacity-40 scale-150 animate-pulse" />
+                         <span className="text-5xl drop-shadow-2xl animate-reaction-heartbeat block relative z-10">💕</span>
+                      </div>
 
-                    {/* User 2 */}
-                    <div className="flex flex-col items-center gap-2">
-                       <div className="relative">
-                          <div className="h-24 w-24 rounded-full border-4 border-yellow-400 shadow-2xl overflow-hidden bg-white/10 backdrop-blur-md">
-                             <Avatar className="h-full w-full">
-                                <AvatarImage src={couples[0].name2 === 'Supriya...' ? "https://picsum.photos/seed/c2/200" : undefined} />
-                                <AvatarFallback className="bg-slate-100 text-black">S</AvatarFallback>
-                             </Avatar>
-                          </div>
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black h-6 w-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-white shadow-lg">1</div>
-                       </div>
-                       <div className="bg-black/40 backdrop-blur-md px-4 py-0.5 rounded-full border border-white/10">
-                          <p className="text-[10px] font-black uppercase tracking-tight flex items-center gap-1">
-                             <Heart className="h-2 w-2 text-red-500 fill-current" /> {couples[0].name2}
-                          </p>
-                       </div>
-                    </div>
-                 </div>
+                      {/* User 2 */}
+                      <div className="flex flex-col items-center gap-2">
+                         <div className="relative">
+                            <div className="h-24 w-24 rounded-full border-4 border-yellow-400 shadow-2xl overflow-hidden bg-white/10 backdrop-blur-md">
+                               <Avatar className="h-full w-full">
+                                  <AvatarImage src={`https://picsum.photos/seed/u2_0/200`} />
+                                  <AvatarFallback className="bg-slate-100 text-black">U</AvatarFallback>
+                               </Avatar>
+                            </div>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black h-6 w-6 rounded-full flex items-center justify-center font-black text-xs border-2 border-white shadow-lg">1</div>
+                         </div>
+                         <div className="bg-black/40 backdrop-blur-md px-4 py-0.5 rounded-full border border-white/10">
+                            <p className="text-[10px] font-black uppercase tracking-tight flex items-center gap-1">
+                               <Heart className="h-2 w-2 text-red-500 fill-current" /> {couples[0].name2}
+                            </p>
+                         </div>
+                      </div>
+                   </div>
+                 ) : (
+                   <div className="text-center space-y-4 opacity-40 animate-pulse">
+                      <div className="h-24 w-24 rounded-full border-4 border-white/20 mx-auto flex items-center justify-center">
+                         <Users className="h-10 w-10" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-widest italic">Awaiting Tribal Sync</p>
+                   </div>
+                 )}
               </div>
 
               {/* Countdown Sync Engine */}
@@ -224,7 +229,7 @@ export default function CpChallengePage() {
 
            {/* Ranking Social Graph */}
            <div className="px-4 space-y-4 pb-32">
-              {couples.map((couple, idx) => (
+              {couples.length > 0 ? couples.map((couple, idx) => (
                 <div key={idx} className="relative group active:scale-[0.98] transition-all">
                    {/* Main Couple Capsule */}
                    <div className="bg-gradient-to-br from-[#e11d48] to-[#881337] rounded-[2.5rem] p-4 pt-8 border-2 border-[#fb7185]/30 shadow-2xl relative overflow-hidden">
@@ -293,7 +298,17 @@ export default function CpChallengePage() {
                       </div>
                    </div>
                 </div>
-              ))}
+              )) : (
+                <div className="py-20 text-center bg-black/10 rounded-[2.5rem] border-2 border-dashed border-white/5 space-y-4">
+                   <div className="h-16 w-16 bg-white/5 rounded-full mx-auto flex items-center justify-center">
+                      <Trophy className="h-8 w-8 text-white/20" />
+                   </div>
+                   <div className="space-y-1">
+                      <p className="font-black uppercase italic text-white/40">No Rankings Yet</p>
+                      <p className="text-[10px] text-white/20 uppercase font-bold">Launch a romantic frequency to top the charts.</p>
+                   </div>
+                </div>
+              )}
            </div>
         </ScrollArea>
 
