@@ -35,11 +35,15 @@ const ANIMALS = [
 ];
 
 const CHIPS = [
-  { value: 10, label: '10', color: 'bg-blue-500' },
-  { value: 100, label: '100', color: 'bg-green-500' },
-  { value: 1000, label: '1K', color: 'bg-yellow-500' },
-  { value: 10000, label: '10K', color: 'bg-red-500' },
-  { value: 100000, label: '100K', color: 'bg-purple-500' },
+  { value: 100, label: '100', color: 'bg-blue-500' },
+  { value: 1000, label: '1K', color: 'bg-green-500' },
+  { value: 5000, label: '5K', color: 'bg-yellow-500' },
+  { value: 50000, label: '50K', color: 'bg-orange-500' },
+  { value: 100000, label: '100K', color: 'bg-red-500' },
+  { value: 300000, label: '300K', color: 'bg-pink-500' },
+  { value: 1000000, label: '1M', color: 'bg-purple-500' },
+  { value: 10000000, label: '10M', color: 'bg-indigo-500' },
+  { value: 100000000, label: '100M', color: 'bg-cyan-500' },
 ];
 
 export default function WildPartyPage() {
@@ -51,7 +55,7 @@ export default function WildPartyPage() {
 
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(15);
-  const [selectedChip, setSelectedChip] = useState(10);
+  const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [lastBets, setLastBets] = useState<Record<string, number>>({});
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
