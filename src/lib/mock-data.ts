@@ -1,4 +1,3 @@
-
 import type { User, Room, Game, CoinPackage, Task } from './types';
 
 /**
@@ -49,6 +48,14 @@ const games: Game[] = [
     coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', 
     cost: 0, 
     imageHint: 'egyptian pyramid' 
+  },
+  { 
+    id: 'g6', 
+    title: 'Teen Patti', 
+    slug: 'teen-patti', 
+    coverUrl: '', 
+    cost: 0, 
+    imageHint: '3d cards poker' 
   },
 ];
 
