@@ -78,26 +78,106 @@ export const GoldCoinIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+/**
+ * High-Fidelity 3D Golden Remote component.
+ * Features emerald green buttons, metallic gradients, and SVGA-style floating animations.
+ */
 export const GameControllerIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
+    viewBox="0 0 200 150"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    className="animate-reaction-float"
     {...props}
   >
-    <path d="M16.14 8.36a2.5 2.5 0 0 0-3.54 0" />
-    <path d="M12 12H4" />
-    <path d="M8 8V4" />
-    <path d="M8.03 16.03a2.5 2.5 0 0 0 0-3.53" />
-    <path d="M16 12h-4" />
-    <path d="M12.46 12.46a2.5 2.5 0 0 0 3.53 3.53" />
-    <path d="M17.64 17.64a2.5 2.5 0 0 0 0-3.53" />
-    <path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10z" />
+    <defs>
+      <linearGradient id="remoteGold" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FFF281" />
+        <stop offset="30%" stopColor="#FFD700" />
+        <stop offset="50%" stopColor="#FFFFFF" />
+        <stop offset="70%" stopColor="#FFD700" />
+        <stop offset="100%" stopColor="#B8860B" />
+      </linearGradient>
+      <linearGradient id="emeraldGreen" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#10b981" />
+        <stop offset="100%" stopColor="#064e3b" />
+      </linearGradient>
+      <radialGradient id="buttonShine" cx="30%" cy="30%" r="50%">
+        <stop offset="0%" stopColor="white" stopOpacity="0.6" />
+        <stop offset="100%" stopColor="white" stopOpacity="0" />
+      </radialGradient>
+      <filter id="remoteShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+        <feOffset dx="0" dy="4" result="offsetblur" />
+        <feComponentTransfer><feFuncA type="linear" slope="0.5" /></feComponentTransfer>
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+
+    <g filter="url(#remoteShadow)">
+      {/* Main Remote Body (3D Mesh Simulation) */}
+      <path 
+        d="M40 40 Q20 40 20 70 L25 110 Q30 130 60 125 L80 115 L120 115 L140 125 Q170 130 175 110 L180 70 Q180 40 160 40 Z" 
+        fill="url(#remoteGold)" 
+        stroke="#8B4513" 
+        strokeWidth="0.5"
+      />
+      
+      {/* Glossy Top Overlay */}
+      <path 
+        d="M40 42 Q25 42 25 65 L30 100 Q35 115 55 112 L75 105 L125 105 L145 112 Q165 115 170 100 L175 65 Q175 42 160 42 Z" 
+        fill="white" 
+        opacity="0.15"
+      />
+
+      {/* Central Touchpad Area */}
+      <rect x="75" y="45" width="50" height="35" rx="4" fill="#8B4513" opacity="0.2" stroke="white" strokeWidth="0.2" />
+      <g opacity="0.3">
+        {Array.from({length: 5}).map((_, i) => (
+          <line key={i} x1="80" y1={50 + i*6} x2="120" y2={50 + i*6} stroke="white" strokeWidth="0.5" />
+        ))}
+      </g>
+
+      {/* Left D-Pad (Green) */}
+      <g transform="translate(45, 75)">
+        <path d="M-12 -4 L-4 -4 L-4 -12 L4 -12 L4 -4 L12 -4 L12 4 L4 4 L4 12 L-4 12 L-4 4 L-12 4 Z" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="0" cy="0" r="12" fill="url(#buttonShine)" pointerEvents="none" />
+      </g>
+
+      {/* Right Action Buttons (Green) */}
+      <g transform="translate(155, 75)">
+        <circle cx="0" cy="-10" r="6" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="10" cy="0" r="6" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="0" cy="10" r="6" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="-10" cy="0" r="6" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="0" cy="-10" r="6" fill="url(#buttonShine)" />
+        <circle cx="10" cy="0" r="6" fill="url(#buttonShine)" />
+        <circle cx="0" cy="10" r="6" fill="url(#buttonShine)" />
+        <circle cx="-10" cy="0" r="6" fill="url(#buttonShine)" />
+      </g>
+
+      {/* Center Sticks (Green) */}
+      <g transform="translate(80, 100)">
+        <circle cx="0" cy="0" r="10" fill="#4d3a00" opacity="0.4" />
+        <circle cx="0" cy="0" r="8" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="-2" cy="-2" r="4" fill="url(#buttonShine)" />
+      </g>
+      <g transform="translate(120, 100)">
+        <circle cx="0" cy="0" r="10" fill="#4d3a00" opacity="0.4" />
+        <circle cx="0" cy="0" r="8" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <circle cx="-2" cy="-2" r="4" fill="url(#buttonShine)" />
+      </g>
+
+      {/* Small Accessory Buttons */}
+      <circle cx="70" cy="55" r="2.5" fill="#064e3b" opacity="0.6" />
+      <circle cx="130" cy="55" r="2.5" fill="#064e3b" opacity="0.6" />
+    </g>
+
+    {/* Dynamic Shine Streak */}
+    <rect x="0" y="0" width="20" height="200" fill="white" opacity="0.2" transform="rotate(30) translate(0, -100)">
+      <animateTransform attributeName="transform" type="translate" from="-200, -100" to="400, -100" dur="3s" repeatCount="indefinite" />
+    </rect>
   </svg>
 );
