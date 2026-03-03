@@ -1,18 +1,93 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Search, Plus, Trophy, Users, Heart, MessageCircle, ArrowRight } from 'lucide-react';
+import { Loader, Search, Plus, Trophy, Users, Heart, ArrowRight, Gamepad2, Sparkles } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+/**
+ * ScrollingBanner Component.
+ * Cycles through high-fidelity tribal promotions every 5 seconds.
+ */
+function ScrollingBanner() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const discoveryBanner = PlaceHolderImages.find(img => img.id === 'discovery-banner');
+  
+  const slides = [
+    {
+      title: "Tribe Events",
+      subtitle: "Global Frequency Sync",
+      icon: Sparkles,
+      color: "from-orange-500/40",
+      image: discoveryBanner?.imageUrl || 'https://picsum.photos/seed/banner1/800/200'
+    },
+    {
+      title: "Elite Rewards",
+      subtitle: "Claim Your Daily Throne",
+      icon: Trophy,
+      color: "from-yellow-500/40",
+      image: 'https://picsum.photos/seed/banner2/800/200'
+    },
+    {
+      title: "Game Zone",
+      subtitle: "Enter the 3D Arena",
+      icon: Gamepad2,
+      color: "from-purple-500/40",
+      image: 'https://picsum.photos/seed/banner3/800/200'
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const slide = slides[currentSlide];
+  const Icon = slide.icon;
+
+  return (
+    <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black">
+      <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
+        <Image 
+          src={slide.image} 
+          alt={slide.title} 
+          fill 
+          className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
+        />
+        <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color)}>
+          <div className="flex items-center gap-2 mb-1">
+             <Icon className="h-4 w-4 text-white animate-pulse" />
+             <h4 className="text-white font-black uppercase italic text-xl tracking-tighter leading-none drop-shadow-lg">{slide.title}</h4>
+          </div>
+          <p className="text-white/80 font-bold uppercase text-[8px] tracking-[0.3em] drop-shadow-md">{slide.subtitle}</p>
+        </div>
+      </div>
+      
+      <div className="absolute top-1/2 right-6 -translate-y-1/2 z-20">
+        <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+          <ArrowRight className="h-5 w-5 text-white" />
+        </div>
+      </div>
+
+      {/* Progress Dots */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+        {slides.map((_, i) => (
+          <div key={i} className={cn("h-1 rounded-full transition-all duration-500", currentSlide === i ? "bg-white w-4" : "bg-white/30 w-1")} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * High-Fidelity Home / Discovery Hub.
@@ -47,8 +122,6 @@ export default function RoomsPage() {
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
   const { data: followedRooms, isLoading: isFollowingLoading } = useCollection(followingQuery);
 
-  const discoveryBanner = PlaceHolderImages.find(img => img.id === 'discovery-banner');
-
   // Elite Help Room Protocol: Ensures Ummy Official Help is always first.
   const displayRooms = useMemo(() => {
     const helpRoom: any = {
@@ -64,7 +137,6 @@ export default function RoomsPage() {
     };
 
     if (!roomsData) return [helpRoom];
-    // Filter out the help room if it already exists in data to avoid duplicates
     return [helpRoom, ...roomsData.filter(r => r.id !== helpRoom.id)];
   }, [roomsData]);
 
@@ -91,7 +163,6 @@ export default function RoomsPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-[#f8f9fa] flex flex-col space-y-6 pb-32 font-headline">
-        {/* Top Header Navigation */}
         <header className="flex items-center justify-between px-6 pt-6 bg-white shrink-0">
           <div className="flex items-center gap-8">
             <CreateRoomDialog 
@@ -133,7 +204,6 @@ export default function RoomsPage() {
         <div className="px-4 space-y-6 overflow-y-auto no-scrollbar flex-1">
           {activeTab === 'Popular' ? (
             <>
-              {/* Top Category Row */}
               <div className="flex gap-2">
                  <CategoryCard 
                    title="Ranking" 
@@ -145,7 +215,6 @@ export default function RoomsPage() {
                  <CategoryCard title="CP" label="CP" gradient="bg-gradient-to-br from-pink-400 to-purple-600" />
               </div>
 
-              {/* Grid View */}
               {isRoomsLoading && !roomsData ? (
                 <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>
               ) : (
@@ -153,35 +222,13 @@ export default function RoomsPage() {
                   {displayRooms.map((room: any, index: number) => (
                     <React.Fragment key={room.id}>
                       <ChatRoomCard room={room} variant="modern" />
-                      {index === 3 && (
-                        <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer">
-                           {discoveryBanner && (
-                             <Image 
-                               src={discoveryBanner.imageUrl} 
-                               alt="Discovery Banner" 
-                               fill 
-                               className="object-cover group-hover:scale-105 transition-transform duration-700"
-                               data-ai-hint={discoveryBanner.imageHint}
-                             />
-                           )}
-                           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent flex flex-col justify-center px-8">
-                              <h4 className="text-white font-black uppercase italic text-xl tracking-tighter leading-none drop-shadow-lg">Tribe Events</h4>
-                              <p className="text-white/80 font-bold uppercase text-[8px] tracking-[0.3em] mt-1 drop-shadow-md">Global Frequency Sync</p>
-                           </div>
-                           <div className="absolute top-1/2 right-6 -translate-y-1/2">
-                              <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
-                                 <ArrowRight className="h-5 w-5 text-white" />
-                              </div>
-                           </div>
-                        </div>
-                      )}
+                      {index === 3 && <ScrollingBanner />}
                     </React.Fragment>
                   ))}
                 </div>
               )}
             </>
           ) : (
-            /* "Me" Section - Followed Rooms at the Top */
             <div className="space-y-6 animate-in fade-in duration-500">
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Followed Rooms</h2>
@@ -221,7 +268,7 @@ export default function RoomsPage() {
                         id: follow.roomId, 
                         title: follow.roomName, 
                         coverUrl: follow.coverUrl, 
-                        participantCount: 0 // Count will sync from standard discovery logic if needed
+                        participantCount: 0
                       } as any} 
                       variant="modern" 
                     />
