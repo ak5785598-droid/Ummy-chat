@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -71,7 +70,7 @@ const LionGuardian = ({ side }: { side: 'left' | 'right' }) => (
 );
 
 const RankingList = ({ items, type, isLoading, currentUid }: any) => {
-  if (isActiveLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
+  if (isLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
   if (!items || items.length === 0) return <div className="text-center py-40 opacity-40"><TrendingUp className="mx-auto mb-4" /> The chronicles are empty.</div>;
 
   const top1 = items[0];
