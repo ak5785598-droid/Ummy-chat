@@ -262,7 +262,6 @@ export default function MessagesPage() {
             {!activeChat && (
               <TabsList className="bg-transparent border-b border-gray-50 rounded-none w-full h-12 justify-start gap-10 px-6 p-0">
                 <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none font-black uppercase text-xs tracking-widest px-0 pb-3 h-full transition-all">Chats</TabsTrigger>
-                <TabsTrigger value="official" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none font-black uppercase text-xs tracking-widest px-0 pb-3 h-full transition-all">Official</TabsTrigger>
               </TabsList>
             )}
 
@@ -329,6 +328,13 @@ export default function MessagesPage() {
             </TabsContent>
 
             <TabsContent value="official" className="m-0 divide-y divide-gray-50 pb-32">
+               <header className="p-4 border-b border-gray-50 flex items-center gap-3 bg-white/80 backdrop-blur-md">
+                 <button onClick={() => setActiveTabValue('chats')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="h-6 w-6 text-gray-600" /></button>
+                 <div className="flex-1">
+                   <p className="font-black text-sm uppercase italic tracking-tight">Official Broadcasts</p>
+                   <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Ummy Support Channel</p>
+                 </div>
+               </header>
                {isSysLoading ? (
                  <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>
                ) : systemMessages?.length === 0 ? (
