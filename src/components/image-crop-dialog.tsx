@@ -23,6 +23,7 @@ interface ImageCropDialogProps {
 /**
  * High-Fidelity Precision Cropping Dimension.
  * Handles the extraction of visual signatures with absolute accuracy.
+ * RE-ENGINEERED: Hardened for local blob frequency and resilient image loading.
  */
 export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, aspect = 4 / 5 }: ImageCropDialogProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -38,12 +39,24 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
     new Promise((resolve, reject) => {
       const img = new Image();
       img.addEventListener('load', () => resolve(img));
-      img.addEventListener('error', (error) => reject(error));
-      img.setAttribute('crossOrigin', 'anonymous');
+      img.addEventListener('error', (err) => {
+        console.error('[Visual Sync] Image Load Error:', err);
+        reject(new Error('Failed to load visual frequency for cropping.'));
+      });
+      
+      // Atomic Check: Local blobs do not require crossOrigin handshake
+      if (!url.startsWith('blob:')) {
+        img.setAttribute('crossOrigin', 'anonymous');
+      }
+      
       img.src = url;
     });
 
   const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<File | null> => {
+    if (!pixelCrop || pixelCrop.width === 0 || pixelCrop.height === 0) {
+      throw new Error('Invalid visual dimensions selected for sync.');
+    }
+
     const imageElement = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -68,7 +81,7 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) return resolve(null);
-        const file = new File([blob], 'cropped_image.jpg', { type: 'image/jpeg' });
+        const file = new File([blob], `sync_${Date.now()}.jpg`, { type: 'image/jpeg' });
         resolve(file);
       }, 'image/jpeg', 0.95);
     });
@@ -83,8 +96,8 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
         onCropComplete(croppedFile);
         onOpenChange(false);
       }
-    } catch (e) {
-      console.error('[Visual Sync] Crop Error:', e);
+    } catch (e: any) {
+      console.error('[Visual Sync] Crop Error:', e?.message || e);
     } finally {
       setIsProcessing(false);
     }
@@ -132,7 +145,7 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
               variant="outline" 
               onClick={() => onOpenChange(false)} 
               disabled={isProcessing}
-              className="flex-1 h-14 rounded-2xl font-black uppercase italic border-2"
+              className="flex-1 h-14 rounded-2xl font-black uppercase italic text-xs border-2"
             >
               <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
