@@ -34,11 +34,9 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
   let currentLevel = 0;
   let nextLevelThreshold = THRESHOLDS[1].spent;
 
-  // Find the current level bracket
   for (let i = 0; i < THRESHOLDS.length; i++) {
     if (totalSpent >= THRESHOLDS[i].spent) {
       currentLevel = THRESHOLDS[i].level;
-      // If there's a next milestone, calculate intermediate levels
       if (i < THRESHOLDS.length - 1) {
         const startLevel = THRESHOLDS[i].level;
         const endLevel = THRESHOLDS[i+1].level;
@@ -54,7 +52,6 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
         currentLevel = startLevel + extraLevels;
         nextLevelThreshold = startSpent + (extraLevels + 1) * spentPerLevel;
       } else {
-        // Max level reached
         currentLevel = 100;
         nextLevelThreshold = totalSpent;
       }
@@ -63,14 +60,9 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
     }
   }
 
-  // Ensure currentLevel doesn't exceed 100
   currentLevel = Math.min(currentLevel, 100);
-  
   const remaining = Math.max(0, nextLevelThreshold - totalSpent);
-  
-  // Progress within the current level's step toward the next level up
-  const rangeSize = nextLevelThreshold - (nextLevelThreshold - (nextLevelThreshold / (currentLevel + 1))); // rough
-  const progressPercent = currentLevel >= 100 ? 100 : (1 - (remaining / (nextLevelThreshold - (totalSpent - (totalSpent % 1000))))) * 100; // simplified for UI
+  const progressPercent = currentLevel >= 100 ? 100 : (1 - (remaining / (nextLevelThreshold - (totalSpent - (totalSpent % 10000) || 10000)))) * 100;
 
   return {
     currentLevel,
@@ -82,9 +74,6 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
   };
 }
 
-/**
- * Data mapping for the Level Icon table matching the blueprint image.
- */
 export const LEVEL_RANGES = [
   { range: 'Lv.0', cost: '10,000', type: 'star', color: 'bg-[#cbd5e1]' },
   { range: 'Lv.1~Lv.10', cost: '100,000', type: 'star', color: 'bg-[#3b82f6]' },

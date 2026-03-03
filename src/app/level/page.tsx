@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Star, Moon, Sun, Diamond, Shield, Crown, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, Star, Moon, Sun, Diamond, Shield, Crown } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -11,11 +11,6 @@ import { calculateLevelProgress, LEVEL_RANGES } from '@/lib/level-utils';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
-/**
- * LevelBadge Component.
- * High-fidelity representation of the "Rich Level Tags" shown in the blueprint.
- * Features a glossy pill-shaped container with localized icons.
- */
 const LevelBadge = ({ level, type, colorClass }: { level: number | string, type: string, colorClass: string }) => {
   const getIcon = () => {
     const iconClass = "h-2.5 w-2.5 fill-white text-white drop-shadow-sm";
@@ -37,22 +32,15 @@ const LevelBadge = ({ level, type, colorClass }: { level: number | string, type:
       "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full shadow-md border border-white/30 relative overflow-hidden",
       colorClass
     )}>
-      {/* Glossy Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent h-1/2 pointer-events-none" />
-      
       {getIcon()}
       <span className="text-[10px] font-black text-white leading-none drop-shadow-sm relative z-10">{level}</span>
     </div>
   );
 };
 
-/**
- * LevelEntryStrip Component.
- * High-fidelity representation of the "Entry Strip" visual vibes from the blueprint.
- * Uses complex gradients and localized shine animations.
- */
 const LevelEntryStrip = ({ type }: { type?: string }) => {
-  if (!type) return <div className="h-6 w-32 bg-transparent" />;
+  if (!type) return <div className="h-5 w-32 bg-transparent" />;
 
   const gradients: Record<string, string> = {
     cyan: "from-[#00E5FF] via-[#2196F3] to-transparent",
@@ -69,9 +57,7 @@ const LevelEntryStrip = ({ type }: { type?: string }) => {
       "h-5 w-32 rounded-full bg-gradient-to-r shadow-lg relative overflow-hidden",
       gradients[type]
     )}>
-       {/* Animated Shine Streak */}
        <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-       
        {type === 'ultimate' && (
          <div className="absolute left-1 top-1/2 -translate-y-1/2">
             <Crown className="h-2.5 w-2.5 text-yellow-700 fill-current" />
@@ -81,10 +67,6 @@ const LevelEntryStrip = ({ type }: { type?: string }) => {
   );
 };
 
-/**
- * User Level Page.
- * Re-engineered to match the provided blueprint image exactly.
- */
 export default function UserLevelPage() {
   const router = useRouter();
   const { user } = useUser();
@@ -95,7 +77,6 @@ export default function UserLevelPage() {
   return (
     <AppLayout hideSidebarOnMobile>
       <div className="min-h-full bg-white font-headline pb-20 animate-in fade-in duration-700">
-        {/* Header */}
         <header className="p-6 pt-10 flex items-center justify-between">
           <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
             <ChevronLeft className="h-6 w-6 text-gray-800" />
@@ -104,7 +85,6 @@ export default function UserLevelPage() {
         </header>
 
         <div className="p-6 space-y-10">
-          {/* Progress Section */}
           <section className="space-y-4">
             <div className="flex justify-between items-center px-1">
                <span className="text-sm font-black">Lv.{stats.currentLevel}</span>
@@ -117,7 +97,6 @@ export default function UserLevelPage() {
             <Progress value={stats.progressPercent} className="h-3 bg-yellow-100 rounded-full [&>div]:bg-[#FFCC00]" />
           </section>
 
-          {/* Level Description */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">
                <div className="w-1 h-5 bg-[#FFCC00] rounded-full" />
@@ -129,7 +108,6 @@ export default function UserLevelPage() {
             </div>
           </section>
 
-          {/* Level Icon Table */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">
                <div className="w-1 h-5 bg-[#FFCC00] rounded-full" />
@@ -147,9 +125,7 @@ export default function UserLevelPage() {
                   </thead>
                   <tbody>
                      {LEVEL_RANGES.map((item, idx) => {
-                       // Deterministic ID extraction from range string
                        const startLevel = item.range.split('~')[0].replace('Lv.', '');
-                       
                        return (
                          <tr key={idx} className="border-b border-yellow-50 last:border-0 hover:bg-yellow-50/20 transition-colors">
                             <td className="py-4 px-2 border-r border-yellow-50">
@@ -157,11 +133,7 @@ export default function UserLevelPage() {
                                <p className="text-[10px] font-bold text-gray-400 italic">({item.cost})</p>
                             </td>
                             <td className="py-4 px-2 border-r border-yellow-50">
-                               <LevelBadge 
-                                 level={startLevel} 
-                                 type={item.type} 
-                                 colorClass={item.color} 
-                               />
+                               <LevelBadge level={startLevel} type={item.type} colorClass={item.color} />
                             </td>
                             <td className="py-4 px-2 flex justify-center items-center">
                                <LevelEntryStrip type={item.strip} />
