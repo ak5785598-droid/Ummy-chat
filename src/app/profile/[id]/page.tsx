@@ -39,6 +39,7 @@ import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
+import { calculateLevelProgress } from '@/lib/level-utils';
 import {
   Dialog,
   DialogContent,
@@ -63,19 +64,6 @@ const AVAILABLE_GIFTS: GiftType[] = [
   { id: 'rolex', name: 'Rolex', emoji: '⌚', price: 500000, animationType: 'zoom' },
   { id: 'celebration', name: 'Celebration', emoji: '🥳', price: 1000000, animationType: 'zoom' },
 ];
-
-function calculateRichLevel(spent: number = 0) {
-  if (spent < 50000) return 1;
-  if (spent < 100000) return 2;
-  if (spent < 1000000) return 3;
-  if (spent < 5000000) return 4;
-  if (spent < 10000000) return Math.floor(5 + ((spent - 5000000) / 5000000) * 5);
-  if (spent < 100000000) return Math.floor(10 + ((spent - 10000000) / 90000000) * 10);
-  if (spent < 1000000000) return Math.floor(20 + ((spent - 100000000) / 900000000) * 10);
-  if (spent < 5000000000) return Math.floor(30 + ((spent - 1000000000) / 4000000000) * 10);
-  if (spent < 90000000000) return Math.floor(40 + ((spent - 5000000000) / 85000000000) * 10);
-  return 50;
-}
 
 const SupporterIcon = ({ color, rank }: { color: string, rank: number }) => (
   <div className="relative group cursor-pointer active:scale-95 transition-transform shrink-0">
@@ -165,13 +153,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
       const diamondReturn = Math.floor(gift.price * 0.4);
       const newTotalSpent = (senderProfile.wallet?.totalSpent || 0) + gift.price;
+      const stats = calculateLevelProgress(newTotalSpent);
 
       // Update Sender
       const senderUpdates = {
         'wallet.coins': increment(-gift.price),
         'wallet.totalSpent': increment(gift.price),
         'wallet.dailySpent': increment(gift.price),
-        'level.rich': calculateRichLevel(newTotalSpent),
+        'level.rich': stats.currentLevel,
         updatedAt: serverTimestamp()
       };
       updateDocumentNonBlocking(senderRef, senderUpdates);
@@ -309,7 +298,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
 
             <div className="bg-white rounded-[1.5rem] p-4 shadow-sm border border-gray-100 flex justify-between gap-2">
-              <ToolTile label="Level" icon={Trophy} />
+              <ToolTile label="Level" icon={Trophy} onClick={() => router.push('/level')} />
               <ToolTile label="Store" icon={Crown} onClick={() => router.push('/store')} />
               <ToolTile label="Badge" icon={ShieldIcon} />
               <ToolTile label="Task" icon={Activity} onClick={() => router.push('/tasks')} />
