@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ChevronLeft, HelpCircle, Plus, Heart, Award, Home, CreditCard, Scroll, Loader, Gift as GiftIcon } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { GoldCoinIcon } from '@/components/icons';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
@@ -26,9 +26,19 @@ import {
 } from '@/components/ui/dialog';
 
 /**
+ * Floating Heart Component for SVGA Animation feel.
+ */
+const FloatingHeart = ({ style }: { style: React.CSSProperties }) => (
+  <div className="absolute pointer-events-none animate-reaction-float opacity-40 select-none" style={style}>
+    <svg viewBox="0 0 24 24" className="fill-pink-400 drop-shadow-lg" width="24" height="24">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  </div>
+);
+
+/**
  * CP House - High-Fidelity Love House Dimension.
- * Designed to mirror the provided blueprint exactly.
- * Injected: Propose Ring Sync Portal.
+ * Re-engineered with SVGA-style background animation.
  */
 export default function CpHousePage() {
   const router = useRouter();
@@ -80,7 +90,7 @@ export default function CpHousePage() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-[100dvh] w-full bg-pink-100 flex flex-col relative overflow-hidden font-headline text-white select-none">
+      <div className="h-[100dvh] w-full bg-[#fce4ec] flex flex-col relative overflow-hidden font-headline text-white select-none">
         
         <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
 
@@ -91,23 +101,31 @@ export default function CpHousePage() {
                src={backgroundAsset.imageUrl} 
                alt="CP House Background" 
                fill 
-               className="object-cover opacity-80" 
+               className="object-cover opacity-90 scale-105" 
                priority
              />
            )}
-           <div className="absolute inset-0 bg-gradient-to-b from-pink-500/20 via-transparent to-pink-900/40" />
+           {/* SVGA Floating Vibe Engine */}
+           <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <FloatingHeart style={{ top: '15%', left: '10%', animationDelay: '0s', transform: 'scale(1.2)' }} />
+              <FloatingHeart style={{ top: '40%', left: '85%', animationDelay: '1.5s', transform: 'scale(0.8)' }} />
+              <FloatingHeart style={{ top: '70%', left: '15%', animationDelay: '3s', transform: 'scale(1.5)' }} />
+              <FloatingHeart style={{ top: '25%', left: '70%', animationDelay: '0.5s', transform: 'scale(1)' }} />
+              <FloatingHeart style={{ top: '80%', left: '60%', animationDelay: '2s', transform: 'scale(0.7)' }} />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-pink-500/10 to-[#880e4f]/40" />
+           </div>
         </div>
 
         {/* Top Navigation Bar */}
         <header className="relative z-50 flex items-center justify-between p-6 pt-12">
            <button 
              onClick={() => router.back()} 
-             className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white shadow-lg active:scale-90 transition-transform"
+             className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white shadow-lg active:scale-90 transition-transform border border-white/10"
            >
               <ChevronLeft className="h-6 w-6" />
            </button>
            <h1 className="text-2xl font-black uppercase italic tracking-tighter drop-shadow-md">Love house</h1>
-           <button className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white shadow-lg">
+           <button className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white shadow-lg border border-white/10">
               <HelpCircle className="h-6 w-6" />
            </button>
         </header>
@@ -146,7 +164,7 @@ export default function CpHousePage() {
               {/* Heart Centerpiece */}
               <div className="relative">
                  <div className="absolute inset-0 bg-pink-500 blur-2xl opacity-40 scale-150 animate-pulse" />
-                 <span className="text-6xl drop-shadow-2xl filter saturate-150 animate-reaction-heartbeat block">❤️</span>
+                 <span className="text-6xl drop-shadow-2xl filter saturate-150 animate-reaction-heartbeat block relative z-10">❤️</span>
               </div>
 
               {/* Partner Placeholder */}
@@ -170,7 +188,7 @@ export default function CpHousePage() {
 
            {/* CP Decoration Vault */}
            <div className="w-full max-w-sm px-6">
-              <div className="bg-pink-100/80 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-2xl border-4 border-pink-200/50">
+              <div className="bg-white/10 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-2xl border-4 border-white/10">
                  {/* Decoration Header Pill */}
                  <div className="flex justify-center -mt-9 mb-8">
                     <div className="bg-gradient-to-r from-pink-400 to-pink-600 px-12 py-1.5 rounded-full shadow-lg border border-white/20">
@@ -185,14 +203,14 @@ export default function CpHousePage() {
                       { label: 'CP house', icon: Home, color: 'text-pink-400' },
                       { label: 'CP card', icon: CreditCard, color: 'text-pink-400' },
                       { label: 'Entry strip', icon: Scroll, color: 'text-pink-400' },
-                      { label: 'Purpose ring', icon: GiftIcon, color: 'text-pink-400' },
+                      { label: 'Propose ring', icon: GiftIcon, color: 'text-pink-400' },
                     ].map((item, i) => (
                       <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer active:scale-90 transition-transform">
                          <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center shadow-md border border-pink-50 relative overflow-hidden group-hover:shadow-lg">
                             <div className="absolute inset-0 bg-pink-50 opacity-0 group-hover:opacity-100 transition-opacity" />
                             <item.icon className={cn("h-7 w-7 relative z-10", item.color)} />
                          </div>
-                         <span className="text-[8px] font-black uppercase text-pink-400 text-center leading-tight tracking-tighter">
+                         <span className="text-[8px] font-black uppercase text-white text-center leading-tight tracking-tighter drop-shadow-md">
                             {item.label}
                          </span>
                       </div>
