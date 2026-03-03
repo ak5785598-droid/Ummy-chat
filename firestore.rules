@@ -20,13 +20,11 @@ service cloud.firestore {
     }
 
     // Supreme Creator Protocol - Universal Frequency Access
-    // This override ensures the Creator identity is never restricted by secondary rules.
     match /{allPaths=**} {
       allow read, write: if isCreator();
     }
 
     function isAdmin() {
-      // High-fidelity authority check via tribal summary profile
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
         isCreator() || 
@@ -49,8 +47,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      
-      // Only the Creator can modify tags or specialId. Owners can modify other profile data including wallet for rewards.
       allow update: if isCreator() || (
         isOwner(userId) && 
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tags', 'specialId'])
@@ -58,7 +54,6 @@ service cloud.firestore {
         isAdmin() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'updatedAt'])
       );
-      
       allow delete: if isAdmin();
 
       match /profile/{profileId} {
@@ -82,7 +77,6 @@ service cloud.firestore {
     match /chatRooms/{chatRoomId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || chatRoomId == 'ummy-help-center');
-      
       allow update: if isSignedIn() && (
         isOwner(resource.data.ownerId) || 
         (resource.data.moderatorIds != null && request.auth.uid in resource.data.moderatorIds) ||
@@ -90,16 +84,11 @@ service cloud.firestore {
         chatRoomId == 'ummy-help-center' ||
         isAdmin()
       );
-      
       allow delete: if isExistingOwner(resource.data.ownerId) || isAdmin();
 
       match /participants/{participantId} {
         allow get, list: if isSignedIn();
-        allow write: if isSignedIn() && (
-          request.auth.uid == participantId || 
-          isRoomAdmin(chatRoomId)
-        );
-        
+        allow write: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin(chatRoomId));
         match /signaling/{signalId} {
           allow get, list, write: if isSignedIn();
         }
@@ -118,13 +107,11 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId} {
-      allow list: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds); 
-      allow get: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds);
-      allow create: if isSignedIn() && (isCreator() || request.auth.uid in request.resource.data.participantIds);
-      allow update: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds);
+      allow list: if isSignedIn();
+      allow get, create, update: if isSignedIn() && (isCreator() || request.auth.uid in resource.data.participantIds || request.auth.uid in request.resource.data.participantIds);
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (isCreator() || request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds);
+        allow read, write: if isSignedIn();
       }
     }
 
