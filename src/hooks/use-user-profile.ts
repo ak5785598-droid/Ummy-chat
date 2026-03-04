@@ -31,6 +31,7 @@ export interface UserProfile {
       activeFrame?: string;
       activeBubble?: string;
       activeWave?: string;
+      activeTheme?: string;
       ownedItems: string[];
     };
     tags?: string[];
@@ -39,6 +40,7 @@ export interface UserProfile {
     lastSignInAt?: any;
     lastMoneyTreeClaimAt?: any;
     isNewUser?: boolean;
+    isOnline?: boolean;
 }
 
 /**

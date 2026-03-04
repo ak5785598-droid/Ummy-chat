@@ -85,7 +85,7 @@ export function ProfileInitializer() {
               totalSpent: 0,
               dailySpent: 0 
             },
-            inventory: { ownedItems: [], activeFrame: 'f5', activeBubble: 'Default' },
+            inventory: { ownedItems: [], activeFrame: 'f5', activeBubble: 'Default', activeTheme: 'misty' },
             stats: { followers: 0, fans: 0, dailyFans: 0 },
             level: { rich: 1, charm: 1 },
             tags: ['Tribe Member'], 

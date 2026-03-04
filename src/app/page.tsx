@@ -29,10 +29,10 @@ export default function Home() {
 
       // Hard redirect fallback for stubborn mobile browsers (Android Chrome/In-app)
       const hardTimer = setTimeout(() => {
-        if (window.location.pathname === '/') {
+        if (typeof window !== 'undefined' && window.location.pathname === '/') {
           window.location.href = destination;
         }
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(hardTimer);
     }
@@ -41,7 +41,9 @@ export default function Home() {
   }, [isUserLoading, user, router]);
 
   const handleManualEntry = () => {
-    window.location.href = user ? '/rooms' : '/login';
+    if (typeof window !== 'undefined') {
+      window.location.href = user ? '/rooms' : '/login';
+    }
   };
 
   return (
