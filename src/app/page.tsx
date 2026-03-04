@@ -25,14 +25,13 @@ export default function Home() {
       });
     }, 30);
 
-    // Standardized check using isUserLoading naming convention to prevent 404/start issues
     if (!isUserLoading) {
       const destination = user ? '/rooms' : '/login';
       
       // Delay redirection to show the beautiful splash sequence
       const timer = setTimeout(() => {
         router.replace(destination);
-      }, 2000);
+      }, 2500);
 
       return () => {
         clearTimeout(timer);

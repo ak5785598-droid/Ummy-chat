@@ -1,92 +1,58 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Mic,
   MicOff,
-  Send,
   Lock,
-  Unlock,
   Loader,
   Gift as GiftIcon,
   Users,
-  Trophy,
   Share2,
   Volume2,
-  Trash2,
+  VolumeX,
   LogOut,
-  UserPlus,
-  UserCheck,
-  Ban,
-  ChevronDown,
-  AlertTriangle,
-  User as UserIcon,
-  RefreshCw,
-  Gamepad2,
-  ShieldCheck,
-  Music,
-  Play,
-  Square,
-  MoreHorizontal,
-  Power,
-  Mail,
-  LayoutGrid,
   ChevronRight,
-  Armchair,
-  Crown,
-  Heart,
   ChevronLeft,
   X,
-  Settings as SettingsIcon,
-  Copy,
-  Info,
-  Calculator as CalculatorIcon,
-  Camera,
-  MessageSquare,
-  Palette,
-  Upload,
+  ShieldCheck,
+  Power,
+  Maximize2,
   Minimize2,
   Smile,
   Zap,
-  Flame
+  Crown,
+  Armchair
 } from 'lucide-react';
-import { GoldCoinIcon, UmmyLogoIcon, GameControllerIcon } from '@/components/icons';
+import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, doc, increment, serverTimestamp } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   collection, 
-  serverTimestamp, 
   query, 
   orderBy, 
   limitToLast, 
-  doc, 
-  increment,
-  writeBatch,
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 
 const ROOM_THEMES = [

@@ -1,31 +1,30 @@
 'use client';
     
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, Auth } from 'firebase/auth';
+import { User, onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 
 export interface UserHookResult {
   user: User | null;
-  isLoading: boolean;
-  error: Error | null;
+  isUserLoading: boolean;
+  userError: Error | null;
 }
 
 /**
  * React hook to subscribe to Firebase user authentication state.
+ * Standardized to use isUserLoading and userError for global sync compatibility.
  *
- * @returns {UserHookResult} Object with user, isLoading, and error state.
+ * @returns {UserHookResult} Object with user, isUserLoading, and userError state.
  */
 export function useUser(): UserHookResult {
   const auth = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [userError, setUserError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!auth) {
-      setIsLoading(false);
-      // Optional: Set an error if auth service is not available
-      // setError(new Error("Firebase Auth service not available."));
+      setIsUserLoading(false);
       return;
     }
 
@@ -33,18 +32,18 @@ export function useUser(): UserHookResult {
       auth,
       (firebaseUser) => {
         setUser(firebaseUser);
-        setIsLoading(false);
+        setIsUserLoading(false);
       },
       (authError) => {
         console.error("useUser auth error:", authError);
-        setError(authError);
-        setIsLoading(false);
+        setUserError(authError);
+        setIsUserLoading(false);
       }
     );
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth]); // Re-run effect if the auth instance changes
+  }, [auth]); 
 
-  return { user, isLoading, error };
+  return { user, isUserLoading, userError };
 }
