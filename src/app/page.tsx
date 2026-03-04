@@ -30,7 +30,7 @@ export default function Home() {
       
       // Delay redirection to show the beautiful splash sequence
       const timer = setTimeout(() => {
-        router.push(destination);
+        router.replace(destination);
       }, 2000);
 
       return () => {

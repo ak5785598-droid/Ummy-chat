@@ -133,7 +133,7 @@ export function AppLayout({
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
               {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
+                <SidebarMenuItem key={`sidebar-${item.label}`}>
                   <SidebarMenuButton 
                     asChild={true} 
                     isActive={pathname.startsWith(item.href)} 
@@ -200,7 +200,7 @@ export function AppLayout({
               {mobileNavItems.map((item) => {
                 const isActive = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
                 return (
-                  <Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-primary" : "text-gray-300")}>
+                  <Link key={`mobile-${item.label}`} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-primary" : "text-gray-300")}>
                     <item.icon className={cn("h-6 w-6", isActive && "fill-current")} />
                     <span className="text-[10px] font-black uppercase italic tracking-widest">{item.label}</span>
                   </Link>
