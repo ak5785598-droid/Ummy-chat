@@ -161,10 +161,6 @@ const SettingsListItem = ({ label, value, onClick, icon: Icon, showChevron = tru
   </div>
 );
 
-/**
- * High-Fidelity Entry Card Component.
- * Slides in from the left when a tribe member enters the frequency.
- */
 function EntryCard({ entrant, onComplete }: { entrant: any, onComplete: () => void }) {
   useEffect(() => {
     const timer = setTimeout(onComplete, 5000);
@@ -349,7 +345,6 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      {/* Marquee Announcement Bar */}
       <div className="relative z-50 px-4 py-1 flex items-center gap-3 bg-black/20 backdrop-blur-sm border-y border-white/5">
          <div className="bg-primary/20 p-1 rounded-md shrink-0"><Zap className="h-3 w-3 text-primary animate-pulse" /></div>
          <div className="flex-1 overflow-hidden">
@@ -401,7 +396,6 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </footer>
 
-      {/* Interaction Dialogs */}
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
         <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden">
           <DialogHeader className="p-8 pb-4 border-b border-white/10 text-center">
