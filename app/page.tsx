@@ -7,8 +7,8 @@ import { UmmyLogoIcon } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 
 /**
- * High-Fidelity App Loading Gateway (Root Bypass).
- * Ensures the official Ummy Yellow splash screen is prioritized.
+ * High-Fidelity Root Application Gateway (Splash).
+ * Background: #FFCC00 (Official Ummy Yellow)
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
