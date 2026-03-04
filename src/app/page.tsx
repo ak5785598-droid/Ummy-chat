@@ -8,8 +8,8 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * Root Application Gateway / Splash Screen.
- * Re-engineered to match the official design blueprint exactly.
- * Background: #FFCC00 Yellow
+ * Re-engineered to match the high-fidelity tribal blueprint.
+ * Background: #FFCC00 (Official Ummy Yellow)
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -21,17 +21,19 @@ export default function Home() {
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) return 100;
-        return prev + 2;
+        return prev + 1.2; // Smooth progression
       });
     }, 30);
 
     if (!isUserLoading) {
-      const destination = user ? '/rooms' : '/login';
-      
       // Delay redirection to show the beautiful splash sequence
       const timer = setTimeout(() => {
-        router.replace(destination);
-      }, 2500);
+        if (user) {
+          router.replace('/rooms');
+        } else {
+          router.replace('/login');
+        }
+      }, 2800); // 2.8s for maximum visual impact
 
       return () => {
         clearTimeout(timer);
@@ -45,44 +47,44 @@ export default function Home() {
   return (
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#FFCC00] overflow-hidden relative font-headline select-none touch-none">
       
-      {/* Brand Identity dimension */}
+      {/* Brand Identity Dimension */}
       <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000 relative z-10">
-        <div className="relative h-44 w-44 flex items-center justify-center">
-           {/* Glossy back-glow */}
-           <div className="absolute inset-0 bg-white/10 rounded-[3rem] blur-3xl animate-pulse" />
-           <UmmyLogoIcon className="h-full w-full drop-shadow-[0_10px_40px_rgba(0,0,0,0.15)] relative z-10" />
+        <div className="relative h-48 w-48 flex items-center justify-center">
+           {/* Glossy radial back-glow */}
+           <div className="absolute inset-0 bg-white/20 rounded-[3.5rem] blur-3xl animate-pulse" />
+           <UmmyLogoIcon className="h-full w-full drop-shadow-[0_15px_50px_rgba(0,0,0,0.15)] relative z-10" />
         </div>
         
         <div className="flex flex-col items-center gap-1 mt-2 text-center">
-           <h1 className="text-6xl font-black text-white tracking-widest uppercase drop-shadow-md">
-             Ummy
+           <h1 className="text-7xl font-black text-white tracking-[0.1em] uppercase drop-shadow-lg">
+             UMMY
            </h1>
-           <p className="text-white/90 font-bold uppercase tracking-[0.2em] text-[11px]">
-             Connecting Your Tribe
+           <p className="text-white/90 font-bold uppercase tracking-[0.4em] text-[13px] italic">
+             CONNECTING YOUR TRIBE
            </p>
         </div>
       </div>
       
-      {/* Bottom Loading Sync Engine */}
-      <div className="absolute bottom-20 flex flex-col items-center gap-4 w-full px-20 max-w-sm">
-         <div className="h-[3px] w-full bg-white/20 rounded-full overflow-hidden shadow-inner relative">
+      {/* Social Graph Sync Engine (Bottom) */}
+      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-16 max-w-md">
+         <div className="h-[5px] w-full bg-white/20 rounded-full overflow-hidden shadow-inner relative border border-white/10">
             <div 
-              className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] transition-all duration-300 ease-out" 
+              className="h-full bg-white shadow-[0_0_25px_rgba(255,255,255,1)] transition-all duration-300 ease-out" 
               style={{ width: `${progress}%` }} 
             />
          </div>
-         <div className="flex items-center gap-3 opacity-60">
-            <Loader2 className="h-3 w-3 text-white animate-spin" />
-            <p className="text-[10px] text-white font-black uppercase tracking-[0.3em] italic">
-                Syncing Social Graph...
+         <div className="flex items-center gap-3">
+            <Loader2 className="h-4 w-4 text-white animate-spin opacity-60" />
+            <p className="text-[11px] text-white font-black uppercase tracking-[0.5em] italic opacity-80">
+                SYNCING SOCIAL GRAPH...
             </p>
          </div>
       </div>
 
-      {/* Atmospheric Vibe Accents */}
-      <div className="absolute inset-0 pointer-events-none opacity-5">
-         <div className="absolute top-[10%] left-[10%] h-64 w-64 rounded-full bg-white blur-[100px]" />
-         <div className="absolute bottom-[10%] right-[10%] h-64 w-64 rounded-full bg-white blur-[100px]" />
+      {/* Atmospheric Environmental Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+         <div className="absolute top-[-20%] left-[-10%] h-[60vh] w-[60vw] rounded-full bg-white/5 blur-[150px]" />
+         <div className="absolute bottom-[-20%] right-[-10%] h-[60vh] w-[60vw] rounded-full bg-white/5 blur-[150px]" />
       </div>
     </div>
   );
