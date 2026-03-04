@@ -115,7 +115,7 @@ export const GameControllerIcon = ({ className, ...props }: React.SVGProps<SVGSV
         ))}
       </g>
       <g transform="translate(45, 75)">
-        <path d="M-12 -4 L-4 -4 L-4 -12 L4 -12 L4 -4 L12 -4 L12 4 L4 4 L4 12 L-4 12 L-4 4 L-12 4 Z" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
+        <path d="M-12 -4 L-4 -4 L-4 -12 L4 -12 L4 -12 L4 -4 L12 -4 L12 4 L4 4 L4 12 L-4 12 L-4 4 L-12 4 Z" fill="url(#emeraldGreen)" stroke="#064e3b" strokeWidth="1" />
         <circle cx="0" cy="0" r="12" fill="url(#buttonShine)" pointerEvents="none" />
       </g>
       <g transform="translate(155, 75)">

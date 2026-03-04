@@ -72,8 +72,6 @@ export function AppLayout({
   const handleLogout = async () => {
     if (!auth || !user || !firestore) return;
     try {
-      console.log("[Identity Sync] Sidebar: Initiating cleanup...");
-      
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -94,7 +92,6 @@ export function AppLayout({
       });
 
       if (currentRoomId) {
-        console.log(`[Identity Sync] Sidebar: Purging presence from room ${currentRoomId}`);
         const roomRef = doc(firestore, 'chatRooms', currentRoomId);
         const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
         batch.delete(participantRef);
@@ -105,12 +102,9 @@ export function AppLayout({
       }
 
       await batch.commit();
-      console.log("[Identity Sync] Sidebar: Cleanup complete.");
-      
       await signOut(auth);
       window.location.href = '/login';
     } catch (error: any) {
-      console.error("[Identity Sync] Sidebar Logout Error:", error);
       await signOut(auth);
       window.location.href = '/login';
     }
@@ -141,7 +135,7 @@ export function AppLayout({
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton 
-                    asChild 
+                    asChild={true} 
                     isActive={pathname.startsWith(item.href)} 
                     className={cn("h-14 rounded-xl px-4", pathname.startsWith(item.href) && "bg-black/10 font-black")}
                   >
@@ -155,7 +149,7 @@ export function AppLayout({
               {isOfficial && (
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    asChild 
+                    asChild={true} 
                     isActive={pathname === '/admin'} 
                     className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}
                   >
@@ -172,7 +166,7 @@ export function AppLayout({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  asChild 
+                  asChild={true} 
                   isActive={pathname.startsWith('/settings')} 
                   className="h-14 rounded-xl mb-2"
                 >
