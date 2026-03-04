@@ -20,14 +20,17 @@ import {
   Zap, 
   Crown, 
   Armchair,
-  Loader
+  Loader,
+  Settings as SettingsIcon,
+  Check,
+  Clipboard
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +43,8 @@ import { useRoomContext } from '@/components/room-provider';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
@@ -47,8 +52,6 @@ const ROOM_THEMES = [
   { id: 'royal', name: 'Royal Palace', url: 'https://images.unsplash.com/photo-1562664377-709f2c337eb2?q=80&w=2000' },
   { id: 'neon', name: 'Neon Party', url: 'https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=2000' },
 ];
-
-const TRIBE_EMOJIS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -93,10 +96,16 @@ export function RoomClient({ room }: { room: Room }) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isExitPortalOpen, setIsExitPortalOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [latestEntrance, setLatestEntrance] = useState<any>(null);
+
+  // Settings State
+  const [roomName, setRoomName] = useState(room.title);
+  const [announcement, setAnnouncement] = useState(room.announcement || '');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -105,6 +114,9 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const { setActiveRoom, setIsMinimized } = useRoomContext();
+
+  const isOwner = currentUser?.uid === room.ownerId;
+  const isMod = room.moderatorIds?.includes(currentUser?.uid || '');
 
   const participantsQuery = useMemoFirebase(() => (!firestore || !room.id ? null : query(collection(firestore, 'chatRooms', room.id, 'participants'))), [firestore, room.id]);
   const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
@@ -130,6 +142,43 @@ export function RoomClient({ room }: { room: Room }) {
     setMessageText('');
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: `Join my tribe: ${room.title}`,
+      text: `Sync with our frequency on Ummy! Room ID: ${room.roomNumber}`,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`Join my tribe: ${room.title}\nRoom ID: ${room.roomNumber}\nLink: ${window.location.href}`);
+        toast({ title: 'Link Copied', description: 'Invite frequency synced to clipboard.' });
+      }
+    } catch (err) {
+      console.error('Share failed', err);
+    }
+  };
+
+  const handleUpdateSettings = async () => {
+    if (!firestore || !room.id || !isOwner) return;
+    setIsSavingSettings(true);
+    try {
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        name: roomName,
+        announcement: announcement,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: 'Settings Updated', description: 'Frequency metadata synchronized.' });
+      setIsSettingsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   const takeSeat = (index: number) => { if (!firestore || !room.id || !currentUser) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index, isMuted: true, updatedAt: serverTimestamp() }); };
   const handleMicToggle = () => { if (!isInSeat || !firestore || !currentUser || !room.id) return; updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); };
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
@@ -145,7 +194,16 @@ export function RoomClient({ room }: { room: Room }) {
       <div className="flex flex-col items-center gap-1 w-full">
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
           <button onClick={() => { if (occupant) { setSelectedParticipantUid((occupant as any).uid || occupant.id); setIsUserProfileCardOpen(true); } else takeSeat(index); }} className={cn("h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 border-white/10 backdrop-blur-sm relative overflow-hidden", isLocked && "border-red-500/50")}>
-            {occupant ? <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar> : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : <Armchair className="text-white/20 h-6 w-6" />}
+            {occupant ? (
+              <div className="relative h-full w-full">
+                <Avatar className="h-full w-full p-0.5">
+                  <AvatarImage src={occupant.avatarUrl} />
+                  <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                {/* Active Presence Dot */}
+                <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-black z-20 shadow-lg shadow-green-500/20" />
+              </div>
+            ) : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : <Armchair className="text-white/20 h-6 w-6" />}
           </button>
         </AvatarFrame>
         <span className={cn("text-[8px] font-black uppercase truncate w-14 text-center mt-1", occupant ? "text-[#fbbf24]" : "text-white/40")}>{occupant ? occupant.name : `Slot ${index}`}</span>
@@ -176,6 +234,14 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={handleShare} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+            <Share2 className="h-4 w-4" />
+          </button>
+          {(isOwner || isMod) && (
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+              <SettingsIcon className="h-4 w-4" />
+            </button>
+          )}
           <button onClick={() => setIsParticipantListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
             <Users className="h-3 w-3 text-white/60" />
             <span className="text-[10px] font-black">{participants?.length || 0}</span>
@@ -238,6 +304,34 @@ export function RoomClient({ room }: { room: Room }) {
           </button>
         </div>
       </footer>
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
+          <DialogHeader className="p-8 pb-4 border-b border-gray-50">
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-center text-primary">Frequency Control</DialogTitle>
+            <DialogDescription className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Room Management Protocol</DialogDescription>
+          </DialogHeader>
+          <div className="p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="roomName" className="text-[10px] font-black uppercase text-gray-400 ml-1">Room Name</Label>
+                <Input id="roomName" value={roomName} onChange={(e) => setRoomName(e.target.value)} className="h-14 rounded-2xl border-2 border-gray-100 focus:border-primary transition-all text-lg font-bold" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="announcement" className="text-[10px] font-black uppercase text-gray-400 ml-1">Scrolling Announcement</Label>
+                <Textarea id="announcement" value={announcement} onChange={(e) => setAnnouncement(e.target.value)} className="h-24 rounded-2xl border-2 border-gray-100 focus:border-primary transition-all resize-none text-sm font-medium italic" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="p-8 pt-0">
+            <Button onClick={handleUpdateSettings} disabled={isSavingSettings} className="w-full h-16 rounded-[1.5rem] bg-primary text-white font-black uppercase italic text-xl shadow-xl shadow-primary/20">
+              {isSavingSettings ? <Loader className="animate-spin h-6 w-6 mr-2" /> : <Check className="h-6 w-6 mr-2" />}
+              Apply Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
         <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden">
