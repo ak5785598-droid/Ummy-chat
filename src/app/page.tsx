@@ -25,6 +25,7 @@ export default function Home() {
       });
     }, 30);
 
+    // Standardized check using isUserLoading naming convention to prevent 404/start issues
     if (!isUserLoading) {
       const destination = user ? '/rooms' : '/login';
       

@@ -345,6 +345,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
+      {/* Marquee Announcement Sync */}
       <div className="relative z-50 px-4 py-1 flex items-center gap-3 bg-black/20 backdrop-blur-sm border-y border-white/5">
          <div className="bg-primary/20 p-1 rounded-md shrink-0"><Zap className="h-3 w-3 text-primary animate-pulse" /></div>
          <div className="flex-1 overflow-hidden">
