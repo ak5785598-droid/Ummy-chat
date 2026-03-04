@@ -425,7 +425,7 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <ScrollArea className="flex-1 px-6">
             <div className="py-6 space-y-4">
-              {participants?.map((p) => (<TribeMemberItem key={p.uid} participant={p} ownerId={room.ownerId} />))}
+              {participants?.map((p) => (<TribeMemberItem key={p.id} participant={p} ownerId={room.ownerId} />))}
             </div>
           </ScrollArea>
           <div className="p-8 text-center bg-white/5"><button onClick={() => setIsParticipantListOpen(false)} className="text-xs font-black uppercase tracking-widest text-white/40">Close List</button></div>
