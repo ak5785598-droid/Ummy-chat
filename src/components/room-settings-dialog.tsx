@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -84,9 +85,13 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
     setIsEditingAnnouncement(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) uploadRoomImage(file);
+    if (file) {
+      await uploadRoomImage(file);
+      // Reset input to allow re-uploading the same file if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -107,20 +112,22 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
            <div className="pb-10">
               {/* Profile / Cover Section */}
-              <SettingItem label="Profile" onClick={() => fileInputRef.current?.click()} className="py-8">
+              <SettingItem label="Profile" onClick={() => !isUploading && fileInputRef.current?.click()} className="py-8">
                  <div className="relative">
-                    <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm">
-                       <AvatarImage src={room.coverUrl} />
+                    <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
+                       <AvatarImage key={room.coverUrl} src={room.coverUrl} className="object-cover" />
                        <AvatarFallback className="bg-slate-200">{(room.title || 'R').charAt(0)}</AvatarFallback>
                     </Avatar>
                     {isUploading && (
-                      <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                         <Loader className="h-4 w-4 animate-spin text-white" />
+                      <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center backdrop-blur-sm z-50">
+                         <Loader className="h-5 w-5 animate-spin text-white" />
                       </div>
                     )}
-                    <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-lg border border-gray-100">
-                       <Camera className="h-3 w-3 text-gray-400" />
-                    </div>
+                    {!isUploading && (
+                      <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-lg border border-gray-100">
+                         <Camera className="h-3 w-3 text-gray-400" />
+                      </div>
+                    )}
                  </div>
                  <ChevronRight className="h-4 w-4 text-gray-300 ml-2" />
               </SettingItem>
