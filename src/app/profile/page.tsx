@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -25,10 +24,10 @@ export default function ProfileGateway() {
   }, [user, isUserLoading, router]);
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-[#FFCC00] space-y-4">
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-[#FFCC00] space-y-4 font-headline">
       <UmmyLogoIcon className="h-16 w-16 animate-pulse" />
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white animate-pulse">
-        Identifying Tribe Member...
+        Syncing Identity...
       </p>
     </div>
   );

@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from "react";
-import { Home, Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, Zap, ShieldAlert, Castle, Compass, MessageSquare, User } from "lucide-react";
+import { Home, Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castle, Compass, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -45,7 +44,7 @@ const mobileNavItems = [
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
- * High-Fidelity Green Smiley SVG Signature.
+ * High-Fidelity Green Smiley SVG Signature for "MINE" tab.
  */
 const GreenSmileyIcon = ({ className, active }: { className?: string, active?: boolean }) => (
   <svg viewBox="0 0 100 100" className={cn(className, "transition-all")} xmlns="http://www.w3.org/2000/svg">
