@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -7,7 +6,9 @@ import {
   ChevronLeft, 
   Loader, 
   Camera,
-  Check
+  Check,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import {
   Dialog,
@@ -19,8 +20,8 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -60,12 +61,13 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
 /**
  * High-Fidelity Room Settings Portal.
  * Designed to mirror the elite tribal settings roster.
- * Includes real-time image cropping and upload sync.
+ * Includes real-time image cropping, upload sync, and administrator management.
  */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
+  const [isManagingAdmins, setIsManagingAdmins] = useState(false);
   const [newName, setNewName] = useState(room.title || room.name);
   const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
   
@@ -78,12 +80,30 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const { isUploading, uploadRoomImage } = useRoomImageUpload(room.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Real-time participant roster for Admin management
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+  }, [firestore, room.id]);
+
+  const { data: participants } = useCollection(participantsQuery);
+
   const handleUpdate = (field: string, value: any) => {
     if (!firestore) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
       [field]: value,
       updatedAt: serverTimestamp()
     });
+  };
+
+  const handleToggleMod = (uid: string) => {
+    if (!firestore || !room.id) return;
+    const isCurrentlyMod = room.moderatorIds?.includes(uid);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid),
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: isCurrentlyMod ? 'Admin Revoked' : 'Admin Granted' });
   };
 
   const handleSaveName = () => {
@@ -197,8 +217,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                 {/* Visual Dimensions */}
                 <SettingItem label="Room Theme" />
 
-                {/* Authority Handshake */}
-                <SettingItem label="Administrators" />
+                {/* Authority Handshake: Real-time Admin Management */}
+                <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
 
                 <div className="h-4 bg-gray-50" />
 
@@ -253,6 +273,47 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                     Visible to all tribe members upon entry sync.
                   </p>
                </div>
+            </div>
+          )}
+
+          {/* Real-time Administrator Management Portal */}
+          {isManagingAdmins && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsManagingAdmins(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
+                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Assign Administrators</h3>
+                  <div className="w-10" />
+               </header>
+               <ScrollArea className="flex-1 p-4">
+                  {participants?.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-all border-b border-gray-50 last:border-0">
+                       <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
+                             <AvatarImage src={p.avatarUrl} />
+                             <AvatarFallback className="bg-slate-100">U</AvatarFallback>
+                          </Avatar>
+                          <div>
+                             <div className="flex items-center gap-2">
+                               <p className="font-black text-sm uppercase tracking-tight">{p.name}</p>
+                               {p.uid === room.ownerId && <Badge className="bg-yellow-500 text-black text-[8px] font-black h-4">OWNER</Badge>}
+                             </div>
+                             <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">Identity: {p.id.slice(0, 8)}</p>
+                          </div>
+                       </div>
+                       {p.uid !== room.ownerId && (
+                         <Switch 
+                           checked={room.moderatorIds?.includes(p.uid)} 
+                           onCheckedChange={() => handleToggleMod(p.uid)}
+                         />
+                       )}
+                    </div>
+                  ))}
+                  {(!participants || participants.length === 0) && (
+                    <div className="py-20 text-center opacity-20 italic">No tribe members detected in frequency.</div>
+                  )}
+               </ScrollArea>
             </div>
           )}
 
