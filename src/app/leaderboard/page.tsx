@@ -1,19 +1,16 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, Trophy, Info, Timer, User as UserIcon, Castle, HelpCircle, ChevronRight, Star } from 'lucide-react';
+import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { GoldCoinIcon } from '@/components/icons';
-import { OfficialTag } from '@/components/official-tag';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import {
   Dialog,
@@ -25,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 
 /**
- * High-Fidelity VIP Tag Component.
+ * High-Fidelity SVIP Signature Badge.
  */
 const SVIPBadge = ({ level }: { level: number }) => (
   <div className={cn(
@@ -37,7 +34,7 @@ const SVIPBadge = ({ level }: { level: number }) => (
 );
 
 /**
- * High-Fidelity Level Tag Component.
+ * High-Fidelity Level Signature Badge.
  */
 const LevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
@@ -46,18 +43,22 @@ const LevelBadge = ({ level }: { level: number }) => (
   </div>
 );
 
-const RankingList = ({ items, type, isLoading, currentUid }: any) => {
+/**
+ * Specialized Ranking List Component.
+ * Features the tiered podium for the Top 3 and an airy roster for others.
+ */
+const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
   if (isLoading) return (
     <div className="flex flex-col items-center py-40 gap-4">
       <Loader className="animate-spin text-primary h-10 w-10" />
-      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 animate-pulse">Ascending the Throne...</p>
     </div>
   );
 
   if (!items || items.length === 0) return (
     <div className="text-center py-40 opacity-40">
-      <TrendingUp className="mx-auto mb-4 h-12 w-12" />
-      <p className="font-black uppercase italic text-sm">The chronicles are empty.</p>
+      <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
+      <p className="font-black uppercase italic text-sm text-white/40">The chronicles are empty.</p>
     </div>
   );
 
@@ -91,25 +92,20 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-1000 relative pb-40">
-      {/* Podium Dimension */}
+      {/* Podium Dimension: Top 1 majestically centered above Top 2 & 3 */}
       <div className="relative pt-4 flex flex-col items-center">
         
         {/* Top 1 Sovereign Position */}
         {top1 && (
           <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
              <div className="relative">
-                {/* Glow Effect */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/20 via-transparent to-transparent blur-2xl" />
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-yellow-500/10 blur-3xl opacity-50" />
                 
-                {/* Ornate Frame Placeholder */}
                 <div className="relative z-10 w-44 h-44">
-                   <div className="absolute inset-0 z-20 pointer-events-none">
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2">
-                         <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
-                      </div>
+                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
+                      <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
                    </div>
                    
-                   {/* Avatar with Circular Border */}
                    <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-4 border-yellow-200">
                          <AvatarImage src={getDisplayImage(top1) || 'https://img.icons8.com/color/512/lion.png'} className="object-cover" />
@@ -120,7 +116,6 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
                 </div>
              </div>
              
-             {/* Info Below Podium */}
              <div className="mt-8 text-center space-y-1">
                 <h2 className="text-xl font-black text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
                 <div className="flex items-center justify-center gap-2 mb-1">
@@ -135,7 +130,7 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
           </Link>
         )}
 
-        {/* Top 2 & 3 Dual Cards */}
+        {/* Top 2 & 3 Dual Cards Row */}
         <div className="flex items-end justify-center gap-3 w-full max-w-sm px-2 relative z-20">
            {top2 && (
              <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-[2rem] border-2 border-blue-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
@@ -185,7 +180,7 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
         </div>
       </div>
 
-      {/* Ranks 4+ List */}
+      {/* Airy List Roster for Rank 4 and below */}
       <div className="mt-10 space-y-2 px-2">
         {others.map((item, index) => (
           <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 group hover:bg-white/10 transition-all active:scale-[0.98]">
@@ -212,6 +207,10 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
   );
 };
 
+/**
+ * Inner Leaderboard Logic.
+ * Wrapped in Suspense to safely consume useSearchParams.
+ */
 function LeaderboardContent() {
   const searchParams = useSearchParams();
   const initialType = (searchParams.get('type') as any) || 'rich';
@@ -246,12 +245,18 @@ function LeaderboardContent() {
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
   const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
 
-  const activeItems = rankingType === 'rich' ? richUsers : rankingType === 'charm' ? charmUsers : rankedRooms;
+  const activeItems = useMemo(() => {
+    if (rankingType === 'rich') return richUsers;
+    if (rankingType === 'charm') return charmUsers;
+    if (rankingType === 'rooms') return rankedRooms;
+    return null;
+  }, [rankingType, richUsers, charmUsers, rankedRooms]);
+
   const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
-        {/* Background Visual Effects */}
+        {/* Immersive Dark Background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
            <div className="absolute top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
@@ -264,7 +269,10 @@ function LeaderboardContent() {
              <Dialog>
                 <DialogTrigger asChild><button className="p-1.5 rounded-full border border-white/20 text-white/60 hover:text-white transition-all"><HelpCircle className="h-6 w-6" /></button></DialogTrigger>
                 <DialogContent className="bg-[#1a1a1a] border-none rounded-t-[3rem] text-white p-8">
-                  <DialogHeader><DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-yellow-500 text-center mb-4">Ranking Rules</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-yellow-500 text-center mb-4">Ranking Rules</DialogTitle>
+                    <DialogDescription className="sr-only">Detailed tribal ranking policy.</DialogDescription>
+                  </DialogHeader>
                   <div className="space-y-4 font-body italic text-gray-400 leading-relaxed pt-2">
                     <p>1. Honor rankings are based on the total Gold Coins spent during the selected period.</p>
                     <p>2. Charm rankings reflect the increase in fan count during the period.</p>
@@ -274,7 +282,6 @@ function LeaderboardContent() {
              </Dialog>
           </div>
 
-          {/* Categorical Tabs */}
           <div className="flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6">
              {[
                { id: 'rich', label: 'Honor' },
@@ -294,7 +301,6 @@ function LeaderboardContent() {
              ))}
           </div>
 
-          {/* Temporal Tabs */}
           <div className="flex items-center justify-center gap-12 px-4">
              {['Daily', 'Weekly', 'Monthly'].map((p) => (
                <button 
@@ -313,10 +319,9 @@ function LeaderboardContent() {
         </header>
 
         <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-2">
-           <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} currentUid={user?.uid} />
+           <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
         </main>
 
-        {/* Sticky Self-Rank Footer */}
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
            <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
               <span className="w-12 text-center font-black text-black/60 italic text-xl">100+</span>
@@ -325,8 +330,8 @@ function LeaderboardContent() {
                 <AvatarFallback className="bg-black text-white">ME</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-lg uppercase italic text-black truncate leading-none mb-1">{me?.username || 'king'}</p>
-                <div className="scale-75 origin-left"><LevelBadge level={me?.level?.rich || 3} /></div>
+                <p className="font-black text-lg uppercase italic text-black truncate leading-none mb-1">{me?.username || 'Tribe Member'}</p>
+                <div className="scale-75 origin-left"><LevelBadge level={me?.level?.rich || 1} /></div>
               </div>
               <div className="text-right flex items-center gap-1 shrink-0">
                 <span className="text-2xl font-black text-black italic leading-none">0</span>
@@ -341,7 +346,11 @@ function LeaderboardContent() {
 export default function LeaderboardPage() {
   return (
     <AppLayout hideSidebarOnMobile>
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#050505]"><Loader className="animate-spin text-primary h-10 w-10" /></div>}>
+      <Suspense fallback={
+        <div className="flex h-screen items-center justify-center bg-[#050505]">
+          <Loader className="animate-spin text-primary h-10 w-10" />
+        </div>
+      }>
         <LeaderboardContent />
       </Suspense>
     </AppLayout>
