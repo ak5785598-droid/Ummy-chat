@@ -79,8 +79,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   };
 
   const getDisplayImage = (item: any) => {
-    if (type === 'rooms') return item.coverUrl || '';
-    return item.avatarUrl || '';
+    if (type === 'rooms') return item.coverUrl || undefined;
+    return item.avatarUrl || undefined;
   };
 
   const formatValue = (val: number) => {
@@ -312,7 +312,7 @@ function LeaderboardContent() {
            <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
               <span className="w-12 text-center font-black text-black/60 italic text-xl">100+</span>
               <Avatar className="h-14 w-14 border-2 border-black/20 shrink-0 shadow-lg">
-                <AvatarImage src={me?.avatarUrl} />
+                <AvatarImage src={me?.avatarUrl || undefined} />
                 <AvatarFallback className="bg-black text-white">ME</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">

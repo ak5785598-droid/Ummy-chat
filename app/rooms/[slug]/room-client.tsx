@@ -91,7 +91,7 @@ function EntryCard({ entrant, onComplete }: { entrant: any, onComplete: () => vo
     <div className="fixed top-40 left-0 z-[150] animate-in slide-in-from-left-full duration-700 pointer-events-none">
       <div className="bg-[#00a859] rounded-r-full py-1.5 pl-2 pr-8 flex items-center gap-3 shadow-lg border-y border-r border-white/20 backdrop-blur-md">
         <Avatar className="h-8 w-8 border-2 border-white/40">
-          <AvatarImage src={entrant.senderAvatar} />
+          <AvatarImage src={entrant.senderAvatar || undefined} />
           <AvatarFallback className="bg-green-700 text-white text-[10px] font-black">{entrant.senderName?.charAt(0)}</AvatarFallback>
         </Avatar>
         <span className="text-[13px] font-black uppercase italic text-white drop-shadow-md">
@@ -172,6 +172,7 @@ function SeatActionDialog({
 
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
+  const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isExitPortalOpen, setIsExitPortalOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
@@ -436,7 +437,7 @@ export function RoomClient({ room }: { room: Room }) {
                       >
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5">
-                            <AvatarImage src={occupant.avatarUrl} />
+                            <AvatarImage src={occupant.avatarUrl || undefined} />
                             <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ) : isLocked ? (
@@ -472,10 +473,30 @@ export function RoomClient({ room }: { room: Room }) {
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-4">
         <button onClick={handleMicToggle} className={cn("p-3 rounded-full border border-white/10 backdrop-blur-md transition-all active:scale-95", isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500" : "bg-white/10")}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
-        <form className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-12 px-4 flex items-center border border-white/5 gap-2" onSubmit={handleSendMessage}>
-          <span className="text-sm shrink-0">💬</span>
-          <Input placeholder="Say Hi" className="bg-transparent border-none text-xs font-black tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full p-0 flex-1" value={messageText} onChange={(e) => setMessageText(e.target.value)} />
-        </form>
+        
+        <div className="flex-1">
+          {showInput ? (
+            <form className="bg-white/10 backdrop-blur-xl rounded-full h-12 px-4 flex items-center border border-white/5 gap-2 animate-in slide-in-from-left-2 duration-300" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
+              <span className="text-sm shrink-0">💬</span>
+              <Input 
+                placeholder="Say Hi" 
+                className="bg-transparent border-none text-xs font-black tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full p-0 flex-1" 
+                value={messageText} 
+                onChange={(e) => setMessageText(e.target.value)} 
+                autoFocus
+                onBlur={() => { if (!messageText) setShowInput(false); }}
+              />
+            </form>
+          ) : (
+            <button 
+              onClick={() => setShowInput(true)}
+              className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/5 flex items-center justify-center active:scale-95 transition-all shadow-lg"
+            >
+              <span className="text-xl">💬</span>
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center gap-2">
           <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg active:scale-95 transition-transform" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
         </div>

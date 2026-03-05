@@ -30,6 +30,35 @@ export default function AdminPage() {
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const handleSearchUsers = async () => {
+    if (!firestore || !searchQuery) return;
+    setIsSearching(true);
+    try {
+      const q = query(
+        collection(firestore, 'users'),
+        where('username', '>=', searchQuery),
+        where('username', '<=', searchQuery + '\uf8ff'),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Search Failed' });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', targetUserId);
+    const profileRef = doc(firestore, 'users', targetUserId, 'profile', targetUserId);
+    const updateData = { [`wallet.${type}`]: increment(amount), updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    toast({ title: 'Balance Adjusted' });
+  };
+
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Unauthorized Portal Access Restricted</div></AppLayout>;
 
   return (
@@ -54,10 +83,31 @@ export default function AdminPage() {
                 <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-500"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                    <div className="flex gap-4">
-                      <Input placeholder="Search member to set role..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                      <Button className="h-12 rounded-xl bg-red-500 text-white hover:bg-red-600">Search</Button>
+                      <Input placeholder="Search member to set role..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
+                      <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-red-500 text-white hover:bg-red-600" disabled={isSearching}>
+                        {isSearching ? <Loader className="animate-spin" /> : 'Search'}
+                      </Button>
                    </div>
-                   <div className="py-20 text-center opacity-20 italic">Enter search query to manage authorities.</div>
+                   
+                   <div className="space-y-4">
+                      {foundUsers.map((u) => (
+                        <div key={u.id} className="p-4 bg-white/50 rounded-2xl border flex items-center gap-4">
+                           <Avatar className="h-12 w-12 border-2 border-white">
+                             <AvatarImage src={u.avatarUrl || undefined} />
+                             <AvatarFallback>U</AvatarFallback>
+                           </Avatar>
+                           <div className="flex-1">
+                              <p className="font-black text-sm uppercase italic">{u.username}</p>
+                              <p className="text-[10px] text-muted-foreground">ID: {u.specialId}</p>
+                           </div>
+                           <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px]">+1k</Button>
+                              <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'diamonds', 100)} className="rounded-full h-8 text-[10px]">+100</Button>
+                           </div>
+                        </div>
+                      ))}
+                      {foundUsers.length === 0 && !isSearching && <div className="py-20 text-center opacity-20 italic">Enter search query to manage authorities.</div>}
+                   </div>
                 </CardContent>
              </Card>
           </TabsContent>

@@ -123,7 +123,7 @@ export function CompactRoomView() {
                       
                       {occupant ? (
                         <Avatar className="h-full w-full p-0.5">
-                          <AvatarImage src={occupant.avatarUrl} />
+                          <AvatarImage src={occupant.avatarUrl || undefined} />
                           <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                       ) : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : (

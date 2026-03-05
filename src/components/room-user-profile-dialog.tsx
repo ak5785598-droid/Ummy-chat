@@ -143,7 +143,7 @@ export function RoomUserProfileDialog({
             <div className="pt-16 pb-8 flex flex-col items-center w-full px-6">
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-4">
                   <Avatar className="h-28 w-28 border-4 border-white/10 shadow-2xl">
-                     <AvatarImage src={profile.avatarUrl} />
+                     <AvatarImage src={profile.avatarUrl || undefined} />
                      <AvatarFallback className="text-3xl bg-slate-800">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                </AvatarFrame>

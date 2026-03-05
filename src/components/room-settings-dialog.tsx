@@ -156,7 +156,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                 <SettingItem label="Profile" onClick={() => !isUploading && fileInputRef.current?.click()} className="py-8">
                    <div className="relative">
                       <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
-                         <AvatarImage key={room.coverUrl} src={room.coverUrl} className="object-cover" />
+                         <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} className="object-cover" />
                          <AvatarFallback className="bg-slate-200">{(room.title || 'R').charAt(0)}</AvatarFallback>
                       </Avatar>
                       {isUploading && (
@@ -292,7 +292,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                     <div key={p.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-all border-b border-gray-50 last:border-0">
                        <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
-                             <AvatarImage src={p.avatarUrl} />
+                             <AvatarImage src={p.avatarUrl || undefined} />
                              <AvatarFallback className="bg-slate-100">U</AvatarFallback>
                           </Avatar>
                           <div>

@@ -100,7 +100,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <div className="relative">
             <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
               <Avatar className="h-28 w-28 border-4 border-gray-50 shadow-inner">
-                <AvatarImage src={profile.avatarUrl} />
+                <AvatarImage src={profile.avatarUrl || undefined} />
                 <AvatarFallback className="text-3xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
               </Avatar>
             </AvatarFrame>
