@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -206,7 +205,6 @@ export default function RoomsPage() {
             <>
               <div className="flex gap-2">
                  <CategoryCard title="Ranking" label="Ranking" gradient="bg-gradient-to-br from-orange-400 to-yellow-600" onClick={() => router.push('/leaderboard')} />
-                 <CategoryCard title="Family" label="Family" gradient="bg-gradient-to-br from-blue-400 to-indigo-600" />
                  <CategoryCard title="CP" label="CP" gradient="bg-gradient-to-br from-pink-400 to-purple-600" onClick={() => router.push('/cp-challenge')} />
               </div>
 
