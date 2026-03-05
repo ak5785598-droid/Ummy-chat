@@ -79,9 +79,8 @@ service cloud.firestore {
     }
 
     match /chatRooms/{chatRoomId} {
-      // Allow public GET for room joining; protect LIST for discovery privacy
-      allow get: if true;
-      allow list: if isSignedIn();
+      // Allow public GET/LIST for discovery and frequency joining
+      allow get, list: if true;
       
       allow create: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || chatRoomId == 'ummy-help-center');
       allow update: if isSignedIn() && (
@@ -94,7 +93,8 @@ service cloud.firestore {
       allow delete: if isExistingOwner(resource.data.ownerId) || isAdmin();
 
       match /participants/{participantId} {
-        allow get, list: if isSignedIn();
+        // Allow public read for room counts and active frequency display
+        allow get, list: if true;
         allow write: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin(chatRoomId));
         match /signaling/{signalId} {
           allow get, list, write: if isSignedIn();
@@ -128,13 +128,13 @@ service cloud.firestore {
     }
 
     match /moments/{momentId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /appConfig/{configId} {
-      allow get: if isSignedIn();
+      allow get: if true;
       allow write: if isAdmin();
     }
     
@@ -143,7 +143,7 @@ service cloud.firestore {
     }
     
     match /games/{gameId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow write: if isAdmin();
     }
   }

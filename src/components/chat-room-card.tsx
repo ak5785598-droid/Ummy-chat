@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -5,11 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Users, Castle } from 'lucide-react';
 import type { Room } from '@/lib/types';
-import { Card } from '@/components/ui/card';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 
 interface ChatRoomCardProps {
@@ -24,13 +24,15 @@ interface ChatRoomCardProps {
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { userProfile: owner } = useUserProfile(room.isOfficial ? undefined : room.ownerId);
 
   // REAL-TIME ACTIVE SYNC: Fetch actual participants to ensure display accuracy
+  // Only query if user is signed in to prevent permission crashes during initial discovery render
   const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
+    if (!firestore || !room.id || !user) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-  }, [firestore, room.id]);
+  }, [firestore, room.id, user]);
 
   const { data: participants } = useCollection(participantsQuery);
 
@@ -146,7 +148,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
 
   return (
     <Link href={`/rooms/${room.id}`} className="group block">
-      <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
+      <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (
             <Image src={room.coverUrl} alt={room.title} fill className="object-cover" />
@@ -159,7 +161,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
         <div className="p-3">
           <h3 className="font-bold text-gray-900 truncate uppercase text-sm">{room.title}</h3>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }

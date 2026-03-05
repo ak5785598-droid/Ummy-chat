@@ -1,51 +1,24 @@
+
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Mic,
   MicOff,
-  Lock,
   Loader,
   Gift as GiftIcon,
   Users,
   Volume2,
-  Trash2,
   LogOut,
-  UserPlus,
-  UserCheck,
-  Ban,
-  ChevronDown,
-  AlertTriangle,
-  User as UserIcon,
-  RefreshCw,
-  Gamepad2,
-  ShieldCheck,
-  Music,
-  Play,
-  Square,
-  MoreHorizontal,
-  Power,
-  Mail,
-  LayoutGrid,
   ChevronRight,
+  UserPlus,
+  Power,
   Armchair,
   Crown,
-  Heart,
   ChevronLeft,
-  X,
   Settings as SettingsIcon,
-  Copy,
-  Info,
-  Calculator as CalculatorIcon,
-  Camera,
-  MessageSquare,
-  Palette,
-  Upload,
   Minimize2,
-  Smile,
-  Zap,
-  Flame
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -55,12 +28,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -85,12 +54,6 @@ const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
   { id: 'neon', name: 'Neon Party', url: 'https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=2000' },
   { id: 'royal', name: 'Royal Palace', url: 'https://images.unsplash.com/photo-1562664377-709f2c337eb2?q=80&w=2000' },
-];
-
-const AVAILABLE_GIFTS: Gift[] = [
-  { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
-  { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
-  { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
 ];
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
