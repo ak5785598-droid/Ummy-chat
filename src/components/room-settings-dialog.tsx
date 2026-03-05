@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageCropDialog } from '@/components/image-crop-dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface RoomSettingsDialogProps {
   room: any;
