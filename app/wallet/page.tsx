@@ -8,7 +8,7 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -155,76 +155,125 @@ export default function WalletPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-32">
-               {/* Main Balance Vibe Card */}
-               <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#ff9d2f] via-[#ffa726] to-[#ffc107] p-8 text-white shadow-2xl overflow-hidden mb-4 group active:scale-[0.98] transition-all">
-                  <div className="relative z-10 flex flex-col h-full justify-between">
-                     <div className="flex justify-between items-start">
-                        <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
-                        <button className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
-                           History <ChevronRight className="h-3 w-3" />
-                        </button>
-                     </div>
-                     <h2 className="text-5xl font-black italic tracking-tighter drop-shadow-md">
-                        {(userProfile?.wallet?.coins || 0).toLocaleString()}
-                     </h2>
-                  </div>
-                  {/* Sovereign Large Coin Visual */}
-                  <div className="absolute -top-4 -right-10 w-56 h-56 opacity-40 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                     <GoldCoinIcon className="w-full h-full" />
-                  </div>
-               </div>
+               
+               {activeTab === 'Coins' ? (
+                 <>
+                   {/* Main Balance Vibe Card */}
+                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#ff9d2f] via-[#ffa726] to-[#ffc107] p-8 text-white shadow-2xl overflow-hidden mb-4 group active:scale-[0.98] transition-all">
+                      <div className="relative z-10 flex flex-col h-full justify-between">
+                         <div className="flex justify-between items-start">
+                            <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
+                            <button className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
+                               History <ChevronRight className="h-3 w-3" />
+                            </button>
+                         </div>
+                         <h2 className="text-5xl font-black italic tracking-tighter drop-shadow-md">
+                            {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                         </h2>
+                      </div>
+                      {/* Sovereign Large Coin Visual */}
+                      <div className="absolute -top-4 -right-10 w-56 h-56 opacity-40 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                         <GoldCoinIcon className="w-full h-full" />
+                      </div>
+                   </div>
 
-               {/* Promotional Broadcast */}
-               <div className="relative h-20 w-full rounded-2xl overflow-hidden mb-6 shadow-md border-2 border-red-100">
-                  <img 
-                    src="https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=1000" 
-                    className="w-full h-full object-cover brightness-75" 
-                    alt="Promo"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-600/80 to-transparent flex items-center px-6">
-                     <div className="flex flex-col">
-                        <span className="text-white font-black uppercase italic text-xl tracking-tighter">$1 = 800,000 coins</span>
-                        <span className="text-[8px] text-white/80 font-bold uppercase tracking-widest">01/03 - 12/03 23:59</span>
-                     </div>
-                  </div>
-               </div>
+                   {/* Promotional Broadcast */}
+                   <div className="relative h-20 w-full rounded-2xl overflow-hidden mb-6 shadow-md border-2 border-red-100">
+                      <img 
+                        src="https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=1000" 
+                        className="w-full h-full object-cover brightness-75" 
+                        alt="Promo"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-600/80 to-transparent flex items-center px-6">
+                         <div className="flex flex-col">
+                            <span className="text-white font-black uppercase italic text-xl tracking-tighter">$1 = 800,000 coins</span>
+                            <span className="text-[8px] text-white/80 font-bold uppercase tracking-widest">01/03 - 12/03 23:59</span>
+                         </div>
+                      </div>
+                   </div>
 
-               {/* Recharge Package Grid */}
-               <div className="grid grid-cols-3 gap-3 mb-10">
-                  {COIN_PACKAGES.map((pkg) => (
-                    <button 
-                      key={pkg.id}
-                      onClick={() => setSelectedPackageId(pkg.id)}
-                      className={cn(
-                        "relative flex flex-col items-center justify-between rounded-2xl border-2 transition-all p-3 h-44 group",
-                        selectedPackageId === pkg.id 
-                          ? "bg-[#fffde7] border-yellow-400 shadow-lg scale-[1.02]" 
-                          : "bg-white border-gray-100 hover:border-gray-200"
-                      )}
-                    >
-                       <div className="w-14 h-14 mb-2 drop-shadow-sm group-hover:scale-110 transition-transform">
-                          <GoldCoinIcon className="w-full h-full" />
-                       </div>
-                       
-                       <div className="text-center flex-1 flex flex-col justify-center">
-                          <p className="font-black text-[13px] tracking-tight leading-none text-gray-900">{pkg.amount}</p>
-                          {pkg.bonus && (
-                            <p className="text-[10px] font-bold text-[#ff9800] mt-1">{pkg.bonus}</p>
+                   {/* Recharge Package Grid */}
+                   <div className="grid grid-cols-3 gap-3 mb-10">
+                      {COIN_PACKAGES.map((pkg) => (
+                        <button 
+                          key={pkg.id}
+                          onClick={() => setSelectedPackageId(pkg.id)}
+                          className={cn(
+                            "relative flex flex-col items-center justify-between rounded-2xl border-2 transition-all p-3 h-44 group",
+                            selectedPackageId === pkg.id 
+                              ? "bg-[#fffde7] border-yellow-400 shadow-lg scale-[1.02]" 
+                              : "bg-white border-gray-100 hover:border-gray-200"
                           )}
-                       </div>
+                        >
+                           <div className="w-14 h-14 mb-2 drop-shadow-sm group-hover:scale-110 transition-transform">
+                              <GoldCoinIcon className="w-full h-full" />
+                           </div>
+                           
+                           <div className="text-center flex-1 flex flex-col justify-center">
+                              <p className="font-black text-[13px] tracking-tight leading-none text-gray-900">{pkg.amount}</p>
+                              {pkg.bonus && (
+                                <p className="text-[10px] font-bold text-[#ff9800] mt-1">{pkg.bonus}</p>
+                              )}
+                           </div>
 
-                       <div className={cn(
-                         "w-full py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all",
-                         selectedPackageId === pkg.id ? "bg-yellow-400 text-black" : "bg-gray-100 text-gray-400"
-                       )}>
-                          {pkg.price}
-                       </div>
-                    </button>
-                  ))}
-               </div>
+                           <div className={cn(
+                             "w-full py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all",
+                             selectedPackageId === pkg.id ? "bg-yellow-400 text-black" : "bg-gray-100 text-gray-400"
+                           )}>
+                              {pkg.price}
+                           </div>
+                        </button>
+                      ))}
+                   </div>
+                 </>
+               ) : (
+                 <div className="space-y-6 animate-in fade-in duration-500">
+                   {/* Diamonds Balance Card */}
+                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-8 text-white shadow-2xl overflow-hidden group active:scale-[0.98] transition-all">
+                      <div className="relative z-10 flex flex-col h-full justify-between">
+                         <div className="flex justify-between items-start">
+                            <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
+                            <button className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
+                               History <ChevronRight className="h-3 w-3" />
+                            </button>
+                         </div>
+                         <h2 className="text-5xl font-black italic tracking-tighter drop-shadow-md">
+                            {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                         </h2>
+                      </div>
+                      {/* Sovereign Large Diamond Visual */}
+                      <div className="absolute -top-4 -right-10 w-56 h-56 opacity-40 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                         <Gem className="w-full h-full text-white fill-current" />
+                      </div>
+                   </div>
+
+                   {/* Exchange Interaction Portal */}
+                   <div className="p-1">
+                      <button 
+                        className="w-full bg-[#fffef0] border border-orange-100 rounded-3xl p-6 flex items-center justify-between shadow-sm group active:scale-[0.98] transition-all"
+                        onClick={() => router.push('/wallet/exchange')}
+                      >
+                         <div className="flex items-center gap-4">
+                            <div className="relative h-14 w-14">
+                               <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full" />
+                               <GoldCoinIcon className="h-full w-full relative z-10 drop-shadow-md" />
+                            </div>
+                            <span className="font-black text-sm uppercase italic text-orange-900 tracking-tight">Exchange diamonds to coins</span>
+                         </div>
+                         <ChevronRight className="h-5 w-5 text-orange-200 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                   </div>
+
+                   <div className="px-2 space-y-4 opacity-40">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">
+                        Conversion Rate: 1 Diamond = 100 Gold Coins
+                      </p>
+                   </div>
+                 </div>
+               )}
 
                {/* Help Link Dimension */}
-               <div className="space-y-4 px-2 pb-10">
+               <div className="space-y-4 px-2 pb-10 mt-6">
                   <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
                     If your recharge can not be completed, please click here for help
                   </p>
@@ -241,7 +290,7 @@ export default function WalletPage() {
                  disabled={isProcessing}
                  className="w-full h-16 rounded-full bg-[#ffcc00] hover:bg-[#ffb300] text-black font-black uppercase italic text-xl shadow-xl shadow-yellow-500/20 active:scale-[0.98] transition-all"
                >
-                  {isProcessing ? <Loader className="animate-spin mr-2" /> : 'Recharge Now'}
+                  {isProcessing ? <Loader className="animate-spin mr-2" /> : activeTab === 'Coins' ? 'Recharge Now' : 'Withdrawal'}
                </Button>
             </footer>
           </div>
