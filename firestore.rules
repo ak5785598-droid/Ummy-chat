@@ -45,7 +45,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get, list: if isSignedIn();
+      // Allow public GET for identity resolution; protect LIST for privacy
+      allow get: if true;
+      allow list: if isSignedIn();
+      
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isCreator() || (
         isOwner(userId) && 
@@ -57,7 +60,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /profile/{profileId} {
-        allow get: if isSignedIn();
+        // Allow public GET for persona viewing
+        allow get: if true;
         allow write: if isOwner(userId) || isAdmin() || isCreator();
       }
       
@@ -75,7 +79,10 @@ service cloud.firestore {
     }
 
     match /chatRooms/{chatRoomId} {
-      allow get, list: if isSignedIn();
+      // Allow public GET for room joining; protect LIST for discovery privacy
+      allow get: if true;
+      allow list: if isSignedIn();
+      
       allow create: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || chatRoomId == 'ummy-help-center');
       allow update: if isSignedIn() && (
         isOwner(resource.data.ownerId) || 
