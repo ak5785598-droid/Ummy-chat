@@ -19,7 +19,9 @@ import {
   Loader,
   LogOut,
   Mic,
-  Clock
+  Clock,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -125,7 +127,7 @@ export function RoomUserProfileDialog({
                   <DropdownMenuContent className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
                      {isOwner && !isMe && (
                        <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
-                          {isTargetPMod ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                          {isTargetPMod ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           <span className="font-black uppercase text-[10px]">{isTargetPMod ? 'Revoke Admin' : 'Make Admin'}</span>
                        </DropdownMenuItem>
                      )}
@@ -158,8 +160,8 @@ export function RoomUserProfileDialog({
                   <div className="bg-cyan-500 rounded-full h-4 w-4 flex items-center justify-center text-[8px] font-black">♂</div>
                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-4 text-[8px] font-black px-2 uppercase">Lv. {profile.level?.rich || 1}</Badge>
                   <Badge className="bg-gradient-to-r from-purple-400 to-pink-600 border-none h-4 text-[8px] font-black px-2 uppercase">Lv. {profile.level?.charm || 1}</Badge>
-                  <OfficialTag size="sm" />
-                  <SellerTag size="sm" />
+                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                  {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                </div>
 
                <div className="w-full flex justify-around items-center mb-8 px-4">

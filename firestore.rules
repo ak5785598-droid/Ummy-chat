@@ -86,9 +86,14 @@ service cloud.firestore {
       allow create: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || chatRoomId == 'ummy-help-center');
       allow update: if isCreator() || (
         isSignedIn() && (
+          // Owner can update everything
           isOwner(resource.data.ownerId) || 
-          (resource.data.get('moderatorIds', []) != null && request.auth.uid in resource.data.get('moderatorIds', [])) ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt', 'isChatMuted', 'currentMusicUrl', 'roomThemeId', 'maxActiveMics', 'isLocked', 'announcement', 'welcomeMessage', 'name', 'coverUrl', 'isSuperMic']) ||
+          // Moderators can only update specific operational fields
+          ( (resource.data.get('moderatorIds', []) != null && request.auth.uid in resource.data.get('moderatorIds', [])) && 
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId', 'moderatorIds', 'createdAt'])
+          ) ||
+          // Public count updates
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt']) ||
           chatRoomId == 'ummy-help-center' ||
           isAdmin()
         )
