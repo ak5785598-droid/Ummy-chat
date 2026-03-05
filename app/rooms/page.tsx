@@ -10,6 +10,7 @@ import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 
 const ICON_MAP: Record<string, any> = {
@@ -96,6 +97,16 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
   );
 }
 
+const RoomSkeleton = () => (
+  <div className="space-y-3">
+    <Skeleton className="aspect-[4/5] w-full rounded-[1.2rem]" />
+    <div className="flex gap-2 px-1">
+      <Skeleton className="h-4 w-4 rounded-full" />
+      <Skeleton className="h-4 flex-1 rounded-md" />
+    </div>
+  </div>
+);
+
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -177,7 +188,9 @@ export default function RoomsPage() {
               </div>
 
               {isRoomsLoading && !roomsData ? (
-                <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                  {Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)}
+                </div>
               ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6">
                   {displayRooms.map((room: any, index: number) => (

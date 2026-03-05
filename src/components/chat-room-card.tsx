@@ -16,7 +16,7 @@ interface ChatRoomCardProps {
 /**
  * High-Fidelity Chat Room Card Component.
  * OPTIMIZED: Uses the denormalized participantCount field from the room document.
- * This prevents opening dozens of active Firestore listeners in the discovery grid.
+ * RE-ENGINEERED: Features a reactive key on images to ensure uploaded Room DPs refresh instantly.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room.ownerId);
@@ -35,11 +35,13 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           <div className="relative aspect-[4/5] w-full rounded-[1.2rem] overflow-hidden shadow-md bg-slate-200">
             {room.coverUrl ? (
               <Image
+                key={room.coverUrl} // Force refresh on DP upload
                 src={room.coverUrl}
                 alt={room.title}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 33vw"
+                priority={onlineCount > 10}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
@@ -104,7 +106,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
       <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (
-            <Image src={room.coverUrl} alt={room.title} fill className="object-cover" />
+            <Image key={room.coverUrl} src={room.coverUrl} alt={room.title} fill className="object-cover" />
           )}
           <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded-full">
              <Users className="h-3 w-3 text-white" />
