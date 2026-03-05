@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -10,14 +9,14 @@ import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface ChatRoomCardProps {
-  room: Room;
+  room: any; // Flexible type to support real-time Firestore document sync
   variant?: 'default' | 'modern';
 }
 
 /**
  * High-Fidelity Chat Room Card Component.
- * OPTIMIZED: Uses the denormalized participantCount field from the room document.
- * RE-ENGINEERED: Features a reactive key on images to ensure uploaded Room DPs refresh instantly.
+ * RE-ENGINEERED: Features a reactive key on images bound to coverUrl to ensure 
+ * uploaded Room DPs refresh instantly everywhere across the frequency.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room.ownerId);
@@ -25,6 +24,9 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const onlineCount = Math.max(0, room.participantCount || 0);
   const ownerName = owner?.username || 'Tribe Member';
   const regionalFlag = '🇮🇳';
+  
+  // Real-time Title Logic: Supports both name and title fields from the tribal graph
+  const roomTitle = room.name || room.title || 'Untitled Frequency';
 
   const eliteJet = PlaceHolderImages.find(img => img.id === 'elite-jet');
 
@@ -38,11 +40,11 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               <Image
                 key={room.coverUrl} // Force cache-bust refresh on every upload sync
                 src={room.coverUrl}
-                alt={room.title}
+                alt={roomTitle}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 33vw"
-                priority={onlineCount > 10}
+                priority={onlineCount > 5} // Prioritize active rooms
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
@@ -94,7 +96,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               "font-black text-xs truncate uppercase tracking-tight",
               "text-gray-900"
             )}>
-              {room.title || 'Untitled Frequency'}
+              {roomTitle}
             </h3>
           </div>
         </div>
@@ -107,7 +109,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
       <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (
-            <Image key={room.coverUrl} src={room.coverUrl} alt={room.title} fill className="object-cover" />
+            <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill className="object-cover" />
           )}
           <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded-full">
              <Users className="h-3 w-3 text-white" />
@@ -115,7 +117,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           </div>
         </div>
         <div className="p-3">
-          <h3 className="font-bold text-gray-900 truncate uppercase text-sm">{room.title || 'Frequency'}</h3>
+          <h3 className="font-bold text-gray-900 truncate uppercase text-sm">{roomTitle}</h3>
         </div>
       </div>
     </Link>

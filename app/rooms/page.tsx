@@ -107,6 +107,10 @@ const RoomSkeleton = () => (
   </div>
 );
 
+/**
+ * Tribal Rooms Hub.
+ * Optimized for real-time visual synchronization of room DPs and identities.
+ */
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
