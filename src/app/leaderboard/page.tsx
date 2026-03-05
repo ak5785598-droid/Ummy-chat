@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -35,16 +36,30 @@ const SVIPBadge = ({ level }: { level: number }) => (
   </div>
 );
 
+/**
+ * High-Fidelity Level Tag Component.
+ */
 const LevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-green-500 to-green-700 border border-green-400/50 scale-90 origin-left shadow-md">
+  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
     <Star className="h-2 w-2 text-white fill-current" />
     <span className="text-[7px] font-black text-white italic">Lv.{level}</span>
   </div>
 );
 
 const RankingList = ({ items, type, isLoading, currentUid }: any) => {
-  if (isLoading) return <div className="flex flex-col items-center py-40 gap-4"><Loader className="animate-spin text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p></div>;
-  if (!items || items.length === 0) return <div className="text-center py-40 opacity-40"><TrendingUp className="mx-auto mb-4" /> The chronicles are empty.</div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center py-40 gap-4">
+      <Loader className="animate-spin text-primary h-10 w-10" />
+      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/50">Ascending the Throne...</p>
+    </div>
+  );
+
+  if (!items || items.length === 0) return (
+    <div className="text-center py-40 opacity-40">
+      <TrendingUp className="mx-auto mb-4 h-12 w-12" />
+      <p className="font-black uppercase italic text-sm">The chronicles are empty.</p>
+    </div>
+  );
 
   const top1 = items[0];
   const top2 = items[1];
@@ -83,32 +98,38 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
         {top1 && (
           <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
              <div className="relative">
+                {/* Glow Effect */}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/20 via-transparent to-transparent blur-2xl" />
+                
+                {/* Ornate Frame Placeholder */}
                 <div className="relative z-10 w-44 h-44">
                    <div className="absolute inset-0 z-20 pointer-events-none">
-                      <img src="https://img.icons8.com/color/512/lion.png" className="absolute -top-4 -left-4 w-12 h-12 rotate-[-15deg] opacity-80" alt="Lion" />
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2">
                          <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
                       </div>
                    </div>
+                   
+                   {/* Avatar with Circular Border */}
                    <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-4 border-yellow-200">
-                         <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
-                         <AvatarFallback className="bg-slate-900 text-white font-black">1</AvatarFallback>
+                         <AvatarImage src={getDisplayImage(top1) || 'https://img.icons8.com/color/512/lion.png'} className="object-cover" />
+                         <AvatarFallback className="bg-slate-900 text-white font-black text-2xl">1</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-6 py-1 rounded-full font-black text-xs shadow-xl border-2 border-yellow-400 italic">TOP 1</div>
                    </div>
                 </div>
              </div>
+             
+             {/* Info Below Podium */}
              <div className="mt-8 text-center space-y-1">
-                <h2 className="text-xl font-black text-white uppercase drop-shadow-md">{getDisplayName(top1)}</h2>
+                <h2 className="text-xl font-black text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
                 <div className="flex items-center justify-center gap-2 mb-1">
                    <SVIPBadge level={8} />
                    <LevelBadge level={91} />
                 </div>
                 <div className="flex items-center justify-center gap-1.5 text-yellow-500 font-black">
                    <GoldCoinIcon className="h-4 w-4" />
-                   <span className="text-sm">{formatValue(getValue(top1))}</span>
+                   <span className="text-lg italic">{formatValue(getValue(top1))}</span>
                 </div>
              </div>
           </Link>
@@ -117,60 +138,61 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
         {/* Top 2 & 3 Dual Cards */}
         <div className="flex items-end justify-center gap-3 w-full max-w-sm px-2 relative z-20">
            {top2 && (
-             <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-[#252b41] rounded-[2.5rem] border-2 border-blue-400/20 p-4 pt-10 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
+             <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-[2rem] border-2 border-blue-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24">
                    <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1.5 border-4 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-2 border-white/20">
                          <AvatarImage src={getDisplayImage(top2)} />
-                         <AvatarFallback>2</AvatarFallback>
+                         <AvatarFallback className="font-black">2</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-3 py-0.5 rounded-full font-black text-[8px] border border-blue-200">TOP 2</div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-3 py-0.5 rounded-full font-black text-[8px] border border-blue-200 shadow-lg">TOP 2</div>
                    </div>
                 </div>
-                <p className="font-black text-xs text-[#fbc02d] uppercase truncate w-24 text-center mt-2 tracking-tighter">{getDisplayName(top2)}</p>
-                <div className="flex items-center gap-1 scale-75">
+                <p className="font-black text-sm text-[#fbc02d] uppercase truncate w-24 text-center mt-2 tracking-tighter">{getDisplayName(top2)}</p>
+                <div className="flex items-center gap-1 scale-75 origin-center">
                    <SVIPBadge level={5} />
                    <LevelBadge level={61} />
                 </div>
                 <div className="flex items-center justify-center gap-1 mt-1 text-yellow-500">
                    <GoldCoinIcon className="h-3 w-3" />
-                   <span className="text-[10px] font-black">{formatValue(getValue(top2))}</span>
+                   <span className="text-xs font-black italic">{formatValue(getValue(top2))}</span>
                 </div>
              </Link>
            )}
 
            {top3 && (
-             <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 bg-[#2d221a] rounded-[2.5rem] border-2 border-amber-400/20 p-4 pt-10 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
+             <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 bg-gradient-to-b from-[#2d221a] to-[#1f1610] rounded-[2rem] border-2 border-amber-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24">
                    <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1.5 border-4 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-2 border-white/20">
                          <AvatarImage src={getDisplayImage(top3)} />
-                         <AvatarFallback>3</AvatarFallback>
+                         <AvatarFallback className="font-black">3</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-3 py-0.5 rounded-full font-black text-[8px] border border-amber-200">TOP 3</div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-3 py-0.5 rounded-full font-black text-[8px] border border-amber-200 shadow-lg">TOP 3</div>
                    </div>
                 </div>
-                <p className="font-black text-xs text-[#fff] uppercase truncate w-24 text-center mt-2 tracking-tighter">{getDisplayName(top3)}</p>
-                <div className="flex items-center gap-1 scale-75">
+                <p className="font-black text-sm text-white uppercase truncate w-24 text-center mt-2 tracking-tighter">{getDisplayName(top3)}</p>
+                <div className="flex items-center gap-1 scale-75 origin-center">
                    <SVIPBadge level={2} />
                    <LevelBadge level={94} />
                 </div>
                 <div className="flex items-center justify-center gap-1 mt-1 text-yellow-500">
                    <GoldCoinIcon className="h-3 w-3" />
-                   <span className="text-[10px] font-black">{formatValue(getValue(top3))}</span>
+                   <span className="text-xs font-black italic">{formatValue(getValue(top3))}</span>
                 </div>
              </Link>
            )}
         </div>
       </div>
 
+      {/* Ranks 4+ List */}
       <div className="mt-10 space-y-2 px-2">
         {others.map((item, index) => (
-          <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-4 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5 group hover:bg-white/5 transition-all active:scale-[0.98]">
-            <span className="w-6 text-center font-black text-white/20 text-sm">{index + 4}</span>
+          <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 group hover:bg-white/10 transition-all active:scale-[0.98]">
+            <span className="w-6 text-center font-black text-white/40 text-sm italic">{index + 4}</span>
             <Avatar className="h-14 w-14 border border-white/10 shrink-0">
               <AvatarImage src={getDisplayImage(item)} />
-              <AvatarFallback>{(index + 4)}</AvatarFallback>
+              <AvatarFallback className="font-black">{(index + 4)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-black text-sm uppercase text-yellow-500 truncate tracking-tight mb-1">{getDisplayName(item)}</p>
@@ -180,7 +202,7 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
               </div>
             </div>
             <div className="text-right flex items-center gap-1.5 shrink-0">
-              <span className="font-black text-sm text-white/80">{formatValue(getValue(item))}</span>
+              <span className="font-black text-sm text-white/80 italic">{formatValue(getValue(item))}</span>
               <GoldCoinIcon className="h-4 w-4 text-yellow-500" />
             </div>
           </Link>
@@ -229,6 +251,7 @@ function LeaderboardContent() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
+        {/* Background Visual Effects */}
         <div className="absolute inset-0 z-0 pointer-events-none">
            <div className="absolute top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
@@ -241,8 +264,8 @@ function LeaderboardContent() {
              <Dialog>
                 <DialogTrigger asChild><button className="p-1.5 rounded-full border border-white/20 text-white/60 hover:text-white transition-all"><HelpCircle className="h-6 w-6" /></button></DialogTrigger>
                 <DialogContent className="bg-[#1a1a1a] border-none rounded-t-[3rem] text-white p-8">
-                  <DialogHeader><DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-yellow-500">Ranking Rules</DialogTitle></DialogHeader>
-                  <div className="space-y-4 font-body italic text-gray-400 leading-relaxed pt-4">
+                  <DialogHeader><DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-yellow-500 text-center mb-4">Ranking Rules</DialogTitle></DialogHeader>
+                  <div className="space-y-4 font-body italic text-gray-400 leading-relaxed pt-2">
                     <p>1. Honor rankings are based on the total Gold Coins spent during the selected period.</p>
                     <p>2. Charm rankings reflect the increase in fan count during the period.</p>
                     <p>3. Room rankings track the total gifts received in specific frequencies.</p>
@@ -251,7 +274,8 @@ function LeaderboardContent() {
              </Dialog>
           </div>
 
-          <div className="flex items-center justify-between gap-2 bg-[#1a1a1a]/60 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6">
+          {/* Categorical Tabs */}
+          <div className="flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6">
              {[
                { id: 'rich', label: 'Honor' },
                { id: 'charm', label: 'Charm' },
@@ -270,6 +294,7 @@ function LeaderboardContent() {
              ))}
           </div>
 
+          {/* Temporal Tabs */}
           <div className="flex items-center justify-center gap-12 px-4">
              {['Daily', 'Weekly', 'Monthly'].map((p) => (
                <button 
@@ -291,10 +316,11 @@ function LeaderboardContent() {
            <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} currentUid={user?.uid} />
         </main>
 
+        {/* Sticky Self-Rank Footer */}
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
            <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
               <span className="w-12 text-center font-black text-black/60 italic text-xl">100+</span>
-              <Avatar className="h-14 w-14 border-2 border-black/20 shrink-0">
+              <Avatar className="h-14 w-14 border-2 border-black/20 shrink-0 shadow-lg">
                 <AvatarImage src={me?.avatarUrl} />
                 <AvatarFallback className="bg-black text-white">ME</AvatarFallback>
               </Avatar>
@@ -315,7 +341,7 @@ function LeaderboardContent() {
 export default function LeaderboardPage() {
   return (
     <AppLayout hideSidebarOnMobile>
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black"><Loader className="animate-spin text-primary" /></div>}>
+      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#050505]"><Loader className="animate-spin text-primary h-10 w-10" /></div>}>
         <LeaderboardContent />
       </Suspense>
     </AppLayout>
