@@ -8,7 +8,8 @@ import {
   Camera,
   Check,
   UserCheck,
-  UserX
+  UserX,
+  Trash2
 } from 'lucide-react';
 import {
   Dialog,
@@ -20,8 +21,8 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, getDocs, writeBatch } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -69,6 +70,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
   const [isManagingAdmins, setIsManagingAdmins] = useState(false);
+  const [isClearingChat, setIsClearingChat] = useState(false);
   const [newName, setNewName] = useState(room.title || room.name);
   const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
   
@@ -105,6 +107,38 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
       updatedAt: serverTimestamp()
     });
     toast({ title: isCurrentlyMod ? 'Admin Revoked' : 'Admin Granted' });
+  };
+
+  const handleClearChat = async () => {
+    if (!firestore || !room.id) return;
+    setIsClearingChat(true);
+    
+    try {
+      const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
+      const snap = await getDocs(messagesRef);
+      
+      if (snap.empty) {
+        toast({ title: 'Frequency Clean', description: 'No messages to clear.' });
+        setIsClearingChat(false);
+        return;
+      }
+
+      const batch = writeBatch(firestore);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      
+      batch.commit().then(() => {
+        toast({ title: 'Frequency Purified', description: 'Chat history has been cleared.' });
+      }).catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `chatRooms/${room.id}/messages`,
+          operation: 'delete',
+        }));
+      });
+    } catch (e: any) {
+      console.error('[Purge Error]:', e);
+    } finally {
+      setIsClearingChat(false);
+    }
   };
 
   const handleSaveName = () => {
@@ -224,6 +258,13 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                 <div className="h-4 bg-gray-50" />
 
                 {/* Governance Rows */}
+                <SettingItem 
+                  label="Clean Chat History" 
+                  onClick={handleClearChat}
+                  className="group"
+                >
+                   {isClearingChat ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-red-400 group-hover:text-red-600 transition-colors" />}
+                </SettingItem>
                 <SettingItem label="Blocked List" extra="0" />
                 <SettingItem label="Kick History" />
              </div>

@@ -126,7 +126,11 @@ service cloud.firestore {
       allow get, list, update: if isSignedIn() && (isCreator() || resource.data.participantIds.hasAny([request.auth.uid]));
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn();
+        // ENFORCED PRIVACY: Only participants can read/write their private frequency
+        allow read, write: if isSignedIn() && (
+          isCreator() || 
+          get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds.hasAny([request.auth.uid])
+        );
       }
     }
 
