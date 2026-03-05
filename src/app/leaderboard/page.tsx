@@ -25,7 +25,6 @@ import {
 
 /**
  * High-Fidelity VIP Tag Component.
- * Approximates the SVIP badges seen in the blueprint.
  */
 const SVIPBadge = ({ level }: { level: number }) => (
   <div className={cn(
@@ -84,18 +83,14 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
         {top1 && (
           <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
              <div className="relative">
-                {/* Ornate Golden Crown Podium Platform */}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/20 via-transparent to-transparent blur-2xl" />
-                
                 <div className="relative z-10 w-44 h-44">
-                   {/* Lion Frame approximations */}
                    <div className="absolute inset-0 z-20 pointer-events-none">
                       <img src="https://img.icons8.com/color/512/lion.png" className="absolute -top-4 -left-4 w-12 h-12 rotate-[-15deg] opacity-80" alt="Lion" />
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2">
                          <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
                       </div>
                    </div>
-                   
                    <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-4 border-yellow-200">
                          <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
@@ -105,7 +100,6 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
                    </div>
                 </div>
              </div>
-
              <div className="mt-8 text-center space-y-1">
                 <h2 className="text-xl font-black text-white uppercase drop-shadow-md">{getDisplayName(top1)}</h2>
                 <div className="flex items-center justify-center gap-2 mb-1">
@@ -170,7 +164,6 @@ const RankingList = ({ items, type, isLoading, currentUid }: any) => {
         </div>
       </div>
 
-      {/* List Dimension - Ranks 4+ */}
       <div className="mt-10 space-y-2 px-2">
         {others.map((item, index) => (
           <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-4 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5 group hover:bg-white/5 transition-all active:scale-[0.98]">
@@ -223,16 +216,19 @@ function LeaderboardContent() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: richUsers, isLoading: isLoadingRich } = useCollection(useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]));
-  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50)), [firestore]));
-  const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]));
+  const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
+  const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50)), [firestore]);
+  const roomsQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]);
+
+  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
+  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
+  const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
 
   const activeItems = rankingType === 'rich' ? richUsers : rankingType === 'charm' ? charmUsers : rankedRooms;
   const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
-        {/* Cinematic Backdrop */}
         <div className="absolute inset-0 z-0 pointer-events-none">
            <div className="absolute top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
@@ -255,7 +251,6 @@ function LeaderboardContent() {
              </Dialog>
           </div>
 
-          {/* Main Category Tabs */}
           <div className="flex items-center justify-between gap-2 bg-[#1a1a1a]/60 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6">
              {[
                { id: 'rich', label: 'Honor' },
@@ -275,7 +270,6 @@ function LeaderboardContent() {
              ))}
           </div>
 
-          {/* Sub Time Tabs */}
           <div className="flex items-center justify-center gap-12 px-4">
              {['Daily', 'Weekly', 'Monthly'].map((p) => (
                <button 
@@ -297,7 +291,6 @@ function LeaderboardContent() {
            <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} currentUid={user?.uid} />
         </main>
 
-        {/* Sticky Self Ranking */}
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
            <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
               <span className="w-12 text-center font-black text-black/60 italic text-xl">100+</span>
