@@ -38,7 +38,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             {room.coverUrl ? (
               <Image
                 key={room.coverUrl} // Force cache-bust refresh on every upload sync
-                src={room.coverUrl}
+                src={room.coverUrl || undefined}
                 alt={roomTitle}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -78,7 +78,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             <div className="absolute bottom-2 right-2 h-8 w-8 rounded-lg overflow-hidden border border-white/20 shadow-lg z-20">
                {eliteJet && (
                  <Image 
-                   src={eliteJet.imageUrl} 
+                   src={eliteJet.imageUrl || undefined} 
                    alt="Emblem" 
                    fill 
                    className="object-contain p-1 bg-black/20 backdrop-blur-sm"
@@ -108,7 +108,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
       <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (
-            <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill className="object-cover" />
+            <Image key={room.coverUrl} src={room.coverUrl || undefined} alt={roomTitle} fill className="object-cover" />
           )}
           <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded-full">
              <Users className="h-3 w-3 text-white" />

@@ -228,7 +228,7 @@ export function RoomUserProfileDialog({
                     </div>
 
                     <DirectMessageDialog 
-                      recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl }} 
+                      recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
                       trigger={
                         <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
@@ -240,7 +240,7 @@ export function RoomUserProfileDialog({
                     />
 
                     <div 
-                      onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl }); }}
+                      onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
                       className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
                     >
                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">

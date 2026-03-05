@@ -61,7 +61,7 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  if (!mounted || slides.length === 0) return null;
+  if (!mounted || slides.length === 0) return <div className="col-span-2 my-2 rounded-[1.5rem] h-28 bg-black/5 animate-pulse" />;
 
   const slide = slides[currentSlide];
   const Icon = ICON_MAP[slide.iconName] || Sparkles;
@@ -70,7 +70,7 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
     <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black">
       <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
         <Image 
-          src={slide.imageUrl} 
+          src={slide.imageUrl || ''} 
           alt={slide.title} 
           fill 
           className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
