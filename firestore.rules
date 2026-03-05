@@ -44,6 +44,12 @@ service cloud.firestore {
       );
     }
 
+    // Public Configuration Mesh
+    match /appConfig/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /users/{userId} {
       // Allow public GET for identity resolution; protect LIST for privacy
       allow get: if true;
@@ -131,11 +137,6 @@ service cloud.firestore {
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    match /appConfig/{configId} {
-      allow get: if true;
-      allow write: if isAdmin();
     }
     
     match /adminLogs/{logId} {

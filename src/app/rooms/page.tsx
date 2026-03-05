@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -11,7 +12,6 @@ import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@
 import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const ICON_MAP: Record<string, any> = {
   Sparkles,
@@ -48,14 +48,8 @@ const DEFAULT_SLIDES = [
   }
 ];
 
-/**
- * ScrollingBanner Component.
- * Cycles through high-fidelity tribal promotions every 5 seconds.
- * Synchronized with the appConfig/banners Firestore document.
- */
 function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  
   const slides = customSlides || DEFAULT_SLIDES;
 
   useEffect(() => {
@@ -104,11 +98,6 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
   );
 }
 
-/**
- * High-Fidelity Home / Discovery Hub.
- * Re-engineered to match the "Popular" grid layout exactly.
- * Includes a persistent "Official Help" frequency at the apex of the grid.
- */
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -116,22 +105,13 @@ export default function RoomsPage() {
   const [activeTab, setActiveTab] = useState<'Popular' | 'Me'>('Popular');
 
   const roomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return query(
       collection(firestore, 'chatRooms'), 
       orderBy('participantCount', 'desc'),
       limit(50)
     );
-  }, [firestore, user]);
-
-  const followingQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'followingRooms'),
-      orderBy('followedAt', 'desc'),
-      limit(20)
-    );
-  }, [firestore, user]);
+  }, [firestore]);
 
   const bannerRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -139,10 +119,8 @@ export default function RoomsPage() {
   }, [firestore]);
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
-  const { data: followedRooms, isLoading: isFollowingLoading } = useCollection(followingQuery);
   const { data: bannerConfig } = useDoc(bannerRef);
 
-  // Elite Help Room Protocol: Ensures Ummy Official Help is always first.
   const displayRooms = useMemo(() => {
     const helpRoomBase: any = {
       id: 'ummy-help-center',
@@ -152,16 +130,13 @@ export default function RoomsPage() {
       category: 'Chat',
       coverUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000',
       ownerId: 'official-support-bot',
-      participantCount: 0, // Fallback, will be replaced by real sync if available
+      participantCount: 0,
       isOfficial: true
     };
 
     if (!roomsData) return [helpRoomBase];
-    
-    // Attempt to find the real synced help room to get the actual count
     const syncedHelpRoom = roomsData.find(r => r.id === 'ummy-help-center');
     const finalHelpRoom = syncedHelpRoom ? { ...helpRoomBase, ...syncedHelpRoom, isOfficial: true } : helpRoomBase;
-
     return [finalHelpRoom, ...roomsData.filter(r => r.id !== 'ummy-help-center')];
   }, [roomsData]);
 
@@ -187,7 +162,7 @@ export default function RoomsPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-[#f8f9fa] flex flex-col space-y-6 pb-32 font-headline">
+      <div className="min-h-full bg-[#f8f9fa] flex flex-col space-y-6 pb-32 font-headline animate-in fade-in duration-700">
         <header className="flex items-center justify-between px-6 pt-6 bg-white shrink-0">
           <div className="flex items-center gap-8">
             <CreateRoomDialog 
@@ -230,19 +205,9 @@ export default function RoomsPage() {
           {activeTab === 'Popular' ? (
             <>
               <div className="flex gap-2">
-                 <CategoryCard 
-                   title="Ranking" 
-                   label="Ranking" 
-                   gradient="bg-gradient-to-br from-orange-400 to-yellow-600" 
-                   onClick={() => router.push('/leaderboard')}
-                 />
+                 <CategoryCard title="Ranking" label="Ranking" gradient="bg-gradient-to-br from-orange-400 to-yellow-600" onClick={() => router.push('/leaderboard')} />
                  <CategoryCard title="Family" label="Family" gradient="bg-gradient-to-br from-blue-400 to-indigo-600" />
-                 <CategoryCard 
-                   title="CP" 
-                   label="CP" 
-                   gradient="bg-gradient-to-br from-pink-400 to-purple-600" 
-                   onClick={() => router.push('/cp-challenge')}
-                 />
+                 <CategoryCard title="CP" label="CP" gradient="bg-gradient-to-br from-pink-400 to-purple-600" onClick={() => router.push('/cp-challenge')} />
               </div>
 
               {isRoomsLoading && !roomsData ? (
@@ -259,52 +224,9 @@ export default function RoomsPage() {
               )}
             </>
           ) : (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              <div className="flex items-center justify-between px-2">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Followed Rooms</h2>
-                <CreateRoomDialog 
-                  trigger={
-                    <button className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1 rounded-full">
-                      Create My Room
-                    </button>
-                  }
-                />
-              </div>
-
-              {isFollowingLoading ? (
-                <div className="flex justify-center py-10"><Loader className="animate-spin text-primary h-6 w-6" /></div>
-              ) : !followedRooms || followedRooms.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-                   <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center">
-                      <Heart className="h-8 w-8 text-gray-200" />
-                   </div>
-                   <div className="space-y-1">
-                      <p className="font-black uppercase italic text-gray-400">No Followed Tribes</p>
-                      <p className="text-[10px] text-gray-300 uppercase font-bold max-w-[180px]">Follow your favorite frequencies to see them here.</p>
-                   </div>
-                   <button 
-                     onClick={() => setActiveTab('Popular')}
-                     className="bg-primary text-white font-black uppercase text-[10px] px-6 py-2 rounded-full shadow-lg"
-                   >
-                     Explore Popular
-                   </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
-                  {followedRooms.map((follow: any) => (
-                    <ChatRoomCard 
-                      key={follow.roomId} 
-                      room={{ 
-                        id: follow.roomId, 
-                        title: follow.roomName, 
-                        coverUrl: follow.coverUrl, 
-                        participantCount: 0
-                      } as any} 
-                      variant="modern" 
-                    />
-                  ))}
-                </div>
-              )}
+            <div className="py-20 text-center space-y-4">
+               <Loader className="animate-spin h-8 w-8 text-primary mx-auto" />
+               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Syncing Followed Rooms...</p>
             </div>
           )}
         </div>
