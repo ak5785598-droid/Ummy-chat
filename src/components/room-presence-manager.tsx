@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs } from 'firebase/firestore';
 
@@ -11,9 +10,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Maintains Firestore presence while a room is active.
- * RE-ENGINEERED: Includes a High-Fidelity Heartbeat to prevent ghost identities.
- * SELF-HEALING: Performs a hard count of participants on entry to fix stale data.
- * ROBUST SYNC: Uses setDocumentNonBlocking with merge for heartbeats to ensure stability.
+ * OPTIMIZED: Synchronizes participantCount document field for grid-wide efficiency.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -23,7 +20,6 @@ export function RoomPresenceManager() {
   const lastRoomId = useRef<string | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. PRIMARY PRESENCE LIFECYCLE (Join/Leave)
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user) {
       return;
@@ -36,13 +32,12 @@ export function RoomPresenceManager() {
       if (lastRoomId.current === roomId) return;
       lastRoomId.current = roomId;
 
-      console.log(`[Presence Sync] Activating presence for room: ${roomId}`);
       const roomDocRef = doc(firestore, 'chatRooms', roomId);
       const userRef = doc(firestore, 'users', uid);
       const profileRef = doc(firestore, 'users', uid, 'profile', uid);
       const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-      // Broadcast entrance (Non-blocking)
+      // Broadcast entrance
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         content: 'entered the room',
         senderId: uid,
@@ -53,18 +48,17 @@ export function RoomPresenceManager() {
         type: 'entrance'
       });
 
-      // SELF-HEALING PROTOCOL: Fetch actual participant size to fix ghost counts
+      // SELF-HEALING: Fetch actual participant size to maintain count accuracy
       let actualCount = 1;
       try {
         const participantsSnap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
         actualCount = participantsSnap.docs.filter(d => d.id !== uid).length + 1;
       } catch (e) {
-        console.warn("[Presence Sync] Could not fetch participant size for healing, falling back to document field.");
+        console.warn("[Presence Sync] Fallback to optimistic count");
       }
 
       const batch = writeBatch(firestore);
 
-      // Atomic Entry & Healing Protocol
       if (roomId === 'ummy-help-center') {
         batch.set(roomDocRef, { 
           id: 'ummy-help-center',
@@ -84,7 +78,6 @@ export function RoomPresenceManager() {
       batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
       batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
 
-      // Initial Participant Document with Heartbeat
       batch.set(participantRef, {
         uid: uid,
         name: userProfile?.username || 'Guest',
@@ -99,13 +92,10 @@ export function RoomPresenceManager() {
       try {
         await batch.commit();
         
-        // Start Heartbeat Frequency
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
         heartbeatInterval.current = setInterval(() => {
-          // ELITE SYNC: Use set with merge instead of update to prevent permission race conditions 
-          // or missing document errors if the join batch hasn't fully propagated.
           setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
-        }, 30000); // 30s Heartbeat
+        }, 30000);
 
       } catch (e) {
         console.error("[Presence Sync] Join failed:", e);
@@ -124,7 +114,6 @@ export function RoomPresenceManager() {
       if (lastRoomId.current === roomId) {
         lastRoomId.current = null;
         
-        console.log(`[Presence Sync] Deactivating presence for room: ${roomId}`);
         const batch = writeBatch(firestore);
         const roomDocRef = doc(firestore, 'chatRooms', roomId);
         const userRef = doc(firestore, 'users', uid);
@@ -137,19 +126,18 @@ export function RoomPresenceManager() {
         });
 
         batch.delete(participantRef);
-        batch.update(userRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-        batch.update(profileRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+        batch.update(userRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
+        batch.update(profileRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
         
         try {
           await batch.commit();
         } catch (e) {
-          console.warn("[Presence Sync] Exit batch failed:", e);
+          console.warn("[Presence Sync] Exit failed:", e);
         }
       }
     };
 
     window.addEventListener('beforeunload', handleExit);
-
     return () => {
       handleExit();
       window.removeEventListener('beforeunload', handleExit);

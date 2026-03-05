@@ -198,8 +198,8 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-3 w-3 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full"><Power className="h-4 w-4" /></button>
+          <button className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 active:scale-95 transition-transform"><Users className="h-3 w-3 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Power className="h-4 w-4" /></button>
         </div>
       </header>
 
@@ -215,7 +215,7 @@ export function RoomClient({ room }: { room: Room }) {
                     <AvatarFrame frameId={occupant?.activeFrame} size="md">
                       <button 
                         onClick={() => { if (occupant) { setSelectedParticipantUid(occupant.uid); setIsUserProfileCardOpen(true); } else { takeSeat(idx); } }}
-                        className="h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 border-white/10 backdrop-blur-sm"
+                        className="h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 border-white/10 backdrop-blur-sm active:scale-90 transition-transform"
                       >
                         {occupant ? <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar> : <Armchair className="text-white/20 h-6 w-6" />}
                       </button>
@@ -243,10 +243,10 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-4">
-        <button onClick={handleMicToggle} className={cn("p-3 rounded-full border border-white/10 backdrop-blur-md transition-all", isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500" : "bg-white/10")}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
+        <button onClick={handleMicToggle} className={cn("p-3 rounded-full border border-white/10 backdrop-blur-md transition-all active:scale-95", isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500" : "bg-white/10")}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
         <form className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-12 px-4 flex items-center border border-white/5" onSubmit={handleSendMessage}><Input placeholder="Say Hi" className="bg-transparent border-none text-xs font-black tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full" value={messageText} onChange={(e) => setMessageText(e.target.value)} /></form>
         <div className="flex items-center gap-2">
-          <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
+          <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg active:scale-95 transition-transform" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
         </div>
       </footer>
 
@@ -257,8 +257,8 @@ export function RoomClient({ room }: { room: Room }) {
             <DialogDescription>Choose to minimize the frequency or exit the session.</DialogDescription>
           </DialogHeader>
           <div className="p-12 flex items-center justify-around gap-8">
-            <button onClick={handleMinimize} className="flex flex-col items-center gap-4"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs">Minimize</span></button>
-            <button onClick={handleExit} className="flex flex-col items-center gap-4"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs">Exit</span></button>
+            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs">Minimize</span></button>
+            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs">Exit</span></button>
           </div>
         </DialogContent>
       </Dialog>

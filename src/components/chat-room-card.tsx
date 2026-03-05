@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Users, Castle } from 'lucide-react';
@@ -8,8 +7,6 @@ import type { Room } from '@/lib/types';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
 
 interface ChatRoomCardProps {
   room: Room;
@@ -18,35 +15,13 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Chat Room Card Component.
- * RE-ENGINEERED: Uses real-time active heartbeat counting to eliminate ghost counts.
- * Filters participants by a 90-second activity threshold.
+ * OPTIMIZED: Uses the denormalized participantCount field from the room document.
+ * This prevents opening dozens of active Firestore listeners in the discovery grid.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  const firestore = useFirestore();
-  const { user } = useUser();
   const { userProfile: owner } = useUserProfile(room.ownerId);
 
-  // REAL-TIME ACTIVE SYNC: Fetch actual participants to ensure display accuracy
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id || !user) return null;
-    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-  }, [firestore, room.id, user]);
-
-  const { data: participants } = useCollection(participantsQuery);
-
-  const onlineCount = useMemo(() => {
-    if (!participants) return Math.max(0, room.participantCount || 0);
-    
-    // GHOST PURGE: Only count users seen in the last 90 seconds
-    const now = Date.now();
-    const activeOnes = participants.filter(p => {
-      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-      return (now - lastSeen) < 90000;
-    });
-    
-    return activeOnes.length;
-  }, [participants, room.participantCount]);
-
+  const onlineCount = Math.max(0, room.participantCount || 0);
   const ownerName = owner?.username || 'Tribe Member';
   const regionalFlag = '🇮🇳';
 
@@ -54,7 +29,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
 
   if (variant === 'modern') {
     return (
-      <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline">
+      <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline active:scale-95 transition-transform">
         <div className="space-y-2">
           {/* Main Image Container */}
           <div className="relative aspect-[4/5] w-full rounded-[1.2rem] overflow-hidden shadow-md bg-slate-200">
@@ -72,7 +47,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               </div>
             )}
             
-            {/* Top-Right Participant Count (Zero-Floor Enforced) */}
+            {/* Top-Right Participant Count */}
             <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/30 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 z-20">
               <div className="flex items-end gap-0.5 h-2">
                  <div className="w-0.5 bg-white h-1" />
@@ -82,7 +57,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               <span className="text-[10px] text-white font-black">{onlineCount}</span>
             </div>
 
-            {/* Bottom Gradient for Text Legibility */}
+            {/* Bottom Gradient */}
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent z-10" />
 
             {/* Bottom-Left Owner Identity */}
@@ -114,7 +89,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             <span className="text-sm shrink-0" aria-label="Region flag">{regionalFlag}</span>
             <h3 className={cn(
               "font-black text-xs truncate uppercase tracking-tight",
-              Math.random() > 0.5 ? "text-orange-500" : "text-pink-500"
+              "text-gray-900"
             )}>
               {room.title}
             </h3>
@@ -125,7 +100,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   }
 
   return (
-    <Link href={`/rooms/${room.id}`} className="group block">
+    <Link href={`/rooms/${room.id}`} className="group block active:scale-95 transition-transform">
       <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (

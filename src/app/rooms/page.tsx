@@ -3,13 +3,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Search, Plus, Trophy, Users, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Flame, Star } from 'lucide-react';
+import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 
 const ICON_MAP: Record<string, any> = {
@@ -17,7 +18,6 @@ const ICON_MAP: Record<string, any> = {
   Trophy,
   Gamepad2,
   Zap,
-  Flame,
   Star,
   Users,
   Heart
@@ -97,6 +97,16 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
   );
 }
 
+const RoomSkeleton = () => (
+  <div className="space-y-3">
+    <Skeleton className="aspect-[4/5] w-full rounded-[1.2rem]" />
+    <div className="flex gap-2 px-1">
+      <Skeleton className="h-4 w-4 rounded-full" />
+      <Skeleton className="h-4 flex-1 rounded-md" />
+    </div>
+  </div>
+);
+
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -121,22 +131,7 @@ export default function RoomsPage() {
   const { data: bannerConfig } = useDoc(bannerRef);
 
   const displayRooms = useMemo(() => {
-    const helpRoomBase: any = {
-      id: 'ummy-help-center',
-      roomNumber: '0000',
-      title: 'Ummy Official Help',
-      topic: 'Ask any app related question quick and fast.',
-      category: 'Chat',
-      coverUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000',
-      ownerId: 'official-support-bot',
-      participantCount: 0,
-      isOfficial: true
-    };
-
-    if (!roomsData) return [helpRoomBase];
-    const syncedHelpRoom = roomsData.find(r => r.id === 'ummy-help-center');
-    const finalHelpRoom = syncedHelpRoom ? { ...helpRoomBase, ...syncedHelpRoom, isOfficial: true } : helpRoomBase;
-    return [finalHelpRoom, ...roomsData.filter(r => r.id !== 'ummy-help-center')];
+    return roomsData || [];
   }, [roomsData]);
 
   const CategoryCard = ({ title, label, gradient, onClick }: { title: string, label: string, gradient: string, onClick?: () => void }) => (
@@ -153,7 +148,6 @@ export default function RoomsPage() {
        </div>
        <div className="absolute -bottom-2 -right-2 opacity-20 rotate-12">
           {title === 'Ranking' && <Trophy className="h-16 w-16 text-white" />}
-          {title === 'Family' && <Users className="h-16 w-16 text-white" />}
           {title === 'CP' && <Heart className="h-16 w-16 text-white" />}
        </div>
     </div>
@@ -164,21 +158,6 @@ export default function RoomsPage() {
       <div className="min-h-full bg-[#f8f9fa] flex flex-col space-y-6 pb-32 font-headline animate-in fade-in duration-700">
         <header className="flex items-center justify-between px-6 pt-6 bg-white shrink-0">
           <div className="flex items-center gap-8">
-            <CreateRoomDialog 
-              trigger={
-                <button 
-                  className={cn(
-                    "text-xl font-black uppercase italic transition-colors relative",
-                    activeTab === 'Me' ? "text-gray-900" : "text-gray-400"
-                  )}
-                >
-                  Me
-                  {activeTab === 'Me' && (
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-1 bg-primary rounded-full" />
-                  )}
-                </button>
-              }
-            />
             <div className="relative">
               <button 
                 onClick={() => setActiveTab('Popular')}
@@ -209,7 +188,9 @@ export default function RoomsPage() {
               </div>
 
               {isRoomsLoading && !roomsData ? (
-                <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                  {Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)}
+                </div>
               ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6">
                   {displayRooms.map((room: any, index: number) => (
