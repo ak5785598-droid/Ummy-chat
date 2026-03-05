@@ -45,7 +45,6 @@ const LevelBadge = ({ level }: { level: number }) => (
 
 /**
  * Specialized Ranking List Component.
- * Features the tiered podium for the Top 3 and an airy roster for others.
  */
 const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
   if (isLoading) return (
@@ -80,8 +79,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   };
 
   const getDisplayImage = (item: any) => {
-    if (type === 'rooms') return item.coverUrl || '';
-    return item.avatarUrl || '';
+    if (type === 'rooms') return item.coverUrl || undefined;
+    return item.avatarUrl || undefined;
   };
 
   const formatValue = (val: number) => {
@@ -92,20 +91,15 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
 
   return (
     <div className="space-y-4 animate-in fade-in duration-1000 relative pb-40">
-      {/* Podium Dimension: Top 1 majestically centered above Top 2 & 3 */}
       <div className="relative pt-4 flex flex-col items-center">
-        
-        {/* Top 1 Sovereign Position */}
         {top1 && (
           <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
              <div className="relative">
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-yellow-500/10 blur-3xl opacity-50" />
-                
                 <div className="relative z-10 w-44 h-44">
                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
                       <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
                    </div>
-                   
                    <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-4 border-yellow-200">
                          <AvatarImage src={getDisplayImage(top1) || 'https://img.icons8.com/color/512/lion.png'} className="object-cover" />
@@ -115,7 +109,6 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                    </div>
                 </div>
              </div>
-             
              <div className="mt-8 text-center space-y-1">
                 <h2 className="text-xl font-black text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
                 <div className="flex items-center justify-center gap-2 mb-1">
@@ -130,7 +123,6 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
           </Link>
         )}
 
-        {/* Top 2 & 3 Dual Cards Row */}
         <div className="flex items-end justify-center gap-3 w-full max-w-sm px-2 relative z-20">
            {top2 && (
              <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-[2rem] border-2 border-blue-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
@@ -180,7 +172,6 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
         </div>
       </div>
 
-      {/* Airy List Roster for Rank 4 and below */}
       <div className="mt-10 space-y-2 px-2">
         {others.map((item, index) => (
           <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 group hover:bg-white/10 transition-all active:scale-[0.98]">
@@ -207,10 +198,6 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   );
 };
 
-/**
- * Inner Leaderboard Logic.
- * Wrapped in Suspense to safely consume useSearchParams.
- */
 function LeaderboardContent() {
   const searchParams = useSearchParams();
   const initialType = (searchParams.get('type') as any) || 'rich';
@@ -220,22 +207,10 @@ function LeaderboardContent() {
   
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>(initialType);
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
-  const [timeLeft, setTimeLeft] = useState('');
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (initialType) setRankingMode(initialType); }, [initialType]);
-
-  useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date();
-      let target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 18, 30, 0));
-      if (now.getTime() >= target.getTime()) target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 18, 30, 0));
-      const diff = target.getTime() - now.getTime();
-      const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-    };
-    const timer = setInterval(updateTimer, 1000); updateTimer();
-    return () => clearInterval(timer);
-  }, []);
 
   const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
   const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50)), [firestore]);
@@ -254,9 +229,10 @@ function LeaderboardContent() {
 
   const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
 
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
-        {/* Immersive Dark Background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
            <div className="absolute top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
@@ -326,7 +302,7 @@ function LeaderboardContent() {
            <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
               <span className="w-12 text-center font-black text-black/60 italic text-xl">100+</span>
               <Avatar className="h-14 w-14 border-2 border-black/20 shrink-0 shadow-lg">
-                <AvatarImage src={me?.avatarUrl} />
+                <AvatarImage src={me?.avatarUrl || undefined} />
                 <AvatarFallback className="bg-black text-white">ME</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">

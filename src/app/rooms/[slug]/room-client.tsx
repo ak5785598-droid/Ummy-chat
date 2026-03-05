@@ -91,7 +91,7 @@ function EntryCard({ entrant, onComplete }: { entrant: any, onComplete: () => vo
     <div className="fixed top-40 left-0 z-[150] animate-in slide-in-from-left-full duration-700 pointer-events-none">
       <div className="bg-[#00a859] rounded-r-full py-1.5 pl-2 pr-8 flex items-center gap-3 shadow-lg border-y border-r border-white/20 backdrop-blur-md">
         <Avatar className="h-8 w-8 border-2 border-white/40">
-          <AvatarImage src={entrant.senderAvatar} />
+          <AvatarImage src={entrant.senderAvatar || undefined} />
           <AvatarFallback className="bg-green-700 text-white text-[10px] font-black">{entrant.senderName?.charAt(0)}</AvatarFallback>
         </Avatar>
         <span className="text-[13px] font-black uppercase italic text-white drop-shadow-md">
@@ -228,7 +228,7 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || '', chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
+      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || undefined, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
     setMessageText('');
   };
@@ -239,7 +239,7 @@ export function RoomClient({ room }: { room: Room }) {
     let finalRecipient = giftRecipient || { uid: currentUser.uid, name: userProfile.username, avatarUrl: userProfile.avatarUrl };
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-gift.price), updatedAt: serverTimestamp() });
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), { 'wallet.coins': increment(-gift.price), updatedAt: serverTimestamp() });
-    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), { content: `sent ${finalRecipient.name} a ${gift.emoji}!`, senderId: currentUser.uid, senderName: userProfile.username, senderAvatar: userProfile.avatarUrl, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'gift', giftId: gift.id });
+    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), { content: `sent ${finalRecipient.name} a ${gift.emoji}!`, senderId: currentUser.uid, senderName: userProfile.username, senderAvatar: userProfile.avatarUrl || undefined, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'gift', giftId: gift.id });
     setIsGiftPickerOpen(false);
   };
 
@@ -437,7 +437,7 @@ export function RoomClient({ room }: { room: Room }) {
                       >
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5">
-                            <AvatarImage src={occupant.avatarUrl} />
+                            <AvatarImage src={occupant.avatarUrl || undefined} />
                             <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                         ) : isLocked ? (

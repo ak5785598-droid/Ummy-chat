@@ -42,7 +42,7 @@ export function RoomPresenceManager() {
         content: 'entered the room',
         senderId: uid,
         senderName: userProfile?.username || 'Tribe Member',
-        senderAvatar: userProfile?.avatarUrl || '',
+        senderAvatar: userProfile?.avatarUrl || undefined,
         chatRoomId: roomId,
         timestamp: serverTimestamp(),
         type: 'entrance'
@@ -81,7 +81,7 @@ export function RoomPresenceManager() {
       batch.set(participantRef, {
         uid: uid,
         name: userProfile?.username || 'Guest',
-        avatarUrl: userProfile?.avatarUrl || '',
+        avatarUrl: userProfile?.avatarUrl || undefined,
         activeFrame: userProfile?.inventory?.activeFrame || 'None',
         activeWave: userProfile?.inventory?.activeWave || 'Default',
         joinedAt: serverTimestamp(),
