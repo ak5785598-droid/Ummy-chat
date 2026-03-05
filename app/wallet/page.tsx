@@ -100,29 +100,39 @@ export default function WalletPage() {
               <ChevronLeft className="h-6 w-6 text-gray-800" />
            </button>
            <h1 className="text-xl font-black uppercase tracking-tight">Wallet</h1>
-           <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2">
+           <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2 active:scale-95 transition-transform">
               {showRecords ? 'Close' : 'Record'}
            </button>
         </header>
 
         {showRecords ? (
-          <div className="flex-1 p-6 space-y-4 animate-in slide-in-from-right duration-300">
-             <h2 className="text-sm font-black uppercase text-gray-400 mb-6">Transaction History</h2>
+          <div className="flex-1 p-6 space-y-4 animate-in slide-in-from-right duration-300 overflow-y-auto no-scrollbar">
+             <h2 className="text-sm font-black uppercase text-gray-400 mb-6">Exchange History</h2>
              {isHistoryLoading ? (
                <div className="flex justify-center pt-20">
                  <Loader className="animate-spin text-primary h-8 w-8" />
                </div>
-             ) : exchangeHistory?.length === 0 ? (
+             ) : !exchangeHistory || exchangeHistory.length === 0 ? (
                <div className="py-40 text-center opacity-20 italic uppercase font-black text-xs">No Records Found</div>
              ) : (
-               exchangeHistory?.map((record: any) => (
-                 <div key={record.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">{record.timestamp ? format(record.timestamp.toDate(), 'MMM d, HH:mm') : 'Syncing...'}</p>
-                      <p className="font-black text-sm uppercase italic">{record.type === 'exchange' ? 'Exchange Diamonds' : 'Purchase Coins'}</p>
+               exchangeHistory.map((record: any) => (
+                 <div key={record.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase">{record.timestamp ? format(record.timestamp.toDate(), 'MMM d, HH:mm') : 'Syncing...'}</p>
+                      <p className="font-black text-sm uppercase italic text-gray-800">{record.type === 'exchange' ? 'Diamond Exchange' : 'Package Purchase'}</p>
+                      {record.diamondAmount && (
+                        <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
+                           <Gem className="h-3 w-3" />
+                           <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
-                      <span className="font-black text-green-600">+{record.coinAmount?.toLocaleString()}</span>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <span className="font-black text-green-600">+{record.coinAmount?.toLocaleString()}</span>
+                        <GoldCoinIcon className="h-4 w-4" />
+                      </div>
+                      <p className="text-[8px] font-black text-green-600 uppercase tracking-widest mt-1">Completed</p>
                     </div>
                  </div>
                ))
@@ -131,7 +141,7 @@ export default function WalletPage() {
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Category Frequencies */}
-            <div className="flex justify-around border-b border-gray-50 bg-white">
+            <div className="flex justify-around border-b border-gray-50 bg-white shrink-0">
                <button 
                  onClick={() => setActiveTab('Coins')}
                  className={cn(
@@ -163,7 +173,7 @@ export default function WalletPage() {
                       <div className="relative z-10 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
                             <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
-                            <button className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
+                            <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
                                History <ChevronRight className="h-3 w-3" />
                             </button>
                          </div>
@@ -233,7 +243,7 @@ export default function WalletPage() {
                       <div className="relative z-10 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
                             <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
-                            <button className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
+                            <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
                                History <ChevronRight className="h-3 w-3" />
                             </button>
                          </div>
@@ -284,15 +294,17 @@ export default function WalletPage() {
             </div>
 
             {/* Bottom Sovereign Portal */}
-            <footer className="p-6 bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
-               <Button 
-                 onClick={handleRechargeNow}
-                 disabled={isProcessing !== false}
-                 className="w-full h-16 rounded-full bg-[#ffcc00] hover:bg-[#ffb300] text-black font-black uppercase italic text-xl shadow-xl shadow-yellow-500/20 active:scale-[0.98] transition-all"
-               >
-                  {isProcessing !== false ? <Loader className="animate-spin mr-2" /> : activeTab === 'Coins' ? 'Recharge Now' : 'Withdrawal'}
-               </Button>
-            </footer>
+            {!showRecords && (
+              <footer className="p-6 bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
+                 <Button 
+                   onClick={handleRechargeNow}
+                   disabled={isProcessing !== false}
+                   className="w-full h-16 rounded-full bg-[#ffcc00] hover:bg-[#ffb300] text-black font-black uppercase italic text-xl shadow-xl shadow-yellow-500/20 active:scale-[0.98] transition-all"
+                 >
+                    {isProcessing !== false ? <Loader className="animate-spin mr-2" /> : activeTab === 'Coins' ? 'Recharge Now' : 'Withdrawal'}
+                 </Button>
+              </footer>
+            )}
           </div>
         )}
       </div>
