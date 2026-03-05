@@ -41,8 +41,6 @@ const mobileNavItems = [
   { href: "/profile", label: "Mine", icon: User },
 ];
 
-const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-
 /**
  * High-Fidelity Green Smiley SVG Signature for "MINE" tab.
  */
@@ -74,12 +72,6 @@ export function AppLayout({
 
   useEffect(() => { setMounted(true); }, []);
 
-  useEffect(() => {
-    if (!isUserLoading && !user && !pathname.startsWith('/login') && pathname !== '/') {
-      router.replace('/login');
-    }
-  }, [user, isUserLoading, pathname, router]);
-
   const handleLogout = async () => {
     if (!auth || !user || !firestore) return;
     try {
@@ -106,14 +98,13 @@ export function AppLayout({
   };
 
   const isOfficial = userProfile?.tags?.some(tag => 
-    ['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager'].includes(tag)
-  ) || user?.uid === CREATOR_ID;
+    ['Admin', 'Official', 'Super Admin'].includes(tag)
+  );
 
   if (!mounted) return null;
-  if (isUserLoading) return <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFCC00]"><UmmyLogoIcon className="h-16 w-16 text-white animate-pulse" /></div>;
-  if (fullScreen || pathname.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
+  if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
-  const isInsideRoom = pathname.startsWith('/rooms/') && pathname !== '/rooms';
+  const isInsideRoom = pathname?.startsWith('/rooms/') && pathname !== '/rooms';
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -129,7 +120,7 @@ export function AppLayout({
             <SidebarMenu>
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} className={cn("h-14 rounded-xl px-4", pathname.startsWith(item.href) && "bg-black/10 font-black")}>
+                  <SidebarMenuButton asChild isActive={pathname?.startsWith(item.href)} className={cn("h-14 rounded-xl px-4", pathname?.startsWith(item.href) && "bg-black/10 font-black")}>
                     <Link href={item.href} className="flex items-center gap-4">
                       <item.icon className="h-6 w-6" />
                       <span className="text-base font-black uppercase italic">{item.label}</span>
@@ -139,10 +130,10 @@ export function AppLayout({
               ))}
               {isOfficial && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className={cn("h-14 rounded-xl px-4 mt-4 bg-red-500/10", pathname === '/admin' && "bg-red-500/20 font-black")}>
+                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-red-500/10">
                     <Link href="/admin" className="flex items-center gap-4">
                       <ShieldAlert className="h-6 w-6 text-red-600" />
-                      <span className="text-base font-black uppercase italic text-red-600">Admin Hub</span>
+                      <span className="text-base font-black uppercase italic text-red-600">Admin</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -150,27 +141,15 @@ export function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="bg-transparent p-6">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} className="h-14 rounded-xl mb-2">
-                  <Link href="/settings" className="flex items-center gap-4">
-                    <Settings className="h-6 w-6" />
-                    <span className="text-base font-black uppercase italic">Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-black transition-all group">
-                  <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center text-[#FFCC00] group-active:scale-90 transition-transform"><Power className="h-5 w-5" /></div>
-                  <span className="text-base font-black uppercase italic">Sign Out</span>
-                </button>
-              </SidebarMenuItem>
-            </SidebarMenu>
+            <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-black">
+              <Power className="h-5 w-5" />
+              <span className="text-base font-black uppercase italic">Sign Out</span>
+            </button>
           </SidebarFooter>
         </Sidebar>
 
         <SidebarInset className="bg-[#FFCC00] flex-1 overflow-hidden flex flex-col p-0">
-          <header className="md:hidden flex items-center justify-between p-4 bg-black/5 backdrop-blur-md h-14 shrink-0 relative z-50">
+          <header className="md:hidden flex items-center justify-between p-4 bg-black/5 h-14 shrink-0 relative z-50">
              <div className="flex items-center gap-2 text-black"><UmmyLogoIcon className="h-6 w-6" /><span className="font-black italic uppercase tracking-tighter">Ummy</span></div>
              <SidebarTrigger className="text-black scale-125" />
           </header>
@@ -179,7 +158,7 @@ export function AppLayout({
           {!isInsideRoom && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-16 pb-safe shrink-0 relative z-50 px-2">
               {mobileNavItems.map((item) => {
-                const isActive = pathname === item.href || (item.href === '/profile' && pathname.startsWith('/profile'));
+                const isActive = pathname === item.href || (item.href === '/profile' && pathname?.startsWith('/profile'));
                 return (
                   <Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-[#00FF00]" : "text-gray-300")}>
                     {item.label === 'Mine' ? (
