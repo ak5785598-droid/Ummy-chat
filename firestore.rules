@@ -44,7 +44,7 @@ service cloud.firestore {
       );
     }
 
-    // Public Configuration Mesh
+    // Public Configuration Mesh - Fixed for instant discovery
     match /appConfig/{configId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -66,7 +66,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /profile/{profileId} {
-        // Allow public GET for persona viewing
+        // Allow public GET for persona viewing - Fixed for profile gateway stability
         allow get: if true;
         allow write: if isOwner(userId) || isAdmin() || isCreator();
       }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -91,11 +92,6 @@ const AVAILABLE_GIFTS: Gift[] = [
   { id: 'rose', name: 'Rose', emoji: '🌹', price: 10, animationType: 'pulse' },
   { id: 'heart', name: 'Heart', emoji: '💖', price: 50, animationType: 'zoom' },
   { id: 'ring', name: 'Ring', emoji: '💍', price: 500, animationType: 'bounce' },
-];
-
-const GAME_LIST = [
-  { id: 'ludo', title: 'Ludo Masters', icon: '🎲', color: 'bg-green-500' },
-  { id: 'fruit-party', title: 'Fruit Party', icon: '🎡', color: 'bg-purple-500' },
 ];
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {

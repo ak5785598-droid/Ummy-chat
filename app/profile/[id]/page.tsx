@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use } from 'react';
@@ -17,7 +18,8 @@ import {
   Heart,
   ShoppingBag,
   Shirt,
-  Activity
+  Activity,
+  User
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
