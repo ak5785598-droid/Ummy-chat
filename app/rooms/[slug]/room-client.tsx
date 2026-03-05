@@ -250,7 +250,12 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: index, isMuted: true, updatedAt: serverTimestamp() }); 
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { 
+      seatIndex: index, 
+      isMuted: true, 
+      activeWave: userProfile?.inventory?.activeWave || 'Default',
+      updatedAt: serverTimestamp() 
+    }); 
   };
 
   const handleSeatAction = (action: string) => {
@@ -283,7 +288,7 @@ export function RoomClient({ room }: { room: Room }) {
           isChatMuted: !room.isChatMuted,
           updatedAt: serverTimestamp()
         });
-        toast({ title: room.isChatMuted ? 'Room Unmuted' : 'Room Muted' });
+        toast({ title: !room.isChatMuted ? 'Frequency Silenced' : 'Silence Revoked' });
         break;
       case 'invite':
         toast({ title: 'Dispatching Invites', description: 'Scanning tribal frequency for friends...' });
@@ -339,7 +344,11 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleMicToggle = () => { 
     const participant = participants?.find(p => p.uid === currentUser?.uid);
-    if (!isInSeat || !firestore || !currentUser || !room.id || participant?.isSilenced) return;
+    if (!isInSeat || !firestore || !currentUser || !room.id || participant?.isSilenced || room.isChatMuted) {
+      if (participant?.isSilenced) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'Your frequency is currently silenced by an Admin.' });
+      else if (room.isChatMuted) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'The room frequency is globally muted.' });
+      return;
+    }
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
 
@@ -358,6 +367,14 @@ export function RoomClient({ room }: { room: Room }) {
       <AvatarFallback>UM</AvatarFallback>
     </Avatar>
   );
+
+  const getWaveColor = (waveId?: string) => {
+    switch(waveId) {
+      case 'w1': return 'text-cyan-500';
+      case 'w2': return 'text-orange-600';
+      default: return 'text-primary';
+    }
+  };
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem]">
@@ -398,6 +415,9 @@ export function RoomClient({ room }: { room: Room }) {
               return (
                 <div key={idx} className="w-[22%] flex flex-col items-center gap-1">
                   <div className="relative">
+                    {occupant && !occupant.isMuted && (
+                      <div className={cn("absolute -inset-1 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />
+                    )}
                     <AvatarFrame frameId={occupant?.activeFrame} size="md">
                       <button 
                         onClick={() => { 
@@ -410,7 +430,7 @@ export function RoomClient({ room }: { room: Room }) {
                           } 
                         }}
                         className={cn(
-                          "h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 backdrop-blur-sm active:scale-90 transition-transform",
+                          "h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10",
                           isLocked ? "border-red-500/40" : "border-white/10"
                         )}
                       >
@@ -426,7 +446,7 @@ export function RoomClient({ room }: { room: Room }) {
                         )}
                       </button>
                     </AvatarFrame>
-                    {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-2 w-2 text-white" /></div>}
+                    {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg z-20"><MicOff className="h-2 w-2 text-white" /></div>}
                   </div>
                   <span className="text-[8px] font-black uppercase text-white/60 truncate w-14 text-center">
                     {occupant ? occupant.name : `No.${idx}`}
@@ -452,7 +472,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-4">
         <button onClick={handleMicToggle} className={cn("p-3 rounded-full border border-white/10 backdrop-blur-md transition-all active:scale-95", isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500" : "bg-white/10")}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
-        <form className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-12 px-4 flex items-center border border-white/5" onSubmit={handleSendMessage}><Input placeholder="Say Hi" className="bg-transparent border-none text-xs font-black tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full" value={messageText} onChange={(e) => setMessageText(e.target.value)} /></form>
+        <form className="flex-1 bg-white/10 backdrop-blur-xl rounded-full h-12 px-4 flex items-center border border-white/5 gap-2" onSubmit={handleSendMessage}>
+          <span className="text-sm shrink-0">💬</span>
+          <Input placeholder="Say Hi" className="bg-transparent border-none text-xs font-black tracking-widest placeholder:text-white/40 focus-visible:ring-0 h-full p-0 flex-1" value={messageText} onChange={(e) => setMessageText(e.target.value)} />
+        </form>
         <div className="flex items-center gap-2">
           <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg active:scale-95 transition-transform" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
         </div>
