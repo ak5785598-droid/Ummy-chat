@@ -26,29 +26,36 @@ import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/firestore";
 
-const sidebarItems = [
-  { href: "/rooms", label: "Home", icon: Castle },
-  { href: "/messages", label: "Messages", icon: Mail },
-  { href: "/store", label: "Boutique", icon: ShoppingBag },
-  { href: "/leaderboard", label: "Rankings", icon: Crown },
-  { href: "/games", label: "Game Zone", icon: Gamepad2 },
-];
-
-const mobileNavItems = [
-  { href: "/rooms", label: "Rooms", icon: Castle },
-  { href: "/messages", label: "Message", icon: MessageSquare },
-  { href: "/profile", label: "Mine", icon: User },
-];
+/**
+ * High-Fidelity Home Nav Icon.
+ */
+const HomeNavIcon = ({ active }: { active: boolean }) => (
+  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="45" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
+    <path d="M 30 65 Q 50 80 70 65" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" fill="none" strokeLinecap="round" />
+  </svg>
+);
 
 /**
- * High-Fidelity Green Smiley SVG Signature for "MINE" tab.
+ * High-Fidelity Message Nav Icon (Yellow Bubble).
  */
-const GreenSmileyIcon = ({ className, active }: { className?: string, active?: boolean }) => (
-  <svg viewBox="0 0 100 100" className={cn(className, "transition-all")} xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="45" fill={active ? "#00FF00" : "#E0E0E0"} />
-    <circle cx="35" cy="40" r="5" fill="#000" />
-    <circle cx="65" cy="40" r="5" fill="#000" />
-    <path d="M 30 65 Q 50 80 70 65" stroke="#000" strokeWidth="5" fill="none" strokeLinecap="round" />
+const MessageNavIcon = ({ active }: { active: boolean }) => (
+  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10 20 Q 10 10 30 10 L 70 10 Q 90 10 90 20 L 90 60 Q 90 70 70 70 L 40 70 L 20 90 L 20 70 Q 10 70 10 60 Z" fill={active ? "#FFCC00" : "none"} stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
+    <circle cx="40" cy="40" r="4" fill={active ? "#000" : "#E0E0E0"} />
+    <circle cx="60" cy="40" r="4" fill={active ? "#000" : "#E0E0E0"} />
+    <path d="M 45 55 Q 50 60 55 55" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="4" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+/**
+ * High-Fidelity Me Nav Icon (Refined Silhouette).
+ */
+const MeNavIcon = ({ active }: { active: boolean }) => (
+  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 50 15 Q 50 5 70 5 Q 90 5 90 20 Q 90 40 70 40 Q 50 40 50 30" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" className="hidden" />
+    <circle cx="50" cy="35" r="20" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
+    <path d="M 20 85 Q 20 60 50 60 Q 80 60 80 85" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" strokeLinecap="round" />
   </svg>
 );
 
@@ -63,7 +70,7 @@ export function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
   const firestore = useFirestore();
@@ -117,16 +124,11 @@ export function AppLayout({
           </SidebarHeader>
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton asChild isActive={pathname?.startsWith(item.href)} className={cn("h-14 rounded-xl px-4", pathname?.startsWith(item.href) && "bg-black/10 font-black")}>
-                    <Link href={item.href} className="flex items-center gap-4">
-                      <item.icon className="h-6 w-6" />
-                      <span className="text-base font-black uppercase italic">{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">Home</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">Messages</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">Boutique</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">Rankings</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">Game Zone</span></Link></SidebarMenuButton></SidebarMenuItem>
               {isOfficial && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-red-500/10">
@@ -156,19 +158,18 @@ export function AppLayout({
           
           {!isInsideRoom && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-16 pb-safe shrink-0 relative z-50 px-2">
-              {mobileNavItems.map((item) => {
-                const isActive = pathname === item.href || (item.href === '/profile' && pathname?.startsWith('/profile'));
-                return (
-                  <Link key={item.label} href={item.href} className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", isActive ? "text-[#00FF00]" : "text-gray-300")}>
-                    {item.label === 'Mine' ? (
-                      <GreenSmileyIcon className="h-7 w-7" active={isActive} />
-                    ) : (
-                      <item.icon className={cn("h-7 w-7", isActive && "fill-current")} />
-                    )}
-                    <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
-                  </Link>
-                );
-              })}
+              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-black" : "text-gray-300")}>
+                <HomeNavIcon active={pathname === '/rooms'} />
+                <span className="text-[9px] font-black uppercase tracking-tighter">Home</span>
+              </Link>
+              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-black" : "text-gray-300")}>
+                <MessageNavIcon active={pathname === '/messages'} />
+                <span className="text-[9px] font-black uppercase tracking-tighter">Message</span>
+              </Link>
+              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-black" : "text-gray-300")}>
+                <MeNavIcon active={pathname?.startsWith('/profile')} />
+                <span className="text-[9px] font-black uppercase tracking-tighter">Me</span>
+              </Link>
             </nav>
           )}
           <FloatingRoomBar />
