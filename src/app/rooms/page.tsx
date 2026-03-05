@@ -49,9 +49,11 @@ const DEFAULT_SLIDES = [
 
 function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const slides = customSlides || DEFAULT_SLIDES;
 
   useEffect(() => {
+    setMounted(true);
     if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -59,7 +61,7 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  if (slides.length === 0) return null;
+  if (!mounted || slides.length === 0) return null;
 
   const slide = slides[currentSlide];
   const Icon = ICON_MAP[slide.iconName] || Sparkles;

@@ -88,7 +88,7 @@ service cloud.firestore {
         isSignedIn() && (
           isOwner(resource.data.ownerId) || 
           (resource.data.get('moderatorIds', []) != null && request.auth.uid in resource.data.get('moderatorIds', [])) ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt', 'isChatMuted', 'currentMusicUrl', 'roomThemeId', 'maxActiveMics', 'isLocked', 'announcement', 'welcomeMessage', 'name', 'coverUrl']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt', 'isChatMuted', 'currentMusicUrl', 'roomThemeId', 'maxActiveMics', 'isLocked', 'announcement', 'welcomeMessage', 'name', 'coverUrl', 'isSuperMic']) ||
           chatRoomId == 'ummy-help-center' ||
           isAdmin()
         )

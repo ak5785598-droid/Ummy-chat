@@ -47,6 +47,7 @@ import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
+import { RoomSettingsDialog } from '@/components/room-settings-dialog';
 
 const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
@@ -174,6 +175,16 @@ export function RoomClient({ room }: { room: Room }) {
   const currentTheme = ROOM_THEMES.find(t => t.id === (room as any).roomThemeId) || ROOM_THEMES[0];
   const maxMics = room.maxActiveMics || 9;
 
+  const roomDpAvatar = (
+    <Avatar className={cn(
+      "h-12 w-12 rounded-xl border-2 border-white/20 transition-transform active:scale-95",
+      canManageRoom && "cursor-pointer"
+    )}>
+      <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} />
+      <AvatarFallback>UM</AvatarFallback>
+    </Avatar>
+  );
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem]">
       <DailyRewardDialog />
@@ -188,10 +199,9 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-6">
         <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
-            <AvatarImage src={room.coverUrl || undefined} />
-            <AvatarFallback>UM</AvatarFallback>
-          </Avatar>
+          {canManageRoom ? (
+            <RoomSettingsDialog room={room} trigger={roomDpAvatar} />
+          ) : roomDpAvatar}
           <div>
             <h1 className="font-black text-[15px] uppercase tracking-tighter text-white">{room.title}</h1>
             <p className="text-[10px] font-bold text-white/60 uppercase">ID:{room.roomNumber}</p>
@@ -220,7 +230,7 @@ export function RoomClient({ room }: { room: Room }) {
                         {occupant ? <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl} /><AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback></Avatar> : <Armchair className="text-white/20 h-6 w-6" />}
                       </button>
                     </AvatarFrame>
-                    {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black"><MicOff className="h-2 w-2 text-white" /></div>}
+                    {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg"><MicOff className="h-2 w-2 text-white" /></div>}
                   </div>
                   <span className="text-[8px] font-black uppercase text-white/60 truncate w-14 text-center">{occupant ? occupant.name : `Slot ${idx}`}</span>
                 </div>
