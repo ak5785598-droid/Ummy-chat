@@ -2,8 +2,18 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, MessageCircle, UserPlus, Star, ShieldCheck, ChevronRight, Search, Loader, Send, ChevronLeft, ClipboardList } from 'lucide-react';
+import { 
+  Flag, 
+  Shield, 
+  MessageSquareText, 
+  ChevronRight, 
+  Search, 
+  Loader, 
+  Send, 
+  ChevronLeft, 
+  CheckCircle2,
+  Users
+} from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { UmmyLogoIcon } from '@/components/icons';
 import { collection, query, orderBy, where, doc, serverTimestamp, limitToLast } from 'firebase/firestore';
@@ -20,8 +30,24 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className="px-6 py-5 flex items-center gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group"
+  >
+    <div className={cn("h-14 w-14 rounded-full flex items-center justify-center shadow-lg shrink-0", colorClass)}>
+      <Icon className="h-7 w-7 text-white" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between mb-0.5">
+        <h3 className="font-black text-[17px] text-gray-900 tracking-tight">{label}</h3>
+        {date && <span className="text-[11px] font-bold text-gray-300 uppercase tracking-tighter">{date}</span>}
+      </div>
+      {subtext && <p className="text-[13px] text-gray-400 truncate font-body italic">{subtext}</p>}
+    </div>
+  </div>
+);
 
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   const participantIds = chat?.participantIds || [];
@@ -124,7 +150,7 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
   };
 
   return (
-    <div className="flex flex-col h-[75vh] bg-white rounded-t-[2.5rem] shadow-2xl animate-in slide-in-from-right duration-300 overflow-hidden font-headline">
+    <div className="flex flex-col h-[85vh] bg-white rounded-t-[2.5rem] shadow-2xl animate-in slide-in-from-right duration-300 overflow-hidden font-headline">
       <header className="p-4 border-b border-gray-50 flex items-center gap-3 bg-white/80 backdrop-blur-md">
         <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="h-6 w-6 text-gray-600" /></button>
         <Avatar className="h-10 w-10">
@@ -143,7 +169,7 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
             <div className="flex justify-center py-10"><Loader className="animate-spin text-primary" /></div>
           ) : messages?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center opacity-20">
-               <MessageCircle className="h-12 w-12 mb-2" />
+               <MessageSquareText className="h-12 w-12 mb-2" />
                <p className="text-[10px] font-black uppercase tracking-widest">No Message History</p>
             </div>
           ) : messages?.map((msg: any) => {
@@ -185,249 +211,145 @@ const PrivateConversation = ({ chatId, otherUser, onBack, currentUid }: any) => 
 export default function MessagesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [activeChat, setActiveChat] = useState<{ id: string; otherUser: any } | null>(null);
-  const [activeTabValue, setActiveTabValue] = useState('chats');
-
-  const notificationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('timestamp', 'desc'));
-  }, [firestore, user]);
+  const [showOfficial, setShowOfficial] = useState(false);
 
   const chatsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Client-side sort to avoid composite index requirement in prototype
     return query(
       collection(firestore, 'privateChats'),
       where('participantIds', 'array-contains', user.uid)
     );
   }, [firestore, user]);
 
-  const { data: systemMessages, isLoading: isSysLoading } = useCollection(notificationsQuery);
   const { data: rawChats, isLoading: isChatsLoading } = useCollection(chatsQuery);
 
-  // High-Fidelity Client-Side Frequency Sort
   const chats = useMemo(() => {
     if (!rawChats) return null;
-    return [...rawChats].sort((a, b) => {
-      const timeA = a.updatedAt?.toMillis?.() || 0;
-      const timeB = b.updatedAt?.toMillis?.() || 0;
-      return timeB - timeA;
-    });
+    return [...rawChats].sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawChats]);
 
-  const latestOfficialMsg = systemMessages?.[0];
-  const officialSubtext = latestOfficialMsg?.content || 'Welcome to the frequency!';
-  const officialTime = latestOfficialMsg?.timestamp 
-    ? (isToday(latestOfficialMsg.timestamp.toDate()) 
-        ? format(latestOfficialMsg.timestamp.toDate(), 'HH:mm') 
-        : format(latestOfficialMsg.timestamp.toDate(), 'MMM d')) 
-    : 'Official';
+  const officialQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('timestamp', 'desc'));
+  }, [firestore, user]);
 
-  const taskListAsset = PlaceHolderImages.find(img => img.id === 'task-list');
+  const { data: officialMsgs } = useCollection(officialQuery);
+  const latestOfficial = officialMsgs?.[0];
+
+  if (activeChat) {
+    return (
+      <AppLayout>
+        <div className="min-h-full bg-white flex flex-col relative font-headline">
+          <PrivateConversation 
+            chatId={activeChat.id} 
+            otherUser={activeChat.otherUser} 
+            currentUid={user?.uid}
+            onBack={() => setActiveChat(null)} 
+          />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-white flex flex-col relative font-headline">
-        {!activeChat && activeTabValue === 'chats' && (
-          <header className="px-6 pt-10 pb-6 bg-white shrink-0">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-4xl font-black uppercase italic tracking-tighter">Messages</h1>
-              <div className="flex gap-3">
-                 <button className="bg-gray-50 p-2.5 rounded-full text-gray-400 hover:text-primary transition-colors"><Search className="h-6 w-6" /></button>
-                 <button className="bg-gray-50 p-2.5 rounded-full text-gray-400 hover:text-primary transition-colors"><UserPlus className="h-6 w-6" /></button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-4">
-               {[
-                 { icon: Bell, label: 'Alerts', color: 'bg-blue-500' },
-                 { icon: Star, label: 'Moments', color: 'bg-pink-500' },
-                 { icon: UserPlus, label: 'Friends', color: 'bg-yellow-500' },
-                 { icon: UserPlus, label: 'Groups', color: 'bg-purple-500' }
-               ].map((item, i) => (
-                 <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
-                    <div className={cn("h-14 w-14 rounded-[1.2rem] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", item.color, `shadow-${item.color.split('-')[1]}-500/20`)}>
-                       <item.icon className="text-white h-6 w-6" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-tighter">{item.label}</span>
-                 </div>
-               ))}
-            </div>
-          </header>
-        )}
-
-        <div className="flex-1 bg-white">
-          <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="w-full">
-            {activeTabValue === 'chats' && !activeChat && (
-              <TabsList className="bg-transparent border-b border-gray-50 rounded-none w-full h-12 justify-start gap-10 px-6 p-0">
-                <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none font-black uppercase text-xs tracking-widest px-0 pb-3 h-full transition-all">Chats</TabsTrigger>
-              </TabsList>
-            )}
-
-            <TabsContent value="chats" className="m-0">
-               {activeChat ? (
-                 <PrivateConversation 
-                   chatId={activeChat.id} 
-                   otherUser={activeChat.otherUser} 
-                   currentUid={user?.uid}
-                   onBack={() => setActiveChat(null)} 
-                 />
-               ) : (
-                 <div className="pb-32">
-                   <div className="divide-y divide-gray-50">
-                     {/* Ummy Official Persistent Identity */}
-                     <div 
-                       onClick={() => setActiveTabValue('official')}
-                       className="px-6 py-4 flex gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group"
-                     >
-                        <div className="relative shrink-0">
-                          <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 shadow-sm overflow-hidden">
-                            <UmmyLogoIcon className="h-10 w-10" />
-                          </div>
-                          <div className="absolute bottom-0 right-0 h-4 w-4 bg-green-500 rounded-full border-2 border-white shadow-sm" />
-                        </div>
-                        <div className="flex-1 min-w-0 pt-1">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <h3 className="font-black text-[15px] text-gray-900 truncate tracking-tight">
-                              Ummy Official_In
-                            </h3>
-                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
-                              {officialTime}
-                            </span>
-                          </div>
-                          <p className="text-[13px] text-gray-400 truncate italic font-body">
-                            {officialSubtext}
-                          </p>
-                        </div>
-                     </div>
-
-                     {isChatsLoading ? (
-                       <div className="flex flex-col items-center py-20 gap-4">
-                          <Loader className="animate-spin text-primary h-8 w-8" />
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Syncing Frequencies...</p>
-                       </div>
-                     ) : !chats || chats.length === 0 ? (
-                       <div className="flex flex-col items-center justify-center py-32 text-center opacity-10">
-                          <MessageCircle className="h-20 w-20 mb-4" />
-                          <p className="font-black uppercase tracking-widest text-xs">No active vibes</p>
-                       </div>
-                     ) : (
-                       chats.map(chat => (
-                         <ChatListItem 
-                           key={chat.id} 
-                           chat={chat} 
-                           currentUid={user?.uid} 
-                           onSelect={(id: string, other: any) => setActiveChat({ id, otherUser: other })} 
-                         />
-                       ))
-                     )}
-                   </div>
-                 </div>
-               )}
-            </TabsContent>
-
-            <TabsContent value="official" className="m-0 bg-gray-50/30 min-h-[70vh] font-headline">
-               <header className="p-4 border-b border-gray-100 flex items-center gap-3 bg-white sticky top-0 z-10">
-                 <button onClick={() => setActiveTabValue('chats')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="h-6 w-6 text-gray-600" /></button>
-                 <div className="flex-1">
-                   <p className="font-black text-sm uppercase italic tracking-tight">Official Inbox</p>
-                   <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Ummy Global Support</p>
-                 </div>
-               </header>
-               
-               <div className="p-4 space-y-4 pb-32">
-                 {isSysLoading ? (
-                   <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" /></div>
-                 ) : systemMessages?.length === 0 ? (
-                   <div className="py-32 text-center text-gray-200 uppercase font-black text-[10px] tracking-widest italic">No System Broadcasts</div>
-                 ) : (
-                   systemMessages?.map((msg: any) => (
-                     <div 
-                       key={msg.id} 
-                       onClick={() => setSelectedMessage(msg)}
-                       className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
-                     >
-                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-                           <UmmyLogoIcon className="h-8 w-8" />
-                        </div>
-                        <div className="flex-1 min-w-0 pt-0.5">
-                           <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-black text-sm text-gray-900 uppercase italic tracking-tighter">{msg.title || 'Official Notice'}</h3>
-                              <span className="text-[9px] font-bold text-gray-400 uppercase">
-                                {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : 'Sync'}
-                              </span>
-                           </div>
-                           <p className="text-[12px] text-gray-500 line-clamp-2 italic font-body leading-relaxed">{msg.content}</p>
-                        </div>
-                     </div>
-                   ))
-                 )}
-               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Floating Task Hub Portal */}
-        {activeTabValue === 'chats' && !activeChat && (
-          <div className="fixed bottom-24 right-6 z-[100] animate-in zoom-in duration-500">
-             <div className="relative group">
-                <button className="h-16 w-16 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border-2 border-gray-50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
-                   <div className="relative h-12 w-12">
-                      {taskListAsset && (
-                        <Image 
-                          src={taskListAsset.imageUrl} 
-                          alt={taskListAsset.description} 
-                          fill 
-                          className="object-contain" 
-                          data-ai-hint={taskListAsset.imageHint}
-                        />
-                      )}
-                   </div>
-                </button>
-                {/* Notification Pulse */}
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-             </div>
-          </div>
-        )}
-      </div>
-
-      <Dialog open={!!selectedMessage} onOpenChange={(open) => !open && setSelectedMessage(null)}>
-        <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
-          <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
-            <div className="h-14 w-14 bg-primary/10 rounded-[1.2rem] flex items-center justify-center text-primary shrink-0">
-               <UmmyLogoIcon className="h-10 w-10" />
-            </div>
-            <div className="flex-1 text-left">
-              <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">
-                {selectedMessage?.title || 'Official Broadcast'}
-              </DialogTitle>
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">
-                {selectedMessage?.timestamp ? format(selectedMessage.timestamp.toDate(), 'MMMM d • HH:mm') : 'Recently'}
-              </p>
-            </div>
-          </DialogHeader>
-          <div className="p-8 space-y-6">
-            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 min-h-[200px] shadow-inner">
-               <p className="text-lg font-body leading-relaxed text-gray-800 whitespace-pre-wrap italic">
-                 {selectedMessage?.content}
-               </p>
-            </div>
-            <div className="flex items-center justify-center gap-2 py-2">
-               <ShieldCheck className="h-4 w-4 text-green-500" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Identity Sync Verified</span>
-            </div>
-          </div>
-          <div className="p-8 pt-0">
-            <button 
-              onClick={() => setSelectedMessage(null)}
-              className="w-full h-16 bg-primary text-white rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl shadow-primary/20 active:scale-95 transition-all"
-            >
-              Sync Confirmed
+      <div className="min-h-full bg-white flex flex-col relative font-headline animate-in fade-in duration-700">
+        
+        {/* Header with Yellow Gradient */}
+        <header className="relative shrink-0">
+          <div className="bg-gradient-to-b from-[#FFCC00] to-white h-24 absolute inset-x-0 top-0 z-0" />
+          <div className="relative z-10 px-6 pt-10 flex items-center justify-between">
+            <div className="w-8" /> {/* Placeholder for alignment */}
+            <h1 className="text-3xl font-black text-black tracking-tight text-center">Message</h1>
+            <button className="p-2 text-black hover:scale-110 transition-transform">
+               <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </header>
+
+        <div className="flex-1 bg-white relative z-10 pt-4">
+          <div className="divide-y divide-gray-50">
+            {/* Official Categories */}
+            <CategoryItem 
+              icon={Flag} 
+              label="Activity" 
+              subtext={latestOfficial?.content || "No new tribal activities."}
+              date={latestOfficial?.timestamp ? format(latestOfficial.timestamp.toDate(), 'M/d/ yyyy') : "4/3/ 2026"}
+              colorClass="bg-gradient-to-br from-orange-500 to-red-600"
+              onClick={() => setShowOfficial(true)}
+            />
+            
+            <CategoryItem 
+              icon={Shield} 
+              label="Family" 
+              colorClass="bg-gradient-to-br from-amber-400 to-orange-500"
+            />
+
+            <CategoryItem 
+              icon={MessageSquareText} 
+              label="Feedback" 
+              colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
+            />
+
+            {/* Chat Divider */}
+            <div className="h-2 bg-gray-50/50" />
+
+            {/* Real-time Chats */}
+            {isChatsLoading ? (
+              <div className="py-20 flex flex-col items-center gap-4">
+                <Loader className="animate-spin text-primary h-8 w-8" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Syncing Frequencies...</p>
+              </div>
+            ) : !chats || chats.length === 0 ? (
+              <div className="py-32 flex flex-col items-center justify-center opacity-10">
+                <MessageSquareText className="h-16 w-16 mb-4" />
+                <p className="font-black uppercase tracking-widest text-xs">No active vibes</p>
+              </div>
+            ) : (
+              chats.map(chat => (
+                <ChatListItem 
+                  key={chat.id} 
+                  chat={chat} 
+                  currentUid={user?.uid} 
+                  onSelect={(id: string, other: any) => setActiveChat({ id, otherUser: other })} 
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Official Notifications Dialog */}
+        <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
+          <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
+            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
+              <div className="h-14 w-14 bg-orange-500 rounded-[1.2rem] flex items-center justify-center text-white shrink-0">
+                 <Flag className="h-8 w-8" />
+              </div>
+              <div className="flex-1 text-left">
+                <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Official Activities</DialogTitle>
+                <DialogDescription className="sr-only">System messages and official tribal broadcasts.</DialogDescription>
+              </div>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] p-6">
+               <div className="space-y-4">
+                  {officialMsgs?.map((msg: any) => (
+                    <div key={msg.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                       <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-black uppercase text-sm">{msg.title || 'Official'}</h4>
+                          <span className="text-[10px] text-gray-400 font-bold">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
+                       </div>
+                       <p className="text-sm font-body italic text-gray-600 leading-relaxed">{msg.content}</p>
+                    </div>
+                  ))}
+               </div>
+            </ScrollArea>
+            <div className="p-8 pt-0">
+              <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-black text-white rounded-2xl font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Close</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AppLayout>
   );
 }
