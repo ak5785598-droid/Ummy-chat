@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -21,9 +22,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-/**
- * High-Fidelity SVIP Signature Badge.
- */
 const SVIPBadge = ({ level }: { level: number }) => (
   <div className={cn(
     "flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm border border-orange-500/50 shadow-lg scale-90 origin-left",
@@ -33,9 +31,6 @@ const SVIPBadge = ({ level }: { level: number }) => (
   </div>
 );
 
-/**
- * High-Fidelity Level Signature Badge.
- */
 const LevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
     <Star className="h-2 w-2 text-white fill-current" />
@@ -43,9 +38,6 @@ const LevelBadge = ({ level }: { level: number }) => (
   </div>
 );
 
-/**
- * Specialized Ranking List Component.
- */
 const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
   if (isLoading) return (
     <div className="flex flex-col items-center py-40 gap-4">

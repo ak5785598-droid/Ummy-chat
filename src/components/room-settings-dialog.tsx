@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -60,11 +61,6 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
   </div>
 );
 
-/**
- * High-Fidelity Room Settings Portal.
- * Designed to mirror the elite tribal settings roster.
- * Includes real-time image cropping, upload sync, and administrator management.
- */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -74,7 +70,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [newName, setNewName] = useState(room.title || room.name);
   const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
   
-  // Precision Visual Sync State
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
 
@@ -83,7 +78,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const { isUploading, uploadRoomImage } = useRoomImageUpload(room.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Real-time participant roster for Admin management
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
@@ -186,7 +180,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
 
           <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
              <div className="pb-10">
-                {/* Visual Identity Section */}
                 <SettingItem label="Profile" onClick={() => !isUploading && fileInputRef.current?.click()} className="py-8">
                    <div className="relative">
                       <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
@@ -207,7 +200,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                    <ChevronRight className="h-4 w-4 text-gray-300 ml-2" />
                 </SettingItem>
 
-                {/* Identity Identifier */}
                 <SettingItem 
                   label="Room Name" 
                   value={room.title || room.name} 
@@ -217,7 +209,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   }} 
                 />
 
-                {/* Tribal Broadcast */}
                 <SettingItem 
                   label="Announcement" 
                   value={room.announcement} 
@@ -227,7 +218,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   }} 
                 />
 
-                {/* Frequency Capacity */}
                 <SettingItem 
                   label="Number of Mic" 
                   extra={`${room.maxActiveMics || 9} people`} 
@@ -238,10 +228,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   }}
                 />
 
-                {/* Locked Access */}
                 <SettingItem label="Room Password" />
 
-                {/* Elite Power Toggle */}
                 <SettingItem label="Super Mic" showChevron={false}>
                    <Switch 
                      checked={room.isSuperMic || false} 
@@ -249,15 +237,12 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                    />
                 </SettingItem>
 
-                {/* Visual Dimensions */}
                 <SettingItem label="Room Theme" />
 
-                {/* Authority Handshake: Real-time Admin Management */}
                 <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
 
                 <div className="h-4 bg-gray-50" />
 
-                {/* Governance Rows */}
                 <SettingItem 
                   label="Clean Chat History" 
                   onClick={handleClearChat}
@@ -270,7 +255,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
              </div>
           </ScrollArea>
 
-          {/* Real-time Text Edit Overlays */}
           {isEditingName && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
@@ -287,9 +271,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                     className="h-16 rounded-2xl border-2 text-xl font-black italic focus:border-primary transition-all" 
                     autoFocus 
                   />
-                  <p className="mt-4 text-[10px] text-muted-foreground font-black uppercase tracking-widest text-center opacity-40 italic">
-                    Broadcast a new name to the global tribe.
-                  </p>
                </div>
             </div>
           )}
@@ -311,14 +292,10 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                     placeholder="Broadcast your vibe..."
                     autoFocus 
                   />
-                  <p className="mt-4 text-[10px] text-muted-foreground font-black uppercase tracking-widest text-center opacity-40 italic">
-                    Visible to all tribe members upon entry sync.
-                  </p>
                </div>
             </div>
           )}
 
-          {/* Real-time Administrator Management Portal */}
           {isManagingAdmins && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
@@ -330,7 +307,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                </header>
                <ScrollArea className="flex-1 p-4">
                   {participants?.map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-all border-b border-gray-50 last:border-0">
+                    <div key={p.uid} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-all border-b border-gray-50 last:border-0">
                        <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
                              <AvatarImage src={p.avatarUrl || undefined} />
@@ -352,9 +329,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                        )}
                     </div>
                   ))}
-                  {(!participants || participants.length === 0) && (
-                    <div className="py-20 text-center opacity-20 italic">No tribe members detected in frequency.</div>
-                  )}
                </ScrollArea>
             </div>
           )}
@@ -363,7 +337,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         </DialogContent>
       </Dialog>
 
-      {/* High-Fidelity Precision Crop Dimension */}
       <ImageCropDialog 
         image={cropImage} 
         open={isCropOpen} 

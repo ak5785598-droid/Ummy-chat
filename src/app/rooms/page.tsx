@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -110,7 +111,7 @@ const RoomSkeleton = () => (
 );
 
 export default function RoomsPage() {
-  const { user } = useUser();
+  const { user } = userUser();
   const firestore = useFirestore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Popular' | 'Me'>('Popular');
