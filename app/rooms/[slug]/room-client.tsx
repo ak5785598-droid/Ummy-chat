@@ -23,6 +23,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -249,6 +252,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
         <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exit Frequency</DialogTitle>
+            <DialogDescription>Choose to minimize the frequency or exit the session.</DialogDescription>
+          </DialogHeader>
           <div className="p-12 flex items-center justify-around gap-8">
             <button onClick={handleMinimize} className="flex flex-col items-center gap-4"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs">Minimize</span></button>
             <button onClick={handleExit} className="flex flex-col items-center gap-4"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs">Exit</span></button>

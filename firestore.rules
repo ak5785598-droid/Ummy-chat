@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -20,7 +19,6 @@ service cloud.firestore {
     }
 
     // Supreme Creator Protocol - Universal Sovereignty
-    // Automatically allows all operations for the specified UID.
     match /{allPaths=**} {
       allow read, write: if isCreator();
     }
@@ -45,7 +43,6 @@ service cloud.firestore {
       );
     }
 
-    // Public Configuration Mesh
     match /appConfig/{configId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -100,7 +97,7 @@ service cloud.firestore {
 
       match /participants/{participantId} {
         allow get, list: if true;
-        allow write: if isSignedIn() && (request.auth.uid == participantId || isRoomAdmin(chatRoomId));
+        allow write: if isCreator() || (isSignedIn() && (request.auth.uid == participantId || isRoomAdmin(chatRoomId)));
         
         match /signaling/{signalId} {
           allow get, list, write: if isSignedIn();
