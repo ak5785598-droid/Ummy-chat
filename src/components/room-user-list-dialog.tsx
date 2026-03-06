@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader, Users, Star, Crown } from 'lucide-react';
+import { Loader, Users, Star, Crown, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -37,14 +37,14 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] md:rounded-[2.5rem] border-none shadow-2xl overflow-hidden font-headline animate-in slide-in-from-bottom-full duration-500">
+      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] md:rounded-[2.5rem] border-none shadow-2xl overflow-hidden font-headline animate-in slide-in-from-bottom-full duration-500">
         <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
           <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
              <Users className="h-6 w-6" />
           </div>
           <div className="flex-1 text-left">
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Room Roster</DialogTitle>
-            <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
+            <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">
               Currently Synchronized: {participants?.length || 0} Members
             </DialogDescription>
           </div>
