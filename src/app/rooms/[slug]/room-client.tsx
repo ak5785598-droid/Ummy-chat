@@ -453,7 +453,7 @@ export function RoomClient({ room }: { room: Room }) {
           {occupant && !occupant.isMuted && <div className="absolute -inset-1 rounded-full border-2 border-green-500 animate-voice-wave" />}
           <AvatarFrame frameId={occupant?.activeFrame} size="md">
             <button onClick={() => handleSeatClick(index, occupant)} className={cn("h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10", isLocked ? "border-red-500/40" : "border-white/10")}>
-              {occupant ? <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl || undefined} /><AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback></Avatar> : isLocked ? <Lock className="text-red-500/40 h-6 w-6" /> : <div className="bg-white/10 rounded-full h-8 w-8 flex items-center justify-center"><Armchair className="text-white/40 h-4 w-4" /></div>}
+              {occupant ? <Avatar className="h-full w-full p-0.5"><AvatarImage src={occupant.avatarUrl || undefined} /><AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback></Avatar> : isLocked ? <Lock className="h-4 w-4 text-red-500/40" /> : <div className="bg-white/10 rounded-full h-8 w-8 flex items-center justify-center"><Armchair className="text-white/40 h-4 w-4" /></div>}
             </button>
           </AvatarFrame>
           {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}

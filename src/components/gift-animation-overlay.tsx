@@ -18,7 +18,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
   const [triggerKey, setTriggerKey] = useState(0);
 
   useEffect(() => {
-    if (giftId) {
+    if (giftId && typeof giftId === 'string') {
       setIsVisible(true);
       setTriggerKey(prev => prev + 1);
       
@@ -35,7 +35,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
     }
   }, [giftId, onComplete]);
 
-  if (!giftId || !isVisible) return null;
+  if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
   const getEmoji = () => {
     switch (giftId) {
@@ -76,7 +76,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
                  <Trophy className="h-32 w-32 text-white drop-shadow-2xl" />
               </div>
            </div>
-           <h2 className="text-7xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl animate-bounce">JACKPOT SYNC</h2>
+           <h2 className="text-7xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl animate-bounce text-center">JACKPOT SYNC</h2>
            <div className="mt-4 flex items-center gap-4 bg-white/10 backdrop-blur-xl px-12 py-4 rounded-full border-2 border-yellow-400/40">
               <span className="text-4xl font-black text-yellow-400 italic">TRIBE LUCK ACTIVE</span>
            </div>
