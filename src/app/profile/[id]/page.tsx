@@ -258,12 +258,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
           
-          {/* Top Corner Icon Requested: 📝 */}
+          {/* Top Corner Icon Requested: ✏️ */}
           {isOwnProfile && (
             <div className="absolute top-4 right-4 z-50">
               <EditProfileDialog profile={profile} trigger={
-                <button className="p-2 hover:scale-110 transition-transform bg-white/20 backdrop-blur-md rounded-full border border-white/10 shadow-sm">
-                  <span className="text-xl">📝</span>
+                <button className="p-2 hover:scale-110 transition-transform bg-white/20 backdrop-blur-md rounded-full border border-white/10 shadow-sm active:scale-90">
+                  <span className="text-xl">✏️</span>
                 </button>
               } />
             </div>
@@ -276,7 +276,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               <div className="absolute top-12 right-6">
                 <EditProfileDialog profile={profile} trigger={
                   <button className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95">
-                    <Pen className="h-4 w-4 text-gray-400" />
+                    <span className="text-lg">✏️</span>
                   </button>
                 } />
               </div>
