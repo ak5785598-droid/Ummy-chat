@@ -26,7 +26,9 @@ import {
   User as UserIcon,
   X,
   UserX,
-  UserCheck
+  UserCheck,
+  Ban,
+  UserPlus
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -119,7 +121,8 @@ function SeatActionDialog({
   isOccupied,
   isMe,
   isLocked,
-  occupantName
+  occupantName,
+  isOccupantMuted
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void; 
@@ -129,17 +132,18 @@ function SeatActionDialog({
   isMe: boolean;
   isLocked: boolean;
   occupantName?: string;
+  isOccupantMuted?: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-500 font-headline">
         <DialogHeader className="p-6 border-b border-gray-50 shrink-0">
           <DialogTitle className="text-xl font-black uppercase italic tracking-tighter text-center">
-            {isOccupied ? (isMe ? 'My Seat' : `Manage ${occupantName}`) : (isLocked ? 'Locked Slot' : 'Available Slot')}
+            {isOccupied ? (isMe ? 'My Seat' : occupantName) : (isLocked ? 'Locked Slot' : 'Available Slot')}
           </DialogTitle>
           <DialogDescription className="sr-only">Choose a frequency management action.</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center py-4">
+        <div className="flex flex-col items-center py-2">
           
           {/* MANAGEMENT: Admin on any occupied seat */}
           {canManage && isOccupied && !isMe && (
@@ -148,11 +152,17 @@ function SeatActionDialog({
                 onClick={() => onAction('toggle-mute')} 
                 className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
               >
-                Mute / Unmute
+                {isOccupantMuted ? 'Unmute' : 'Mute'} Member
+              </button>
+              <button 
+                onClick={() => onAction('kick-out')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-red-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                Kick from Room
               </button>
               <button 
                 onClick={() => onAction('remove-from-seat')} 
-                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-red-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-orange-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
               >
                 Remove from seat
               </button>
@@ -173,6 +183,12 @@ function SeatActionDialog({
                 className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
               >
                 {isLocked ? 'Unlock Seat' : 'Lock Seat'}
+              </button>
+              <button 
+                onClick={() => onAction('invite')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-blue-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                Invite Friends
               </button>
             </>
           )}
@@ -296,6 +312,63 @@ export function RoomClient({ room }: { room: Room }) {
     }); 
   };
 
+  const handleSilence = (uid: string, currentMuted: boolean) => {
+    if (!firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), {
+      isMuted: !currentMuted,
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: !currentMuted ? 'Voice Frequency Silenced' : 'Voice Frequency Restored' });
+  };
+
+  const handleKick = (uid: string, durationMinutes: number) => {
+    if (!firestore || !room.id) return;
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + durationMinutes);
+    
+    setDocumentNonBlocking(
+      doc(firestore, 'chatRooms', room.id, 'bans', uid),
+      {
+        uid,
+        expiresAt: expiresAt,
+        createdAt: serverTimestamp(),
+        adminId: currentUser?.uid
+      },
+      { merge: true }
+    );
+    
+    // Auto-remove from seat
+    const participant = participants?.find(p => p.uid === uid);
+    if (participant && participant.seatIndex > 0) {
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { 
+        seatIndex: 0,
+        isMuted: true
+      });
+    }
+    
+    toast({ title: 'Exclusion Protocol Active', description: `Tribe member restricted for ${durationMinutes} mins.` });
+  };
+
+  const handleLeaveSeatForce = (uid: string) => {
+    if (!firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { 
+      seatIndex: 0,
+      isMuted: true,
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: 'Participant Removed from Mic' });
+  };
+
+  const handleToggleMod = (uid: string) => {
+    if (!firestore || !room.id) return;
+    const isCurrentlyMod = room.moderatorIds?.includes(uid);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid),
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: isCurrentlyMod ? 'Admin Role Revoked' : 'Admin Role Granted' });
+  };
+
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
@@ -340,17 +413,21 @@ export function RoomClient({ room }: { room: Room }) {
         break;
       case 'toggle-mute':
         if (canManageRoom && occupant) {
-          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', occupant.uid), {
-            isMuted: !occupant.isMuted
-          });
-          toast({ title: occupant.isMuted ? 'Voice Frequency Restored' : 'Participant Silenced' });
+          handleSilence(occupant.uid, occupant.isMuted);
+        }
+        break;
+      case 'kick-out':
+        if (canManageRoom && occupant) {
+          handleKick(occupant.uid, 60); // Default 1 hour kick from seat menu
         }
         break;
       case 'remove-from-seat':
         if (canManageRoom && occupant) {
-          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', occupant.uid), { seatIndex: 0, isMuted: true });
-          toast({ title: 'Participant Removed from Seat' });
+          handleLeaveSeatForce(occupant.uid);
         }
+        break;
+      case 'invite':
+        setIsShareOpen(true);
         break;
       case 'view-profile':
         setIsUserProfileCardOpen(true);
@@ -412,6 +489,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const isMeAlreadyInSeat = participants?.some(p => p.uid === currentUser?.uid && p.seatIndex > 0);
+  const selectedOccupant = participants?.find(p => p.uid === selectedParticipantUid);
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
@@ -518,10 +596,11 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenChange={setIsSeatMenuOpen} 
         onAction={handleSeatAction}
         canManage={canManageRoom}
-        isOccupied={!!participants?.find(p => p.seatIndex === selectedSeatIdx)}
-        isMe={participants?.find(p => p.seatIndex === selectedSeatIdx)?.uid === currentUser?.uid}
+        isOccupied={!!occupant}
+        isMe={occupant?.uid === currentUser?.uid}
         isLocked={!!selectedSeatIdx && (room.lockedSeats?.includes(selectedSeatIdx) || false)}
-        occupantName={participants?.find(p => p.seatIndex === selectedSeatIdx)?.name}
+        occupantName={occupant?.name}
+        isOccupantMuted={occupant?.isMuted}
       />
 
       <RoomUserProfileDialog 
@@ -532,12 +611,12 @@ export function RoomClient({ room }: { room: Room }) {
         isOwner={isOwner} 
         roomOwnerId={room.ownerId} 
         roomModeratorIds={room.moderatorIds || []} 
-        onSilence={(uid, cur) => {}} 
-        onKick={(uid, dur) => {}} 
-        onLeaveSeat={(uid) => {}} 
-        onToggleMod={(uid) => {}} 
+        onSilence={handleSilence} 
+        onKick={handleKick} 
+        onLeaveSeat={handleLeaveSeatForce} 
+        onToggleMod={handleToggleMod} 
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }} 
-        isSilenced={false} 
+        isSilenced={selectedOccupant?.isMuted || false} 
         isMe={selectedParticipantUid === currentUser?.uid} 
       />
     </div>
