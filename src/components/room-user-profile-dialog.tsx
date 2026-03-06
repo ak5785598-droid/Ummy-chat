@@ -65,8 +65,8 @@ interface RoomUserProfileDialogProps {
 
 /**
  * High-Fidelity Room User Card.
- * Management row (Kick, Seat Leave, Mute) is strictly visible to Room Owner/Admin.
- * OWNER IMMUNITY: Admins cannot kick, mute, or force-remove the Room Owner.
+ * Re-engineered to match the provided blueprint exactly.
+ * Features centered identity, specialized badges, stats row, gift capsule, and colorful action portals.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -143,7 +143,7 @@ export function RoomUserProfileDialog({
             <div className="pt-16 pb-8 flex flex-col items-center w-full px-6">
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-4">
                   <Avatar className="h-28 w-28 border-4 border-white/10 shadow-2xl">
-                     <AvatarImage src={profile.avatarUrl || undefined} />
+                     <AvatarImage key={profile.avatarUrl} src={profile.avatarUrl || undefined} />
                      <AvatarFallback className="text-3xl bg-slate-800">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                </AvatarFrame>
@@ -155,15 +155,19 @@ export function RoomUserProfileDialog({
                   <Copy className="h-3 w-3 text-white/20 cursor-pointer" />
                </div>
 
+               {/* Badge Row - Synchronized with Blueprint */}
                <div className="flex items-center gap-2 mb-8 flex-wrap justify-center">
                   <span className="text-sm">🇮🇳</span>
-                  <div className="bg-cyan-500 rounded-full h-4 w-4 flex items-center justify-center text-[8px] font-black">♂</div>
-                  <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-4 text-[8px] font-black px-2 uppercase">Lv. {profile.level?.rich || 1}</Badge>
-                  <Badge className="bg-gradient-to-r from-purple-400 to-pink-600 border-none h-4 text-[8px] font-black px-2 uppercase">Lv. {profile.level?.charm || 1}</Badge>
+                  <div className="bg-yellow-500 rounded-full h-4 w-4 flex items-center justify-center shadow-lg">
+                     <Home className="h-2.5 w-2.5 text-black fill-current" />
+                  </div>
+                  <div className="bg-blue-500 rounded-full h-4 w-4 flex items-center justify-center text-[8px] font-black shadow-lg">♂</div>
+                  <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-4 text-[8px] font-black px-2 uppercase shadow-sm">Lv. {profile.level?.rich || 1}</Badge>
+                  <Badge className="bg-gradient-to-r from-teal-400 to-green-600 border-none h-4 text-[8px] font-black px-2 uppercase shadow-sm">Lv. {profile.level?.charm || 1}</Badge>
                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                  {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                </div>
 
+               {/* Stats Row - Three Column blueprint */}
                <div className="w-full flex justify-around items-center mb-8 px-4">
                   <div className="text-center">
                      <p className="text-lg font-black tracking-tighter">0</p>
@@ -179,33 +183,19 @@ export function RoomUserProfileDialog({
                   </div>
                </div>
 
-               {/* Achievement Rows */}
-               <div className="w-full space-y-3 mb-8">
-                  <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5 group active:bg-white/10 transition-all cursor-pointer">
-                     <div className="flex items-center gap-3">
-                        <span className="text-xs font-black text-white/60 uppercase">Badge · 0</span>
-                     </div>
+               {/* Gift Capsule Row */}
+               <div className="w-full mb-8">
+                  <div className="bg-white/5 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-white/80 uppercase">Gift · {(profile.stats?.fans || 0).toLocaleString()}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
                         <div className="flex -space-x-2">
-                           {[1, 2, 3].map(i => (
-                             <div key={i} className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-200 to-amber-600 border border-black/20 shadow-sm" />
+                           {['🍎', '🍒', '🎉', '⚽', '🍉'].map((emoji, i) => (
+                             <div key={i} className="h-6 w-6 rounded-full bg-black/40 flex items-center justify-center text-[10px] border border-white/10 shadow-sm">{emoji}</div>
                            ))}
                         </div>
-                        <ChevronRight className="h-4 w-4 text-white/20" />
-                     </div>
-                  </div>
-
-                  <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5 group active:bg-white/10 transition-all cursor-pointer">
-                     <div className="flex items-center gap-3">
-                        <span className="text-xs font-black text-white/60 uppercase">Gift · {(profile.stats?.fans || 0).toLocaleString()}</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <div className="flex -space-x-2">
-                           {['🌹', '💖', '💍'].map((emoji, i) => (
-                             <div key={i} className="h-6 w-6 rounded-full bg-black/40 flex items-center justify-center text-[10px] border border-white/10">{emoji}</div>
-                           ))}
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-white/20" />
+                        <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white transition-colors" />
                      </div>
                   </div>
                </div>
@@ -214,14 +204,14 @@ export function RoomUserProfileDialog({
                <div className="w-full space-y-4">
                   <div className="grid grid-cols-4 gap-4 px-2">
                     <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
-                          <UserPlus className="h-7 w-7 text-white" />
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
+                          <UserPlus className="h-7 w-7 text-white fill-current" />
                        </div>
                        <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Follow</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 border border-white/10">
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#b45309] flex items-center justify-center shadow-lg shadow-orange-500/20 border border-white/10">
                           <Bell className="h-7 w-7 text-white" />
                        </div>
                        <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Reminder</span>
@@ -231,8 +221,8 @@ export function RoomUserProfileDialog({
                       recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
                       trigger={
                         <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
-                              <MessageCircle className="h-7 w-7 text-white" />
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
+                              <MessageCircle className="h-7 w-7 text-white fill-current" />
                            </div>
                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Message</span>
                         </div>
@@ -243,18 +233,16 @@ export function RoomUserProfileDialog({
                       onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
                       className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
                     >
-                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">
+                       <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#d946ef] via-[#9333ea] to-[#581c87] flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">
                           <GiftIcon className="h-7 w-7 text-white fill-current" />
                        </div>
                        <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Send Gift</span>
                     </div>
                   </div>
 
-                  {/* Management Row: OWNER IMMUNITY ENFORCED */}
+                  {/* Management Row: Discretely separated for Authorized frequencies */}
                   {(canManage || isMe) && (
-                    <div className="grid grid-cols-3 gap-4 px-2 pt-4 border-t border-white/10">
-                       
-                       {/* Mute: Admin only on non-owners */}
+                    <div className="grid grid-cols-3 gap-4 px-2 pt-4 border-t border-white/10 opacity-60 hover:opacity-100 transition-opacity">
                        {canManage && !isMe && !isTargetOwner ? (
                          <div 
                            onClick={() => onSilence(userId, isSilenced)}
@@ -277,7 +265,6 @@ export function RoomUserProfileDialog({
                          </div>
                        )}
 
-                       {/* Seat Leave: Allowed for Self OR Admin on non-owners */}
                        {isMe || (canManage && !isTargetOwner) ? (
                          <div 
                            onClick={() => onLeaveSeat(userId)}
@@ -286,20 +273,17 @@ export function RoomUserProfileDialog({
                             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
                                <LogOut className="h-7 w-7 text-black" />
                             </div>
-                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">
-                              {isMe ? 'Leave Seat' : 'Seat Leave'}
-                            </span>
+                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isMe ? 'Leave' : 'Force Leave'}</span>
                          </div>
                        ) : (
                          <div className="flex flex-col items-center gap-2 opacity-20 pointer-events-none">
                             <div className="h-14 w-14 rounded-2xl bg-slate-800 flex items-center justify-center border border-white/10">
                                <LogOut className="h-7 w-7 text-white/40" />
                             </div>
-                            <span className="text-[10px] font-black uppercase text-white/20 tracking-tight">Seat Leave</span>
+                            <span className="text-[10px] font-black uppercase text-white/20 tracking-tight">Leave</span>
                          </div>
                        )}
 
-                       {/* Kick Out: Admin only on non-owners */}
                        {canManage && !isMe && !isTargetOwner ? (
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -307,20 +291,13 @@ export function RoomUserProfileDialog({
                                   <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20 border border-white/10">
                                      <Ban className="h-7 w-7 text-white" />
                                   </div>
-                                  <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick Out</span>
+                                  <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick</span>
                                </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="bg-slate-900 border-white/10 text-white rounded-[1.5rem] p-2 min-w-[160px] shadow-2xl">
-                               <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                  <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Exclusion Duration</p>
-                               </div>
                                <DropdownMenuItem onClick={() => onKick(userId, 5)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
                                   <Clock className="h-4 w-4 text-primary" />
-                                  <span className="font-black uppercase text-[10px]">5 Minutes</span>
-                               </DropdownMenuItem>
-                               <DropdownMenuItem onClick={() => onKick(userId, 60)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
-                                  <Clock className="h-4 w-4 text-orange-400" />
-                                  <span className="font-black uppercase text-[10px]">1 Hour</span>
+                                  <span className="font-black uppercase text-[10px]">5 Mins</span>
                                </DropdownMenuItem>
                                <DropdownMenuItem onClick={() => onKick(userId, 1440)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400">
                                   <Ban className="h-4 w-4" />
@@ -333,7 +310,7 @@ export function RoomUserProfileDialog({
                             <div className="h-14 w-14 rounded-2xl bg-slate-800 flex items-center justify-center border border-white/10">
                                <Ban className="h-7 w-7 text-white/40" />
                             </div>
-                            <span className="text-[10px] font-black uppercase text-white/20 tracking-tight">Kick Out</span>
+                            <span className="text-[10px] font-black uppercase text-white/20 tracking-tight">Kick</span>
                          </div>
                        )}
                     </div>
