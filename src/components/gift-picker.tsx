@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -27,6 +26,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface GiftItem {
   id: string;
@@ -208,7 +208,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
         {/* Footer Interaction Bar */}
         <div className="p-6 bg-black/40 border-t border-white/5 flex items-center justify-between gap-4">
-           <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/wallet')}>
+           <div className="flex items-center gap-2 cursor-pointer" onClick={() => {}}>
               <GoldCoinIcon className="h-5 w-5" />
               <span className="text-lg font-black italic text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
               <ChevronRight className="h-4 w-4 text-white/40" />
