@@ -50,6 +50,7 @@ const GIFTS: Record<string, GiftItem[]> = {
     { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', animationId: 'lucky-star', type: 'lucky' },
   ],
   'Hot': [
+    { id: 'rose', name: 'Rose', price: 10, icon: '🌹', animationId: 'rose' },
     { id: 'g1', name: 'Color Powder', price: 5000, icon: '🌈', animationId: 'color-carnival' },
     { id: 'g2', name: 'Color Palette', price: 15000, icon: '🎨', animationId: 'color-carnival' },
     { id: 'g3', name: 'Color Temple', price: 50000, icon: '🕌', animationId: 'galaxy' },
