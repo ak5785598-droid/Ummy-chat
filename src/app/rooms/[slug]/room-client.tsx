@@ -64,7 +64,8 @@ import {
   doc, 
   increment,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  Timestamp
 } from 'firebase/firestore';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
@@ -234,7 +235,7 @@ export function RoomClient({ room }: { room: Room }) {
         setIsUserProfileCardOpen(true);
       }
     } else {
-      setSelectedParticipantUid(null);
+      setSelectedParticipantUid(null); // CRITICAL FIX: Ensure previous occupant ID is cleared for empty seat tap
       setIsSeatMenuOpen(true);
     }
   };
