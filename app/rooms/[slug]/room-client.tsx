@@ -186,7 +186,10 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleMicToggle = () => { 
-    if (!isInSeat || !firestore || !currentUser || !room.id) return;
+    if (!isInSeat || !firestore || !currentUser || !room.id) {
+      if (!isInSeat) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'You must take a seat to use the microphone.' });
+      return;
+    }
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
 
@@ -359,6 +362,19 @@ export function RoomClient({ room }: { room: Room }) {
 
            {/* Interaction Icon Set */}
            <div className="flex items-center gap-3">
+              {/* Mic Toggle Synchronization */}
+              <button 
+                onClick={handleMicToggle}
+                disabled={!isInSeat}
+                className={cn(
+                  "p-2 rounded-full transition-all active:scale-90",
+                  !isInSeat ? "bg-white/5 text-white/20 opacity-50 cursor-not-allowed" : 
+                  (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg shadow-green-500/40 border border-white/20")
+                )}
+              >
+                 {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+              </button>
+
               <button onClick={() => setIsMutedLocal(!isMutedLocal)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">
                  {isMutedLocal ? <VolumeX className="h-5 w-5 text-white/60" /> : <Volume2 className="h-5 w-5 text-white" />}
               </button>
@@ -374,6 +390,13 @@ export function RoomClient({ room }: { room: Room }) {
                  <div className="absolute -top-1 -right-1 bg-pink-500 h-3 w-3 rounded-full border-2 border-black" />
               </div>
 
+              <button 
+                onClick={() => router.push('/games')}
+                className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-2 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"
+              >
+                <GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" />
+              </button>
+              
               <button className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
            </div>
         </div>
