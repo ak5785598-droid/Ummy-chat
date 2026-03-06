@@ -5,9 +5,9 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
+import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import Image from 'next/image';
+
+const ICON_MAP: Record<string, any> = {
+  Sparkles,
+  Trophy,
+  Gamepad2,
+  Zap,
+  Star,
+  Users,
+  Heart
+};
 
 const SVIPBadge = ({ level }: { level: number }) => (
   <div className={cn(
@@ -94,7 +105,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                    </div>
                    <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-4 border-yellow-200">
-                         <AvatarImage src={getDisplayImage(top1) || 'https://img.icons8.com/color/512/lion.png'} className="object-cover" />
+                         <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
                          <AvatarFallback className="bg-slate-900 text-white font-black text-2xl">1</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-6 py-1 rounded-full font-black text-xs shadow-xl border-2 border-yellow-400 italic">TOP 1</div>
@@ -190,6 +201,44 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   );
 };
 
+const BannerDisplay = () => {
+  const firestore = useFirestore();
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
+  const { data: bannerConfig, isLoading } = useDoc(bannerRef);
+
+  if (isLoading) return <div className="flex justify-center py-40"><Loader className="animate-spin text-primary h-10 w-10" /></div>;
+
+  const slides = bannerConfig?.slides || [];
+
+  if (slides.length === 0) return (
+    <div className="text-center py-40 opacity-40">
+      <Sparkles className="mx-auto mb-4 h-12 w-12 text-white/20" />
+      <p className="font-black uppercase italic text-sm text-white/40">No active events in the grid.</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 p-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+       {slides.map((slide: any, idx: number) => {
+         const Icon = ICON_MAP[slide.iconName] || Sparkles;
+         return (
+           <div key={idx} className="relative h-40 w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black group active:scale-[0.98] transition-all">
+              <Image src={slide.imageUrl || 'https://picsum.photos/seed/promo/800/200'} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
+              <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-10", slide.color || "from-black/40")}>
+                 <div className="flex items-center gap-3 mb-2">
+                    <Icon className="h-6 w-6 text-white animate-pulse" />
+                    <h4 className="text-white font-black uppercase italic text-3xl tracking-tighter leading-none drop-shadow-lg">{slide.title}</h4>
+                 </div>
+                 <p className="text-white/80 font-bold uppercase text-xs tracking-[0.3em] drop-shadow-md">{slide.subtitle}</p>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+           </div>
+         );
+       })}
+    </div>
+  );
+};
+
 function LeaderboardContent() {
   const searchParams = useSearchParams();
   const initialType = (searchParams.get('type') as any) || 'rich';
@@ -197,7 +246,7 @@ function LeaderboardContent() {
   const firestore = useFirestore();
   const { userProfile: me } = useUserProfile(user?.uid);
   
-  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>(initialType);
+  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'banner'>(initialType);
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [mounted, setMounted] = useState(false);
 
@@ -226,7 +275,7 @@ function LeaderboardContent() {
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
         <div className="absolute inset-0 z-0 pointer-events-none">
-           <div className="absolute top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
+           <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         </div>
 
@@ -250,17 +299,18 @@ function LeaderboardContent() {
              </Dialog>
           </div>
 
-          <div className="flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6">
+          <div className="flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md rounded-full p-1.5 border border-white/5 shadow-2xl mb-6 overflow-x-auto no-scrollbar">
              {[
                { id: 'rich', label: 'Honor' },
                { id: 'charm', label: 'Charm' },
-               { id: 'rooms', label: 'Room' }
+               { id: 'rooms', label: 'Room' },
+               { id: 'banner', label: 'Banner' }
              ].map((cat) => (
                <button 
                  key={cat.id} 
                  onClick={() => setRankingMode(cat.id as any)} 
                  className={cn(
-                   "flex-1 py-3 rounded-full font-black uppercase italic text-sm transition-all duration-500", 
+                   "flex-1 min-w-[90px] py-3 rounded-full font-black uppercase italic text-sm transition-all duration-500 whitespace-nowrap", 
                    rankingType === cat.id ? "bg-gradient-to-b from-[#f5e1a4] to-[#b88a44] text-black shadow-lg" : "text-white/40"
                  )}
                >
@@ -269,25 +319,31 @@ function LeaderboardContent() {
              ))}
           </div>
 
-          <div className="flex items-center justify-center gap-12 px-4">
-             {['Daily', 'Weekly', 'Monthly'].map((p) => (
-               <button 
-                 key={p} 
-                 onClick={() => setTimePeriod(p.toLowerCase() as any)} 
-                 className={cn(
-                   "text-sm font-black uppercase italic transition-all relative", 
-                   timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
-                 )}
-               >
-                 {p}
-                 {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
-               </button>
-             ))}
-          </div>
+          {rankingType !== 'banner' && (
+            <div className="flex items-center justify-center gap-12 px-4">
+               {['Daily', 'Weekly', 'Monthly'].map((p) => (
+                 <button 
+                   key={p} 
+                   onClick={() => setTimePeriod(p.toLowerCase() as any)} 
+                   className={cn(
+                     "text-sm font-black uppercase italic transition-all relative", 
+                     timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
+                   )}
+                 >
+                   {p}
+                   {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
+                 </button>
+               ))}
+            </div>
+          )}
         </header>
 
         <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-2">
-           <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
+           {rankingType === 'banner' ? (
+             <BannerDisplay />
+           ) : (
+             <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
+           )}
         </main>
 
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
@@ -316,7 +372,7 @@ export default function LeaderboardPage() {
     <AppLayout hideSidebarOnMobile>
       <Suspense fallback={
         <div className="flex h-screen items-center justify-center bg-[#050505]">
-          <Loader className="animate-spin text-primary h-10 w-10" />
+          <Loader className="animate-spin text-primary h-8 w-8" />
         </div>
       }>
         <LeaderboardContent />

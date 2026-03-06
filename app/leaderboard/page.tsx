@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
+import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import Image from 'next/image';
+
+const ICON_MAP: Record<string, any> = {
+  Sparkles,
+  Trophy,
+  Gamepad2,
+  Zap,
+  Star,
+  Users,
+  Heart
+};
 
 /**
  * High-Fidelity SVIP Signature Badge.
@@ -45,7 +57,6 @@ const LevelBadge = ({ level }: { level: number }) => (
 
 /**
  * Specialized Ranking List Component.
- * Optimized for compact viewing.
  */
 const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
   if (isLoading) return (
@@ -103,7 +114,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                    </div>
                    <div className="relative w-full h-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_30px_rgba(251,191,36,0.4)] border-[4px] border-[#1a1a1a]">
                       <Avatar className="h-full w-full border-2 border-yellow-200">
-                         <AvatarImage src={getDisplayImage(top1) || 'https://img.icons8.com/color/512/lion.png'} className="object-cover" />
+                         <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
                          <AvatarFallback className="bg-slate-900 text-white font-black text-xl">1</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-4 py-0.5 rounded-full font-black text-[8px] shadow-xl border-2 border-yellow-400 italic whitespace-nowrap">TOP 1</div>
@@ -130,7 +141,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
                    <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1 border-2 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border border-white/20">
-                         <AvatarImage src={getDisplayImage(top2) || undefined} />
+                         <AvatarImage src={getDisplayImage(top2)} />
                          <AvatarFallback className="font-black text-xs">2</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-2 py-0.5 rounded-full font-black text-[6px] border border-blue-200 shadow-lg">TOP 2</div>
@@ -153,7 +164,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
                    <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1 border-2 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border border-white/20">
-                         <AvatarImage src={getDisplayImage(top3) || undefined} />
+                         <AvatarImage src={getDisplayImage(top3)} />
                          <AvatarFallback className="font-black text-xs">3</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-3 py-0.5 rounded-full font-black text-[6px] border border-amber-200 shadow-lg">TOP 3</div>
@@ -178,7 +189,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
           <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/5 group hover:bg-white/10 transition-all active:scale-[0.98]">
             <span className="w-5 text-center font-black text-white/40 text-xs italic">{index + 4}</span>
             <Avatar className="h-11 w-11 border border-white/10 shrink-0">
-              <AvatarImage src={getDisplayImage(item) || undefined} />
+              <AvatarImage src={getDisplayImage(item)} />
               <AvatarFallback className="font-black text-xs">{(index + 4)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
@@ -199,6 +210,44 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   );
 };
 
+const BannerDisplay = () => {
+  const firestore = useFirestore();
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
+  const { data: bannerConfig, isLoading } = useDoc(bannerRef);
+
+  if (isLoading) return <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-8 w-8" /></div>;
+
+  const slides = bannerConfig?.slides || [];
+
+  if (slides.length === 0) return (
+    <div className="text-center py-20 opacity-40">
+      <Sparkles className="mx-auto mb-4 h-10 w-10 text-white/20" />
+      <p className="font-black uppercase italic text-xs text-white/40">No active events in the grid.</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4 p-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
+       {slides.map((slide: any, idx: number) => {
+         const Icon = ICON_MAP[slide.iconName] || Sparkles;
+         return (
+           <div key={idx} className="relative h-32 w-full rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black group active:scale-[0.98] transition-all">
+              <Image src={slide.imageUrl || 'https://picsum.photos/seed/promo/800/200'} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
+              <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color || "from-black/40")}>
+                 <div className="flex items-center gap-2 mb-1">
+                    <Icon className="h-5 w-5 text-white animate-pulse" />
+                    <h4 className="text-white font-black uppercase italic text-2xl tracking-tighter leading-none drop-shadow-lg">{slide.title}</h4>
+                 </div>
+                 <p className="text-white/80 font-bold uppercase text-[10px] tracking-[0.3em] drop-shadow-md">{slide.subtitle}</p>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+           </div>
+         );
+       })}
+    </div>
+  );
+};
+
 function LeaderboardContent() {
   const searchParams = useSearchParams();
   const initialType = (searchParams.get('type') as any) || 'rich';
@@ -206,7 +255,7 @@ function LeaderboardContent() {
   const firestore = useFirestore();
   const { userProfile: me } = useUserProfile(user?.uid);
   
-  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>(initialType);
+  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'banner'>(initialType);
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [mounted, setMounted] = useState(false);
 
@@ -259,17 +308,18 @@ function LeaderboardContent() {
              </Dialog>
           </div>
 
-          <div className="flex items-center justify-between gap-1.5 bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/5 shadow-2xl mb-4">
+          <div className="flex items-center justify-between gap-1.5 bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/5 shadow-2xl mb-4 overflow-x-auto no-scrollbar">
              {[
                { id: 'rich', label: 'Honor' },
                { id: 'charm', label: 'Charm' },
-               { id: 'rooms', label: 'Room' }
+               { id: 'rooms', label: 'Room' },
+               { id: 'banner', label: 'Banner' }
              ].map((cat) => (
                <button 
                  key={cat.id} 
                  onClick={() => setRankingMode(cat.id as any)} 
                  className={cn(
-                   "flex-1 py-2.5 rounded-full font-black uppercase italic text-xs transition-all duration-500", 
+                   "flex-1 min-w-[80px] py-2.5 rounded-full font-black uppercase italic text-[10px] transition-all duration-500 whitespace-nowrap", 
                    rankingType === cat.id ? "bg-gradient-to-b from-[#f5e1a4] to-[#b88a44] text-black shadow-lg" : "text-white/40"
                  )}
                >
@@ -278,25 +328,31 @@ function LeaderboardContent() {
              ))}
           </div>
 
-          <div className="flex items-center justify-center gap-10 px-4">
-             {['Daily', 'Weekly', 'Monthly'].map((p) => (
-               <button 
-                 key={p} 
-                 onClick={() => setTimePeriod(p.toLowerCase() as any)} 
-                 className={cn(
-                   "text-[11px] font-black uppercase italic transition-all relative", 
-                   timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
-                 )}
-               >
-                 {p}
-                 {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
-               </button>
-             ))}
-          </div>
+          {rankingType !== 'banner' && (
+            <div className="flex items-center justify-center gap-10 px-4">
+               {['Daily', 'Weekly', 'Monthly'].map((p) => (
+                 <button 
+                   key={p} 
+                   onClick={() => setTimePeriod(p.toLowerCase() as any)} 
+                   className={cn(
+                     "text-[11px] font-black uppercase italic transition-all relative", 
+                     timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
+                   )}
+                 >
+                   {p}
+                   {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
+                 </button>
+               ))}
+            </div>
+          )}
         </header>
 
         <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-2">
-           <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
+           {rankingType === 'banner' ? (
+             <BannerDisplay />
+           ) : (
+             <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
+           )}
         </main>
 
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-3 h-16 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
