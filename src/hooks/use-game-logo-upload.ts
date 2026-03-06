@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -33,13 +32,17 @@ export function useGameLogoUpload() {
     console.log(`[Visual Sync] Starting game logo upload for: ${game.id}`, file.name);
 
     try {
-      // 1. Storage Upload Handshake
+      // 1. Storage Upload Handshake with Metadata
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const storagePath = `games/${game.id}/logo_${timestamp}.${fileExtension}`;
       const storageRef = ref(storage, storagePath);
       
-      const result = await uploadBytes(storageRef, file);
+      const metadata = {
+        contentType: file.type || 'image/jpeg'
+      };
+      
+      const result = await uploadBytes(storageRef, file, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       // 2. Firestore Sync (Atomic Merge Protocol)

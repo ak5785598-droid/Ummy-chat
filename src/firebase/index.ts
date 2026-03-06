@@ -9,7 +9,7 @@ import { getStorage } from 'firebase/storage';
 /**
  * PRODUCTION FIREBASE INITIALIZATION
  * Re-engineered to simplify service retrieval and ensure absolute storage bucket stability.
- * Explicitly resolves the storage bucket URI to prevent connection hangs.
+ * Utilizes the default bucket from the app config for maximum reliability.
  */
 export function initializeFirebase() {
   if (!getApps().length) {
@@ -21,10 +21,7 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  const bucket = firebaseConfig.storageBucket;
-  const storageUrl = bucket && !bucket.startsWith('gs://') ? `gs://${bucket}` : bucket;
-  
-  console.log(`[Firebase Init] Storage Bucket: ${storageUrl}`);
+  console.log(`[Firebase Init] Initializing services for project: ${firebaseConfig.projectId}`);
   
   // Re-engineered with Long Polling Auto-Detection for extreme network resilience.
   // This resolves connectivity hangs in specific proxy/cloud development environments.
@@ -34,7 +31,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
     firestore: initializeFirestore(firebaseApp, {
       experimentalAutoDetectLongPolling: true,
     }),
-    storage: getStorage(firebaseApp, storageUrl || undefined)
+    // Using the default bucket from the initialized app is the most stable protocol.
+    storage: getStorage(firebaseApp)
   };
 }
 

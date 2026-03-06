@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -78,13 +77,17 @@ export function useRoomImageUpload(roomId: string) {
       // 1. High-Speed Client-Side Compression
       const compressedBlob = await compressImage(file);
       
-      // 2. Storage Vault Handshake
+      // 2. Storage Vault Handshake with Metadata
       const fileExtension = 'jpg';
       const timestamp = Date.now();
       const storagePath = `chatRooms/${roomId}/cover_${timestamp}.${fileExtension}`;
       const storageRef = ref(storage, storagePath);
+      
+      const metadata = {
+        contentType: 'image/jpeg'
+      };
 
-      const result = await uploadBytes(storageRef, compressedBlob);
+      const result = await uploadBytes(storageRef, compressedBlob, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       // 3. Firestore Global Sync (Atomic Merge Protocol)

@@ -181,7 +181,8 @@ export default function AdminPage() {
     setIsUploadingBanner(index);
     try {
       const sRef = ref(storage, `banners/slide_${index}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
+      const metadata = { contentType: file.type || 'image/jpeg' };
+      const result = await uploadBytes(sRef, file, metadata);
       const url = await getDownloadURL(result.ref);
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];

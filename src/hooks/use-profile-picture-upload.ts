@@ -9,6 +9,7 @@ import { useToast } from './use-toast';
 /**
  * Elite Visual Identity Sync Hook.
  * Optimized for High-Speed uploads by utilizing the direct uploadBytes protocol.
+ * Includes automatic MIME-type synchronization for high-fidelity rendering.
  */
 export function useProfilePictureUpload() {
   const storage = useStorage();
@@ -31,13 +32,17 @@ export function useProfilePictureUpload() {
     console.log(`[Visual Sync] Starting high-speed profile upload for: ${user.uid}`, file.name);
 
     try {
-      // 1. High-Speed Storage Upload
+      // 1. High-Speed Storage Upload with Metadata
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const storagePath = `users/${user.uid}/profile_${timestamp}.${fileExtension}`;
       const storageRef = ref(storage, storagePath);
       
-      const result = await uploadBytes(storageRef, file);
+      const metadata = {
+        contentType: file.type || 'image/jpeg'
+      };
+
+      const result = await uploadBytes(storageRef, file, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       // 2. Firestore Sync (Non-Blocking)
