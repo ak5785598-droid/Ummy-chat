@@ -283,6 +283,8 @@ export function RoomClient({ room }: { room: Room }) {
   const { data: firestoreMessages } = useCollection(messagesQuery);
   const [latestEntrance, setLatestEntrance] = useState<any>(null);
 
+  const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     if (firestoreMessages && firestoreMessages.length > 0) {
@@ -297,7 +299,13 @@ export function RoomClient({ room }: { room: Room }) {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || undefined, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
+      content: messageText, 
+      senderId: currentUser.uid, 
+      senderName: userProfile.username || 'User', 
+      senderAvatar: userProfile.avatarUrl || null, 
+      chatRoomId: room.id, 
+      timestamp: serverTimestamp(), 
+      type: 'text'
     });
     setMessageText('');
   };
@@ -489,7 +497,6 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const isMeAlreadyInSeat = participants?.some(p => p.uid === currentUser?.uid && p.seatIndex > 0);
-  const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
   const selectedOccupant = participants?.find(p => p.uid === selectedParticipantUid);
 
   return (
