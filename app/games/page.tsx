@@ -16,12 +16,13 @@ import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import type { Game } from '@/lib/types';
 
 const FALLBACK_GAMES: Game[] = [
+  { id: 'fallback-fruit-slots', title: 'Fruit Slots', slug: 'fruit-slots', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d lemon fruit slots' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d fruit icons' },
   { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: '', cost: 0, imageHint: '3d lion head' },
   { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: '', cost: 0, imageHint: '3d slot machine' },
   { id: 'fallback-pyramid', title: 'Pyramid Battle', slug: 'pyramid-battle', coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', cost: 0, imageHint: 'egyptian pyramid' },
-  { id: 'fallback-teen', title: 'Teen Patti', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d cards poker' },
+  { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d dragon character' },
 ];
 
 export default function GamesPage() {

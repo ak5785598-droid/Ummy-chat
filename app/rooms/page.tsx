@@ -8,7 +8,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
+import { collection, query, limit, orderBy, doc, where, getDocs } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -70,7 +70,7 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
     <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black">
       <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
         <Image 
-          src={slide.imageUrl || ''} 
+          src={slide.imageUrl || undefined} 
           alt={slide.title} 
           fill 
           className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
@@ -124,12 +124,18 @@ export default function RoomsPage() {
     );
   }, [firestore]);
 
+  const myRoomQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
+  }, [firestore, user]);
+
   const bannerRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore]);
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
+  const { data: myRooms, isLoading: isMyRoomLoading } = useCollection(myRoomQuery);
   const { data: bannerConfig } = useDoc(bannerRef);
 
   const displayRooms = useMemo(() => {
@@ -174,6 +180,20 @@ export default function RoomsPage() {
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-[#00E5FF] rounded-full" />
               )}
             </div>
+            <div className="relative">
+              <button 
+                onClick={() => setActiveTab('Me')}
+                className={cn(
+                  "text-2xl font-black uppercase italic tracking-tighter transition-colors",
+                  activeTab === 'Me' ? "text-gray-900" : "text-gray-400"
+                )}
+              >
+                Me
+              </button>
+              {activeTab === 'Me' && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-[#00E5FF] rounded-full" />
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-4">
              <UserSearchDialog />
@@ -205,9 +225,29 @@ export default function RoomsPage() {
               )}
             </>
           ) : (
-            <div className="py-20 text-center space-y-4">
-               <Loader className="animate-spin h-8 w-8 text-primary mx-auto" />
-               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Syncing Followed Rooms...</p>
+            <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-in fade-in duration-500">
+               {isMyRoomLoading ? (
+                 <Loader className="animate-spin text-primary h-10 w-10" />
+               ) : myRooms && myRooms.length > 0 ? (
+                 <div className="w-full max-w-sm space-y-6">
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter text-center">My Frequency</h3>
+                    <ChatRoomCard room={myRooms[0]} variant="modern" />
+                    <Button asChild className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl">
+                       <Link href={`/rooms/${myRooms[0].id}`}>Enter Room</Link>
+                    </Button>
+                 </div>
+               ) : (
+                 <div className="text-center space-y-6 px-8 py-12 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 max-w-sm w-full">
+                    <div className="h-24 w-24 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto animate-pulse">
+                       <Plus className="h-12 w-12" />
+                    </div>
+                    <div className="space-y-2">
+                       <h3 className="text-2xl font-black uppercase italic tracking-tighter">Define Your Frequency</h3>
+                       <p className="text-muted-foreground font-body italic text-base leading-tight">Gather your tribe and start broadcasting your vibe to the world.</p>
+                    </div>
+                    <CreateRoomDialog trigger={<Button className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase italic shadow-xl shadow-primary/20">Launch Room</Button>} />
+                 </div>
+               )}
             </div>
           )}
         </div>
