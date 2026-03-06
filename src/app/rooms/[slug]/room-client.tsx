@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,7 +17,7 @@ import {
   Lock,
   Unlock,
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -441,7 +440,11 @@ export function RoomClient({ room }: { room: Room }) {
                             <AvatarImage src={occupant.avatarUrl || undefined} />
                             <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                        ) : isLocked ? <Lock className="text-red-500/40 h-6 w-6" /> : <Armchair className="text-white/20 h-6 w-6" />}
+                        ) : isLocked ? (
+                          <Lock className="text-red-500/40 h-6 w-6" />
+                        ) : (
+                          <Armchair className="text-white/20 h-6 w-6" />
+                        )}
                       </button>
                     </AvatarFrame>
                     {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg z-20"><MicOff className="h-2 w-2 text-white" /></div>}
@@ -456,13 +459,11 @@ export function RoomClient({ room }: { room: Room }) {
         </ScrollArea>
         <div className="px-4 pb-2">
           <ScrollArea className="h-32" ref={scrollRef}>
-            <div className="flex flex-col gap-1.5">
+            <div className="space-y-1">
               {firestoreMessages?.map((msg: any) => (
-                <div key={msg.id} className="flex flex-col animate-in slide-in-from-left-2 duration-300">
-                  <div className="bg-black/20 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5 inline-flex gap-2 w-fit max-w-[95%]">
-                    <span className="text-[9px] font-black text-blue-400 uppercase shrink-0">{msg.senderName}:</span>
-                    <p className="text-[9px] font-medium text-white/80 leading-tight">{msg.content}</p>
-                  </div>
+                <div key={msg.id} className="bg-black/20 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5 inline-flex gap-2 max-w-[90%]">
+                  <span className="text-[9px] font-black text-blue-400 uppercase">{msg.senderName}:</span>
+                  <p className="text-[9px] font-medium text-white/80">{msg.content}</p>
                 </div>
               ))}
             </div>
@@ -497,6 +498,12 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => router.push('/games')}
+            className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-3 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"
+          >
+            <GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" />
+          </button>
           <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg active:scale-95 transition-transform" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
         </div>
       </footer>

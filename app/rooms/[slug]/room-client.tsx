@@ -17,7 +17,7 @@ import {
   Lock,
   Unlock,
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -498,6 +498,12 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => router.push('/games')}
+            className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-3 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"
+          >
+            <GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" />
+          </button>
           <button className="bg-gradient-to-br from-pink-400 to-indigo-600 p-3 rounded-full shadow-lg active:scale-95 transition-transform" onClick={() => setIsGiftPickerOpen(true)}><GiftIcon className="h-5 w-5 text-white" /></button>
         </div>
       </footer>
