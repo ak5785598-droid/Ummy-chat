@@ -25,6 +25,7 @@ export function ProfileInitializer() {
         const userSnap = await getDoc(userRef);
         
         // 1. STALE IDENTITY PURGE PROTOCOL (Anti-Ghost Startup)
+        // If app was cut without logout, this cleans up the previous frequency.
         if (userSnap.exists()) {
           const userData = userSnap.data();
           const staleRoomId = userData.currentRoomId;
@@ -37,7 +38,7 @@ export function ProfileInitializer() {
               const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
               const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
               
-              // Atomic Cleanup
+              // Atomic Cleanup: Decrement count and delete stale participant
               batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
               batch.delete(participantRef);
               batch.update(userRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });

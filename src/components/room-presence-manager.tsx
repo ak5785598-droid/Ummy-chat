@@ -11,6 +11,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 /**
  * Maintains Firestore presence while a room is active.
  * OPTIMIZED: Synchronizes participantCount document field for grid-wide efficiency.
+ * HEARTBEAT: Updates lastSeen every 30s to allow detection of app-kills/screen-cuts.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -93,6 +94,7 @@ export function RoomPresenceManager() {
       try {
         await batch.commit();
         
+        // Start 30s Heartbeat Sync
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
         heartbeatInterval.current = setInterval(() => {
           setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
@@ -127,8 +129,8 @@ export function RoomPresenceManager() {
         });
 
         batch.delete(participantRef);
-        batch.update(userRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
-        batch.update(profileRef, { currentRoomId: null, isOnline: true, updatedAt: serverTimestamp() });
+        batch.update(userRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
+        batch.update(profileRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
         
         try {
           await batch.commit();

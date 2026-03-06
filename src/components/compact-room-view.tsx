@@ -42,6 +42,7 @@ export function CompactRoomView() {
   const router = useRouter();
   const [now, setNow] = useState(Date.now());
 
+  // Local clock sync for ghost detection
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);
@@ -54,13 +55,13 @@ export function CompactRoomView() {
 
   const { data: rawParticipants } = useCollection(participantsQuery);
   
+  // ANTI-GHOST FILTER: Participants who haven't pulsed in 90s are removed from UI.
   const participants = useMemo(() => {
     if (!rawParticipants) return [];
     return rawParticipants.filter(p => {
-      if (!p.joinedAt) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-      const referenceTime = lastSeen || p.joinedAt?.toDate?.()?.getTime?.() || 0;
-      return (now - referenceTime) < 90000;
+      if (!lastSeen) return true; // Keep newly joined users
+      return (now - lastSeen) < 90000; // 1.5 minute threshold for "Offline" detection
     });
   }, [rawParticipants, now]);
 
