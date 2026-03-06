@@ -286,7 +286,7 @@ export function RoomClient({ room }: { room: Room }) {
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
   }, [firestore, room.id]);
 
-  const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
+  const { data: participants = [] } = useCollection<RoomParticipant>(participantsQuery);
   const onlineCount = participants?.length || 0;
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
@@ -597,7 +597,11 @@ export function RoomClient({ room }: { room: Room }) {
           }
         }} 
       />
-      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} />
+      <RoomPlayDialog 
+        open={isRoomPlayOpen} 
+        onOpenChange={setIsRoomPlayOpen} 
+        participants={participants}
+      />
     </div>
   );
 }
