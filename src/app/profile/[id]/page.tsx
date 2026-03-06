@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use } from 'react';
@@ -278,23 +279,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
           
-          {isOwnProfile && (
-            <div className="absolute top-4 right-4 z-50">
-              <EditProfileDialog profile={profile} trigger={
-                <button className="p-2 hover:scale-110 transition-transform bg-white/20 backdrop-blur-md rounded-full border border-white/10 shadow-sm active:scale-90">
-                  <span className="text-xl">✏️</span>
-                </button>
-              } />
-            </div>
-          )}
-
           {/* Header Dimension - Modern White Roster */}
           <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
+            
+            {/* Absolute Edit Trigger - High-Fidelity Placement */}
             {isOwnProfile && (
-              <div className="absolute top-12 right-6">
+              <div className="absolute top-10 right-6">
                 <EditProfileDialog profile={profile} trigger={
-                  <button className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95">
-                    <span className="text-lg">✏️</span>
+                  <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
+                    <Pen className="h-5 w-5 text-gray-600" />
                   </button>
                 } />
               </div>
