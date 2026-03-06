@@ -221,7 +221,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           const polite = user.uid > peerId;
           const offerCollision = signal.type === 'offer' && (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          if (ignoreOffer.current.set(peerId)) return;
+          if (ignoreOffer.current.get(peerId)) return;
 
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();

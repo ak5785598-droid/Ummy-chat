@@ -266,6 +266,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
+  const [hasHeadphones, setHasHeadphones] = useState(false);
 
   // Combo Protocol State
   const [activeCombo, setActiveCombo] = useState<{ gift: GiftItem, recipient: any, count: number } | null>(null);
@@ -308,9 +309,10 @@ export function RoomClient({ room }: { room: Room }) {
   useEffect(() => {
     const handleDeviceChange = async () => {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasHeadphones = devices.some(d => d.kind === 'audiooutput' && (d.label.toLowerCase().includes('headphone') || d.label.toLowerCase().includes('headset') || d.label.toLowerCase().includes('bluetooth')));
+      const connected = devices.some(d => d.kind === 'audiooutput' && (d.label.toLowerCase().includes('headphone') || d.label.toLowerCase().includes('headset') || d.label.toLowerCase().includes('bluetooth')));
       
-      if (hasHeadphones) {
+      setHasHeadphones(connected);
+      if (connected) {
         toast({
           title: 'Headset Synchronized',
           description: 'High-fidelity audio mesh is now tuned for your headphones.',
@@ -592,7 +594,9 @@ export function RoomClient({ room }: { room: Room }) {
            <div onClick={() => setShowInput(true)} className="bg-white/10 backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center text-white/60 font-bold text-sm cursor-pointer">Say Hi</div>
            <div className="flex items-center gap-3">
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
-              <button className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Headphones className="h-5 w-5 text-white" /></button>
+              <button className={cn("p-2 rounded-full transition-all active:scale-90 bg-white/10", hasHeadphones ? "text-green-400" : "text-white")}>
+                <Headphones className="h-5 w-5" />
+              </button>
               <button onClick={() => setIsMutedLocal(!isMutedLocal)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">{isMutedLocal ? <VolumeX className="h-5 w-5 text-white/60" /> : <Volume2 className="h-5 w-5 text-white" />}</button>
               <button onClick={() => router.push('/messages')} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
               <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>
