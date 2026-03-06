@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Swords, Flame, Briefcase, Sparkles, HelpCircle, Plus, ChevronLeft } from 'lucide-react';
+import { Swords, Flame, Briefcase, Sparkles, HelpCircle, Plus, ChevronLeft, Armchair } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -19,12 +19,13 @@ interface RoomPlayDialogProps {
 
 /**
  * High-Fidelity Room Play Portal.
- * RE-ENGINEERED: Now includes the Battle Setup Dimension.
+ * RE-ENGINEERED: Features three interactive dimensions: Grid, Battle Setup, and Participant Selection.
  */
 export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
-  const [view, setView] = useState<'grid' | 'battle'>('grid');
+  const [view, setView] = useState<'grid' | 'battle' | 'selection'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [battleTime, setBattleTime] = useState('30 s');
+  const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
 
   const options = [
     { 
@@ -81,12 +82,17 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
     onOpenChange(open);
   };
 
+  const handleOpenSelection = (side: 'BLUE' | 'RED') => {
+    setSelectionSide(side);
+    setView('selection');
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         
-        {view === 'grid' ? (
-          <>
+        {view === 'grid' && (
+          <div className="animate-in fade-in duration-500">
             <DialogHeader className="p-8 pb-4">
               <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-white/90">Room Play</DialogTitle>
               <DialogDescription className="sr-only">Choose a room game or tool frequency.</DialogDescription>
@@ -109,9 +115,10 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   <div className="w-24 shrink-0" />
                </div>
             </div>
-          </>
-        ) : (
-          /* BATTLE SETUP VIEW - Blue/Red Ornate Cards */
+          </div>
+        )}
+
+        {view === 'battle' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <header className="p-6 pb-2 flex items-center justify-between">
                <div className="flex items-center gap-3">
@@ -127,26 +134,23 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
             </header>
 
             <div className="p-6 space-y-8">
-               {/* Select People Dimension */}
                <div className="space-y-4">
                   <h3 className="text-lg font-black uppercase tracking-tight text-white/90">Select People</h3>
                   <div className="grid grid-cols-2 gap-4">
-                     {/* Blue Card */}
                      <div className="relative aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-[#004d40] via-[#006064] to-[#00acc1] border-2 border-cyan-400/20 shadow-2xl overflow-hidden group">
                         <OrnateCorners color="#fbbf24" />
                         <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-                        <button className="absolute inset-0 flex items-center justify-center active:scale-95 transition-transform">
+                        <button onClick={() => handleOpenSelection('BLUE')} className="absolute inset-0 flex items-center justify-center active:scale-95 transition-transform">
                            <div className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border-2 border-white/20">
                               <Plus className="h-6 w-6 text-white" />
                            </div>
                         </button>
                      </div>
                      
-                     {/* Red Card */}
                      <div className="relative aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-[#4a0e0e] via-[#880e4f] to-[#b71c1c] border-2 border-red-400/20 shadow-2xl overflow-hidden group">
                         <OrnateCorners color="#fbbf24" />
                         <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" style={{ animationDelay: '1s' }} />
-                        <button className="absolute inset-0 flex items-center justify-center active:scale-95 transition-transform">
+                        <button onClick={() => handleOpenSelection('RED')} className="absolute inset-0 flex items-center justify-center active:scale-95 transition-transform">
                            <div className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border-2 border-white/20">
                               <Plus className="h-6 w-6 text-white" />
                            </div>
@@ -155,7 +159,6 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   </div>
                </div>
 
-               {/* Mode Selection Dimension */}
                <div className="space-y-4">
                   <h3 className="text-lg font-black uppercase tracking-tight text-white/90">Mode</h3>
                   <div className="flex gap-3">
@@ -174,7 +177,6 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   </div>
                </div>
 
-               {/* Time Selection Dimension */}
                <div className="space-y-4">
                   <h3 className="text-lg font-black uppercase tracking-tight text-white/90">Time</h3>
                   <div className="grid grid-cols-3 gap-3">
@@ -193,11 +195,72 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   </div>
                </div>
 
-               {/* Final Start Portal */}
                <div className="pt-4 pb-10">
                   <Button className="w-full h-16 rounded-[1.5rem] bg-emerald-800/80 hover:bg-emerald-700 text-emerald-400 border-2 border-yellow-500/40 font-black uppercase italic text-xl shadow-xl shadow-emerald-950/20 active:scale-95 transition-all">
                      Start
                   </Button>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'selection' && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[500px] relative bg-gradient-to-br from-[#4a0e0e] via-[#2d0707] to-black">
+            {/* SVGA Background Watermark */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center opacity-10">
+               <Swords className="w-[150%] h-[150%] text-white rotate-45" />
+            </div>
+            
+            {/* Cinematic Shine Streak */}
+            <div className="absolute inset-0 bg-white/5 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+
+            <header className="p-8 pb-4 flex items-center gap-4 relative z-10">
+               <button onClick={() => setView('battle')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-8 w-8 text-white" /></button>
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 relative">
+                     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg">
+                        <defs>
+                           <linearGradient id="badgeGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#FFF281" />
+                              <stop offset="50%" stopColor="#FFD700" />
+                              <stop offset="100%" stopColor="#B8860B" />
+                           </linearGradient>
+                        </defs>
+                        <path d="M50 5 L85 20 L85 55 C85 75 50 95 50 95 C50 95 15 75 15 55 L15 20 Z" fill="url(#badgeGold)" stroke="#4d3a00" strokeWidth="1" />
+                        <path d="M50 35 L60 55 L40 55 Z" fill="#4d3a00" />
+                        <rect x="48" y="55" width="4" height="15" fill="#4d3a00" rx="2" />
+                     </svg>
+                  </div>
+                  <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">Select People</h2>
+               </div>
+            </header>
+
+            <div className="p-8 pt-12 relative z-10 flex flex-col items-center">
+               {/* Selection Pyramid Grid */}
+               <div className="w-full space-y-12">
+                  {/* Top Center Seat */}
+                  <div className="flex justify-center">
+                     <button className="h-20 w-20 rounded-full bg-black/40 border-2 border-white/5 backdrop-blur-md flex items-center justify-center shadow-2xl hover:bg-black/60 active:scale-95 transition-all">
+                        <Armchair className="h-8 w-8 text-[#880e4f]" />
+                     </button>
+                  </div>
+
+                  {/* Row of 4 Seats */}
+                  <div className="grid grid-cols-4 gap-4 w-full">
+                     {[1, 2, 3, 4].map((i) => (
+                       <div key={i} className="flex justify-center">
+                          <button className="h-16 w-16 rounded-full bg-black/40 border-2 border-white/5 backdrop-blur-md flex items-center justify-center shadow-xl hover:bg-black/60 active:scale-95 transition-all">
+                             <Armchair className="h-6 w-6 text-[#880e4f]" />
+                          </button>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+
+               <div className="mt-20 w-full">
+                  <div className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-white/20 animate-pulse">
+                     Syncing Room Frequencies...
+                  </div>
                </div>
             </div>
           </div>
