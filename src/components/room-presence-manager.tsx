@@ -3,7 +3,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, query, where } from 'firebase/firestore';
 
@@ -12,7 +12,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, query
  * ANTI-GHOST PROTOCOL: 
  * 1. 20s Heartbeat for live tracking.
  * 2. Distributed Cleanup: ANY participant now sweeps stale (60s+) participants periodically.
- * This ensures room counts are corrected even if users "cut" the app screen.
+ * 3. Exact Count Sync: Periodically forces room count to match actual active roster size.
  */
 export function RoomPresenceManager() {
   const { activeRoom, setActiveRoom } = useRoomContext();
@@ -78,30 +78,44 @@ export function RoomPresenceManager() {
           setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
         }, 20000);
 
-        // 4. DISTRIBUTED GHOST PURGE (Every Participant acts as a cleaner)
-        // If anyone is in the room, they will clear out people who haven't pulsed in 60s.
+        // 4. DISTRIBUTED ROSTER SANITY CHECK (Aggressive 30s Sweep)
         if (cleanupInterval.current) clearInterval(cleanupInterval.current);
         cleanupInterval.current = setInterval(async () => {
           const staleThreshold = new Date(Date.now() - 60000); 
-          const q = query(collection(firestore, 'chatRooms', roomId, 'participants'), where('lastSeen', '<', staleThreshold));
-          const snap = await getDocs(q);
+          const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
+          const snap = await getDocs(participantsRef);
           
           if (!snap.empty) {
             const purgeBatch = writeBatch(firestore);
+            let activeCount = 0;
             let purgedCount = 0;
             
             snap.docs.forEach(d => {
-              if (d.id !== uid) { 
+              const data = d.data();
+              const lastSeen = data.lastSeen?.toDate?.() || new Date(0);
+              
+              if (lastSeen < staleThreshold && d.id !== uid) {
                 purgeBatch.delete(d.ref);
                 purgedCount++;
+              } else {
+                activeCount++;
               }
             });
 
+            // Always synchronize the room count to the actual active roster size
+            // This fixes "Ghost Rooms" instantly if discrepancies occur
+            purgeBatch.update(roomDocRef, { 
+              participantCount: activeCount,
+              updatedAt: serverTimestamp() 
+            });
+
+            await purgeBatch.commit();
             if (purgedCount > 0) {
-              purgeBatch.update(roomDocRef, { participantCount: increment(-purgedCount) });
-              await purgeBatch.commit();
-              console.log(`[Presence Sync] Terminated ${purgedCount} ghost identities from Room #${roomId}.`);
+              console.log(`[Presence Sync] Purged ${purgedCount} ghosts. Room count corrected to: ${activeCount}`);
             }
+          } else {
+            // Roster is physically empty, ensure count is 0
+            updateDocumentNonBlocking(roomDocRef, { participantCount: 0 });
           }
         }, 30000); 
 
@@ -126,8 +140,9 @@ export function RoomPresenceManager() {
         const profileRef = doc(firestore, 'users', uid, 'profile', uid);
         const participantRef = doc(firestore, 'chatRooms', exitRoomId, 'participants', uid);
 
-        batch.update(roomDocRef, { participantCount: increment(-1) });
+        // Standard exit cleanup
         batch.delete(participantRef);
+        batch.update(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
         batch.update(userRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
         batch.update(profileRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
         
