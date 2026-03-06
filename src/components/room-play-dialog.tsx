@@ -20,6 +20,7 @@ interface RoomPlayDialogProps {
 /**
  * High-Fidelity Room Play Portal.
  * RE-ENGINEERED: Features three interactive dimensions: Grid, Battle Setup, and Participant Selection.
+ * Supports dynamic Teal (Blue) and Burgundy (Red) selection themes.
  */
 export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
   const [view, setView] = useState<'grid' | 'battle' | 'selection'>('grid');
@@ -205,12 +206,18 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
         )}
 
         {view === 'selection' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[500px] relative bg-gradient-to-br from-[#4a0e0e] via-[#2d0707] to-black">
+          <div className={cn(
+            "animate-in fade-in slide-in-from-right-4 duration-500 min-h-[500px] relative transition-colors duration-700",
+            selectionSide === 'BLUE' ? "bg-gradient-to-br from-[#002b2b] via-[#004d4d] to-black" : "bg-gradient-to-br from-[#4a0e0e] via-[#2d0707] to-black"
+          )}>
             {/* SVGA Background Watermark */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center opacity-10">
                <Swords className="w-[150%] h-[150%] text-white rotate-45" />
             </div>
             
+            {/* High-Fidelity Stadium Lighting */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-to-b from-white/10 via-transparent to-transparent pointer-events-none" />
+
             {/* Cinematic Shine Streak */}
             <div className="absolute inset-0 bg-white/5 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none" />
 
@@ -220,13 +227,13 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   <div className="h-10 w-10 relative">
                      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg">
                         <defs>
-                           <linearGradient id="badgeGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                           <linearGradient id="badgeGoldSelect" x1="0%" y1="0%" x2="100%" y2="100%">
                               <stop offset="0%" stopColor="#FFF281" />
                               <stop offset="50%" stopColor="#FFD700" />
                               <stop offset="100%" stopColor="#B8860B" />
                            </linearGradient>
                         </defs>
-                        <path d="M50 5 L85 20 L85 55 C85 75 50 95 50 95 C50 95 15 75 15 55 L15 20 Z" fill="url(#badgeGold)" stroke="#4d3a00" strokeWidth="1" />
+                        <path d="M50 5 L85 20 L85 55 C85 75 50 95 50 95 C50 95 15 75 15 55 L15 20 Z" fill="url(#badgeGoldSelect)" stroke="#4d3a00" strokeWidth="1" />
                         <path d="M50 35 L60 55 L40 55 Z" fill="#4d3a00" />
                         <rect x="48" y="55" width="4" height="15" fill="#4d3a00" rx="2" />
                      </svg>
@@ -240,8 +247,11 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                <div className="w-full space-y-12">
                   {/* Top Center Seat */}
                   <div className="flex justify-center">
-                     <button className="h-20 w-20 rounded-full bg-black/40 border-2 border-white/5 backdrop-blur-md flex items-center justify-center shadow-2xl hover:bg-black/60 active:scale-95 transition-all">
-                        <Armchair className="h-8 w-8 text-[#880e4f]" />
+                     <button className={cn(
+                       "h-20 w-20 rounded-full bg-black/40 border-2 backdrop-blur-md flex items-center justify-center shadow-2xl hover:bg-black/60 active:scale-95 transition-all",
+                       selectionSide === 'BLUE' ? "border-cyan-400/20" : "border-white/5"
+                     )}>
+                        <Armchair className={cn("h-8 w-8", selectionSide === 'BLUE' ? "text-[#008b8b]" : "text-[#880e4f]")} />
                      </button>
                   </div>
 
@@ -249,8 +259,11 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   <div className="grid grid-cols-4 gap-4 w-full">
                      {[1, 2, 3, 4].map((i) => (
                        <div key={i} className="flex justify-center">
-                          <button className="h-16 w-16 rounded-full bg-black/40 border-2 border-white/5 backdrop-blur-md flex items-center justify-center shadow-xl hover:bg-black/60 active:scale-95 transition-all">
-                             <Armchair className="h-6 w-6 text-[#880e4f]" />
+                          <button className={cn(
+                            "h-16 w-16 rounded-full bg-black/40 border-2 backdrop-blur-md flex items-center justify-center shadow-xl hover:bg-black/60 active:scale-95 transition-all",
+                            selectionSide === 'BLUE' ? "border-cyan-400/20" : "border-white/5"
+                          )}>
+                             <Armchair className={cn("h-6 w-6", selectionSide === 'BLUE' ? "text-[#008b8b]" : "text-[#880e4f]")} />
                           </button>
                        </div>
                      ))}
