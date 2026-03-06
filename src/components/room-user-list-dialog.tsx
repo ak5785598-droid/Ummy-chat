@@ -62,7 +62,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
                   <div key={p.uid} className="p-4 bg-gray-50 rounded-2xl flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer border border-gray-100/50 hover:bg-gray-100">
                      <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                           <AvatarImage src={p.avatarUrl} />
+                           <AvatarImage src={p.avatarUrl || undefined} />
                            <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>

@@ -49,7 +49,7 @@ export function MomentsFeed() {
           <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                <AvatarImage src={moment.avatarUrl} />
+                <AvatarImage src={moment.avatarUrl || undefined} />
                 <AvatarFallback>{moment.username?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <div>
@@ -70,7 +70,7 @@ export function MomentsFeed() {
             {moment.imageUrl && (
               <div className="relative aspect-square w-full bg-slate-50">
                 <Image 
-                  src={moment.imageUrl} 
+                  src={moment.imageUrl || undefined} 
                   alt="Moment vibe" 
                   fill 
                   className="object-cover"

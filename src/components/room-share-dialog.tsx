@@ -55,7 +55,7 @@ export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogPro
         <div className="p-8 space-y-8">
            <div className="p-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center text-center gap-4">
               <div className="h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-md">
-                 <img src={room.coverUrl} className="h-12 w-12 rounded-lg object-cover" />
+                 <img src={room.coverUrl || undefined} className="h-12 w-12 rounded-lg object-cover" />
               </div>
               <div>
                  <h3 className="font-black uppercase italic text-lg">{room.title}</h3>

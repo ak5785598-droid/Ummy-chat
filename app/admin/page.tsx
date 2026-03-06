@@ -253,7 +253,7 @@ export default function AdminPage() {
              {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
                <Card key={idx} className="rounded-2xl overflow-hidden">
                   <div className="relative aspect-[8/2] bg-muted">
-                     {slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" />}
+                     {slide.imageUrl && <Image src={slide.imageUrl || undefined} alt="Banner" fill className="object-cover" />}
                      {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
                   </div>
                   <CardContent className="p-4 flex justify-between items-center">
@@ -274,7 +274,7 @@ export default function AdminPage() {
                 {targetUserForTags && (
                   <div className="mt-6 p-4 border rounded-xl flex items-center justify-between">
                      <div className="flex items-center gap-4">
-                        <Avatar><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
+                        <Avatar><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar>
                         <p className="font-black uppercase italic text-sm">{targetUserForTags.username}</p>
                      </div>
                      <div className="flex gap-2">

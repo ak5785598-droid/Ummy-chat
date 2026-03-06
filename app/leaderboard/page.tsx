@@ -130,7 +130,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
                    <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1 border-2 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border border-white/20">
-                         <AvatarImage src={getDisplayImage(top2)} />
+                         <AvatarImage src={getDisplayImage(top2) || undefined} />
                          <AvatarFallback className="font-black text-xs">2</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-2 py-0.5 rounded-full font-black text-[6px] border border-blue-200 shadow-lg">TOP 2</div>
@@ -153,10 +153,10 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
                    <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1 border-2 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border border-white/20">
-                         <AvatarImage src={getDisplayImage(top3)} />
+                         <AvatarImage src={getDisplayImage(top3) || undefined} />
                          <AvatarFallback className="font-black text-xs">3</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-2 py-0.5 rounded-full font-black text-[6px] border border-amber-200 shadow-lg">TOP 3</div>
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-3 py-0.5 rounded-full font-black text-[6px] border border-amber-200 shadow-lg">TOP 3</div>
                    </div>
                 </div>
                 <p className="font-black text-xs text-white uppercase truncate w-20 text-center mt-1 tracking-tighter">{getDisplayName(top3)}</p>
@@ -178,7 +178,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
           <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/5 group hover:bg-white/10 transition-all active:scale-[0.98]">
             <span className="w-5 text-center font-black text-white/40 text-xs italic">{index + 4}</span>
             <Avatar className="h-11 w-11 border border-white/10 shrink-0">
-              <AvatarImage src={getDisplayImage(item)} />
+              <AvatarImage src={getDisplayImage(item) || undefined} />
               <AvatarFallback className="font-black text-xs">{(index + 4)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">

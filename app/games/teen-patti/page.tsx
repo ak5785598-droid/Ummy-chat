@@ -136,7 +136,7 @@ export default function TeenPattiGamePage() {
            <div className="flex justify-around items-end px-4 flex-1 pb-28">
               {FACTIONS.map((f) => (
                 <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState !== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState !== 'betting' && "opacity-60")}>
-                   <img src={f.bannerUrl} className="w-24 h-28 object-contain filter drop-shadow-lg" alt="Banner" />
+                   <img src={f.bannerUrl || undefined} className="w-24 h-28 object-contain filter drop-shadow-lg" alt="Banner" />
                 </button>
               ))}
            </div>
