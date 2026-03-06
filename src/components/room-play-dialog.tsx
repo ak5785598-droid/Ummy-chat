@@ -19,11 +19,11 @@ interface RoomPlayDialogProps {
 
 /**
  * High-Fidelity Room Play Portal.
- * RE-ENGINEERED: Features three interactive dimensions: Grid, Battle Setup, and Participant Selection.
- * Supports dynamic Teal (Blue) and Burgundy (Red) selection themes.
+ * RE-ENGINEERED: Features four interactive dimensions: Grid, Battle Setup, Participant Selection, and Rules.
+ * Supports dynamic Teal (Blue) and Burgundy (Red) selection themes and Emerald (Green) Rules.
  */
 export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
-  const [view, setView] = useState<'grid' | 'battle' | 'selection'>('grid');
+  const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [battleTime, setBattleTime] = useState('30 s');
   const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
@@ -131,7 +131,7 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                   </div>
                   <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Battle</h2>
                </div>
-               <button className="p-1 hover:scale-110 transition-transform"><HelpCircle className="h-6 w-6 text-yellow-500" /></button>
+               <button onClick={() => setView('rules')} className="p-1 hover:scale-110 transition-transform"><HelpCircle className="h-6 w-6 text-yellow-500" /></button>
             </header>
 
             <div className="p-6 space-y-8">
@@ -201,6 +201,46 @@ export function RoomPlayDialog({ open, onOpenChange }: RoomPlayDialogProps) {
                      Start
                   </Button>
                </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'rules' && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[500px] bg-gradient-to-br from-[#064e3b] via-[#065f46] to-black relative">
+            <div className="absolute inset-0 bg-white/5 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+            
+            <header className="p-6 border-b border-white/5 flex items-center relative z-10">
+               <button onClick={() => setView('battle')} className="p-1 hover:scale-110 transition-transform">
+                  <ChevronLeft className="h-8 w-8 text-white" />
+               </button>
+               <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter text-center flex-1 pr-8">Rules</h2>
+            </header>
+            
+            <div className="p-10 space-y-16 relative z-10">
+               <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-700">
+                  <div className="flex items-center gap-4">
+                     <span className="text-3xl drop-shadow-lg">🎫</span>
+                     <h3 className="text-2xl font-black text-white tracking-tight">Number of votes</h3>
+                  </div>
+                  <p className="text-base font-body italic text-white/80 leading-relaxed pl-12">
+                     PK according to number of votes received, 1 person 1 vote.
+                  </p>
+               </div>
+
+               <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-1000">
+                  <div className="flex items-center gap-4">
+                     <span className="text-3xl drop-shadow-lg">🔥</span>
+                     <h3 className="text-2xl font-black text-white tracking-tight">Number of coins</h3>
+                  </div>
+                  <p className="text-base font-body italic text-white/80 leading-relaxed pl-12">
+                     PK according to number of coins received.
+                  </p>
+               </div>
+            </div>
+
+            {/* Background Watermark */}
+            <div className="absolute inset-0 pointer-events-none opacity-5 flex items-center justify-center">
+               <Swords className="w-[120%] h-[120%] text-white rotate-12" />
             </div>
           </div>
         )}
