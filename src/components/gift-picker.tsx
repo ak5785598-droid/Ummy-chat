@@ -148,8 +148,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
       });
 
       // 2. RECIPIENT UPDATE: Diamond Yield Protocol (40% Conversion)
-      // If sent to a specific user, they receive 40% of the coin value as diamonds
-      if (recipient && recipient.uid && recipient.uid !== user.uid) {
+      // Supports self-gifting by ensuring recipient receives diamonds even if they are the sender
+      if (recipient && recipient.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
         const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);

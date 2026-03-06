@@ -387,7 +387,8 @@ export function RoomClient({ room }: { room: Room }) {
       updateDocumentNonBlocking(roomRef, { 'stats.totalGifts': increment(gift.price), 'stats.dailyGifts': increment(gift.price) });
 
       // RECIPIENT DIAMOND YIELD (40% CONVERSION)
-      if (recipient && recipient.uid && recipient.uid !== currentUser.uid) {
+      // SELF-GIFTING: Diamonds are credited back to you if you are the recipient
+      if (recipient && recipient.uid) {
         const diamondYield = Math.floor(gift.price * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
         const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);

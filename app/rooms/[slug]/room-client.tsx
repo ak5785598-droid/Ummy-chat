@@ -175,10 +175,6 @@ function SeatActionDialog({
   );
 }
 
-/**
- * Majestic Combo Button Component.
- * Visual and behavioral sync for rapid-fire gift dispatching.
- */
 function GiftComboButton({ count, onClick, onTimeout }: { count: number, onClick: () => void, onTimeout: () => void }) {
   const [timeLeft, setTimeLeft] = useState(5000);
   const duration = 5000;
@@ -354,6 +350,17 @@ export function RoomClient({ room }: { room: Room }) {
         'stats.totalGifts': increment(gift.price),
         'stats.dailyGifts': increment(gift.price)
       });
+
+      // RECIPIENT DIAMOND YIELD (40% CONVERSION)
+      // SELF-GIFTING: Credits diamonds even if sender is recipient
+      if (recipient && recipient.uid) {
+        const diamondYield = Math.floor(gift.price * 0.4);
+        const recipientRef = doc(firestore, 'users', recipient.uid);
+        const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);
+        const recUpdateData = { 'wallet.diamonds': increment(diamondYield), updatedAt: serverTimestamp() };
+        updateDocumentNonBlocking(recipientRef, recUpdateData);
+        updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
+      }
 
       addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
         type: 'gift',
