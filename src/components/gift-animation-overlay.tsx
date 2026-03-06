@@ -12,12 +12,14 @@ interface GiftAnimationOverlayProps {
 /**
  * High-Fidelity Gift Animation Engine.
  * Features SVGA-style cinematic sequences for high-tier tribal gifts.
+ * RE-ENGINEERED: Now includes elite particle systems for Lucky Gifts (🍀, 👑, 🍁, ⭐).
  */
 export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [triggerKey, setTriggerKey] = useState(0);
 
   useEffect(() => {
+    // SOVEREIGN IDENTITY CHECK: Ensure giftId is a valid string frequency
     if (giftId && typeof giftId === 'string') {
       setIsVisible(true);
       setTriggerKey(prev => prev + 1);
@@ -25,7 +27,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       // Animation duration protocol
       let duration = 3000;
       if (['galaxy', 'rolex', 'color-carnival', 'lucky-jackpot'].includes(giftId)) duration = 4500;
-      if (['dragon', 'celebration', 'propose-ring'].includes(giftId)) duration = 6000;
+      if (['dragon', 'celebration', 'propose-ring', 'lucky-crown', 'lucky-star'].includes(giftId)) duration = 5000;
 
       const timer = setTimeout(() => {
         setIsVisible(false);
@@ -38,6 +40,11 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
   if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
   const getEmoji = () => {
+    if (giftId === 'lucky-clover') return '🍀';
+    if (giftId === 'lucky-crown') return '👑';
+    if (giftId === 'lucky-maple') return '🍁';
+    if (giftId === 'lucky-star') return '⭐';
+    
     switch (giftId) {
       case 'rose': return '🌹';
       case 'heart': return '💖';
@@ -51,10 +58,6 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       case 'supernova': return '💥';
       case 'rolex': return '⌚';
       case 'celebration': return '🥳';
-      case 'lucky-clover': return '🍀';
-      case 'lucky-crown': return '👑';
-      case 'lucky-maple': return '🍁';
-      case 'lucky-star': return '⭐';
       default: return '🎁';
     }
   };
@@ -62,8 +65,8 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
   return (
     <div key={triggerKey} className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden">
       
-      {/* Screen Flash Protocol */}
-      {['dragon', 'supernova', 'rolex', 'celebration', 'lucky-jackpot'].includes(giftId) && (
+      {/* Screen Flash Protocol - Elite high-tier triggers */}
+      {['dragon', 'supernova', 'rolex', 'celebration', 'lucky-jackpot', 'lucky-crown', 'lucky-star'].includes(giftId) && (
         <div className="absolute inset-0 animate-screen-flash bg-white pointer-events-none z-[301]" />
       )}
 
@@ -86,37 +89,53 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       {/* High-Fidelity Propose Ring Animation */}
       {giftId === 'propose-ring' && <ProposeRingAnimation />}
 
-      {/* Lucky Gift Particles */}
+      {/* Lucky Gift Particle Engine (SVGA-Style Cinematic) */}
       {giftId.startsWith('lucky-') && giftId !== 'lucky-jackpot' && (
-        <div className="absolute inset-0 z-[302]">
-           {Array.from({ length: 20 }).map((_, i) => (
+        <div className="absolute inset-0 z-[302] flex items-center justify-center">
+           {/* Center Burst Visual */}
+           <div className={cn(
+             "absolute h-64 w-64 rounded-full blur-3xl opacity-20 animate-pulse",
+             giftId === 'lucky-clover' ? "bg-green-500" : 
+             giftId === 'lucky-crown' ? "bg-yellow-500" :
+             giftId === 'lucky-maple' ? "bg-orange-500" : "bg-blue-500"
+           )} />
+
+           {/* Floating Particle Roster */}
+           {Array.from({ length: 24 }).map((_, i) => (
              <div 
                key={i} 
                className={cn(
-                 "absolute top-[-20px] opacity-0 animate-petal-fall",
-                 giftId === 'lucky-clover' ? "text-green-400" : 
-                 giftId === 'lucky-crown' ? "text-yellow-400" :
-                 giftId === 'lucky-maple' ? "text-orange-400" : "text-blue-400"
+                 "absolute opacity-0",
+                 giftId === 'lucky-clover' ? "animate-lucky-float-green" : 
+                 giftId === 'lucky-crown' ? "animate-lucky-float-gold" :
+                 giftId === 'lucky-maple' ? "animate-lucky-float-orange" : "animate-lucky-float-blue"
                )}
                style={{ 
                  left: `${Math.random() * 100}%`, 
+                 top: `${Math.random() * 100}%`,
                  animationDelay: `${Math.random() * 2}s`,
-                 fontSize: `${10 + Math.random() * 20}px`
+                 animationDuration: `${3 + Math.random() * 3}s`,
+                 fontSize: `${20 + Math.random() * 40}px`,
+                 filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))'
                }}
              >
                 {getEmoji()}
              </div>
            ))}
+
+           {/* Center Icon Scale-Up */}
+           <div className="text-[12rem] filter drop-shadow-[0_0_60px_rgba(255,255,255,0.8)] animate-lucky-center-pop">
+              {getEmoji()}
+           </div>
         </div>
       )}
 
       {/* Standard High-Tier Animated Emojis */}
-      {!['propose-ring', 'galaxy', 'color-carnival', 'lucky-jackpot'].includes(giftId) && (
+      {!giftId.startsWith('lucky-') && !['propose-ring', 'galaxy', 'color-carnival'].includes(giftId) && (
         <div className={cn(
           "text-9xl filter drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] transition-all",
           giftId === 'rolex' ? "animate-rolex-sync" : 
-          giftId === 'celebration' ? "animate-celebration-pop" : 
-          giftId.startsWith('lucky-') ? "animate-reaction-glitter scale-[1.5]" : "animate-bounce scale-[2.0]"
+          giftId === 'celebration' ? "animate-celebration-pop" : "animate-bounce scale-[2.0]"
         )}>
           {getEmoji()}
         </div>
@@ -141,6 +160,22 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
           100% { transform: scale(3); opacity: 0; }
         }
         .animate-celebration-pop { animation: celebration-pop 5s ease-in-out forwards; }
+
+        /* LUCKY PARTICLE ANIMATIONS */
+        @keyframes lucky-float-green { 0% { transform: translateY(100vh) rotate(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; } }
+        .animate-lucky-float-green { animation: lucky-float-green 4s linear infinite; }
+
+        @keyframes lucky-float-gold { 0% { transform: scale(0) rotate(0); opacity: 0; } 50% { opacity: 1; transform: scale(1.2) rotate(180deg); } 100% { transform: scale(2) rotate(360deg); opacity: 0; } }
+        .animate-lucky-float-gold { animation: lucky-float-gold 3s ease-out infinite; }
+
+        @keyframes lucky-float-orange { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(200px, 400px) rotate(720deg); opacity: 0; } }
+        .animate-lucky-float-orange { animation: lucky-float-orange 5s ease-in-out infinite; }
+
+        @keyframes lucky-float-blue { 0% { transform: scale(1) translate(0,0); opacity: 0; } 10% { opacity: 1; } 100% { transform: scale(0) translate(-300px, -300px); opacity: 0; } }
+        .animate-lucky-float-blue { animation: lucky-float-blue 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        @keyframes lucky-center-pop { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 30% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(1) rotate(0deg); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+        .animate-lucky-center-pop { animation: lucky-center-pop 4s forwards; }
       `}</style>
     </div>
   );
