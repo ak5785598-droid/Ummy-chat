@@ -5,6 +5,7 @@ import { ProfileInitializer } from '@/components/profile-initializer';
 import { RoomProvider } from '@/components/room-provider';
 import { RoomPresenceManager } from '@/components/room-presence-manager';
 import { GlobalPresenceManager } from '@/components/global-presence-manager';
+import { GlobalBroadcastBanner } from '@/components/global-broadcast-banner';
 import type { ReactNode } from 'react';
 
 /**
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <GlobalPresenceManager />
       <RoomProvider>
         <RoomPresenceManager />
+        <GlobalBroadcastBanner />
         {children}
       </RoomProvider>
     </FirebaseClientProvider>

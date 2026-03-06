@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RoomParticipant } from '@/lib/types';
+import { RoomParticipant, Room } from '@/lib/types';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -39,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, Timestamp, addDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
@@ -49,13 +49,14 @@ interface RoomPlayDialogProps {
   onOpenChange: (open: boolean) => void;
   participants?: RoomParticipant[];
   roomId?: string;
+  room?: any;
 }
 
 /**
  * High-Fidelity Room Play Portal.
  * Features real-time participant selection, Battle setup, and the Majestic Lucky Bag.
  */
-export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }: RoomPlayDialogProps) {
+export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId, room }: RoomPlayDialogProps) {
   const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'lucky-bag' | 'lucky-bag-rules'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [battleTime, setBattleTime] = useState('30 s');
@@ -128,22 +129,6 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
     onOpenChange(open);
   };
 
-  const toggleSelection = (uid: string) => {
-    const currentTeam = selectionSide === 'BLUE' ? blueTeam : redTeam;
-    const setter = selectionSide === 'BLUE' ? setBlueTeam : setRedTeam;
-    const otherTeam = selectionSide === 'BLUE' ? redTeam : blueTeam;
-
-    if (otherTeam.includes(uid)) return;
-
-    if (currentTeam.includes(uid)) {
-      setter(prev => prev.filter(id => id !== uid));
-    } else {
-      if (currentTeam.length < 5) {
-        setter(prev => [...prev, uid]);
-      }
-    }
-  };
-
   const rainPackages = [
     { id: 'r1', label: '2000', value: 2000 },
     { id: 'r2', label: '5000', value: 5000 },
@@ -163,7 +148,7 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
   const activePackages = luckyBagTab === 'Normal' ? normalPackages : rainPackages;
 
   const handleSendLuckyBag = async () => {
-    if (!user || !firestore || !userProfile || !roomId) return;
+    if (!user || !firestore || !userProfile || !roomId || !room) return;
     
     const pkg = activePackages.find(p => p.id === selectedCoinPkg);
     if (!pkg) return;
@@ -175,20 +160,33 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
 
     setIsSending(true);
     try {
-      // 1. Economic Handshake
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
       updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-pkg.value), updatedAt: serverTimestamp() });
       updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(-pkg.value), updatedAt: serverTimestamp() });
 
-      // 2. Dispatch System Message to trigger overlay for everyone
+      // If it's a Normal Lucky Bag, trigger GLOBAL BROADCAST
+      if (luckyBagTab === 'Normal') {
+        const broadcastRef = collection(firestore, 'globalBroadcasts');
+        await addDoc(broadcastRef, {
+          roomId: roomId,
+          roomNumber: room.roomNumber || '0000',
+          senderId: user.uid,
+          senderName: userProfile.username,
+          expiresAt: Timestamp.fromDate(new Date(Date.now() + 5000)), // 5 seconds duration
+          createdAt: serverTimestamp()
+        });
+      }
+
+      // Dispatch System Message
       await addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: luckyBagTab === 'Rain' ? 'lucky-rain' : 'lucky-bag',
         senderId: user.uid,
         senderName: userProfile.username,
         amount: pkg.value,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
+        bagId: `bag_${Date.now()}` // For grab logic synchronization
       });
 
       toast({ title: 'Dispatch Successful', description: `${luckyBagTab} frequency synchronized.` });
@@ -198,6 +196,15 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
     } finally {
       setIsSending(false);
     }
+  };
+
+  const toggleSelection = (uid: string) => {
+    const currentTeam = selectionSide === 'BLUE' ? blueTeam : redTeam;
+    const setter = selectionSide === 'BLUE' ? setBlueTeam : setRedTeam;
+    const otherTeam = selectionSide === 'BLUE' ? redTeam : blueTeam;
+    if (otherTeam.includes(uid)) return;
+    if (currentTeam.includes(uid)) setter(prev => prev.filter(id => id !== uid));
+    else if (currentTeam.length < 5) setter(prev => [...prev, uid]);
   };
 
   const seatedParticipants = participants.filter(p => p.seatIndex > 0);
@@ -213,22 +220,14 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
               <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-white/90">Room Play</DialogTitle>
               <DialogDescription className="sr-only">Choose a room game or tool frequency.</DialogDescription>
             </DialogHeader>
-
             <div className="p-8 pt-2 pb-16">
                <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4">
                   {options.map((opt) => (
-                    <button 
-                      key={opt.id}
-                      onClick={opt.onClick}
-                      className="flex flex-col items-center gap-3 shrink-0 active:scale-90 transition-transform"
-                    >
-                       <div className="relative p-4 bg-white/5 rounded-3xl border border-white/5 shadow-inner hover:bg-white/10 transition-colors">
-                          {opt.icon}
-                       </div>
+                    <button key={opt.id} onClick={opt.onClick} className="flex flex-col items-center gap-3 shrink-0 active:scale-90 transition-transform">
+                       <div className="relative p-4 bg-white/5 rounded-3xl border border-white/5 shadow-inner hover:bg-white/10 transition-colors">{opt.icon}</div>
                        <span className="text-sm font-black uppercase italic text-white/80 tracking-tight">{opt.label}</span>
                     </button>
                   ))}
-                  <div className="w-24 shrink-0" />
                </div>
             </div>
           </div>
@@ -239,114 +238,48 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
             <div className="absolute inset-0 pointer-events-none">
                <div className="absolute inset-0 bg-[#2d0a4a] opacity-90" />
                <div className="absolute top-0 left-0 w-full h-48 overflow-hidden">
-                  {luckyBagBanner && (
-                    <Image 
-                      src={luckyBagBanner.imageUrl} 
-                      alt="Coins" 
-                      fill 
-                      className="object-cover opacity-40 brightness-75 scale-110"
-                      data-ai-hint={luckyBagBanner.imageHint}
-                    />
-                  )}
+                  {luckyBagBanner && <Image src={luckyBagBanner.imageUrl} alt="Coins" fill className="object-cover opacity-40 brightness-75 scale-110" data-ai-hint={luckyBagBanner.imageHint} />}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#2d0a4a]" />
                </div>
-               <div className="absolute top-0 left-[-20%] w-[150%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-45deg] animate-shine" style={{ animationDuration: '8s' }} />
             </div>
-
             <header className="p-6 pb-2 flex items-center justify-between relative z-10">
-               <div className="flex items-center gap-2">
-                  <div className="bg-black/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/10 shadow-lg cursor-pointer hover:bg-black/40 transition-all">
-                     <GoldCoinIcon className="h-4 w-4" />
-                     <span className="text-xs font-black text-white italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                     <ChevronRight className="h-3 w-3 text-white/40" />
-                  </div>
-               </div>
-               
-               <h2 className="text-3xl font-black text-yellow-400 italic tracking-tighter drop-shadow-md" style={{ fontFamily: 'serif' }}>Lucky Bag</h2>
-
+               <div className="bg-black/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/10"><GoldCoinIcon className="h-4 w-4" /><span className="text-xs font-black text-white italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span></div>
+               <h2 className="text-3xl font-black text-yellow-400 italic tracking-tighter" style={{ fontFamily: 'serif' }}>Lucky Bag</h2>
                <div className="flex gap-2">
-                  <button className="p-2 bg-purple-900/40 rounded-xl border border-white/10">
-                     <ClipboardList className="h-5 w-5 text-yellow-400" />
-                  </button>
-                  <button onClick={() => setView('lucky-bag-rules')} className="p-2 bg-purple-900/40 rounded-xl border border-white/10">
-                     <HelpCircle className="h-5 w-5 text-yellow-400" />
-                  </button>
-                  <button onClick={() => setView('grid')} className="p-2 bg-purple-900/40 rounded-xl border border-white/10 ml-1">
-                     <X className="h-5 w-5 text-white/60" />
-                  </button>
+                  <button onClick={() => setView('lucky-bag-rules')} className="p-2 bg-purple-900/40 rounded-xl border border-white/10"><HelpCircle className="h-5 w-5 text-yellow-400" /></button>
+                  <button onClick={() => setView('grid')} className="p-2 bg-purple-900/40 rounded-xl border border-white/10"><X className="h-5 w-5 text-white/60" /></button>
                </div>
             </header>
-
-            <main className="p-6 pt-2 space-y-8 relative z-10 flex flex-col">
+            <main className="p-6 pt-2 space-y-8 relative z-10">
                <div className="bg-black/30 backdrop-blur-md p-1.5 rounded-full border-2 border-white/10 flex items-center shadow-inner mt-4">
-                  <button 
-                    onClick={() => { setLuckyBagTab('Normal'); setSelectedCoinPkg('n1'); }}
-                    className={cn(
-                      "flex-1 h-12 rounded-full font-black uppercase italic text-sm transition-all duration-500 relative overflow-hidden",
-                      luckyBagTab === 'Normal' ? "text-white bg-gradient-to-br from-[#6a11cb] via-[#2575fc] to-[#6a11cb] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6)]" : "text-white/40"
-                    )}
-                  >
-                     Normal
-                  </button>
-                  <button 
-                    onClick={() => { setLuckyBagTab('Rain'); setSelectedCoinPkg('r1'); }}
-                    className={cn(
-                      "flex-1 h-12 rounded-full font-black uppercase italic text-sm transition-all duration-500 relative overflow-hidden",
-                      luckyBagTab === 'Rain' ? "text-white bg-gradient-to-br from-[#6a11cb] via-[#2575fc] to-[#6a11cb] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6)]" : "text-white/40"
-                    )}
-                  >
-                     Lucky Rain
-                  </button>
+                  {['Normal', 'Rain'].map(tab => (
+                    <button key={tab} onClick={() => { setLuckyBagTab(tab as any); setSelectedCoinPkg(tab === 'Normal' ? 'n1' : 'r1'); }} className={cn("flex-1 h-12 rounded-full font-black uppercase italic text-sm transition-all duration-500", luckyBagTab === tab ? "text-white bg-gradient-to-br from-[#6a11cb] via-[#2575fc] to-[#6a11cb] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6)]" : "text-white/40")}>{tab === 'Normal' ? 'Normal' : 'Lucky Rain'}</button>
+                  ))}
                </div>
-
                <div className="space-y-4">
-                  <h3 className="text-lg font-black uppercase italic tracking-tight text-white/90 ml-1">Total Coins</h3>
+                  <h3 className="text-lg font-black uppercase italic tracking-tight text-white/90">Total Coins</h3>
                   <div className="grid grid-cols-2 gap-3">
                      {activePackages.map((pkg) => (
-                       <button 
-                         key={pkg.id}
-                         onClick={() => setSelectedCoinPkg(pkg.id)}
-                         className={cn(
-                           "h-16 rounded-2xl flex items-center justify-center gap-3 transition-all relative overflow-hidden border-2",
-                           selectedCoinPkg === pkg.id 
-                            ? "bg-gradient-to-r from-white via-indigo-100 to-white border-white shadow-xl" 
-                            : "bg-white/5 border-white/5 hover:bg-white/10"
-                         )}
-                       >
-                          <GoldCoinIcon className="h-5 w-5" />
-                          <span className={cn(
-                            "text-xl font-black italic tracking-tighter",
-                            selectedCoinPkg === pkg.id ? "text-black" : "text-white"
-                          )}>{pkg.label}</span>
+                       <button key={pkg.id} onClick={() => setSelectedCoinPkg(pkg.id)} className={cn("h-16 rounded-2xl flex items-center justify-center gap-3 transition-all border-2", selectedCoinPkg === pkg.id ? "bg-gradient-to-r from-white via-indigo-100 to-white border-white shadow-xl" : "bg-white/5 border-white/5 hover:bg-white/10")}>
+                          <GoldCoinIcon className="h-5 w-5" /><span className={cn("text-xl font-black italic tracking-tighter", selectedCoinPkg === pkg.id ? "text-black" : "text-white")}>{pkg.label}</span>
                        </button>
                      ))}
                   </div>
                </div>
-
-               <div className="pt-10 pb-16">
-                  <Button 
-                    onClick={handleSendLuckyBag}
-                    disabled={isSending}
-                    className="w-full h-16 rounded-[2rem] bg-gradient-to-r from-[#8e24aa] via-[#ab47bc] to-[#8e24aa] text-white border-2 border-purple-400/40 font-black uppercase italic text-2xl tracking-tighter shadow-xl active:scale-95 transition-all"
-                  >
-                     {isSending ? <Loader className="animate-spin h-6 w-6" /> : 'SEND'}
-                  </Button>
-               </div>
+               <div className="pt-10 pb-16"><Button onClick={handleSendLuckyBag} disabled={isSending} className="w-full h-16 rounded-[2rem] bg-gradient-to-r from-[#8e24aa] via-[#ab47bc] to-[#8e24aa] text-white border-2 border-purple-400/40 font-black uppercase italic text-2xl tracking-tighter shadow-xl active:scale-95 transition-all">{isSending ? <Loader className="animate-spin h-6 w-6" /> : 'SEND'}</Button></div>
             </main>
          </div>
         )}
 
-        {/* Other view components (rules, selection, etc.) same as before */}
         {view === 'lucky-bag-rules' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[600px] bg-gradient-to-b from-[#8e2de2] via-[#4a00e0] to-[#1a0a2e] relative overflow-hidden flex flex-col">
             <header className="p-6 flex items-center relative z-10">
-               <button onClick={() => setView('lucky-bag')} className="h-10 w-10 rounded-full bg-[#4a00e0]/40 border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors"><ChevronLeft className="h-6 w-6 text-yellow-400" /></button>
+               <button onClick={() => setView('lucky-bag')} className="h-10 w-10 rounded-full bg-[#4a00e0]/40 border border-white/20 flex items-center justify-center"><ChevronLeft className="h-6 w-6 text-yellow-400" /></button>
                <h2 className="text-3xl font-black text-yellow-400 italic tracking-tighter text-center flex-1 pr-10" style={{ fontFamily: 'serif' }}>Rules</h2>
             </header>
             <ScrollArea className="flex-1 p-8 pt-2 relative z-10">
                <div className="space-y-10 pb-20">
-                  <section className="space-y-4"><h3 className="text-2xl font-black text-white italic tracking-tight">Lucky Bag</h3><ul className="space-y-4 pl-4">{["When a Lucky Bag pack is more than 7000 Coins, a chatroom broadcast will be sent;","A maximum of 10 Lucky Bags can exist in each room at the same time;","If the Coins in the Lucky Bag are not robbed, the remaining Coins will be returned to the sender's account after 10 minutes;","The maximum number of Coins sent per day is 200,000 Coins;","The maximum number of Coins you can receive every day is 50,000 Coins;"].map((rule, idx) => (<li key={idx} className="flex gap-3 text-sm font-medium text-white/90 leading-relaxed"><div className="h-1.5 w-1.5 rounded-full bg-white shrink-0 mt-2 shadow-[0_0_5px_white]" /><p>{rule}</p></li>)) }</ul></section>
-                  <section className="space-y-4"><h3 className="text-2xl font-black text-white italic tracking-tight">Lucky Rain</h3><ul className="space-y-4 pl-4">{["The maximum number of Coins sent per day is 200,000 Coins;","The maximum number of Coins you can receive every day is 50,000 Coins;","When a Lucky Rain exceeds 40,000 Coins, a chat room broadcast will be sent;"].map((rule, idx) => (<li key={idx} className="flex gap-3 text-sm font-medium text-white/90 leading-relaxed"><div className="h-1.5 w-1.5 rounded-full bg-white shrink-0 mt-2 shadow-[0_0_5px_white]" /><p>{rule}</p></li>)) }</ul></section>
+                  <section className="space-y-4"><h3 className="text-2xl font-black text-white italic tracking-tight">Lucky Bag</h3><ul className="space-y-4 pl-4">{["When a Lucky Bag pack is more than 7000 Coins, a chatroom broadcast will be sent;","A maximum of 10 Lucky Bags can exist in each room at the same time;","The maximum number of Coins sent per day is 200,000 Coins;"].map((rule, idx) => (<li key={idx} className="flex gap-3 text-sm font-medium text-white/90 leading-relaxed"><div className="h-1.5 w-1.5 rounded-full bg-white shrink-0 mt-2 shadow-[0_0_5px_white]" /><p>{rule}</p></li>)) }</ul></section>
                </div>
             </ScrollArea>
           </div>
@@ -357,7 +290,6 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
             <header className="p-6 pb-2 flex items-center justify-between">
                <div className="flex items-center gap-3">
                   <button onClick={() => setView('grid')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-6 w-6 text-white/60" /></button>
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-500 to-red-500 p-0.5 border border-white/20"><div className="w-full h-full bg-black/40 rounded-full flex items-center justify-center"><Swords className="h-5 w-5 text-white" /></div></div>
                   <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Battle</h2>
                </div>
                <button onClick={() => setView('rules')} className="p-1 hover:scale-110 transition-transform"><HelpCircle className="h-6 w-6 text-yellow-500" /></button>
@@ -374,24 +306,16 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [], roomId }
                      </div>
                   </div>
                </div>
-               <div className="space-y-4"><h3 className="text-lg font-black uppercase tracking-tight text-white/90">Mode</h3><div className="flex gap-3">{['Votes', 'Coins'].map((m) => (<button key={m} onClick={() => setBattleMode(m as any)} className={cn("flex-1 h-12 rounded-2xl font-black uppercase italic text-sm transition-all border-2", battleMode === m ? "bg-emerald-600/80 border-emerald-400 text-white shadow-[0_0_15px_rgba(52,211,153,0.3)]" : "bg-white/5 border-white/5 text-white/40")}>{m}</button>))}</div></div>
-               <div className="space-y-4"><h3 className="text-lg font-black uppercase tracking-tight text-white/90">Time</h3><div className="grid grid-cols-3 gap-3">{['30 s', '1 min', '5 min', '10 min', '15 min'].map((t) => (<button key={t} onClick={() => setBattleTime(t)} className={cn("h-12 rounded-2xl font-black uppercase italic text-[10px] tracking-widest transition-all border-2", battleTime === t ? "bg-emerald-600/80 border-emerald-400 text-white shadow-[0_0_15px_rgba(52,211,153,0.3)]" : "bg-white/5 border-white/5 text-white/40")}>{t}</button>))}</div></div>
-               <div className="pt-4 pb-10"><Button disabled={blueTeam.length === 0 || redTeam.length === 0} className="w-full h-16 rounded-[1.5rem] bg-emerald-800/80 hover:bg-emerald-700 text-emerald-400 border-2 border-yellow-500/40 font-black uppercase italic text-xl shadow-xl active:scale-95 transition-all disabled:opacity-50">Start</Button></div>
+               <div className="space-y-4"><h3 className="text-lg font-black uppercase tracking-tight text-white/90">Mode</h3><div className="flex gap-3">{['Votes', 'Coins'].map((m) => (<button key={m} onClick={() => setBattleMode(m as any)} className={cn("flex-1 h-12 rounded-2xl font-black uppercase italic text-sm transition-all border-2", battleMode === m ? "bg-emerald-600/80 border-emerald-400 text-white" : "bg-white/5 border-white/5 text-white/40")}>{m}</button>))}</div></div>
+               <div className="pt-4 pb-10"><Button disabled={blueTeam.length === 0 || redTeam.length === 0} className="w-full h-16 rounded-[1.5rem] bg-emerald-800/80 text-emerald-400 font-black uppercase italic text-xl shadow-xl active:scale-95 transition-all">Start</Button></div>
             </div>
           </div>
         )}
 
-        {view === 'rules' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[500px] bg-gradient-to-br from-[#064e3b] via-[#065f46] to-black relative">
-            <header className="p-6 border-b border-white/5 flex items-center relative z-10"><button onClick={() => setView('battle')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-8 w-8 text-white" /></button><h2 className="text-3xl font-black text-white uppercase italic tracking-tighter text-center flex-1 pr-8">Rules</h2></header><div className="p-10 space-y-16 relative z-10"><div className="space-y-3"><div className="flex items-center gap-4"><span className="text-3xl">🎫</span><h3 className="text-2xl font-black text-white tracking-tight">Number of votes</h3></div><p className="text-base font-body italic text-white/80 leading-relaxed pl-12">PK according to number of votes received, 1 person 1 vote.</p></div><div className="space-y-3"><div className="flex items-center gap-4"><span className="text-3xl">🔥</span><h3 className="text-2xl font-black text-white tracking-tight">Number of coins</h3></div><p className="text-base font-body italic text-white/80 leading-relaxed pl-12">PK according to number of coins received.</p></div></div>
-          </div>
-        )}
-
         {view === 'selection' && (
-          <div className={cn("animate-in fade-in slide-in-from-right-4 duration-500 min-h-[600px] max-h-[90vh] relative flex flex-col", selectionSide === 'BLUE' ? "bg-[#004d4d]" : "bg-[#4a0e0e]")}>
+          <div className={cn("animate-in fade-in slide-in-from-right-4 duration-500 min-h-[600px] relative flex flex-col", selectionSide === 'BLUE' ? "bg-[#004d4d]" : "bg-[#4a0e0e]")}>
             <header className="p-8 pb-4 flex items-center justify-between relative z-10"><div className="flex items-center gap-4"><button onClick={() => setView('battle')} className="p-1"><ChevronLeft className="h-8 w-8 text-white" /></button><h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">Select People</h2></div><button onClick={() => setView('battle')} className="bg-white/10 px-6 py-2 rounded-full font-black uppercase text-[10px] italic border border-white/20">Done</button></header>
-            <div className="p-8 pt-6 relative z-10 flex flex-col items-center"><div className="w-full space-y-8"><div className="flex justify-center"><SelectionSeat index={0} side={selectionSide} selectedUid={(selectionSide === 'BLUE' ? blueTeam : redTeam)[0]} onRemove={() => { const setter = selectionSide === 'BLUE' ? setBlueTeam : setRedTeam; setter(prev => prev.slice(1)); }} participants={participants} /></div><div className="grid grid-cols-4 gap-4 w-full">{[1, 2, 3, 4].map((i) => (<SelectionSeat key={i} index={i} side={selectionSide} selectedUid={(selectionSide === 'BLUE' ? blueTeam : redTeam)[i]} onRemove={() => { const setter = selectionSide === 'BLUE' ? setBlueTeam : setRedTeam; setter(prev => prev.filter((_, idx) => idx !== i)); }} participants={participants} />))}</div></div></div>
-            <div className="flex-1 px-8 pb-10 relative z-10 flex flex-col min-h-0"><div className="flex items-center gap-2 mb-4"><Users className="h-4 w-4 text-white/40" /><span className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Tribe on Mic</span></div><ScrollArea className="flex-1 bg-black/20 rounded-3xl border border-white/5 p-4">{seatedParticipants.length > 0 ? <div className="grid grid-cols-1 gap-2">{seatedParticipants.map((p) => { const isSelectedOnCurrentSide = (selectionSide === 'BLUE' ? blueTeam : redTeam).includes(p.uid); const isSelectedOnOtherSide = (selectionSide === 'BLUE' ? redTeam : blueTeam).includes(p.uid); return <button key={p.uid} disabled={isSelectedOnOtherSide} onClick={() => toggleSelection(p.uid)} className={cn("flex items-center justify-between p-3 rounded-2xl transition-all border-2", isSelectedOnCurrentSide ? (selectionSide === 'BLUE' ? "bg-cyan-500/20 border-cyan-400" : "bg-red-500/20 border-red-400") : "bg-white/5 border-white/5 hover:bg-white/10", isSelectedOnOtherSide && "opacity-20 grayscale cursor-not-allowed")}><div className="flex items-center gap-3"><Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={p.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar><div className="text-left"><p className="font-black text-xs uppercase tracking-tight text-white">{p.name}</p><p className="text-[8px] font-bold text-white/40 uppercase">Mic Slot {p.seatIndex}</p></div></div>{isSelectedOnCurrentSide ? <div className={cn("h-6 w-6 rounded-full flex items-center justify-center", selectionSide === 'BLUE' ? "bg-cyan-400" : "bg-red-400")}><Check className="h-3 w-3 text-black" strokeWidth={4} /></div> : <Plus className="h-6 w-6 text-white/40" />}</button>; })}</div> : <div className="flex flex-col items-center justify-center py-10 opacity-20"><Armchair className="h-10 w-10 mb-2" /><p className="text-[10px] font-black uppercase italic">Nobody sitting on mic</p></div>}</ScrollArea></div>
+            <div className="flex-1 px-8 pb-10 relative z-10 flex flex-col min-h-0"><ScrollArea className="flex-1 bg-black/20 rounded-3xl border border-white/5 p-4">{seatedParticipants.length > 0 ? <div className="grid grid-cols-1 gap-2">{seatedParticipants.map((p) => { const isSelected = (selectionSide === 'BLUE' ? blueTeam : redTeam).includes(p.uid); return <button key={p.uid} onClick={() => toggleSelection(p.uid)} className={cn("flex items-center justify-between p-3 rounded-2xl transition-all border-2", isSelected ? (selectionSide === 'BLUE' ? "bg-cyan-500/20 border-cyan-400" : "bg-red-500/20 border-red-400") : "bg-white/5 border-white/5 hover:bg-white/10")}><div className="flex items-center gap-3"><Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={p.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar><div className="text-left"><p className="font-black text-xs uppercase tracking-tight text-white">{p.name}</p></div></div>{isSelected ? <Check className="h-4 w-4 text-white" /> : <Plus className="h-4 w-4 text-white/40" />}</button>; })}</div> : <p className="text-center py-10 opacity-20 italic">Nobody on mic</p>}</ScrollArea></div>
           </div>
         )}
 
@@ -410,23 +334,10 @@ function SelectionPortal({ side, team, onClick, participants }: any) {
             const p = participants.find((part: any) => part.uid === uid);
             return <Avatar key={uid} className="h-12 w-12 border-2 border-white/40 shadow-xl"><AvatarImage src={p?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>;
           })}
-          {team.length > 3 && <div className="h-12 w-12 rounded-full bg-black/60 border-2 border-white/40 flex items-center justify-center text-[10px] font-black">+{team.length - 3}</div>}
         </div>
       ) : (
         <div className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border-2 border-white/20"><Plus className="h-6 w-6 text-white" /></div>
       )}
     </button>
-  );
-}
-
-function SelectionSeat({ index, side, selectedUid, onRemove, participants }: any) {
-  const p = participants.find((part: any) => part.uid === selectedUid);
-  return (
-    <div className="relative">
-      <button onClick={() => selectedUid && onRemove()} className={cn("h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center transition-all relative z-10", "bg-black/40 border-2 backdrop-blur-md shadow-2xl", selectedUid ? (side === 'BLUE' ? "border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)]" : "border-red-400 shadow-[0_0_15px_rgba(248,113,113,0.4)]") : "border-white/5")}>
-        {p ? <Avatar className="h-full w-full p-1"><AvatarImage src={p.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar> : <Armchair className={cn("h-6 w-6", side === 'BLUE' ? "text-cyan-400" : "text-red-400")} />}
-      </button>
-      {p && <div className="absolute -top-1 -right-1 z-20 bg-black/80 rounded-full p-1 border border-white/20"><X className="h-2.5 w-2.5 text-white" /></div>}
-    </div>
   );
 }

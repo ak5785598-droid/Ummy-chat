@@ -129,14 +129,13 @@ export function RoomClient({ room }: { room: Room }) {
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [grabBagActive, setGrabBagActive] = useState<string | null>(null);
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
-
-  const [activeCombo, setActiveCombo] = useState<{ gift: GiftItem, recipient: any, count: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -178,6 +177,10 @@ export function RoomClient({ room }: { room: Room }) {
         setActiveGiftAnimation(lastMsg.giftId);
       } else if (lastMsg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
+      } else if (lastMsg.type === 'lucky-bag') {
+        // Trigger the "Grab" visual logic
+        setGrabBagActive(lastMsg.bagId || 'bag_default');
+        setTimeout(() => setGrabBagActive(null), 10000); // Visual bag disappears after 10s
       }
     }
   }, [firestoreMessages]);
@@ -189,6 +192,27 @@ export function RoomClient({ room }: { room: Room }) {
       content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || null, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
     setMessageText('');
+  };
+
+  const handleGrabBag = async () => {
+    if (!currentUser || !firestore || !userProfile || !grabBagActive) return;
+    
+    // Randomized Grab Logic Protocol
+    const winAmount = Math.floor(Math.random() * 450) + 50; // Random grab between 50 and 500 coins
+    
+    const userRef = doc(firestore, 'users', currentUser.uid);
+    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    
+    const updateData = {
+      'wallet.coins': increment(winAmount),
+      updatedAt: serverTimestamp()
+    };
+
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    
+    setGrabBagActive(null);
+    toast({ title: 'Bag Synchronized!', description: `You grabbed ${winAmount.toLocaleString()} Gold Coins!` });
   };
 
   const handleMicToggle = () => { 
@@ -241,6 +265,25 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
+      {/* Lucky Bag Grab Portal */}
+      {grabBagActive && (
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[250] animate-in zoom-in duration-500">
+           <button 
+             onClick={handleGrabBag}
+             className="relative h-40 w-40 flex flex-col items-center justify-center group active:scale-90 transition-all"
+           >
+              <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-20 animate-pulse" />
+              <div className="relative bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-[2.5rem] p-6 border-4 border-white shadow-2xl overflow-hidden animate-bounce">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent skew-x-[-45deg] animate-shine" />
+                 <GiftIcon className="h-20 w-20 text-white fill-white drop-shadow-lg" />
+              </div>
+              <div className="mt-4 bg-yellow-400 text-black px-6 py-1.5 rounded-full font-black uppercase italic text-sm shadow-xl border-2 border-white">
+                 Grab Coins!
+              </div>
+           </button>
+        </div>
+      )}
+
       <header className="relative z-50 flex items-center justify-between p-4 pt-8">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20"><AvatarImage src={room.coverUrl || undefined} /><AvatarFallback>UM</AvatarFallback></Avatar>
@@ -248,9 +291,9 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
-          <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full"><Hexagon className="h-5 w-5" /></button>} />
-          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full"><Share2 className="h-5 w-5" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full"><Power className="h-5 w-5" /></button>
+          <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
+          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Power className="h-5 w-5" /></button>
         </div>
       </header>
 
@@ -304,7 +347,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
-      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} participants={participants} roomId={room.id} />
+      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} participants={participants} roomId={room.id} room={room} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
     </div>
   );
