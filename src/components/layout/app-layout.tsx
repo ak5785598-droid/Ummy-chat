@@ -17,7 +17,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useUser, useAuth, useFirestore } from "@/firebase";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -53,7 +52,6 @@ const MessageNavIcon = ({ active }: { active: boolean }) => (
  */
 const MeNavIcon = ({ active }: { active: boolean }) => (
   <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 50 15 Q 50 5 70 5 Q 90 5 90 20 Q 90 40 70 40 Q 50 40 50 30" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" className="hidden" />
     <circle cx="50" cy="35" r="20" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
     <path d="M 20 85 Q 20 60 50 60 Q 80 60 80 85" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" strokeLinecap="round" />
   </svg>
@@ -150,11 +148,9 @@ export function AppLayout({
         </Sidebar>
 
         <SidebarInset className="bg-[#FFCC00] flex-1 overflow-hidden flex flex-col p-0">
-          <header className="md:hidden flex items-center justify-between p-4 bg-black/5 h-14 shrink-0 relative z-50">
-             <div className="flex items-center gap-2 text-black"><UmmyLogoIcon className="h-6 w-6" /><span className="font-black italic uppercase tracking-tighter">Ummy</span></div>
-             <SidebarTrigger className="text-black scale-125" />
-          </header>
-          <main className="flex-1 w-full overflow-y-auto bg-white rounded-tl-[2.5rem] shadow-2xl relative no-scrollbar">{children}</main>
+          <main className="flex-1 w-full overflow-y-auto bg-white relative no-scrollbar">
+            {children}
+          </main>
           
           {!isInsideRoom && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-16 pb-safe shrink-0 relative z-50 px-2">
