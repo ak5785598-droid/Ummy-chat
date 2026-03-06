@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -21,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { CameraCaptureDialog } from '@/components/camera-capture-dialog';
+import { ImageCropDialog } from '@/components/image-crop-dialog';
 
 interface EditProfileDialogProps {
   profile: any;
@@ -28,7 +30,7 @@ interface EditProfileDialogProps {
 
 /**
  * Production Persona Editor.
- * Includes High-Fidelity real-time mobile camera integration.
+ * Includes High-Fidelity real-time mobile camera and precision cropping dimension.
  */
 export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
@@ -43,6 +45,8 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
 
   useEffect(() => {
     if (profile && open) {
@@ -85,12 +89,18 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ variant: "destructive", title: "File too large", description: "Limit is 5MB." });
-        return;
-      }
-      uploadProfilePicture(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropImage(reader.result as string);
+        setIsCropOpen(true);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    await uploadProfilePicture(croppedFile);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -101,20 +111,20 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
             <Pen className="h-5 w-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl font-headline">
           <form onSubmit={handleSave}>
             <DialogHeader className="p-8 pb-0 text-center">
               <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Modify Persona</DialogTitle>
               <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-                Changes are reflected on the global rankings instantly.
+                Changes are reflected across the tribal graph instantly.
               </DialogDescription>
             </DialogHeader>
             <div className="p-8 space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative group">
                   <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-2xl">
-                    <AvatarImage src={profile?.avatarUrl || undefined} alt={name} />
-                    <AvatarFallback className="text-4xl font-black">{(name || 'U').charAt(0)}</AvatarFallback>
+                    <AvatarImage key={profile?.avatarUrl} src={profile?.avatarUrl || undefined} alt={name} />
+                    <AvatarFallback className="text-4xl font-black bg-slate-50">{(name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                   {isUploading && (
                     <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm z-10">
@@ -187,6 +197,14 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
         onOpenChange={setIsCameraOpen} 
         onCapture={uploadProfilePicture}
         title="Sync Persona Photo"
+      />
+
+      <ImageCropDialog 
+        image={cropImage} 
+        open={isCropOpen} 
+        onOpenChange={setIsCropOpen} 
+        onCropComplete={handleCropComplete} 
+        aspect={1/1} 
       />
     </>
   );
