@@ -550,6 +550,41 @@ export function RoomClient({ room }: { room: Room }) {
               )}
            </div>
         </div>
+
+        {/* Chat Feed Dimension */}
+        <div className="absolute bottom-0 left-0 w-full h-48 z-20 pointer-events-none p-4 pb-0">
+           <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
+              <div className="flex flex-col gap-2 justify-end min-h-full">
+                 {firestoreMessages?.map((msg: any) => {
+                   if (msg.type === 'entrance') return (
+                     <div key={msg.id} className="text-[10px] font-black text-yellow-400 uppercase italic bg-black/40 px-3 py-1 rounded-full w-fit shadow-lg border border-white/5 animate-in slide-in-from-left-2">
+                        {msg.senderName} entered the room
+                     </div>
+                   );
+                   
+                   const isMe = msg.senderId === currentUser?.uid;
+                   
+                   return (
+                     <div key={msg.id} className="flex items-start gap-2 bg-black/40 backdrop-blur-md rounded-2xl p-2 border border-white/5 w-fit max-w-[80%] animate-in fade-in slide-in-from-left-2 shadow-xl">
+                        <Avatar className="h-7 w-7 shrink-0 border border-white/10 shadow-sm">
+                           <AvatarImage src={msg.senderAvatar || undefined} />
+                           <AvatarFallback className="text-[10px] font-black">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                           <span className={cn(
+                             "text-[9px] font-black uppercase tracking-tighter leading-none mb-1",
+                             isMe ? "text-primary" : "text-white/40"
+                           )}>
+                             {msg.senderName}
+                           </span>
+                           <p className="text-[12px] font-bold text-white leading-tight break-all">{msg.content}</p>
+                        </div>
+                     </div>
+                   );
+                 })}
+              </div>
+           </ScrollArea>
+        </div>
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 pt-4">
