@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -80,6 +79,7 @@ import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker, type GiftItem } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
+import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 
 const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
@@ -227,9 +227,45 @@ export function RoomClient({ room }: { room: Room }) {
     setSelectedSeatIdx(index);
     if (occupant) {
       setSelectedParticipantUid(occupant.uid);
-      if (canManageRoom || occupant.uid === currentUser?.uid) setIsSeatMenuOpen(true);
-      else setIsUserProfileCardOpen(true);
-    } else setIsSeatMenuOpen(true);
+      // If it's me or I'm an admin, I can manage the seat
+      if (canManageRoom || occupant.uid === currentUser?.uid) {
+        setIsSeatMenuOpen(true);
+      } else {
+        setIsUserProfileCardOpen(true);
+      }
+    } else {
+      setSelectedParticipantUid(null);
+      setIsSeatMenuOpen(true);
+    }
+  };
+
+  const handleSilence = (uid: string, current: boolean) => {
+    if (!firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
+  };
+
+  const handleKick = (uid: string, duration: number) => {
+    if (!firestore || !room.id) return;
+    const expires = new Date(Date.now() + duration * 60000);
+    setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'bans', uid), { expiresAt: Timestamp.fromDate(expires) }, { merge: true });
+    deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
+    toast({ title: 'Member Excluded', description: `Restricted for ${duration} minutes.` });
+    setIsUserProfileCardOpen(false);
+  };
+
+  const handleLeaveSeat = (uid: string) => {
+    if (!firestore || !room.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true });
+    setIsSeatMenuOpen(false);
+    setIsUserProfileCardOpen(false);
+  };
+
+  const handleToggleMod = (uid: string) => {
+    if (!firestore || !room.id) return;
+    const isCurrentlyMod = room.moderatorIds?.includes(uid);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid)
+    });
   };
 
   return (
@@ -322,6 +358,34 @@ export function RoomClient({ room }: { room: Room }) {
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
       <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} participants={participants} roomId={room.id} room={room} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
+      
+      <RoomSeatMenuDialog 
+        open={isSeatMenuOpen} 
+        onOpenChange={setIsSeatMenuOpen}
+        seatIndex={selectedSeatIdx}
+        roomId={room.id}
+        isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
+        occupantUid={selectedParticipantUid}
+        canManage={canManageRoom}
+        currentUserId={currentUser?.uid}
+      />
+
+      <RoomUserProfileDialog 
+        userId={selectedParticipantUid}
+        open={isUserProfileCardOpen}
+        onOpenChange={setIsUserProfileCardOpen}
+        canManage={canManageRoom}
+        isOwner={isOwner}
+        roomOwnerId={room.ownerId}
+        roomModeratorIds={room.moderatorIds || []}
+        onSilence={handleSilence}
+        onKick={handleKick}
+        onLeaveSeat={handleLeaveSeat}
+        onToggleMod={handleToggleMod}
+        onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
+        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
+        isMe={selectedParticipantUid === currentUser?.uid}
+      />
     </div>
   );
 }
