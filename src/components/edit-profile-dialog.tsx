@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -26,13 +25,14 @@ import { ImageCropDialog } from '@/components/image-crop-dialog';
 
 interface EditProfileDialogProps {
   profile: any;
+  trigger?: React.ReactNode;
 }
 
 /**
  * Production Persona Editor.
- * Includes High-Fidelity real-time mobile camera and precision cropping dimension.
+ * Updated to allow custom triggers for high-fidelity profile integration.
  */
-export function EditProfileDialog({ profile }: EditProfileDialogProps) {
+export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -107,9 +107,11 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-2 border-white/20 hover:bg-white/20 text-white h-10 w-10 shadow-xl backdrop-blur-md">
-            <Pen className="h-5 w-5" />
-          </Button>
+          {trigger ? trigger : (
+            <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-2 border-white/20 hover:bg-white/20 text-white h-10 w-10 shadow-xl backdrop-blur-md">
+              <Pen className="h-5 w-5" />
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] overflow-hidden border-none shadow-2xl font-headline">
           <form onSubmit={handleSave}>

@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,7 @@ interface RoomSeatMenuDialogProps {
 
 /**
  * High-Fidelity Room Seat Menu.
- * Mirrors the provided blueprint exactly with vertical minimalist action items.
+ * Re-engineered for absolute reliability when taking seats.
  */
 export function RoomSeatMenuDialog({
   open,
@@ -46,12 +46,13 @@ export function RoomSeatMenuDialog({
   const handleTakeSeat = () => {
     if (!firestore || !currentUserId || !roomId) return;
     
-    // Update the participant's seatIndex to the new slot
+    // ATOMIC SYNC: Using setDoc with merge to ensure document exists
     const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', currentUserId);
-    updateDocumentNonBlocking(participantRef, {
+    setDocumentNonBlocking(participantRef, {
       seatIndex: seatIndex,
+      isMuted: true, // Default to muted when taking a new frequency slot
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
     
     toast({ title: 'Seat Taken', description: `Synchronized to position ${seatIndex}.` });
     onOpenChange(false);
@@ -61,10 +62,10 @@ export function RoomSeatMenuDialog({
     if (!firestore || !roomId) return;
     
     const roomRef = doc(firestore, 'chatRooms', roomId);
-    updateDocumentNonBlocking(roomRef, {
+    setDocumentNonBlocking(roomRef, {
       lockedSeats: isLocked ? arrayRemove(seatIndex) : arrayUnion(seatIndex),
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
     
     toast({ title: isLocked ? 'Mic Unlocked' : 'Mic Locked' });
     onOpenChange(false);
@@ -91,18 +92,14 @@ export function RoomSeatMenuDialog({
         </DialogHeader>
 
         <div className="flex flex-col items-center">
-          {/* TAKE: Only if seat is empty and not locked (unless admin) */}
           {(!occupantUid && (!isLocked || canManage)) && (
             <MenuItem label="Take" onClick={handleTakeSeat} />
           )}
 
-          {/* INVITE: General option for tribe coordination */}
           <MenuItem label="Invite" onClick={() => { toast({ title: 'Invite Frequency' }); onOpenChange(false); }} />
 
-          {/* MUTE: Usually relates to occupant or seat mic state */}
           <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
 
-          {/* LOCK/UNLOCK: Admin only sovereignty */}
           {canManage && (
             <MenuItem 
               label={isLocked ? "Unlock the mic" : "Lock the mic"} 
@@ -110,7 +107,6 @@ export function RoomSeatMenuDialog({
             />
           )}
 
-          {/* CANCEL: Standard exit handshake */}
           <MenuItem 
             label="Cancel" 
             onClick={() => onOpenChange(false)} 
