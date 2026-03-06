@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -13,7 +12,6 @@ interface VoiceTutorialProps {
 /**
  * Interactive Onboarding Tutorial.
  * High-fidelity guide for first-time voice chat users.
- * Typography normalized to standard upright.
  */
 export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
   const [step, setStep] = useState(1);
@@ -22,21 +20,21 @@ export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
     {
       id: 1,
       title: "Voice Sync",
-      description: "Tap the microphone icon to toggle your voice frequency. Green means you are live!",
+      description: "Tap the microphone icon to toggle your voice frequency. Green means you are live and the tribe can hear you!",
       icon: Mic,
-      color: "text-primary",
+      color: "text-green-500",
     },
     {
       id: 2,
       title: "Tribe Seats",
-      description: "Click any available slot to take a seat and start broadcasting to the room.",
+      description: "Click any available slot to take a seat. You must be in a seat to broadcast your voice to the room.",
       icon: Users,
       color: "text-blue-400",
     },
     {
       id: 3,
       title: "Send Vibe",
-      description: "Use the Boutique to send gifts. High-tier gifts trigger cinematic animations!",
+      description: "Use the Boutique to send gifts. High-tier gifts trigger full-screen cinematic animations for everyone!",
       icon: Gift,
       color: "text-pink-500",
     }
@@ -56,8 +54,8 @@ export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
         </button>
 
         <div className="p-8 pt-12 flex flex-col items-center text-center space-y-6">
-          <div className={cn("h-20 w-20 rounded-3xl flex items-center justify-center shadow-xl bg-white", currentStep.color)}>
-            <currentStep.icon className="h-10 w-10" />
+          <div className={cn("h-24 w-24 rounded-[2rem] flex items-center justify-center shadow-xl bg-white", currentStep.color)}>
+            <currentStep.icon className="h-12 w-12" />
           </div>
 
           <div className="space-y-2">
@@ -71,7 +69,7 @@ export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
 
           <div className="flex gap-2 mb-4">
             {steps.map(s => (
-              <div key={s.id} className={cn("h-1.5 rounded-full transition-all", s.id === step ? "bg-primary w-8" : "bg-gray-200 w-2")} />
+              <div key={s.id} className={cn("h-1.5 rounded-full transition-all duration-500", s.id === step ? "bg-primary w-10" : "bg-gray-200 w-2")} />
             ))}
           </div>
 
@@ -80,7 +78,7 @@ export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
               if (step < steps.length) setStep(step + 1);
               else onComplete();
             }}
-            className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase shadow-xl shadow-primary/20 bg-primary"
+            className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase shadow-xl shadow-primary/20 bg-primary hover:scale-[1.02] active:scale-95 transition-transform"
           >
             {step < steps.length ? 'Next Step' : 'Enter Frequency'}
             <ArrowRight className="ml-2 h-6 w-6" />
@@ -88,7 +86,7 @@ export function VoiceTutorial({ onComplete }: VoiceTutorialProps) {
 
           <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-gray-400">
              <ShieldCheck className="h-3 w-3 text-green-500" />
-             <span>Microphone Encryption Active</span>
+             <span>Secure Voice Encryption Active</span>
           </div>
         </div>
       </div>

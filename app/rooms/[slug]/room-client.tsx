@@ -61,6 +61,7 @@ import { useWebRTC } from '@/hooks/use-webrtc';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
+import { VoiceTutorial } from '@/components/voice-tutorial';
 
 const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
@@ -177,6 +178,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isExitPortalOpen, setIsExitPortalOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
@@ -205,6 +207,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants?.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
+  // Real-time Voice Engine Integration
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
@@ -224,11 +227,17 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages, currentUser?.uid]);
 
+  // Check if first time entry for tutorial
+  useEffect(() => {
+    const hasSeen = localStorage.getItem('seen_voice_tutorial');
+    if (!hasSeen) setIsTutorialOpen(true);
+  }, []);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || '', chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
+      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || undefined, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
     setMessageText('');
   };
@@ -239,7 +248,7 @@ export function RoomClient({ room }: { room: Room }) {
     let finalRecipient = giftRecipient || { uid: currentUser.uid, name: userProfile.username, avatarUrl: userProfile.avatarUrl };
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-gift.price), updatedAt: serverTimestamp() });
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), { 'wallet.coins': increment(-gift.price), updatedAt: serverTimestamp() });
-    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), { content: `sent ${finalRecipient.name} a ${gift.emoji}!`, senderId: currentUser.uid, senderName: userProfile.username, senderAvatar: userProfile.avatarUrl, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'gift', giftId: gift.id });
+    addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), { content: `sent ${finalRecipient.name} a ${gift.emoji}!`, senderId: currentUser.uid, senderName: userProfile.username, senderAvatar: userProfile.avatarUrl || undefined, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'gift', giftId: gift.id });
     setIsGiftPickerOpen(false);
   };
 
@@ -311,14 +320,12 @@ export function RoomClient({ room }: { room: Room }) {
   const handleKick = (uid: string, durationMinutes: number) => {
     if (!firestore || !room.id) return;
     const expiresAt = new Date(Date.now() + durationMinutes * 60000);
-    // Record exclusion
     setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'bans', uid), {
       uid,
       expiresAt,
       bannedAt: serverTimestamp(),
       bannedBy: currentUser?.uid
     }, { merge: true });
-    // Remove participant
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
     toast({ title: 'Exclusion Synchronized', description: `Tribe member restricted for ${durationMinutes} minutes.` });
   };
@@ -327,7 +334,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), {
       isSilenced: !current,
-      isMuted: true, // Force mute when silencing
+      isMuted: true, 
       updatedAt: serverTimestamp()
     });
     toast({ title: !current ? 'Frequency Silenced' : 'Silence Revoked' });
@@ -346,7 +353,8 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMicToggle = () => { 
     const participant = participants?.find(p => p.uid === currentUser?.uid);
     if (!isInSeat || !firestore || !currentUser || !room.id || participant?.isSilenced || room.isChatMuted) {
-      if (participant?.isSilenced) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'Your frequency is currently silenced by an Admin.' });
+      if (!isInSeat) toast({ title: 'Take a Seat', description: 'You must take a mic slot to speak.' });
+      else if (participant?.isSilenced) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'Your frequency is currently silenced by an Admin.' });
       else if (room.isChatMuted) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'The room frequency is globally muted.' });
       return;
     }
@@ -377,12 +385,22 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  const handleTutorialComplete = () => {
+    localStorage.setItem('seen_voice_tutorial', 'true');
+    setIsTutorialOpen(false);
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline rounded-[2.5rem]">
       <DailyRewardDialog />
+      {isTutorialOpen && <VoiceTutorial onComplete={handleTutorialComplete} />}
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <EntryCard entrant={latestEntrance} onComplete={() => setLatestEntrance(null)} />
-      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (<RemoteAudio key={peerId} stream={stream} />))}
+      
+      {/* Remote Audio Mesh Nodes */}
+      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+        <RemoteAudio key={peerId} stream={stream} />
+      ))}
       
       <div className="absolute inset-0 z-0">
         <Image src={currentTheme.url} alt="Background" fill className="object-cover opacity-60" priority />
@@ -416,6 +434,7 @@ export function RoomClient({ room }: { room: Room }) {
               return (
                 <div key={idx} className="w-[22%] flex flex-col items-center gap-1">
                   <div className="relative">
+                    {/* Voice Frequency visualizer for active speakers */}
                     {occupant && !occupant.isMuted && (
                       <div className={cn("absolute -inset-1 rounded-full border-2 animate-voice-wave", getWaveColor(occupant.activeWave))} />
                     )}
@@ -449,7 +468,7 @@ export function RoomClient({ room }: { room: Room }) {
                     </AvatarFrame>
                     {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-0.5 border border-black shadow-lg z-20"><MicOff className="h-2 w-2 text-white" /></div>}
                   </div>
-                  <span className="text-[8px] font-black uppercase text-white/60 truncate w-14 text-center">
+                  <span className={cn("text-[8px] font-black uppercase truncate w-14 text-center", occupant ? "text-primary" : "text-white/60")}>
                     {occupant ? occupant.name : `No.${idx}`}
                   </span>
                 </div>
@@ -472,7 +491,16 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/80 to-transparent pt-4">
-        <button onClick={handleMicToggle} className={cn("p-3 rounded-full border border-white/10 backdrop-blur-md transition-all active:scale-95", isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500" : "bg-white/10")}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
+        {/* Main Mic Toggle Synchronized with WebRTC Engine */}
+        <button 
+          onClick={handleMicToggle} 
+          className={cn(
+            "p-3 rounded-full border border-white/10 backdrop-blur-md transition-all active:scale-95", 
+            isInSeat && !currentUserParticipant?.isMuted ? "bg-green-500 shadow-lg shadow-green-500/40 border-green-400" : "bg-white/10"
+          )}
+        >
+          {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5 text-white" /> : <MicOff className="h-5 w-5 text-white/60" />}
+        </button>
         
         <div className="flex-1">
           {showInput ? (

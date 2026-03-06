@@ -15,9 +15,6 @@ import { useToast } from '@/hooks/use-toast';
  * PRODUCTION WEBRTC HOOK
  * Handles P2P Audio Mesh via Firestore Signaling.
  * Re-engineered for high-fidelity synchronization using the Perfect Negotiation pattern.
- * - Prevents glare conditions and signaling state mismatches.
- * - Dynamic track addition when local stream becomes ready.
- * - Robust error handling for mobile browser frequencies.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean) {
   const { user } = useUser();
@@ -51,7 +48,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
-        console.log('[WebRTC] Requesting Microphone Frequency...');
         const stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
@@ -66,9 +62,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         });
         
         setLocalStream(stream);
-        console.log('[WebRTC] Local Frequency Synchronized');
       } catch (err: any) {
-        console.error('[WebRTC] Media Error:', err);
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           toast({
             variant: 'destructive',
@@ -111,14 +105,14 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         const peerData = change.doc.data();
         const isPeerSpeaker = peerData.seatIndex > 0;
         
-        // Protocol: Connections are maintained if AT LEAST one side is a speaker (in seat)
+        // Connection Logic: Speaker to Everyone
         if (isPeerSpeaker || isInSeat) {
-          if (change.type === 'added' || change.type === 'modified') {
+          if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) {
             if (!peerConnections.current.has(peerId)) {
               initiateConnection(peerId);
             }
           }
-        } else if (change.type === 'removed') {
+        } else if (change.type === 'removed' || (change.type === 'modified' && !isPeerSpeaker && !isInSeat)) {
           closeConnection(peerId);
         }
       });
@@ -136,7 +130,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     });
 
     const initiateConnection = (peerId: string) => {
-      console.log(`[WebRTC] Initiating P2P Handshake: ${peerId}`);
       const pc = new RTCPeerConnection(iceConfig);
       peerConnections.current.set(peerId, pc);
 
@@ -151,7 +144,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       };
 
       pc.ontrack = (event) => {
-        console.log(`[WebRTC] Received Remote Frequency: ${peerId}`);
         setRemoteStreams(prev => {
           const next = new Map(prev);
           next.set(peerId, event.streams[0]);
@@ -184,30 +176,19 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         if (signal.type === 'offer') {
           initiateConnection(peerId);
           pc = peerConnections.current.get(peerId)!;
-        } else {
-          return;
-        }
+        } else return;
       }
 
       try {
         if (signal.type === 'offer') {
           const polite = user.uid > peerId;
-          const offerCollision = signal.type === 'offer' && 
-            (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
-
+          const offerCollision = signal.type === 'offer' && (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          if (ignoreOffer.current.get(peerId)) {
-            console.warn(`[WebRTC] Glare Conflict: Ignoring offer from ${peerId}`);
-            return;
-          }
+          if (ignoreOffer.current.get(peerId)) return;
 
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
-          sendSignal(peerId, { 
-            type: 'answer', 
-            sdp: pc.localDescription?.sdp, 
-            from: user.uid 
-          });
+          sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
         } else if (signal.type === 'answer') {
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
         } else if (signal.type === 'candidate') {
@@ -218,7 +199,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           }
         }
       } catch (err) {
-        console.error(`[WebRTC] Signaling Handshake Error (${peerId}):`, err);
+        console.error(`[WebRTC] Signal Error:`, err);
       }
     };
 
@@ -231,17 +212,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     };
   }, [roomId, user?.uid, isInSeat, localStream]); 
 
-  useEffect(() => {
-    if (!localStream) return;
-    peerConnections.current.forEach((pc, peerId) => {
-      const senders = pc.getSenders();
-      localStream.getTracks().forEach(track => {
-        const alreadyAdded = senders.find(s => s.track?.id === track.id);
-        if (!alreadyAdded) pc.addTrack(track, localStream);
-      });
-    });
-  }, [localStream]);
-
   const sendSignal = (toPeerId: string, payload: any) => {
     if (!firestore || !roomId) return;
     const ref = collection(firestore, 'chatRooms', roomId, 'participants', toPeerId, 'signaling');
@@ -252,8 +222,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     const pc = peerConnections.current.get(peerId);
     pc?.close();
     peerConnections.current.delete(peerId);
-    makingOffer.current.delete(peerId);
-    ignoreOffer.current.delete(peerId);
     setRemoteStreams(prev => {
       const next = new Map(prev);
       next.delete(peerId);
