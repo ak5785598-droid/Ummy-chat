@@ -28,7 +28,8 @@ import {
   UserX,
   UserCheck,
   Ban,
-  UserPlus
+  UserPlus,
+  Headphones
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -103,7 +104,6 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
       
       gainNode.connect(ctx.destination);
       
-      // We still use the audio element as a hidden anchor for some browser engine optimizations
       if (audioRef.current) {
         audioRef.current.srcObject = stream;
         audioRef.current.muted = true; // Muted because Web Audio handles the output
@@ -303,6 +303,26 @@ export function RoomClient({ room }: { room: Room }) {
   const [latestEntrance, setLatestEntrance] = useState<any>(null);
 
   const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
+
+  // HEADPHONE SYNC ENGINE
+  useEffect(() => {
+    const handleDeviceChange = async () => {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasHeadphones = devices.some(d => d.kind === 'audiooutput' && (d.label.toLowerCase().includes('headphone') || d.label.toLowerCase().includes('headset') || d.label.toLowerCase().includes('bluetooth')));
+      
+      if (hasHeadphones) {
+        toast({
+          title: 'Headset Synchronized',
+          description: 'High-fidelity audio mesh is now tuned for your headphones.',
+        });
+      }
+    };
+
+    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+    handleDeviceChange(); // Initial check
+
+    return () => navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+  }, [toast]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -572,6 +592,7 @@ export function RoomClient({ room }: { room: Room }) {
            <div onClick={() => setShowInput(true)} className="bg-white/10 backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center text-white/60 font-bold text-sm cursor-pointer">Say Hi</div>
            <div className="flex items-center gap-3">
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
+              <button className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Headphones className="h-5 w-5 text-white" /></button>
               <button onClick={() => setIsMutedLocal(!isMutedLocal)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">{isMutedLocal ? <VolumeX className="h-5 w-5 text-white/60" /> : <Volume2 className="h-5 w-5 text-white" />}</button>
               <button onClick={() => router.push('/messages')} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
               <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>

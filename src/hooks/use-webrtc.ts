@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
  * Handles P2P Audio Mesh via Firestore Signaling.
  * Re-engineered for high-fidelity synchronization using the Perfect Negotiation pattern.
  * OPTIMIZED: Added Real-time Voice Boost Protocol for Outbound Speaking Volume (2.5x Gain).
+ * ENHANCED: Headset & Hardware specific constraints for "Real" conversation quality.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean) {
   const { user } = useUser();
@@ -40,7 +41,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     ],
   };
 
-  // 1. Local Stream Management with Voice Boost
+  // 1. Local Stream Management with Voice Boost & Headphone Tuning
   useEffect(() => {
     if (!isInSeat || !user || !roomId || !firestore) {
       if (localStream) {
@@ -56,17 +57,27 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
+        // ENHANCED CONSTRAINTS: Optimized for headset hardware and real-time clarity
         const rawStream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true
+            autoGainControl: true,
+            // @ts-ignore - Chrome specific high-fidelity constraints
+            googEchoCancellation: true,
+            // @ts-ignore
+            googAutoGainControl: true,
+            // @ts-ignore
+            googNoiseSuppression: true,
+            // @ts-ignore
+            googHighpassFilter: true,
+            channelCount: 1,
+            sampleRate: 48000,
           }, 
           video: false 
         });
 
         // VOICE BOOST PROTOCOL: Outbound (Speaking Volume)
-        // We use a GainNode to multiply the input level for the tribe.
         if (!audioContextRef.current) {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
