@@ -119,7 +119,8 @@ function SeatActionDialog({
   isOccupied,
   isMe,
   isLocked,
-  occupantName
+  occupantName,
+  isOccupantMuted
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void; 
@@ -129,13 +130,14 @@ function SeatActionDialog({
   isMe: boolean;
   isLocked: boolean;
   occupantName?: string;
+  isOccupantMuted?: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-500 font-headline">
         <DialogHeader className="p-6 border-b border-gray-50 shrink-0">
           <DialogTitle className="text-xl font-black uppercase italic tracking-tighter text-center">
-            {isOccupied ? (isMe ? 'My Seat' : `Manage ${occupantName}`) : (isLocked ? 'Locked Slot' : 'Available Slot')}
+            {isOccupied ? (isMe ? 'My Seat' : occupantName) : (isLocked ? 'Locked Slot' : 'Available Slot')}
           </DialogTitle>
           <DialogDescription className="sr-only">Choose a frequency management action.</DialogDescription>
         </DialogHeader>
@@ -148,7 +150,7 @@ function SeatActionDialog({
                 onClick={() => onAction('toggle-mute')} 
                 className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
               >
-                Mute / Unmute
+                {isOccupantMuted ? 'Unmute' : 'Mute'} Member
               </button>
               <button 
                 onClick={() => onAction('remove-from-seat')} 
@@ -412,6 +414,8 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const isMeAlreadyInSeat = participants?.some(p => p.uid === currentUser?.uid && p.seatIndex > 0);
+  const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
+  const selectedOccupant = participants?.find(p => p.uid === selectedParticipantUid);
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
@@ -518,10 +522,11 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenChange={setIsSeatMenuOpen} 
         onAction={handleSeatAction}
         canManage={canManageRoom}
-        isOccupied={!!participants?.find(p => p.seatIndex === selectedSeatIdx)}
-        isMe={participants?.find(p => p.seatIndex === selectedSeatIdx)?.uid === currentUser?.uid}
+        isOccupied={!!occupant}
+        isMe={occupant?.uid === currentUser?.uid}
         isLocked={!!selectedSeatIdx && (room.lockedSeats?.includes(selectedSeatIdx) || false)}
-        occupantName={participants?.find(p => p.seatIndex === selectedSeatIdx)?.name}
+        occupantName={occupant?.name}
+        isOccupantMuted={occupant?.isMuted}
       />
 
       <RoomUserProfileDialog 

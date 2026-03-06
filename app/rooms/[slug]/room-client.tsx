@@ -489,6 +489,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const isMeAlreadyInSeat = participants?.some(p => p.uid === currentUser?.uid && p.seatIndex > 0);
+  const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
   const selectedOccupant = participants?.find(p => p.uid === selectedParticipantUid);
 
   return (
