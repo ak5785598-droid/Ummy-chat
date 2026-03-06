@@ -1,4 +1,3 @@
-
 {
   "placeholderImages": [
     {
@@ -118,7 +117,7 @@
     {
       "id": "tp-char-b",
       "description": "3D Anime princess in regal gold dress",
-      "imageUrl": "https://images.unsplash.com/photo-1532328076801-a862c9d5a74a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHwzZCUyMHByaW5jZXNzJTIwZ29sZHxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1532328076801-a862c9d5a74a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3ZCUyMHByaW5jZXNzJTIwZ29sZHxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "3d princess gold"
     },
     {
@@ -188,34 +187,10 @@
       "imageHint": "golden crown"
     },
     {
-      "id": "cp-house-bg",
-      "description": "3D paper cut hearts pink burgundy romantic background",
-      "imageUrl": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1000",
-      "imageHint": "3d hearts papercut"
-    },
-    {
-      "id": "propose-ring",
-      "description": "Red heart shaped jewelry box with diamond ring",
-      "imageUrl": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=800",
-      "imageHint": "heart ringbox"
-    },
-    {
-      "id": "cp-challenge-hero",
-      "description": "Anime style romantic couple in soft light with flowers",
-      "imageUrl": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1200",
-      "imageHint": "anime couple romantic"
-    },
-    {
-      "id": "gift-color-powder",
-      "description": "Vibrant color powder for tribal festival",
-      "imageUrl": "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=400",
-      "imageHint": "colored powder"
-    },
-    {
-      "id": "gift-color-palette",
-      "description": "Majestic artistic color palette",
-      "imageUrl": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=400",
-      "imageHint": "color palette"
+      "id": "lucky-bag-banner",
+      "description": "Sack of gold coins with crown and jewels background",
+      "imageUrl": "https://images.unsplash.com/photo-1616220797937-f64f159935b7?q=80&w=1000",
+      "imageHint": "sack of gold coins"
     }
   ]
 }

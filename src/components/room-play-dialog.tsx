@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -39,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface RoomPlayDialogProps {
   open: boolean;
@@ -139,6 +141,25 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
   };
 
   const seatedParticipants = participants.filter(p => p.seatIndex > 0);
+  const luckyBagBanner = PlaceHolderImages.find(img => img.id === 'lucky-bag-banner');
+
+  const rainPackages = [
+    { id: 'r1', label: '2000' },
+    { id: 'r2', label: '5000' },
+    { id: 'r3', label: '10000' },
+    { id: 'r4', label: '50000' },
+    { id: 'r5', label: '80000' },
+    { id: 'r6', label: '100000' },
+  ];
+
+  const normalPackages = [
+    { id: 'n1', label: '5777' },
+    { id: 'n2', label: '17777' },
+    { id: 'n3', label: '99999' },
+    { id: 'n4', label: '1777777' }
+  ];
+
+  const activePackages = luckyBagTab === 'Normal' ? normalPackages : rainPackages;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -172,11 +193,24 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
         )}
 
         {view === 'lucky-bag' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[650px] relative bg-[#2d0a4a]">
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[650px] relative">
             {/* SVGA Background Atmosphere */}
             <div className="absolute inset-0 pointer-events-none">
-               <div className="absolute inset-0 bg-gradient-to-br from-[#4a148c] via-[#2d0a4a] to-black opacity-80" />
-               {/* Diagonal Light Beams */}
+               <div className="absolute inset-0 bg-[#2d0a4a] opacity-90" />
+               <div className="absolute top-0 left-0 w-full h-48 overflow-hidden">
+                  {luckyBagBanner && (
+                    <Image 
+                      src={luckyBagBanner.imageUrl} 
+                      alt="Coins" 
+                      fill 
+                      className="object-cover opacity-40 brightness-75 scale-110"
+                      data-ai-hint={luckyBagBanner.imageHint}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#2d0a4a]" />
+               </div>
+               
+               {/* Light Beams */}
                <div className="absolute top-0 left-[-20%] w-[150%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-45deg] animate-shine" style={{ animationDuration: '8s' }} />
                <div className="absolute top-0 left-[-10%] w-[150%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-45deg] animate-shine" style={{ animationDuration: '6s', animationDelay: '2s' }} />
                
@@ -211,13 +245,13 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
             </header>
 
             <main className="p-6 pt-2 space-y-8 relative z-10 flex flex-col">
-               {/* Glossy Tab Switcher */}
-               <div className="bg-black/30 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center shadow-inner">
+               {/* Glossy Tab Switcher - Optimized for image design */}
+               <div className="bg-black/30 backdrop-blur-md p-1.5 rounded-full border-2 border-white/10 flex items-center shadow-inner mt-4">
                   <button 
                     onClick={() => setLuckyBagTab('Normal')}
                     className={cn(
                       "flex-1 h-12 rounded-full font-black uppercase italic text-sm transition-all duration-500 relative overflow-hidden",
-                      luckyBagTab === 'Normal' ? "text-white bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 shadow-xl" : "text-white/40"
+                      luckyBagTab === 'Normal' ? "text-white bg-gradient-to-br from-[#6a11cb] via-[#2575fc] to-[#6a11cb] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6)]" : "text-white/40"
                     )}
                   >
                      {luckyBagTab === 'Normal' && <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />}
@@ -227,7 +261,7 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
                     onClick={() => setLuckyBagTab('Rain')}
                     className={cn(
                       "flex-1 h-12 rounded-full font-black uppercase italic text-sm transition-all duration-500 relative overflow-hidden",
-                      luckyBagTab === 'Rain' ? "text-white bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 shadow-xl" : "text-white/40"
+                      luckyBagTab === 'Rain' ? "text-white bg-gradient-to-br from-[#6a11cb] via-[#2575fc] to-[#6a11cb] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6)]" : "text-white/40"
                     )}
                   >
                      {luckyBagTab === 'Rain' && <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />}
@@ -238,13 +272,11 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
                {/* Total Coins Dimension */}
                <div className="space-y-4">
                   <h3 className="text-lg font-black uppercase italic tracking-tight text-white/90 ml-1">Total Coins</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                     {[
-                       { id: '5777', label: '5777' },
-                       { id: '17777', label: '17777' },
-                       { id: '99999', label: '99999' },
-                       { id: '1777777', label: '1777777' }
-                     ].map((pkg) => (
+                  <div className={cn(
+                    "grid gap-3",
+                    luckyBagTab === 'Normal' ? "grid-cols-2" : "grid-cols-2"
+                  )}>
+                     {activePackages.map((pkg) => (
                        <button 
                          key={pkg.id}
                          onClick={() => setSelectedCoinPkg(pkg.id)}
@@ -260,55 +292,73 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
                             "text-xl font-black italic tracking-tighter",
                             selectedCoinPkg === pkg.id ? "text-black" : "text-white"
                           )}>{pkg.label}</span>
+                          
+                          {/* Animated Shimmer for selection */}
                           {selectedCoinPkg === pkg.id && (
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine skew-x-[-30deg]" />
+                          )}
+                          
+                          {/* High-Fidelity Holographic overlay for rain packages */}
+                          {luckyBagTab === 'Rain' && selectedCoinPkg === pkg.id && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 via-purple-400/20 to-pink-400/20 opacity-40 animate-pulse pointer-events-none" />
                           )}
                        </button>
                      ))}
                   </div>
                </div>
 
-               {/* Dropdown Syncs */}
-               <div className="space-y-6 pt-2">
-                  <div className="flex items-center justify-between gap-4">
-                     <span className="text-base font-black uppercase italic text-white/80">Number of recipients</span>
-                     <Select defaultValue="5">
-                        <SelectTrigger className="w-24 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
-                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                           {['5', '10', '20', '50'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
-                        </SelectContent>
-                     </Select>
-                  </div>
+               {/* Conditional Notification Text for Rain */}
+               {luckyBagTab === 'Rain' && (
+                 <div className="bg-black/20 rounded-2xl p-4 border border-white/5 animate-in fade-in duration-700">
+                    <p className="text-sm font-body italic text-white/60 leading-relaxed">
+                      Sending 40000 Coins will trigger a flight notification.
+                    </p>
+                 </div>
+               )}
 
-                  <div className="flex items-center justify-between gap-4">
-                     <span className="text-base font-black uppercase italic text-white/80">Countdown</span>
-                     <Select defaultValue="Now">
-                        <SelectTrigger className="w-28 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
-                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                           {['Now', '1 min', '5 min'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
-                        </SelectContent>
-                     </Select>
-                  </div>
+               {/* Dropdown Syncs - Only visible in Normal mode per blueprint logic */}
+               {luckyBagTab === 'Normal' && (
+                 <div className="space-y-6 pt-2">
+                    <div className="flex items-center justify-between gap-4">
+                       <span className="text-base font-black uppercase italic text-white/80">Number of recipients</span>
+                       <Select defaultValue="5">
+                          <SelectTrigger className="w-24 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
+                             <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white">
+                             {['5', '10', '20', '50'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
+                          </SelectContent>
+                       </Select>
+                    </div>
 
-                  <div className="flex items-center justify-between gap-4">
-                     <div className="flex flex-col gap-1">
-                        <span className="text-base font-black uppercase italic text-white/80">How to join</span>
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest italic">Everyone can receive it.</p>
-                     </div>
-                     <Select defaultValue="Everyone">
-                        <SelectTrigger className="w-32 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
-                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                           {['Everyone', 'Fans only', 'VIP only'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
-                        </SelectContent>
-                     </Select>
-                  </div>
-               </div>
+                    <div className="flex items-center justify-between gap-4">
+                       <span className="text-base font-black uppercase italic text-white/80">Countdown</span>
+                       <Select defaultValue="Now">
+                          <SelectTrigger className="w-28 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
+                             <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white">
+                             {['Now', '1 min', '5 min'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
+                          </SelectContent>
+                       </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-base font-black uppercase italic text-white/80">How to join</span>
+                          <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest italic">Everyone can receive it.</p>
+                       </div>
+                       <Select defaultValue="Everyone">
+                          <SelectTrigger className="w-32 h-10 rounded-xl bg-black/40 border-white/10 text-white font-black italic shadow-xl">
+                             <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white">
+                             {['Everyone', 'Fans only', 'VIP only'].map(v => <SelectItem key={v} value={v} className="font-black italic">{v}</SelectItem>)}
+                          </SelectContent>
+                       </Select>
+                    </div>
+                 </div>
+               )}
 
                {/* Send Sync Dispatch */}
                <div className="pt-10 pb-16">
@@ -320,6 +370,9 @@ export function RoomPlayDialog({ open, onOpenChange, participants = [] }: RoomPl
                   </Button>
                </div>
             </main>
+            
+            {/* Pointed Bottom Ornaments per reference */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-8 bg-[#2d0a4a] rotate-45 translate-y-4 border-r border-b border-white/5 z-0" />
           </div>
         )}
 
