@@ -86,12 +86,45 @@ const ROOM_THEMES = [
 
 function RemoteAudio({ stream }: { stream: MediaStream }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const contextRef = useRef<AudioContext | null>(null);
+
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.srcObject = stream;
-      audioRef.current.play().catch(() => {});
+    if (!stream) return;
+
+    // VOICE BOOST PROTOCOL: Inbound (Listening Volume)
+    // Synchronizes the remote frequency with boosted gain for maximum tribal clarity.
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      contextRef.current = ctx;
+      
+      const source = ctx.createMediaStreamSource(stream);
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 2.5; // Significant listening boost (250%)
+      
+      gainNode.connect(ctx.destination);
+      
+      // We still use the audio element as a hidden anchor for some browser engine optimizations
+      if (audioRef.current) {
+        audioRef.current.srcObject = stream;
+        audioRef.current.muted = true; // Muted because Web Audio handles the output
+        audioRef.current.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn("[Voice Sync] Listening boost failed, falling back to standard audio.", e);
+      if (audioRef.current) {
+        audioRef.current.srcObject = stream;
+        audioRef.current.muted = false;
+        audioRef.current.play().catch(() => {});
+      }
     }
+
+    return () => {
+      if (contextRef.current) {
+        contextRef.current.close().catch(() => {});
+      }
+    };
   }, [stream]);
+
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 

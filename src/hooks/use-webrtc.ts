@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
  * PRODUCTION WEBRTC HOOK
  * Handles P2P Audio Mesh via Firestore Signaling.
  * Re-engineered for high-fidelity synchronization using the Perfect Negotiation pattern.
+ * OPTIMIZED: Added Real-time Voice Boost Protocol for Outbound Speaking Volume (2.5x Gain).
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean) {
   const { user } = useUser();
@@ -28,6 +29,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const makingOffer = useRef<Map<string, boolean>>(new Map());
   const ignoreOffer = useRef<Map<string, boolean>>(new Map());
 
+  // Web Audio Context for Gain Boosting
+  const audioContextRef = useRef<AudioContext | null>(null);
+
   const iceConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -36,19 +40,23 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     ],
   };
 
-  // 1. Local Stream Management
+  // 1. Local Stream Management with Voice Boost
   useEffect(() => {
     if (!isInSeat || !user || !roomId || !firestore) {
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         setLocalStream(null);
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
       return;
     }
 
     const startLocalStream = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const rawStream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
@@ -56,12 +64,30 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           }, 
           video: false 
         });
+
+        // VOICE BOOST PROTOCOL: Outbound (Speaking Volume)
+        // We use a GainNode to multiply the input level for the tribe.
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        const source = ctx.createMediaStreamSource(rawStream);
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 2.5; // High-fidelity outbound boost (250%)
         
-        stream.getAudioTracks().forEach(track => {
+        const destination = ctx.createMediaStreamDestination();
+        source.connect(gainNode);
+        gainNode.connect(destination);
+        
+        const boostedStream = destination.stream;
+        
+        boostedStream.getAudioTracks().forEach(track => {
           track.enabled = !isMuted;
         });
         
-        setLocalStream(stream);
+        setLocalStream(boostedStream);
       } catch (err: any) {
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           toast({
@@ -184,7 +210,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           const polite = user.uid > peerId;
           const offerCollision = signal.type === 'offer' && (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          if (ignoreOffer.current.get(peerId)) return;
+          if (ignoreOffer.current.set(peerId)) return;
 
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
