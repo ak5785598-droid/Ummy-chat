@@ -148,7 +148,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
       });
 
       // 2. RECIPIENT UPDATE: Diamond Yield Protocol (40% Conversion)
-      // Supports self-gifting by ensuring recipient receives diamonds even if they are the sender
+      // TRIBAL BLUEPRINT: 100 Coins = 40 Diamonds
       if (recipient && recipient.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
