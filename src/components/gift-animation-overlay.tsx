@@ -1,8 +1,8 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Trophy, Sparkles, Star, Crown } from 'lucide-react';
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
@@ -24,7 +24,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       
       // Animation duration protocol
       let duration = 3000;
-      if (['galaxy', 'rolex', 'color-carnival'].includes(giftId)) duration = 4500;
+      if (['galaxy', 'rolex', 'color-carnival', 'lucky-jackpot'].includes(giftId)) duration = 4500;
       if (['dragon', 'celebration', 'propose-ring'].includes(giftId)) duration = 6000;
 
       const timer = setTimeout(() => {
@@ -51,6 +51,10 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       case 'supernova': return '💥';
       case 'rolex': return '⌚';
       case 'celebration': return '🥳';
+      case 'lucky-clover': return '🍀';
+      case 'lucky-crown': return '👑';
+      case 'lucky-maple': return '🍁';
+      case 'lucky-star': return '⭐';
       default: return '🎁';
     }
   };
@@ -59,49 +63,60 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
     <div key={triggerKey} className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden">
       
       {/* Screen Flash Protocol */}
-      {['dragon', 'supernova', 'rolex', 'celebration'].includes(giftId) && (
+      {['dragon', 'supernova', 'rolex', 'celebration', 'lucky-jackpot'].includes(giftId) && (
         <div className="absolute inset-0 animate-screen-flash bg-white pointer-events-none z-[301]" />
       )}
 
-      {/* Holographic Petal storm for 'Color Carnival' feel */}
-      {giftId === 'color-carnival' && (
-        <div className="absolute inset-0 z-[305]">
-           {Array.from({ length: 30 }).map((_, i) => (
-             <div 
-               key={i} 
-               className={cn(
-                 "absolute top-[-20px] h-4 w-4 rounded-full opacity-0 animate-petal-fall",
-                 ['bg-pink-400', 'bg-cyan-400', 'bg-yellow-400', 'bg-purple-400'][i % 4]
-               )}
-               style={{ 
-                 left: `${Math.random() * 100}%`, 
-                 animationDelay: `${Math.random() * 2}s`,
-                 filter: 'blur(2px) brightness(1.2)'
-               }}
-             />
-           ))}
+      {/* Lucky Jackpot Protocol */}
+      {giftId === 'lucky-jackpot' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-in zoom-in duration-700 z-[305]">
+           <div className="relative mb-8">
+              <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-40 animate-pulse" />
+              <div className="bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 border-[6px] border-white p-8 rounded-full shadow-[0_0_50px_rgba(251,191,36,0.8)] animate-shimmer-gold relative z-10">
+                 <Trophy className="h-32 w-32 text-white drop-shadow-2xl" />
+              </div>
+           </div>
+           <h2 className="text-7xl font-black text-white uppercase italic tracking-tighter drop-shadow-2xl animate-bounce">JACKPOT SYNC</h2>
+           <div className="mt-4 flex items-center gap-4 bg-white/10 backdrop-blur-xl px-12 py-4 rounded-full border-2 border-yellow-400/40">
+              <span className="text-4xl font-black text-yellow-400 italic">TRIBE LUCK ACTIVE</span>
+           </div>
         </div>
       )}
 
       {/* High-Fidelity Propose Ring Animation */}
       {giftId === 'propose-ring' && <ProposeRingAnimation />}
 
-      {/* Galaxy Zoom Effect */}
-      {giftId === 'galaxy' && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-1000">
-           <div className="absolute inset-0 bg-gradient-radial from-indigo-500/20 to-transparent animate-pulse" />
-           <div className="w-full h-full flex items-center justify-center">
-              <span className="text-[20rem] animate-galaxy-zoom opacity-0">🌌</span>
-           </div>
+      {/* Lucky Gift Particles */}
+      {giftId.startsWith('lucky-') && giftId !== 'lucky-jackpot' && (
+        <div className="absolute inset-0 z-[302]">
+           {Array.from({ length: 20 }).map((_, i) => (
+             <div 
+               key={i} 
+               className={cn(
+                 "absolute top-[-20px] opacity-0 animate-petal-fall",
+                 giftId === 'lucky-clover' ? "text-green-400" : 
+                 giftId === 'lucky-crown' ? "text-yellow-400" :
+                 giftId === 'lucky-maple' ? "text-orange-400" : "text-blue-400"
+               )}
+               style={{ 
+                 left: `${Math.random() * 100}%`, 
+                 animationDelay: `${Math.random() * 2}s`,
+                 fontSize: `${10 + Math.random() * 20}px`
+               }}
+             >
+                {getEmoji()}
+             </div>
+           ))}
         </div>
       )}
 
       {/* Standard High-Tier Animated Emojis */}
-      {!['propose-ring', 'galaxy', 'color-carnival'].includes(giftId) && (
+      {!['propose-ring', 'galaxy', 'color-carnival', 'lucky-jackpot'].includes(giftId) && (
         <div className={cn(
           "text-9xl filter drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] transition-all",
           giftId === 'rolex' ? "animate-rolex-sync" : 
-          giftId === 'celebration' ? "animate-celebration-pop" : "animate-bounce scale-[2.0]"
+          giftId === 'celebration' ? "animate-celebration-pop" : 
+          giftId.startsWith('lucky-') ? "animate-reaction-glitter scale-[1.5]" : "animate-bounce scale-[2.0]"
         )}>
           {getEmoji()}
         </div>
@@ -118,13 +133,6 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
           100% { transform: scale(2) rotate(0deg); opacity: 0; }
         }
         .animate-rolex-sync { animation: rolex-sync 4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-        @keyframes galaxy-zoom {
-          0% { transform: scale(0) rotate(0); opacity: 0; }
-          20% { opacity: 1; transform: scale(1) rotate(45deg); }
-          100% { transform: scale(5) rotate(360deg); opacity: 0; }
-        }
-        .animate-galaxy-zoom { animation: galaxy-zoom 4s linear forwards; }
 
         @keyframes celebration-pop {
           0% { transform: scale(0); opacity: 0; }

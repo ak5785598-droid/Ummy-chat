@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
-import { Mic, Home, ChevronRight, Send, Loader, User } from 'lucide-react';
+import { Mic, Home, ChevronRight, Send, Loader, User, Info, Sparkles } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
@@ -27,6 +27,11 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface GiftItem {
   id: string;
@@ -34,9 +39,16 @@ interface GiftItem {
   price: number;
   icon: string;
   animationId: string;
+  type?: 'standard' | 'lucky';
 }
 
 const GIFTS: Record<string, GiftItem[]> = {
+  'Lucky': [
+    { id: 'lucky_clover', name: 'Lucky Clover', price: 100, icon: '🍀', animationId: 'lucky-clover', type: 'lucky' },
+    { id: 'lucky_crown', name: 'Lucky Crown', price: 500, icon: '👑', animationId: 'lucky-crown', type: 'lucky' },
+    { id: 'lucky_maple', name: 'Lucky Maple', price: 1000, icon: '🍁', animationId: 'lucky-maple', type: 'lucky' },
+    { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', animationId: 'lucky-star', type: 'lucky' },
+  ],
   'Hot': [
     { id: 'g1', name: 'Color Powder', price: 5000, icon: '🌈', animationId: 'color-carnival' },
     { id: 'g2', name: 'Color Palette', price: 15000, icon: '🎨', animationId: 'color-carnival' },
@@ -64,10 +76,6 @@ interface GiftPickerProps {
   onGiftSent?: (giftId: string) => void;
 }
 
-/**
- * High-Fidelity Gift Picker Dimension.
- * Re-engineered to match the provided screenshot blueprint.
- */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
@@ -78,10 +86,28 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
   const [quantity, setQuantity] = useState('1');
   const [isSending, setIsSending] = useState(false);
 
+  const calculateLuckyWin = (price: number, qty: number) => {
+    const roll = Math.random() * 100;
+    let multiplier = 0;
+
+    // Tribal Luck Probability Protocol
+    if (roll < 0.05) multiplier = 1000;
+    else if (roll < 0.2) multiplier = 100;
+    else if (roll < 1.0) multiplier = 50;
+    else if (roll < 5.0) multiplier = 5;
+    else if (roll < 15.0) multiplier = 2;
+    else if (roll < 60.0) multiplier = 1;
+    else multiplier = 0;
+
+    return { multiplier, winAmount: price * qty * multiplier };
+  };
+
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile) return;
 
-    const totalCost = selectedGift.price * parseInt(quantity);
+    const qtyNum = parseInt(quantity);
+    const totalCost = selectedGift.price * qtyNum;
+    
     if ((userProfile.wallet?.coins || 0) < totalCost) {
       toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
       return;
@@ -93,14 +119,26 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const roomRef = doc(firestore, 'chatRooms', roomId);
 
+      let winAmount = 0;
+      let luckyResult = null;
+
+      if (selectedGift.type === 'lucky') {
+        const { multiplier, winAmount: won } = calculateLuckyWin(selectedGift.price, qtyNum);
+        winAmount = won;
+        if (multiplier > 0) {
+          luckyResult = { multiplier, winAmount };
+        }
+      }
+
+      const netCost = totalCost - winAmount;
+
       const updateData = {
-        'wallet.coins': increment(-totalCost),
+        'wallet.coins': increment(-netCost),
         'wallet.totalSpent': increment(totalCost),
         'wallet.dailySpent': increment(totalCost),
         updatedAt: serverTimestamp()
       };
 
-      // 1. Economic Handshake
       updateDocumentNonBlocking(userRef, updateData);
       updateDocumentNonBlocking(profileRef, updateData);
       updateDocumentNonBlocking(roomRef, { 
@@ -108,7 +146,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         'stats.dailyGifts': increment(totalCost)
       });
 
-      // 2. Broadcast Gift Event
+      // Broadcast Gift Event
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,
@@ -117,12 +155,24 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         recipientName: recipient?.name || 'the Room',
         giftId: selectedGift.animationId,
         text: `sent ${selectedGift.name} x${quantity}`,
+        luckyWin: luckyResult,
         timestamp: serverTimestamp()
       });
 
-      if (onGiftSent) onGiftSent(selectedGift.animationId);
+      if (onGiftSent) {
+        // If it's a big lucky win, pass a special flag to the overlay
+        onGiftSent(luckyResult && luckyResult.multiplier >= 50 ? 'lucky-jackpot' : selectedGift.animationId);
+      }
       
-      toast({ title: 'Vibe Sent!', description: `Dispatched ${selectedGift.name} x${quantity}` });
+      if (winAmount > 0) {
+        toast({ 
+          title: 'Luck Synchronized!', 
+          description: `You won ${winAmount.toLocaleString()} coins back! (${luckyResult?.multiplier}x)` 
+        });
+      } else {
+        toast({ title: 'Vibe Sent!', description: `Dispatched ${selectedGift.name} x${quantity}` });
+      }
+      
       setSelectedGift(null);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Dispatch Failed' });
@@ -161,20 +211,40 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
                  </div>
               </div>
               <div className="flex gap-2">
-                 <button className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><Mic className="h-4 w-4 text-white/60" /></button>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                       <button className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors">
+                          <Info className="h-4 w-4 text-yellow-500" />
+                       </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="bg-slate-900 border-white/10 text-white p-4 rounded-2xl w-64 shadow-2xl">
+                       <h4 className="font-black uppercase italic text-sm mb-2 text-yellow-500">Lucky Gift Rules</h4>
+                       <p className="text-[10px] font-body leading-relaxed text-gray-300">
+                          When you send a Lucky Gift, you have a chance to receive a massive coin return instantly!
+                       </p>
+                       <div className="mt-3 grid grid-cols-2 gap-2 text-[9px] font-black uppercase italic">
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>1x Return</span><span className="text-green-400">High</span></div>
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>2x Return</span><span className="text-green-400">Med</span></div>
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>5x Return</span><span className="text-yellow-400">Low</span></div>
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>50x Return</span><span className="text-orange-400">Rare</span></div>
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>100x Return</span><span className="text-red-400">Epic</span></div>
+                          <div className="flex justify-between border-b border-white/5 pb-1"><span>1000x Return</span><span className="text-purple-400">LEGEND</span></div>
+                       </div>
+                    </PopoverContent>
+                 </Popover>
                  <button className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><Home className="h-4 w-4 text-white/60" /></button>
               </div>
            </div>
 
            <div className="flex items-center justify-between">
-              <Tabs defaultValue="Hot" className="w-full">
+              <Tabs defaultValue="Lucky" className="w-full">
                  <TabsList className="bg-transparent p-0 gap-6 h-10 border-none justify-start overflow-x-auto no-scrollbar">
                     {Object.keys(GIFTS).map(tab => (
                       <TabsTrigger key={tab} value={tab} className="p-0 text-sm font-black uppercase italic tracking-tighter text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100">
                         {tab}
                       </TabsTrigger>
                     ))}
-                    {['Lucky', 'SVIP', 'Country', 'Bag'].filter(t => !GIFTS[t]).map(tab => (
+                    {['Country', 'Bag'].map(tab => (
                       <span key={tab} className="text-sm font-black uppercase italic tracking-tighter text-white/20 cursor-default">{tab}</span>
                     ))}
                  </TabsList>
@@ -191,7 +261,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
                                selectedGift?.id === gift.id ? "bg-white/10 ring-1 ring-white/20 shadow-xl scale-105" : "hover:bg-white/5"
                              )}
                            >
-                              <div className="text-3xl drop-shadow-lg mb-1">{gift.icon}</div>
+                              <div className="relative">
+                                 <div className={cn(
+                                   "text-3xl drop-shadow-lg mb-1 transition-transform group-hover:scale-110",
+                                   gift.type === 'lucky' && "animate-reaction-pulse"
+                                 )}>
+                                    {gift.icon}
+                                 </div>
+                                 {gift.type === 'lucky' && (
+                                   <div className="absolute -top-1 -right-1">
+                                      <Sparkles className="h-3 w-3 text-yellow-400 animate-pulse" />
+                                   </div>
+                                 )}
+                              </div>
                               <span className="text-[9px] font-black text-white uppercase tracking-tighter text-center px-1 leading-tight">{gift.name}</span>
                               <div className="flex items-center gap-1 text-yellow-500">
                                  <GoldCoinIcon className="h-2.5 w-2.5" />
