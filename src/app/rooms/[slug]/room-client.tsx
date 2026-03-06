@@ -438,7 +438,7 @@ export function RoomClient({ room }: { room: Room }) {
                         {occupant ? (
                           <Avatar className="h-full w-full p-0.5">
                             <AvatarImage src={occupant.avatarUrl || undefined} />
-                            <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                           </Avatar>
                         ) : isLocked ? (
                           <Lock className="text-red-500/40 h-6 w-6" />

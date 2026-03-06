@@ -23,7 +23,8 @@ import {
   Mail,
   LayoutGrid,
   ChevronRight,
-  User as UserIcon
+  User as UserIcon,
+  X
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -120,7 +121,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
-  const [latestEntrance, setLatestEntrance] = useState<any>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -154,6 +154,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
   
+  const [latestEntrance, setLatestEntrance] = useState<any>(null);
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     if (firestoreMessages && firestoreMessages.length > 0) {
@@ -221,7 +223,7 @@ export function RoomClient({ room }: { room: Room }) {
               {occupant ? (
                 <Avatar className="h-full w-full p-0.5">
                   <AvatarImage src={occupant.avatarUrl || undefined} />
-                  <AvatarFallback>{occupant.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               ) : isLocked ? (
                 <Lock className="text-red-500/40 h-6 w-6" />
@@ -441,13 +443,5 @@ export function RoomClient({ room }: { room: Room }) {
         isMe={selectedParticipantUid === currentUser?.uid} 
       />
     </div>
-  );
-}
-
-function X({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-    </svg>
   );
 }
