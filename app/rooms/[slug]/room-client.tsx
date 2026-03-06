@@ -77,6 +77,7 @@ import { RoomSettingsDialog } from '@/components/room-settings-dialog';
 import { RoomUserListDialog } from '@/components/room-user-list-dialog';
 import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker, type GiftItem } from '@/components/gift-picker';
+import { RoomPlayDialog } from '@/components/room-play-dialog';
 
 const ROOM_THEMES = [
   { id: 'misty', name: 'Misty Forest', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000' },
@@ -225,6 +226,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
+  const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
@@ -536,7 +538,7 @@ export function RoomClient({ room }: { room: Room }) {
               <button onClick={() => router.push('/messages')} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
               <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>
               <button onClick={() => router.push('/games')} className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-2 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"><GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" /></button>
-              <button className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
+              <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
            </div>
         </div>
       </footer>
@@ -569,6 +571,7 @@ export function RoomClient({ room }: { room: Room }) {
           }
         }} 
       />
+      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} />
     </div>
   );
 }
