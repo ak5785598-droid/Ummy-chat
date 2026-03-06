@@ -24,7 +24,9 @@ import {
   LayoutGrid,
   ChevronRight,
   User as UserIcon,
-  X
+  X,
+  UserX,
+  UserCheck
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant, Gift } from '@/lib/types';
@@ -109,6 +111,114 @@ function EntryCard({ entrant, onComplete }: { entrant: any, onComplete: () => vo
   );
 }
 
+function SeatActionDialog({ 
+  open, 
+  onOpenChange, 
+  onAction, 
+  canManage,
+  isOccupied,
+  isMe,
+  isLocked,
+  occupantName
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+  onAction: (action: string) => void;
+  canManage: boolean;
+  isOccupied: boolean;
+  isMe: boolean;
+  isLocked: boolean;
+  occupantName?: string;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-500 font-headline">
+        <DialogHeader className="p-6 border-b border-gray-50 shrink-0">
+          <DialogTitle className="text-xl font-black uppercase italic tracking-tighter text-center">
+            {isOccupied ? (isMe ? 'My Seat' : `Manage ${occupantName}`) : (isLocked ? 'Locked Slot' : 'Available Slot')}
+          </DialogTitle>
+          <DialogDescription className="sr-only">Choose a frequency management action.</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col items-center py-4">
+          
+          {/* MANAGEMENT: Admin on any occupied seat */}
+          {canManage && isOccupied && !isMe && (
+            <>
+              <button 
+                onClick={() => onAction('toggle-mute')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                Mute / Unmute
+              </button>
+              <button 
+                onClick={() => onAction('remove-from-seat')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-red-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                Remove from seat
+              </button>
+            </>
+          )}
+
+          {/* MANAGEMENT: Admin on empty seat */}
+          {canManage && !isOccupied && (
+            <>
+              <button 
+                onClick={() => onAction('take-seat')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                Take Mic
+              </button>
+              <button 
+                onClick={() => onAction('toggle-lock')} 
+                className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+              >
+                {isLocked ? 'Unlock Seat' : 'Lock Seat'}
+              </button>
+            </>
+          )}
+
+          {/* NORMAL USER: Empty Seat */}
+          {!canManage && !isOccupied && !isLocked && (
+            <button 
+              onClick={() => onAction('take-seat')} 
+              className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+            >
+              Take Mic
+            </button>
+          )}
+
+          {/* ANY USER: Their own seat */}
+          {isMe && (
+            <button 
+              onClick={() => onAction('leave-seat')} 
+              className="w-full py-5 text-center font-black text-lg uppercase tracking-tight text-pink-500 hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+            >
+              Leave Mic
+            </button>
+          )}
+
+          {/* SHARED: Profile shortcut */}
+          {isOccupied && !isMe && (
+            <button 
+              onClick={() => onAction('view-profile')} 
+              className="w-full py-5 text-center font-black text-lg uppercase tracking-tight hover:bg-gray-50 active:bg-gray-100 transition-all border-b"
+            >
+              View Profile
+            </button>
+          )}
+
+          <button 
+            onClick={() => onOpenChange(false)} 
+            className="w-full py-6 text-center font-black text-lg uppercase tracking-tight text-gray-400 hover:bg-gray-50 active:bg-gray-100 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
   const [showInput, setShowInput] = useState(false);
@@ -117,6 +227,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
+  
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
@@ -153,7 +265,6 @@ export function RoomClient({ room }: { room: Room }) {
   }, [firestore, room.id]);
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
-  
   const [latestEntrance, setLatestEntrance] = useState<any>(null);
 
   useEffect(() => {
@@ -185,6 +296,69 @@ export function RoomClient({ room }: { room: Room }) {
     }); 
   };
 
+  const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
+    setSelectedSeatIdx(index);
+    if (occupant) {
+      setSelectedParticipantUid(occupant.uid);
+      if (canManageRoom || occupant.uid === currentUser?.uid) {
+        setIsSeatMenuOpen(true);
+      } else {
+        setIsUserProfileCardOpen(true);
+      }
+    } else {
+      setIsSeatMenuOpen(true);
+    }
+  };
+
+  const handleSeatAction = (action: string) => {
+    if (!selectedSeatIdx || !firestore || !room.id || !currentUser) return;
+
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    const occupant = participants?.find(p => p.seatIndex === selectedSeatIdx);
+
+    switch(action) {
+      case 'take-seat':
+        if (room.lockedSeats?.includes(selectedSeatIdx) && !canManageRoom) {
+          toast({ variant: 'destructive', title: 'Restricted', description: 'This slot is locked by an Admin.' });
+        } else {
+          takeSeat(selectedSeatIdx);
+        }
+        break;
+      case 'leave-seat':
+        if (currentUserParticipant) {
+          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { seatIndex: 0, isMuted: true });
+        }
+        break;
+      case 'toggle-lock':
+        if (canManageRoom) {
+          const isCurrentlyLocked = room.lockedSeats?.includes(selectedSeatIdx);
+          updateDocumentNonBlocking(roomRef, {
+            lockedSeats: isCurrentlyLocked ? arrayRemove(selectedSeatIdx) : arrayUnion(selectedSeatIdx)
+          });
+          toast({ title: isCurrentlyLocked ? 'Slot Unlocked' : 'Slot Locked' });
+        }
+        break;
+      case 'toggle-mute':
+        if (canManageRoom && occupant) {
+          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', occupant.uid), {
+            isMuted: !occupant.isMuted
+          });
+          toast({ title: occupant.isMuted ? 'Voice Frequency Restored' : 'Participant Silenced' });
+        }
+        break;
+      case 'remove-from-seat':
+        if (canManageRoom && occupant) {
+          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', occupant.uid), { seatIndex: 0, isMuted: true });
+          toast({ title: 'Participant Removed from Seat' });
+        }
+        break;
+      case 'view-profile':
+        setIsUserProfileCardOpen(true);
+        break;
+    }
+    setIsSeatMenuOpen(false);
+  };
+
   const handleMicToggle = () => { 
     if (!isInSeat || !firestore || !currentUser || !room.id) {
       if (!isInSeat) toast({ variant: 'destructive', title: 'Action Prohibited', description: 'You must take a seat to use the microphone.' });
@@ -210,14 +384,7 @@ export function RoomClient({ room }: { room: Room }) {
           )}
           <AvatarFrame frameId={occupant?.activeFrame} size="md">
             <button 
-              onClick={() => { 
-                if (occupant) { 
-                  setSelectedParticipantUid(occupant.uid); 
-                  setIsUserProfileCardOpen(true); 
-                } else if (!isMeAlreadyInSeat) {
-                  takeSeat(index);
-                } 
-              }}
+              onClick={() => handleSeatClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center bg-black/40 border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10",
                 isLocked ? "border-red-500/40" : "border-white/10"
@@ -239,7 +406,7 @@ export function RoomClient({ room }: { room: Room }) {
           </AvatarFrame>
           {occupant?.isMuted && <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
         </div>
-        <span className="text-[10px] font-bold text-white/60 uppercase">{label}</span>
+        <span className="text-[10px] font-bold text-white/60 uppercase truncate w-14 text-center">{occupant ? occupant.name : label}</span>
       </div>
     );
   };
@@ -253,13 +420,11 @@ export function RoomClient({ room }: { room: Room }) {
       <EntryCard entrant={latestEntrance} onComplete={() => setLatestEntrance(null)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (<RemoteAudio key={peerId} stream={stream} />))}
       
-      {/* Dynamic Background Sync */}
       <div className="absolute inset-0 z-0">
         <Image src={currentTheme.url} alt="Background" fill className="object-cover opacity-60" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* High-Fidelity Blueprint Header */}
       <header className="relative z-50 flex items-center justify-between p-4 pt-8">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
@@ -277,171 +442,70 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setIsUserListOpen(true)}
-            className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 active:scale-95 transition-transform"
-          >
-            <Users className="h-4 w-4 text-white/60" />
-            <span className="text-[12px] font-black">{onlineCount}</span>
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 active:scale-95 transition-transform">
+            <Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span>
           </button>
-          
-          <RoomSettingsDialog room={room} trigger={
-            <button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>
-          } />
-          
+          <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
           <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>
           <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Power className="h-5 w-5" /></button>
         </div>
       </header>
 
-      {/* Money Tree Visual Asset */}
-      <div className="absolute top-32 right-4 z-40 animate-reaction-float">
-         <img src="https://images.unsplash.com/photo-1616220797937-f64f159935b7?q=80&w=200" alt="Money Tree" className="h-16 w-16 drop-shadow-2xl" />
-      </div>
-
       <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
-           {/* Top Seat (No.1) */}
-           <div className="w-full flex justify-center">
-              <Seat index={1} label="No.1" />
-           </div>
-           
-           {/* Middle Row (No.2 - No.5) */}
-           <div className="w-full flex justify-center gap-4 px-4">
-              <Seat index={2} label="No.2" />
-              <Seat index={3} label="No.3" />
-              <Seat index={4} label="No.4" />
-              <Seat index={5} label="No.5" />
-           </div>
-
-           {/* Bottom Row (No.6 - No.9) */}
-           <div className="w-full flex justify-center gap-4 px-4">
-              <Seat index={6} label="No.6" />
-              <Seat index={7} label="No.7" />
-              <Seat index={8} label="No.8" />
-              <Seat index={9} label="No.9" />
-           </div>
-
-           {/* Join Call-to-Action */}
+           <div className="w-full flex justify-center"><Seat index={1} label="No.1" /></div>
+           <div className="w-full flex justify-center gap-4 px-4"><Seat index={2} label="No.2" /><Seat index={3} label="No.3" /><Seat index={4} label="No.4" /><Seat index={5} label="No.5" /></div>
+           <div className="w-full flex justify-center gap-4 px-4"><Seat index={6} label="No.6" /><Seat index={7} label="No.7" /><Seat index={8} label="No.8" /><Seat index={9} label="No.9" /></div>
            <div className="mt-8 px-6 w-full max-w-[280px]">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 rounded-2xl border border-white/10 shadow-xl mb-4">
-                 <p className="text-[11px] font-bold leading-relaxed">Welcome to Ummy! Please show respect to one another and be courteous.</p>
-              </div>
-              <button 
-                onClick={() => !isMeAlreadyInSeat && takeSeat(1)}
-                className="w-full h-14 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 rounded-full flex items-center justify-center gap-2 font-black uppercase text-sm shadow-xl shadow-emerald-900/40 active:scale-95 transition-all"
-              >
-                 Join Voice Chat <ChevronRight className="h-4 w-4" />
-              </button>
-           </div>
-        </div>
-
-        {/* Dynamic Activity Feed Overlay */}
-        <div className="absolute right-4 bottom-24 z-40">
-           <div className="relative h-20 w-16 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl">
-              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=200" alt="Activity" className="h-full w-full object-cover" />
-              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                 <div className="h-1 w-1 bg-white rounded-full" />
-                 <div className="h-1 w-1 bg-white/40 rounded-full" />
-                 <div className="h-1 w-1 bg-white/40 rounded-full" />
-              </div>
+              {!isMeAlreadyInSeat && (
+                <button onClick={() => takeSeat(1)} className="w-full h-14 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 rounded-full flex items-center justify-center gap-2 font-black uppercase text-sm shadow-xl active:scale-95 transition-all">
+                   Join Voice Chat <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
            </div>
         </div>
       </main>
 
-      {/* Blueprint Lower Interaction Bar */}
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 pt-4">
         <div className="flex-1 flex items-center gap-3">
-           {/* Say Hi Input Area */}
-           <div 
-             onClick={() => setShowInput(true)}
-             className="bg-white/10 backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center text-white/60 font-bold text-sm cursor-pointer"
-           >
-              Say Hi
-           </div>
-
-           {/* Interaction Icon Set */}
+           <div onClick={() => setShowInput(true)} className="bg-white/10 backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center text-white/60 font-bold text-sm cursor-pointer">Say Hi</div>
            <div className="flex items-center gap-3">
-              {/* Mic Toggle Synchronization */}
-              <button 
-                onClick={handleMicToggle}
-                disabled={!isInSeat}
-                className={cn(
-                  "p-2 rounded-full transition-all active:scale-90",
-                  !isInSeat ? "bg-white/5 text-white/20 opacity-50 cursor-not-allowed" : 
-                  (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg shadow-green-500/40 border border-white/20")
-                )}
-              >
+              <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
                  {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
               </button>
-
               <button onClick={() => setIsMutedLocal(!isMutedLocal)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">
                  {isMutedLocal ? <VolumeX className="h-5 w-5 text-white/60" /> : <Volume2 className="h-5 w-5 text-white" />}
               </button>
               <button onClick={() => router.push('/messages')} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
-              
-              <div className="relative">
-                 <button 
-                   onClick={() => setIsGiftPickerOpen(true)}
-                   className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl shadow-purple-900/40 active:scale-90 transition-transform"
-                 >
-                    <GiftIcon className="h-6 w-6 text-white fill-white" />
-                 </button>
-                 <div className="absolute -top-1 -right-1 bg-pink-500 h-3 w-3 rounded-full border-2 border-black" />
-              </div>
-
-              <button 
-                onClick={() => router.push('/games')}
-                className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-2 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"
-              >
+              <button onClick={() => setIsGiftPickerOpen(true)} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform">
+                 <GiftIcon className="h-6 w-6 text-white fill-white" />
+              </button>
+              <button onClick={() => router.push('/games')} className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-2 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50">
                 <GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" />
               </button>
-              
               <button className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
            </div>
         </div>
       </footer>
 
-      {/* Input Overlay Modal for Mobile Stability */}
       {showInput && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline">
            <div className="bg-slate-900 rounded-[2.5rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10">
-              <div className="flex justify-between items-center px-4">
-                 <h3 className="font-black uppercase tracking-widest text-[10px] text-white/40">Broadcasting to Tribe</h3>
-                 <button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-5 w-5" /></button>
-              </div>
+              <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[10px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-5 w-5" /></button></div>
               <form className="flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
-                 <Input 
-                   autoFocus 
-                   value={messageText} 
-                   onChange={(e) => setMessageText(e.target.value)}
-                   className="h-14 bg-white/5 border-white/10 rounded-full px-6 text-white"
-                   placeholder="Type a message..."
-                 />
-                 <button className="bg-primary text-black h-14 w-14 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-                    <Mail className="h-6 w-6" />
-                 </button>
+                 <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-14 bg-white/5 border-white/10 rounded-full px-6 text-white" placeholder="Type a message..." />
+                 <button className="bg-primary text-black h-14 w-14 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-6 w-6" /></button>
               </form>
            </div>
         </div>
       )}
 
-      {/* Blueprint Portal Dialogs */}
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
         <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Exit Frequency</DialogTitle>
-            <DialogDescription>Choose to minimize the frequency or exit the session.</DialogDescription>
-          </DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>Exit Frequency</DialogTitle><DialogDescription>Choose to minimize the frequency or exit the session.</DialogDescription></DialogHeader>
           <div className="p-12 flex items-center justify-around gap-8">
-            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-               <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
-               <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
-            </button>
-            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-               <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
-               <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
-            </button>
+            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span></button>
+            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span></button>
           </div>
         </DialogContent>
       </Dialog>
@@ -449,6 +513,17 @@ export function RoomClient({ room }: { room: Room }) {
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
       
+      <SeatActionDialog 
+        open={isSeatMenuOpen} 
+        onOpenChange={setIsSeatMenuOpen} 
+        onAction={handleSeatAction}
+        canManage={canManageRoom}
+        isOccupied={!!participants?.find(p => p.seatIndex === selectedSeatIdx)}
+        isMe={participants?.find(p => p.seatIndex === selectedSeatIdx)?.uid === currentUser?.uid}
+        isLocked={!!selectedSeatIdx && (room.lockedSeats?.includes(selectedSeatIdx) || false)}
+        occupantName={participants?.find(p => p.seatIndex === selectedSeatIdx)?.name}
+      />
+
       <RoomUserProfileDialog 
         userId={selectedParticipantUid} 
         open={isUserProfileCardOpen} 
