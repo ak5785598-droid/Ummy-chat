@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -31,7 +30,7 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle,
+  DialogTitle, 
   DialogDescription
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -228,18 +227,20 @@ export function RoomUserProfileDialog({
 
                   {/* Administrative & Secondary Actions Section */}
                   {!isMe && (
-                    <div className="space-y-4 pt-6 border-t border-white/10">
-                       <div className="grid grid-cols-2 gap-4 px-2">
-                          {/* HIGH-FIDELITY GIFT DISPATCH: Primary Option near Mute */}
+                    <div className="space-y-4 pt-6 border-t border-white/10 w-full">
+                       {/* HIGH-FIDELITY GIFT DISPATCH: Full Width Prominent Option */}
+                       <div className="px-2">
                           <Button 
                             onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
-                            className="h-14 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black uppercase italic text-xs shadow-xl shadow-rose-500/20 active:scale-95 transition-all"
+                            className="w-full h-16 rounded-[1.5rem] bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white font-black uppercase italic text-lg shadow-xl shadow-rose-500/30 active:scale-95 transition-all group"
                           >
-                             <GiftIcon className="mr-2 h-5 w-5 fill-current animate-pulse" />
+                             <GiftIcon className="mr-3 h-7 w-7 fill-current animate-reaction-heartbeat" />
                              Send Gift
                           </Button>
-                          
-                          {canManage && (
+                       </div>
+                       
+                       {canManage && (
+                         <div className="grid grid-cols-2 gap-4 px-2">
                             <Button 
                               onClick={() => onSilence(userId, isSilenced)}
                               className={cn(
@@ -250,16 +251,16 @@ export function RoomUserProfileDialog({
                                {isSilenced ? <Mic className="mr-2 h-5 w-5" /> : <MicOff className="mr-2 h-5 w-5" />}
                                {isSilenced ? 'Unmute' : 'Mute'}
                             </Button>
-                          )}
-                       </div>
-
-                       {canManage && (
-                         <div className="grid grid-cols-2 gap-4 px-2">
-                            <Button onClick={() => onLeaveSeat(userId)} variant="outline" className="h-12 rounded-2xl bg-white/5 border-white/10 text-white/60 font-black uppercase text-[10px] italic active:scale-95 transition-all">
+                            <Button onClick={() => onLeaveSeat(userId)} variant="outline" className="h-14 rounded-2xl bg-white/5 border-white/10 text-white/60 font-black uppercase text-[10px] italic active:scale-95 transition-all">
                                <LogOut className="mr-2 h-4 w-4" />
                                Seat leave
                             </Button>
-                            <Button onClick={() => onKick(userId, 5)} variant="outline" className="h-12 rounded-2xl bg-red-500/10 border-red-500/20 text-red-500 font-black uppercase text-[10px] italic active:scale-95 transition-all">
+                         </div>
+                       )}
+
+                       {canManage && (
+                         <div className="px-2">
+                            <Button onClick={() => onKick(userId, 5)} variant="outline" className="w-full h-12 rounded-2xl bg-red-500/10 border-red-500/20 text-red-500 font-black uppercase text-[10px] italic active:scale-95 transition-all">
                                <Ban className="mr-2 h-4 w-4" />
                                Kick out
                             </Button>

@@ -23,13 +23,14 @@ export function initializeFirebase() {
 export function getSdks(firebaseApp: FirebaseApp) {
   console.log(`[Firebase Init] Initializing services for project: ${firebaseConfig.projectId}`);
   
-  // Re-engineered with Long Polling Auto-Detection for extreme network resilience.
-  // This resolves connectivity hangs in specific proxy/cloud development environments.
+  // CRITICAL: Switched to Force Long Polling for extreme network resilience.
+  // This resolves the "Could not reach Cloud Firestore backend" timeout errors by ensuring
+  // consistent connectivity in proxy or cloud-based development environments.
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: initializeFirestore(firebaseApp, {
-      experimentalAutoDetectLongPolling: true,
+      experimentalForceLongPolling: true,
     }),
     // Using the default bucket from the initialized app is the most stable protocol.
     storage: getStorage(firebaseApp)
