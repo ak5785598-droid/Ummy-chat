@@ -14,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 /**
  * PRODUCTION WEBRTC HOOK
  * Handles P2P Audio Mesh via Firestore Signaling.
- * BUG FIX: ICE candidates are now guarded by remoteDescription status to prevent InvalidStateError.
+ * BUG FIX: Signaling state guards implemented to prevent InvalidStateError during 
+ * remote description synchronization (Perfect Negotiation protocol).
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, musicStream: MediaStream | null = null) {
   const { user } = useUser();
@@ -212,15 +213,19 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       try {
         if (signal.type === 'offer') {
           const polite = user.uid > peerId;
-          const offerCollision = signal.type === 'offer' && (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
+          const offerCollision = (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
+          
           if (ignoreOffer.current.get(peerId)) return;
 
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
         } else if (signal.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+          // FIX: High-fidelity signaling state guard to prevent InvalidStateError
+          if (pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+          }
         } else if (signal.type === 'candidate') {
           try {
             // FIX: High-fidelity guard for ICE candidates
