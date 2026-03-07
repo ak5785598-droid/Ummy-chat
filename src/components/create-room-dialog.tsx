@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp, runTransaction, doc, query, where, getDocs } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where, getDocs, setDoc } from 'firebase/firestore';
 import { Plus, Loader } from 'lucide-react';
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 
 interface CreateRoomDialogProps {
@@ -29,11 +30,13 @@ interface CreateRoomDialogProps {
  * Production Room Creation Portal.
  * Enforces the "One user, one room" tribal protocol.
  * DIRECT ENTRY: If iconOnly is true, clicking skips to existing room if found.
+ * IDENTITY SYNC: Room Number is synchronized with the User's Profile ID (specialId).
  */
 export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
@@ -72,7 +75,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !firestore) return;
+    if (!user || !firestore || !userProfile) return;
 
     setIsSubmitting(true);
 
@@ -93,21 +96,16 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
         return;
       }
 
-      // 2. Sequential Room Number Dispatch
-      const countersRef = doc(firestore, 'appConfig', 'counters');
-      const roomNumber = await runTransaction(firestore, async (transaction) => {
-        const countersSnap = await transaction.get(countersRef);
-        let nextRoomNum = 100001;
-        if (countersSnap.exists()) {
-          const current = countersSnap.data().roomCounter || 100000;
-          nextRoomNum = current + 1;
-        }
-        transaction.set(countersRef, { roomCounter: nextRoomNum }, { merge: true });
-        return String(nextRoomNum);
-      });
+      // 2. Identity Sync Protocol (Room ID No = User Profile ID)
+      // Use the user's specialId (e.g. 071) as the roomNumber
+      const roomNumber = userProfile.specialId;
 
       // 3. Frequency Initialization
-      const docRef = await addDoc(collection(firestore, 'chatRooms'), {
+      // We use the user's UID as the document ID to strictly enforce "One User, One Room"
+      const roomRef = doc(firestore, 'chatRooms', user.uid);
+      
+      await setDoc(roomRef, {
+        id: user.uid,
         name, 
         description: topic, 
         roomNumber, 
@@ -118,11 +116,12 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
         stats: { totalGifts: 0, dailyGifts: 0 }, 
         lockedSeats: [], 
         participantCount: 0, 
-        announcement: 'Welcome to the frequency!'
+        announcement: 'Welcome to the frequency!',
+        roomThemeId: 'misty' // Initial theme
       });
       
       setOpen(false);
-      router.push(`/rooms/${docRef.id}`);
+      router.push(`/rooms/${user.uid}`);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Room Failed', description: error.message });
     } finally {
@@ -156,7 +155,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
           <DialogHeader className="p-8 pb-0 text-center">
             <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Launch Tribe</DialogTitle>
             <DialogDescription className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">
-              By clicking on this icon we can directly enter to our room
+              Identity Sync: Room ID No will match your Profile ID
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-8 px-8">
@@ -170,7 +169,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
             </div>
           </div>
           <DialogFooter className="p-8 pt-0">
-            <Button type="submit" className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20" disabled={isSubmitting || !userProfile}>
               {isSubmitting ? <Loader className="animate-spin" /> : 'Start Frequency'}
             </Button>
           </DialogFooter>

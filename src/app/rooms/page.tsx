@@ -317,14 +317,14 @@ export default function RoomsPage() {
                     </div>
                   ) : (
                     <div className="text-center space-y-6 px-8 py-12 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 w-full">
-                       <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto">
+                       <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto animate-pulse">
                           <Zap className="h-10 w-10" />
                        </div>
                        <div className="space-y-1">
-                          <h3 className="text-xl font-black uppercase italic">Define Your Frequency</h3>
-                          <p className="text-muted-foreground font-body italic text-sm">Gather your tribe and start broadcasting.</p>
+                          <h3 className="text-xl font-black uppercase italic">Launch Your Room</h3>
+                          <p className="text-muted-foreground font-body italic text-sm">One user, one frequency. Your Room ID will match your Profile ID.</p>
                        </div>
-                       <CreateRoomDialog trigger={<Button className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl">Launch Room</Button>} />
+                       <CreateRoomDialog trigger={<Button className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl shadow-primary/20">Launch Room</Button>} />
                     </div>
                   )}
                </section>
