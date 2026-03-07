@@ -54,7 +54,7 @@ const BET_OPTIONS = [
 
 /**
  * High-Fidelity Roulette Dimension.
- * Re-engineered for absolute visual stability and elite chip synchronization.
+ * Re-engineered for 5-second high-fidelity visual roll sync.
  */
 export default function RoulettePage() {
   const router = useRouter();
@@ -130,6 +130,7 @@ export default function RoulettePage() {
     
     setRotation(targetRotation);
 
+    // Roll for exactly 5 seconds as requested
     setTimeout(() => {
       showResult(targetNum);
     }, 5000);

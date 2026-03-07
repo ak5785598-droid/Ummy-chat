@@ -43,6 +43,8 @@ const DEFAULT_SLIDES = [
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
+  { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
+  { id: 'win-go-spin', title: 'WIN GO SPIN', slug: 'win-go-spin', imageHint: 'betting grid' },
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
@@ -50,7 +52,6 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * Ummy Command Center - Supreme Authority Oversight.
- * RE-ENGINEERED: Now maps all game synchronization to slugs for absolute cross-portal visual fidelity.
  */
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -84,7 +85,6 @@ export default function AdminPage() {
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
-      // ATOMIC SYNC: Standardize on slug mapping for visual integrity
       const match = firestoreGames?.find(g => g.slug === base.slug);
       return match ? { ...base, ...match } : base;
     });

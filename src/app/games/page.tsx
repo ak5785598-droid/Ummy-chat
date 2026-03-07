@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -19,6 +18,8 @@ import type { Game } from '@/lib/types';
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const FALLBACK_GAMES: Game[] = [
+  { id: 'fallback-roulette', title: 'Roulette', slug: 'roulette', coverUrl: '', cost: 0, imageHint: 'roulette wheel' },
+  { id: 'fallback-win-go', title: 'WIN GO SPIN', slug: 'win-go-spin', coverUrl: '', cost: 0, imageHint: 'number gambling grid' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d fruit icons' },
   { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: '', cost: 0, imageHint: '3d lion head' },
@@ -26,8 +27,6 @@ const FALLBACK_GAMES: Game[] = [
 
 /**
  * 3D Tribe Arena - Global Game Frequencies.
- * Re-engineered for absolute visual synchronization via slug-based identity.
- * Features Sovereign-only DP Sync tools visible directly on the game grid.
  */
 export default function GamesPage() {
   const { user } = useUser();

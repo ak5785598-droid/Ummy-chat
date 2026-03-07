@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
@@ -29,6 +28,7 @@ interface RoomGamesDialogProps {
 
 const FALLBACK_GAMES = [
   { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: true, slug: 'roulette' },
+  { id: 'win-go-spin', title: 'WIN GO SPIN', iconId: 'game-win-go', isNew: true, slug: 'win-go-spin' },
   { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
   { id: 'wild-party', title: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
   { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
