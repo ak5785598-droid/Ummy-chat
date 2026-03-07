@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo, useEffect } from 'react';
@@ -15,8 +16,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Chat Room Entry Page Gateway.
- * Manages identity synchronization, ban checks, and room metadata retrieval.
- * Includes a Permanent Protocol for the Official Help Desk.
+ * Synchronizes identity and ensures all theme/background metadata is passed to the client.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -31,7 +31,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     }
   }, [isUserLoading, currentUser, router]);
 
-  // Exclusion List Handshake
   const banDocRef = useMemoFirebase(() => {
     if (!firestore || !slug || isUserLoading || !currentUser) return null;
     return doc(firestore, 'chatRooms', slug, 'bans', currentUser.uid);
@@ -44,7 +43,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return doc(firestore, 'chatRooms', slug);
   }, [firestore, slug, isUserLoading, currentUser]);
 
-  const { data: firestoreRoom, isLoading: isDocLoading, error: docError } = useDoc(roomDocRef);
+  const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
   const bannedUntil = useMemo(() => {
     if (!banData) return null;
@@ -52,7 +51,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return (expires && expires > new Date()) ? expires : null;
   }, [banData]);
 
-  // Elite Permanent Fallback Protocol: Ensures Ummy Help Desk is never "Disbanded"
   const activeRoom: Room | null = useMemo(() => {
     if (firestoreRoom) {
       return {
@@ -78,7 +76,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       } as any;
     }
 
-    // Return hardcoded metadata for the official support portal if DB entry is missing
     if (slug === 'ummy-help-center') {
       return {
         id: 'ummy-help-center',
@@ -113,39 +110,16 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   if (bannedUntil) {
     return (
       <AppLayout>
-        <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center px-6 animate-in zoom-in duration-500">
-          <div className="h-24 w-24 bg-red-500/10 rounded-full flex items-center justify-center shadow-xl shadow-red-500/10 border-2 border-red-500/20">
-            <Ban className="h-12 w-12 text-red-500" />
-          </div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter italic">Frequency Exclusion</h1>
-          <div className="space-y-2">
-            <p className="text-muted-foreground font-body text-lg">You were kicked from this room.</p>
-            <p className="text-primary font-black uppercase text-xs tracking-widest bg-primary/10 px-4 py-2 rounded-full inline-block">
-              Restricted until {format(bannedUntil, 'MMM d, HH:mm')}
-            </p>
-          </div>
-          <button onClick={() => router.push('/rooms')} className="bg-primary text-white font-black uppercase tracking-widest text-xs px-10 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform">Explore Others</button>
+        <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center px-6">
+          <Ban className="h-12 w-12 text-red-500" />
+          <h1 className="text-3xl font-black uppercase italic">Frequency Exclusion</h1>
+          <p className="text-muted-foreground">Restricted until {format(bannedUntil, 'MMM d, HH:mm')}</p>
         </div>
       </AppLayout>
     );
   }
 
-  if (docError && slug !== 'ummy-help-center') {
-     return (
-        <AppLayout>
-            <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 text-center px-6">
-                <ShieldAlert className="h-16 w-16 text-destructive mb-2" />
-                <h1 className="text-2xl font-black uppercase tracking-tighter">Access Denied</h1>
-                <p className="text-muted-foreground font-body text-base">You do not have permission to access this frequency.</p>
-                <button onClick={() => router.push('/rooms')} className="bg-primary text-white font-black uppercase tracking-widest text-xs px-8 py-3 rounded-full shadow-lg">Explore Others</button>
-            </div>
-        </AppLayout>
-     );
-  }
-
-  const isWaiting = isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading && slug !== 'ummy-help-center');
-
-  if (isWaiting) {
+  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading && slug !== 'ummy-help-center')) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -161,11 +135,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   if (!activeRoom) {
     return (
       <AppLayout>
-        <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center px-6 animate-in fade-in duration-700">
-            <div className="h-24 w-24 bg-secondary/20 rounded-full flex items-center justify-center"><Ghost className="h-12 w-12 text-muted-foreground opacity-40" /></div>
-            <h1 className="text-3xl font-black uppercase tracking-tighter">Frequency Not Found</h1>
-            <p className="text-muted-foreground max-w-xs font-body text-lg">This tribe has disbanded or the frequency has been terminated by an Admin.</p>
-            <button onClick={() => router.push('/rooms')} className="bg-primary text-white font-black uppercase tracking-widest text-xs px-10 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform">Back to Home</button>
+        <div className="flex h-[60vh] flex-col items-center justify-center text-center px-6">
+            <Ghost className="h-12 w-12 text-muted-foreground opacity-40 mb-4" />
+            <h1 className="text-2xl font-black uppercase">Frequency Not Found</h1>
+            <button onClick={() => router.push('/rooms')} className="mt-6 bg-primary text-white px-10 py-3 rounded-full font-black uppercase italic">Back to Home</button>
         </div>
       </AppLayout>
     );

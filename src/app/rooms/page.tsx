@@ -8,8 +8,8 @@ import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, limit, orderBy, doc, where, getDocs } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -144,37 +144,6 @@ export default function RoomsPage() {
   const displayRooms = useMemo(() => {
     return roomsData || [];
   }, [roomsData]);
-
-  // ANTI-GHOST HUB CLEANER: Zero out rooms with counts but no active heartbeats
-  useEffect(() => {
-    if (!firestore || !displayRooms.length) return;
-
-    const performGhostScan = async () => {
-      // Logic: Pick a few rooms from display that have counts and check them
-      const roomsWithCounts = displayRooms.filter(r => (r.participantCount || 0) > 0);
-      if (roomsWithCounts.length === 0) return;
-
-      const staleThreshold = new Date(Date.now() - 90000); // 90s stale threshold
-
-      for (const room of roomsWithCounts) {
-        const participantsRef = collection(firestore, 'chatRooms', room.id, 'participants');
-        const q = query(participantsRef, where('lastSeen', '>', staleThreshold));
-        const activeSnap = await getDocs(q);
-
-        if (activeSnap.empty) {
-          // No active users found in the roster, correct the count to zero
-          console.log(`[Ghost Scan] Zeroing count for room: ${room.id} (${room.participantCount} -> 0)`);
-          updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 
-            participantCount: 0,
-            updatedAt: serverTimestamp()
-          });
-        }
-      }
-    };
-
-    const timer = setTimeout(performGhostScan, 5000);
-    return () => clearTimeout(timer);
-  }, [displayRooms, firestore]);
 
   const CategoryCard = ({ title, label, gradient, onClick }: { title: string, label: string, gradient: string, onClick?: () => void }) => (
     <div 
