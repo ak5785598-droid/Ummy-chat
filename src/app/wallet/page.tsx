@@ -78,7 +78,7 @@ export default function WalletPage() {
 
   if (isUserLoading || isProfileLoading) {
     return (
-      <AppLayout hideSidebarOnMobile>
+      <AppLayout hideSidebarOnMobile hideBottomNav>
         <div className="flex h-[80vh] items-center justify-center bg-white">
           <Loader className="animate-spin text-primary h-8 w-8" />
         </div>
@@ -89,7 +89,7 @@ export default function WalletPage() {
   if (!user) return null;
 
   return (
-    <AppLayout hideSidebarOnMobile>
+    <AppLayout hideSidebarOnMobile hideBottomNav>
       <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
         
         {/* Header Protocol - Compact */}

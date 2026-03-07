@@ -60,10 +60,12 @@ const MeNavIcon = ({ active }: { active: boolean }) => (
 export function AppLayout({ 
   children, 
   hideSidebarOnMobile = false,
+  hideBottomNav = false,
   fullScreen = false
 }: { 
   children: React.ReactNode; 
   hideSidebarOnMobile?: boolean; 
+  hideBottomNav?: boolean;
   fullScreen?: boolean;
 }) {
   const pathname = usePathname();
@@ -109,6 +111,7 @@ export function AppLayout({
   if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
   const isInsideRoom = pathname?.startsWith('/rooms/') && pathname !== '/rooms';
+  const shouldShowBottomNav = !isInsideRoom && !hideBottomNav;
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -152,7 +155,7 @@ export function AppLayout({
             {children}
           </main>
           
-          {!isInsideRoom && (
+          {shouldShowBottomNav && (
             <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-16 pb-safe shrink-0 relative z-50 px-2">
               <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-black" : "text-gray-300")}>
                 <HomeNavIcon active={pathname === '/rooms'} />
