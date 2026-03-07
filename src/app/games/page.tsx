@@ -27,7 +27,7 @@ const FALLBACK_GAMES: Game[] = [
 /**
  * 3D Tribe Arena - Global Game Frequencies.
  * Re-engineered for absolute visual synchronization via slug-based identity.
- * Features Sovereign-only DP Sync tools.
+ * Features Sovereign-only DP Sync tools visible directly on the game grid.
  */
 export default function GamesPage() {
   const { user } = useUser();
@@ -58,7 +58,6 @@ export default function GamesPage() {
 
   const activeGames = useMemo(() => {
     return FALLBACK_GAMES.map(fb => {
-      // SOURCE OF TRUTH: Match by slug to ensure synced visuals override fallbacks
       const match = firestoreGames?.find(g => g.slug === fb.slug);
       return match ? { ...fb, ...match } : fb;
     });
@@ -111,9 +110,14 @@ export default function GamesPage() {
           </header>
 
           <section className="space-y-12">
-             <div className="flex items-center gap-3 px-2">
-                <Zap className="h-6 w-6 text-yellow-500 fill-current animate-bounce" />
-                <h3 className="font-headline text-2xl font-black uppercase italic tracking-widest text-white/80">Select Dimension</h3>
+             <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-3">
+                   <Zap className="h-6 w-6 text-yellow-500 fill-current animate-bounce" />
+                   <h3 className="font-headline text-2xl font-black uppercase italic tracking-widest text-white/80">Select Dimension</h3>
+                </div>
+                {isSovereign && (
+                  <Badge className="bg-primary text-black font-black uppercase italic animate-pulse">Identity Sync Active</Badge>
+                )}
              </div>
 
              {isGamesLoading && !firestoreGames ? (
@@ -148,13 +152,13 @@ export default function GamesPage() {
                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            
-                           {/* Sovereign-Only DP Change Protocol */}
+                           {/* Sovereign-Only DP Change Portal - Integrated Directly on Game */}
                            {isSovereign && (
                              <button 
                                onClick={(e) => handleLogoChangeClick(e, game.slug)}
-                               className="absolute top-4 right-4 bg-black/60 p-2 rounded-full border border-white/20 text-white z-20 hover:bg-primary hover:text-black shadow-xl backdrop-blur-md transition-all active:scale-90"
+                               className="absolute top-4 right-4 bg-primary text-black p-2.5 rounded-full z-30 shadow-[0_0_20px_rgba(255,204,0,0.5)] border-2 border-white hover:scale-110 transition-all active:scale-90"
                              >
-                               {isUploading && selectedGameSlug === game.slug ? <Loader className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                               {isUploading && selectedGameSlug === game.slug ? <Loader className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
                              </button>
                            )}
 

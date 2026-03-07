@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -14,14 +14,20 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { X, Gamepad2, Sparkles } from 'lucide-react';
+import { X, Gamepad2, Sparkles, Camera, Loader } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { collection, query } from 'firebase/firestore';
+import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 interface RoomGamesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ROOM_GAMES = [
+const FALLBACK_GAMES = [
   { id: 'fruit-party', name: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
   { id: 'wild-party', name: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
   { id: 'ludo', name: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
@@ -29,19 +35,62 @@ const ROOM_GAMES = [
 
 /**
  * High-Fidelity Room Games Portal.
- * Re-engineered for FULL SCREEN 3D dimension selection.
+ * Re-engineered for FULL SCREEN 3D dimension selection with Sovereign DP Sync.
  */
 export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const router = useRouter();
+  const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
+  const firestore = useFirestore();
+  const { isUploading, uploadGameLogo } = useGameLogoUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
+
+  const isSovereign = user?.uid === CREATOR_ID || 
+                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
+
+  const gamesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'games'));
+  }, [firestore, user]);
+
+  const { data: firestoreGames } = useCollection(gamesQuery);
+
+  const activeGames = useMemo(() => {
+    return FALLBACK_GAMES.map(fb => {
+      const match = firestoreGames?.find(g => g.slug === fb.slug);
+      return match ? { ...fb, ...match } : fb;
+    });
+  }, [firestoreGames]);
 
   const handleGameClick = (slug: string) => {
     router.push(`/games/${slug}`);
     onOpenChange(false);
   };
 
+  const handleLogoChangeClick = (e: React.MouseEvent, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedGameSlug(slug);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedGameSlug) {
+      const game = activeGames.find(g => g.slug === selectedGameSlug);
+      if (game) {
+        uploadGameLogo(game as any, file);
+      }
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none bg-black/95 backdrop-blur-3xl border-none p-0 flex flex-col text-white font-headline shadow-2xl animate-in slide-in-from-bottom duration-500">
+      <DialogContent className="w-screen h-screen max-none m-0 rounded-none bg-black/95 backdrop-blur-3xl border-none p-0 flex flex-col text-white font-headline shadow-2xl animate-in slide-in-from-bottom duration-500">
+        
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+
         {/* Sovereign Full Screen Header */}
         <DialogHeader className="p-6 pt-12 border-b border-white/5 flex flex-row items-center justify-between shrink-0 bg-black/40">
           <div className="flex items-center gap-4">
@@ -69,36 +118,53 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10">
-                 {ROOM_GAMES.map((game) => {
-                   const asset = PlaceHolderImages.find(img => img.id === game.iconId);
+                 {activeGames.map((game) => {
+                   const assetId = (game as any).iconId || `game-${game.slug}`;
+                   const asset = PlaceHolderImages.find(img => img.id === assetId);
+                   const displayUrl = (game as any).coverUrl || asset?.imageUrl;
+
                    return (
-                     <button 
+                     <div 
                        key={game.id} 
-                       onClick={() => handleGameClick(game.slug)}
-                       className="flex flex-col items-center gap-6 group active:scale-95 transition-transform"
+                       className="flex flex-col items-center gap-6 group relative"
                      >
                         <div className="relative w-full aspect-square">
                            {/* 3D Depth Layer */}
                            <div className="absolute inset-0 bg-primary/10 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                            
-                           <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl group-hover:border-primary transition-all group-hover:shadow-[0_0_40px_rgba(255,204,0,0.2)] bg-white/5">
-                              {asset && (
+                           <button 
+                             onClick={() => handleGameClick(game.slug)}
+                             className="relative w-full h-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl group-hover:border-primary transition-all group-hover:shadow-[0_0_40px_rgba(255,204,0,0.2)] bg-white/5 active:scale-95 transform-gpu"
+                           >
+                              {displayUrl ? (
                                 <Image 
-                                  src={asset.imageUrl} 
+                                  key={displayUrl}
+                                  src={displayUrl} 
                                   alt={game.name} 
                                   fill
                                   className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                  data-ai-hint={asset.imageHint}
-                                  unoptimized // Ensures visual sync bypasses stale CDN caches
+                                  unoptimized 
                                 />
+                              ) : (
+                                <div className="flex items-center justify-center h-full w-full">
+                                   <Gamepad2 className="h-12 w-12 text-white/20" />
+                                </div>
                               )}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                              
-                              {/* Overlay Glow */}
                               <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                           </div>
+                           </button>
 
-                           {game.isNew && (
+                           {/* Admin Only DP Sync Button */}
+                           {isSovereign && (
+                             <button 
+                               onClick={(e) => handleLogoChangeClick(e, game.slug)}
+                               className="absolute top-2 right-2 bg-primary text-black p-2 rounded-full z-30 shadow-xl border border-white hover:scale-110 transition-all active:scale-90"
+                             >
+                                {isUploading && selectedGameSlug === game.slug ? <Loader className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                             </button>
+                           )}
+
+                           {(game as any).isNew && (
                              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-orange-400 to-red-600 px-4 py-1 rounded-full shadow-xl border-2 border-white/20 z-10 animate-reaction-pulse">
                                 <span className="text-[10px] font-black text-white uppercase italic tracking-widest">New</span>
                              </div>
@@ -114,7 +180,7 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
                               <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">3D Reality</span>
                            </div>
                         </div>
-                     </button>
+                     </div>
                    );
                  })}
               </div>
