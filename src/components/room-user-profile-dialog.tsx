@@ -22,7 +22,10 @@ import {
   Clock,
   UserCheck,
   UserX,
-  User
+  User,
+  Heart,
+  Plus,
+  Check
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -46,6 +49,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
+import { Button } from '@/components/ui/button';
 
 interface RoomUserProfileDialogProps {
   userId: string | null;
@@ -66,7 +70,7 @@ interface RoomUserProfileDialogProps {
 
 /**
  * High-Fidelity Tribe Member Identity Card.
- * Re-engineered to include prominent Gift Dispatch portal.
+ * Re-engineered for prominent Gift Dispatch and Sovereign Control.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -118,6 +122,7 @@ export function RoomUserProfileDialog({
           </div>
         ) : profile ? (
           <div className="relative flex flex-col items-center">
+            {/* Sovereign Navigation Bar */}
             <div className="w-full flex justify-between items-center p-6 absolute top-0 left-0 z-50">
                <button onClick={() => onOpenChange(false)} className="text-white/40 hover:text-white transition-colors">
                   <ChevronRight className="h-6 w-6 rotate-180" />
@@ -181,8 +186,8 @@ export function RoomUserProfileDialog({
                   </div>
                </div>
 
-               <div className="w-full space-y-4">
-                  {/* Primary Action Grid */}
+               <div className="w-full space-y-6">
+                  {/* Primary Grid Navigation */}
                   <div className="grid grid-cols-4 gap-4 px-2">
                     <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
@@ -215,54 +220,53 @@ export function RoomUserProfileDialog({
                       className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
                     >
                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#d946ef] via-[#9333ea] to-[#581c87] flex items-center justify-center shadow-lg shadow-purple-500/20 border border-white/10">
-                          <GiftIcon className="h-7 w-7 text-white fill-current" />
+                          <GiftIcon className="h-7 w-7 text-white fill-current animate-pulse" />
                        </div>
-                       <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Send Gift</span>
+                       <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Gift</span>
                     </div>
                   </div>
 
-                  {/* Secondary Actions Protocol */}
-                  <div className="grid grid-cols-4 gap-4 px-2 pt-4 border-t border-white/10">
-                     {/* HIGH-FIDELITY GIFT OPTIMIZATION: Send Gift next to Mute */}
-                     {!isMe && (
-                       <div 
-                         onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
-                         className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
-                       >
-                          <div className="h-14 w-14 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center shadow-lg border border-white/10">
-                             <GiftIcon className="h-7 w-7 text-pink-400 fill-current animate-pulse" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Gift</span>
+                  {/* Administrative & Secondary Actions Section */}
+                  {!isMe && (
+                    <div className="space-y-4 pt-6 border-t border-white/10">
+                       <div className="grid grid-cols-2 gap-4 px-2">
+                          {/* HIGH-FIDELITY GIFT DISPATCH: Primary Option near Mute */}
+                          <Button 
+                            onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
+                            className="h-14 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black uppercase italic text-xs shadow-xl shadow-rose-500/20 active:scale-95 transition-all"
+                          >
+                             <GiftIcon className="mr-2 h-5 w-5 fill-current animate-pulse" />
+                             Send Gift
+                          </Button>
+                          
+                          {canManage && (
+                            <Button 
+                              onClick={() => onSilence(userId, isSilenced)}
+                              className={cn(
+                                "h-14 rounded-2xl font-black uppercase italic text-xs shadow-xl transition-all active:scale-95",
+                                isSilenced ? "bg-gradient-to-r from-green-500 to-green-700 text-white" : "bg-gradient-to-r from-orange-500 to-orange-700 text-white"
+                              )}
+                            >
+                               {isSilenced ? <Mic className="mr-2 h-5 w-5" /> : <MicOff className="mr-2 h-5 w-5" />}
+                               {isSilenced ? 'Unmute' : 'Mute'}
+                            </Button>
+                          )}
                        </div>
-                     )}
 
-                     {canManage && !isMe ? (
-                       <div onClick={() => onSilence(userId, isSilenced)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                          <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10", isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600")}>
-                             {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
-                          </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
-                       </div>
-                     ) : null}
-
-                     {(isMe || (canManage && !isMe)) ? (
-                       <div onClick={() => onLeaveSeat(userId)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
-                             <LogOut className="h-7 w-7 text-black" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isMe ? 'Leave' : 'Force'}</span>
-                       </div>
-                     ) : null}
-
-                     {canManage && !isMe ? (
-                       <div onClick={() => onKick(userId, 5)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20 border border-white/10">
-                             <Ban className="h-7 w-7 text-white" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick</span>
-                       </div>
-                     ) : null}
-                  </div>
+                       {canManage && (
+                         <div className="grid grid-cols-2 gap-4 px-2">
+                            <Button onClick={() => onLeaveSeat(userId)} variant="outline" className="h-12 rounded-2xl bg-white/5 border-white/10 text-white/60 font-black uppercase text-[10px] italic active:scale-95 transition-all">
+                               <LogOut className="mr-2 h-4 w-4" />
+                               Seat leave
+                            </Button>
+                            <Button onClick={() => onKick(userId, 5)} variant="outline" className="h-12 rounded-2xl bg-red-500/10 border-red-500/20 text-red-500 font-black uppercase text-[10px] italic active:scale-95 transition-all">
+                               <Ban className="mr-2 h-4 w-4" />
+                               Kick out
+                            </Button>
+                         </div>
+                       )}
+                    </div>
+                  )}
                </div>
             </div>
           </div>
