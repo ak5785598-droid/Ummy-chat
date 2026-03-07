@@ -408,7 +408,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <button 
                   onClick={handleFollowRoom}
                   className={cn(
-                    "p-1.5 rounded-full transition-all active:scale-90 border",
+                    "p-1 rounded-full transition-all active:scale-90 border",
                     followData ? "bg-red-500 border-red-400 text-white" : "bg-white/10 border-white/10 text-white/60 hover:text-white"
                   )}
                 >
