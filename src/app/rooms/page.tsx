@@ -1,20 +1,25 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star } from 'lucide-react';
+import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star, Camera } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useStorage } from '@/firebase';
+import { collection, query, limit, orderBy, doc, where, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const ICON_MAP: Record<string, any> = {
   Sparkles,
@@ -50,19 +55,67 @@ const DEFAULT_SLIDES = [
   }
 ];
 
-function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
+interface ScrollingBannerProps {
+  slides?: any[];
+  isSovereign?: boolean;
+}
+
+/**
+ * High-Fidelity Scrolling Banner.
+ * Re-engineered to allow Sovereign users to change visuals directly from the hub.
+ */
+function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const firestore = useFirestore();
+  const storage = useStorage();
+  const { toast } = useToast();
+  
   const slides = customSlides || DEFAULT_SLIDES;
 
   useEffect(() => {
     setMounted(true);
-    if (slides.length <= 1) return;
+    if (slides.length <= 1 || isUploading) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, isUploading]);
+
+  const handleUploadClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !firestore || !storage) return;
+
+    setIsUploading(true);
+    try {
+      const timestamp = Date.now();
+      const sRef = ref(storage, `banners/slide_${currentSlide}_${timestamp}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+
+      const bannerConfigRef = doc(firestore, 'appConfig', 'banners');
+      const newSlides = [...slides];
+      // Ensure we merge with existing slide data or fallback
+      const baseSlide = slides[currentSlide] || DEFAULT_SLIDES[currentSlide] || DEFAULT_SLIDES[0];
+      newSlides[currentSlide] = { ...baseSlide, imageUrl: url };
+      
+      await setDoc(bannerConfigRef, { slides: newSlides }, { merge: true });
+      toast({ title: 'Banner Synchronized', description: 'Promotional visual updated across all frequencies.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   if (!mounted || slides.length === 0) return <div className="col-span-2 my-2 rounded-[1.5rem] h-28 bg-black/5 animate-pulse" />;
 
@@ -87,6 +140,20 @@ function ScrollingBanner({ slides: customSlides }: { slides?: any[] }) {
         </div>
       </div>
       
+      {/* Sovereign Edit Portal */}
+      {isSovereign && (
+        <div className="absolute top-2 left-2 z-30">
+           <button 
+             onClick={handleUploadClick}
+             disabled={isUploading}
+             className="bg-black/60 p-2 rounded-full border border-white/20 text-white backdrop-blur-md hover:bg-primary hover:text-black transition-all active:scale-90"
+           >
+              {isUploading ? <Loader className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+           </button>
+           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+        </div>
+      )}
+
       <div className="absolute top-1/2 right-6 -translate-y-1/2 z-20">
         <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
           <ArrowRight className="h-5 w-5 text-white" />
@@ -114,9 +181,13 @@ const RoomSkeleton = () => (
 
 export default function RoomsPage() {
   const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Popular' | 'Me'>('Popular');
+
+  const isSovereign = user?.uid === CREATOR_ID || 
+                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -221,7 +292,7 @@ export default function RoomsPage() {
                   {displayRooms.map((room: any, index: number) => (
                     <React.Fragment key={room.id}>
                       <ChatRoomCard room={room} variant="modern" />
-                      {index === 3 && <ScrollingBanner slides={bannerConfig?.slides} />}
+                      {index === 3 && <ScrollingBanner slides={bannerConfig?.slides} isSovereign={isSovereign} />}
                     </React.Fragment>
                   ))}
                 </div>
