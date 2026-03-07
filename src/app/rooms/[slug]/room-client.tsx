@@ -132,6 +132,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
   
+  // ANTI-GHOST FILTER: Prune UI list of any participant not pulsing
   const participants = (participantsData || []).filter(p => {
     const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
     if (!lastSeen) return true;
@@ -196,7 +197,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
   const handleExit = () => { setActiveRoom(null); router.push('/rooms'); };
 
-  // High-Fidelity Background Protocol: Prioritize custom URL, then theme, then default.
+  // Background priority: Custom URL > Theme ID > Default
   const currentTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
   const bgUrl = room.backgroundUrl || currentTheme.url;
 
@@ -243,6 +244,7 @@ export function RoomClient({ room }: { room: Room }) {
     setSelectedSeatIdx(index);
     if (occupant) {
       setSelectedParticipantUid(occupant.uid);
+      // TRIBAL BLUEPRINT: Clicking yourself or managed seats opens Seat Options
       if (canManageRoom || occupant.uid === currentUser?.uid) setIsSeatMenuOpen(true);
       else setIsUserProfileCardOpen(true);
     } else {
@@ -289,7 +291,7 @@ export function RoomClient({ room }: { room: Room }) {
       
       <div className="absolute inset-0 z-0">
         <Image 
-          key={`${room.roomThemeId}_${room.backgroundUrl}`} 
+          key={`${room.roomThemeId}_${room.backgroundUrl}`}
           src={bgUrl} 
           alt="Background" 
           fill 
@@ -325,9 +327,9 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden">
-        {/* ENHANCED ARENA LAYOUT: Shifted upward with pt-4 and increased bottom clearance */}
-        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-60 overflow-y-auto no-scrollbar">
+      <main className="relative z-10 flex-1 flex flex-col pt-2 overflow-hidden">
+        {/* ARENA ELEVATION: justify-start and pt-2 shifts grid upward. pb-80 ensures bottom clearance. */}
+        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-2 pb-80 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center"><Seat index={1} label="No.1" /></div>
            <div className="w-full flex justify-center gap-4 px-4"><Seat index={2} label="No.2" /><Seat index={3} label="No.3" /><Seat index={4} label="No.4" /><Seat index={5} label="No.5" /></div>
            <div className="w-full flex justify-center gap-4 px-4"><Seat index={6} label="No.6" /><Seat index={7} label="No.7" /><Seat index={8} label="No.8" /><Seat index={9} label="No.9" /></div>
@@ -392,6 +394,7 @@ export function RoomClient({ room }: { room: Room }) {
         occupantUid={selectedParticipantUid}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
+        onLeaveSeat={handleLeaveSeat}
       />
 
       <RoomUserProfileDialog 

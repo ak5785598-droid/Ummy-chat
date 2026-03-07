@@ -22,12 +22,13 @@ interface RoomSeatMenuDialogProps {
   occupantUid?: string | null;
   canManage: boolean;
   currentUserId?: string;
+  onLeaveSeat: (uid: string) => void;
 }
 
 /**
  * High-Fidelity Room Seat Menu.
  * Re-engineered to match the provided tribal blueprint exactly.
- * ATOMIC TAKE: Ensures seat taking is reliable using setDocumentNonBlocking with merge.
+ * Features absolute seat synchronization and Leave/Take logic.
  */
 export function RoomSeatMenuDialog({
   open,
@@ -37,7 +38,8 @@ export function RoomSeatMenuDialog({
   isLocked,
   occupantUid,
   canManage,
-  currentUserId
+  currentUserId,
+  onLeaveSeat
 }: RoomSeatMenuDialogProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -48,7 +50,6 @@ export function RoomSeatMenuDialog({
     if (!firestore || !currentUserId || !roomId) return;
     
     // ATOMIC SYNC: Explicitly setting document to ensure the user takes the frequency slot
-    // Using setDocumentNonBlocking with merge: true to avoid race conditions with presence initialization
     const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', currentUserId);
     setDocumentNonBlocking(participantRef, {
       seatIndex: seatIndex,
@@ -94,9 +95,14 @@ export function RoomSeatMenuDialog({
         </DialogHeader>
 
         <div className="flex flex-col items-center">
-          {/* Blueprint: Take Action */}
+          {/* Blueprint: Take Action - Show if empty and not locked (or admin) */}
           {(!occupantUid && (!isLocked || canManage)) && (
             <MenuItem label="Take" onClick={handleTakeSeat} />
+          )}
+
+          {/* Blueprint: Leave Action - Show if current user is the occupant */}
+          {(occupantUid === currentUserId) && (
+            <MenuItem label="Leave seat" onClick={() => onLeaveSeat(currentUserId)} className="text-red-500" />
           )}
 
           {/* Blueprint: Invite Action */}
