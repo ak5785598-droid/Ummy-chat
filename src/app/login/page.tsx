@@ -20,7 +20,7 @@ import Link from 'next/link';
 
 /**
  * High-Fidelity Identity Portal.
- * Synchronized with the Deep-Purple Ummy palette.
+ * Synchronized with the Ummy brand palette and glassmorphism style.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -101,22 +101,21 @@ export default function LoginPage() {
 
   if (isUserLoading || user) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#1B0033]">
-        <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#140028]">
+        <UmmyLogoIcon className="h-24 w-24 animate-pulse logo-glow" />
       </div>
     );
   }
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-gradient-to-br from-[#140028] via-[#2a0050] to-[#3d0073] p-8 overflow-hidden font-headline">
+    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm space-y-10 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput && (
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group bg-transparent">
-              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <UmmyLogoIcon className="h-24 w-24 relative z-10 drop-shadow-[0_0_35px_rgba(255,79,163,0.8)]" />
+            <div className="p-6 relative overflow-hidden group">
+              <UmmyLogoIcon className="h-24 w-24 relative z-10 logo-glow" />
             </div>
             <div className="space-y-1">
               <h1 className="text-6xl font-black uppercase tracking-tighter text-white drop-shadow-sm">
@@ -134,7 +133,7 @@ export default function LoginPage() {
             <>
               <Button
                 onClick={() => setShowPhoneInput(true)}
-                className="w-full h-14 bg-white text-[#1B0033] hover:bg-white/90 rounded-full font-bold uppercase text-lg shadow-xl border-none transition-all active:scale-95"
+                className="w-full h-14 bg-white text-black hover:bg-white/90 rounded-full font-bold uppercase text-lg shadow-xl border-none transition-all active:scale-95"
               >
                 <Smartphone className="mr-2 h-5 w-5" />
                 Phone Login
@@ -143,14 +142,14 @@ export default function LoginPage() {
               <Button
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
-                className="w-full h-14 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 rounded-full font-bold uppercase text-lg shadow-xl border border-white/20 transition-all active:scale-95"
+                className="w-full h-14 glass-card text-white hover:bg-white/10 rounded-full font-bold uppercase text-lg shadow-xl transition-all active:scale-95"
               >
                 {isSigningIn ? <Loader className="animate-spin h-5 w-5 mr-2" /> : <FcGoogle className="h-6 w-6 mr-2" />}
                 Sign in with Google
               </Button>
             </>
           ) : (
-            <div className="space-y-6 animate-in zoom-in duration-300 bg-black/20 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl w-full">
+            <div className="space-y-6 animate-in zoom-in duration-300 glass-card p-8 rounded-[2.5rem] shadow-2xl w-full">
               <div className="flex justify-between items-center mb-2">
                  <div className="flex items-center gap-2 text-white/80">
                     <Phone className="h-4 w-4" />
@@ -167,7 +166,7 @@ export default function LoginPage() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     disabled={isSigningIn}
-                    className="h-14 bg-white/5 border-white/10 text-white rounded-2xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20"
+                    className="h-14 bg-white/10 border-white/10 text-white rounded-2xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20"
                   />
                   <Button 
                     onClick={handlePhoneSignIn} 
@@ -186,7 +185,7 @@ export default function LoginPage() {
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     disabled={isSigningIn}
-                    className="h-16 bg-white/5 border-white/10 text-white rounded-2xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20"
+                    className="h-16 bg-white/10 border-white/10 text-white rounded-2xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20"
                     maxLength={6}
                   />
                   <Button 
@@ -217,12 +216,12 @@ export default function LoginPage() {
       </div>
 
       <div className="absolute bottom-10 left-8 z-10">
-        <div className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-primary backdrop-blur-md border border-white/5">
+        <div className="h-10 w-10 glass-card rounded-full flex items-center justify-center text-primary">
           <Zap className="h-5 w-5" />
         </div>
       </div>
       <div className="absolute bottom-10 right-8 z-10">
-        <div className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-primary backdrop-blur-md border border-white/5">
+        <div className="h-10 w-10 glass-card rounded-full flex items-center justify-center text-primary">
           <Activity className="h-5 w-5" />
         </div>
       </div>

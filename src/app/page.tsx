@@ -9,7 +9,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 
 /**
  * Root Application Gateway / Splash Screen.
- * Re-engineered for the Deep-Purple Ummy identity.
+ * Re-engineered for the Deep-Purple Ummy identity with high-fidelity glassmorphism.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -45,8 +45,8 @@ export default function Home() {
       
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center">
-           <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl animate-pulse" />
-           <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10" />
+           <div className="absolute inset-0 bg-accent/20 rounded-[3rem] blur-3xl animate-pulse" />
+           <UmmyLogoIcon className="h-full w-full logo-glow relative z-10" />
         </div>
         
         <div className="flex flex-col items-center gap-2 mt-4 text-center px-6">
@@ -63,14 +63,14 @@ export default function Home() {
          {showFailSafe ? (
            <Button 
              onClick={handleManualEntry}
-             className="bg-primary text-white rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
+             className="bg-primary text-black rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
            >
              Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
            </Button>
          ) : (
            <div className="flex flex-col items-center gap-4">
               <div className="h-[4px] w-56 bg-white/10 rounded-full overflow-hidden shadow-inner">
-                  <div className="h-full bg-primary shadow-[0_0_15px_rgba(255,154,0,0.8)] animate-loading-bar" style={{ width: '45%' }} />
+                  <div className="h-full bg-accent shadow-[0_0_15px_rgba(255,79,163,0.8)] animate-loading-bar" style={{ width: '45%' }} />
               </div>
               <div className="flex items-center gap-2">
                  <Loader2 className="h-3 w-3 text-white/40 animate-spin" />

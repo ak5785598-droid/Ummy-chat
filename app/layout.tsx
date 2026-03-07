@@ -41,7 +41,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#1B0033',
+  themeColor: '#140028',
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
 };
@@ -52,10 +52,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="bg-[#1B0033] h-full w-full">
+    <html lang="en" suppressHydrationWarning className="bg-[#140028] h-full w-full">
       <body
         className={cn(
-          'min-h-[100dvh] bg-[#1B0033] text-white antialiased touch-manipulation overscroll-none overflow-hidden select-none',
+          'min-h-[100dvh] bg-[#140028] text-white antialiased touch-manipulation overscroll-none overflow-hidden select-none',
           fontHeadline.variable,
           fontBody.variable
         )}
