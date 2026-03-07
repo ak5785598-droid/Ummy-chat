@@ -54,7 +54,7 @@ interface RoomPlayDialogProps {
  * High-Fidelity Room Play Portal.
  * Features real-time participant selection, Battle setup, and Frequency Management.
  * Re-engineered with a 3-column grid to align management tools vertically.
- * Integrated Music Play logic for localized file synchronization.
+ * Integrated Music Play logic for localized file synchronization from mobile settings.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -233,7 +233,7 @@ export function RoomPlayDialog({
     });
   }
 
-  // Play Music option for localized file synchronization
+  // Play Music option optimized for mobile device storage
   options.push({
     id: 'music',
     label: isMusicPlaying ? 'Stop Music' : 'Play Music',
@@ -291,8 +291,14 @@ export function RoomPlayDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         
-        {/* Hidden music dispatcher */}
-        <input type="file" ref={musicInputRef} accept="audio/*" className="hidden" onChange={handleMusicFileChange} />
+        {/* Mobile File System Portal for Music Synchronization */}
+        <input 
+          type="file" 
+          ref={musicInputRef} 
+          accept="audio/*" 
+          className="hidden" 
+          onChange={handleMusicFileChange} 
+        />
 
         {view === 'grid' && (
           <div className="animate-in fade-in duration-500">

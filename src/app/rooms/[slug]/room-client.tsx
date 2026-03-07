@@ -167,7 +167,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
-  // Music Frequencies
+  // Music Synchronization States
   const [musicUrl, setMusicUrl] = useState<string | null>(null);
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
@@ -252,32 +252,36 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
 
-  // Music Sync Implementation
+  // Local Music Broadcast Logic
   const handlePlayMusic = (url: string) => {
     if (!isInSeat) {
-      toast({ variant: 'destructive', title: 'Action Restricted', description: 'You must take a seat to share music frequencies.' });
+      toast({ variant: 'destructive', title: 'Sync Restricted', description: 'You must take a seat to share music frequencies.' });
       return;
     }
     setMusicUrl(url);
-    toast({ title: 'Music Synchronized', description: 'Playing audio to the room.' });
+    toast({ title: 'Music Syncing...', description: 'Establishing multi-track audio frequency.' });
   };
 
   const handleStopMusic = () => {
     if (musicUrl) URL.revokeObjectURL(musicUrl);
     setMusicUrl(null);
     setMusicStream(null);
-    toast({ title: 'Music Terminated' });
+    toast({ title: 'Music Frequency Terminated' });
   };
 
   useEffect(() => {
     if (musicUrl && musicAudioRef.current) {
       const audio = musicAudioRef.current;
       audio.src = musicUrl;
-      audio.play().catch(console.error);
-      
-      // Capture stream logic for WebRTC broadcast
-      const stream = (audio as any).captureStream ? (audio as any).captureStream() : ((audio as any).mozCaptureStream ? (audio as any).mozCaptureStream() : null);
-      if (stream) setMusicStream(stream);
+      audio.crossOrigin = "anonymous";
+      audio.load();
+      audio.play().then(() => {
+        // High-Fidelity capture for WebRTC broadcast
+        const stream = (audio as any).captureStream ? (audio as any).captureStream() : ((audio as any).mozCaptureStream ? (audio as any).mozCaptureStream() : null);
+        if (stream) setMusicStream(stream);
+      }).catch(console.error);
+    } else {
+      setMusicStream(null);
     }
   }, [musicUrl]);
 
@@ -350,7 +354,7 @@ export function RoomClient({ room }: { room: Room }) {
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       
-      {/* Internal Music Engine */}
+      {/* Internal High-Fidelity Music Engine */}
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
       
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (

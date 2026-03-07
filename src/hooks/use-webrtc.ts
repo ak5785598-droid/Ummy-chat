@@ -31,7 +31,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const makingOffer = useRef<Map<string, boolean>>(new Map());
   const ignoreOffer = useRef<Map<string, boolean>>(new Map());
 
-  // Web Audio Context for Gain Boosting
+  // Web Audio Context for Outbound Gain Boosting
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const iceConfig = {
@@ -42,7 +42,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     ],
   };
 
-  // 1. Local Stream Management with Voice Boost
+  // 1. Local Microphone Stream Management with Voice Boost
   useEffect(() => {
     if (!isInSeat || !user || !roomId || !firestore) {
       if (localStream) {
@@ -69,7 +69,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           video: false 
         });
 
-        // VOICE BOOST PROTOCOL: Outbound (Speaking Volume)
+        // VOICE BOOST PROTOCOL: High-fidelity outbound boost (250%)
         if (!audioContextRef.current) {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
@@ -78,26 +78,19 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
         const source = ctx.createMediaStreamSource(rawStream);
         const gainNode = ctx.createGain();
-        gainNode.gain.value = 2.5; // High-fidelity outbound boost (250%)
+        gainNode.gain.value = 2.5; 
         
         const destination = ctx.createMediaStreamDestination();
         source.connect(gainNode);
         gainNode.connect(destination);
         
         const boostedStream = destination.stream;
-        
-        boostedStream.getAudioTracks().forEach(track => {
-          track.enabled = !isMuted;
-        });
+        boostedStream.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
         
         setLocalStream(boostedStream);
       } catch (err: any) {
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          toast({
-            variant: 'destructive',
-            title: 'Microphone Denied',
-            description: 'Please enable microphone permissions to join the frequency.',
-          });
+          toast({ variant: 'destructive', title: 'Mic Access Required' });
         }
       }
     };
@@ -105,9 +98,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     startLocalStream();
 
     return () => {
-      if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-      }
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
     };
   }, [isInSeat, roomId, user?.uid]);
 
@@ -120,23 +111,21 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
   }, [isMuted, localStream]);
 
-  // 2. Music Stream Sync: Dynamically add/remove music tracks from all peers
+  // 2. Music Frequency Sync: Dynamically re-negotiate tracks for all active peers
   useEffect(() => {
     peerConnections.current.forEach((pc, peerId) => {
-      // 1. Purge old music senders
+      // Clear previous music frequency tracks
       const existingSenders = musicSenders.current.get(peerId);
       if (existingSenders) {
-        existingSenders.forEach(s => {
-          try { pc.removeTrack(s); } catch(e) {}
-        });
+        existingSenders.forEach(s => { try { pc.removeTrack(s); } catch(e) {} });
         musicSenders.current.delete(peerId);
       }
 
-      // 2. Synchronize new music tracks if active
+      // Synchronize new music tracks if active in current session
       if (musicStream && musicStream.getAudioTracks().length > 0) {
         const newSenders: RTCRtpSender[] = [];
         musicStream.getAudioTracks().forEach(track => {
-          // We associate music with the existing localStream if it exists to keep peers stable
+          // Associated music with current local session for stability
           newSenders.push(pc.addTrack(track, localStream || musicStream));
         });
         musicSenders.current.set(peerId, newSenders);
@@ -144,7 +133,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     });
   }, [musicStream, localStream]);
 
-  // 3. Global Mesh & Signaling Handshake
+  // 3. P2P Mesh Handshake via Firestore Signaling
   useEffect(() => {
     if (!user || !roomId || !firestore) return;
 
@@ -160,9 +149,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         
         if (isPeerSpeaker || isInSeat) {
           if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) {
-            if (!peerConnections.current.has(peerId)) {
-              initiateConnection(peerId);
-            }
+            if (!peerConnections.current.has(peerId)) initiateConnection(peerId);
           }
         } else if (change.type === 'removed' || (change.type === 'modified' && !isPeerSpeaker && !isInSeat)) {
           closeConnection(peerId);
@@ -185,12 +172,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       const pc = new RTCPeerConnection(iceConfig);
       peerConnections.current.set(peerId, pc);
 
-      // Add Microphone Frequencies
       if (localStream) {
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
       }
 
-      // Add Music Frequencies
       if (musicStream) {
         const senders: RTCRtpSender[] = [];
         musicStream.getTracks().forEach(track => {
@@ -217,13 +202,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         try {
           makingOffer.current.set(peerId, true);
           await pc.setLocalDescription();
-          sendSignal(peerId, { 
-            type: 'offer', 
-            sdp: pc.localDescription?.sdp, 
-            from: user.uid 
-          });
+          sendSignal(peerId, { type: 'offer', sdp: pc.localDescription?.sdp, from: user.uid });
         } catch (err) {
-          console.error(`[WebRTC] Negotiation Failed (${peerId}):`, err);
+          console.error(`[WebRTC] Negotiation Error (${peerId}):`, err);
         } finally {
           makingOffer.current.set(peerId, false);
         }
@@ -255,15 +236,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
         } else if (signal.type === 'candidate') {
           try {
-            if (pc.remoteDescription) {
-              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-            }
+            if (pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
           } catch (err) {
             if (!ignoreOffer.current.get(peerId)) throw err;
           }
         }
       } catch (err) {
-        console.error(`[WebRTC] Signal Error:`, err);
+        console.error(`[WebRTC] Signal Handshake Error:`, err);
       }
     };
 
