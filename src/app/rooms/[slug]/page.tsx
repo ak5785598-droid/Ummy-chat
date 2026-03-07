@@ -203,7 +203,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
                     Exit
                  </Button>
                  <Button 
-                   onClick={handleVerifyVerification}
+                   onClick={handleVerifyPassword}
                    disabled={passwordInput.length < 4}
                    className="flex-[2] h-14 rounded-2xl bg-black text-white font-black uppercase italic text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                  >
