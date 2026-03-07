@@ -60,7 +60,6 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         topic: firestoreRoom.description || '',
         category: (firestoreRoom.category as any) || 'Chat',
         coverUrl: firestoreRoom.coverUrl || '',
-        backgroundUrl: firestoreRoom.backgroundUrl || null,
         ownerId: firestoreRoom.ownerId,
         moderatorIds: firestoreRoom.moderatorIds || [],
         lockedSeats: firestoreRoom.lockedSeats || [],

@@ -90,9 +90,6 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 
-/**
- * Stable Seat Interaction Component.
- */
 const Seat = ({ 
   index, 
   label, 
@@ -193,7 +190,6 @@ export function RoomClient({ room }: { room: Room }) {
   const participants = useMemo(() => {
     if (!participantsData) return [];
     return participantsData.filter(p => {
-      // Self-Sovereignty Bypass: Always show self in grid
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
@@ -247,7 +243,7 @@ export function RoomClient({ room }: { room: Room }) {
     return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
   }, [room.roomThemeId]);
 
-  const bgUrl = room.backgroundUrl || currentTheme.url;
+  const bgUrl = currentTheme.url;
 
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
@@ -297,10 +293,9 @@ export function RoomClient({ room }: { room: Room }) {
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (<RemoteAudio key={peerId} stream={stream} />))}
       
-      {/* Background Engine with Hard-Refresh Logic */}
       <div className="absolute inset-0 z-0">
         <Image 
-          key={`${room.roomThemeId}_${room.backgroundUrl || 'default'}`} 
+          key={`${room.roomThemeId}`} 
           src={bgUrl} 
           alt="Background" 
           fill 
@@ -327,7 +322,6 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
-        {/* Elevated Seat Grid Container */}
         <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
@@ -349,7 +343,6 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* Compact Chat Stream */}
         <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-4 pb-0">
            <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
@@ -358,7 +351,7 @@ export function RoomClient({ room }: { room: Room }) {
                       <Avatar className="h-6 w-6 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-[11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
+                        <p className="text-11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
                       </div>
                    </div>
                  ))}

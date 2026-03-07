@@ -11,7 +11,6 @@ import {
   UserX,
   Trash2,
   Lock,
-  Image as ImageIcon,
   Palette
 } from 'lucide-react';
 import {
@@ -28,7 +27,6 @@ import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, getDocs, writeBatch } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
-import { useRoomBackgroundUpload } from '@/hooks/use-room-background-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -79,17 +77,14 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
-  const [cropMode, setCropMode] = useState<'profile' | 'background'>('profile');
 
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isUploading: isUploadingProfile, uploadRoomImage } = useRoomImageUpload(room.id);
-  const { isUploading: isUploadingBg, uploadBackground } = useRoomBackgroundUpload(room.id);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const bgInputRef = useRef<HTMLInputElement>(null);
 
   const isOfficialRoom = room.id === 'ummy-help-center';
   const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
@@ -179,10 +174,9 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
     toast({ title: 'Theme Synchronized', description: `${theme.name} is now live.` });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, mode: 'profile' | 'background') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setCropMode(mode);
       const reader = new FileReader();
       reader.onload = () => {
         setCropImage(reader.result as string);
@@ -193,13 +187,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   };
 
   const handleCropComplete = async (croppedFile: File) => {
-    if (cropMode === 'profile') {
-      await uploadRoomImage(croppedFile);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } else {
-      await uploadBackground(croppedFile);
-      if (bgInputRef.current) bgInputRef.current.value = '';
-    }
+    await uploadRoomImage(croppedFile);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const currentTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
@@ -277,24 +266,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                      checked={room.isSuperMic || false} 
                      onCheckedChange={(val) => handleUpdate('isSuperMic', val)} 
                    />
-                </SettingItem>
-
-                <SettingItem 
-                  label="Room Background" 
-                  onClick={() => !isUploadingBg && bgInputRef.current?.click()}
-                >
-                   <div className="relative">
-                      {room.backgroundUrl ? (
-                        <div className="h-10 w-16 rounded-lg overflow-hidden border border-gray-200">
-                           <img src={room.backgroundUrl} className="h-full w-full object-cover" alt="Background" />
-                        </div>
-                      ) : <ImageIcon className="h-5 w-5 text-gray-300" />}
-                      {isUploadingBg && (
-                        <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
-                           <Loader className="h-3 w-3 animate-spin text-white" />
-                        </div>
-                      )}
-                   </div>
                 </SettingItem>
 
                 <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
@@ -446,14 +417,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
           <input 
             type="file" 
             ref={fileInputRef} 
-            onChange={(e) => handleFileChange(e, 'profile')} 
-            className="hidden" 
-            accept="image/*" 
-          />
-          <input 
-            type="file" 
-            ref={bgInputRef} 
-            onChange={(e) => handleFileChange(e, 'background')} 
+            onChange={(e) => handleFileChange(e)} 
             className="hidden" 
             accept="image/*" 
           />
@@ -465,7 +429,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         open={isCropOpen} 
         onOpenChange={setIsCropOpen} 
         onCropComplete={handleCropComplete} 
-        aspect={cropMode === 'profile' ? 4/5 : 9/16} 
+        aspect={4/5} 
       />
     </>
   );
