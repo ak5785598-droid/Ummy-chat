@@ -221,9 +221,9 @@ export function RoomUserProfileDialog({
                     </div>
                   </div>
 
-                  {/* Secondary/Admin Actions Protocol */}
+                  {/* Secondary Actions Protocol */}
                   <div className="grid grid-cols-4 gap-4 px-2 pt-4 border-t border-white/10">
-                     {/* ALWAYS VISIBLE GIFT ENTRY (Next to Mute) */}
+                     {/* HIGH-FIDELITY GIFT OPTIMIZATION: Send Gift next to Mute */}
                      {!isMe && (
                        <div 
                          onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
