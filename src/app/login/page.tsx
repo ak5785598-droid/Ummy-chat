@@ -108,15 +108,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient p-8 overflow-hidden font-headline">
+    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-gradient-to-br from-[#140028] via-[#2a0050] to-[#3d0073] p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm space-y-10 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput && (
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="bg-white rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group">
+            <div className="rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group bg-transparent">
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <UmmyLogoIcon className="h-24 w-24 relative z-10" />
+              <UmmyLogoIcon className="h-24 w-24 relative z-10 drop-shadow-[0_0_35px_rgba(255,79,163,0.8)]" />
             </div>
             <div className="space-y-1">
               <h1 className="text-6xl font-black uppercase tracking-tighter text-white drop-shadow-sm">

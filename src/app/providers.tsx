@@ -9,8 +9,6 @@ import type { ReactNode } from 'react';
 
 /**
  * The main providers component for the application.
- * Includes Firebase context, Real-time Profile Initializer, and Global Room Frequency Management.
- * GlobalBroadcastBanner has been removed.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (

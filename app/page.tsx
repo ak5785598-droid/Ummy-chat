@@ -9,7 +9,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 
 /**
  * Root Application Gateway / Splash Screen.
- * Re-engineered for absolute stability across all mobile browsers.
+ * Re-engineered for the Deep-Purple Ummy identity.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -40,12 +40,12 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#FFCC00] overflow-hidden relative font-headline select-none touch-none">
+    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient overflow-hidden relative font-headline select-none touch-none">
       <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />
       
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center">
-           <div className="absolute inset-0 bg-white/20 rounded-[3rem] blur-2xl animate-pulse" />
+           <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl animate-pulse" />
            <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10" />
         </div>
         
@@ -53,7 +53,7 @@ export default function Home() {
            <h1 className="text-6xl font-black text-white tracking-tighter uppercase drop-shadow-lg">
              Ummy
            </h1>
-           <p className="text-white font-black uppercase tracking-[0.5em] text-[10px] opacity-80">
+           <p className="text-primary font-black uppercase tracking-[0.5em] text-[10px] opacity-80">
              Connecting Your Tribe
            </p>
         </div>
@@ -63,18 +63,18 @@ export default function Home() {
          {showFailSafe ? (
            <Button 
              onClick={handleManualEntry}
-             className="bg-white text-[#FFCC00] rounded-full px-10 h-14 font-black uppercase shadow-2xl"
+             className="bg-primary text-white rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
            >
              Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
            </Button>
          ) : (
            <div className="flex flex-col items-center gap-4">
-              <div className="h-[4px] w-56 bg-white/20 rounded-full overflow-hidden shadow-inner">
-                  <div className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-loading-bar" style={{ width: '45%' }} />
+              <div className="h-[4px] w-56 bg-white/10 rounded-full overflow-hidden shadow-inner">
+                  <div className="h-full bg-primary shadow-[0_0_15px_rgba(255,154,0,0.8)] animate-loading-bar" style={{ width: '45%' }} />
               </div>
               <div className="flex items-center gap-2">
-                 <Loader2 className="h-3 w-3 text-white/60 animate-spin" />
-                 <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest">
+                 <Loader2 className="h-3 w-3 text-white/40 animate-spin" />
+                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
                      Syncing Social Graph...
                  </p>
               </div>
