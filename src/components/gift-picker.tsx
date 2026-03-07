@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -103,10 +102,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
     return { multiplier, winAmount: price * qty * multiplier };
   };
 
-  /**
-   * High-Fidelity Gift Dispatch Engine.
-   * Handles Atomic Wallet Sync and Recipient Yield Protocol.
-   */
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile) return;
 
@@ -137,7 +132,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
       const netCost = totalCost - winAmount;
 
-      // 1. SENDER UPDATE: Atomic Coin Deduction & Stats Sync
       const senderUpdateData = {
         'wallet.coins': increment(-netCost),
         'wallet.totalSpent': increment(totalCost),
@@ -152,8 +146,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         'stats.dailyGifts': increment(totalCost)
       });
 
-      // 2. RECIPIENT UPDATE: Diamond Yield Protocol (40% Conversion)
-      // TRIBAL BLUEPRINT: 100 Coins = 40 Diamonds
       if (recipient && recipient.uid && recipient.uid !== user.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
@@ -164,12 +156,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
           updatedAt: serverTimestamp()
         };
 
-        console.log(`[Economic Sync] Dispatching ${diamondYield} Diamonds to Recipient: ${recipient.uid}`);
         updateDocumentNonBlocking(recipientRef, recUpdateData);
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
       }
 
-      // 3. BROADCAST SYNC: Global Frequency Message Dispatch
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,
@@ -204,37 +194,37 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+      <DialogContent className="sm:max-w-[380px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         <DialogHeader className="sr-only">
           <DialogTitle>Tribe Gift Vault</DialogTitle>
           <DialogDescription>Dispatch visual frequencies to the room.</DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 pb-2 space-y-4">
+        <div className="p-4 pb-2 space-y-3">
            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                  <div className="relative">
-                    <div className="h-12 w-12 rounded-full border-2 border-green-500 overflow-hidden">
+                    <div className="h-10 w-10 rounded-full border-2 border-green-500 overflow-hidden">
                        <Avatar className="h-full w-full">
                           <AvatarImage src={userProfile?.avatarUrl || undefined} />
                           <AvatarFallback>U</AvatarFallback>
                        </Avatar>
                     </div>
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 text-white h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black border border-black">1</div>
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 text-white h-3.5 w-3.5 rounded-full flex items-center justify-center text-[7px] font-black border border-black">1</div>
                  </div>
-                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                       <Badge variant="outline" className="h-4 border-amber-600 text-amber-500 text-[8px] font-black uppercase bg-amber-950/20">4</Badge>
-                       <span className="text-[10px] font-black text-yellow-500 italic">+5000Exp (To Lv.5 : 9.9k)</span>
+                 <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                       <Badge variant="outline" className="h-3 border-amber-600 text-amber-500 text-[7px] font-black uppercase bg-amber-950/20 px-1">4</Badge>
+                       <span className="text-[8px] font-black text-yellow-500 italic">+5000Exp</span>
                     </div>
-                    <Progress value={45} className="h-1 w-40 bg-white/5 [&>div]:bg-yellow-500" />
+                    <Progress value={45} className="h-0.5 w-24 bg-white/5 [&>div]:bg-yellow-500" />
                  </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                  <Popover>
                     <PopoverTrigger asChild>
-                       <button className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors">
-                          <Info className="h-4 w-4 text-yellow-500" />
+                       <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors">
+                          <Info className="h-3 w-3 text-yellow-500" />
                        </button>
                     </PopoverTrigger>
                     <PopoverContent className="bg-slate-900 border-white/10 text-white p-4 rounded-2xl w-64 shadow-2xl">
@@ -249,52 +239,52 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
                        </div>
                     </PopoverContent>
                  </Popover>
-                 <button className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><Home className="h-4 w-4 text-white/60" /></button>
+                 <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><Home className="h-3 w-3 text-white/60" /></button>
               </div>
            </div>
 
            <div className="flex items-center justify-between">
               <Tabs defaultValue="Lucky" className="w-full">
-                 <TabsList className="bg-transparent p-0 gap-6 h-10 border-none justify-start overflow-x-auto no-scrollbar">
+                 <TabsList className="bg-transparent p-0 gap-4 h-8 border-none justify-start overflow-x-auto no-scrollbar">
                     {Object.keys(GIFTS).map(tab => (
-                      <TabsTrigger key={tab} value={tab} className="p-0 text-sm font-black uppercase italic tracking-tighter text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100">
+                      <TabsTrigger key={tab} value={tab} className="p-0 text-xs font-black uppercase italic tracking-tighter text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100">
                         {tab}
                       </TabsTrigger>
                     ))}
                     {['Country', 'Bag'].map(tab => (
-                      <span key={tab} className="text-sm font-black uppercase italic tracking-tighter text-white/20 cursor-default">{tab}</span>
+                      <span key={tab} className="text-xs font-black uppercase italic tracking-tighter text-white/20 cursor-default">{tab}</span>
                     ))}
                  </TabsList>
 
                  {Object.entries(GIFTS).map(([category, items]) => (
-                   <TabsContent key={category} value={category} className="mt-4 animate-in fade-in duration-500">
-                      <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                   <TabsContent key={category} value={category} className="mt-3 animate-in fade-in duration-500">
+                      <div className="grid grid-cols-4 gap-y-4 gap-x-1.5">
                          {items.map(gift => (
                            <button 
                              key={gift.id} 
                              onClick={() => setSelectedGift(gift)}
                              className={cn(
-                               "flex flex-col items-center gap-1 group relative py-2 rounded-2xl transition-all",
+                               "flex flex-col items-center gap-0.5 group relative py-1.5 rounded-xl transition-all",
                                selectedGift?.id === gift.id ? "bg-white/10 ring-1 ring-white/20 shadow-xl scale-105" : "hover:bg-white/5"
                              )}
                            >
                               <div className="relative">
                                  <div className={cn(
-                                   "text-3xl drop-shadow-lg mb-1 transition-transform group-hover:scale-110",
+                                   "text-2xl drop-shadow-lg mb-0.5 transition-transform group-hover:scale-110",
                                    gift.type === 'lucky' && "animate-reaction-pulse"
                                  )}>
                                     {gift.icon}
                                  </div>
                                  {gift.type === 'lucky' && (
                                    <div className="absolute -top-1 -right-1">
-                                      <Sparkles className="h-3 w-3 text-yellow-400 animate-pulse" />
+                                      <Sparkles className="h-2.5 w-2.5 text-yellow-400 animate-pulse" />
                                    </div>
                                  )}
                               </div>
-                              <span className="text-[9px] font-black text-white uppercase tracking-tighter text-center px-1 leading-tight">{gift.name}</span>
-                              <div className="flex items-center gap-1 text-yellow-500">
-                                 <GoldCoinIcon className="h-2.5 w-2.5" />
-                                 <span className="text-[10px] font-black italic">{gift.price}</span>
+                              <span className="text-[8px] font-black text-white uppercase tracking-tighter text-center px-1 leading-tight truncate w-full">{gift.name}</span>
+                              <div className="flex items-center gap-0.5 text-yellow-500">
+                                 <GoldCoinIcon className="h-2 w-2" />
+                                 <span className="text-[9px] font-black italic">{gift.price}</span>
                               </div>
                            </button>
                          ))}
@@ -305,21 +295,21 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
            </div>
         </div>
 
-        <div className="p-6 bg-black/40 border-t border-white/5 flex items-center justify-between gap-4">
-           <div className="flex items-center gap-2 cursor-pointer" onClick={() => onOpenChange(false)}>
-              <GoldCoinIcon className="h-5 w-5" />
-              <span className="text-lg font-black italic text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-              <ChevronRight className="h-4 w-4 text-white/40" />
+        <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between gap-3">
+           <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => onOpenChange(false)}>
+              <GoldCoinIcon className="h-4 w-4" />
+              <span className="text-sm font-black italic text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+              <ChevronRight className="h-3 w-3 text-white/40" />
            </div>
 
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-2">
               <Select value={quantity} onValueChange={setQuantity}>
-                 <SelectTrigger className="w-20 h-10 rounded-full bg-white/5 border-white/10 text-white font-black italic">
+                 <SelectTrigger className="w-16 h-8 rounded-full bg-white/5 border-white/10 text-white font-black italic text-[10px] px-2">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="bg-slate-900 border-white/10 text-white">
                     {['1', '10', '99', '520', '999'].map(q => (
-                      <SelectItem key={q} value={q} className="font-black italic">{q}</SelectItem>
+                      <SelectItem key={q} value={q} className="font-black italic text-xs">{q}</SelectItem>
                     ))}
                  </SelectContent>
               </Select>
@@ -327,9 +317,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
               <Button 
                 onClick={handleSend}
                 disabled={!selectedGift || isSending}
-                className="bg-gradient-to-r from-[#fcd34d] via-[#f59e0b] to-[#b45309] text-white h-10 px-8 rounded-full font-black uppercase italic shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                className="bg-gradient-to-r from-[#fcd34d] via-[#f59e0b] to-[#b45309] text-white h-8 px-6 rounded-full font-black uppercase italic text-[10px] shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
               >
-                 {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'Send'}
+                 {isSending ? <Loader className="h-3 w-3 animate-spin" /> : 'Send'}
               </Button>
            </div>
         </div>
