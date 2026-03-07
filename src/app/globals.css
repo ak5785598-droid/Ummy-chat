@@ -1,61 +1,49 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 48 100% 50%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 48 100% 50%;
+    /* Primary Background: #1B0033 */
+    --background: 272 100% 10%;
+    --foreground: 0 0% 100%;
+    
+    --card: 272 100% 12%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 272 100% 10%;
+    --popover-foreground: 0 0% 100%;
+    
+    /* Accent color: #FF9A00 (Orange) */
+    --primary: 36 100% 50%;
     --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 343 100% 60%;
+    
+    --secondary: 272 100% 15%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 272 40% 20%;
+    --muted-foreground: 272 10% 70%;
+    
+    /* Secondary accent: #FF4FA3 (Pink) */
+    --accent: 331 100% 66%;
     --accent-foreground: 0 0% 100%;
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 48 100% 50%;
+    
+    --border: 272 50% 20%;
+    --input: 272 50% 20%;
+    --ring: 36 100% 50%;
     --radius: 1.25rem;
 
-    --sidebar-background: 48 100% 50%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 0 0% 0%;
-    --sidebar-primary-foreground: 48 100% 50%;
-    --sidebar-accent: 0 0% 0% / 0.05;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 48 100% 45%;
-    --sidebar-ring: 0 0% 0%;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 343 100% 60%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 48 100% 50%;
+    --sidebar-background: 272 100% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 36 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 272 100% 15%;
+    --sidebar-accent-foreground: 36 100% 50%;
+    --sidebar-border: 272 50% 20%;
+    --sidebar-ring: 36 100% 50%;
   }
 }
 
@@ -67,7 +55,7 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-hidden bg-[#FFCC00];
+    @apply h-[100dvh] w-full overflow-hidden bg-[#1B0033];
     height: 100dvh;
     min-height: 100dvh;
     position: fixed;
@@ -78,7 +66,7 @@
   }
 
   body {
-    @apply bg-[#FFCC00] text-foreground antialiased;
+    @apply bg-[#1B0033] text-foreground antialiased;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
@@ -89,6 +77,7 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .bg-ummy-gradient { background: linear-gradient(135deg, #1B0033 0%, #3B0078 100%); }
 }
 
 @keyframes voice-wave {
@@ -109,30 +98,6 @@
 
 @keyframes screen-flash { 0% { background-color: rgba(255, 255, 255, 0); } 10% { background-color: rgba(255, 255, 255, 0.8); } 100% { background-color: rgba(255, 255, 255, 0); } }
 .animate-screen-flash { animation: screen-flash 0.5s ease-out forwards; }
-
-@keyframes rolex-sync {
-  0% { transform: scale(0) rotate(-180deg); opacity: 0; filter: brightness(2) sepia(1) saturate(10) hue-rotate(5deg); }
-  20% { transform: scale(1.3) rotate(0deg); opacity: 1; filter: brightness(1.5) sepia(1) saturate(10) hue-rotate(5deg); }
-  40% { transform: scale(1) rotate(0deg); filter: brightness(1.2) sepia(1) saturate(10) hue-rotate(5deg) drop-shadow(0 0 50px rgba(255, 215, 0, 1)); }
-  100% { transform: scale(2) rotate(0deg); opacity: 0; filter: sepia(1) saturate(10) hue-rotate(5deg); }
-}
-.animate-rolex-sync { animation: rolex-sync 4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-@keyframes celebration-pop {
-  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
-  20% { transform: scale(1.5) rotate(10deg); opacity: 1; }
-  100% { transform: scale(3); opacity: 0; }
-}
-.animate-celebration-pop { animation: celebration-pop 5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-@keyframes party-confetti { 0% { transform: translateY(-100px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-.animate-party-confetti { animation: party-confetti 4s ease-out forwards; }
-
-@keyframes heart-burst { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
-.animate-heart-burst { animation: heart-burst 2s ease-out forwards; }
-
-@keyframes galaxy-zoom { 0% { transform: scale(0) rotate(0deg); opacity: 0; } 100% { transform: scale(4) rotate(360deg); opacity: 0; } }
-.animate-galaxy-zoom { animation: galaxy-zoom 4s linear forwards; }
 
 @keyframes reaction-pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.2); filter: brightness(1.3); } }
 .animate-reaction-pulse { animation: reaction-pulse 1s infinite; }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -26,17 +25,17 @@ export default function ProfileGateway() {
   }, [user, isUserLoading, router]);
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#FFCC00] space-y-6 font-headline">
+    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#1B0033] space-y-6 font-headline">
       <div className="relative">
-        <div className="absolute inset-0 bg-white/20 blur-xl rounded-full animate-pulse" />
+        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
         <UmmyLogoIcon className="h-24 w-24 relative z-10 animate-bounce" />
       </div>
       <div className="flex flex-col items-center gap-2">
          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white animate-pulse">
            Syncing Identity
          </p>
-         <div className="h-1 w-32 bg-white/20 rounded-full overflow-hidden">
-            <div className="h-full bg-white animate-loading-bar w-1/2" />
+         <div className="h-1 w-32 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-primary animate-loading-bar w-1/2" />
          </div>
       </div>
       <style jsx>{`

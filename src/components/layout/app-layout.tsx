@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -31,30 +30,29 @@ import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/fi
  */
 const HomeNavIcon = ({ active }: { active: boolean }) => (
   <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="45" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
-    <path d="M 30 65 Q 50 80 70 65" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" fill="none" strokeLinecap="round" />
+    <circle cx="50" cy="50" r="45" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth="6" />
+    <path d="M 30 65 Q 50 80 70 65" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth="6" fill="none" strokeLinecap="round" />
   </svg>
 );
 
 /**
- * High-Fidelity Message Nav Icon (Yellow Bubble).
+ * High-Fidelity Message Nav Icon.
  */
 const MessageNavIcon = ({ active }: { active: boolean }) => (
   <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 10 20 Q 10 10 30 10 L 70 10 Q 90 10 90 20 L 90 60 Q 90 70 70 70 L 40 70 L 20 90 L 20 70 Q 10 70 10 60 Z" fill={active ? "#FFCC00" : "none"} stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
-    <circle cx="40" cy="40" r="4" fill={active ? "#000" : "#E0E0E0"} />
-    <circle cx="60" cy="40" r="4" fill={active ? "#000" : "#E0E0E0"} />
-    <path d="M 45 55 Q 50 60 55 55" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="4" fill="none" strokeLinecap="round" />
+    <path d="M 10 20 Q 10 10 30 10 L 70 10 Q 90 10 90 20 L 90 60 Q 90 70 70 70 L 40 70 L 20 90 L 20 70 Q 10 70 10 60 Z" fill={active ? "#FF4FA3" : "none"} stroke={active ? "#FF4FA3" : "#4A4A4A"} strokeWidth="6" />
+    <circle cx="40" cy="40" r="4" fill={active ? "#FFF" : "#4A4A4A"} />
+    <circle cx="60" cy="40" r="4" fill={active ? "#FFF" : "#4A4A4A"} />
   </svg>
 );
 
 /**
- * High-Fidelity Me Nav Icon (Refined Silhouette).
+ * High-Fidelity Me Nav Icon.
  */
 const MeNavIcon = ({ active }: { active: boolean }) => (
   <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="35" r="20" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" />
-    <path d="M 20 85 Q 20 60 50 60 Q 80 60 80 85" fill="none" stroke={active ? "#000" : "#E0E0E0"} strokeWidth="6" strokeLinecap="round" />
+    <circle cx="50" cy="35" r="20" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth="6" />
+    <path d="M 20 85 Q 20 60 50 60 Q 80 60 80 85" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth="6" strokeLinecap="round" />
   </svg>
 );
 
@@ -112,33 +110,32 @@ export function AppLayout({
   if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
   const isInsideRoom = pathname?.startsWith('/rooms/') && pathname !== '/rooms';
-  // SOVEREIGN SYNC: Hide navigation on Wallet and Exchange pages as requested.
   const isWallet = pathname?.startsWith('/wallet');
   const shouldShowBottomNav = !isInsideRoom && !isWallet && !hideBottomNav;
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="flex h-[100dvh] w-full bg-[#FFCC00] font-headline overflow-hidden relative">
-        <Sidebar className="bg-[#FFCC00] border-none text-black">
+      <div className="flex h-[100dvh] w-full bg-[#1B0033] font-headline overflow-hidden relative">
+        <Sidebar className="bg-[#1B0033] border-none text-white">
           <SidebarHeader className="bg-transparent p-6 pb-10">
             <div className="flex items-center gap-3">
               <UmmyLogoIcon className="h-10 w-10" />
-              <span className="font-black text-3xl italic tracking-tighter uppercase">Ummy</span>
+              <span className="font-black text-3xl italic tracking-tighter uppercase text-white">Ummy</span>
             </div>
           </SidebarHeader>
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">Home</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">Messages</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">Boutique</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">Rankings</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">Game Zone</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">Home</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">Messages</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">Boutique</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">Rankings</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">Game Zone</span></Link></SidebarMenuButton></SidebarMenuItem>
               {isOfficial && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-red-500/10">
+                  <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-primary/10">
                     <Link href="/admin" className="flex items-center gap-4">
-                      <ShieldAlert className="h-6 w-6 text-red-600" />
-                      <span className="text-base font-black uppercase italic text-red-600">Admin</span>
+                      <ShieldAlert className="h-6 w-6 text-primary" />
+                      <span className="text-base font-black uppercase italic text-primary">Admin</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -146,29 +143,31 @@ export function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="bg-transparent p-6">
-            <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-black">
+            <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-white/60 hover:text-white">
               <Power className="h-5 w-5" />
               <span className="text-base font-black uppercase italic">Sign Out</span>
             </button>
           </SidebarFooter>
         </Sidebar>
 
-        <SidebarInset className="bg-[#FFCC00] flex-1 overflow-hidden flex flex-col p-0">
-          <main className="flex-1 w-full overflow-y-auto bg-white relative no-scrollbar">
-            {children}
+        <SidebarInset className="bg-[#1B0033] flex-1 overflow-hidden flex flex-col p-0">
+          <main className="flex-1 w-full overflow-y-auto bg-[#1B0033] relative no-scrollbar">
+            <div className="min-h-full bg-white text-black">
+              {children}
+            </div>
           </main>
           
           {shouldShowBottomNav && (
-            <nav className="md:hidden flex items-center justify-around bg-white border-t border-gray-100 h-16 pb-safe shrink-0 relative z-50 px-2">
-              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-black" : "text-gray-300")}>
+            <nav className="md:hidden flex items-center justify-around bg-[#1B0033] border-t border-white/5 h-16 pb-safe shrink-0 relative z-50 px-2">
+              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-primary" : "text-white/20")}>
                 <HomeNavIcon active={pathname === '/rooms'} />
                 <span className="text-[9px] font-black uppercase tracking-tighter">Home</span>
               </Link>
-              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-black" : "text-gray-300")}>
+              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-accent" : "text-white/20")}>
                 <MessageNavIcon active={pathname === '/messages'} />
                 <span className="text-[9px] font-black uppercase tracking-tighter">Message</span>
               </Link>
-              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-black" : "text-gray-300")}>
+              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-primary" : "text-white/20")}>
                 <MeNavIcon active={pathname?.startsWith('/profile')} />
                 <span className="text-[9px] font-black uppercase tracking-tighter">Me</span>
               </Link>

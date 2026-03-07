@@ -230,18 +230,18 @@ export default function AdminPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8 max-w-6xl mx-auto p-4 animate-in fade-in duration-700 font-headline">
+      <div className="space-y-8 max-w-6xl mx-auto p-4 animate-in fade-in duration-700 font-headline bg-white min-h-full">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
           <div className="flex items-center gap-4">
              <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20"><Shield className="h-8 w-8 text-white" /></div>
              <div><h1 className="text-4xl font-bold uppercase italic tracking-tighter">Supreme Command</h1><p className="text-muted-foreground">Supreme Authority Protocol Active.</p></div>
           </div>
-          <Badge className="bg-red-500 text-white font-black uppercase italic px-4 py-1.5 h-10 rounded-xl shadow-xl shadow-red-500/20">Supreme Creator</Badge>
+          <Badge className="bg-primary text-black font-black uppercase italic px-4 py-1.5 h-10 rounded-xl shadow-xl shadow-primary/20">Supreme Creator</Badge>
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-secondary/50 p-1.5 h-12 rounded-full border w-fit overflow-x-auto no-scrollbar">
-            <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-red-500 data-[state=active]:text-white">Authority Hub</TabsTrigger>
+            <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">Authority Hub</TabsTrigger>
             <TabsTrigger value="banners" className="rounded-full px-6 font-black uppercase text-[10px]">Banners</TabsTrigger>
             <TabsTrigger value="games" className="rounded-full px-6 font-black uppercase text-[10px]">Game Sync</TabsTrigger>
             <TabsTrigger value="tags" className="rounded-full px-6 font-black uppercase text-[10px]">Assign Tags</TabsTrigger>
@@ -249,12 +249,12 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="authority" className="space-y-6">
-             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-red-500/10 to-transparent">
-                <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-500"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
+                <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                    <div className="flex gap-4">
                       <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
-                      <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-red-500 text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
+                      <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
                    </div>
                    <div className="space-y-4">
                       {foundUsers.map((u) => (
@@ -296,9 +296,9 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-6">
-             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-purple-500/10 to-transparent">
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
                 <CardHeader>
-                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-purple-600">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary">
                       <Gamepad2 className="h-6 w-6" /> Game Identity Sync
                    </CardTitle>
                    <CardDescription>Synchronize high-fidelity cover visuals for the 3D Tribe Arena.</CardDescription>
@@ -329,7 +329,7 @@ export default function AdminPage() {
                            <CardTitle className="text-sm font-black uppercase italic">{game.title}</CardTitle>
                            <Button 
                              onClick={() => handleGameDPUploadClick(game)} 
-                             className="w-full mt-2 h-10 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-[10px] italic shadow-lg shadow-purple-500/20"
+                             className="w-full mt-2 h-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] italic shadow-lg shadow-primary/20"
                              disabled={isUploadingGameDP}
                            >
                               <Camera className="h-3 w-3 mr-2" /> Sync New DP
@@ -363,8 +363,8 @@ export default function AdminPage() {
 
           <TabsContent value="rewards" className="space-y-6">
              <Card className="rounded-2xl p-8 text-center space-y-6">
-                <h3 className="text-2xl font-black uppercase italic text-yellow-500">Daily Reset Protocol</h3>
-                <Button onClick={handleDistributeDailyRewards} disabled={isSaving} className="w-full h-16 rounded-2xl bg-yellow-500 text-black font-black uppercase italic text-xl shadow-xl shadow-yellow-500/20">
+                <h3 className="text-2xl font-black uppercase italic text-primary">Daily Reset Protocol</h3>
+                <Button onClick={handleDistributeDailyRewards} disabled={isSaving} className="w-full h-16 rounded-2xl bg-primary text-black font-black uppercase italic text-xl shadow-xl shadow-primary/20">
                    {isSaving ? <Loader className="animate-spin mr-2" /> : <Gift className="mr-2" />}
                    Distribute Rewards & Reset
                 </Button>
