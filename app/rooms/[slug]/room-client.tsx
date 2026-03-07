@@ -19,7 +19,6 @@ import {
   Share2,
   Mail,
   LayoutGrid,
-  ChevronRight,
   X,
   UserX,
   UserCheck,
@@ -78,13 +77,14 @@ import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { ROOM_THEMES } from '@/lib/themes';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
+import { RoomGamesDialog } from '@/components/room-games-dialog';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
-      audioRef.current.muted = muted; // Locally mute the room audio output
+      audioRef.current.muted = muted;
       audioRef.current.play().catch(() => {});
     }
   }, [stream, muted]);
@@ -155,6 +155,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
+  const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState(Date.now());
   
@@ -277,6 +278,7 @@ export function RoomClient({ room }: { room: Room }) {
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
     toast({ title: 'Member Excluded', description: `Restricted for ${duration} minutes.` });
     setIsUserProfileCardOpen(false);
+    setIsSeatMenuOpen(false);
   };
 
   const handleLeaveSeat = (uid: string) => {
@@ -397,7 +399,6 @@ export function RoomClient({ room }: { room: Room }) {
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
               <button onClick={() => router.push('/messages')} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
               <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>
-              <button onClick={() => router.push('/games')} className="bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-2 rounded-full shadow-lg active:scale-95 transition-transform border border-yellow-200/50"><GameControllerIcon className="h-5 w-5 text-white drop-shadow-md" /></button>
               <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
            </div>
         </div>
@@ -426,7 +427,9 @@ export function RoomClient({ room }: { room: Room }) {
         room={room} 
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
+        onOpenGames={() => setIsRoomGamesOpen(true)}
       />
+      <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
       
       <RoomSeatMenuDialog 
@@ -439,6 +442,7 @@ export function RoomClient({ room }: { room: Room }) {
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
         onLeaveSeat={handleLeaveSeat}
+        onKick={handleKick}
       />
 
       <RoomUserProfileDialog 

@@ -29,6 +29,7 @@ interface RoomSeatMenuDialogProps {
 /**
  * High-Fidelity Room Seat Menu.
  * Re-engineered to match the tribal blueprint with integrated Kick and Leave protocols.
+ * GUARD PROTOCOL: Ensures actions are only triggered if identity metadata is verified.
  */
 export function RoomSeatMenuDialog({
   open,
@@ -116,7 +117,11 @@ export function RoomSeatMenuDialog({
           {(canManage && occupantUid && occupantUid !== currentUserId) && (
             <MenuItem 
               label="Kick out" 
-              onClick={() => onKick(occupantUid, 5)} 
+              onClick={() => {
+                if (typeof onKick === 'function') {
+                  onKick(occupantUid, 5);
+                }
+              }} 
               className="text-red-500" 
             />
           )}
@@ -125,7 +130,11 @@ export function RoomSeatMenuDialog({
           {(occupantUid && (occupantUid === currentUserId || canManage)) && (
             <MenuItem 
               label={occupantUid === currentUserId ? "Leave seat" : "Seat leave"} 
-              onClick={() => onLeaveSeat(occupantUid)} 
+              onClick={() => {
+                if (typeof onLeaveSeat === 'function') {
+                  onLeaveSeat(occupantUid);
+                }
+              }} 
               className="text-orange-600" 
             />
           )}
