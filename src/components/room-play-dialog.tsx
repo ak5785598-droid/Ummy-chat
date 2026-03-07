@@ -57,6 +57,7 @@ const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭
 /**
  * High-Fidelity Room Play Portal.
  * Re-engineered for absolute stability and interactive sync.
+ * Hardened with high-fidelity accessibility synchronization.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -276,11 +277,11 @@ export function RoomPlayDialog({
     });
   }
 
-  const handleClose = (open: boolean) => {
-    if (!open) {
+  const handleClose = (openVal: boolean) => {
+    if (!openVal) {
       setTimeout(() => setView('grid'), 300);
     }
-    onOpenChange(open);
+    onOpenChange(openVal);
   };
 
   const seatedParticipants = (participants || []).filter(p => p.seatIndex > 0);
@@ -344,7 +345,7 @@ export function RoomPlayDialog({
                       className="w-full flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-left border border-white/5"
                     >
                        <div className="relative h-14 w-20 rounded-lg overflow-hidden shrink-0">
-                          <img src={video.thumbnailUrl} className="h-full w-full object-cover" alt="" />
+                          <img src={video.thumbnailUrl} className="h-full w-full object-cover" alt={video.title} />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Play className="h-4 w-4 text-white" /></div>
                        </div>
                        <div className="flex-1 min-w-0">

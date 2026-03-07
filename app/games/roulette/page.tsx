@@ -237,7 +237,7 @@ export default function RoulettePage() {
                 {winners.map((winner, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
                      <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar}/><AvatarFallback>W</AvatarFallback>
+                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
                      </Avatar>
                      <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
                         <span className="text-3xl">🥇</span>
