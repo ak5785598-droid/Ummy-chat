@@ -20,7 +20,8 @@ import {
   Pencil,
   MessageCircle,
   Plus,
-  User
+  User,
+  Pen
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -32,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
+import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
   <div className="flex flex-col items-center justify-center flex-1 py-4 relative">
@@ -257,7 +259,19 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
           
           {/* Header Dimension - Modern White Roster */}
-          <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50">
+          <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
+            
+            {/* Absolute Edit Trigger - High-Fidelity Placement */}
+            {isOwnProfile && (
+              <div className="absolute top-10 right-6">
+                <EditProfileDialog profile={profile} trigger={
+                  <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
+                    <Pen className="h-5 w-5 text-gray-600" />
+                  </button>
+                } />
+              </div>
+            )}
+
             <div className="relative">
               <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
                 <Avatar className="h-28 w-28 border-4 border-gray-50 shadow-inner">
@@ -265,9 +279,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   <AvatarFallback className="text-3xl font-black bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
-              <button className="absolute bottom-1 right-1 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 active:scale-90 transition-transform">
-                <SettingsIcon className="h-4 w-4 text-gray-400" />
-              </button>
+              <EditProfileDialog profile={profile} trigger={
+                <button className="absolute bottom-1 right-1 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 active:scale-90 transition-transform">
+                  <SettingsIcon className="h-4 w-4 text-gray-400" />
+                </button>
+              } />
             </div>
 
             <div className="space-y-1">
