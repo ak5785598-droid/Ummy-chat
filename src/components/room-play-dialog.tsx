@@ -25,7 +25,8 @@ import {
   VolumeX,
   Music,
   Square,
-  SmilePlus
+  SmilePlus,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,16 +47,13 @@ interface RoomPlayDialogProps {
   isMutedLocal: boolean;
   setIsMutedLocal: (val: boolean) => void;
   onOpenGames: () => void;
-  isMusicPlaying: boolean;
-  onPlayMusic: (url: string) => void;
-  onStopMusic: () => void;
 }
 
 const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
 
 /**
  * High-Fidelity Room Play Portal.
- * ACCESSIBILITY SYNC: Guaranteed DialogTitle rendering for all views.
+ * Re-engineered for high-fidelity tool selection and battle synchronization.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -65,16 +63,12 @@ export function RoomPlayDialog({
   room,
   isMutedLocal,
   setIsMutedLocal,
-  onOpenGames,
-  isMusicPlaying,
-  onPlayMusic,
-  onStopMusic
+  onOpenGames
 }: RoomPlayDialogProps) {
   const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'emojis'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
   const [isClearingChat, setIsClearingChat] = useState(false);
-  const musicInputRef = useRef<HTMLInputElement>(null);
   
   const [blueTeam, setBlueTeam] = useState<string[]>([]);
   const [redTeam, setRedTeam] = useState<string[]>([]);
@@ -135,15 +129,6 @@ export function RoomPlayDialog({
     onOpenChange(false);
   };
 
-  const handleMusicFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && typeof onPlayMusic === 'function') {
-      const url = URL.createObjectURL(file);
-      onPlayMusic(url);
-      onOpenChange(false);
-    }
-  };
-
   const handleSendEmoji = (emoji: string) => {
     if (!firestore || !roomId || !user) return;
     const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
@@ -154,6 +139,14 @@ export function RoomPlayDialog({
     }, 4000);
     
     onOpenChange(false);
+  };
+
+  const toggleSelection = (uid: string) => {
+    if (selectionSide === 'BLUE') {
+      setBlueTeam(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid].slice(0, 5));
+    } else {
+      setRedTeam(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid].slice(0, 5));
+    }
   };
 
   const options = [
@@ -263,30 +256,6 @@ export function RoomPlayDialog({
     });
   }
 
-  options.push({
-    id: 'music',
-    label: isMusicPlaying ? 'Stop Music' : 'Play Music',
-    onClick: () => {
-      if (isMusicPlaying) {
-        if (typeof onStopMusic === 'function') onStopMusic();
-      } else {
-        musicInputRef.current?.click();
-      }
-    },
-    icon: (
-      <div className={cn(
-        "relative w-16 h-16 rounded-full p-0.5 border-2 border-white/20 shadow-xl overflow-hidden group",
-        isMusicPlaying ? "bg-gradient-to-br from-pink-500 to-rose-700" : "bg-gradient-to-br from-indigo-500 to-purple-700"
-      )}>
-         <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-         <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-            {isMusicPlaying ? <Square className="h-8 w-8 text-white fill-white drop-shadow-md" /> : <Music className="h-8 w-8 text-white drop-shadow-md animate-pulse" />}
-         </div>
-         <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
-      </div>
-    )
-  });
-
   const handleClose = (open: boolean) => {
     if (!open) {
       setTimeout(() => setView('grid'), 300);
@@ -299,20 +268,10 @@ export function RoomPlayDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
-        
-        {/* ROOT ACCESSIBILITY SYNC: Always present DialogTitle */}
         <DialogHeader className="sr-only">
           <DialogTitle>Room Play Portal</DialogTitle>
           <DialogDescription>Interactive room tools and games frequency selection.</DialogDescription>
         </DialogHeader>
-
-        <input 
-          type="file" 
-          ref={musicInputRef} 
-          accept="audio/*" 
-          className="hidden" 
-          onChange={handleMusicFileChange} 
-        />
 
         {view === 'grid' && (
           <div className="animate-in fade-in duration-500">
