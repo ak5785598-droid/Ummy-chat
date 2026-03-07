@@ -107,6 +107,8 @@ export default function LoginPage() {
     );
   }
 
+  const glassStyle = "bg-black/35 backdrop-blur-[20px] border border-white/[0.08]";
+
   return (
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
@@ -115,7 +117,10 @@ export default function LoginPage() {
         {!showPhoneInput && (
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="p-6 relative overflow-hidden group">
-              <UmmyLogoIcon className="h-24 w-24 relative z-10 logo-glow" />
+              <UmmyLogoIcon 
+                className="h-24 w-24 relative z-10" 
+                style={{ filter: 'drop-shadow(0 0 40px rgba(255,79,163,0.8))' }}
+              />
             </div>
             <div className="space-y-1">
               <h1 className="text-6xl font-black uppercase tracking-tighter text-white drop-shadow-sm">
@@ -142,14 +147,14 @@ export default function LoginPage() {
               <Button
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
-                className="w-full h-14 glass-card text-white hover:bg-white/10 rounded-full font-bold uppercase text-lg shadow-xl transition-all active:scale-95"
+                className={`w-full h-14 ${glassStyle} text-white hover:bg-white/10 rounded-full font-bold uppercase text-lg shadow-xl transition-all active:scale-95`}
               >
                 {isSigningIn ? <Loader className="animate-spin h-5 w-5 mr-2" /> : <FcGoogle className="h-6 w-6 mr-2" />}
                 Sign in with Google
               </Button>
             </>
           ) : (
-            <div className="space-y-6 animate-in zoom-in duration-300 glass-card p-8 rounded-[2.5rem] shadow-2xl w-full">
+            <div className={`space-y-6 animate-in zoom-in duration-300 ${glassStyle} p-8 rounded-[2.5rem] shadow-2xl w-full`}>
               <div className="flex justify-between items-center mb-2">
                  <div className="flex items-center gap-2 text-white/80">
                     <Phone className="h-4 w-4" />
@@ -216,12 +221,12 @@ export default function LoginPage() {
       </div>
 
       <div className="absolute bottom-10 left-8 z-10">
-        <div className="h-10 w-10 glass-card rounded-full flex items-center justify-center text-primary">
+        <div className={`h-10 w-10 ${glassStyle} rounded-full flex items-center justify-center text-primary`}>
           <Zap className="h-5 w-5" />
         </div>
       </div>
       <div className="absolute bottom-10 right-8 z-10">
-        <div className="h-10 w-10 glass-card rounded-full flex items-center justify-center text-primary">
+        <div className={`h-10 w-10 ${glassStyle} rounded-full flex items-center justify-center text-primary`}>
           <Activity className="h-5 w-5" />
         </div>
       </div>
