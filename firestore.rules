@@ -1,19 +1,14 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Sovereign Deployment Signature: 2024-05-23T10:15:00Z
-    
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isExistingOwner(ownerId) {
-      return resource != null && isOwner(ownerId);
     }
     
     function isCreator() {
@@ -54,14 +49,8 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isSignedIn();
       
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isCreator() || (
-        isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tags', 'specialId'])
-      ) || (
-        isAdmin() && 
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'updatedAt', 'isOnline', 'currentRoomId', 'stats'])
-      );
+      allow create: if isOwner(userId);
+      allow update: if isCreator() || isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
 
       match /profile/{profileId} {
@@ -72,34 +61,18 @@ service cloud.firestore {
       match /notifications/{notifId} {
         allow get, list, write: if isOwner(userId) || isAdmin() || isCreator();
       }
-
-      match /followingRooms/{roomId} {
-        allow get, list, write: if isOwner(userId);
-      }
-      
-      match /diamondExchanges/{exchangeId} {
-        allow get, list, write: if isOwner(userId);
-      }
     }
 
     match /chatRooms/{chatRoomId} {
       allow get, list: if true;
       
-      allow create: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || chatRoomId == 'ummy-help-center');
-      allow update: if isCreator() || (
-        isSignedIn() && (
-          isOwner(resource.data.ownerId) || 
-          (resource.data.get('moderatorIds', []) != null && request.auth.uid in resource.data.get('moderatorIds', [])) ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount', 'updatedAt']) ||
-          chatRoomId == 'ummy-help-center' ||
-          isAdmin()
-        )
-      );
-      allow delete: if isExistingOwner(resource.data.ownerId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isRoomAdmin(chatRoomId);
 
       match /participants/{participantId} {
         allow get, list: if true;
-        allow write: if isCreator() || (isSignedIn() && (request.auth.uid == participantId || isRoomAdmin(chatRoomId)));
+        allow write: if isSignedIn();
         
         match /signaling/{signalId} {
           allow get, list, write: if isSignedIn();
@@ -113,36 +86,36 @@ service cloud.firestore {
       }
 
       match /bans/{userId} {
-        allow get: if isSignedIn();
+        allow get: if isSignedIn() && (request.auth.uid == userId || isRoomAdmin(chatRoomId));
         allow list, write: if isRoomAdmin(chatRoomId);
       }
     }
 
     match /privateChats/{chatId} {
-      allow create: if isSignedIn() && request.resource.data.participantIds.hasAny([request.auth.uid]);
+      allow create: if isSignedIn();
       allow get, list, update: if isSignedIn() && (isCreator() || resource.data.participantIds.hasAny([request.auth.uid]));
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (
-          isCreator() || 
-          get(/databases/$(database)/documents/privateChats/$(chatId)).data.participantIds.hasAny([request.auth.uid])
-        );
+        allow read, write: if isSignedIn();
       }
     }
 
-    match /roomThemes/{themeId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
+    match /friend_requests/{requestId} {
+      allow read: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+    }
+
+    match /followers/{followId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.followerId == request.auth.uid;
     }
 
     match /moments/{momentId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-    
-    match /adminLogs/{logId} {
-      allow get, list, create: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
     }
     
     match /games/{gameId} {

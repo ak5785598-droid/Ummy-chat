@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -23,164 +24,40 @@
           "type": "string",
           "description": "A short biographical description provided by the user."
         },
-        "friendIds": {
-          "type": "array",
-          "description": "References to other User entities that this user has added as friends. (Relationship: User N:N User)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "interests": {
-          "type": "array",
-          "description": "A list of topics or categories representing the user's interests, used for AI recommendations.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
+        "specialId": {
           "type": "string",
-          "description": "Timestamp indicating when the user profile was created.",
-          "format": "date-time"
+          "description": "Sequential 3-digit numeric ID."
         }
       },
       "required": [
         "id",
-        "username",
-        "createdAt"
+        "username"
       ]
     },
-    "ChatRoom": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChatRoom",
+    "FriendRequest": {
+      "title": "FriendRequest",
       "type": "object",
-      "description": "Represents a voice and text chat room where users can interact. This entity includes settings for microphone usage, moderation, and customizable visual themes.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ChatRoom entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the chat room."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the chat room's purpose or topic."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to the User entity who created and owns this chat room. (Relationship: User 1:N ChatRoom)"
-        },
-        "memberIds": {
-          "type": "array",
-          "description": "References to User entities who are currently members or allowed to join this chat room. (Relationship: User N:N ChatRoom)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "moderatorIds": {
-          "type": "array",
-          "description": "References to User entities who have moderation privileges in this chat room. (Relationship: User N:N ChatRoom)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "maxActiveMics": {
-          "type": "number",
-          "description": "The maximum number of users who can have their microphones active simultaneously in this room. This allows controlling the 'amount of mic options' in a room."
-        },
-        "roomThemeId": {
-          "type": "string",
-          "description": "Reference to the RoomTheme entity that defines the visual styling of this chat room. Users can change this theme. (Relationship: RoomTheme 1:N ChatRoom)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the chat room was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the chat room's information was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "ownerId",
-        "maxActiveMics",
-        "roomThemeId",
-        "createdAt"
-      ]
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     },
-    "RoomTheme": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "RoomTheme",
+    "Follower": {
+      "title": "Follower",
       "type": "object",
-      "description": "Defines a customizable visual theme that can be applied to individual chat rooms. This entity stores all visual properties, allowing users to personalize their room's appearance.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the RoomTheme entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the theme (e.g., 'Warm Sunset', 'Neon Party')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A short description detailing the visual style and mood of the theme."
-        },
-        "primaryColor": {
-          "type": "string",
-          "description": "Hex color code for the primary color used in this theme, affecting major UI elements."
-        },
-        "backgroundColor": {
-          "type": "string",
-          "description": "Hex color code for the background color used in this theme, creating the overall atmosphere."
-        },
-        "accentColor": {
-          "type": "string",
-          "description": "Hex color code for the accent color used in this theme, typically for interactive elements and highlights."
-        },
-        "headlineFont": {
-          "type": "string",
-          "description": "The name of the font to be used for headlines and titles within the themed room."
-        },
-        "bodyFont": {
-          "type": "string",
-          "description": "The name of the font to be used for body text within the themed room."
-        },
-        "backgroundImageUrl": {
-          "type": "string",
-          "description": "Optional URL to an image asset to be used as the background for the themed room.",
-          "format": "uri"
-        },
-        "iconStyleHint": {
-          "type": "string",
-          "description": "A descriptive hint for the intended style of icons within this theme (e.g., 'soft-rounded', 'sharp-minimal')."
-        },
-        "animationStyleHint": {
-          "type": "string",
-          "description": "A descriptive hint for the intended style of animations and transitions within this theme (e.g., 'subtle-fades', 'energetic-bounces')."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "description",
-        "primaryColor",
-        "backgroundColor",
-        "accentColor",
-        "headlineFont",
-        "bodyFont"
-      ]
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "google.com",
+      "phone"
     ]
   },
   "firestore": {
@@ -192,68 +69,25 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores individual user profiles. Access is path-based, with the user's UID matching the {userId} wildcard. Includes friend IDs for connections and interests for AI recommendations.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user, typically matching Firebase Authentication's UID."
-            }
-          ]
+          "description": "Stores individual user profiles."
         }
       },
       {
-        "path": "/chatRooms/{chatRoomId}",
+        "path": "/friend_requests/{requestId}",
         "definition": {
-          "entityName": "ChatRoom",
-          "schema": {
-            "$ref": "#/backend/entities/ChatRoom"
-          },
-          "description": "Contains details for each voice and text chat room. Includes owner, members, moderators, maximum active microphones, and a reference to the selected room theme (roomThemeId) for customization. Authorization is based on the 'ownerId', 'memberIds', and 'moderatorIds' fields stored directly in the document.",
-          "params": [
-            {
-              "name": "chatRoomId",
-              "description": "The unique identifier for a specific chat room."
-            }
-          ]
+          "entityName": "FriendRequest",
+          "schema": { "$ref": "#/backend/entities/FriendRequest" },
+          "description": "Stores friend requests between users."
         }
       },
       {
-        "path": "/chatRooms/{chatRoomId}/messages/{messageId}",
+        "path": "/followers/{followId}",
         "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/backend/entities/Message"
-          },
-          "description": "Stores individual text messages sent within a chat room. Includes denormalized 'roomOwnerId', 'roomMemberIds', and 'roomModeratorIds' from the parent ChatRoom for authorization independence, allowing atomic operations and simplified security rules.",
-          "params": [
-            {
-              "name": "chatRoomId",
-              "description": "The unique identifier of the parent chat room."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique identifier for a specific message within the chat room."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roomThemes/{themeId}",
-        "definition": {
-          "entityName": "RoomTheme",
-          "schema": {
-            "$ref": "#/backend/entities/RoomTheme"
-          },
-          "description": "A collection of predefined visual themes that users can apply to their chat rooms. These documents are globally readable for all authenticated users to browse and select. Write access is typically restricted to administrators or backend processes.",
-          "params": [
-            {
-              "name": "themeId",
-              "description": "The unique identifier for a specific room theme."
-            }
-          ]
+          "entityName": "Follower",
+          "schema": { "$ref": "#/backend/entities/Follower" },
+          "description": "Stores follow relationships."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and strategy mandates. \n\n**Authorization Independence via Denormalization:**\n\n1.  **User Profiles (`/users/{userId}`):** User profiles are stored at a path directly matching their `uid` (`/users/{request.auth.uid}`). This inherently provides ownership-based authorization, eliminating the need for `get()` calls for basic profile access. Access to a user's `friendIds` array is controlled by the profile's access rules.\n2.  **Chat Rooms (`/chatRooms/{chatRoomId}`):** Each `ChatRoom` document explicitly stores `ownerId`, `memberIds`, and `moderatorIds`. These fields serve as the direct source of authorization for who can access or modify the room's settings. Crucially, for any subcollections of `ChatRoom`, such as `messages`, these authorization fields (`roomOwnerId`, `roomMemberIds`, `roomModeratorIds`) are **denormalized** into each `message` document. This allows security rules for messages to evaluate access directly from the message document itself without needing a `get()` call to the parent `ChatRoom` document, thereby preserving atomic operations and simplifying rule logic.\n3.  **Room Themes (`/roomThemes/{themeId}`):** Themes are static, globally readable assets. They require no `get()` calls for authorization as they are public.\n\n**QAPs (Queries as Authorization Primitives):**\n\n1.  **User-Specific Data:** `list` operations on `/users` are not typically performed. Users access their own profile by path. When a user queries their friends, they will retrieve `friendIds` from their own profile and then perform individual `get()` calls or a collection group query on `/users` for friend profiles, relying on `request.auth.uid` matching `userId` or `friendId` explicitly (if a public view is allowed for friends).\n2.  **Chat Rooms:** The `/chatRooms` collection allows for efficient `list` operations by querying the `memberIds` array using `array-contains`. For instance, a user can query for all rooms where `memberIds array-contains request.auth.uid` to find all rooms they belong to. This makes `list` operations secure and performant without relying on client-side filtering.\n3.  **Messages:** Within `/chatRooms/{chatRoomId}/messages`, `list` operations are implicitly secure because each message document contains the `roomMemberIds` (denormalized). A user can only list messages if their `uid` is in the `roomMemberIds` array present directly on the message document, ensuring that only authorized members can read messages within a room.\n4.  **Room Themes:** The `/roomThemes` collection is designed for public `list` operations, allowing any authenticated user to browse available themes without special authorization checks, as they are general application resources."
+    ]
   }
 }

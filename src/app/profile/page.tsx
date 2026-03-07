@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -7,7 +8,7 @@ import { UmmyLogoIcon } from '@/components/icons';
 
 /**
  * Root Profile Gateway.
- * Correctly identifies the authenticated user and redirects to their dynamic dashboard.
+ * Correctly identifies the authenticated user and redirects to their specific dynamic identity frequency.
  */
 export default function ProfileGateway() {
   const { user, isUserLoading } = useUser();
@@ -16,6 +17,7 @@ export default function ProfileGateway() {
   useEffect(() => {
     if (!isUserLoading) {
       if (user) {
+        console.log(`[Identity Gateway] Synchronizing user frequency: ${user.uid}`);
         router.replace(`/profile/${user.uid}`);
       } else {
         router.replace('/login');
@@ -29,9 +31,23 @@ export default function ProfileGateway() {
         <div className="absolute inset-0 bg-white/20 blur-xl rounded-full animate-pulse" />
         <UmmyLogoIcon className="h-24 w-24 relative z-10 animate-bounce" />
       </div>
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white animate-pulse">
-        Syncing Identity
-      </p>
+      <div className="flex flex-col items-center gap-2">
+         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white animate-pulse">
+           Syncing Identity
+         </p>
+         <div className="h-1 w-32 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-full bg-white animate-loading-bar w-1/2" />
+         </div>
+      </div>
+      <style jsx>{`
+        @keyframes loading-bar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        .animate-loading-bar {
+          animation: loading-bar 1.5s infinite linear;
+        }
+      `}</style>
     </div>
   );
 }
