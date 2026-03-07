@@ -173,11 +173,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
-  // Music Synchronization States
-  const [musicUrl, setMusicUrl] = useState<string | null>(null);
-  const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
-  const musicAudioRef = useRef<HTMLAudioElement>(null);
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -243,7 +238,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
+  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -283,37 +278,6 @@ export function RoomClient({ room }: { room: Room }) {
     if (!isInSeat || !firestore || !currentUser || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
-
-  const handlePlayMusic = (url: string) => {
-    if (!isInSeat) {
-      toast({ variant: 'destructive', title: 'Sync Restricted', description: 'You must take a seat to share music frequencies.' });
-      return;
-    }
-    setMusicUrl(url);
-    toast({ title: 'Music Syncing...', description: 'Establishing multi-track audio frequency.' });
-  };
-
-  const handleStopMusic = () => {
-    if (musicUrl) URL.revokeObjectURL(musicUrl);
-    setMusicUrl(null);
-    setMusicStream(null);
-    toast({ title: 'Music Frequency Terminated' });
-  };
-
-  useEffect(() => {
-    if (musicUrl && musicAudioRef.current) {
-      const audio = musicAudioRef.current;
-      audio.src = musicUrl;
-      audio.crossOrigin = "anonymous";
-      audio.load();
-      audio.play().then(() => {
-        const stream = (audio as any).captureStream ? (audio as any).captureStream() : ((audio as any).mozCaptureStream ? (audio as any).mozCaptureStream() : null);
-        if (stream) setMusicStream(stream);
-      }).catch(console.error);
-    } else {
-      setMusicStream(null);
-    }
-  }, [musicUrl]);
 
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
   const handleExit = () => { 
@@ -396,9 +360,6 @@ export function RoomClient({ room }: { room: Room }) {
       <DailyRewardDialog />
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
-      
-      <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
-      
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
@@ -447,7 +408,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
-          {isOwner && (
+          {canManageRoom && (
             <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
           )}
           <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>
@@ -508,7 +469,6 @@ export function RoomClient({ room }: { room: Room }) {
            <div className="flex items-center gap-3">
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
               
-              {/* EMOJI REACTION TRIGGER */}
               <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">
                 <SmilePlus className="h-5 w-5 text-white" />
               </button>
@@ -559,9 +519,6 @@ export function RoomClient({ room }: { room: Room }) {
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
-        isMusicPlaying={!!musicUrl}
-        onPlayMusic={handlePlayMusic}
-        onStopMusic={handleStopMusic}
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />

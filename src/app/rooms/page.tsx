@@ -195,13 +195,13 @@ export default function RoomsPage() {
     );
   }, [firestore]);
 
-  // OPTIMIZED IDENTITY SYNC: Check direct document by UID for "My Frequency"
+  // My Personal Frequency Sync
   const myRoomRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'chatRooms', user.uid);
   }, [firestore, user]);
 
-  // FOLLOWED ROOMS SYNC
+  // Followed Frequencies Sync
   const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
