@@ -64,6 +64,10 @@ interface RoomUserProfileDialogProps {
   isMe: boolean;
 }
 
+/**
+ * High-Fidelity Tribe Member Identity Card.
+ * Re-engineered to include prominent Gift Dispatch portal.
+ */
 export function RoomUserProfileDialog({ 
   userId, 
   open, 
@@ -178,6 +182,7 @@ export function RoomUserProfileDialog({
                </div>
 
                <div className="w-full space-y-4">
+                  {/* Primary Action Grid */}
                   <div className="grid grid-cols-4 gap-4 px-2">
                     <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
@@ -216,36 +221,48 @@ export function RoomUserProfileDialog({
                     </div>
                   </div>
 
-                  {(canManage || isMe) && (
-                    <div className="grid grid-cols-3 gap-4 px-2 pt-4 border-t border-white/10 opacity-60 hover:opacity-100 transition-opacity">
-                       {canManage && !isMe ? (
-                         <div onClick={() => onSilence(userId, isSilenced)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                            <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10", isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600")}>
-                               {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
-                         </div>
-                       ) : null}
+                  {/* Secondary/Admin Actions Protocol */}
+                  <div className="grid grid-cols-4 gap-4 px-2 pt-4 border-t border-white/10">
+                     {/* ALWAYS VISIBLE GIFT ENTRY (Next to Mute) */}
+                     {!isMe && (
+                       <div 
+                         onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
+                         className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer"
+                       >
+                          <div className="h-14 w-14 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center shadow-lg border border-white/10">
+                             <GiftIcon className="h-7 w-7 text-pink-400 fill-current animate-pulse" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Gift</span>
+                       </div>
+                     )}
 
-                       {isMe || (canManage && !isMe) ? (
-                         <div onClick={() => onLeaveSeat(userId)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
-                               <LogOut className="h-7 w-7 text-black" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isMe ? 'Leave' : 'Force Leave'}</span>
-                         </div>
-                       ) : null}
+                     {canManage && !isMe ? (
+                       <div onClick={() => onSilence(userId, isSilenced)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                          <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10", isSilenced ? "bg-gradient-to-br from-green-400 to-green-600" : "bg-gradient-to-br from-orange-400 to-orange-600")}>
+                             {isSilenced ? <Mic className="h-7 w-7 text-white" /> : <MicOff className="h-7 w-7 text-white" />}
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isSilenced ? 'Unmute' : 'Mute'}</span>
+                       </div>
+                     ) : null}
 
-                       {canManage && !isMe ? (
-                         <div onClick={() => onKick(userId, 5)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20 border border-white/10">
-                               <Ban className="h-7 w-7 text-white" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick</span>
-                         </div>
-                       ) : null}
-                    </div>
-                  )}
+                     {(isMe || (canManage && !isMe)) ? (
+                       <div onClick={() => onLeaveSeat(userId)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 border border-white/10">
+                             <LogOut className="h-7 w-7 text-black" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{isMe ? 'Leave' : 'Force'}</span>
+                       </div>
+                     ) : null}
+
+                     {canManage && !isMe ? (
+                       <div onClick={() => onKick(userId, 5)} className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
+                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20 border border-white/10">
+                             <Ban className="h-7 w-7 text-white" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">Kick</span>
+                       </div>
+                     ) : null}
+                  </div>
                </div>
             </div>
           </div>

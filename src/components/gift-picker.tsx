@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -102,6 +103,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
     return { multiplier, winAmount: price * qty * multiplier };
   };
 
+  /**
+   * High-Fidelity Gift Dispatch Engine.
+   * Handles Atomic Wallet Sync and Recipient Yield Protocol.
+   */
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile) return;
 
@@ -132,7 +137,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
       const netCost = totalCost - winAmount;
 
-      // 1. SENDER UPDATE: Deduct coins, update spent stats
+      // 1. SENDER UPDATE: Atomic Coin Deduction & Stats Sync
       const senderUpdateData = {
         'wallet.coins': increment(-netCost),
         'wallet.totalSpent': increment(totalCost),
@@ -149,7 +154,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
       // 2. RECIPIENT UPDATE: Diamond Yield Protocol (40% Conversion)
       // TRIBAL BLUEPRINT: 100 Coins = 40 Diamonds
-      if (recipient && recipient.uid) {
+      if (recipient && recipient.uid && recipient.uid !== user.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
         const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);
@@ -159,11 +164,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
           updatedAt: serverTimestamp()
         };
 
+        console.log(`[Economic Sync] Dispatching ${diamondYield} Diamonds to Recipient: ${recipient.uid}`);
         updateDocumentNonBlocking(recipientRef, recUpdateData);
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
       }
 
-      // 3. BROADCAST SYNC: Dispatch message to room
+      // 3. BROADCAST SYNC: Global Frequency Message Dispatch
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,
