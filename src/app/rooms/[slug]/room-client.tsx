@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -429,6 +428,7 @@ export function RoomClient({ room }: { room: Room }) {
         room={room} 
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
+        onOpenGames={() => setIsRoomGamesOpen(true)}
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />

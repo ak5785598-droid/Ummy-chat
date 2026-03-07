@@ -32,6 +32,7 @@ import { RoomParticipant } from '@/lib/types';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, updateDocumentNonBlocking } from '@/firebase';
 import { collection, getDocs, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { GameControllerIcon } from '@/components/icons';
 
 interface RoomPlayDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ interface RoomPlayDialogProps {
   room?: any;
   isMutedLocal: boolean;
   setIsMutedLocal: (val: boolean) => void;
+  onOpenGames: () => void;
 }
 
 /**
@@ -55,7 +57,8 @@ export function RoomPlayDialog({
   roomId, 
   room,
   isMutedLocal,
-  setIsMutedLocal
+  setIsMutedLocal,
+  onOpenGames
 }: RoomPlayDialogProps) {
   const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
@@ -118,8 +121,6 @@ export function RoomPlayDialog({
     onOpenChange(false);
   };
 
-  // RE-ORDERED OPTIONS: 0: Volume, 1: Battle, 2: Calculator, 3: Mute Chat, 4: Clear Chat
-  // In a 3-column grid, index 3 (Mute Chat) will be directly below index 0 (Mute Room).
   const options = [
     { 
       id: 'volume', 
@@ -156,22 +157,25 @@ export function RoomPlayDialog({
       )
     },
     { 
-      id: 'calculator', 
-      label: 'Calculator', 
-      onClick: () => {},
+      id: 'games', 
+      label: 'Games', 
+      onClick: () => {
+        onOpenGames();
+        onOpenChange(false);
+      },
       icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#3d2b1f] to-black p-0.5 border-2 border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.4)] overflow-hidden group">
-           <div className="w-full h-full flex items-center justify-center rounded-full bg-black/40">
-              <Flame className="h-8 w-8 text-orange-500 fill-current animate-reaction-pulse drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-0.5 border-2 border-yellow-200/50 shadow-xl overflow-hidden group">
+           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
+              <GameControllerIcon className="h-8 w-8 text-white drop-shadow-md" />
            </div>
-           <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+           <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
         </div>
       )
     }
   ];
 
   if (canManage) {
-    // Index 3: Positioned below Mute Room in a 3-col grid
     options.push({
       id: 'mute-chat',
       label: isChatMuted ? 'Open Public Msg' : 'Close Public Msg',
@@ -194,7 +198,6 @@ export function RoomPlayDialog({
       )
     });
 
-    // Index 4: Positioned below Battle in a 3-col grid
     options.push({
       id: 'clear-chat',
       label: 'Clear Chat',
@@ -210,6 +213,20 @@ export function RoomPlayDialog({
       )
     });
   }
+
+  options.push({ 
+    id: 'calculator', 
+    label: 'Calculator', 
+    onClick: () => {},
+    icon: (
+      <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#3d2b1f] to-black p-0.5 border-2 border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.4)] overflow-hidden group">
+         <div className="w-full h-full flex items-center justify-center rounded-full bg-black/40">
+            <Flame className="h-8 w-8 text-orange-500 fill-current animate-reaction-pulse drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+         </div>
+         <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+      </div>
+    )
+  });
 
   const handleClose = (open: boolean) => {
     if (!open) {
