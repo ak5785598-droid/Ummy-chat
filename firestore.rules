@@ -61,6 +61,10 @@ service cloud.firestore {
       match /notifications/{notifId} {
         allow get, list, write: if isOwner(userId) || isAdmin() || isCreator();
       }
+
+      match /followedRooms/{roomId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     match /chatRooms/{chatRoomId} {

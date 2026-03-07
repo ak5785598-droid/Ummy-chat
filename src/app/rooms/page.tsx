@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star, Camera, Upload } from 'lucide-react';
+import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star, Camera, Upload, Pin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
@@ -61,7 +62,6 @@ interface ScrollingBannerProps {
 
 /**
  * High-Fidelity Scrolling Banner.
- * Re-engineered to allow Sovereign users to change visuals via the right-side action portal.
  */
 function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -104,14 +104,13 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerP
 
       const bannerConfigRef = doc(firestore, 'appConfig', 'banners');
       const newSlides = [...slides];
-      // Ensure we merge with existing slide data or fallback
       const baseSlide = slides[currentSlide] || DEFAULT_SLIDES[currentSlide] || DEFAULT_SLIDES[0];
       newSlides[currentSlide] = { ...baseSlide, imageUrl: url };
       
       await setDoc(bannerConfigRef, { slides: newSlides }, { merge: true });
-      toast({ title: 'Banner Synchronized', description: 'Promotional visual updated across all frequencies.' });
+      toast({ title: 'Banner Synchronized' });
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+      toast({ variant: 'destructive', title: 'Sync Failed' });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -131,6 +130,7 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerP
           alt={slide.title} 
           fill 
           className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
+          unoptimized
         />
         <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color || "from-black/40")}>
           <div className="flex items-center gap-2 mb-1">
@@ -201,6 +201,12 @@ export default function RoomsPage() {
     return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
   }, [firestore, user]);
 
+  // Followed Rooms Sync
+  const followedRoomsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
+  }, [firestore, user]);
+
   const bannerRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'appConfig', 'banners');
@@ -208,6 +214,7 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
   const { data: myRooms, isLoading: isMyRoomLoading } = useCollection(myRoomQuery);
+  const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
   const { data: bannerConfig } = useDoc(bannerRef);
 
   const displayRooms = useMemo(() => {
@@ -297,29 +304,53 @@ export default function RoomsPage() {
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-in fade-in duration-500">
-               {isMyRoomLoading ? (
-                 <Loader className="animate-spin text-primary h-10 w-10" />
-               ) : myRooms && myRooms.length > 0 ? (
-                 <div className="w-full max-w-sm space-y-6">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter text-center">My Frequency</h3>
-                    <ChatRoomCard room={myRooms[0]} variant="modern" />
-                    <Button asChild className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl">
-                       <Link href={`/rooms/${myRooms[0].id}`}>Enter Room</Link>
-                    </Button>
-                 </div>
-               ) : (
-                 <div className="text-center space-y-6 px-8 py-12 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 max-w-sm w-full">
-                    <div className="h-24 w-24 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto animate-pulse">
-                       <Plus className="h-12 w-12" />
+            <div className="flex flex-col space-y-8 animate-in fade-in duration-500 pb-10">
+               {/* My Room Section */}
+               <section className="space-y-4">
+                  <h3 className="text-xl font-black uppercase italic tracking-tighter px-2 flex items-center gap-2">
+                     <Pin className="h-5 w-5 text-primary" /> My Frequency
+                  </h3>
+                  {isMyRoomLoading ? (
+                    <div className="flex justify-center p-10"><Loader className="animate-spin text-primary h-8 w-8" /></div>
+                  ) : myRooms && myRooms.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                       <ChatRoomCard room={myRooms[0]} variant="modern" />
                     </div>
-                    <div className="space-y-2">
-                       <h3 className="text-2xl font-black uppercase italic tracking-tighter">Define Your Frequency</h3>
-                       <p className="text-muted-foreground font-body italic text-base leading-tight">Gather your tribe and start broadcasting your vibe to the world.</p>
+                  ) : (
+                    <div className="text-center space-y-6 px-8 py-12 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 w-full">
+                       <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto">
+                          <Zap className="h-10 w-10" />
+                       </div>
+                       <div className="space-y-1">
+                          <h3 className="text-xl font-black uppercase italic">Define Your Frequency</h3>
+                          <p className="text-muted-foreground font-body italic text-sm">Gather your tribe and start broadcasting.</p>
+                       </div>
+                       <CreateRoomDialog trigger={<Button className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl">Launch Room</Button>} />
                     </div>
-                    <CreateRoomDialog trigger={<Button className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase italic shadow-xl shadow-primary/20">Launch Room</Button>} />
-                 </div>
-               )}
+                  )}
+               </section>
+
+               {/* Followed Rooms Section */}
+               <section className="space-y-4">
+                  <h3 className="text-xl font-black uppercase italic tracking-tighter px-2 flex items-center gap-2">
+                     <Heart className="h-5 w-5 text-red-500 fill-current" /> Followed Tribes
+                  </h3>
+                  {isFollowedLoading ? (
+                    <div className="grid grid-cols-2 gap-4">
+                       {Array.from({ length: 2 }).map((_, i) => <RoomSkeleton key={i} />)}
+                    </div>
+                  ) : followedRooms && followedRooms.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                       {followedRooms.map((room: any) => (
+                         <ChatRoomCard key={room.id} room={room} variant="modern" />
+                       ))}
+                    </div>
+                  ) : (
+                    <div className="py-20 text-center opacity-20 italic bg-white rounded-[2.5rem] border-2 border-dashed border-gray-100">
+                       <p className="font-bold text-sm">No followed frequencies detected.</p>
+                    </div>
+                  )}
+               </section>
             </div>
           )}
         </div>

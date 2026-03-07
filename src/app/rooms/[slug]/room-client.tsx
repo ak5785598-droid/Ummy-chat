@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -22,7 +23,8 @@ import {
   X,
   UserX,
   UserCheck,
-  Ban
+  Ban,
+  Heart
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -43,6 +45,7 @@ import {
   useFirestore, 
   useCollection, 
   useMemoFirebase, 
+  useDoc,
   addDocumentNonBlocking, 
   updateDocumentNonBlocking, 
   setDocumentNonBlocking,
@@ -185,6 +188,32 @@ export function RoomClient({ room }: { room: Room }) {
   const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
 
+  // Follow Frequency Logic
+  const followRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser || !room.id) return null;
+    return doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
+  }, [firestore, currentUser, room.id]);
+  const { data: followData } = useDoc(followRef);
+
+  const handleFollowRoom = () => {
+    if (!firestore || !currentUser || !room.id) return;
+    const ref = doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
+    if (followData) {
+      deleteDocumentNonBlocking(ref);
+      toast({ title: 'Unfollowed Frequency' });
+    } else {
+      setDocumentNonBlocking(ref, {
+        id: room.id,
+        title: room.title,
+        coverUrl: room.coverUrl,
+        roomNumber: room.roomNumber,
+        ownerId: room.ownerId,
+        followedAt: serverTimestamp()
+      }, { merge: true });
+      toast({ title: 'Frequency Followed', description: 'Synchronized to your Me tab.' });
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
@@ -252,7 +281,6 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
 
-  // Local Music Broadcast Logic
   const handlePlayMusic = (url: string) => {
     if (!isInSeat) {
       toast({ variant: 'destructive', title: 'Sync Restricted', description: 'You must take a seat to share music frequencies.' });
@@ -375,7 +403,21 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20"><AvatarImage src={room.coverUrl || undefined} /><AvatarFallback>UM</AvatarFallback></Avatar>
-          <div className="flex flex-col"><h1 className="font-black text-[15px] uppercase tracking-tighter text-white">{room.title}</h1><p className="text-[10px] font-bold text-white/60 uppercase">ID:{room.roomNumber}</p></div>
+          <div className="flex flex-col">
+             <div className="flex items-center gap-2">
+                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white">{room.title}</h1>
+                <button 
+                  onClick={handleFollowRoom}
+                  className={cn(
+                    "p-1.5 rounded-full transition-all active:scale-90 border",
+                    followData ? "bg-red-500 border-red-400 text-white" : "bg-white/10 border-white/10 text-white/60 hover:text-white"
+                  )}
+                >
+                   <Heart className={cn("h-3 w-3", followData && "fill-current")} />
+                </button>
+             </div>
+             <p className="text-[10px] font-bold text-white/60 uppercase">ID:{room.roomNumber}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
