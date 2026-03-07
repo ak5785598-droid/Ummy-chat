@@ -236,7 +236,7 @@ export default function FruitPartyPage() {
                 {winners.map((winner, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
                      <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
+                        <AvatarImage src={winner.avatar}/><AvatarFallback>W</AvatarFallback>
                      </Avatar>
                      <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
                         <span className="text-3xl">🥇</span>
@@ -342,7 +342,7 @@ export default function FruitPartyPage() {
            </div>
         </main>
 
-        <footer className="relative z-50 p-4 pb-10 space-y-4">
+        <footer className="relative z-50 p-4 pb-10 space-y-4 -translate-y-12">
            <div className="max-w-md mx-auto bg-[#7c3aed]/40 backdrop-blur-xl rounded-[2rem] p-4 border border-white/10 shadow-2xl">
               <div className="flex items-center justify-between mb-4 px-2">
                  <div className="bg-gradient-to-r from-[#ffd54f] to-[#ffca28] px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
