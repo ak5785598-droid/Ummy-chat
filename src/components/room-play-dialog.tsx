@@ -56,7 +56,7 @@ const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭
 
 /**
  * High-Fidelity Room Play Portal.
- * RE-ENGINEERED: Includes search-capable Music selection view.
+ * Re-engineered for absolute stability and interactive sync.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -73,7 +73,6 @@ export function RoomPlayDialog({
   const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
   const [isClearingChat, setIsClearingChat] = useState(false);
   
-  // Music State
   const [musicSearch, setMusicSearch] = useState('');
   const [isSearchingMusic, setIsSearchingMusic] = useState(false);
   const [musicResults, setMusicResults] = useState<any[]>([]);
@@ -410,27 +409,6 @@ export function RoomPlayDialog({
                <div className="space-y-4"><h3 className="text-lg font-black uppercase tracking-tight text-white/90">Mode</h3><div className="flex gap-3">{['Votes', 'Coins'].map((m) => (<button key={m} onClick={() => setBattleMode(m as any)} className={cn("flex-1 h-12 rounded-2xl font-black uppercase italic text-sm transition-all border-2", battleMode === m ? "bg-emerald-600/80 border-emerald-400 text-white" : "bg-white/5 border-white/5 text-white/40")}>{m}</button>))}</div></div>
                <div className="pt-4 pb-10"><Button disabled={blueTeam.length === 0 || redTeam.length === 0} className="w-full h-16 rounded-[1.5rem] bg-emerald-800/80 text-emerald-400 font-black uppercase italic text-xl shadow-xl active:scale-95 transition-all">Start</Button></div>
             </div>
-          </div>
-        )}
-
-        {view === 'rules' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 min-h-[600px] bg-gradient-to-b from-[#064e3b] via-[#065f46] to-black relative overflow-hidden flex flex-col">
-            <header className="p-6 flex items-center relative z-10 border-b border-white/5">
-               <button onClick={() => setView('battle')} className="h-10 w-10 rounded-full bg-[#064e3b]/40 border border-white/20 flex items-center justify-center"><ChevronLeft className="h-6 w-6 text-yellow-400" /></button>
-               <h2 className="text-3xl font-black text-yellow-400 italic tracking-tighter text-center flex-1 pr-10">PK Rules</h2>
-            </header>
-            <ScrollArea className="flex-1 p-8 pt-2 relative z-10">
-               <div className="space-y-10 pb-20">
-                  <section className="space-y-4">
-                    <h3 className="text-2xl font-black text-white italic tracking-tight flex items-center gap-2">🎫 1 person 1 vote</h3>
-                    <p className="text-sm font-medium text-white/80 leading-relaxed pl-8">Honor rankings are based on the total votes received from room participants during the PK window.</p>
-                  </section>
-                  <section className="space-y-4">
-                    <h3 className="text-2xl font-black text-white italic tracking-tight flex items-center gap-2">🔥 Coins received</h3>
-                    <p className="text-sm font-medium text-white/80 leading-relaxed pl-8">Charm rankings reflect the total value of Gold Coin gifts received during the live battle frequency.</p>
-                  </section>
-               </div>
-            </ScrollArea>
           </div>
         )}
 
