@@ -11,7 +11,8 @@ import {
   UserX,
   Trash2,
   Lock,
-  Palette
+  Palette,
+  ShieldCheck
 } from 'lucide-react';
 import {
   Dialog,
@@ -35,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ImageCropDialog } from '@/components/image-crop-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ROOM_THEMES, RoomTheme } from '@/lib/themes';
+import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 
 interface RoomSettingsDialogProps {
@@ -70,10 +72,13 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
   const [isEditingTheme, setIsEditingTheme] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [isManagingAdmins, setIsManagingAdmins] = useState(false);
   const [isClearingChat, setIsClearingChat] = useState(false);
+  
   const [newName, setNewName] = useState(room.title || room.name);
   const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
+  const [newPassword, setNewPassword] = useState(room.password || '');
   
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
@@ -86,6 +91,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isOwner = user?.uid === room.ownerId;
   const isOfficialRoom = room.id === 'ummy-help-center';
   const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
   const canUseOfficialThemes = isOfficialRoom || userIsOfficial;
@@ -157,12 +163,21 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
     setIsEditingAnnouncement(false);
   };
 
+  const handleSavePassword = () => {
+    if (newPassword && newPassword.length !== 4) {
+      toast({ variant: 'destructive', title: 'Invalid Sync', description: 'Password must be exactly 4 digits.' });
+      return;
+    }
+    handleUpdate('password', newPassword || null);
+    setIsEditingPassword(false);
+    toast({ title: 'Privacy Sync Complete', description: newPassword ? 'Room frequency locked.' : 'Room frequency unlocked.' });
+  };
+
   const handleSelectTheme = (theme: RoomTheme) => {
     if (theme.isOfficial && !canUseOfficialThemes) {
       toast({ variant: 'destructive', title: 'Access Denied', description: 'Official themes are restricted to system authorities.' });
       return;
     }
-    // Force Atomic Sync: Selecting a preset theme resets any custom background URL
     if (firestore) {
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         roomThemeId: theme.id,
@@ -259,7 +274,18 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   }}
                 />
 
-                <SettingItem label="Room Password" />
+                <SettingItem 
+                  label="Room Password" 
+                  value={room.password ? 'Active' : 'Off'} 
+                  onClick={() => {
+                    if (!isOwner) {
+                      toast({ variant: 'destructive', title: 'Restricted Access', description: 'Only the room owner can manage the privacy code.' });
+                      return;
+                    }
+                    setNewPassword(room.password || '');
+                    setIsEditingPassword(true);
+                  }}
+                />
 
                 <SettingItem label="Super Mic" showChevron={false}>
                    <Switch 
@@ -285,6 +311,48 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                 <SettingItem label="Kick History" />
              </div>
           </ScrollArea>
+
+          {isEditingPassword && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsEditingPassword(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
+                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Privacy Code</h3>
+                  <button onClick={handleSavePassword} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
+               </header>
+               <div className="p-8 space-y-8">
+                  <div className="text-center space-y-2 mb-4">
+                     <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Lock className="h-8 w-8 text-primary" />
+                     </div>
+                     <h4 className="text-xl font-black uppercase italic">Room Password</h4>
+                     <p className="text-xs text-muted-foreground font-body italic">Enter a 4-digit code to lock this frequency.</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">4-Digit Sync Code (Leave empty to unlock)</Label>
+                    <Input 
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="0000"
+                      value={newPassword} 
+                      onChange={(e) => setNewPassword(e.target.value.replace(/\D/g, ''))} 
+                      className="h-20 rounded-[1.5rem] border-2 text-4xl font-black tracking-[1em] text-center focus:border-primary transition-all" 
+                      autoFocus 
+                    />
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex gap-3">
+                     <ShieldCheck className="h-5 w-5 text-orange-500 shrink-0" />
+                     <p className="text-[10px] font-bold text-orange-800 leading-relaxed uppercase">
+                        When active, only you (the owner) can enter without verification. All others must provide the sync code.
+                     </p>
+                  </div>
+               </div>
+            </div>
+          )}
 
           {isEditingTheme && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">

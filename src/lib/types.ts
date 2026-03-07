@@ -90,6 +90,7 @@ export type Room = {
   backgroundUrl?: string;
   roomThemeId?: string;
   announcement?: string;
+  password?: string;
   ownerId: string;
   moderatorIds?: string[];
   lockedSeats?: number[];

@@ -1,21 +1,25 @@
 'use client';
 
-import { use, useMemo, useEffect } from 'react';
+import { use, useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RoomClient } from './room-client';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, ShieldAlert, Ghost, Ban } from 'lucide-react';
+import { Loader, ShieldAlert, Ghost, Ban, Lock, ArrowRight } from 'lucide-react';
 import type { Room } from '@/lib/types';
 import { useRoomContext } from '@/components/room-provider';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Chat Room Entry Page Gateway.
  * Synchronizes identity and ensures all theme/background metadata is passed to the client.
+ * Features a high-fidelity 4-digit password entry guard for private rooms.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -23,7 +27,11 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const firestore = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const { setActiveRoom, setIsMinimized } = useRoomContext();
+  const { toast } = useToast();
   
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       router.replace('/login');
@@ -64,6 +72,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         moderatorIds: firestoreRoom.moderatorIds || [],
         lockedSeats: firestoreRoom.lockedSeats || [],
         announcement: firestoreRoom.announcement || "Enjoy the vibe!",
+        password: firestoreRoom.password || '',
         createdAt: firestoreRoom.createdAt,
         stats: firestoreRoom.stats || { totalGifts: 0, dailyGifts: 0 },
         isChatMuted: firestoreRoom.isChatMuted,
@@ -98,12 +107,25 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return null;
   }, [firestoreRoom, slug]);
 
+  const isOwner = currentUser?.uid === activeRoom?.ownerId;
+  const requiresPassword = activeRoom?.password && !isOwner && !isUnlocked;
+
   useEffect(() => {
-    if (activeRoom && !bannedUntil) {
+    if (activeRoom && !bannedUntil && !requiresPassword) {
       setActiveRoom(activeRoom);
       setIsMinimized(false);
     }
-  }, [activeRoom, setActiveRoom, setIsMinimized, bannedUntil]);
+  }, [activeRoom, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword]);
+
+  const handleVerifyPassword = () => {
+    if (passwordInput === activeRoom?.password) {
+      setIsUnlocked(true);
+      toast({ title: 'Sync Verified', description: 'Synchronizing with private frequency.' });
+    } else {
+      setPasswordInput('');
+      toast({ variant: 'destructive', title: 'Invalid Code', description: 'Incorrect 4-digit password.' });
+    }
+  };
 
   if (bannedUntil) {
     return (
@@ -137,6 +159,58 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
             <Ghost className="h-12 w-12 text-muted-foreground opacity-40 mb-4" />
             <h1 className="text-2xl font-black uppercase">Frequency Not Found</h1>
             <button onClick={() => router.push('/rooms')} className="mt-6 bg-primary text-white px-10 py-3 rounded-full font-black uppercase italic">Back to Home</button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (requiresPassword) {
+    return (
+      <AppLayout fullScreen>
+        <div className="fixed inset-0 bg-[#FFCC00] z-[1000] flex flex-col items-center justify-center p-8 font-headline">
+           <div className="mb-12 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
+              <div className="h-24 w-24 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
+                 <Lock className="h-10 w-10 text-black" />
+              </div>
+              <div className="space-y-1">
+                 <h2 className="text-4xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/60">Private Frequency Active</p>
+              </div>
+           </div>
+
+           <div className="w-full max-w-xs space-y-8 animate-in slide-in-from-bottom-10 duration-700">
+              <div className="space-y-4 text-center">
+                 <Input 
+                   type="password"
+                   inputMode="numeric"
+                   maxLength={4}
+                   value={passwordInput}
+                   onChange={(e) => setPasswordInput(e.target.value.replace(/\D/g, ''))}
+                   onKeyDown={(e) => e.key === 'Enter' && passwordInput.length === 4 && handleVerifyPassword()}
+                   className="h-20 bg-white border-none rounded-[1.5rem] shadow-xl text-4xl font-black tracking-[1em] text-center focus:ring-4 focus:ring-black/10 placeholder:text-black/5"
+                   placeholder="0000"
+                   autoFocus
+                 />
+                 <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Enter 4-Digit Entry Code</p>
+              </div>
+
+              <div className="flex gap-4">
+                 <Button 
+                   onClick={() => router.push('/rooms')}
+                   variant="outline" 
+                   className="flex-1 h-14 rounded-2xl bg-white/20 border-black/10 font-black uppercase italic text-xs hover:bg-white/30"
+                 >
+                    Exit
+                 </Button>
+                 <Button 
+                   onClick={handleVerifyVerification}
+                   disabled={passwordInput.length < 4}
+                   className="flex-[2] h-14 rounded-2xl bg-black text-white font-black uppercase italic text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                 >
+                    Verify Sync <ArrowRight className="ml-2 h-5 w-5" />
+                 </Button>
+              </div>
+           </div>
         </div>
       </AppLayout>
     );
