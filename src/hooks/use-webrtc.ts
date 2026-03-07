@@ -230,7 +230,11 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
         } else if (signal.type === 'candidate') {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+            // GUARD: Only add ICE candidate if remote description is already synchronized
+            // This prevents the RTCPeerConnection InvalidStateError crash
+            if (pc.remoteDescription) {
+              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+            }
           } catch (err) {
             if (!ignoreOffer.current.get(peerId)) throw err;
           }
