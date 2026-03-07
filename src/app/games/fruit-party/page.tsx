@@ -211,7 +211,7 @@ export default function FruitPartyPage() {
   if (isLaunching) {
     return (
       <div className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce">🎡</div>
+        <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
         <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
         <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
       </div>
@@ -264,7 +264,7 @@ export default function FruitPartyPage() {
               <button className="bg-white/10 p-1.5 rounded-full"><HelpCircle className="h-4 w-4" /></button>
               <button className="bg-white/10 p-1.5 rounded-full"><BarChart2 className="h-4 w-4" /></button>
            </div>
-           <h1 className="text-2xl font-black text-white uppercase italic tracking-tight">Fruit Party</h1>
+           <h1 className="text-xl font-black text-white uppercase italic tracking-tight drop-shadow-md">Fruit Party</h1>
            <div className="flex gap-1">
               <button className="bg-white/10 p-1.5 rounded-full"><MoreHorizontal className="h-4 w-4" /></button>
               <button className="bg-white/10 p-1.5 rounded-full"><ChevronDown className="h-4 w-4" /></button>
@@ -272,6 +272,7 @@ export default function FruitPartyPage() {
            </div>
         </div>
 
+        {/* Special Character - Glossy SVGA Animation */}
         <div className="absolute top-44 left-4 z-40 animate-in slide-in-from-left-4 duration-1000">
            <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 p-2 group shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-shimmer-gold">
               {specialChicken && (
@@ -296,10 +297,12 @@ export default function FruitPartyPage() {
            </div>
         </div>
 
+        {/* Main Arena - Decreased Size Sync */}
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
            <div className="relative w-full max-w-[300px] aspect-square flex items-center justify-center">
               <div className="absolute inset-0 border-[6px] border-white/10 rounded-full m-12" />
               
+              {/* Compact Central Timer */}
               <div className="relative z-20 w-32 h-32 bg-[#4c1d95] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
                  <span className="text-6xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
                     {gameState === 'betting' ? timeLeft : '🎲'}
