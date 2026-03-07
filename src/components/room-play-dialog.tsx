@@ -46,7 +46,7 @@ interface RoomPlayDialogProps {
 /**
  * High-Fidelity Room Play Portal.
  * Features real-time participant selection, Battle setup, and Frequency Management.
- * Includes local room audio control.
+ * Re-engineered with a 3-column grid to align management tools vertically.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -118,6 +118,8 @@ export function RoomPlayDialog({
     onOpenChange(false);
   };
 
+  // RE-ORDERED OPTIONS: 0: Volume, 1: Battle, 2: Calculator, 3: Mute Chat, 4: Clear Chat
+  // In a 3-column grid, index 3 (Mute Chat) will be directly below index 0 (Mute Room).
   const options = [
     { 
       id: 'volume', 
@@ -169,21 +171,7 @@ export function RoomPlayDialog({
   ];
 
   if (canManage) {
-    options.push({
-      id: 'clear-chat',
-      label: 'Clear Chat',
-      onClick: handleClearChat,
-      icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden group">
-           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-              {isClearingChat ? <Loader className="h-8 w-8 text-white animate-spin" /> : <Trash2 className="h-8 w-8 text-white drop-shadow-md" />}
-           </div>
-           <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
-        </div>
-      )
-    });
-
+    // Index 3: Positioned below Mute Room in a 3-col grid
     options.push({
       id: 'mute-chat',
       label: isChatMuted ? 'Open Public Msg' : 'Close Public Msg',
@@ -200,6 +188,22 @@ export function RoomPlayDialog({
               ) : (
                 <MessageSquareOff className="h-8 w-8 text-white drop-shadow-md" />
               )}
+           </div>
+           <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+        </div>
+      )
+    });
+
+    // Index 4: Positioned below Battle in a 3-col grid
+    options.push({
+      id: 'clear-chat',
+      label: 'Clear Chat',
+      onClick: handleClearChat,
+      icon: (
+        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden group">
+           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
+              {isClearingChat ? <Loader className="h-8 w-8 text-white animate-spin" /> : <Trash2 className="h-8 w-8 text-white drop-shadow-md" />}
            </div>
            <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
         </div>
@@ -236,11 +240,13 @@ export function RoomPlayDialog({
               <DialogDescription className="sr-only">Choose a room game or tool frequency.</DialogDescription>
             </DialogHeader>
             <div className="p-8 pt-2 pb-16">
-               <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4">
+               <div className="grid grid-cols-3 gap-y-10 gap-x-4">
                   {options.map((opt) => (
-                    <button key={opt.id} onClick={opt.onClick} className="flex flex-col items-center gap-3 shrink-0 active:scale-90 transition-transform">
-                       <div className="relative p-4 bg-white/5 rounded-3xl border border-white/5 shadow-inner hover:bg-white/10 transition-colors">{opt.icon}</div>
-                       <span className="text-[10px] font-black uppercase italic text-white/80 tracking-tight text-center w-20 leading-tight">{opt.label}</span>
+                    <button key={opt.id} onClick={opt.onClick} className="flex flex-col items-center gap-3 active:scale-90 transition-transform">
+                       <div className="relative p-1 bg-white/5 rounded-3xl border border-white/5 shadow-inner hover:bg-white/10 transition-colors">
+                          {opt.icon}
+                       </div>
+                       <span className="text-[10px] font-black uppercase italic text-white/80 tracking-tight text-center w-full leading-tight">{opt.label}</span>
                     </button>
                   ))}
                </div>
