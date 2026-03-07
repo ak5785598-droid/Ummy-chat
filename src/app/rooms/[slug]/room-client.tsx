@@ -19,7 +19,6 @@ import {
   Share2,
   Mail,
   LayoutGrid,
-  ChevronRight,
   X,
   UserX,
   UserCheck,
@@ -338,7 +337,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
-          {canManageRoom && (
+          {/* SOVEREIGN RULE: Only the room owner can change settings. */}
+          {isOwner && (
             <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
           )}
           <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>

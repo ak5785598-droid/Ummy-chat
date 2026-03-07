@@ -28,8 +28,8 @@ interface RoomSeatMenuDialogProps {
 
 /**
  * High-Fidelity Room Seat Menu.
- * Re-engineered to match the tribal blueprint with integrated Kick and Leave protocols.
- * GUARD PROTOCOL: Ensures actions are only triggered if identity metadata is verified.
+ * AUTHORITY PROTOCOL: All administrative actions (Invite, Lock, Kick, Mute) 
+ * are strictly restricted to room owners and administrators.
  */
 export function RoomSeatMenuDialog({
   open,
@@ -97,15 +97,17 @@ export function RoomSeatMenuDialog({
         </DialogHeader>
 
         <div className="flex flex-col items-center">
-          {/* Blueprint: Take Action (if empty) */}
+          {/* Blueprint: Take Action (if empty) - Available to tribe members if not locked */}
           {(!occupantUid && (!isLocked || canManage)) && (
             <MenuItem label="Take" onClick={handleTakeSeat} />
           )}
 
-          {/* Blueprint: Invite Action */}
-          <MenuItem label="Invite" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+          {/* Blueprint: Invite Action - RESTRICTED TO ADMINS */}
+          {canManage && (
+            <MenuItem label="Invite" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+          )}
 
-          {/* Blueprint: Lock/Unlock Toggle */}
+          {/* Blueprint: Lock/Unlock Toggle - RESTRICTED TO ADMINS */}
           {canManage && (
             <MenuItem 
               label={isLocked ? "Unlock the mic" : "Lock the mic"} 
@@ -113,7 +115,7 @@ export function RoomSeatMenuDialog({
             />
           )}
 
-          {/* Blueprint: Kick out (Admin only, if occupied and not me) */}
+          {/* Blueprint: Kick out - RESTRICTED TO ADMINS */}
           {(canManage && occupantUid && occupantUid !== currentUserId) && (
             <MenuItem 
               label="Kick out" 
@@ -126,7 +128,7 @@ export function RoomSeatMenuDialog({
             />
           )}
 
-          {/* Blueprint: Seat leave (Me or Admin on someone else) */}
+          {/* Blueprint: Seat leave - RESTRICTED TO ADMINS or OWN SEAT */}
           {(occupantUid && (occupantUid === currentUserId || canManage)) && (
             <MenuItem 
               label={occupantUid === currentUserId ? "Leave seat" : "Seat leave"} 
@@ -139,10 +141,12 @@ export function RoomSeatMenuDialog({
             />
           )}
 
-          {/* Blueprint: Mute Action */}
-          <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
+          {/* Blueprint: Mute Action - RESTRICTED TO ADMINS */}
+          {canManage && (
+            <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
+          )}
 
-          {/* Blueprint: Cancel Action with clear separation */}
+          {/* Blueprint: Cancel Action - FOR EVERYONE */}
           <MenuItem 
             label="Cancel" 
             onClick={() => onOpenChange(false)} 
