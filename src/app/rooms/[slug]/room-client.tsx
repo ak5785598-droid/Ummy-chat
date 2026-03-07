@@ -24,7 +24,8 @@ import {
   UserCheck,
   Ban,
   Heart,
-  Plus
+  Plus,
+  SmilePlus
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -82,6 +83,7 @@ import { ROOM_THEMES } from '@/lib/themes';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
+import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -161,6 +163,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState(Date.now());
   
@@ -313,7 +316,14 @@ export function RoomClient({ room }: { room: Room }) {
   }, [musicUrl]);
 
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
-  const handleExit = () => { setActiveRoom(null); router.push('/rooms'); };
+  const handleExit = () => { 
+    if (firestore && currentUser) {
+      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+      deleteDocumentNonBlocking(pRef);
+    }
+    setActiveRoom(null); 
+    router.push('/rooms'); 
+  };
 
   const currentTheme = useMemo(() => {
     return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
@@ -408,7 +418,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20"><AvatarImage src={room.coverUrl || undefined} /><AvatarFallback>UM</AvatarFallback></Avatar>
+          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
+            <AvatarImage src={room.coverUrl || undefined} unoptimized />
+            <AvatarFallback>UM</AvatarFallback>
+          </Avatar>
           <div className="flex flex-col">
              <div className="flex items-center gap-2">
                 <h1 className="font-black text-[15px] uppercase tracking-tighter text-white">{room.title}</h1>
@@ -494,6 +507,12 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
            <div className="flex items-center gap-3">
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
+              
+              {/* EMOJI REACTION TRIGGER */}
+              <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">
+                <SmilePlus className="h-5 w-5 text-white" />
+              </button>
+
               <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
               <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>
               <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
@@ -511,7 +530,22 @@ export function RoomClient({ room }: { room: Room }) {
       )}
 
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
-        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline"><DialogHeader className="sr-only"><DialogTitle>Exit Frequency</DialogTitle><DialogDescription>Choose to minimize or exit.</DialogDescription></DialogHeader><div className="p-12 flex items-center justify-around gap-8"><button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span></button><button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span></button></div></DialogContent>
+        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exit Frequency</DialogTitle>
+            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
+          </DialogHeader>
+          <div className="p-12 flex items-center justify-around gap-8">
+            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
+            </button>
+            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
+            </button>
+          </div>
+        </DialogContent>
       </Dialog>
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
@@ -531,6 +565,7 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
+      <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
       
       <RoomSeatMenuDialog 

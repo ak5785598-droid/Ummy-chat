@@ -41,6 +41,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
                 src={room.coverUrl || undefined}
                 alt={roomTitle}
                 fill
+                unoptimized
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 33vw"
                 priority={onlineCount > 5} // Prioritize active rooms
@@ -81,6 +82,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
                    src={eliteJet.imageUrl || undefined} 
                    alt="Emblem" 
                    fill 
+                   unoptimized
                    className="object-contain p-1 bg-black/20 backdrop-blur-sm"
                    data-ai-hint={eliteJet.imageHint}
                  />
@@ -108,7 +110,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
       <div className="overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border-none rounded-2xl">
         <div className="relative h-40 w-full bg-slate-100">
           {room.coverUrl && (
-            <Image key={room.coverUrl} src={room.coverUrl || undefined} alt={roomTitle} fill className="object-cover" />
+            <Image key={room.coverUrl} src={room.coverUrl || undefined} alt={roomTitle} fill unoptimized className="object-cover" />
           )}
           <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded-full">
              <Users className="h-3 w-3 text-white" />

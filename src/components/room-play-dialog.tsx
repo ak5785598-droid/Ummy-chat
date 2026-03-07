@@ -55,7 +55,7 @@ const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭
 
 /**
  * High-Fidelity Room Play Portal.
- * RE-ENGINEERED: Now includes the high-fidelity Emoji Reaction Protocol.
+ * ACCESSIBILITY SYNC: Guaranteed DialogTitle rendering for all views.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -149,7 +149,6 @@ export function RoomPlayDialog({
     const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
     updateDocumentNonBlocking(pRef, { activeEmoji: emoji, updatedAt: serverTimestamp() });
     
-    // Clear emoji pulse after a few seconds
     setTimeout(() => {
       updateDocumentNonBlocking(pRef, { activeEmoji: null });
     }, 4000);
@@ -295,21 +294,18 @@ export function RoomPlayDialog({
     onOpenChange(open);
   };
 
-  const toggleSelection = (uid: string) => {
-    const currentTeam = selectionSide === 'BLUE' ? blueTeam : redTeam;
-    const setter = selectionSide === 'BLUE' ? setBlueTeam : setRedTeam;
-    const otherTeam = selectionSide === 'BLUE' ? redTeam : blueTeam;
-    if (otherTeam.includes(uid)) return;
-    if (currentTeam.includes(uid)) setter(prev => prev.filter(id => id !== uid));
-    else if (currentTeam.length < 5) setter(prev => [...prev, uid]);
-  };
-
   const seatedParticipants = (participants || []).filter(p => p.seatIndex > 0);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         
+        {/* ROOT ACCESSIBILITY SYNC: Always present DialogTitle */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>Room Play Portal</DialogTitle>
+          <DialogDescription>Interactive room tools and games frequency selection.</DialogDescription>
+        </DialogHeader>
+
         <input 
           type="file" 
           ref={musicInputRef} 
@@ -320,10 +316,9 @@ export function RoomPlayDialog({
 
         {view === 'grid' && (
           <div className="animate-in fade-in duration-500">
-            <DialogHeader className="p-8 pb-4">
-              <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-white/90">Room Play</DialogTitle>
-              <DialogDescription className="sr-only">Choose a room game or tool frequency.</DialogDescription>
-            </DialogHeader>
+            <header className="p-8 pb-4">
+              <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white/90">Room Play</h2>
+            </header>
             <div className="p-8 pt-2 pb-16">
                <div className="grid grid-cols-3 gap-y-10 gap-x-4">
                   {options.map((opt) => (
