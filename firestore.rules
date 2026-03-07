@@ -2,6 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Sovereign Deployment Signature: 2024-05-22T14:30:00Z
+    
     function isSignedIn() {
       return request.auth != null;
     }
@@ -58,7 +60,7 @@ service cloud.firestore {
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tags', 'specialId'])
       ) || (
         isAdmin() && 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'updatedAt', 'isOnline', 'currentRoomId'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'updatedAt', 'isOnline', 'currentRoomId', 'stats'])
       );
       allow delete: if isAdmin();
 

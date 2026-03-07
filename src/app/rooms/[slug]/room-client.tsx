@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Mic,
@@ -100,6 +100,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [now, setNow] = useState(Date.now());
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
@@ -119,6 +120,12 @@ export function RoomClient({ room }: { room: Room }) {
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isOwner || isModerator;
 
+  // Real-time ticker for stale participant filtering
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
@@ -126,11 +133,14 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
   
-  const participants = (participantsData || []).filter(p => {
-    const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-    if (!lastSeen) return true;
-    return (Date.now() - lastSeen) < 65000;
-  });
+  const participants = useMemo(() => {
+    if (!participantsData) return [];
+    return participantsData.filter(p => {
+      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
+      if (!lastSeen) return true;
+      return (now - lastSeen) < 65000;
+    });
+  }, [participantsData, now]);
 
   const onlineCount = participants.length;
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);

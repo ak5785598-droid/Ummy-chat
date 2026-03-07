@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -13,20 +12,28 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
  * 1. 20s Heartbeat for live tracking.
  * 2. Optimized Cleanup: ONLY the Room Owner performs roster sweeps to save quota.
  * 3. Exact Count Sync: Forces room count to match actual active roster size.
+ * BUG FIX: De-coupled from full userProfile to prevent infinite effect loops.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
+  
   const lastRoomId = useRef<string | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const cleanupInterval = useRef<NodeJS.Timeout | null>(null);
 
+  // Stable metadata dependencies to prevent effect restarts on every heartbeat
+  const userMetadata = useMemo(() => ({
+    username: userProfile?.username,
+    avatarUrl: userProfile?.avatarUrl,
+    activeFrame: userProfile?.inventory?.activeFrame,
+    activeWave: userProfile?.inventory?.activeWave
+  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave]);
+
   useEffect(() => {
-    if (!firestore || !activeRoom?.id || !user) {
-      return;
-    }
+    if (!firestore || !activeRoom?.id || !user) return;
 
     const roomId = activeRoom.id;
     const uid = user.uid;
@@ -38,7 +45,6 @@ export function RoomPresenceManager() {
       const profileRef = doc(firestore, 'users', uid, 'profile', uid);
       const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-      // Identity Sync Guard: Only perform the full join logic once per frequency transition
       if (lastRoomId.current !== roomId) {
         lastRoomId.current = roomId;
 
@@ -49,8 +55,8 @@ export function RoomPresenceManager() {
         addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
           content: 'entered the room',
           senderId: uid,
-          senderName: userProfile?.username || 'Tribe Member',
-          senderAvatar: userProfile?.avatarUrl || null,
+          senderName: userMetadata.username || 'Tribe Member',
+          senderAvatar: userMetadata.avatarUrl || null,
           chatRoomId: roomId,
           timestamp: serverTimestamp(),
           type: 'entrance'
@@ -64,10 +70,10 @@ export function RoomPresenceManager() {
 
         batch.set(participantRef, {
           uid: uid,
-          name: userProfile?.username || 'Guest',
-          avatarUrl: userProfile?.avatarUrl || null,
-          activeFrame: userProfile?.inventory?.activeFrame || 'None',
-          activeWave: userProfile?.inventory?.activeWave || 'Default',
+          name: userMetadata.username || 'Guest',
+          avatarUrl: userMetadata.avatarUrl || null,
+          activeFrame: userMetadata.activeFrame || 'None',
+          activeWave: userMetadata.activeWave || 'Default',
           joinedAt: serverTimestamp(),
           lastSeen: serverTimestamp(),
           isMuted: true,
@@ -76,14 +82,14 @@ export function RoomPresenceManager() {
 
         await batch.commit();
       } else {
-        // Metadata Refresh: If already joined, ensure participant record matches current profile
-        updateDocumentNonBlocking(participantRef, {
-          name: userProfile?.username || 'Guest',
-          avatarUrl: userProfile?.avatarUrl || null,
-          activeFrame: userProfile?.inventory?.activeFrame || 'None',
-          activeWave: userProfile?.inventory?.activeWave || 'Default',
+        // Metadata Refresh Sync: Use set merge to prevent errors if doc was cleaned up prematurely
+        setDocumentNonBlocking(participantRef, {
+          name: userMetadata.username || 'Guest',
+          avatarUrl: userMetadata.avatarUrl || null,
+          activeFrame: userMetadata.activeFrame || 'None',
+          activeWave: userMetadata.activeWave || 'Default',
           lastSeen: serverTimestamp(),
-        });
+        }, { merge: true });
       }
 
       // Start Heartbeat Sync (20s)
@@ -93,8 +99,7 @@ export function RoomPresenceManager() {
       }, 20000);
 
       // SOVEREIGN ROSTER CLEANUP: Only the owner sweeps to save Firestore costs
-      if (isOwner) {
-        if (cleanupInterval.current) clearInterval(cleanupInterval.current);
+      if (isOwner && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
           const staleThreshold = new Date(Date.now() - 60000); 
           const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
@@ -119,7 +124,7 @@ export function RoomPresenceManager() {
               updatedAt: serverTimestamp() 
             });
 
-            await purgeBatch.commit();
+            await purgeBatch.commit().catch(() => {});
           }
         }, 45000); 
       }
@@ -128,10 +133,19 @@ export function RoomPresenceManager() {
     performJoin();
 
     return () => {
+      // Cleanup heartbeat only when Room ID or User changes, not every profile update
+    };
+  }, [firestore, activeRoom?.id, user?.uid, userMetadata, activeRoom?.ownerId]); 
+
+  // Absolute Cleanup on Unmount
+  useEffect(() => {
+    return () => {
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
       if (cleanupInterval.current) clearInterval(cleanupInterval.current);
+      heartbeatInterval.current = null;
+      cleanupInterval.current = null;
     };
-  }, [firestore, activeRoom?.id, user?.uid, userProfile, activeRoom?.ownerId]); 
+  }, []);
 
   return null;
 }
