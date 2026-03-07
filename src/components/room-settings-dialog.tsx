@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -69,7 +70,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
 
 /**
  * Room Settings Portal - Sovereign Control Dimension.
- * Re-engineered to focus strictly on room identity and access synchronization.
+ * Re-engineered to filter themes based on room identity.
  */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
@@ -95,9 +96,27 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwner = user?.uid === room.ownerId;
-  const isOfficialRoom = room.id === 'ummy-help-center';
+  const isOfficialHelpRoom = room.id === 'ummy-help-center';
   const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
-  const canUseOfficialThemes = isOfficialRoom || userIsOfficial;
+  const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
+
+  // Filter themes based on official/help requirements
+  const filteredThemes = useMemo(() => {
+    return ROOM_THEMES.filter(theme => {
+      if (isOfficialHelpRoom) {
+        // Help Center rooms can see help themes and general themes
+        return theme.category === 'help' || theme.category === 'general';
+      }
+      // Entertainment rooms or Official rooms owned by creator
+      if (userIsOfficial || isOwner) {
+        // Exclude help themes from non-help rooms
+        if (theme.category === 'help') return false;
+        return true;
+      }
+      // Standard users only see general themes
+      return theme.category === 'general';
+    });
+  }, [isOfficialHelpRoom, userIsOfficial, isOwner]);
 
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -200,7 +219,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                 <SettingItem label="Profile" onClick={() => !isUploadingProfile && fileInputRef.current?.click()} className="py-8">
                    <div className="relative">
                       <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
-                         <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} className="object-cover" />
+                         <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} className="object-cover" unoptimized />
                          <AvatarFallback className="bg-slate-200">{(room.title || 'R').charAt(0)}</AvatarFallback>
                       </Avatar>
                       {isUploadingProfile && (
@@ -316,8 +335,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   <div className="w-10" />
                </header>
                <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-2 gap-4 p-6">
-                     {ROOM_THEMES.map((theme) => {
+                  <div className="grid grid-cols-2 gap-4 p-6 pb-20">
+                     {filteredThemes.map((theme) => {
                        const isLocked = theme.isOfficial && !canUseOfficialThemes;
                        return (
                          <button 
@@ -332,7 +351,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                               "relative aspect-square w-full rounded-2xl overflow-hidden border-4 transition-all",
                               room.roomThemeId === theme.id ? "border-primary scale-105 shadow-lg" : "border-transparent group-hover:border-gray-100"
                             )}>
-                               <Image src={theme.url} alt={theme.name} fill className="object-cover" sizes="200px" />
+                               <Image src={theme.url} alt={theme.name} fill className="object-cover" sizes="200px" unoptimized />
                                {isLocked && (
                                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                     <Lock className="h-8 w-8 text-white/80" />
@@ -345,7 +364,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                                )}
                             </div>
                             <span className={cn(
-                              "text-[10px] font-black uppercase tracking-tight",
+                              "text-[10px] font-black uppercase tracking-tight text-center px-1",
                               room.roomThemeId === theme.id ? "text-primary" : "text-gray-500"
                             )}>{theme.name}</span>
                          </button>

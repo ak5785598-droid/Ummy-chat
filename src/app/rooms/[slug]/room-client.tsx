@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -84,6 +85,7 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -185,6 +187,8 @@ export function RoomClient({ room }: { room: Room }) {
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
+
+  const mascotAsset = PlaceHolderImages.find(img => img.id === 'ummy-mascot');
 
   // Follow Frequency Logic
   const followRef = useMemoFirebase(() => {
@@ -375,6 +379,22 @@ export function RoomClient({ room }: { room: Room }) {
           priority 
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
+      </div>
+
+      {/* Sovereign Logo Watermark Overlay */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-10">
+         <div className="relative w-64 h-64">
+            {mascotAsset && (
+              <Image 
+                src={mascotAsset.imageUrl} 
+                alt="Ummy Watermark" 
+                fill 
+                className="object-contain"
+                data-ai-hint={mascotAsset.imageHint}
+                unoptimized
+              />
+            )}
+         </div>
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
