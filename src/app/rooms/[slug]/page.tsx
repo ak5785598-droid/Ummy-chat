@@ -63,6 +63,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         topic: firestoreRoom.description || '',
         category: (firestoreRoom.category as any) || 'Chat',
         coverUrl: firestoreRoom.coverUrl || '',
+        backgroundUrl: firestoreRoom.backgroundUrl || null,
         ownerId: firestoreRoom.ownerId,
         moderatorIds: firestoreRoom.moderatorIds || [],
         lockedSeats: firestoreRoom.lockedSeats || [],
@@ -72,12 +73,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         isChatMuted: firestoreRoom.isChatMuted,
         currentMusicUrl: firestoreRoom.currentMusicUrl,
         maxActiveMics: firestoreRoom.maxActiveMics,
-        roomThemeId: firestoreRoom.roomThemeId
+        roomThemeId: firestoreRoom.roomThemeId,
+        isSuperMic: firestoreRoom.isSuperMic || false
       } as any;
     }
 
     // Return hardcoded metadata for the official support portal if DB entry is missing
-    // CREATOR PROTOCOL: Assigning ownership to Supreme Creator for administrative sovereignty.
     if (slug === 'ummy-help-center') {
       return {
         id: 'ummy-help-center',

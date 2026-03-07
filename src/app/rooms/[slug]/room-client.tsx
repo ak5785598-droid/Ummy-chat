@@ -326,7 +326,8 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-8 pb-48 overflow-y-auto no-scrollbar">
+        {/* ENHANCED ARENA LAYOUT: Shifted upward with pt-4 and increased bottom clearance */}
+        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-60 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center"><Seat index={1} label="No.1" /></div>
            <div className="w-full flex justify-center gap-4 px-4"><Seat index={2} label="No.2" /><Seat index={3} label="No.3" /><Seat index={4} label="No.4" /><Seat index={5} label="No.5" /></div>
            <div className="w-full flex justify-center gap-4 px-4"><Seat index={6} label="No.6" /><Seat index={7} label="No.7" /><Seat index={8} label="No.8" /><Seat index={9} label="No.9" /></div>
