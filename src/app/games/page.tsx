@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -28,10 +27,6 @@ const FALLBACK_GAMES: Game[] = [
   { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d dragon character' },
 ];
 
-/**
- * 3D Tribe Arena - High-Fidelity Game Dashboard.
- * Re-engineered to support Sovereign Visual Synchronization (Logo Uploads).
- */
 export default function GamesPage() {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
@@ -49,9 +44,8 @@ export default function GamesPage() {
     setLiveCounts(counts);
   }, []);
 
-  // Sovereign Authority Check: Only the Creator or designated High-Tier Admins can synchronize game visuals.
   const isSovereign = user?.uid === CREATOR_ID || 
-                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager'].includes(t));
+                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -125,13 +119,14 @@ export default function GamesPage() {
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 pt-4">
                   {activeGames.map((game) => (
                     <div key={game.id} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
-                      <Link href={`/games/${game.slug}`} className="block relative">
+                      <div className="block relative">
                         {/* 3D Depth Layer */}
                         <div className="absolute inset-0 bg-purple-600/20 rounded-[2.5rem] translate-z-[-20px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         
-                        <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-purple-500/50 group-hover:shadow-[0_40px_80px_rgba(168,85,247,0.3)] group-hover:-translate-y-4 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                        <Link href={`/games/${game.slug}`} className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-purple-500/50 group-hover:shadow-[0_40px_80px_rgba(168,85,247,0.3)] group-hover:-translate-y-4 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
                            {game.coverUrl ? (
                              <Image 
+                               key={game.coverUrl}
                                src={game.coverUrl} 
                                alt={game.title} 
                                fill 
@@ -149,7 +144,6 @@ export default function GamesPage() {
                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            
-                           {/* Sovereign Sync Trigger: Only visible to Creators/Admins */}
                            {isSovereign && (
                              <button 
                                onClick={(e) => handleLogoChangeClick(e, game.id)}
@@ -163,7 +157,7 @@ export default function GamesPage() {
                               <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                               <span className="text-[10px] font-black text-white/80">{(liveCounts[game.slug] || 100).toLocaleString()}</span>
                            </div>
-                        </div>
+                        </Link>
                         
                         <div className="mt-6 px-2 space-y-1 text-center translate-z-[30px]">
                            <h4 className="font-black text-sm uppercase italic truncate group-hover:text-purple-400 transition-colors tracking-tighter drop-shadow-lg">{game.title}</h4>
@@ -172,7 +166,7 @@ export default function GamesPage() {
                               <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">3D Reality</span>
                            </div>
                         </div>
-                      </Link>
+                      </div>
                     </div>
                   ))}
                </div>
