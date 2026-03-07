@@ -166,7 +166,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
-  const [now, setNow] = useState(Date.now());
+  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
+  const [now, setNow] = useState<number | null>(null);
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
@@ -214,6 +215,8 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   useEffect(() => {
+    // SYNC INITIALIZATION: Initialize 'now' on client mount
+    setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
   }, []);
@@ -227,6 +230,9 @@ export function RoomClient({ room }: { room: Room }) {
   
   const participants = useMemo(() => {
     if (!participantsData) return [];
+    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
+    if (now === null) return participantsData;
+
     return participantsData.filter(p => {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;

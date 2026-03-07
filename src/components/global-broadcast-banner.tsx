@@ -15,15 +15,18 @@ export function GlobalBroadcastBanner() {
   const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
-  const [now, setNow] = useState(new Date());
+  // DEFERRED SYNC: now set to null to prevent hydration discrepancy
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    // SYNC INITIALIZATION: Initialize 'now' on client mount
+    setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const broadcastsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !now) return null; // Wait for client synchronization
     return query(
       collection(firestore, 'globalBroadcasts'),
       where('expiresAt', '>', Timestamp.fromDate(now)),

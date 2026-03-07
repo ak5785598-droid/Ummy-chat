@@ -20,9 +20,12 @@ export function CompactRoomView() {
   const { user: currentUser } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const [now, setNow] = useState(Date.now());
+  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
+    // SYNC INITIALIZATION: Initialize 'now' on client mount
+    setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
   }, []);
@@ -37,6 +40,9 @@ export function CompactRoomView() {
   // ANTI-GHOST FILTER: Real-time UI purge for inactive participants
   const participants = useMemo(() => {
     if (!rawParticipants) return [];
+    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
+    if (now === null) return rawParticipants;
+
     return rawParticipants.filter(p => {
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;

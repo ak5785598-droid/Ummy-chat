@@ -28,10 +28,13 @@ interface RoomUserListDialogProps {
  */
 export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListDialogProps) {
   const firestore = useFirestore();
-  const [now, setNow] = useState(Date.now());
+  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     if (open) {
+      // SYNC INITIALIZATION: Initialize 'now' on client mount
+      setNow(Date.now());
       const timer = setInterval(() => setNow(Date.now()), 15000);
       return () => clearInterval(timer);
     }
@@ -46,6 +49,9 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
 
   const participants = useMemo(() => {
     if (!rawParticipants) return [];
+    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
+    if (now === null) return rawParticipants;
+
     return rawParticipants.filter(p => {
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
