@@ -18,11 +18,9 @@ import type { Game } from '@/lib/types';
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const FALLBACK_GAMES: Game[] = [
-  { id: 'fallback-fruit-slots', title: 'Fruit Slots', slug: 'fruit-slots', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d lemon fruit slots' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d fruit icons' },
   { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: '', cost: 0, imageHint: '3d lion head' },
-  { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: '', cost: 0, imageHint: '3d slot machine' },
   { id: 'fallback-pyramid', title: 'Pyramid Battle', slug: 'pyramid-battle', coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', cost: 0, imageHint: 'egyptian pyramid' },
   { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d dragon character' },
 ];
@@ -30,7 +28,6 @@ const FALLBACK_GAMES: Game[] = [
 /**
  * 3D Tribe Arena - Global Game Frequencies.
  * Re-engineered for absolute visual synchronization.
- * Uses unoptimized loading and reactive keys to ensure immediate DP updates.
  */
 export default function GamesPage() {
   const { user } = useUser();
@@ -54,14 +51,12 @@ export default function GamesPage() {
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // We remove the strict orderBy('title') to ensure documents without titles (initial sync) are still retrieved.
     return query(collection(firestore, 'games'));
   }, [firestore, user]);
 
   const { data: firestoreGames, isLoading: isGamesLoading } = useCollection(gamesQuery);
 
   const activeGames = useMemo(() => {
-    // Robust merge logic: Firestore data always overrides hardcoded fallbacks
     return FALLBACK_GAMES.map(fb => {
       const match = firestoreGames?.find(g => g.slug === fb.slug || g.id === fb.id);
       return match ? { ...fb, ...match } : fb;
@@ -148,7 +143,6 @@ export default function GamesPage() {
                              </div>
                            )}
                            
-                           {/* High-fidelity glass overlay */}
                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            

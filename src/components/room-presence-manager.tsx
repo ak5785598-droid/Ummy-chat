@@ -12,7 +12,6 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
  * 1. 20s Heartbeat for live tracking.
  * 2. Optimized Cleanup: ONLY the Room Owner performs roster sweeps to save quota.
  * 3. Exact Count Sync: Forces room count to match actual active roster size.
- * BUG FIX: De-coupled from full userProfile to prevent infinite effect loops.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -80,9 +79,9 @@ export function RoomPresenceManager() {
           seatIndex: existingData?.seatIndex ?? 0,
         }, { merge: true });
 
-        await batch.commit();
+        batch.commit().catch(console.error);
       } else {
-        // Metadata Refresh Sync: Use set merge to prevent errors if doc was cleaned up prematurely
+        // Metadata Refresh Sync
         setDocumentNonBlocking(participantRef, {
           name: userMetadata.username || 'Guest',
           avatarUrl: userMetadata.avatarUrl || null,
@@ -124,7 +123,7 @@ export function RoomPresenceManager() {
               updatedAt: serverTimestamp() 
             });
 
-            await purgeBatch.commit().catch(() => {});
+            purgeBatch.commit().catch(() => {});
           }
         }, 45000); 
       }
@@ -132,12 +131,9 @@ export function RoomPresenceManager() {
 
     performJoin();
 
-    return () => {
-      // Cleanup heartbeat only when Room ID or User changes, not every profile update
-    };
+    return () => {};
   }, [firestore, activeRoom?.id, user?.uid, userMetadata, activeRoom?.ownerId]); 
 
-  // Absolute Cleanup on Unmount
   useEffect(() => {
     return () => {
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);

@@ -276,7 +276,6 @@ export function RoomClient({ room }: { room: Room }) {
       audio.crossOrigin = "anonymous";
       audio.load();
       audio.play().then(() => {
-        // High-Fidelity capture for WebRTC broadcast
         const stream = (audio as any).captureStream ? (audio as any).captureStream() : ((audio as any).mozCaptureStream ? (audio as any).mozCaptureStream() : null);
         if (stream) setMusicStream(stream);
       }).catch(console.error);
@@ -354,7 +353,6 @@ export function RoomClient({ room }: { room: Room }) {
       <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       
-      {/* Internal High-Fidelity Music Engine */}
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
       
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (

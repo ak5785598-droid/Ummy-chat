@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -21,13 +20,6 @@ interface RoomGamesDialogProps {
 }
 
 const ROOM_GAMES = [
-  { id: 'magic-slot', name: 'Magic Slot', iconId: 'game-magic-slot', isNew: true, slug: 'fruit-slots' },
-  { id: 'candy-slot', name: 'Candy Slot', iconId: 'game-candy-slot', isNew: false, slug: 'fruit-slots' },
-  { id: 'christmas-slot', name: 'Christmas Slot', iconId: 'game-xmas-slot', isNew: true, slug: 'fruit-slots' },
-  { id: 'ganesha-gold', name: 'Ganesha Gold', iconId: 'game-ganesha-gold', isNew: true, slug: 'fruit-slots' },
-  { id: 'halloween-slot', name: 'Halloween Slot', iconId: 'game-halloween-slot', isNew: true, slug: 'fruit-slots' },
-  { id: 'lucky-777', name: 'Lucky 777', iconId: 'game-lucky-777', isNew: true, slug: 'lucky-slot-777' },
-  { id: 'ocean-slot', name: 'Ocean Slot', iconId: 'game-ocean-slot', isNew: true, slug: 'fruit-slots' },
   { id: 'fruit-party', name: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
   { id: 'dragon-battle', name: 'Dragon Battle', iconId: 'game-dragon-battle', isNew: false, slug: 'teen-patti' },
   { id: 'pyramid-battle', name: 'Pyramid Battle', iconId: 'game-pyramid-battle', isNew: false, slug: 'pyramid-battle' },
