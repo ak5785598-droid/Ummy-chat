@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star, Camera } from 'lucide-react';
+import { Loader, Trophy, Heart, ArrowRight, Gamepad2, Sparkles, Zap, Users, Star, Camera, Upload } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
@@ -62,7 +61,7 @@ interface ScrollingBannerProps {
 
 /**
  * High-Fidelity Scrolling Banner.
- * Re-engineered to allow Sovereign users to change visuals directly from the hub.
+ * Re-engineered to allow Sovereign users to change visuals via the right-side action portal.
  */
 function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -87,7 +86,9 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerP
 
   const handleUploadClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    fileInputRef.current?.click();
+    if (isSovereign && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,24 +141,21 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerP
         </div>
       </div>
       
-      {/* Sovereign Edit Portal */}
-      {isSovereign && (
-        <div className="absolute top-2 left-2 z-30">
-           <button 
-             onClick={handleUploadClick}
-             disabled={isUploading}
-             className="bg-black/60 p-2 rounded-full border border-white/20 text-white backdrop-blur-md hover:bg-primary hover:text-black transition-all active:scale-90"
-           >
-              {isUploading ? <Loader className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
-           </button>
-           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-        </div>
-      )}
-
       <div className="absolute top-1/2 right-6 -translate-y-1/2 z-20">
-        <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
-          <ArrowRight className="h-5 w-5 text-white" />
-        </div>
+        {isSovereign ? (
+          <button 
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="h-10 w-10 bg-primary backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-black shadow-xl hover:scale-110 active:scale-95 transition-all"
+          >
+            {isUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+          </button>
+        ) : (
+          <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+            <ArrowRight className="h-5 w-5 text-white" />
+          </div>
+        )}
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
       </div>
 
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
