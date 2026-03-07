@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -28,7 +27,7 @@ import {
   Plus,
   SmilePlus
 } from 'lucide-react';
-import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
+import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -187,8 +186,6 @@ export function RoomClient({ room }: { room: Room }) {
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
-
-  const mascotAsset = PlaceHolderImages.find(img => img.id === 'ummy-mascot');
 
   // Follow Frequency Logic
   const followRef = useMemoFirebase(() => {
@@ -381,19 +378,10 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* Sovereign Logo Watermark Overlay - Transparent Mascot Synchronization */}
+      {/* Sovereign Logo Watermark Overlay - Official Ummy Mascot Sync */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-10">
          <div className="relative w-64 h-64">
-            {mascotAsset && (
-              <Image 
-                src={mascotAsset.imageUrl} 
-                alt="Ummy Watermark" 
-                fill 
-                className="object-contain"
-                data-ai-hint={mascotAsset.imageHint}
-                unoptimized
-              />
-            )}
+            <UmmyLogoIcon className="h-full w-full" />
          </div>
       </div>
 

@@ -1,8 +1,12 @@
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 
+/**
+ * Official Ummy Brand Signature.
+ * Synchronized with the high-fidelity PNG asset.
+ */
 export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("relative overflow-hidden", className)} {...props}>
+  <div className={cn("relative overflow-hidden shrink-0", className)} {...props}>
     <Image 
       src="/images/ummy-logo.png" 
       alt="Ummy Logo" 
@@ -24,7 +28,7 @@ export const GoldCoinIcon = (props: React.SVGProps<SVGSVGElement>) => (
       <linearGradient id="goldBase" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#FFF281" />
         <stop offset="40%" stopColor="#FFD700" />
-        <stop offset="100%" stopColor="#B8860B" />
+        <stop offset="100%" stopColor="#8B4513" />
       </linearGradient>
       <linearGradient id="bearEar" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stopColor="#FF4D4D" />
