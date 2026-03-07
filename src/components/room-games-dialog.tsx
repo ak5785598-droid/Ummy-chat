@@ -27,10 +27,11 @@ interface RoomGamesDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// SCHEMA SYNC: Using 'title' instead of 'name' to match the Game type and prevent Firebase 'undefined' errors
 const FALLBACK_GAMES = [
-  { id: 'fruit-party', name: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
-  { id: 'wild-party', name: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
-  { id: 'ludo', name: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
+  { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
+  { id: 'wild-party', title: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
+  { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
 ];
 
 /**
@@ -125,7 +126,7 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
 
                    return (
                      <div 
-                       key={game.id} 
+                       key={game.slug} 
                        className="flex flex-col items-center gap-6 group relative"
                      >
                         <div className="relative w-full aspect-square">
@@ -140,7 +141,7 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
                                 <Image 
                                   key={displayUrl}
                                   src={displayUrl} 
-                                  alt={game.name} 
+                                  alt={game.title} 
                                   fill
                                   className="object-cover group-hover:scale-110 transition-transform duration-700"
                                   unoptimized 
@@ -173,7 +174,7 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
 
                         <div className="text-center space-y-2">
                            <span className="text-sm font-black text-white uppercase tracking-[0.2em] group-hover:text-primary transition-colors block">
-                              {game.name}
+                              {game.title}
                            </span>
                            <div className="flex items-center justify-center gap-2">
                               <div className="h-0.5 w-4 rounded-full bg-primary/40 group-hover:w-8 transition-all duration-500" />

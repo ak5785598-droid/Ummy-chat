@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export function useGameLogoUpload() {
       
       const updateData = { 
         id: game.slug, // Synchronize ID field with the slug
-        title: game.title,
+        title: game.title || (game as any).name || 'Untitled Game', // PROTOCOL GUARD: Prevents 'undefined' errors
         slug: game.slug,
         coverUrl: downloadURL,
         updatedAt: serverTimestamp()
