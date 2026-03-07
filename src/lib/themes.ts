@@ -15,6 +15,49 @@ export interface RoomTheme {
 }
 
 export const ROOM_THEMES: RoomTheme[] = [
+  // Haza-Inspired Premium Collection
+  { 
+    id: 'haza_summer', 
+    name: 'Haza Summer', 
+    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2000',
+    seatColor: 'rgba(255, 255, 255, 0.15)',
+    accentColor: '#0ea5e9',
+    category: 'general'
+  },
+  { 
+    id: 'haza_aurora', 
+    name: 'Haza Aurora', 
+    url: 'https://images.unsplash.com/photo-1531366930077-511778400463?q=80&w=2000',
+    seatColor: 'rgba(22, 163, 74, 0.15)',
+    accentColor: '#4ade80',
+    category: 'general'
+  },
+  { 
+    id: 'haza_tiger', 
+    name: 'Haza Gold Tiger', 
+    url: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?q=80&w=2000',
+    seatColor: 'rgba(184, 138, 68, 0.2)',
+    accentColor: '#fbbf24',
+    category: 'general'
+  },
+  { 
+    id: 'haza_azure', 
+    name: 'Haza Azure Ocean', 
+    url: 'https://images.unsplash.com/photo-1439405326854-014607f694d7?q=80&w=2000',
+    seatColor: 'rgba(14, 165, 233, 0.15)',
+    accentColor: '#38bdf8',
+    category: 'general'
+  },
+  { 
+    id: 'haza_dream', 
+    name: 'Haza Crystal Dream', 
+    url: 'https://images.unsplash.com/photo-1502759683299-cdcd6974244f?q=80&w=2000',
+    seatColor: 'rgba(147, 51, 234, 0.15)',
+    accentColor: '#d946ef',
+    category: 'general'
+  },
+
+  // Base Collection
   { 
     id: 'misty', 
     name: 'Misty Forest', 
