@@ -24,9 +24,9 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -67,6 +67,10 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
   </div>
 );
 
+/**
+ * Room Settings Portal - Sovereign Control Dimension.
+ * Re-engineered to focus strictly on room identity and access synchronization.
+ */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -74,7 +78,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [isEditingTheme, setIsEditingTheme] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [isManagingAdmins, setIsManagingAdmins] = useState(false);
-  const [isClearingChat, setIsClearingChat] = useState(false);
   
   const [newName, setNewName] = useState(room.title || room.name);
   const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
@@ -119,38 +122,6 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
       updatedAt: serverTimestamp()
     });
     toast({ title: isCurrentlyMod ? 'Admin Revoked' : 'Admin Granted' });
-  };
-
-  const handleClearChat = async () => {
-    if (!firestore || !room.id) return;
-    setIsClearingChat(true);
-    
-    try {
-      const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
-      const snap = await getDocs(messagesRef);
-      
-      if (snap.empty) {
-        toast({ title: 'Frequency Clean', description: 'No messages to clear.' });
-        setIsClearingChat(false);
-        return;
-      }
-
-      const batch = writeBatch(firestore);
-      snap.docs.forEach(d => batch.delete(d.ref));
-      
-      batch.commit().then(() => {
-        toast({ title: 'Frequency Purified', description: 'Chat history has been cleared.' });
-      }).catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: `chatRooms/${room.id}/messages`,
-          operation: 'delete',
-        }));
-      });
-    } catch (e: any) {
-      console.error('[Purge Error]:', e);
-    } finally {
-      setIsClearingChat(false);
-    }
   };
 
   const handleSaveName = () => {
@@ -221,7 +192,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
              </button>
              <DialogTitle className="text-xl font-black uppercase italic tracking-tighter">Settings</DialogTitle>
              <div className="w-10" />
-             <DialogDescription className="sr-only">Manage room settings and visual identity.</DialogDescription>
+             <DialogDescription className="sr-only">Manage room identity and privacy frequency.</DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
@@ -287,36 +258,17 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   }}
                 />
 
-                <SettingItem label="Super Mic" showChevron={false}>
-                   <Switch 
-                     checked={room.isSuperMic || false} 
-                     onCheckedChange={(val) => handleUpdate('isSuperMic', val)} 
-                   />
-                </SettingItem>
-
                 <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
 
                 <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
-
-                <div className="h-4 bg-gray-50" />
-
-                <SettingItem 
-                  label="Clean Chat History" 
-                  onClick={handleClearChat}
-                  className="group"
-                >
-                   {isClearingChat ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-red-400 group-hover:text-red-600 transition-colors" />}
-                </SettingItem>
-                <SettingItem label="Blocked List" extra="0" />
-                <SettingItem label="Kick History" />
              </div>
           </ScrollArea>
 
           {isEditingPassword && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <button onClick={() => setIsEditingPassword(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
-                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <button onClick={() => setIsEditingPassword(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Privacy Code</h3>
                   <button onClick={handleSavePassword} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
@@ -357,8 +309,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
           {isEditingTheme && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <button onClick={() => setIsEditingTheme(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
-                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <button onClick={() => setIsEditingTheme(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Room Themes</h3>
                   <div className="w-10" />
@@ -407,8 +359,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
           {isEditingName && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <button onClick={() => setIsEditingName(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
-                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <button onClick={() => setIsEditingName(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Edit Room Name</h3>
                   <button onClick={handleSaveName} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
@@ -427,8 +379,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
           {isEditingAnnouncement && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <button onClick={() => setIsEditingAnnouncement(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
-                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <button onClick={() => setIsEditingAnnouncement(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Edit Announcement</h3>
                   <button onClick={handleSaveAnnouncement} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
@@ -448,8 +400,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
           {isManagingAdmins && (
             <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <button onClick={() => setIsManagingAdmins(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
-                     <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <button onClick={() => setIsManagingAdmins(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Assign Administrators</h3>
                   <div className="w-10" />
