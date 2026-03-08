@@ -156,7 +156,7 @@ export default function AdminPage() {
   const [isSavingId, setIsSavingId] = useState(false);
   
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
-  const fileInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
 
@@ -197,7 +197,6 @@ export default function AdminPage() {
         return;
       }
 
-      // Batching Protocol: 500 operations per writeBatch
       const batches = [];
       let currentBatch = writeBatch(firestore);
       let count = 0;
@@ -686,8 +685,8 @@ export default function AdminPage() {
                       </div>
                       <CardContent className="p-4 flex justify-between items-center">
                          <p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p>
-                         <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
-                         <Button onClick={() => fileInputRefs[idx].current?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button>
+                         <input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
+                         <Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button>
                       </CardContent>
                    </Card>
                  ))}
@@ -1029,7 +1028,7 @@ export default function AdminPage() {
                                      disabled={isSendingDm || !dmContent.trim()} 
                                      className="h-14 px-8 bg-indigo-600 text-white rounded-2xl font-black uppercase italic"
                                    >
-                                      {isSendingDm ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                                      {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="h-5 w-5" />}
                                    </Button>
                                 </div>
                              </div>
