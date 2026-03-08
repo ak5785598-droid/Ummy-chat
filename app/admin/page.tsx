@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { OfficialTag } from '@/components/official-tag';
+import { GoldCoinIcon } from '@/components/icons';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
