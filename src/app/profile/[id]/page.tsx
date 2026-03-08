@@ -36,6 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
+import { OfficialTag } from '@/components/official-tag';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
@@ -177,7 +178,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    <AvatarFallback className="text-3xl bg-slate-100">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 pb-1">
-                   <h1 className={cn("text-2xl font-black tracking-tight leading-none mb-2", isOwnProfile ? "text-gray-900" : "text-white")}>{profile.username}</h1>
+                   <div className="flex items-center gap-2 mb-2">
+                      <h1 className={cn("text-2xl font-black tracking-tight leading-none", isOwnProfile ? "text-gray-900" : "text-white")}>{profile.username}</h1>
+                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                   </div>
                    <div className="flex items-center gap-2">
                       <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                       <span className="text-lg">🇮🇳</span>

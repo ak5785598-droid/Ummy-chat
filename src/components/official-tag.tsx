@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
  * Designed to mirror the reference image exactly:
  * - Glossy emerald green capsule background.
  * - Glowing golden 3D border.
- * - Refined 3D Bear icon with pink ears.
+ * - Refined 3D Bear icon with pink/orange ears.
  * - Animated sparkles and shine effects.
  */
 export function OfficialTag({ className, size = 'md' }: { className?: string, size?: 'sm' | 'md' | 'lg' }) {
@@ -61,17 +61,18 @@ export function OfficialTag({ className, size = 'md' }: { className?: string, si
         </div>
 
         {/* Official Text */}
-        <span className="relative z-30 font-headline text-[15px] font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] tracking-tight">
+        <span className="relative z-30 font-headline text-[15px] font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] tracking-tight italic">
           Official
         </span>
         
-        {/* Animated Sparkles Around the Tag */}
+        {/* Ornaments: Green Gem and Pink Star */}
+        <div className="absolute left-0 top-0 w-3 h-3 bg-green-400 rounded-sm rotate-45 border border-green-200 z-40 opacity-80" style={{ left: '-2px', top: '-2px' }} />
+        <div className="absolute right-1 top-0 text-[10px] animate-pulse z-40" style={{ top: '-4px' }}>⭐</div>
+
+        {/* Animated Sparkles */}
         <div className="absolute inset-0 pointer-events-none z-40">
            <div className="absolute top-1 right-2 w-1 h-1 bg-white rounded-full animate-ping" />
            <div className="absolute bottom-1 left-10 w-0.5 h-0.5 bg-yellow-200 rounded-full animate-pulse" />
-           <svg viewBox="0 0 24 24" className="absolute top-0 right-6 w-3 h-3 text-white fill-current animate-pulse opacity-60">
-              <path d="M12 2l2 8 8 2-8 2-2 8-2-8-8-2 8-2 2-8z" />
-           </svg>
         </div>
       </div>
     </div>

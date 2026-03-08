@@ -69,7 +69,7 @@ interface RoomUserProfileDialogProps {
 
 /**
  * High-Fidelity Tribe Member Identity Card.
- * Re-engineered: "Send Gift" is now positioned PROMINENTLY BELOW the Mute option.
+ * Displays the elite Official Tag signature if synchronized.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -186,7 +186,6 @@ export function RoomUserProfileDialog({
                </div>
 
                <div className="w-full space-y-6">
-                  {/* Primary Grid Navigation */}
                   <div className="grid grid-cols-4 gap-4 px-2">
                     <div className="flex flex-col items-center gap-2 group active:scale-95 transition-all cursor-pointer">
                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] flex items-center justify-center shadow-lg shadow-green-500/20 border border-white/10">
@@ -225,10 +224,8 @@ export function RoomUserProfileDialog({
                     </div>
                   </div>
 
-                  {/* Administrative & Secondary Actions Section */}
                   {!isMe && (
                     <div className="space-y-4 pt-6 border-t border-white/10 w-full">
-                       {/* ADMIN SYNC: Mute and Leave Seat options displayed at top of actions if admin */}
                        {canManage && (
                          <div className="grid grid-cols-2 gap-4 px-2">
                             <Button 
@@ -248,7 +245,6 @@ export function RoomUserProfileDialog({
                          </div>
                        )}
 
-                       {/* HIGH-FIDELITY GIFT DISPATCH: Positioned DOWN from Mute option as requested */}
                        <div className="px-2">
                           <Button 
                             onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}

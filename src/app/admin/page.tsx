@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { OfficialTag } from '@/components/official-tag';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -51,6 +52,7 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * Ummy Command Center - Supreme Authority Oversight.
+ * Only the Supreme Creator can assign the Official Tag frequency.
  */
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -193,6 +195,15 @@ export default function AdminPage() {
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
+    
+    // Also update target local state for immediate visual feedback in search results
+    if (targetUserForTags && targetUserForTags.id === targetUid) {
+      setTargetUserForTags(prev => ({
+        ...prev,
+        tags: hasRole ? prev.tags.filter(t => t !== roleId) : [...(prev.tags || []), roleId]
+      }));
+    }
+    
     toast({ title: 'Authority Updated' });
   };
 
@@ -343,18 +354,48 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="tags" className="space-y-6">
-             <Card className="rounded-2xl p-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                <CardHeader className="px-0">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2">
+                      <BadgeCheck className="h-6 w-6 text-primary" /> Assign Official Tags
+                   </CardTitle>
+                   <CardDescription>Grant high-fidelity elite signatures to tribe members. Restricted to Supreme Authority.</CardDescription>
+                </CardHeader>
                 <div className="flex gap-4">
-                   <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} />
-                   <Button onClick={handleSearchByTagId}>Find Tribe</Button>
+                   <Input placeholder="Enter User Tribal ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId()} className="h-14 rounded-2xl border-2" />
+                   <Button onClick={handleSearchByTagId} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find Tribe</Button>
                 </div>
                 {targetUserForTags && (
-                  <div className="mt-6 p-4 border rounded-xl flex items-center justify-between">
-                     <div className="flex items-center gap-4"><Avatar><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar><p className="font-black uppercase italic text-sm">{targetUserForTags.username}</p></div>
-                     <div className="flex gap-2">
-                        {ELITE_TAGS.map(tag => (
-                          <Button key={tag.id} variant={targetUserForTags.tags?.includes(tag.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}>{tag.label}</Button>
-                        ))}
+                  <div className="mt-10 p-6 border-2 border-slate-100 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
+                           <div>
+                              <p className="font-black uppercase italic text-xl tracking-tighter">{targetUserForTags.username}</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.specialId}</p>
+                           </div>
+                        </div>
+                        {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
+                     </div>
+                     
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Assign Elite Frequency</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                           {ELITE_TAGS.map(tag => (
+                             <Button 
+                               key={tag.id} 
+                               variant={targetUserForTags.tags?.includes(tag.id) ? 'default' : 'outline'} 
+                               className={cn(
+                                 "h-16 rounded-2xl font-black uppercase italic text-xs transition-all border-2",
+                                 targetUserForTags.tags?.includes(tag.id) ? "bg-primary text-black border-primary shadow-xl shadow-primary/20" : "hover:bg-gray-50"
+                               )}
+                               onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}
+                             >
+                                {tag.id === 'Official' ? <BadgeCheck className="mr-2 h-4 w-4" /> : tag.id === 'Seller' ? <Heart className="mr-2 h-4 w-4" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                                {tag.label}
+                             </Button>
+                           ))}
+                        </div>
                      </div>
                   </div>
                 )}
