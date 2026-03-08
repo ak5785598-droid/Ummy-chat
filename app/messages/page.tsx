@@ -228,6 +228,7 @@ export default function MessagesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [showOfficial, setShowOfficial] = useState(false);
+  const [showSystemDialog, setShowSystemDialog] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
 
@@ -246,13 +247,19 @@ export default function MessagesPage() {
     return [...rawChats].sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawChats]);
 
-  const officialQuery = useMemoFirebase(() => {
+  const notificationsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('timestamp', 'desc'));
   }, [firestore, user]);
 
-  const { data: officialMsgs } = useCollection(officialQuery);
-  const latestOfficial = officialMsgs?.[0];
+  const { data: allNotifications } = useCollection(notificationsQuery);
+
+  // Filter logic for official vs direct system portals
+  const teamMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'system') || [], [allNotifications]);
+  const systemMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'direct_system') || [], [allNotifications]);
+
+  const latestTeam = teamMsgs[0];
+  const latestSystem = systemMsgs[0];
 
   const handleSelectChat = (id: string, other: any) => {
     setActiveChatId(id);
@@ -280,8 +287,8 @@ export default function MessagesPage() {
             <CategoryItem 
               icon={Flag} 
               label="Ummy Team" 
-              subtext={latestOfficial?.content || "[Image]"}
-              date={latestOfficial?.timestamp ? format(latestOfficial.timestamp.toDate(), 'h:mm a') : "6:10 PM"}
+              subtext={latestTeam?.content || "No team broadcasts."}
+              date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-green-100"
               customIcon={<img src="https://img.icons8.com/color/96/lion.png" className="h-10 w-10" alt="Team" />}
               isVerified
@@ -291,11 +298,12 @@ export default function MessagesPage() {
             <CategoryItem 
               icon={Shield} 
               label="Ummy System" 
-              subtext="Welcome to Ummy! Reach out to us ..."
-              date="Sunday"
+              subtext={latestSystem?.content || "Welcome to Ummy! Reach out to us ..."}
+              date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : "Sunday"}
               colorClass="bg-green-600"
               customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-8 w-8" alt="System" />}
               isVerified
+              onClick={() => setShowSystemDialog(true)}
             />
 
             {/* Real-time Chats */}
@@ -317,7 +325,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Official Notifications Dialog */}
+        {/* Official Team Notifications Dialog */}
         <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
             <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
@@ -326,15 +334,15 @@ export default function MessagesPage() {
               </div>
               <div className="flex-1 text-left">
                 <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Official Activities</DialogTitle>
-                <DialogDescription className="sr-only">System messages and official broadcasts.</DialogDescription>
+                <DialogDescription className="sr-only">Global team broadcasts.</DialogDescription>
               </div>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] p-6">
                <div className="space-y-4">
-                  {officialMsgs?.length === 0 ? (
+                  {teamMsgs.length === 0 ? (
                     <div className="py-10 text-center opacity-20 italic">No official broadcasts.</div>
                   ) : (
-                    officialMsgs?.map((msg: any) => (
+                    teamMsgs.map((msg: any) => (
                       <div key={msg.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
                          <div className="flex justify-between items-start mb-2">
                             <h4 className="font-black uppercase text-sm">{msg.title || 'Official'}</h4>
@@ -348,6 +356,41 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="p-8 pt-0">
               <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-black text-white rounded-2xl font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Close</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Official System Notifications Dialog (Targeted) */}
+        <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
+          <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
+            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
+              <div className="h-14 w-14 bg-green-600 rounded-[1.2rem] flex items-center justify-center text-white shrink-0">
+                 <Shield className="h-8 w-8" />
+              </div>
+              <div className="flex-1 text-left">
+                <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">System Notices</DialogTitle>
+                <DialogDescription className="sr-only">Personal official notifications.</DialogDescription>
+              </div>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] p-6">
+               <div className="space-y-4">
+                  {systemMsgs.length === 0 ? (
+                    <div className="py-10 text-center opacity-20 italic">No system notices.</div>
+                  ) : (
+                    systemMsgs.map((msg: any) => (
+                      <div key={msg.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                         <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-black uppercase text-sm">{msg.title || 'System'}</h4>
+                            <span className="text-[10px] text-gray-400 font-bold">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
+                         </div>
+                         <p className="text-sm font-body italic text-gray-600 leading-relaxed">{msg.content}</p>
+                      </div>
+                    ))
+                  )}
+               </div>
+            </ScrollArea>
+            <div className="p-8 pt-0">
+              <button onClick={() => setShowSystemDialog(false)} className="w-full h-16 bg-black text-white rounded-2xl font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Close</button>
             </div>
           </DialogContent>
         </Dialog>

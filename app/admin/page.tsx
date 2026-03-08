@@ -11,7 +11,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone, MessageSquareText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -140,9 +140,18 @@ export default function AdminPage() {
   const [broadcastContent, setBroadcastContent] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
+  // Direct Message States
+  const [dmSearchId, setDmSearchId] = useState('');
+  const [dmSearchName, setDmSearchName] = useState('');
+  const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
+  const [dmTitle, setDmTitle] = useState('Official System Notice');
+  const [dmContent, setDmContent] = useState('');
+  const [isSendingDm, setIsSendingDm] = useState(false);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
+  const [isSearchingDm, setIsSearchingDm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingId, setIsSavingId] = useState(false);
   
@@ -222,6 +231,27 @@ export default function AdminPage() {
       toast({ variant: 'destructive', title: 'Broadcast Failed', description: e.message });
     } finally {
       setIsBroadcasting(false);
+    }
+  };
+
+  const handleDirectMessage = async () => {
+    if (!firestore || !targetUserForDm || !dmContent.trim() || !isCreator) return;
+    setIsSendingDm(true);
+    try {
+      const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
+      await addDoc(notifRef, {
+        title: dmTitle,
+        content: dmContent,
+        type: 'direct_system',
+        timestamp: serverTimestamp(),
+        isRead: false
+      });
+      toast({ title: 'Message Dispatched', description: `Message synced to ${targetUserForDm.username}'s system frequency.` });
+      setDmContent('');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Dispatch Failed', description: e.message });
+    } finally {
+      setIsSendingDm(false);
     }
   };
 
@@ -488,6 +518,9 @@ export default function AdminPage() {
               <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <Megaphone className="h-4 w-4 text-cyan-500" /> Broadcaster
               </TabsTrigger>
+              <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
+                <MessageSquareText className="h-4 w-4 text-indigo-500" /> Direct Messenger
+              </TabsTrigger>
               <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
               </TabsTrigger>
@@ -574,6 +607,71 @@ export default function AdminPage() {
                         </Button>
                      </div>
                   </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="direct-messenger" className="m-0 space-y-6 focus-visible:ring-0">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900">
+                        <MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger
+                     </CardTitle>
+                     <CardDescription>Dispatch a private official notice to a single member's Ummy System frequency.</CardDescription>
+                  </CardHeader>
+                  
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Recipient I'd..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find by ID</Button>
+                     </div>
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Username..." value={dmSearchName} onChange={(e) => setDmSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', dmSearchName, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleGenericSearch('name', dmSearchName, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingDm}>Find by Name</Button>
+                     </div>
+                  </div>
+
+                  {targetUserForDm && (
+                    <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
+                       <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl}/></Avatar>
+                          <div>
+                             <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
+                             {targetUserForDm.specialId && <SpecialIdBadge id={targetUserForDm.specialId} color={targetUserForDm.specialIdColor} />}
+                          </div>
+                       </div>
+
+                       <div className="space-y-4">
+                          <div className="grid gap-2">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Message Title</p>
+                             <Input 
+                               value={dmTitle} 
+                               onChange={(e) => setDmTitle(e.target.value)}
+                               className="h-14 rounded-2xl border-2 border-slate-100 text-lg font-black italic"
+                             />
+                          </div>
+                          <div className="grid gap-2">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Message Content</p>
+                             <Textarea 
+                               placeholder="Type the private system frequency..."
+                               value={dmContent}
+                               onChange={(e) => setDmContent(e.target.value)}
+                               className="h-40 rounded-3xl border-2 border-slate-100 p-6 text-base font-body italic resize-none"
+                             />
+                          </div>
+                       </div>
+
+                       <div className="pt-4">
+                          <Button 
+                            onClick={handleDirectMessage}
+                            disabled={isSendingDm || !dmContent.trim()}
+                            className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-indigo-700 transition-all"
+                          >
+                             {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />}
+                             Synchronize Direct Sync
+                          </Button>
+                       </div>
+                    </div>
+                  )}
                </Card>
             </TabsContent>
 
