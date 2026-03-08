@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -52,12 +52,13 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * Ummy Command Center - Supreme Authority Oversight.
- * Re-engineered for "Hand-to-Hand" Real-time Sync via live document listeners.
+ * Only the Supreme Creator can assign the Official Tag frequency.
  */
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   const { isUploading: isUploadingGameDP, uploadGameLogo } = useGameLogoUpload();
   
@@ -69,28 +70,13 @@ export default function AdminPage() {
   const [idSearchInput, setIdSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
-  
-  // Real-time Selection Protocol
-  const [selectedUserIdForTags, setSelectedUserIdForTags] = useState<string | null>(null);
-  const [selectedUserIdForIdSync, setSelectedUserIdForIdSync] = useState<string | null>(null);
-
+  const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
+  const [targetUserForId, setTargetUserForId] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingId, setIsSavingId] = useState(false);
   
-  // Live Data Hooks
-  const userForTagsRef = useMemoFirebase(() => {
-    if (!firestore || !selectedUserIdForTags) return null;
-    return doc(firestore, 'users', selectedUserIdForTags);
-  }, [firestore, selectedUserIdForTags]);
-  const { data: targetUserForTags } = useDoc(userForTagsRef);
-
-  const userForIdRef = useMemoFirebase(() => {
-    if (!firestore || !selectedUserIdForIdSync) return null;
-    return doc(firestore, 'users', selectedUserIdForIdSync);
-  }, [firestore, selectedUserIdForIdSync]);
-  const { data: targetUserForId } = useDoc(userForIdRef);
-
+  // Banner & Game state
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const fileInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const gameFileInputRef = useRef<HTMLInputElement>(null);
@@ -188,12 +174,8 @@ export default function AdminPage() {
       const paddedId = tagSearchId.padStart(3, '0');
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty) {
-        setSelectedUserIdForTags(snap.docs[0].id);
-      } else {
-        toast({ variant: 'destructive', title: 'Identity Not Found' });
-        setSelectedUserIdForTags(null);
-      }
+      if (!snap.empty) setTargetUserForTags({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      else toast({ variant: 'destructive', title: 'Identity Not Found' });
     } finally {
       setIsSearching(false);
     }
@@ -206,41 +188,58 @@ export default function AdminPage() {
       const paddedId = idSearchInput.padStart(3, '0');
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty) {
-        setSelectedUserIdForIdSync(snap.docs[0].id);
-      } else {
-        toast({ variant: 'destructive', title: 'Identity Not Found' });
-        setSelectedUserIdForIdSync(null);
-      }
+      if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      else toast({ variant: 'destructive', title: 'Identity Not Found' });
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleUpdateId = async () => {
-    if (!firestore || !selectedUserIdForIdSync || !newIdInput) return;
+    if (!firestore || !targetUserForId || !newIdInput) return;
     setIsSavingId(true);
     try {
       const paddedNewId = newIdInput.padStart(3, '0');
       
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== selectedUserIdForIdSync) {
+      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
         toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned to another member.' });
         return;
       }
 
-      const uRef = doc(firestore, 'users', selectedUserIdForIdSync);
-      const pRef = doc(firestore, 'users', selectedUserIdForIdSync, 'profile', selectedUserIdForIdSync);
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       
       const updateData = { specialId: paddedNewId, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId }));
       toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId}.` });
       setNewIdInput('');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Sync Failed' });
+    } finally {
+      setIsSavingId(false);
+    }
+  };
+
+  const handleRemoveId = async () => {
+    if (!firestore || !targetUserForId) return;
+    setIsSavingId(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      
+      const updateData = { specialId: null, updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
+      
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: null }));
+      toast({ title: 'ID Purged', description: 'Identity numeric signature has been removed.' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Purge Failed' });
     } finally {
       setIsSavingId(false);
     }
@@ -264,7 +263,29 @@ export default function AdminPage() {
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    toast({ title: 'Authority Synchronized' });
+    
+    if (targetUserForTags && targetUserForTags.id === targetUid) {
+      setTargetUserForTags((prev: any) => ({
+        ...prev,
+        tags: hasRole ? (prev.tags || []).filter((t: string) => t !== roleId) : [...(prev.tags || []), roleId]
+      }));
+    }
+    
+    toast({ title: 'Authority Updated' });
+  };
+
+  const handleRemoveAllTags = async (targetUid: string) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', targetUid);
+    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
+    const updateData = { tags: [], updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    
+    if (targetUserForTags && targetUserForTags.id === targetUid) {
+      setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
+    }
+    toast({ title: 'Authority Purged', description: 'All tags have been removed.' });
   };
 
   const handleBannerImageUpload = async (index: number, file: File) => {
@@ -440,7 +461,17 @@ export default function AdminPage() {
                      </div>
                      
                      <div className="space-y-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Assign Elite Frequency</p>
+                        <div className="flex items-center justify-between ml-2">
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Assign Elite Frequency</p>
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="text-red-500 text-[8px] font-black uppercase h-6 hover:bg-red-50" 
+                             onClick={() => handleRemoveAllTags(targetUserForTags.id)}
+                           >
+                              Remove All Tags
+                           </Button>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                            {ELITE_TAGS.map(tag => (
                              <Button 
@@ -481,26 +512,36 @@ export default function AdminPage() {
                         <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
                         <div>
                            <p className="font-black uppercase italic text-xl tracking-tighter">{targetUserForId.username}</p>
-                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId}</p>
+                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId || 'None'}</p>
                         </div>
                      </div>
                      
                      <div className="space-y-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">New Special I'd Assignment</p>
-                        <div className="flex gap-4">
+                        <div className="flex gap-2">
                            <Input 
                              placeholder="Enter New Numeric I'd (e.g. 777)" 
                              value={newIdInput} 
                              onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))}
-                             className="h-14 rounded-2xl border-2 text-xl font-black tracking-widest text-center"
+                             className="h-14 rounded-2xl border-2 text-xl font-black tracking-widest text-center flex-1"
                            />
-                           <Button 
-                             onClick={handleUpdateId} 
-                             disabled={!newIdInput || isSavingId}
-                             className="h-14 px-10 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
-                           >
-                              {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize I\'d'}
-                           </Button>
+                           <div className="flex gap-2 shrink-0">
+                              <Button 
+                                onClick={handleUpdateId} 
+                                disabled={!newIdInput || isSavingId}
+                                className="h-14 px-10 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
+                              >
+                                 {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}
+                              </Button>
+                              <Button 
+                                onClick={handleRemoveId} 
+                                disabled={isSavingId || !targetUserForId.specialId}
+                                variant="outline"
+                                className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none"
+                              >
+                                 {isSavingId ? <Loader className="animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                              </Button>
+                           </div>
                         </div>
                      </div>
                   </div>

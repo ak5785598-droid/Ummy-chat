@@ -73,6 +73,13 @@ const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) 
   );
 };
 
+const SpecialIdBadge = ({ id }: { id: string }) => (
+  <div className="relative overflow-hidden bg-gradient-to-r from-rose-300 via-rose-500 to-rose-300 px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.3)] border border-white/30 group animate-in fade-in duration-500">
+    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+    <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+  </div>
+);
+
 /**
  * Public Profile View.
  */
@@ -107,7 +114,9 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                          <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID:{profile.specialId}</span>
+                          {profile.specialId ? <SpecialIdBadge id={profile.specialId} /> : (
+                            <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+                          )}
                           <Copy className="h-3 w-3 text-white/40" />
                        </div>
                     </div>
@@ -305,7 +314,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="flex items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.specialId}</span>
+                  {profile.specialId ? <SpecialIdBadge id={profile.specialId} /> : (
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+                  )}
                   <Copy className="h-3 w-3 text-gray-300" />
                 </div>
                 {/* Elite Tag Synchronization - Hand to Hand Beside ID */}
