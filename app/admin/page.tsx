@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { OfficialTag } from '@/components/official-tag';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -43,9 +44,10 @@ const DEFAULT_SLIDES = [
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
-  { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
-  { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
-  { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
+  { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
+  { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
+  { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
+  { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
 ];
 
 /**
@@ -64,10 +66,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('authority');
   const [searchQuery, setSearchQuery] = useState('');
   const [tagSearchId, setTagSearchId] = useState('');
+  const [idSearchInput, setIdSearchInput] = useState('');
+  const [newIdInput, setNewIdInput] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
+  const [targetUserForId, setTargetUserForId] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingId, setIsSavingId] = useState(false);
   
   // Banner & Game state
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
@@ -83,7 +89,7 @@ export default function AdminPage() {
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
-      const match = firestoreGames?.find(g => g.id === base.id || g.slug === base.slug);
+      const match = firestoreGames?.find(g => g.slug === base.slug);
       return match ? { ...base, ...match } : base;
     });
   }, [firestoreGames]);
@@ -99,12 +105,6 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
-
-  const logsQuery = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
-    return query(collection(firestore, 'adminLogs'), orderBy('createdAt', 'desc'), limit(20));
-  }, [firestore, isCreator]);
-  const { data: logs } = useCollection(logsQuery);
 
   const handleDistributeDailyRewards = async () => {
     if (!firestore || !isCreator) return;
@@ -180,6 +180,50 @@ export default function AdminPage() {
     }
   };
 
+  const handleFindUserById = async () => {
+    if (!firestore || !idSearchInput) return;
+    setIsSearching(true);
+    try {
+      const paddedId = idSearchInput.padStart(3, '0');
+      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleUpdateId = async () => {
+    if (!firestore || !targetUserForId || !newIdInput) return;
+    setIsSavingId(true);
+    try {
+      const paddedNewId = newIdInput.padStart(3, '0');
+      
+      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
+        toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned to another member.' });
+        return;
+      }
+
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      
+      const updateData = { specialId: paddedNewId, updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
+      
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId }));
+      toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId}.` });
+      setNewIdInput('');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed' });
+    } finally {
+      setIsSavingId(false);
+    }
+  };
+
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', targetUserId);
@@ -235,31 +279,32 @@ export default function AdminPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8 max-w-6xl mx-auto p-4 animate-in fade-in duration-700 font-headline">
+      <div className="space-y-8 max-w-6xl mx-auto p-4 animate-in fade-in duration-700 font-headline bg-white min-h-full">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
           <div className="flex items-center gap-4">
              <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20"><Shield className="h-8 w-8 text-white" /></div>
              <div><h1 className="text-4xl font-bold uppercase italic tracking-tighter">Supreme Command</h1><p className="text-muted-foreground">Supreme Authority Protocol Active.</p></div>
           </div>
-          <Badge className="bg-red-500 text-white font-black uppercase italic px-4 py-1.5 h-10 rounded-xl shadow-xl shadow-red-500/20">Supreme Creator</Badge>
+          <Badge className="bg-primary text-black font-black uppercase italic px-4 py-1.5 h-10 rounded-xl shadow-xl shadow-primary/20">Supreme Creator</Badge>
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-secondary/50 p-1.5 h-12 rounded-full border w-fit overflow-x-auto no-scrollbar">
-            <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-red-500 data-[state=active]:text-white">Authority Hub</TabsTrigger>
+            <TabsTrigger value="authority" className="rounded-full px-6 font-black uppercase text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">Authority Hub</TabsTrigger>
             <TabsTrigger value="banners" className="rounded-full px-6 font-black uppercase text-[10px]">Banners</TabsTrigger>
             <TabsTrigger value="games" className="rounded-full px-6 font-black uppercase text-[10px]">Game Sync</TabsTrigger>
             <TabsTrigger value="tags" className="rounded-full px-6 font-black uppercase text-[10px]">Assign Tags</TabsTrigger>
+            <TabsTrigger value="special-id" className="rounded-full px-6 font-black uppercase text-[10px]">Special I'd</TabsTrigger>
             <TabsTrigger value="rewards" className="rounded-full px-6 font-black uppercase text-[10px]">Rewards</TabsTrigger>
           </TabsList>
 
           <TabsContent value="authority" className="space-y-6">
-             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-red-500/10 to-transparent">
-                <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-500"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
+                <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                    <div className="flex gap-4">
                       <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
-                      <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-red-500 text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
+                      <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
                    </div>
                    <div className="space-y-4">
                       {foundUsers.map((u) => (
@@ -288,7 +333,7 @@ export default function AdminPage() {
              {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
                <Card key={idx} className="rounded-2xl overflow-hidden">
                   <div className="relative aspect-[8/2] bg-muted">
-                     {slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" />}
+                     {slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />}
                      {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
                   </div>
                   <CardContent className="p-4 flex justify-between items-center">
@@ -301,23 +346,30 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-6">
-             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-purple-500/10 to-transparent">
+             <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
                 <CardHeader>
-                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-purple-600">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary">
                       <Gamepad2 className="h-6 w-6" /> Game Identity Sync
                    </CardTitle>
                    <CardDescription>Synchronize high-fidelity cover visuals for the 3D Tribe Arena.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                    {gamesList.map((game) => (
-                     <Card key={game.id} className="rounded-3xl overflow-hidden border-2 border-slate-100 shadow-sm group">
+                     <Card key={game.slug} className="rounded-3xl overflow-hidden border-2 border-slate-100 shadow-sm group">
                         <div className="relative aspect-square bg-slate-50 flex items-center justify-center">
                            {game.coverUrl ? (
-                             <Image key={game.coverUrl} src={game.coverUrl} alt={game.title} fill className="object-cover transition-transform group-hover:scale-105" />
+                             <Image 
+                               key={game.coverUrl} 
+                               src={game.coverUrl} 
+                               alt={game.title} 
+                               fill 
+                               unoptimized 
+                               className="object-cover transition-transform group-hover:scale-105" 
+                             />
                            ) : (
                              <Gamepad2 className="h-12 w-12 text-slate-200" />
                            )}
-                           {isUploadingGameDP && selectedGameForDP?.id === game.id && (
+                           {isUploadingGameDP && selectedGameForDP?.slug === game.slug && (
                              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
                                 <Loader className="h-8 w-8 animate-spin text-white" />
                              </div>
@@ -327,7 +379,7 @@ export default function AdminPage() {
                            <CardTitle className="text-sm font-black uppercase italic">{game.title}</CardTitle>
                            <Button 
                              onClick={() => handleGameDPUploadClick(game)} 
-                             className="w-full mt-2 h-10 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-[10px] italic shadow-lg shadow-purple-500/20"
+                             className="w-full mt-2 h-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] italic shadow-lg shadow-primary/20"
                              disabled={isUploadingGameDP}
                            >
                               <Camera className="h-3 w-3 mr-2" /> Sync New DP
@@ -341,18 +393,93 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="tags" className="space-y-6">
-             <Card className="rounded-2xl p-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                <CardHeader className="px-0">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2">
+                      <BadgeCheck className="h-6 w-6 text-primary" /> Assign Official Tags
+                   </CardTitle>
+                   <CardDescription>Grant high-fidelity elite signatures to tribe members. Restricted to Supreme Authority.</CardDescription>
+                </CardHeader>
                 <div className="flex gap-4">
-                   <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} />
-                   <Button onClick={handleSearchByTagId}>Find Tribe</Button>
+                   <Input placeholder="Enter User Tribal ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId()} className="h-14 rounded-2xl border-2" />
+                   <Button onClick={handleSearchByTagId} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find Tribe</Button>
                 </div>
                 {targetUserForTags && (
-                  <div className="mt-6 p-4 border rounded-xl flex items-center justify-between">
-                     <div className="flex items-center gap-4"><Avatar><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar><p className="font-black uppercase italic text-sm">{targetUserForTags.username}</p></div>
-                     <div className="flex gap-2">
-                        {ELITE_TAGS.map(tag => (
-                          <Button key={tag.id} variant={targetUserForTags.tags?.includes(tag.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}>{tag.label}</Button>
-                        ))}
+                  <div className="mt-10 p-6 border-2 border-slate-100 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
+                           <div>
+                              <p className="font-black uppercase italic text-xl tracking-tighter">{targetUserForTags.username}</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.specialId}</p>
+                           </div>
+                        </div>
+                        {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
+                     </div>
+                     
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Assign Elite Frequency</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                           {ELITE_TAGS.map(tag => (
+                             <Button 
+                               key={tag.id} 
+                               variant={targetUserForTags.tags?.includes(tag.id) ? 'default' : 'outline'} 
+                               className={cn(
+                                 "h-16 rounded-2xl font-black uppercase italic text-xs transition-all border-2",
+                                 targetUserForTags.tags?.includes(tag.id) ? "bg-primary text-black border-primary shadow-xl shadow-primary/20" : "hover:bg-gray-50"
+                               )}
+                               onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}
+                             >
+                                {tag.id === 'Official' ? <BadgeCheck className="mr-2 h-4 w-4" /> : tag.id === 'Seller' ? <Heart className="mr-2 h-4 w-4" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                                {tag.label}
+                             </Button>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+                )}
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="special-id" className="space-y-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                <CardHeader className="px-0">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2">
+                      <Type className="h-6 w-6 text-primary" /> Manage Special I'd
+                   </CardTitle>
+                   <CardDescription>Re-synchronize a member's numeric identity frequency.</CardDescription>
+                </CardHeader>
+                <div className="flex gap-4">
+                   <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFindUserById()} className="h-14 rounded-2xl border-2" />
+                   <Button onClick={handleFindUserById} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Locate Member</Button>
+                </div>
+                {targetUserForId && (
+                  <div className="mt-10 p-6 border-2 border-slate-100 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                     <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
+                        <div>
+                           <p className="font-black uppercase italic text-xl tracking-tighter">{targetUserForId.username}</p>
+                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId}</p>
+                        </div>
+                     </div>
+                     
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">New Special I'd Assignment</p>
+                        <div className="flex gap-4">
+                           <Input 
+                             placeholder="Enter New Numeric I'd (e.g. 777)" 
+                             value={newIdInput} 
+                             onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))}
+                             className="h-14 rounded-2xl border-2 text-xl font-black tracking-widest text-center"
+                           />
+                           <Button 
+                             onClick={handleUpdateId} 
+                             disabled={!newIdInput || isSavingId}
+                             className="h-14 px-10 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
+                           >
+                              {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize I\'d'}
+                           </Button>
+                        </div>
                      </div>
                   </div>
                 )}
@@ -361,8 +488,8 @@ export default function AdminPage() {
 
           <TabsContent value="rewards" className="space-y-6">
              <Card className="rounded-2xl p-8 text-center space-y-6">
-                <h3 className="text-2xl font-black uppercase italic text-yellow-500">Daily Reset Protocol</h3>
-                <Button onClick={handleDistributeDailyRewards} disabled={isSaving} className="w-full h-16 rounded-2xl bg-yellow-500 text-black font-black uppercase italic text-xl shadow-xl shadow-yellow-500/20">
+                <h3 className="text-2xl font-black uppercase italic text-primary">Daily Reset Protocol</h3>
+                <Button onClick={handleDistributeDailyRewards} disabled={isSaving} className="w-full h-16 rounded-2xl bg-primary text-black font-black uppercase italic text-xl shadow-xl shadow-primary/20">
                    {isSaving ? <Loader className="animate-spin mr-2" /> : <Gift className="mr-2" />}
                    Distribute Rewards & Reset
                 </Button>

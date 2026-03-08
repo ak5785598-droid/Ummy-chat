@@ -67,10 +67,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('authority');
   const [searchQuery, setSearchQuery] = useState('');
   const [tagSearchId, setTagSearchId] = useState('');
+  const [idSearchInput, setIdSearchInput] = useState('');
+  const [newIdInput, setNewIdInput] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
+  const [targetUserForId, setTargetUserForId] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingId, setIsSavingId] = useState(false);
   
   // Banner & Game state
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
@@ -177,6 +181,50 @@ export default function AdminPage() {
     }
   };
 
+  const handleFindUserById = async () => {
+    if (!firestore || !idSearchInput) return;
+    setIsSearching(true);
+    try {
+      const paddedId = idSearchInput.padStart(3, '0');
+      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleUpdateId = async () => {
+    if (!firestore || !targetUserForId || !newIdInput) return;
+    setIsSavingId(true);
+    try {
+      const paddedNewId = newIdInput.padStart(3, '0');
+      
+      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
+        toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned to another member.' });
+        return;
+      }
+
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      
+      const updateData = { specialId: paddedNewId, updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
+      
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId }));
+      toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId}.` });
+      setNewIdInput('');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed' });
+    } finally {
+      setIsSavingId(false);
+    }
+  };
+
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', targetUserId);
@@ -196,11 +244,10 @@ export default function AdminPage() {
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
     
-    // Also update target local state for immediate visual feedback in search results
     if (targetUserForTags && targetUserForTags.id === targetUid) {
-      setTargetUserForTags(prev => ({
+      setTargetUserForTags((prev: any) => ({
         ...prev,
-        tags: hasRole ? prev.tags.filter(t => t !== roleId) : [...(prev.tags || []), roleId]
+        tags: hasRole ? (prev.tags || []).filter((t: string) => t !== roleId) : [...(prev.tags || []), roleId]
       }));
     }
     
@@ -256,6 +303,7 @@ export default function AdminPage() {
             <TabsTrigger value="banners" className="rounded-full px-6 font-black uppercase text-[10px]">Banners</TabsTrigger>
             <TabsTrigger value="games" className="rounded-full px-6 font-black uppercase text-[10px]">Game Sync</TabsTrigger>
             <TabsTrigger value="tags" className="rounded-full px-6 font-black uppercase text-[10px]">Assign Tags</TabsTrigger>
+            <TabsTrigger value="special-id" className="rounded-full px-6 font-black uppercase text-[10px]">Special I'd</TabsTrigger>
             <TabsTrigger value="rewards" className="rounded-full px-6 font-black uppercase text-[10px]">Rewards</TabsTrigger>
           </TabsList>
 
@@ -395,6 +443,51 @@ export default function AdminPage() {
                                 {tag.label}
                              </Button>
                            ))}
+                        </div>
+                     </div>
+                  </div>
+                )}
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="special-id" className="space-y-6">
+             <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                <CardHeader className="px-0">
+                   <CardTitle className="text-2xl uppercase italic flex items-center gap-2">
+                      <Type className="h-6 w-6 text-primary" /> Manage Special I'd
+                   </CardTitle>
+                   <CardDescription>Re-synchronize a member's numeric identity frequency.</CardDescription>
+                </CardHeader>
+                <div className="flex gap-4">
+                   <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFindUserById()} className="h-14 rounded-2xl border-2" />
+                   <Button onClick={handleFindUserById} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Locate Member</Button>
+                </div>
+                {targetUserForId && (
+                  <div className="mt-10 p-6 border-2 border-slate-100 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                     <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
+                        <div>
+                           <p className="font-black uppercase italic text-xl tracking-tighter">{targetUserForId.username}</p>
+                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId}</p>
+                        </div>
+                     </div>
+                     
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">New Special I'd Assignment</p>
+                        <div className="flex gap-4">
+                           <Input 
+                             placeholder="Enter New Numeric I'd (e.g. 777)" 
+                             value={newIdInput} 
+                             onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))}
+                             className="h-14 rounded-2xl border-2 text-xl font-black tracking-widest text-center"
+                           />
+                           <Button 
+                             onClick={handleUpdateId} 
+                             disabled={!newIdInput || isSavingId}
+                             className="h-14 px-10 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
+                           >
+                              {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize I\'d'}
+                           </Button>
                         </div>
                      </div>
                   </div>
