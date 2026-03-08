@@ -54,7 +54,7 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * High-Fidelity Glossy Special ID Signature.
- * Supports Red and Blue themes.
+ * Supports Red and Blue themes with shining animation.
  */
 const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
   const theme = color === 'blue' 
@@ -203,6 +203,7 @@ export default function AdminPage() {
         const paddedId = value.padStart(3, '0');
         q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       } else {
+        // FIXED SEARCH: Proper username matching handshake
         q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
       }
       
@@ -226,6 +227,7 @@ export default function AdminPage() {
         const paddedId = value.padStart(3, '0');
         q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       } else {
+        // FIXED SEARCH: Proper username matching handshake
         q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
       }
 

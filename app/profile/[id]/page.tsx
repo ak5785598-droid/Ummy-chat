@@ -140,8 +140,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
                        <div className="flex items-center gap-1">
-                          {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />}
-                          {!profile.specialId && (
+                          {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
                             <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
                                <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                                <Copy className="h-3 w-3 text-white/40" />
@@ -390,8 +389,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />}
-                  {!profile.specialId && (
+                  {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
                     <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                       <Copy className="h-3 w-3 text-gray-300" />
