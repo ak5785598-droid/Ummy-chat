@@ -22,11 +22,12 @@ import {
   User,
   Pen,
   ShieldCheck,
-  BadgeCheck
+  BadgeCheck,
+  Check
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
+import { doc, serverTimestamp } from 'firebase/firestore';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
   <div className="flex flex-col items-center justify-center flex-1 py-4 relative">
@@ -104,6 +106,12 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
+  const handleCopyId = () => {
+    const idToCopy = profile.specialId || profile.id;
+    navigator.clipboard.writeText(idToCopy);
+    toast({ title: 'ID Copied' });
+  };
+
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
       {/* Sovereign Green Header */}
@@ -130,7 +138,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     <div className="flex items-center gap-2">
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
-                       <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
+                       <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
                           {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
                             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                           )}
@@ -268,15 +276,77 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const { id: profileId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
-  
+  const firestore = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
+
+  const [isProcessingFriend, setIsProcessingFriend] = useState(false);
+  const [isProcessingFollow, setIsProcessingFollow] = useState(false);
+
+  // Check Friend Request Status
+  const friendRequestRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
+    return doc(firestore, 'friend_requests', `${currentUser.uid}_${profileId}`);
+  }, [firestore, currentUser, profileId]);
+  const { data: friendRequest } = useDoc(friendRequestRef);
+
+  // Check Follow Status
+  const followRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
+    return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
+  }, [firestore, currentUser, profileId]);
+  const { data: followData } = useDoc(followRef);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
   }, [currentUser, isUserLoading, router]);
 
   const isOwnProfile = currentUser?.uid === profileId;
+
+  const handleCopyId = () => {
+    if (!profile) return;
+    const idToCopy = profile.specialId || profile.id;
+    navigator.clipboard.writeText(idToCopy);
+    toast({ title: 'ID Copied' });
+  };
+
+  const handleFriendRequest = async () => {
+    if (!firestore || !currentUser || !profileId || isProcessingFriend) return;
+    if (friendRequest) return;
+
+    setIsProcessingFriend(true);
+    const requestRef = doc(firestore, 'friend_requests', `${currentUser.uid}_${profileId}`);
+    
+    setDocumentNonBlocking(requestRef, {
+      senderId: currentUser.uid,
+      receiverId: profileId,
+      status: 'pending',
+      timestamp: serverTimestamp()
+    }, { merge: true });
+
+    toast({ title: 'Request Sent', description: 'Your friend request is synchronized.' });
+    setIsProcessingFriend(false);
+  };
+
+  const handleFollow = async () => {
+    if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
+    
+    setIsProcessingFollow(true);
+    const fRef = doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
+
+    if (followData) {
+      deleteDocumentNonBlocking(fRef);
+      toast({ title: 'Unfollowed' });
+    } else {
+      setDocumentNonBlocking(fRef, {
+        followerId: currentUser.uid,
+        followingId: profileId,
+        timestamp: serverTimestamp()
+      }, { merge: true });
+      toast({ title: 'Following' });
+    }
+    setIsProcessingFollow(false);
+  };
 
   if (isUserLoading || isProfileLoading) {
     return (
@@ -332,7 +402,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <span className="text-lg">🇮🇳</span>
               </div>
               <div className="flex items-center justify-center gap-2">
-                <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
+                <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
                   {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                   )}
