@@ -74,12 +74,21 @@ const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) 
   );
 };
 
-const SpecialIdBadge = ({ id }: { id: string }) => (
-  <div className="relative overflow-hidden bg-gradient-to-r from-rose-300 via-rose-500 to-rose-300 px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.3)] border border-white/30 group animate-in fade-in duration-500">
-    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-    <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
-  </div>
-);
+const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+
+  return (
+    <div className={cn(
+      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r",
+      theme
+    )}>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+    </div>
+  );
+};
 
 const CenterTag = ({ label, gradient }: { label: string, gradient: string }) => (
   <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient)}>
@@ -122,7 +131,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                          {profile.specialId ? <SpecialIdBadge id={profile.specialId} /> : (
+                          {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
                             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                           )}
                           <Copy className="h-3 w-3 text-white/40" />
@@ -324,7 +333,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="flex items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                  {profile.specialId ? <SpecialIdBadge id={profile.specialId} /> : (
+                  {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
                   )}
                   <Copy className="h-3 w-3 text-gray-300" />
@@ -378,7 +387,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           {/* Sequential Menu List */}
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-8">
             <MenuItem label="Invite Friends" icon={UserPlus} colorClass="bg-green-100 text-green-600" />
-            <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" />
+            <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />

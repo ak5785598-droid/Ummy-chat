@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -54,13 +54,23 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * High-Fidelity Glossy Special ID Signature.
+ * Supports Red and Blue themes.
  */
-const SpecialIdBadge = ({ id }: { id: string }) => (
-  <div className="relative overflow-hidden bg-gradient-to-r from-rose-300 via-rose-500 to-rose-300 px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.3)] border border-white/30 group animate-in fade-in duration-500 w-fit">
-    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-    <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
-  </div>
-);
+const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+
+  return (
+    <div className={cn(
+      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
+      theme
+    )}>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+    </div>
+  );
+};
 
 /**
  * Ummy Command Center - Supreme Authority Oversight.
@@ -80,6 +90,7 @@ export default function AdminPage() {
   const [tagSearchId, setTagSearchId] = useState('');
   const [idSearchInput, setIdSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
+  const [selectedColor, setSelectedColor] = useState('red');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
   const [targetUserForId, setTargetUserForId] = useState<any>(null);
@@ -222,12 +233,12 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       
-      const updateData = { specialId: paddedNewId, updatedAt: serverTimestamp() };
+      const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId }));
-      toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId}.` });
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
+      toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId} with ${selectedColor} theme.` });
       setNewIdInput('');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Sync Failed' });
@@ -243,11 +254,11 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       
-      const updateData = { specialId: null, updatedAt: serverTimestamp() };
+      const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: null }));
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
       toast({ title: 'ID Purged', description: 'Identity numeric signature has been removed.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Purge Failed' });
@@ -382,7 +393,7 @@ export default function AdminPage() {
                                 <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                                 <div className="flex-1">
                                    <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
-                                   {u.specialId ? <SpecialIdBadge id={u.specialId} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
+                                   {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
                                 </div>
                                 <div className="flex gap-2">
                                    <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px] border-slate-200">+1k</Button>
@@ -485,7 +496,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
-                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
+                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
                              </div>
                           </div>
                           {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
@@ -547,7 +558,7 @@ export default function AdminPage() {
                                 {targetUserForId.specialId ? (
                                   <div className="flex items-center gap-2">
                                      <span className="text-[10px] font-black uppercase text-gray-400">Current:</span>
-                                     <SpecialIdBadge id={targetUserForId.specialId} />
+                                     <SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} />
                                   </div>
                                 ) : (
                                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: None</p>
@@ -556,31 +567,57 @@ export default function AdminPage() {
                           </div>
                        </div>
                        
-                       <div className="space-y-4">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">New Special I'd Assignment</p>
-                          <div className="flex gap-2">
-                             <Input 
-                               placeholder="Enter New Numeric I'd (e.g. 777)" 
-                               value={newIdInput} 
-                               onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))}
-                               className="h-14 rounded-2xl border-2 border-slate-200 text-xl font-black tracking-widest text-center flex-1"
-                             />
-                             <div className="flex gap-2 shrink-0">
-                                <Button 
-                                  onClick={handleUpdateId} 
-                                  disabled={!newIdInput || isSavingId}
-                                  className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
+                       <div className="space-y-6">
+                          <div className="space-y-4">
+                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Theme Frequency</p>
+                             <div className="flex gap-4 ml-2">
+                                <button 
+                                  onClick={() => setSelectedColor('red')}
+                                  className={cn(
+                                    "h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center",
+                                    selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60"
+                                  )}
                                 >
-                                   {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}
-                                </Button>
-                                <Button 
-                                  onClick={handleRemoveId} 
-                                  disabled={isSavingId || !targetUserForId.specialId}
-                                  variant="outline"
-                                  className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none"
+                                   {selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}
+                                </button>
+                                <button 
+                                  onClick={() => setSelectedColor('blue')}
+                                  className={cn(
+                                    "h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center",
+                                    selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60"
+                                  )}
                                 >
-                                   {isSavingId ? <Loader className="animate-spin" /> : <Trash2 className="h-5 w-5" />}
-                                </Button>
+                                   {selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}
+                                </button>
+                             </div>
+                          </div>
+
+                          <div className="space-y-4">
+                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">New Special I'd Assignment</p>
+                             <div className="flex gap-2">
+                                <Input 
+                                  placeholder="Enter New Numeric I'd (e.g. 777)" 
+                                  value={newIdInput} 
+                                  onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))}
+                                  className="h-14 rounded-2xl border-2 border-slate-200 text-xl font-black tracking-widest text-center flex-1"
+                                />
+                                <div className="flex gap-2 shrink-0">
+                                   <Button 
+                                     onClick={handleUpdateId} 
+                                     disabled={!newIdInput || isSavingId}
+                                     className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
+                                   >
+                                      {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}
+                                   </Button>
+                                   <Button 
+                                     onClick={handleRemoveId} 
+                                     disabled={isSavingId || !targetUserForId.specialId}
+                                     variant="outline"
+                                     className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none"
+                                   >
+                                      {isSavingId ? <Loader className="animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                                   </Button>
+                                </div>
                              </div>
                           </div>
                        </div>

@@ -69,9 +69,24 @@ interface RoomUserProfileDialogProps {
   isMe: boolean;
 }
 
+const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+
+  return (
+    <div className={cn(
+      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r",
+      theme
+    )}>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+    </div>
+  );
+};
+
 /**
  * High-Fidelity Tribe Member Identity Card.
- * Displays elite tags directly adjacent to ID for Hand-to-Hand recognition.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -123,7 +138,6 @@ export function RoomUserProfileDialog({
           </div>
         ) : profile ? (
           <div className="relative flex flex-col items-center">
-            {/* Sovereign Navigation Bar */}
             <div className="w-full flex justify-between items-center p-6 absolute top-0 left-0 z-50">
                <button onClick={() => onOpenChange(false)} className="text-white/40 hover:text-white transition-colors">
                   <ChevronRight className="h-6 w-6 rotate-180" />
@@ -163,10 +177,11 @@ export function RoomUserProfileDialog({
                
                <div className="flex flex-wrap items-center justify-center gap-2 mt-1 mb-4">
                   <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
-                     <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:{profile.specialId}</span>
+                     <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:</span>
+                     {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />}
+                     {!profile.specialId && <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{profile.id.slice(0, 6)}</span>}
                      <Copy className="h-3 w-3 text-white/20" />
                   </div>
-                  {/* Elite Tag Synchronization - Hand to Hand Beside ID */}
                   <div className="flex items-center gap-1 shrink-0">
                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                      {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
