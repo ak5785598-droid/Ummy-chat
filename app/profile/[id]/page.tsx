@@ -12,7 +12,6 @@ import {
   Briefcase,
   UserPlus,
   Star,
-  Gem,
   Heart,
   ShoppingBag,
   MoreHorizontal,
@@ -366,8 +365,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           {/* Sequential Menu List */}
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-8">
             <MenuItem label="Invite Friends" icon={UserPlus} colorClass="bg-green-100 text-green-600" />
-            <MenuItem label="Aristocracy" icon={Star} colorClass="bg-yellow-100 text-yellow-600" />
-            <MenuItem label="Treasure Vault" icon={Gem} colorClass="bg-purple-100 text-purple-600" />
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
