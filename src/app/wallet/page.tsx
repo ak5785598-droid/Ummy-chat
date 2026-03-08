@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
-import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Loader, Gem } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { createOrderAction, verifyPaymentAction } from '@/actions/payments';
 
 const COIN_PACKAGES = [
   { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
@@ -24,7 +25,7 @@ const COIN_PACKAGES = [
 
 /**
  * Tribal Vault - High-Fidelity Economic Dimension.
- * Re-engineered for compact mobile visual frequency and fixed withdrawal logic.
+ * Re-engineered for Razorpay UPI integration and fixed withdrawal logic.
  */
 export default function WalletPage() {
   const router = useRouter();
@@ -63,27 +64,97 @@ export default function WalletPage() {
     }
   };
 
-  const handleRechargeNow = () => {
-    if (!user || !firestore) return;
+  const handleRechargeNow = async () => {
+    if (!user || !firestore || !userProfile) return;
     const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
     if (!pkg) return;
 
     setIsProcessing(true);
-    // Simulation of secure payment handshake
-    setTimeout(() => {
-      const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
-      const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
-      const totalGain = amountValue + bonusValue;
+    
+    try {
+      const inrAmount = parseInt(pkg.price.replace(' INR', ''));
+      
+      // 1. Create order on server frequency
+      const orderRes = await createOrderAction(inrAmount);
+      if (!orderRes.success) {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: orderRes.error });
+        setIsProcessing(false);
+        return;
+      }
 
-      const userRef = doc(firestore, 'users', user.uid);
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      
-      updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      
-      toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins.` });
+      // 2. Open High-Fidelity Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: inrAmount * 100,
+        currency: "INR",
+        name: "Ummy Tribe",
+        description: `Recharge ${pkg.amount} Coins`,
+        order_id: orderRes.orderId,
+        handler: async (response: any) => {
+          // 3. Verify payment signature protocol
+          const verifyRes = await verifyPaymentAction(
+            response.razorpay_order_id,
+            response.razorpay_payment_id,
+            response.razorpay_signature
+          );
+
+          if (verifyRes.success) {
+            const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
+            const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
+            const totalGain = amountValue + bonusValue;
+
+            const userRef = doc(firestore, 'users', user.uid);
+            const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+            const transRef = doc(collection(firestore, 'transactions'));
+
+            // Record Atomic Transaction Ledger
+            setDocumentNonBlocking(transRef, {
+              userId: user.uid,
+              coins: totalGain,
+              amount: inrAmount,
+              paymentId: response.razorpay_payment_id,
+              paymentMethod: 'UPI',
+              status: 'completed',
+              createdAt: serverTimestamp()
+            }, { merge: true });
+
+            // Synchronize Wallet Balance
+            const updateData = { 
+              'wallet.coins': increment(totalGain), 
+              updatedAt: serverTimestamp() 
+            };
+            updateDocumentNonBlocking(userRef, updateData);
+            updateDocumentNonBlocking(profileRef, updateData);
+            
+            toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins.` });
+          } else {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: verifyRes.error });
+          }
+          setIsProcessing(false);
+        },
+        prefill: {
+          name: userProfile.username,
+          email: user.email || "",
+          contact: user.phoneNumber || "",
+        },
+        theme: { color: "#FF9A00" },
+        modal: {
+          ondismiss: () => setIsProcessing(false)
+        }
+      };
+
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        toast({ variant: 'destructive', title: 'System Error', description: 'Payment script failed to load.' });
+        setIsProcessing(false);
+      }
+    } catch (e: any) {
+      console.error('[Payment Sync] Error:', e);
+      toast({ variant: 'destructive', title: 'Handshake Error' });
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const handleWithdrawal = () => {
@@ -318,6 +389,6 @@ export default function WalletPage() {
         )}
       </div>
       <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-    </AppLayout>
+    </div>
   );
 }

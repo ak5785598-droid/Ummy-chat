@@ -1,64 +1,36 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user profile within the Dilsey application. This entity stores personal information, connections, and interests for personalized recommendations.",
+      "description": "Represents a user profile within the application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "The display name chosen by the user."
-        },
-        "avatarUrl": {
-          "type": "string",
-          "description": "URL to the user's profile picture or avatar.",
-          "format": "uri"
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biographical description provided by the user."
-        },
-        "specialId": {
-          "type": "string",
-          "description": "Sequential 3-digit numeric ID."
-        }
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "avatarUrl": { "type": "string", "format": "uri" },
+        "bio": { "type": "string" },
+        "specialId": { "type": "string" }
       },
-      "required": [
-        "id",
-        "username"
-      ]
+      "required": ["id", "username"]
     },
-    "FriendRequest": {
-      "title": "FriendRequest",
+    "Transaction": {
+      "title": "Transaction",
       "type": "object",
+      "description": "Economic ledger record for UPI recharges.",
       "properties": {
-        "senderId": { "type": "string" },
-        "receiverId": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
-        "timestamp": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Follower": {
-      "title": "Follower",
-      "type": "object",
-      "properties": {
-        "followerId": { "type": "string" },
-        "followingId": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "userId": { "type": "string" },
+        "coins": { "type": "number" },
+        "amount": { "type": "number" },
+        "paymentId": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     }
   },
   "auth": {
-    "providers": [
-      "google.com",
-      "phone"
-    ]
+    "providers": ["google.com", "phone"]
   },
   "firestore": {
     "structure": [
@@ -66,26 +38,16 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
+          "schema": { "$ref": "#/backend/entities/User" },
           "description": "Stores individual user profiles."
         }
       },
       {
-        "path": "/friend_requests/{requestId}",
+        "path": "/transactions/{transactionId}",
         "definition": {
-          "entityName": "FriendRequest",
-          "schema": { "$ref": "#/backend/entities/FriendRequest" },
-          "description": "Stores friend requests between users."
-        }
-      },
-      {
-        "path": "/followers/{followId}",
-        "definition": {
-          "entityName": "Follower",
-          "schema": { "$ref": "#/backend/entities/Follower" },
-          "description": "Stores follow relationships."
+          "entityName": "Transaction",
+          "schema": { "$ref": "#/backend/entities/Transaction" },
+          "description": "Stores verified recharge transactions."
         }
       }
     ]

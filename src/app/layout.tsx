@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Alegreya, Belleza } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from './providers';
+import Script from 'next/script';
 
 const fontHeadline = Belleza({
   subsets: ['latin'],
@@ -62,6 +63,7 @@ export default function RootLayout({
       >
         <Providers>{children}</Providers>
         <Toaster />
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );

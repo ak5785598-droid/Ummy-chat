@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -70,6 +69,11 @@ service cloud.firestore {
       match /followedRooms/{roomId} {
         allow read, write: if isOwner(userId);
       }
+
+      match /diamondExchanges/{exchangeId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+      }
     }
 
     match /chatRooms/{chatRoomId} {
@@ -107,6 +111,11 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, write: if isSignedIn();
       }
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
     }
 
     match /friend_requests/{requestId} {
