@@ -26,7 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -70,6 +70,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
 /**
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
+ * Now synchronizes with dynamic themes uploaded via the Admin Theme Hub.
  */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
@@ -99,30 +100,46 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
   const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
 
-  // Filter themes based on official/help requirements
-  const filteredThemes = useMemo(() => {
-    return ROOM_THEMES.filter(theme => {
-      if (isOfficialHelpRoom) {
-        // Help Center rooms can see help themes and general themes
-        return theme.category === 'help' || theme.category === 'general';
-      }
-      // Entertainment rooms or Official rooms owned by creator
-      if (userIsOfficial || isOwner) {
-        // Exclude help themes from non-help rooms
-        if (theme.category === 'help') return false;
-        return true;
-      }
-      // Standard users only see general themes
-      return theme.category === 'general';
-    });
-  }, [isOfficialHelpRoom, userIsOfficial, isOwner]);
-
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
   }, [firestore, room.id]);
 
   const { data: participants } = useCollection(participantsQuery);
+
+  const customThemesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: customThemes } = useCollection(customThemesQuery);
+
+  // Filter themes based on official/help requirements and merge custom ones
+  const filteredThemes = useMemo(() => {
+    const baseline = ROOM_THEMES.filter(theme => {
+      if (isOfficialHelpRoom) {
+        return theme.category === 'help' || theme.category === 'general';
+      }
+      if (userIsOfficial || isOwner) {
+        if (theme.category === 'help') return false;
+        return true;
+      }
+      return theme.category === 'general';
+    });
+
+    const dynamic = (customThemes || []).filter(theme => {
+      if (isOfficialHelpRoom) {
+        return theme.category === 'help' || theme.category === 'general';
+      }
+      if (userIsOfficial || isOwner) {
+        if (theme.category === 'help') return false;
+        return true;
+      }
+      return theme.category === 'general';
+    });
+
+    return [...baseline, ...dynamic];
+  }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes]);
 
   const handleUpdate = (field: string, value: any) => {
     if (!firestore) return;
@@ -195,7 +212,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const currentTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
+  const currentTheme = filteredThemes.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
 
   return (
     <>

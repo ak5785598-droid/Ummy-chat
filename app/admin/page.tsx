@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -7,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError, useStorage, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone, MessageSquareText } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone, MessageSquareText, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -22,6 +21,7 @@ import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -148,6 +148,12 @@ export default function AdminPage() {
   const [dmContent, setDmContent] = useState('');
   const [isSendingDm, setIsSendingDm] = useState(false);
 
+  // Theme Sync States
+  const [newThemeName, setNewThemeName] = useState('');
+  const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
+  const [isUploadingTheme, setIsUploadingTheme] = useState(false);
+  const themeFileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
@@ -165,6 +171,12 @@ export default function AdminPage() {
     return query(collection(firestore, 'games'));
   }, [firestore, isCreator]);
   const { data: firestoreGames } = useCollection(gamesQuery);
+
+  const themesQuery = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
+  }, [firestore, isCreator]);
+  const { data: customThemes } = useCollection(themesQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -477,6 +489,38 @@ export default function AdminPage() {
     }
   };
 
+  const handleThemeUpload = async (file: File) => {
+    if (!storage || !firestore || !newThemeName.trim()) {
+      toast({ variant: 'destructive', title: 'Missing Data', description: 'Enter theme name before uploading.' });
+      return;
+    }
+    setIsUploadingTheme(true);
+    try {
+      const timestamp = Date.now();
+      const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+
+      const themeRef = doc(collection(firestore, 'roomThemes'));
+      await setDoc(themeRef, {
+        id: themeRef.id,
+        name: newThemeName,
+        url: url,
+        category: newThemeCategory,
+        createdAt: serverTimestamp(),
+        accentColor: '#FFCC00',
+        seatColor: 'rgba(255, 255, 255, 0.1)'
+      });
+
+      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now in the theme vault.` });
+      setNewThemeName('');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
+    } finally {
+      setIsUploadingTheme(false);
+    }
+  };
+
   const handleGameDPUploadClick = (game: any) => {
     setSelectedGameForDP(game);
     gameFileInputRef.current?.click();
@@ -508,6 +552,9 @@ export default function AdminPage() {
             <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
+              </TabsTrigger>
+              <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
+                <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
               </TabsTrigger>
               <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
@@ -563,6 +610,94 @@ export default function AdminPage() {
                              </div>
                           </div>
                         ))}
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="themes" className="m-0 space-y-6 focus-visible:ring-0">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-500">
+                        <Palette className="h-6 w-6" /> Theme Hub
+                     </CardTitle>
+                     <CardDescription>Upload high-fidelity environmental signatures for room frequencies.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                        <div className="space-y-4">
+                           <div className="grid gap-2">
+                              <p className="text-[10px] font-black uppercase text-gray-400 ml-1">Theme Name</p>
+                              <Input 
+                                placeholder="Enter Theme Name..." 
+                                value={newThemeName} 
+                                onChange={(e) => setNewThemeName(e.target.value)} 
+                                className="h-14 rounded-2xl border-2 border-white text-lg font-black italic shadow-sm"
+                              />
+                           </div>
+                           <div className="grid gap-2">
+                              <p className="text-[10px] font-black uppercase text-gray-400 ml-1">Category</p>
+                              <Select value={newThemeCategory} onValueChange={(val: any) => setNewThemeCategory(val)}>
+                                 <SelectTrigger className="h-14 rounded-2xl border-2 border-white shadow-sm font-black italic">
+                                    <SelectValue placeholder="Select Category" />
+                                 </SelectTrigger>
+                                 <SelectContent className="bg-white rounded-2xl font-black italic">
+                                    <SelectItem value="general">General</SelectItem>
+                                    <SelectItem value="entertainment">Entertainment</SelectItem>
+                                    <SelectItem value="help">Help</SelectItem>
+                                 </SelectContent>
+                              </Select>
+                           </div>
+                        </div>
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl bg-white p-6 group">
+                           <button 
+                             onClick={() => themeFileInputRef.current?.click()}
+                             disabled={isUploadingTheme}
+                             className="flex flex-col items-center gap-3 active:scale-95 transition-transform"
+                           >
+                              <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm group-hover:bg-rose-100 transition-colors">
+                                 {isUploadingTheme ? <Loader className="animate-spin h-8 w-8" /> : <Upload className="h-8 w-8" />}
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload Visual Sync</span>
+                           </button>
+                           <input 
+                             type="file" 
+                             ref={themeFileInputRef} 
+                             className="hidden" 
+                             accept="image/*" 
+                             onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} 
+                           />
+                        </div>
+                     </div>
+
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                           <h3 className="text-sm font-black uppercase italic tracking-widest text-slate-400">Uploaded Frequencies</h3>
+                           <Badge variant="outline" className="text-[8px] font-black uppercase italic border-slate-200">{customThemes?.length || 0} Total</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                           {customThemes?.map((theme) => (
+                             <Card key={theme.id} className="rounded-2xl overflow-hidden border-2 border-slate-50 shadow-sm group relative">
+                                <div className="relative aspect-square">
+                                   <Image src={theme.url} alt={theme.name} fill className="object-cover" unoptimized />
+                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                                      <Button 
+                                        variant="destructive" 
+                                        size="icon" 
+                                        className="rounded-full shadow-2xl" 
+                                        onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'roomThemes', theme.id))}
+                                      >
+                                         <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                   </div>
+                                </div>
+                                <div className="p-3 text-center border-t border-slate-50">
+                                   <p className="text-[10px] font-black uppercase truncate">{theme.name}</p>
+                                   <Badge className="mt-1 text-[6px] h-3 px-1 font-black uppercase bg-slate-100 text-slate-500 border-none">{theme.category}</Badge>
+                                </div>
+                             </Card>
+                           ))}
+                        </div>
                      </div>
                   </CardContent>
                </Card>
