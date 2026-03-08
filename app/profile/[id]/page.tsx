@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -85,7 +86,7 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
     <div 
       onClick={onClick}
       className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
+        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
         theme
       )}
     >

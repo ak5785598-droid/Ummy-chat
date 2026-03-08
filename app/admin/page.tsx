@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -92,7 +93,7 @@ export default function AdminPage() {
   const [idSearchInput, setIdSearchInput] = useState('');
   const [nameSearchInput, setNameSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
-  const [selectedColor, setSelectedColor] = useState('red');
+  const [selectedColor, setSelectedColor] = useState<string | null>('red');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
   const [targetUserForId, setTargetUserForId] = useState<any>(null);
@@ -230,8 +231,13 @@ export default function AdminPage() {
       }
 
       const snap = await getDocs(q);
-      if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+      if (!snap.empty) {
+        const userData = { ...snap.docs[0].data(), id: snap.docs[0].id };
+        setTargetUserForId(userData);
+        setSelectedColor(userData.specialIdColor || 'red');
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found' });
+      }
     } finally {
       setIsSearching(false);
     }
@@ -274,15 +280,14 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       
-      // REVERSION PROTOCOL: Set specialId back to accountId (the original sequential ID)
-      const restoredId = targetUserForId.accountNumber || targetUserForId.id.slice(0, 6);
-      const updateData = { specialId: restoredId, specialIdColor: null, updatedAt: serverTimestamp() };
+      // THEME PURGE PROTOCOL: Keep the number, remove the color prestige
+      const updateData = { specialIdColor: null, updatedAt: serverTimestamp() };
       
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: restoredId, specialIdColor: null }));
-      toast({ title: 'ID Reverted', description: 'Identity numeric signature has been restored to baseline.' });
+      setTargetUserForId((prev: any) => ({ ...prev, specialIdColor: null }));
+      toast({ title: 'ID Color Removed', description: 'Prestige color has been purged. Numeric identity remains unchanged.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Purge Failed' });
     } finally {
@@ -585,21 +590,31 @@ export default function AdminPage() {
                   </div>
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
-                       <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
-                          <div>
-                             <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
-                             <div className="mt-1">
-                                {targetUserForId.specialIdColor ? (
-                                  <div className="flex items-center gap-2">
-                                     <span className="text-[10px] font-black uppercase text-gray-400">Current:</span>
-                                     <SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} />
-                                  </div>
-                                ) : (
-                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId || 'None'}</p>
-                                )}
+                       <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
+                                <div className="mt-1">
+                                   {targetUserForId.specialIdColor ? (
+                                     <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black uppercase text-gray-400">Current:</span>
+                                        <SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} />
+                                     </div>
+                                   ) : (
+                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId || 'None'}</p>
+                                   )}
+                                </div>
                              </div>
                           </div>
+                          <Button 
+                            onClick={handleRemoveId} 
+                            disabled={isSavingId || !targetUserForId.specialIdColor}
+                            variant="outline"
+                            className="h-12 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none flex items-center gap-2"
+                          >
+                             {isSavingId ? <Loader className="animate-spin" /> : <><Trash2 className="h-4 w-4" /> Remove Color</>}
+                          </Button>
                        </div>
                        
                        <div className="space-y-6">
@@ -624,6 +639,16 @@ export default function AdminPage() {
                                 >
                                    {selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}
                                 </button>
+                                <button 
+                                  onClick={() => setSelectedColor(null)}
+                                  className={cn(
+                                    "h-10 w-10 rounded-full bg-slate-200 border-4 transition-all flex items-center justify-center",
+                                    selectedColor === null ? "border-slate-900 scale-110" : "border-transparent opacity-60"
+                                  )}
+                                >
+                                   {selectedColor === null && <Check className="h-4 w-4 text-slate-900" />}
+                                   {!selectedColor && <X className="h-4 w-4 text-slate-400" />}
+                                </button>
                              </div>
                           </div>
 
@@ -643,14 +668,6 @@ export default function AdminPage() {
                                      className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl shadow-primary/20"
                                    >
                                       {isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}
-                                   </Button>
-                                   <Button 
-                                     onClick={handleRemoveId} 
-                                     disabled={isSavingId || !targetUserForId.specialIdColor}
-                                     variant="outline"
-                                     className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none"
-                                   >
-                                      {isSavingId ? <Loader className="animate-spin" /> : <Trash2 className="h-5 w-5" />}
                                    </Button>
                                 </div>
                              </div>
