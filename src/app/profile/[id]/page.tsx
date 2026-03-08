@@ -77,16 +77,19 @@ const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) 
   );
 };
 
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: string | null, onClick?: () => void }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
     : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
+        theme
+      )}
+    >
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
       <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
     </div>
@@ -184,6 +187,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
+  const handleCopyId = () => {
+    const idToCopy = profile.specialId || profile.id;
+    navigator.clipboard.writeText(idToCopy);
+    toast({ title: 'ID Copied' });
+  };
+
   return (
     <AppLayout hideSidebarOnMobile>
       <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
@@ -212,10 +221,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <div className="flex items-center gap-2">
                          <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                          <span className="text-lg">🇮🇳</span>
-                         <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                            <span className={cn("text-[11px] font-bold uppercase tracking-widest", isOwnProfile ? "text-gray-400" : "text-white/80")}>ID:{profile.specialId}</span>
-                            {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />}
-                            <Copy className={cn("h-3 w-3", isOwnProfile ? "text-gray-300" : "text-white/40")} />
+                         <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
+                            {profile.specialIdColor ? (
+                              <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
+                            ) : (
+                              <>
+                                <span className={cn("text-[11px] font-bold uppercase tracking-widest", isOwnProfile ? "text-gray-400" : "text-white/80")}>ID:{profile.specialId || profile.id.slice(0, 6)}</span>
+                                <Copy className={cn("h-3 w-3", isOwnProfile ? "text-gray-300" : "text-white/40")} />
+                              </>
+                            )}
                          </div>
                       </div>
                       {/* Elite Tag Synchronization */}

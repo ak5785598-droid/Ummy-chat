@@ -56,7 +56,7 @@ const ACTIVE_GAME_FREQUENCIES = [
  * High-Fidelity Glossy Special ID Signature.
  * Supports Red and Blue themes with shining animation.
  */
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
     : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
@@ -203,7 +203,6 @@ export default function AdminPage() {
         const paddedId = value.padStart(3, '0');
         q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       } else {
-        // FIXED SEARCH: Proper username matching handshake
         q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
       }
       
@@ -227,7 +226,6 @@ export default function AdminPage() {
         const paddedId = value.padStart(3, '0');
         q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       } else {
-        // FIXED SEARCH: Proper username matching handshake
         q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
       }
 
@@ -418,7 +416,7 @@ export default function AdminPage() {
                                 <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
                                 <div className="flex-1">
                                    <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
-                                   {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
+                                   {u.specialIdColor ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.specialId || u.id.slice(0, 6)}</p>}
                                 </div>
                                 <div className="flex gap-2">
                                    <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px] border-slate-200">+1k</Button>
@@ -527,7 +525,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
-                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
+                                {targetUserForTags.specialIdColor ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.specialId || targetUserForTags.id.slice(0, 6)}</p>}
                              </div>
                           </div>
                           {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
@@ -592,13 +590,13 @@ export default function AdminPage() {
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
                              <div className="mt-1">
-                                {targetUserForId.specialId ? (
+                                {targetUserForId.specialIdColor ? (
                                   <div className="flex items-center gap-2">
                                      <span className="text-[10px] font-black uppercase text-gray-400">Current:</span>
                                      <SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} />
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: None</p>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId || 'None'}</p>
                                 )}
                              </div>
                           </div>
@@ -648,7 +646,7 @@ export default function AdminPage() {
                                    </Button>
                                    <Button 
                                      onClick={handleRemoveId} 
-                                     disabled={isSavingId || !targetUserForId.specialId}
+                                     disabled={isSavingId || !targetUserForId.specialIdColor}
                                      variant="outline"
                                      className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase italic rounded-2xl hover:bg-red-50 shadow-none"
                                    >
