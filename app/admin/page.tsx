@@ -88,7 +88,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('authority');
   const [searchQuery, setSearchQuery] = useState('');
   const [tagSearchId, setTagSearchId] = useState('');
+  const [tagSearchName, setTagSearchName] = useState('');
   const [idSearchInput, setIdSearchInput] = useState('');
+  const [nameSearchInput, setNameSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
   const [selectedColor, setSelectedColor] = useState('red');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
@@ -189,12 +191,21 @@ export default function AdminPage() {
     }
   };
 
-  const handleSearchByTagId = async () => {
-    if (!firestore || !tagSearchId) return;
+  const handleSearchByTagId = async (mode: 'id' | 'name') => {
+    if (!firestore) return;
+    const value = mode === 'id' ? tagSearchId : tagSearchName;
+    if (!value) return;
+
     setIsSearchingTag(true);
     try {
-      const paddedId = tagSearchId.padStart(3, '0');
-      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      let q;
+      if (mode === 'id') {
+        const paddedId = value.padStart(3, '0');
+        q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      } else {
+        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
+      }
+      
       const snap = await getDocs(q);
       if (!snap.empty) setTargetUserForTags({ ...snap.docs[0].data(), id: snap.docs[0].id });
       else toast({ variant: 'destructive', title: 'Identity Not Found' });
@@ -203,12 +214,21 @@ export default function AdminPage() {
     }
   };
 
-  const handleFindUserById = async () => {
-    if (!firestore || !idSearchInput) return;
+  const handleFindUserById = async (mode: 'id' | 'name') => {
+    if (!firestore) return;
+    const value = mode === 'id' ? idSearchInput : nameSearchInput;
+    if (!value) return;
+
     setIsSearching(true);
     try {
-      const paddedId = idSearchInput.padStart(3, '0');
-      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      let q;
+      if (mode === 'id') {
+        const paddedId = value.padStart(3, '0');
+        q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      } else {
+        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
+      }
+
       const snap = await getDocs(q);
       if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
       else toast({ variant: 'destructive', title: 'Identity Not Found' });
@@ -254,12 +274,15 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       
-      const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
+      // REVERSION PROTOCOL: Set specialId back to accountId (the original sequential ID)
+      const restoredId = targetUserForId.accountNumber || targetUserForId.id.slice(0, 6);
+      const updateData = { specialId: restoredId, specialIdColor: null, updatedAt: serverTimestamp() };
+      
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
-      toast({ title: 'ID Purged', description: 'Identity numeric signature has been removed.' });
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: restoredId, specialIdColor: null }));
+      toast({ title: 'ID Reverted', description: 'Identity numeric signature has been restored to baseline.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Purge Failed' });
     } finally {
@@ -485,9 +508,15 @@ export default function AdminPage() {
                      </CardTitle>
                      <CardDescription>Grant high-fidelity elite signatures to tribe members. Restricted to Supreme Authority.</CardDescription>
                   </CardHeader>
-                  <div className="flex gap-4">
-                     <Input placeholder="Enter User Tribal ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId()} className="h-14 rounded-2xl border-2 border-slate-200" />
-                     <Button onClick={handleSearchByTagId} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>{isSearchingTag ? <Loader className="animate-spin" /> : 'Find Tribe'}</Button>
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter User Tribal ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId('id')} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleSearchByTagId('id')} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find by ID</Button>
+                     </div>
+                     <div className="flex gap-4">
+                        <Input placeholder="Or Enter Username..." value={tagSearchName} onChange={(e) => setTagSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchByTagId('name')} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleSearchByTagId('name')} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingTag}>Find by Name</Button>
+                     </div>
                   </div>
                   {targetUserForTags && (
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
@@ -544,9 +573,15 @@ export default function AdminPage() {
                      </CardTitle>
                      <CardDescription>Re-synchronize a member's numeric identity frequency.</CardDescription>
                   </CardHeader>
-                  <div className="flex gap-4">
-                     <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFindUserById()} className="h-14 rounded-2xl border-2 border-slate-200" />
-                     <Button onClick={handleFindUserById} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Locate Member'}</Button>
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFindUserById('id')} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleFindUserById('id')} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearching}>Find by ID</Button>
+                     </div>
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Username..." value={nameSearchInput} onChange={(e) => setNameSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFindUserById('name')} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleFindUserById('name')} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearching}>Find by Name</Button>
+                     </div>
                   </div>
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">

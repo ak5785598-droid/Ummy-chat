@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -11,6 +10,7 @@ import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, incre
  * If a user returns and has a stale currentRoomId, we perform an immediate physical cleanup 
  * of the previous frequency participant record before allowing a new entry.
  * REGISTRATION GUARD: Synchronized counter update allows unique sequence ID generation.
+ * ACCOUNT NUMBER SYNC: Persists the original sequential ID for future restoration.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -36,7 +36,7 @@ export function ProfileInitializer() {
             console.log(`[Identity Sync] Commencing absolute purge of stale presence in room: ${staleRoomId}`);
             try {
               const batch = writeBatch(firestore);
-              const roomRef = doc(firestore, 'chatRooms', staleRoomId);
+              const roomDocRef = doc(firestore, 'chatRooms', staleRoomId);
               const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
               const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
               
@@ -94,6 +94,7 @@ export function ProfileInitializer() {
           const initialData = {
             id: profileId,
             specialId: specialId,
+            accountNumber: specialId, // THE ANCHOR IDENTITY: Stored for future reversion
             username: user.displayName || `Tribe_${specialId}`,
             avatarUrl: user.photoURL || '', 
             email: user.email || '',
@@ -127,6 +128,7 @@ export function ProfileInitializer() {
         await setDoc(userSummaryRef, {
           id: profileId,
           specialId: finalData.specialId,
+          accountNumber: finalData.accountNumber,
           username: finalData.username,
           avatarUrl: finalData.avatarUrl,
           wallet: finalData.wallet,

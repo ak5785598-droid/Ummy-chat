@@ -69,21 +69,31 @@ interface RoomUserProfileDialogProps {
   isMe: boolean;
 }
 
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: string, onClick?: () => void }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
     : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
+        theme
+      )}
+    >
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
       <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
     </div>
   );
 };
+
+const CenterTag = ({ label, gradient }: { label: string, gradient: string }) => (
+  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient)}>
+    <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+    <span className="text-[8px] font-black text-white uppercase italic tracking-tighter relative z-10">{label}</span>
+  </div>
+);
 
 /**
  * High-Fidelity Tribe Member Identity Card.
@@ -111,10 +121,9 @@ export function RoomUserProfileDialog({
   if (!userId) return null;
 
   const handleCopyId = () => {
-    if (profile?.specialId) {
-      navigator.clipboard.writeText(profile.specialId);
-      toast({ title: 'ID Copied' });
-    }
+    const idToCopy = profile?.specialId || userId;
+    navigator.clipboard.writeText(idToCopy);
+    toast({ title: 'ID Copied' });
   };
 
   const handleViewFullProfile = () => {
@@ -176,16 +185,21 @@ export function RoomUserProfileDialog({
                <h2 className="text-2xl font-black uppercase tracking-tighter drop-shadow-md">{profile.username}</h2>
                
                <div className="flex flex-wrap items-center justify-center gap-2 mt-1 mb-4">
-                  <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
-                     <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:</span>
-                     {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />}
-                     {!profile.specialId && <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{profile.id.slice(0, 6)}</span>}
-                     <Copy className="h-3 w-3 text-white/20" />
+                  <div className="flex items-center gap-1">
+                     {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />}
+                     {!profile.specialId && (
+                       <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
+                          <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:{profile.id.slice(0, 6)}</span>
+                          <Copy className="h-3 w-3 text-white/20" />
+                       </div>
+                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                      {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                      {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                     {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                     {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                   </div>
                </div>
 

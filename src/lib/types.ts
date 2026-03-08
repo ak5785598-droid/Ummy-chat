@@ -1,6 +1,8 @@
 export type User = {
   id: string;
   specialId: string; // Sequential numeric ID starting 1001
+  accountNumber?: string; // Original sequential ID for reversion
+  specialIdColor?: string; // red or blue
   name: string;
   username?: string;
   avatarUrl: string;

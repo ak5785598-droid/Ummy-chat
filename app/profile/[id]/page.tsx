@@ -76,16 +76,19 @@ const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) 
   );
 };
 
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string }) => {
+const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: string, onClick?: () => void }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
     : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
+        theme
+      )}
+    >
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
       <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
     </div>
@@ -114,9 +117,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
 
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
-      {/* Sovereign Green Header */}
       <div className="relative bg-[#689f38] h-[40vh] flex flex-col pt-12">
-        {/* Large Background Initial */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
            <span className="text-[25rem] font-black text-white/20 select-none leading-none -mt-10">{firstLetter}</span>
         </div>
@@ -138,14 +139,16 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     <div className="flex items-center gap-2">
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
-                       <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                          {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
-                            <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+                       <div className="flex items-center gap-1">
+                          {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />}
+                          {!profile.specialId && (
+                            <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
+                               <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+                               <Copy className="h-3 w-3 text-white/40" />
+                            </div>
                           )}
-                          <Copy className="h-3 w-3 text-white/40" />
                        </div>
                     </div>
-                    {/* Elite Tag Synchronization */}
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                        {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
@@ -159,11 +162,8 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
         </div>
       </div>
 
-      {/* Content Roster */}
       <div className="relative z-20 bg-white rounded-t-[2.5rem] -mt-6 p-6 space-y-8">
-         {/* Dual Level Cards */}
          <div className="grid grid-cols-2 gap-4">
-            {/* Rich Card */}
             <div className="bg-gradient-to-br from-[#6a11cb] to-[#2575fc] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
                <div className="relative z-10 space-y-1">
                   <div className="flex items-center gap-2">
@@ -181,7 +181,6 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                </div>
             </div>
 
-            {/* Charm Card */}
             <div className="bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
                <div className="relative z-10 space-y-1">
                   <div className="flex items-center gap-2">
@@ -200,14 +199,12 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
             </div>
          </div>
 
-         {/* General Stats */}
          <div className="flex justify-between items-center px-2">
             <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Followers</span></div>
             <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Follow</span></div>
             <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span></div>
          </div>
 
-         {/* Profile Section */}
          <div className="space-y-4">
             <h3 className="font-black text-lg uppercase tracking-tight">Profile</h3>
             <div className="space-y-4">
@@ -222,7 +219,6 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
             </div>
          </div>
 
-         {/* Top Contributors Component */}
          <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center">
                <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Top 3 User Contributions</span>
@@ -245,14 +241,12 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
             <p className="text-[10px] font-bold text-gray-400 uppercase italic">This Month</p>
          </div>
 
-         {/* Moments Dimension */}
          <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
             <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Moments</span>
             <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" />
          </div>
       </div>
 
-      {/* Bottom Sticky Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-4">
          <DirectMessageDialog 
            recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
@@ -283,14 +277,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [isProcessingFriend, setIsProcessingFriend] = useState(false);
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
 
-  // Check Friend Request Status
   const friendRequestRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'friend_requests', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
   const { data: friendRequest } = useDoc(friendRequestRef);
 
-  // Check Follow Status
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
@@ -361,16 +353,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   
   if (!profile) return null;
 
-  // Render original "Me" tab style if it's the owner's profile
   if (isOwnProfile) {
     return (
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
-          
-          {/* Header Dimension - Modern White Roster */}
           <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
-            
-            {/* Absolute Edit Trigger - High-Fidelity Placement */}
             {isOwnProfile && (
               <div className="absolute top-10 right-6">
                 <EditProfileDialog profile={profile} trigger={
@@ -401,14 +388,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="bg-blue-500 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♂</div>
                 <span className="text-lg">🇮🇳</span>
               </div>
-              <div className="flex items-center justify-center gap-2">
-                <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                  {profile.specialId ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} /> : (
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  {profile.specialId && <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />}
+                  {!profile.specialId && (
+                    <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.id.slice(0, 6)}</span>
+                      <Copy className="h-3 w-3 text-gray-300" />
+                    </div>
                   )}
-                  <Copy className="h-3 w-3 text-gray-300" />
                 </div>
-                {/* Elite Tag Synchronization */}
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
@@ -420,7 +409,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
-          {/* Stats Bar Dimension */}
           <div className="bg-white flex divide-x divide-gray-50 border-b border-gray-50 mb-4">
             <StatItem label="Friend" value={0} />
             <StatItem label="Following" value={0} />
@@ -428,7 +416,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <StatItem label="Visitors" value={0} hasNotification />
           </div>
 
-          {/* Dual Visual Banners */}
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">
             <div className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-95 transition-all cursor-pointer">
                <div className="relative z-10 flex flex-col h-full justify-between">
@@ -454,7 +441,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
-          {/* Sequential Menu List */}
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-8">
             <MenuItem label="Invite Friends" icon={UserPlus} colorClass="bg-green-100 text-green-600" />
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
@@ -472,7 +458,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     );
   }
 
-  // Render high-fidelity public profile layout for other users
   return (
     <AppLayout hideSidebarOnMobile>
        <PublicProfileView profile={profile} onBack={() => router.back()} />
