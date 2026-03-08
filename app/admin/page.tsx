@@ -53,6 +53,16 @@ const ACTIVE_GAME_FREQUENCIES = [
 ];
 
 /**
+ * High-Fidelity Glossy Special ID Signature.
+ */
+const SpecialIdBadge = ({ id }: { id: string }) => (
+  <div className="relative overflow-hidden bg-gradient-to-r from-rose-300 via-rose-500 to-rose-300 px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.3)] border border-white/30 group animate-in fade-in duration-500 w-fit">
+    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+    <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+  </div>
+);
+
+/**
  * Ummy Command Center - Supreme Authority Oversight.
  */
 export default function AdminPage() {
@@ -370,7 +380,10 @@ export default function AdminPage() {
                           <div key={u.id} className="p-4 bg-white rounded-2xl border border-slate-100 flex flex-col gap-4 shadow-sm">
                              <div className="flex items-center gap-4">
                                 <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
-                                <div className="flex-1"><p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p><p className="text-[10px] text-muted-foreground">ID: {u.specialId}</p></div>
+                                <div className="flex-1">
+                                   <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
+                                   {u.specialId ? <SpecialIdBadge id={u.specialId} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
+                                </div>
                                 <div className="flex gap-2">
                                    <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px] border-slate-200">+1k</Button>
                                    <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'diamonds', 100)} className="rounded-full h-8 text-[10px] border-slate-200">+100</Button>
@@ -472,7 +485,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.specialId}</p>
+                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
                              </div>
                           </div>
                           {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
@@ -530,7 +543,16 @@ export default function AdminPage() {
                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
-                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: {targetUserForId.specialId || 'None'}</p>
+                             <div className="mt-1">
+                                {targetUserForId.specialId ? (
+                                  <div className="flex items-center gap-2">
+                                     <span className="text-[10px] font-black uppercase text-gray-400">Current:</span>
+                                     <SpecialIdBadge id={targetUserForId.specialId} />
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current Signature: None</p>
+                                )}
+                             </div>
                           </div>
                        </div>
                        
