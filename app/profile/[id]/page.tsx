@@ -95,8 +95,8 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
   );
 };
 
-const CenterTag = ({ label, gradient }: { label: string, gradient: string }) => (
-  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient)}>
+const CenterTag = ({ label, gradient, className }: { label: string, gradient: string, className?: string }) => (
+  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient, className)}>
     <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
     <span className="text-[8px] font-black text-white uppercase italic tracking-tighter relative z-10">{label}</span>
   </div>
@@ -151,9 +151,9 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                        {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-2" />}
-                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-10" />}
+                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
                  </div>
               </div>
@@ -286,7 +286,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
-  const { data: followData } = useDoc(followData);
+  const { data: followData } = useDoc(followRef);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -399,9 +399,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-2" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-10" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
