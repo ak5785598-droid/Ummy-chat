@@ -40,6 +40,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { OfficialTag } from '@/components/official-tag';
+import { SellerTag } from '@/components/seller-tag';
+import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -69,7 +71,7 @@ interface RoomUserProfileDialogProps {
 
 /**
  * High-Fidelity Tribe Member Identity Card.
- * Displays the elite Official Tag signature if synchronized.
+ * Displays the elite assigned tags directly adjacent to the ID signature.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -159,15 +161,22 @@ export function RoomUserProfileDialog({
 
                <h2 className="text-2xl font-black uppercase tracking-tighter drop-shadow-md">{profile.username}</h2>
                
-               <div className="flex items-center gap-1 mt-1 mb-4" onClick={handleCopyId}>
-                  <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:{profile.specialId}</span>
-                  <Copy className="h-3 w-3 text-white/20 cursor-pointer" />
+               <div className="flex flex-wrap items-center justify-center gap-3 mt-1 mb-4">
+                  <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
+                     <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:{profile.specialId}</span>
+                     <Copy className="h-3 w-3 text-white/20" />
+                  </div>
+                  {/* Elite Tag Synchronization Adjacent to ID */}
+                  <div className="flex items-center gap-1 shrink-0">
+                     {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                     {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
+                     {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                  </div>
                </div>
 
                <div className="flex items-center gap-2 mb-8 flex-wrap justify-center">
                   <span className="text-sm">🇮🇳</span>
                   <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-4 text-[8px] font-black px-2 uppercase shadow-sm">Lv. {profile.level?.rich || 1}</Badge>
-                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                </div>
 
                <div className="w-full flex justify-around items-center mb-8 px-4">

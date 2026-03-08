@@ -34,6 +34,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
+import { OfficialTag } from '@/components/official-tag';
+import { SellerTag } from '@/components/seller-tag';
+import { CustomerServiceTag } from '@/components/customer-service-tag';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
   <div className="flex flex-col items-center justify-center flex-1 py-4 relative">
@@ -99,12 +102,20 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
               </Avatar>
               <div className="flex-1 pb-1">
                  <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{profile.username}</h1>
-                 <div className="flex items-center gap-2">
-                    <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
-                    <span className="text-lg">🇵🇭</span>
-                    <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                       <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID:{profile.specialId}</span>
-                       <Copy className="h-3 w-3 text-white/40" />
+                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div className="flex items-center gap-2">
+                       <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
+                       <span className="text-lg">🇮🇳</span>
+                       <div className="flex items-center gap-1 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
+                          <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID:{profile.specialId}</span>
+                          <Copy className="h-3 w-3 text-white/40" />
+                       </div>
+                    </div>
+                    {/* Elite Tag Synchronization */}
+                    <div className="flex items-center gap-1 shrink-0">
+                       {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                       {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
+                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
                     </div>
                  </div>
               </div>
@@ -292,9 +303,17 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="bg-blue-500 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♂</div>
                 <span className="text-lg">🇮🇳</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.specialId}</span>
-                <Copy className="h-3 w-3 text-gray-300" />
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { navigator.clipboard.writeText(profile.specialId); toast({ title: 'ID Copied' }); }}>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.specialId}</span>
+                  <Copy className="h-3 w-3 text-gray-300" />
+                </div>
+                {/* Elite Tag Synchronization */}
+                <div className="flex items-center gap-1 shrink-0">
+                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                   {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                </div>
               </div>
             </div>
           </div>
