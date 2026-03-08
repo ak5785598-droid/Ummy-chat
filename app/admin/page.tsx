@@ -52,12 +52,12 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 /**
  * Ummy Command Center - Supreme Authority Oversight.
+ * Re-engineered for "Hand-to-Hand" Real-time Sync via live document listeners.
  */
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   const { isUploading: isUploadingGameDP, uploadGameLogo } = useGameLogoUpload();
   
@@ -69,13 +69,28 @@ export default function AdminPage() {
   const [idSearchInput, setIdSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
-  const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
-  const [targetUserForId, setTargetUserForId] = useState<any>(null);
+  
+  // Real-time Selection Protocol
+  const [selectedUserIdForTags, setSelectedUserIdForTags] = useState<string | null>(null);
+  const [selectedUserIdForIdSync, setSelectedUserIdForIdSync] = useState<string | null>(null);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingId, setIsSavingId] = useState(false);
   
-  // Banner & Game state
+  // Live Data Hooks
+  const userForTagsRef = useMemoFirebase(() => {
+    if (!firestore || !selectedUserIdForTags) return null;
+    return doc(firestore, 'users', selectedUserIdForTags);
+  }, [firestore, selectedUserIdForTags]);
+  const { data: targetUserForTags } = useDoc(userForTagsRef);
+
+  const userForIdRef = useMemoFirebase(() => {
+    if (!firestore || !selectedUserIdForIdSync) return null;
+    return doc(firestore, 'users', selectedUserIdForIdSync);
+  }, [firestore, selectedUserIdForIdSync]);
+  const { data: targetUserForId } = useDoc(userForIdRef);
+
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const fileInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const gameFileInputRef = useRef<HTMLInputElement>(null);
@@ -173,8 +188,12 @@ export default function AdminPage() {
       const paddedId = tagSearchId.padStart(3, '0');
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty) setTargetUserForTags({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+      if (!snap.empty) {
+        setSelectedUserIdForTags(snap.docs[0].id);
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found' });
+        setSelectedUserIdForTags(null);
+      }
     } finally {
       setIsSearching(false);
     }
@@ -187,34 +206,37 @@ export default function AdminPage() {
       const paddedId = idSearchInput.padStart(3, '0');
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty) setTargetUserForId({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+      if (!snap.empty) {
+        setSelectedUserIdForIdSync(snap.docs[0].id);
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found' });
+        setSelectedUserIdForIdSync(null);
+      }
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleUpdateId = async () => {
-    if (!firestore || !targetUserForId || !newIdInput) return;
+    if (!firestore || !selectedUserIdForIdSync || !newIdInput) return;
     setIsSavingId(true);
     try {
       const paddedNewId = newIdInput.padStart(3, '0');
       
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
+      if (!snap.empty && snap.docs[0].id !== selectedUserIdForIdSync) {
         toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned to another member.' });
         return;
       }
 
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      const uRef = doc(firestore, 'users', selectedUserIdForIdSync);
+      const pRef = doc(firestore, 'users', selectedUserIdForIdSync, 'profile', selectedUserIdForIdSync);
       
       const updateData = { specialId: paddedNewId, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
       
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId }));
       toast({ title: 'ID Synchronized', description: `Member is now identified as ${paddedNewId}.` });
       setNewIdInput('');
     } catch (e: any) {
@@ -242,7 +264,7 @@ export default function AdminPage() {
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    toast({ title: 'Authority Updated' });
+    toast({ title: 'Authority Synchronized' });
   };
 
   const handleBannerImageUpload = async (index: number, file: File) => {

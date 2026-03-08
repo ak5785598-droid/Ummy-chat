@@ -71,7 +71,7 @@ interface RoomUserProfileDialogProps {
 
 /**
  * High-Fidelity Tribe Member Identity Card.
- * Displays the elite assigned tags directly adjacent to the ID signature.
+ * Displays elite tags directly adjacent to ID for Hand-to-Hand recognition.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -161,12 +161,12 @@ export function RoomUserProfileDialog({
 
                <h2 className="text-2xl font-black uppercase tracking-tighter drop-shadow-md">{profile.username}</h2>
                
-               <div className="flex flex-wrap items-center justify-center gap-3 mt-1 mb-4">
+               <div className="flex flex-wrap items-center justify-center gap-2 mt-1 mb-4">
                   <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
                      <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">ID:{profile.specialId}</span>
                      <Copy className="h-3 w-3 text-white/20" />
                   </div>
-                  {/* Elite Tag Synchronization Adjacent to ID */}
+                  {/* Elite Tag Synchronization - Hand to Hand Beside ID */}
                   <div className="flex items-center gap-1 shrink-0">
                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                      {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
