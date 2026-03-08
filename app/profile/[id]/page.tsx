@@ -20,7 +20,9 @@ import {
   MessageCircle,
   Plus,
   User,
-  Pen
+  Pen,
+  ShieldCheck,
+  BadgeCheck
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -79,6 +81,13 @@ const SpecialIdBadge = ({ id }: { id: string }) => (
   </div>
 );
 
+const CenterTag = ({ label, gradient }: { label: string, gradient: string }) => (
+  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient)}>
+    <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+    <span className="text-[8px] font-black text-white uppercase italic tracking-tighter relative z-10">{label}</span>
+  </div>
+);
+
 /**
  * Public Profile View.
  */
@@ -119,11 +128,13 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                           <Copy className="h-3 w-3 text-white/40" />
                        </div>
                     </div>
-                    {/* Elite Tag Synchronization - Hand to Hand Beside ID */}
+                    {/* Elite Tag Synchronization */}
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                        {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                        {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
                  </div>
               </div>
@@ -318,11 +329,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   )}
                   <Copy className="h-3 w-3 text-gray-300" />
                 </div>
-                {/* Elite Tag Synchronization - Hand to Hand Beside ID */}
+                {/* Elite Tag Synchronization */}
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
@@ -368,6 +381,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
+            <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
+            <MenuItem label="Seller center" icon={BadgeCheck} colorClass="bg-purple-100 text-purple-600" />
           </div>
 
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">

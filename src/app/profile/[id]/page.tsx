@@ -22,7 +22,9 @@ import {
   User,
   Pen,
   UserCheck,
-  Check
+  Check,
+  ShieldCheck,
+  BadgeCheck
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -74,6 +76,20 @@ const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) 
     </div>
   );
 };
+
+const SpecialIdBadge = ({ id }: { id: string }) => (
+  <div className="relative overflow-hidden bg-gradient-to-r from-rose-300 via-rose-500 to-rose-300 px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.3)] border border-white/30 group animate-in fade-in duration-500">
+    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+    <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+  </div>
+);
+
+const CenterTag = ({ label, gradient }: { label: string, gradient: string }) => (
+  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient)}>
+    <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+    <span className="text-[8px] font-black text-white uppercase italic tracking-tighter relative z-10">{label}</span>
+  </div>
+);
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: profileId } = use(params);
@@ -197,6 +213,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                          {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                          {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
                          {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
+                         {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                         {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                       </div>
                    </div>
                 </div>
@@ -265,6 +283,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <MenuItem label="Ummy Boutique" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
                 <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
                 <MenuItem label="Setting" icon={SettingsIcon} href="/settings" />
+                <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
+                <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
+                <MenuItem label="Seller center" icon={BadgeCheck} colorClass="bg-purple-100 text-purple-600" />
              </div>
            )}
         </div>

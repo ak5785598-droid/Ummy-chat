@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2 } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -35,6 +35,8 @@ const ELITE_TAGS = [
   { id: 'Official', label: 'Official', color: 'bg-green-500', icon: BadgeCheck },
   { id: 'Customer Service', label: 'Customer Service', color: 'bg-blue-500', icon: MessageSquare },
   { id: 'Seller', label: 'Seller', color: 'bg-purple-500', icon: Heart },
+  { id: 'Official center', label: 'Official center', color: 'bg-indigo-500', icon: ShieldCheck },
+  { id: 'Seller center', label: 'Seller center', color: 'bg-orange-500', icon: Store },
 ];
 
 const DEFAULT_SLIDES = [
@@ -483,7 +485,7 @@ export default function AdminPage() {
                                )}
                                onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}
                              >
-                                {tag.id === 'Official' ? <BadgeCheck className="mr-2 h-4 w-4" /> : tag.id === 'Seller' ? <Heart className="mr-2 h-4 w-4" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                                {tag.id === 'Official' ? <BadgeCheck className="mr-2 h-4 w-4" /> : tag.id === 'Seller' ? <Heart className="mr-2 h-4 w-4" /> : tag.id === 'Official center' ? <ShieldCheck className="mr-2 h-4 w-4" /> : tag.id === 'Seller center' ? <Store className="mr-2 h-4 w-4" /> : <MessageSquare className="mr-2 h-4 w-4" />}
                                 {tag.label}
                              </Button>
                            ))}
