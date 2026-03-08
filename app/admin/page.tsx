@@ -11,7 +11,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
+import { Textarea } from '@/components/ui/textarea';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -134,6 +135,11 @@ export default function AdminPage() {
   const [coinDispatchAmount, setCoinDispatchAmount] = useState('');
   const [isDispatching, setIsDispatching] = useState(false);
 
+  // Broadcast States
+  const [broadcastTitle, setBroadcastTitle] = useState('Official Notice');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
@@ -169,6 +175,55 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
+
+  const handleSystemBroadcast = async () => {
+    if (!firestore || !broadcastContent.trim() || !isCreator) return;
+    setIsBroadcasting(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      const totalUsers = usersSnap.docs.length;
+      
+      if (totalUsers === 0) {
+        toast({ title: 'No users detected in social graph.' });
+        return;
+      }
+
+      // Batching Protocol: 500 operations per writeBatch
+      const batches = [];
+      let currentBatch = writeBatch(firestore);
+      let count = 0;
+
+      for (const userDoc of usersSnap.docs) {
+        const notifRef = doc(collection(firestore, 'users', userDoc.id, 'notifications'));
+        currentBatch.set(notifRef, {
+          title: broadcastTitle,
+          content: broadcastContent,
+          type: 'system',
+          timestamp: serverTimestamp(),
+          isRead: false
+        });
+        
+        count++;
+        if (count === 499) {
+          batches.push(currentBatch.commit());
+          currentBatch = writeBatch(firestore);
+          count = 0;
+        }
+      }
+      
+      if (count > 0) {
+        batches.push(currentBatch.commit());
+      }
+
+      await Promise.all(batches);
+      toast({ title: 'Broadcast Synchronized', description: `Message successfully dispatched to ${totalUsers} members.` });
+      setBroadcastContent('');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Broadcast Failed', description: e.message });
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
 
   const handleDistributeDailyRewards = async () => {
     if (!firestore || !isCreator) return;
@@ -361,6 +416,20 @@ export default function AdminPage() {
     toast({ title: 'Authority Updated' });
   };
 
+  const handleRemoveAllTags = async (targetUid: string) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', targetUid);
+    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
+    const updateData = { tags: [], updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    
+    if (targetUserForTags && targetUserForTags.id === targetUid) {
+      setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
+    }
+    toast({ title: 'Authority Purged' });
+  };
+
   const handleBannerImageUpload = async (index: number, file: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);
@@ -416,6 +485,9 @@ export default function AdminPage() {
               <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <Gamepad2 className="h-4 w-4 text-purple-500" /> Game Sync
               </TabsTrigger>
+              <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
+                <Megaphone className="h-4 w-4 text-cyan-500" /> Broadcaster
+              </TabsTrigger>
               <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
               </TabsTrigger>
@@ -458,6 +530,48 @@ export default function AdminPage() {
                              </div>
                           </div>
                         ))}
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="broadcaster" className="m-0 space-y-6 focus-visible:ring-0">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900">
+                        <Megaphone className="h-6 w-6 text-primary" /> Global Broadcaster
+                     </CardTitle>
+                     <CardDescription>Dispatch official system announcements to every member's Ummy Team frequency.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-6">
+                     <div className="space-y-4">
+                        <div className="grid gap-2">
+                           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Broadcast Title</p>
+                           <Input 
+                             value={broadcastTitle} 
+                             onChange={(e) => setBroadcastTitle(e.target.value)}
+                             className="h-14 rounded-2xl border-2 border-slate-100 text-lg font-black italic"
+                           />
+                        </div>
+                        <div className="grid gap-2">
+                           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Message Content</p>
+                           <Textarea 
+                             placeholder="Type the official message frequency..."
+                             value={broadcastContent}
+                             onChange={(e) => setBroadcastContent(e.target.value)}
+                             className="h-40 rounded-3xl border-2 border-slate-100 p-6 text-base font-body italic resize-none"
+                           />
+                        </div>
+                     </div>
+                     <div className="pt-4">
+                        <Button 
+                          onClick={handleSystemBroadcast}
+                          disabled={isBroadcasting || !broadcastContent.trim()}
+                          className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase italic text-xl shadow-xl hover:scale-[1.02] transition-transform"
+                        >
+                           {isBroadcasting ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />}
+                           Synchronize Global Broadcast
+                        </Button>
                      </div>
                   </CardContent>
                </Card>
