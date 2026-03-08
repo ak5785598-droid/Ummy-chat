@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -151,7 +150,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                       {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
+                       {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-3" />}
                        {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
                        {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                        {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
@@ -399,7 +398,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                   {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
+                   {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-3" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
                    {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                    {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
