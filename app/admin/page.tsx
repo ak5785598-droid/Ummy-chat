@@ -234,11 +234,12 @@ export default function AdminPage() {
     }
   };
 
-  const handleDirectMessage = async () => {
-    if (!firestore || !targetUserForDm || !dmContent.trim() || !isCreator) return;
+  const handleDirectMessage = async (overrideTarget?: any) => {
+    const target = overrideTarget || targetUserForDm;
+    if (!firestore || !target || !dmContent.trim() || !isCreator) return;
     setIsSendingDm(true);
     try {
-      const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
+      const notifRef = collection(firestore, 'users', target.id, 'notifications');
       await addDoc(notifRef, {
         title: dmTitle,
         content: dmContent,
@@ -246,7 +247,7 @@ export default function AdminPage() {
         timestamp: serverTimestamp(),
         isRead: false
       });
-      toast({ title: 'Message Dispatched', description: `Message synced to ${targetUserForDm.username}'s system frequency.` });
+      toast({ title: 'Message Dispatched', description: `Message synced to ${target.username}'s system frequency.` });
       setDmContent('');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Dispatch Failed', description: e.message });
@@ -651,25 +652,25 @@ export default function AdminPage() {
                           </div>
                           <div className="grid gap-2">
                              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Message Content</p>
-                             <Textarea 
-                               placeholder="Type the private system frequency..."
-                               value={dmContent}
-                               onChange={(e) => setDmContent(e.target.value)}
-                               className="h-40 rounded-3xl border-2 border-slate-100 p-6 text-base font-body italic resize-none"
-                             />
-                          </div>
-                       </div>
+                           <Textarea 
+                             placeholder="Type the private system frequency..."
+                             value={dmContent}
+                             onChange={(e) => setDmContent(e.target.value)}
+                             className="h-40 rounded-3xl border-2 border-slate-100 p-6 text-base font-body italic resize-none"
+                           />
+                        </div>
+                     </div>
 
-                       <div className="pt-4">
-                          <Button 
-                            onClick={handleDirectMessage}
-                            disabled={isSendingDm || !dmContent.trim()}
-                            className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-indigo-700 transition-all"
-                          >
-                             {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />}
-                             Synchronize Direct Sync
-                          </Button>
-                       </div>
+                     <div className="pt-4">
+                        <Button 
+                          onClick={() => handleDirectMessage()}
+                          disabled={isSendingDm || !dmContent.trim()}
+                          className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-indigo-700 transition-all"
+                        >
+                           {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />}
+                           Synchronize Direct Sync
+                        </Button>
+                     </div>
                     </div>
                   )}
                </Card>
@@ -685,7 +686,7 @@ export default function AdminPage() {
                       </div>
                       <CardContent className="p-4 flex justify-between items-center">
                          <p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p>
-                         <input type="file" ref={fileInputRef => fileInputRefs[idx].current = fileInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
+                         <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
                          <Button onClick={() => fileInputRefs[idx].current?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button>
                       </CardContent>
                    </Card>
@@ -907,7 +908,7 @@ export default function AdminPage() {
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900">
                         <Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center
                      </CardTitle>
-                     <CardDescription>Dispatch economic and visual assets to tribe members via global sync.</CardDescription>
+                     <CardDescription>Dispatch economic, visual, and official notices to tribe members via global sync.</CardDescription>
                   </CardHeader>
 
                   <div className="flex flex-col gap-4">
@@ -998,6 +999,39 @@ export default function AdminPage() {
                                      {w.name}
                                   </Button>
                                 ))}
+                             </div>
+                          </div>
+
+                          {/* Direct System Message Sync */}
+                          <div className="lg:col-span-2 space-y-4 pt-6 border-t border-slate-100">
+                             <div className="flex items-center gap-2 text-indigo-500">
+                                <MessageSquareText className="h-5 w-5" />
+                                <h4 className="font-black uppercase italic text-sm">Direct System Sync</h4>
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-1">
+                                   <Input 
+                                     placeholder="Message Title..." 
+                                     value={dmTitle} 
+                                     onChange={(e) => setDmTitle(e.target.value)}
+                                     className="h-14 rounded-2xl border-2 border-slate-200 font-black italic"
+                                   />
+                                </div>
+                                <div className="md:col-span-2 flex gap-2">
+                                   <Textarea 
+                                     placeholder="Type message for Ummy System frequency..." 
+                                     value={dmContent}
+                                     onChange={(e) => setDmContent(e.target.value)}
+                                     className="h-14 min-h-[3.5rem] rounded-2xl border-2 border-slate-200 p-4 text-sm font-body italic resize-none flex-1"
+                                   />
+                                   <Button 
+                                     onClick={() => handleDirectMessage(targetUserForRewards)}
+                                     disabled={isSendingDm || !dmContent.trim()} 
+                                     className="h-14 px-8 bg-indigo-600 text-white rounded-2xl font-black uppercase italic"
+                                   >
+                                      {isSendingDm ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                                   </Button>
+                                </div>
                              </div>
                           </div>
                        </div>
