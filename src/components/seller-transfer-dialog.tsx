@@ -157,11 +157,13 @@ export function SellerTransferDialog() {
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline">
+      <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline">
         <form onSubmit={handleTransfer}>
           <DialogHeader className="p-8 pb-4 text-center border-b border-gray-50">
             <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Coin Dispatch</DialogTitle>
-            <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Certified Seller Economic Gateway</DialogDescription>
+            <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">
+              Transfer Coins to any user by entering their User ID and amount.
+            </DialogDescription>
           </DialogHeader>
           <div className="p-8 space-y-6">
             <div className="space-y-4">

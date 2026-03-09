@@ -366,7 +366,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               <div className="absolute top-10 right-6">
                 <EditProfileDialog profile={profile} trigger={
                   <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
-                    <span className="sr-only">Edit Profile</span>
                     <Pen className="h-5 w-5 text-gray-600" />
                   </button>
                 } />
