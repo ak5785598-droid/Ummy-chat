@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
+import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -143,6 +143,13 @@ export default function AdminPage() {
   const [dmTitle, setDmTitle] = useState('Official System Notice');
   const [dmContent, setDmContent] = useState('');
   const [isSendingDm, setIsSendingDm] = useState(false);
+
+  const [banSearchId, setBanSearchId] = useState('');
+  const [banSearchName, setBanSearchName] = useState('');
+  const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
+  const [isSearchingBan, setIsSearchingBan] = useState(false);
+  const [banDuration, setBanDuration] = useState('1'); // Days
+  const [isBanning, setIsBanning] = useState(false);
 
   const [newThemeName, setNewThemeName] = useState('');
   const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
@@ -415,6 +422,61 @@ export default function AdminPage() {
     }
   };
 
+  const handleBanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const days = parseInt(banDuration);
+      const bannedUntil = days === 99999 ? null : Timestamp.fromDate(new Date(Date.now() + days * 24 * 60 * 60 * 1000));
+      
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      
+      const banData = {
+        banStatus: {
+          isBanned: true,
+          bannedAt: serverTimestamp(),
+          bannedUntil: bannedUntil,
+          reason: 'Administrative Exclusion'
+        }
+      };
+
+      await setDoc(uRef, banData, { merge: true });
+      await setDoc(pRef, banData, { merge: true });
+      
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
+      toast({ title: 'ID Banned', description: 'Member restricted from tribal frequencies.' });
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
+  const handleUnbanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      
+      const unbanData = {
+        banStatus: {
+          isBanned: false,
+          bannedAt: null,
+          bannedUntil: null,
+          reason: null
+        }
+      };
+
+      await setDoc(uRef, unbanData, { merge: true });
+      await setDoc(pRef, unbanData, { merge: true });
+      
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
+      toast({ title: 'ID Unbanned', description: 'Member frequency restored.' });
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', targetUserId);
@@ -564,6 +626,9 @@ export default function AdminPage() {
               <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ShieldCheck className="h-4 w-4 text-indigo-500" /> Assign Center
               </TabsTrigger>
+              <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
+              </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
               </TabsTrigger>
@@ -666,6 +731,86 @@ export default function AdminPage() {
                        <Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100" : "bg-indigo-600 text-white hover:bg-indigo-700")}>
                           {targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Seller Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Seller Center</>}
                        </Button>
+                    </div>
+                  )}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="id-ban" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600">
+                        <Gavel className="h-6 w-6" /> Supreme ID Ban Protocol
+                     </CardTitle>
+                     <CardDescription>Exclude members from the entire Ummy frequency network. Once active, the member is blocked from all social graphs.</CardDescription>
+                  </CardHeader>
+                  
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Target ID..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate ID</Button>
+                     </div>
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Username..." value={banSearchName} onChange={(e) => setBanSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 font-black uppercase italic" disabled={isSearchingBan}>Locate Name</Button>
+                     </div>
+                  </div>
+
+                  {targetUserForBan && (
+                    <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
+                       <div className="flex items-center justify-between border-b pb-6">
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p>
+                                {targetUserForBan.specialId && <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} />}
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[10px] font-black uppercase text-gray-400 mb-1">Authorization State</p>
+                             {targetUserForBan.banStatus?.isBanned ? (
+                               <Badge className="bg-red-600 text-white font-black uppercase text-[10px] py-1 px-3">BANNED</Badge>
+                             ) : (
+                               <Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3 shadow-none">AUTHORIZED</Badge>
+                             )}
+                          </div>
+                       </div>
+
+                       {!targetUserForBan.banStatus?.isBanned ? (
+                         <div className="space-y-6">
+                            <div className="grid gap-4">
+                               <p className="text-[10px] font-black uppercase text-gray-400 ml-1">Ban Duration Frequency</p>
+                               <Select value={banDuration} onValueChange={setBanDuration}>
+                                  <SelectTrigger className="h-14 rounded-2xl border-2 bg-white font-black italic">
+                                     <SelectValue placeholder="Select Duration" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white rounded-2xl font-black italic">
+                                     <SelectItem value="1">24 Hours (1 Day)</SelectItem>
+                                     <SelectItem value="7">168 Hours (7 Days)</SelectItem>
+                                     <SelectItem value="30">720 Hours (30 Days)</SelectItem>
+                                     <SelectItem value="99999">Forever (Permanent)</SelectItem>
+                                  </SelectContent>
+                               </Select>
+                            </div>
+                            <Button onClick={handleBanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-red-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-red-700">
+                               {isBanning ? <Loader className="animate-spin mr-2" /> : <Gavel className="mr-2" />} Execute Supreme Ban
+                            </Button>
+                         </div>
+                       ) : (
+                         <div className="space-y-6">
+                            <div className="bg-red-50 p-6 rounded-2xl border-2 border-red-100 space-y-2">
+                               <p className="text-[10px] font-black uppercase text-red-600">Ban Active Until</p>
+                               <p className="text-xl font-black italic text-red-900">
+                                  {targetUserForBan.banStatus.bannedUntil 
+                                    ? format(targetUserForBan.banStatus.bannedUntil.toDate(), 'PPP HH:mm') 
+                                    : 'PERMANENT EXCLUSION'}
+                               </p>
+                            </div>
+                            <Button onClick={handleUnbanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-green-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-green-700">
+                               {isBanning ? <Loader className="animate-spin mr-2" /> : <Zap className="mr-2" />} Synchronize Restoration (Unban)
+                            </Button>
+                         </div>
+                       )}
                     </div>
                   )}
                </Card>
@@ -826,7 +971,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
                      <Input placeholder="Recipient I'd..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                     <Button onClick={handleGenericSearch.bind(null, 'id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
