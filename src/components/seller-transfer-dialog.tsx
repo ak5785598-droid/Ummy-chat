@@ -45,6 +45,18 @@ export function SellerTransferDialog() {
   // AUTH STATUS SYNC: Reactive check for seller tags
   const isAuthorized = userProfile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user?.uid === CREATOR_ID;
 
+  // AUTO-TERMINATION PROTOCOL: Close portal if certification is revoked in real-time
+  useEffect(() => {
+    if (open && !isAuthorized && user?.uid !== CREATOR_ID) {
+      setOpen(false);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Certification Suspended', 
+        description: 'Your Seller Center access has been revoked by tribal authority.' 
+      });
+    }
+  }, [isAuthorized, open, user?.uid, toast]);
+
   // REAL-TIME IDENTITY SYNC
   useEffect(() => {
     const lookupRecipient = async () => {
@@ -87,7 +99,7 @@ export function SellerTransferDialog() {
 
     try {
       // 1. FRESH AUTHORITY VERIFICATION (Anti-Ghost Protocol)
-      // Perform a fresh fetch from DB to ensure authority hasn't been revoked in another tab/session
+      // Perform a fresh fetch from DB to ensure authority hasn't been revoked in another session
       const freshUserSnap = await getDoc(doc(firestore, 'users', user.uid));
       const freshTags = freshUserSnap.data()?.tags || [];
       const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
@@ -192,7 +204,7 @@ export function SellerTransferDialog() {
           <DialogHeader className="p-8 pb-4 text-center border-b border-gray-50">
             <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter text-slate-900">coins transfer</DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">
-              Transfer Coins to any user by entering their User ID and amount.
+              Transfer Coins to any user by entering their User ID and amount. Requires active certification.
             </DialogDescription>
           </DialogHeader>
           <div className="p-8 space-y-6">
@@ -200,7 +212,7 @@ export function SellerTransferDialog() {
               <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 animate-in fade-in duration-300">
                  <Ban className="h-5 w-5 text-red-500 shrink-0" />
                  <p className="text-[10px] font-bold text-red-800 leading-relaxed uppercase">
-                    Your seller certification has been revoked. You cannot use this transfer option until the admin portal re-activates your center.
+                    Your seller certification has been revoked. Access to the coin frequency is restricted.
                  </p>
               </div>
             )}
@@ -273,7 +285,7 @@ export function SellerTransferDialog() {
                <p className="text-[9px] text-purple-700 leading-relaxed uppercase font-bold">
                  {isAuthorized 
                    ? "Ensure identity match. Authorization is verified in real-time before coins are dispatched."
-                   : "Sovereign Access Required. This option is unusable without an active admin assignment."}
+                   : "Sovereign Access Denied. Your Seller Center certification is currently inactive."}
                </p>
             </div>
           </div>

@@ -23,7 +23,8 @@ import {
   Pen,
   ShieldCheck,
   BadgeCheck,
-  Check
+  Check,
+  Flag
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -41,6 +42,12 @@ import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { doc, serverTimestamp } from 'firebase/firestore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -119,6 +126,10 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
     toast({ title: 'ID Copied' });
   };
 
+  const handleReport = () => {
+    window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank');
+  };
+
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
       <div className="relative bg-[#689f38] h-[40vh] flex flex-col pt-12">
@@ -127,8 +138,21 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
         </div>
 
         <div className="relative z-10 flex justify-between px-6 mb-8">
-           <button onClick={onBack} className="p-1 text-white"><ChevronLeft className="h-8 w-8" /></button>
-           <button className="p-1 text-white"><MoreHorizontal className="h-8 w-8" /></button>
+           <button onClick={onBack} className="p-1 text-white active:scale-90 transition-transform"><ChevronLeft className="h-8 w-8" /></button>
+           <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                 <button className="p-1 text-white active:scale-95 transition-transform"><MoreHorizontal className="h-8 w-8" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
+                 <DropdownMenuItem 
+                   onClick={handleReport}
+                   className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400"
+                 >
+                    <Flag className="h-4 w-4" />
+                    <span className="font-black uppercase text-[10px]">Report</span>
+                 </DropdownMenuItem>
+              </DropdownMenuContent>
+           </DropdownMenu>
         </div>
 
         <div className="relative z-10 px-6 mt-auto pb-10">
@@ -359,7 +383,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (isOwnProfile) {
     // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic based on current DB tags.
     // Reactive sync ensures this value updates immediately upon Admin revocation.
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === CREATOR_ID;
+    const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
+    const isSeller = profile.tags?.some(t => sellerTags.includes(t)) || profile.id === CREATOR_ID;
 
     return (
       <AppLayout>
