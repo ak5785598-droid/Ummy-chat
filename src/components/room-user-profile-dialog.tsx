@@ -7,7 +7,6 @@ import {
   MessageCircle, 
   UserPlus, 
   Gift as GiftIcon,
-  ChevronRight,
   MicOff,
   Ban,
   Star,
@@ -18,7 +17,8 @@ import {
   Heart,
   Plus,
   CheckCircle2,
-  AtSign
+  AtSign,
+  Sparkles
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -43,7 +43,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
 
 interface RoomUserProfileDialogProps {
@@ -63,9 +62,28 @@ interface RoomUserProfileDialogProps {
   isMe: boolean;
 }
 
+const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: string | null, onClick?: () => void }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
+        theme
+      )}
+    >
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+    </div>
+  );
+};
+
 /**
- * High-Fidelity Tribe Member Identity Card.
- * Re-engineered to match your exact blueprint visual.
+ * High-Fidelity Room User Profile Dialog.
+ * Matches your exact blueprint: Dark aesthetic, Level cards, Admin command grid.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -100,19 +118,12 @@ export function RoomUserProfileDialog({
     router.push(`/profile/${userId}`);
   };
 
-  const handleMention = () => {
-    toast({ title: 'Mention Synced', description: `@${profile?.username} added to draft.` });
-    onOpenChange(false);
-  };
-
-  const isTargetPMod = roomModeratorIds.includes(userId);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#050505] border-none p-0 rounded-[2.5rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+      <DialogContent className="sm:max-w-[425px] bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-[2.5rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
         <DialogHeader className="sr-only">
           <DialogTitle>Tribe Member Profile</DialogTitle>
-          <DialogDescription>Identity synchronization card.</DialogDescription>
+          <DialogDescription>High-fidelity identity synchronization.</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -121,31 +132,25 @@ export function RoomUserProfileDialog({
           </div>
         ) : profile ? (
           <div className="relative flex flex-col items-center">
-            {/* Top Action Header */}
+            {/* Action Menu (Top Right) */}
             <div className="w-full flex justify-end p-6 absolute top-0 right-0 z-50">
                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                    <button className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors border border-white/5 shadow-xl">
                        <MoreHorizontal className="h-6 w-6" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                     {isOwner && !isMe && (
-                       <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
-                          <UserCheck className="h-4 w-4" />
-                          <span className="font-black uppercase text-[10px]">{isTargetPMod ? 'Revoke Admin' : 'Make Admin'}</span>
-                       </DropdownMenuItem>
-                     )}
                      <DropdownMenuItem onClick={handleViewFullProfile} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
                         <User className="h-4 w-4 text-primary" />
-                        <span className="font-black uppercase text-[10px]">Full Profile</span>
+                        <span className="font-black uppercase text-[10px]">View Profile</span>
                      </DropdownMenuItem>
                   </DropdownMenuContent>
                </DropdownMenu>
             </div>
 
             <div className="pt-16 pb-6 flex flex-col items-center w-full">
-               {/* Center Avatar Identity */}
+               {/* Identity Header */}
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-4">
                   <Avatar className="h-28 w-28 border-4 border-white/10 shadow-2xl">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
@@ -153,9 +158,10 @@ export function RoomUserProfileDialog({
                   </Avatar>
                </AvatarFrame>
 
-               <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">{profile.username}</h2>
+               <h2 className="text-2xl font-black uppercase tracking-tighter mb-3">{profile.username}</h2>
                
-               <div className="flex items-center justify-center gap-3 mb-2">
+               {/* Identity Meta Row (Blueprint Precise) */}
+               <div className="flex items-center justify-center gap-3 mb-4">
                   <div className={cn(
                     "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg",
                     profile.gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
@@ -163,122 +169,115 @@ export function RoomUserProfileDialog({
                     {profile.gender === 'Female' ? '♀' : '♂'}
                   </div>
                   <span className="text-lg">🇮🇳</span>
-                  <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                     <span className="text-sm font-bold text-white/60 uppercase tracking-widest">ID: {profile.specialId || profile.id.slice(0, 7)}</span>
-                     <Copy className="h-3 w-3 text-white/20" />
+                  <SpecialIdBadge id={profile.specialId || profile.id.slice(0, 6)} color="red" onClick={handleCopyId} />
+                  <OfficialTag size="sm" className="-ml-1" />
+               </div>
+
+               {/* Verified Badge */}
+               <div className="mb-8">
+                  <div className="bg-[#00E676] px-5 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(0,230,118,0.4)]">
+                     <CheckCircle2 className="h-3.5 w-3.5 text-white fill-current" />
+                     <span className="text-[11px] font-black text-white uppercase tracking-widest">Verified</span>
                   </div>
                </div>
 
-               {/* Verified Identity Badge */}
-               <div className="mb-6">
-                  <div className="bg-[#00E676] px-4 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,230,118,0.3)]">
-                     <CheckCircle2 className="h-3 w-3 text-white fill-current" />
-                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Verified</span>
-                  </div>
-               </div>
-
-               {/* High-Fidelity Level Cards */}
-               <div className="grid grid-cols-2 gap-3 w-full px-6 mb-8">
-                  {/* Rich Card */}
-                  <div className="bg-gradient-to-br from-[#6a11cb] to-[#2575fc] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
-                     <div className="relative z-10 flex flex-col justify-between h-full gap-1">
+               {/* Level Cards Grid */}
+               <div className="grid grid-cols-2 gap-4 w-full px-8 mb-10">
+                  {/* Rich Level Card */}
+                  <div className="bg-gradient-to-br from-[#2563eb] to-[#1e1b4b] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
+                     <div className="relative z-10 space-y-2">
                         <div className="flex items-center gap-2">
-                           <Star className="h-6 w-6 text-white/40 fill-current" />
+                           <div className="h-6 w-6 bg-white/20 rounded-lg flex items-center justify-center">
+                              <Star className="h-3.5 w-3.5 fill-white text-white" />
+                           </div>
                            <div className="flex flex-col">
-                              <span className="text-[9px] font-black uppercase opacity-60">Rich</span>
+                              <span className="text-[10px] font-bold text-white/60 uppercase leading-none">Rich</span>
                               <span className="text-sm font-black italic">Lv {profile.level?.rich || 0}</span>
                            </div>
                         </div>
-                        <div className="h-px bg-white/10 w-full my-1" />
-                        <p className="text-[8px] font-black uppercase tracking-tighter text-white/80">Mthly Send: 600</p>
+                        <div className="h-px bg-white/10 w-full" />
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Send: 600</p>
                      </div>
                      <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
                         <Star className="h-20 w-20 fill-current" />
                      </div>
                   </div>
 
-                  {/* Charm Card */}
-                  <div className="bg-gradient-to-br from-[#ff9a9e] via-[#fecfef] to-[#fbc2eb] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
-                     <div className="relative z-10 flex flex-col justify-between h-full gap-1">
+                  {/* Charm Level Card */}
+                  <div className="bg-gradient-to-br from-[#db2777] to-[#4c0519] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
+                     <div className="relative z-10 space-y-2">
                         <div className="flex items-center gap-2">
-                           <div className="relative">
-                              <div className="absolute inset-0 bg-white blur-md opacity-20" />
-                              <span className="text-xl relative z-10 drop-shadow-md">✨</span>
+                           <div className="h-6 w-6 bg-white/20 rounded-lg flex items-center justify-center">
+                              <Sparkles className="h-3.5 w-3.5 fill-white text-white" />
                            </div>
                            <div className="flex flex-col">
-                              <span className="text-[9px] font-black uppercase opacity-60 text-slate-900">Charm</span>
-                              <span className="text-sm font-black italic text-slate-900">Lv {profile.level?.charm || 0}</span>
+                              <span className="text-[10px] font-bold text-white/60 uppercase leading-none">Charm</span>
+                              <span className="text-sm font-black italic">Lv {profile.level?.charm || 0}</span>
                            </div>
                         </div>
-                        <div className="h-px bg-slate-900/10 w-full my-1" />
-                        <p className="text-[8px] font-black uppercase tracking-tighter text-slate-900/80">Mthly Received: 2.8K</p>
+                        <div className="h-px bg-white/10 w-full" />
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Received: 2.8K</p>
                      </div>
                      <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
-                        <Heart className="h-20 w-20 fill-slate-900" />
+                        <Heart className="h-20 w-20 fill-current" />
                      </div>
                   </div>
                </div>
 
-               {/* Admin Commander Section (Dynamic) */}
+               {/* Admin Command Grid (Owners/Mods Only) */}
                {canManage && !isMe && (
-                 <div className="w-full px-6 mb-8">
-                    <div className="bg-white/5 rounded-3xl p-4 border border-white/5 space-y-4">
-                       <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 text-center mb-2">Sovereign Commands</p>
-                       <div className="grid grid-cols-3 gap-2">
-                          <button 
-                            onClick={() => onSilence(userId, isSilenced)}
-                            className={cn(
-                              "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all active:scale-95",
-                              isSilenced ? "bg-green-500/10 border-green-500/20 text-green-500" : "bg-orange-500/10 border-orange-500/20 text-orange-500"
-                            )}
-                          >
-                             {isSilenced ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-                             <span className="text-[8px] font-black uppercase">Mute</span>
-                          </button>
-                          
-                          <button 
-                            onClick={() => onLeaveSeat(userId)}
-                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/5 border border-white/5 text-white/60 hover:bg-white/10 active:scale-95 transition-all"
-                          >
-                             <LogOut className="h-5 w-5" />
-                             <span className="text-[8px] font-black uppercase">Seat leave</span>
-                          </button>
+                 <div className="w-full px-8 mb-10">
+                    <div className="grid grid-cols-3 gap-3">
+                       <button 
+                         onClick={() => onSilence(userId, isSilenced)}
+                         className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-lg"
+                       >
+                          <MicOff className={cn("h-6 w-6", isSilenced ? "text-green-500" : "text-white/60")} />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Turn off</span>
+                       </button>
+                       
+                       <button 
+                         onClick={() => onLeaveSeat(userId)}
+                         className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-lg"
+                       >
+                          <LogOut className="h-6 w-6 text-white/60" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Seat Leave</span>
+                       </button>
 
-                          <button 
-                            onClick={() => onKick(userId, 10)}
-                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all"
-                          >
-                             <Ban className="h-5 w-5" />
-                             <span className="text-[8px] font-black uppercase">Kick out</span>
-                          </button>
-                       </div>
+                       <button 
+                         onClick={() => onKick(userId, 10)}
+                         className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all shadow-lg"
+                       >
+                          <Ban className="h-6 w-6 text-red-500" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-red-500/80">Kick out</span>
+                       </button>
                     </div>
                  </div>
                )}
 
-               {/* Bottom Action Bar Protocol */}
-               <div className="w-full border-t border-white/5 bg-black/40 px-8 py-6 flex items-center justify-between mt-auto">
-                  <button onClick={handleMention} className="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform">
-                     <AtSign className="h-6 w-6 text-white/40 group-hover:text-white transition-colors" />
+               {/* Interactive Social Bar */}
+               <div className="w-full border-t border-white/5 bg-black/40 px-10 py-8 flex items-center justify-between mt-auto">
+                  <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
+                     <AtSign className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" />
                      <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">at</span>
                   </button>
 
-                  <button className="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform">
-                     <Plus className="h-6 w-6 text-white/40 group-hover:text-white transition-colors" strokeWidth={3} />
+                  <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
+                     <Plus className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" strokeWidth={3} />
                      <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Follow</span>
                   </button>
 
-                  <button className="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform">
-                     <MessageCircle className="h-6 w-6 text-white/40 group-hover:text-white transition-colors" />
+                  <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
+                     <MessageCircle className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" />
                      <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Chat</span>
                   </button>
 
                   <button 
                     onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
-                    className="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
+                    className="flex flex-col items-center gap-2 group active:scale-90 transition-transform"
                   >
                      <div className="relative">
-                        <GiftIcon className="h-6 w-6 text-yellow-500 fill-yellow-500 animate-reaction-heartbeat" />
+                        <GiftIcon className="h-7 w-7 text-yellow-500 fill-yellow-500 animate-reaction-heartbeat" />
                         <div className="absolute inset-0 bg-yellow-400 blur-lg opacity-20" />
                      </div>
                      <span className="text-[10px] font-black uppercase text-yellow-500">Gift</span>
@@ -289,5 +288,38 @@ export function RoomUserProfileDialog({
         ) : null}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Sub-components used within Dialog
+function DropdownMenu({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  return <div className="relative">{React.Children.map(children, child => React.isValidElement(child) ? React.cloneElement(child as any, { isOpen, setIsOpen }) : child)}</div>;
+}
+
+function DropdownMenuTrigger({ children, asChild, isOpen, setIsOpen }: any) {
+  return React.cloneElement(children, { onClick: () => setIsOpen(!isOpen) });
+}
+
+function DropdownMenuContent({ children, align, className, isOpen, setIsOpen }: any) {
+  if (!isOpen) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+      <div className={cn("absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md", className)}>
+        {children}
+      </div>
+    </>
+  );
+}
+
+function DropdownMenuItem({ children, onClick, className, setIsOpen }: any) {
+  return (
+    <div 
+      className={cn("relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground", className)}
+      onClick={() => { onClick?.(); setIsOpen(false); }}
+    >
+      {children}
+    </div>
   );
 }

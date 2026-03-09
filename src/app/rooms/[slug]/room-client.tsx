@@ -166,7 +166,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
-  // HYDRATION SYNC: Set to null initially
   const [now, setNow] = useState<number | null>(null);
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -214,7 +213,6 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   useEffect(() => {
-    // CLIENT MOUNT SYNC: Initialize timer
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
@@ -287,7 +285,6 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
   const handleExit = () => { 
     if (firestore && currentUser) {
-      // PRO-ACTIVE IDENTITY PURGE
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
       const uRef = doc(firestore, 'users', currentUser.uid);
@@ -306,10 +303,11 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
+      // HIGH-FIDELITY SYNC: Always open the profile dialog for any occupant
       setSelectedParticipantUid(occupant.uid);
-      if (canManageRoom || occupant.uid === currentUser?.uid) setIsSeatMenuOpen(true);
-      else setIsUserProfileCardOpen(true);
+      setIsUserProfileCardOpen(true);
     } else {
+      // Open the seat menu for empty seats
       setSelectedParticipantUid(null);
       setIsSeatMenuOpen(true);
     }
