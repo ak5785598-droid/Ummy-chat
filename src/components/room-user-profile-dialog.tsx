@@ -18,7 +18,9 @@ import {
   Plus,
   CheckCircle2,
   AtSign,
-  Sparkles
+  Sparkles,
+  ChevronRight,
+  Flag
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -37,12 +39,6 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { useRouter } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { GoldCoinIcon } from '@/components/icons';
 
 interface RoomUserProfileDialogProps {
@@ -83,8 +79,8 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
 
 /**
  * High-Fidelity Room User Profile Dialog.
- * Designed to perfectly match your production visual blueprint.
- * Features centered identity headers, elite level cards, and the Sovereign command grid.
+ * Perfectly matches the production visual blueprint with dark-slate aesthetic.
+ * Integrates the Sovereign Command Grid for administrative oversight.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -133,21 +129,12 @@ export function RoomUserProfileDialog({
           </div>
         ) : profile ? (
           <div className="relative flex flex-col items-center">
-            {/* Action Menu (Top Right) */}
+            
+            {/* Action Meta Options (Top Right) */}
             <div className="w-full flex justify-end p-6 absolute top-0 right-0 z-50">
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors border border-white/5 shadow-xl">
-                       <MoreHorizontal className="h-6 w-6" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                     <DropdownMenuItem onClick={handleViewFullProfile} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer">
-                        <User className="h-4 w-4 text-primary" />
-                        <span className="font-black uppercase text-[10px]">View Profile</span>
-                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-               </DropdownMenu>
+               <button onClick={handleViewFullProfile} className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors border border-white/5 shadow-xl">
+                  <MoreHorizontal className="h-6 w-6" />
+               </button>
             </div>
 
             <div className="pt-16 pb-6 flex flex-col items-center w-full">
@@ -197,7 +184,7 @@ export function RoomUserProfileDialog({
                            </div>
                         </div>
                         <div className="h-px bg-white/10 w-full" />
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Send: 600</p>
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Send: 0</p>
                      </div>
                      <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
                         <Star className="h-20 w-20 fill-current" />
@@ -217,7 +204,7 @@ export function RoomUserProfileDialog({
                            </div>
                         </div>
                         <div className="h-px bg-white/10 w-full" />
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Received: 2.8K</p>
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Received: 0</p>
                      </div>
                      <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
                         <Heart className="h-20 w-20 fill-current" />
@@ -225,9 +212,9 @@ export function RoomUserProfileDialog({
                   </div>
                </div>
 
-               {/* Admin Command Grid (Owners/Mods Only) */}
+               {/* Sovereign Command Grid (Owners/Mods Only) */}
                {canManage && (
-                 <div className="w-full px-8 mb-10">
+                 <div className="w-full px-8 mb-10 animate-in fade-in zoom-in duration-500">
                     <div className="grid grid-cols-3 gap-3">
                        <button 
                          onClick={() => onSilence(userId, isSilenced)}
@@ -293,38 +280,5 @@ export function RoomUserProfileDialog({
         ) : null}
       </DialogContent>
     </Dialog>
-  );
-}
-
-// Sub-components used within Dialog
-function DropdownMenu({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  return <div className="relative">{React.Children.map(children, child => React.isValidElement(child) ? React.cloneElement(child as any, { isOpen, setIsOpen }) : child)}</div>;
-}
-
-function DropdownMenuTrigger({ children, asChild, isOpen, setIsOpen }: any) {
-  return React.cloneElement(children, { onClick: () => setIsOpen(!isOpen) });
-}
-
-function DropdownMenuContent({ children, align, className, isOpen, setIsOpen }: any) {
-  if (!isOpen) return null;
-  return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-      <div className={cn("absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md", className)}>
-        {children}
-      </div>
-    </>
-  );
-}
-
-function DropdownMenuItem({ children, onClick, className, setIsOpen }: any) {
-  return (
-    <div 
-      className={cn("relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground", className)}
-      onClick={() => { onClick?.(); setIsOpen(false); }}
-    >
-      {children}
-    </div>
   );
 }

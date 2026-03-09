@@ -31,9 +31,7 @@ interface RoomSeatMenuDialogProps {
 
 /**
  * High-Fidelity Room Seat Menu.
- * AUTHORITY PROTOCOL: All administrative actions (Invite, Lock, Kick, Mute) 
- * are strictly restricted to room owners and administrators.
- * Now includes a high-speed "Send gift" portal positioned DOWN from Mute.
+ * Standardizes administrative labels: "Take mic", "Lock mic", "Invite to mic".
  */
 export function RoomSeatMenuDialog({
   open,
@@ -58,7 +56,6 @@ export function RoomSeatMenuDialog({
   const handleTakeSeat = () => {
     if (!firestore || !currentUserId || !roomId) return;
     
-    // ATOMIC SYNC: Synchronize identity to the specific microphone slot
     const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', currentUserId);
     setDocumentNonBlocking(participantRef, {
       seatIndex: seatIndex,
@@ -66,7 +63,7 @@ export function RoomSeatMenuDialog({
       updatedAt: serverTimestamp()
     }, { merge: true });
     
-    toast({ title: 'Seat Taken', description: `Synchronized to position ${seatIndex}.` });
+    toast({ title: 'Seat Taken' });
     onOpenChange(false);
   };
 
@@ -104,56 +101,41 @@ export function RoomSeatMenuDialog({
         </DialogHeader>
 
         <div className="flex flex-col items-center">
-          {/* Blueprint: Take Action (if empty) - Available to tribe members if not locked */}
           {(!occupantUid && (!isLocked || canManage)) && (
-            <MenuItem label="Take" onClick={handleTakeSeat} />
+            <MenuItem label="Take mic" onClick={handleTakeSeat} />
           )}
 
-          {/* Blueprint: Invite Action - RESTRICTED TO ADMINS */}
           {canManage && (
-            <MenuItem label="Invite" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+            <MenuItem label="Invite to mic" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
           )}
 
-          {/* Blueprint: Lock/Unlock Toggle - RESTRICTED TO ADMINS */}
           {canManage && (
             <MenuItem 
-              label={isLocked ? "Unlock the mic" : "Lock the mic"} 
+              label={isLocked ? "Unlock mic" : "Lock mic"} 
               onClick={handleToggleLock}
             />
           )}
 
-          {/* Blueprint: Kick out - RESTRICTED TO ADMINS */}
           {(canManage && occupantUid && occupantUid !== currentUserId) && (
             <MenuItem 
               label="Kick out" 
-              onClick={() => {
-                if (typeof onKick === 'function') {
-                  onKick(occupantUid, 5);
-                }
-              }} 
+              onClick={() => onKick(occupantUid, 5)} 
               className="text-red-500" 
             />
           )}
 
-          {/* Blueprint: Seat leave - RESTRICTED TO ADMINS or OWN SEAT */}
           {(occupantUid && (occupantUid === currentUserId || canManage)) && (
             <MenuItem 
-              label={occupantUid === currentUserId ? "Leave seat" : "Seat leave"} 
-              onClick={() => {
-                if (typeof onLeaveSeat === 'function') {
-                  onLeaveSeat(occupantUid);
-                }
-              }} 
+              label="Seat leave" 
+              onClick={() => onLeaveSeat(occupantUid)} 
               className="text-orange-600" 
             />
           )}
 
-          {/* Blueprint: Mute Action - RESTRICTED TO ADMINS */}
           {canManage && (
             <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
           )}
 
-          {/* HIGH-FIDELITY GIFT DISPATCH: Positioned DOWN from Mute as requested */}
           {(occupantUid && onSendGift) && (
             <MenuItem 
               label="Send gift" 
@@ -164,12 +146,11 @@ export function RoomSeatMenuDialog({
                   name: occupantName || 'Tribe Member',
                   avatarUrl: occupantAvatarUrl || ''
                 });
-                onOpenChange(false); // Immediate sync closure
+                onOpenChange(false);
               }} 
             />
           )}
 
-          {/* Blueprint: Cancel Action - FOR EVERYONE */}
           <MenuItem 
             label="Cancel" 
             onClick={() => onOpenChange(false)} 

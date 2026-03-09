@@ -84,7 +84,6 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -208,7 +207,7 @@ export function RoomClient({ room }: { room: Room }) {
         ownerId: room.ownerId,
         followedAt: serverTimestamp()
       }, { merge: true });
-      toast({ title: 'Frequency Followed', description: 'Synchronized to your Me tab.' });
+      toast({ title: 'Frequency Followed' });
     }
   };
 
@@ -303,12 +302,10 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
-      // SOVEREIGN ACCESS PROTOCOL: Clicking an occupied seat ALWAYS opens the profile card.
-      // This allows owners/admins to moderate and standard users to view levels instantly.
+      // RULE: Clicking occupied seat always triggers high-fidelity identity synchronization
       setSelectedParticipantUid(occupant.uid);
       setIsUserProfileCardOpen(true);
     } else {
-      // Empty seat protocol: Open the mic management menu.
       setSelectedParticipantUid(null);
       setIsSeatMenuOpen(true);
     }
@@ -382,12 +379,6 @@ export function RoomClient({ room }: { room: Room }) {
           priority 
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
-      </div>
-
-      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-10">
-         <div className="relative w-64 h-64">
-            <UmmyLogoIcon className="h-full w-full" />
-         </div>
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
