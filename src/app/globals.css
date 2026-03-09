@@ -73,17 +73,28 @@
 
 @layer utilities {
   .bg-ummy-gradient {
-    background: linear-gradient(135deg, #140028 0%, #2A0050 50%, #3D0073 100%);
+    background: linear-gradient(-45deg, #140028, #2A0050, #3D0073, #880e4f, #0d47a1);
+    background-size: 400% 400%;
+    animation: gradient-move 15s ease infinite;
   }
+  
   .glass-card {
     @apply bg-black/30 backdrop-blur-[20px] border border-white/10;
   }
+  
   .logo-glow {
     filter: drop-shadow(0 0 45px rgba(255, 79, 163, 0.9));
   }
+  
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@keyframes gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes voice-wave {
