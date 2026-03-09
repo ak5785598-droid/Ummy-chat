@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { format } from 'date-fns';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -149,6 +150,7 @@ export default function AdminPage() {
   const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
   const [isSearchingBan, setIsSearchingBan] = useState(false);
   const [banDuration, setBanDuration] = useState('1'); // Days
+  const [isPermanentBan, setIsPermanentBan] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
 
   const [newThemeName, setNewThemeName] = useState('');
@@ -427,7 +429,7 @@ export default function AdminPage() {
     setIsBanning(true);
     try {
       const days = parseInt(banDuration);
-      const bannedUntil = days === 99999 ? null : Timestamp.fromDate(new Date(Date.now() + days * 24 * 60 * 60 * 1000));
+      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + days * 24 * 60 * 60 * 1000));
       
       const uRef = doc(firestore, 'users', targetUserForBan.id);
       const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
@@ -504,9 +506,6 @@ export default function AdminPage() {
     toast({ title: 'Authority Updated' });
   };
 
-  /**
-   * MASTER REVOCATION PROTOCOL: Atomically purges all seller-related tags.
-   */
   const handleToggleSellerCenter = async () => {
     if (!firestore || !targetUserForCenter) return;
     const tags = targetUserForCenter.tags || [];
@@ -518,7 +517,6 @@ export default function AdminPage() {
     
     let newTags;
     if (isCurrentlyActive) {
-      // MASTER PURGE: Ensuring absolute removal across all possible identifiers
       newTags = tags.filter(t => !sellerTags.includes(t));
     } else {
       newTags = [...tags, 'Seller'];
@@ -742,7 +740,7 @@ export default function AdminPage() {
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600">
                         <Gavel className="h-6 w-6" /> Supreme ID Ban Protocol
                      </CardTitle>
-                     <CardDescription>Exclude members from the entire Ummy frequency network. Once active, the member is blocked from all social graphs.</CardDescription>
+                     <CardDescription>Exclude members from the entire Ummy frequency network. Enter any time period or unban restored members.</CardDescription>
                   </CardHeader>
                   
                   <div className="flex flex-col gap-4">
@@ -779,20 +777,34 @@ export default function AdminPage() {
                        {!targetUserForBan.banStatus?.isBanned ? (
                          <div className="space-y-6">
                             <div className="grid gap-4">
-                               <p className="text-[10px] font-black uppercase text-gray-400 ml-1">Ban Duration Frequency</p>
-                               <Select value={banDuration} onValueChange={setBanDuration}>
-                                  <SelectTrigger className="h-14 rounded-2xl border-2 bg-white font-black italic">
-                                     <SelectValue placeholder="Select Duration" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-white rounded-2xl font-black italic">
-                                     <SelectItem value="1">24 Hours (1 Day)</SelectItem>
-                                     <SelectItem value="7">168 Hours (7 Days)</SelectItem>
-                                     <SelectItem value="30">720 Hours (30 Days)</SelectItem>
-                                     <SelectItem value="99999">Forever (Permanent)</SelectItem>
-                                  </SelectContent>
-                               </Select>
+                               <div className="flex items-center justify-between px-1">
+                                  <p className="text-[10px] font-black uppercase text-gray-400">Ban Duration (Days)</p>
+                                  <button onClick={() => setIsPermanentBan(!isPermanentBan)} className={cn("text-[8px] font-black uppercase italic px-2 py-0.5 rounded-md transition-all", isPermanentBan ? "bg-red-600 text-white" : "bg-slate-100 text-slate-400")}>
+                                     {isPermanentBan ? 'Permanent Active' : 'Make Permanent'}
+                                  </button>
+                               </div>
+                               {!isPermanentBan ? (
+                                 <div className="flex gap-2">
+                                    <Input 
+                                      type="text" 
+                                      inputMode="numeric" 
+                                      placeholder="Enter number of days..." 
+                                      value={banDuration} 
+                                      onChange={(e) => setBanDuration(e.target.value.replace(/\D/g, ''))} 
+                                      className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" 
+                                    />
+                                    <div className="h-14 bg-slate-100 rounded-2xl flex items-center justify-center px-6">
+                                       <span className="font-black uppercase italic text-xs text-slate-400">Days</span>
+                                    </div>
+                                 </div>
+                               ) : (
+                                 <div className="h-14 rounded-2xl border-2 border-red-100 bg-red-50 flex items-center justify-center gap-2">
+                                    <Gavel className="h-5 w-5 text-red-600" />
+                                    <span className="font-black uppercase italic text-red-600">Infinite Exclusion Protocol</span>
+                                 </div>
+                               )}
                             </div>
-                            <Button onClick={handleBanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-red-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-red-700">
+                            <Button onClick={handleBanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-red-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-red-700 active:scale-95 transition-all">
                                {isBanning ? <Loader className="animate-spin mr-2" /> : <Gavel className="mr-2" />} Execute Supreme Ban
                             </Button>
                          </div>
@@ -806,7 +818,7 @@ export default function AdminPage() {
                                     : 'PERMANENT EXCLUSION'}
                                </p>
                             </div>
-                            <Button onClick={handleUnbanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-green-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-green-700">
+                            <Button onClick={handleUnbanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-green-600 text-white font-black uppercase italic text-xl shadow-xl hover:bg-green-700 active:scale-95 transition-all">
                                {isBanning ? <Loader className="animate-spin mr-2" /> : <Zap className="mr-2" />} Synchronize Restoration (Unban)
                             </Button>
                          </div>
