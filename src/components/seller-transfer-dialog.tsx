@@ -61,6 +61,7 @@ export function SellerTransferDialog() {
 
     try {
       const usersRef = collection(firestore, 'users');
+      // Sync Protocol: Pad user-friendly IDs (e.g. 1 to 001) to match sequential graph
       const paddedId = recipientId.padStart(3, '0');
       const q = query(usersRef, where('specialId', '==', paddedId), limit(1));
       
@@ -142,7 +143,7 @@ export function SellerTransferDialog() {
       <DialogTrigger asChild>
         <button 
           type="button"
-          className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0"
+          className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0 text-left"
         >
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm bg-purple-100 text-purple-600">
@@ -181,10 +182,11 @@ export function SellerTransferDialog() {
                   <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6" />
                   <Input
                     id="amount"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="0"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
                     className="h-14 pl-12 rounded-2xl border-2 focus:border-purple-500 transition-all text-2xl font-black italic"
                     required
                   />
