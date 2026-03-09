@@ -17,13 +17,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Identity Portal.
  * Redesigned for a modern social app experience inspired by Wafa, Mico, and Tango.
- * Features a full-screen abstract neon background with blur overlay and glassmorphism.
+ * Synchronized with the /login-bg.png asset and premium glassmorphism.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -37,8 +35,6 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
-  const loginBg = PlaceHolderImages.find(img => img.id === 'login-bg');
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -116,20 +112,14 @@ export default function LoginPage() {
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
-      {/* Immersive Background Synchronization layer */}
+      {/* Immersive Background Synchronization Layer */}
       <div className="absolute inset-0 -z-10">
-        {loginBg && (
-          <Image 
-            src={loginBg.imageUrl}
-            alt="Background"
-            fill
-            className="object-cover"
-            priority
-            unoptimized
-            data-ai-hint={loginBg.imageHint}
-          />
-        )}
-        {/* Depth Overlay Protocol */}
+        <img
+          src="/login-bg.png"
+          alt="Login Background"
+          className="w-full h-full object-cover"
+        />
+        {/* Cinematic Blur Overlay for Depth */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       </div>
 
@@ -230,7 +220,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer Section: Compliance Ledger */}
+      {/* Footer Section: Legal Sync */}
       <footer className="relative z-20 flex flex-col items-center space-y-6 text-center mb-8 animate-in fade-in duration-1000 delay-500">
         <div className="text-[10px] text-white/60 leading-relaxed max-w-[240px] uppercase tracking-tighter font-bold">
           By continuing you agree to the<br/>
