@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 /**
  * PRODUCTION WEBRTC HOOK
  * Re-engineered for absolute stability and high-fidelity social voice sync.
+ * GRACEFUL PERMISSION SYNC: Prevents runtime crashes on hardware access denial.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, musicStream: MediaStream | null = null) {
   const { user } = useUser();
@@ -24,9 +25,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   
-  // Persistent refs to survive component re-renders and track changes
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const senders = useRef<Map<string, Map<string, RTCRtpSender>>>(new Map()); // peerId -> trackId -> sender
+  const senders = useRef<Map<string, Map<string, RTCRtpSender>>>(new Map()); 
   const makingOffer = useRef<Map<string, boolean>>(new Map());
   const ignoreOffer = useRef<Map<string, boolean>>(new Map());
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -43,7 +43,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     iceCandidatePoolSize: 10,
   };
 
-  // 1. LOCAL STREAM SYNC: Handle Mic Hardware Initialization
   useEffect(() => {
     if (!isInSeat || !user || !roomId) {
       if (localStream) {
@@ -55,7 +54,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
-        console.log('[WebRTC] Initializing local voice frequency...');
+        console.log('[WebRTC] Requesting local mic frequency sync...');
         const rawStream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
@@ -73,17 +72,23 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
         const source = ctx.createMediaStreamSource(rawStream);
         const gainNode = ctx.createGain();
-        gainNode.gain.value = 2.0; // Moderate boost for tribal clarity
+        gainNode.gain.value = 2.0; 
         
         const destination = ctx.createMediaStreamDestination();
         source.connect(gainNode);
         gainNode.connect(destination);
         
-        const boostedStream = destination.stream;
-        setLocalStream(boostedStream);
+        setLocalStream(destination.stream);
       } catch (err: any) {
-        console.error('[WebRTC] Local Stream Error:', err);
-        toast({ variant: 'destructive', title: 'Mic Sync Failed' });
+        // GRACEFUL SYNC ERROR HANDLING: Prevents Next.js runtime overlay for permission issues
+        console.warn('[WebRTC] Hardware Sync Denied:', err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          toast({ 
+            variant: 'destructive', 
+            title: 'Mic Access Denied', 
+            description: 'Please enable microphone permissions in your browser to speak.' 
+          });
+        }
       }
     };
 
@@ -94,7 +99,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     };
   }, [isInSeat, user?.uid, roomId]);
 
-  // 2. MUTE SYNC: Control track state locally
   useEffect(() => {
     if (localStream) {
       localStream.getAudioTracks().forEach(track => {
@@ -103,14 +107,12 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
   }, [isMuted, localStream]);
 
-  // 3. TRACK MANAGEMENT: Dynamically update peer connections without dropping signaling
   useEffect(() => {
     const updateTracks = async () => {
       for (const [peerId, pc] of peerConnections.current.entries()) {
         const peerSenders = senders.current.get(peerId) || new Map();
-        
-        // Handle Local Mic Track
         const audioTrack = localStream?.getAudioTracks()[0];
+        
         if (audioTrack) {
           if (peerSenders.has('mic')) {
             const sender = peerSenders.get('mic');
@@ -120,7 +122,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
             peerSenders.set('mic', sender);
           }
         } else {
-          // User left seat, remove mic sender
           const sender = peerSenders.get('mic');
           if (sender) {
             try { pc.removeTrack(sender); } catch (e) {}
@@ -128,7 +129,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           }
         }
 
-        // Handle Music Stream Track
         const musicTrack = musicStream?.getAudioTracks()[0];
         if (musicTrack) {
           if (peerSenders.has('music')) {
@@ -145,27 +145,20 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
             peerSenders.delete('music');
           }
         }
-
         senders.current.set(peerId, peerSenders);
       }
     };
-
     updateTracks();
   }, [localStream, musicStream]);
 
-  // 4. SIGNALING & PEER MANAGEMENT: Long-lived subscription
   useEffect(() => {
     if (!user || !roomId || !firestore) return;
 
-    console.log(`[WebRTC] Establishing long-lived tribal signal for room: ${roomId}`);
-
     const initiateConnection = (peerId: string) => {
       if (peerConnections.current.has(peerId)) return;
-
       const pc = new RTCPeerConnection(iceConfig);
       peerConnections.current.set(peerId, pc);
 
-      // Initial tracks
       const peerSenders = new Map();
       const micTrack = localStream?.getAudioTracks()[0];
       if (micTrack) peerSenders.set('mic', pc.addTrack(micTrack, localStream!));
@@ -180,20 +173,11 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       };
 
       pc.ontrack = (event) => {
-        console.log(`[WebRTC] Received remote frequency from: ${peerId}`);
         setRemoteStreams(prev => {
           const next = new Map(prev);
           next.set(peerId, event.streams[0]);
           return next;
         });
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        console.log(`[WebRTC] ICE State with ${peerId}: ${pc.iceConnectionState}`);
-        if (pc.iceConnectionState === 'failed') pc.restartIce();
-        if (pc.iceConnectionState === 'disconnected') {
-          // Wait for auto-recovery or prune in next sync
-        }
       };
 
       pc.onnegotiationneeded = async () => {
@@ -202,7 +186,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'offer', sdp: pc.localDescription?.sdp, from: user.uid });
         } catch (err) {
-          console.error(`[WebRTC] Negotiation Failed (${peerId}):`, err);
+          console.error(`[WebRTC] Negotiation Failed:`, err);
         } finally {
           makingOffer.current.set(peerId, false);
         }
@@ -212,7 +196,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     const handleSignal = async (signal: any) => {
       const peerId = signal.from;
       let pc = peerConnections.current.get(peerId);
-
       if (!pc) {
         if (signal.type === 'offer') {
           initiateConnection(peerId);
@@ -225,9 +208,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           const polite = user.uid > peerId;
           const offerCollision = (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          
           if (ignoreOffer.current.get(peerId)) return;
-
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
@@ -237,29 +218,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           }
         } else if (signal.type === 'candidate') {
           try {
-            if (pc.remoteDescription) {
-              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-            }
+            if (pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
           } catch (err) {
             if (!ignoreOffer.current.get(peerId)) throw err;
           }
         }
       } catch (err) {
-        console.error(`[WebRTC] Signal Handshake Error (${peerId}):`, err);
-      }
-    };
-
-    const closeConnection = (peerId: string) => {
-      const pc = peerConnections.current.get(peerId);
-      if (pc) {
-        pc.close();
-        peerConnections.current.delete(peerId);
-        senders.current.delete(peerId);
-        setRemoteStreams(prev => {
-          const next = new Map(prev);
-          next.delete(peerId);
-          return next;
-        });
+        console.error(`[WebRTC] Signal Error:`, err);
       }
     };
 
@@ -268,16 +233,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       snapshot.docChanges().forEach((change) => {
         const peerId = change.doc.id;
         if (peerId === user.uid) return;
-
-        const peerData = change.doc.data();
-        const isPeerSpeaker = (peerData.seatIndex || 0) > 0;
-        
+        const isPeerSpeaker = (change.doc.data().seatIndex || 0) > 0;
         if (isPeerSpeaker || isInSeat) {
-          if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) {
-            initiateConnection(peerId);
-          }
-        } else if (change.type === 'removed') {
-          closeConnection(peerId);
+          if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) initiateConnection(peerId);
         }
       });
     });
@@ -286,23 +244,20 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     const unsubSignaling = onSnapshot(signalingRef, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
-          const signal = change.doc.data();
-          handleSignal(signal);
+          handleSignal(change.doc.data());
           deleteDoc(change.doc.ref).catch(() => {});
         }
       });
     });
 
     return () => {
-      console.log(`[WebRTC] Purging tribal signals for room: ${roomId}`);
       unsubParticipants();
       unsubSignaling();
       peerConnections.current.forEach(pc => pc.close());
       peerConnections.current.clear();
-      senders.current.clear();
       setRemoteStreams(new Map());
     };
-  }, [roomId, user?.uid, isInSeat]); // NO localStream dependency ensures stability
+  }, [roomId, user?.uid, isInSeat]);
 
   const sendSignal = (toPeerId: string, payload: any) => {
     if (!firestore || !roomId) return;

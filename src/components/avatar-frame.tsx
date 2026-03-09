@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -26,11 +27,10 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   const isWings = frameId === 'f5'; // Golden wings
   const isBronzeSky = frameId === 'f6'; // Bronze Sky
   const isCelestial = frameId === 'f7'; // Celestial Wings
-  const isOfficialHQ = frameId === 'f-official-hq'; // NEW: High-Fidelity Official Frame
+  const isOfficialHQ = frameId === 'f-official-hq'; // High-Fidelity Official HQ
 
   return (
     <div className={cn('relative flex items-center justify-center p-1', className)}>
-      {/* Frame Layer */}
       <div className="absolute inset-0 z-20 pointer-events-none scale-110">
         
         {isOfficialHQ && (
@@ -53,15 +53,12 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
               </filter>
             </defs>
 
-            {/* Laurel Wreath Engine */}
             <g fill="url(#hqGold)" stroke="#854d0e" strokeWidth="0.1" className="animate-shimmer-gold">
-               {/* Left Wreath */}
                {[160, 180, 200, 220, 240, 260, 280, 300, 320, 340].map((deg, i) => (
                  <g key={`l-${i}`} transform={`rotate(${deg}, 50, 50) translate(0, -42)`}>
                     <path d="M0 0 C -5 -5, -8 -15, 0 -20 C 8 -15, 5 -5, 0 0 Z" transform="scale(0.4) rotate(-30)" />
                  </g>
                ))}
-               {/* Right Wreath */}
                {[20, 40, 60, 80, 100, 120, 140, 160, 180, 200].map((deg, i) => (
                  <g key={`r-${i}`} transform={`rotate(${deg}, 50, 50) translate(0, -42)`}>
                     <path d="M0 0 C 5 -5, 8 -15, 0 -20 C -8 -15, -5 -5, 0 0 Z" transform="scale(0.4) rotate(30)" />
@@ -69,36 +66,20 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
                ))}
             </g>
 
-            {/* Top Sovereign Gem */}
             <g transform="translate(50, 8)" filter="url(#hqGlow)">
                <path d="M 0 -6 L 5 0 L 0 6 L -5 0 Z" fill="url(#hqGem)" stroke="#854d0e" strokeWidth="0.5" />
                <path d="M -2 0 L 0 -3 L 2 0 L 0 3 Z" fill="white" opacity="0.4" />
             </g>
 
-            {/* Main Inner Ring */}
             <circle cx="50" cy="50" r="44" fill="none" stroke="url(#hqGold)" strokeWidth="3" className="animate-shimmer-gold" />
-            <circle cx="50" cy="50" r="41" fill="none" stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" />
-
-            {/* Bottom Official Ribbon */}
+            
             <g transform="translate(50, 85)">
-               {/* Ribbon Wings */}
                <path d="M -45 -5 L -35 -12 L -15 -12 L -15 8 L -35 8 L -45 1 Z" fill="#b45309" stroke="#451a03" strokeWidth="0.5" />
                <path d="M 45 -5 L 35 -12 L 15 -12 L 15 8 L 35 8 L 45 1 Z" fill="#b45309" stroke="#451a03" strokeWidth="0.5" />
-               
-               {/* Main Banner Body */}
                <path d="M -30 -10 Q 0 -15 30 -10 L 30 10 Q 0 15 -30 10 Z" fill="url(#hqGold)" stroke="#854d0e" strokeWidth="0.5" />
-               
-               {/* Official Typography */}
                <text y="3" fontSize="7" textAnchor="middle" fill="#1a1a1a" fontWeight="900" style={{fontFamily: 'sans-serif', letterSpacing: '0.05em'}}>OFFICIAL</text>
-               
-               {/* Decorative Flourishes */}
-               <g transform="translate(0, 12)" fill="url(#hqGold)" stroke="#854d0e" strokeWidth="0.2">
-                  <path d="M -10 0 C -5 5, 5 5, 10 0 L 0 8 Z" />
-                  <circle cx="0" cy="8" r="1.5" />
-               </g>
             </g>
 
-            {/* Glossy Shine Protocol */}
             <rect x="0" y="0" width="15" height="150" fill="white" opacity="0.25" transform="rotate(45) translate(0, -100)">
                <animateTransform attributeName="transform" type="translate" from="-150, -100" to="250, 100" dur="2.5s" repeatCount="indefinite" />
             </rect>
@@ -226,7 +207,6 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
         )}
       </div>
 
-      {/* Avatar Content */}
       <div className="relative z-10 rounded-full overflow-hidden">
         {children}
       </div>

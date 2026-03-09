@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -130,7 +131,6 @@ export function RoomUserProfileDialog({
         ) : profile ? (
           <div className="relative flex flex-col items-center">
             
-            {/* Action Meta Options (Top Right) */}
             <div className="w-full flex justify-end p-6 absolute top-0 right-0 z-50">
                <button onClick={handleViewFullProfile} className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors border border-white/5 shadow-xl">
                   <MoreHorizontal className="h-6 w-6" />
@@ -138,7 +138,6 @@ export function RoomUserProfileDialog({
             </div>
 
             <div className="pt-16 pb-6 flex flex-col items-center w-full">
-               {/* Identity Header */}
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-4">
                   <Avatar className="h-28 w-28 border-4 border-white/10 shadow-2xl">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
@@ -148,7 +147,6 @@ export function RoomUserProfileDialog({
 
                <h2 className="text-2xl font-black uppercase tracking-tighter mb-3">{profile.username}</h2>
                
-               {/* Identity Meta Row (Blueprint Precise) */}
                <div className="flex items-center justify-center gap-3 mb-4">
                   <div className={cn(
                     "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg",
@@ -161,7 +159,6 @@ export function RoomUserProfileDialog({
                   <OfficialTag size="sm" className="-ml-1" />
                </div>
 
-               {/* Verified Badge */}
                <div className="mb-8">
                   <div className="bg-[#00E676] px-5 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(0,230,118,0.4)]">
                      <CheckCircle2 className="h-3.5 w-3.5 text-white fill-current" />
@@ -169,9 +166,7 @@ export function RoomUserProfileDialog({
                   </div>
                </div>
 
-               {/* Level Cards Grid */}
                <div className="grid grid-cols-2 gap-4 w-full px-8 mb-10">
-                  {/* Rich Level Card */}
                   <div className="bg-gradient-to-br from-[#2563eb] to-[#1e1b4b] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
                      <div className="relative z-10 space-y-2">
                         <div className="flex items-center gap-2">
@@ -191,7 +186,6 @@ export function RoomUserProfileDialog({
                      </div>
                   </div>
 
-                  {/* Charm Level Card */}
                   <div className="bg-gradient-to-br from-[#db2777] to-[#4c0519] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
                      <div className="relative z-10 space-y-2">
                         <div className="flex items-center gap-2">
@@ -212,7 +206,6 @@ export function RoomUserProfileDialog({
                   </div>
                </div>
 
-               {/* Sovereign Command Grid (Owners/Mods Only) */}
                {canManage && (
                  <div className="w-full px-8 mb-10 animate-in fade-in zoom-in duration-500">
                     <div className="grid grid-cols-3 gap-3">
@@ -247,7 +240,6 @@ export function RoomUserProfileDialog({
                  </div>
                )}
 
-               {/* Interactive Social Bar */}
                <div className="w-full border-t border-white/5 bg-black/40 px-10 py-8 flex items-center justify-between mt-auto">
                   <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
                      <AtSign className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" />
