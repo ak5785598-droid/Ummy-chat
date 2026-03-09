@@ -42,12 +42,28 @@ const coinPackages: CoinPackage[] = [
 ];
 
 const dailyTasks: Task[] = [
-  { id: 'dt1', title: 'Daily Check-in', description: 'Access any frequency today.', coinReward: 10, isCompleted: false, cta: { label: 'Explore', href: '/rooms' } },
-  { id: 'dt2', title: 'Tribe Support', description: 'Send a gift to any host.', coinReward: 50, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'dt1', title: 'Daily Check-in', description: 'Access any frequency today.', coinReward: 5000, isCompleted: false, cta: { label: 'Explore', href: '/rooms' } },
+  { id: 'dt2', title: 'Send gift once', description: 'Dispatch a gift to any tribe member.', coinReward: 500, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'dt3', title: '1 New follower', description: 'Gain 1 new follower today.', coinReward: 1000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'dt4', title: '3 User enter the room', description: 'Have 3 members visit your frequency.', coinReward: 2500, isCompleted: false, cta: { label: 'Launch', href: '/rooms' } },
+  { id: 'dt5', title: '10 User enter the room', description: 'Have 10 members visit your frequency.', coinReward: 10000, isCompleted: false, cta: { label: 'Launch', href: '/rooms' } },
+  { id: 'dt6', title: 'Share room link', description: 'Successfully Share room link to WhatsApp.', coinReward: 5000, isCompleted: false, cta: { label: 'Share', href: '/rooms' } },
 ];
 
 const achievementTasks: Task[] = [
-  { id: 'at1', title: 'Official Host', description: 'Launch your first frequency.', coinReward: 500, isCompleted: false, cta: { label: 'Launch', href: '/rooms' } },
+  { id: 'at1', title: 'On mic for 10 Minutes', description: 'Broadcast your voice for 10 minutes.', coinReward: 2500, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at2', title: 'On mic 30 minutes', description: 'Broadcast your voice for 30 minutes.', coinReward: 10000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at3', title: 'On mic 60Minute', description: 'Broadcast your voice for 60 minutes.', coinReward: 25000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at4', title: 'Invite 1 user on mic', description: 'Successfully invited 1 user on mic.', coinReward: 2500, isCompleted: false, cta: { label: 'Invite', href: '/rooms' } },
+  { id: 'at5', title: 'Invite 10 user on mic', description: 'Successfully Invited 10user on mic.', coinReward: 25000, isCompleted: false, cta: { label: 'Invite', href: '/rooms' } },
+  { id: 'at6', title: 'Invite 3 New users', description: 'Successfully invited 3 New user on mic.', coinReward: 2000, isCompleted: false, cta: { label: 'Invite', href: '/rooms' } },
+  { id: 'at7', title: 'Room Loyalty', description: 'More than 5 user enter Your room for 2 Consecutive days.', coinReward: 20000, isCompleted: false, cta: { label: 'Launch', href: '/rooms' } },
+  { id: 'at8', title: 'Trio Sync (1m)', description: '3 User on mic at the same time for 1 minutes.', coinReward: 5000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at9', title: 'Trio Sync (10m)', description: '3 user on mic at the same time for 10 minutes.', coinReward: 10000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at10', title: 'New Trio Sync (5m)', description: '3 New user on mic at the same time for 5 minutes.', coinReward: 10000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at11', title: 'New User Gifts', description: '3 New user send gifts in the room.', coinReward: 5000, isCompleted: false, cta: { label: 'Go', href: '/rooms' } },
+  { id: 'at12', title: '10 New follower', description: 'Grow your tribe by 10 new followers.', coinReward: 5000, isCompleted: false, cta: { label: 'Profile', href: '/profile' } },
+  { id: 'at13', title: '3 New New-User followers', description: '3 New follower From new user.', coinReward: 2500, isCompleted: false, cta: { label: 'Profile', href: '/profile' } },
 ];
 
 export const getPopularRooms = (): Room[] => rooms;
