@@ -83,7 +83,8 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
 
 /**
  * High-Fidelity Room User Profile Dialog.
- * Matches your exact blueprint: Dark aesthetic, Level cards, Admin command grid.
+ * Designed to perfectly match your production visual blueprint.
+ * Features centered identity headers, elite level cards, and the Sovereign command grid.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -225,7 +226,7 @@ export function RoomUserProfileDialog({
                </div>
 
                {/* Admin Command Grid (Owners/Mods Only) */}
-               {canManage && !isMe && (
+               {canManage && (
                  <div className="w-full px-8 mb-10">
                     <div className="grid grid-cols-3 gap-3">
                        <button 
@@ -246,7 +247,11 @@ export function RoomUserProfileDialog({
 
                        <button 
                          onClick={() => onKick(userId, 10)}
-                         className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all shadow-lg"
+                         disabled={isMe}
+                         className={cn(
+                           "flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all shadow-lg",
+                           isMe && "opacity-20 grayscale"
+                         )}
                        >
                           <Ban className="h-6 w-6 text-red-500" />
                           <span className="text-[9px] font-black uppercase tracking-widest text-red-500/80">Kick out</span>

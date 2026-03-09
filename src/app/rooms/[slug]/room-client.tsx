@@ -303,11 +303,12 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
-      // HIGH-FIDELITY SYNC: Always open the profile dialog for any occupant
+      // SOVEREIGN ACCESS PROTOCOL: Clicking an occupied seat ALWAYS opens the profile card.
+      // This allows owners/admins to moderate and standard users to view levels instantly.
       setSelectedParticipantUid(occupant.uid);
       setIsUserProfileCardOpen(true);
     } else {
-      // Open the seat menu for empty seats
+      // Empty seat protocol: Open the mic management menu.
       setSelectedParticipantUid(null);
       setIsSeatMenuOpen(true);
     }
