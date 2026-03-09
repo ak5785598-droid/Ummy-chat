@@ -174,7 +174,7 @@ export function SellerTransferDialog() {
                   placeholder="ID (e.g. 001)"
                   value={recipientId}
                   onChange={(e) => setRecipientId(e.target.value.replace(/\D/g, ''))}
-                  className="h-14 rounded-2xl border-2 focus:border-purple-500 transition-all text-xl font-black text-center"
+                  className="h-14 rounded-2xl border-2 focus:border-purple-500 transition-all text-xl font-black text-center text-slate-900 bg-slate-50 placeholder:text-slate-300"
                   required
                 />
               </div>
@@ -189,7 +189,7 @@ export function SellerTransferDialog() {
                     placeholder="0"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-                    className="h-14 pl-12 rounded-2xl border-2 focus:border-purple-500 transition-all text-2xl font-black italic"
+                    className="h-14 pl-12 rounded-2xl border-2 focus:border-purple-500 transition-all text-2xl font-black italic text-slate-900 bg-slate-50 placeholder:text-slate-300"
                     required
                   />
                 </div>
