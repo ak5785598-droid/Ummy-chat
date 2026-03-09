@@ -149,7 +149,12 @@ export default function AdminPage() {
   const [banSearchName, setBanSearchName] = useState('');
   const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
   const [isSearchingBan, setIsSearchingBan] = useState(false);
-  const [banDuration, setBanDuration] = useState('1'); // Days
+  
+  // High-Precision Ban States
+  const [banDays, setBanDays] = useState('1');
+  const [banHours, setBanHours] = useState('0');
+  const [banMinutes, setBanMinutes] = useState('0');
+  const [banSeconds, setBanSeconds] = useState('0');
   const [isPermanentBan, setIsPermanentBan] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
 
@@ -428,8 +433,13 @@ export default function AdminPage() {
     if (!firestore || !targetUserForBan || !isCreator) return;
     setIsBanning(true);
     try {
-      const days = parseInt(banDuration);
-      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + days * 24 * 60 * 60 * 1000));
+      const days = parseInt(banDays) || 0;
+      const hours = parseInt(banHours) || 0;
+      const mins = parseInt(banMinutes) || 0;
+      const secs = parseInt(banSeconds) || 0;
+      
+      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
+      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
       
       const uRef = doc(firestore, 'users', targetUserForBan.id);
       const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
@@ -740,7 +750,7 @@ export default function AdminPage() {
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600">
                         <Gavel className="h-6 w-6" /> Supreme ID Ban Protocol
                      </CardTitle>
-                     <CardDescription>Exclude members from the entire Ummy frequency network. Enter any time period or unban restored members.</CardDescription>
+                     <CardDescription>Exclude members from the entire Ummy frequency network. Enter high-precision temporal offsets.</CardDescription>
                   </CardHeader>
                   
                   <div className="flex flex-col gap-4">
@@ -776,25 +786,31 @@ export default function AdminPage() {
 
                        {!targetUserForBan.banStatus?.isBanned ? (
                          <div className="space-y-6">
-                            <div className="grid gap-4">
+                            <div className="grid gap-6">
                                <div className="flex items-center justify-between px-1">
-                                  <p className="text-[10px] font-black uppercase text-gray-400">Ban Duration (Days)</p>
+                                  <p className="text-[10px] font-black uppercase text-gray-400">Temporal Exclusion Offset</p>
                                   <button onClick={() => setIsPermanentBan(!isPermanentBan)} className={cn("text-[8px] font-black uppercase italic px-2 py-0.5 rounded-md transition-all", isPermanentBan ? "bg-red-600 text-white" : "bg-slate-100 text-slate-400")}>
                                      {isPermanentBan ? 'Permanent Active' : 'Make Permanent'}
                                   </button>
                                </div>
+                               
                                {!isPermanentBan ? (
-                                 <div className="flex gap-2">
-                                    <Input 
-                                      type="text" 
-                                      inputMode="numeric" 
-                                      placeholder="Enter number of days..." 
-                                      value={banDuration} 
-                                      onChange={(e) => setBanDuration(e.target.value.replace(/\D/g, ''))} 
-                                      className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" 
-                                    />
-                                    <div className="h-14 bg-slate-100 rounded-2xl flex items-center justify-center px-6">
-                                       <span className="font-black uppercase italic text-xs text-slate-400">Days</span>
+                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div className="space-y-1">
+                                       <p className="text-[8px] font-black uppercase text-gray-400 text-center">Days</p>
+                                       <Input type="text" inputMode="numeric" value={banDays} onChange={(e) => setBanDays(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" />
+                                    </div>
+                                    <div className="space-y-1">
+                                       <p className="text-[8px] font-black uppercase text-gray-400 text-center">Hours</p>
+                                       <Input type="text" inputMode="numeric" value={banHours} onChange={(e) => setBanHours(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" />
+                                    </div>
+                                    <div className="space-y-1">
+                                       <p className="text-[8px] font-black uppercase text-gray-400 text-center">Minutes</p>
+                                       <Input type="text" inputMode="numeric" value={banMinutes} onChange={(e) => setBanMinutes(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" />
+                                    </div>
+                                    <div className="space-y-1">
+                                       <p className="text-[8px] font-black uppercase text-gray-400 text-center">Seconds</p>
+                                       <Input type="text" inputMode="numeric" value={banSeconds} onChange={(e) => setBanSeconds(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black italic text-center" />
                                     </div>
                                  </div>
                                ) : (
@@ -814,7 +830,7 @@ export default function AdminPage() {
                                <p className="text-[10px] font-black uppercase text-red-600">Ban Active Until</p>
                                <p className="text-xl font-black italic text-red-900">
                                   {targetUserForBan.banStatus.bannedUntil 
-                                    ? format(targetUserForBan.banStatus.bannedUntil.toDate(), 'PPP HH:mm') 
+                                    ? format(targetUserForBan.banStatus.bannedUntil.toDate(), 'PPP HH:mm:ss') 
                                     : 'PERMANENT EXCLUSION'}
                                </p>
                             </div>
