@@ -8,10 +8,6 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
 /**
  * Maintains Firestore presence while a room is active.
- * ANTI-GHOST PROTOCOL: 
- * 1. 20s Heartbeat for live tracking.
- * 2. Optimized Cleanup: ONLY the Room Owner performs roster sweeps to save quota.
- * 3. Exact Count Sync: Forces room count to match actual active roster size.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -23,7 +19,6 @@ export function RoomPresenceManager() {
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const cleanupInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Stable metadata dependencies to prevent effect restarts on every heartbeat
   const userMetadata = useMemo(() => ({
     username: userProfile?.username,
     avatarUrl: userProfile?.avatarUrl,
@@ -50,20 +45,23 @@ export function RoomPresenceManager() {
         const existingSnap = await getDoc(participantRef);
         const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-        // Broadcast Entrance
-        addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
-          content: 'entered the room',
-          senderId: uid,
-          senderName: userMetadata.username || 'Tribe Member',
-          senderAvatar: userMetadata.avatarUrl || null,
-          chatRoomId: roomId,
-          timestamp: serverTimestamp(),
-          type: 'entrance'
-        });
-
-        // Atomic Join Handshake
+        // AUTH HANDSHAKE: Ensure clean slate
         const batch = writeBatch(firestore);
-        batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+        
+        // Broadcast entrance only if not already established
+        if (!existingSnap.exists()) {
+          addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+            content: 'entered the room',
+            senderId: uid,
+            senderName: userMetadata.username || 'Tribe Member',
+            senderAvatar: userMetadata.avatarUrl || null,
+            chatRoomId: roomId,
+            timestamp: serverTimestamp(),
+            type: 'entrance'
+          });
+          batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+        }
+
         batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
         batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
 
@@ -81,7 +79,6 @@ export function RoomPresenceManager() {
 
         batch.commit().catch(console.error);
       } else {
-        // Metadata Refresh Sync
         setDocumentNonBlocking(participantRef, {
           name: userMetadata.username || 'Guest',
           avatarUrl: userMetadata.avatarUrl || null,
@@ -91,13 +88,11 @@ export function RoomPresenceManager() {
         }, { merge: true });
       }
 
-      // Start Heartbeat Sync (20s)
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
       heartbeatInterval.current = setInterval(() => {
         setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
       }, 20000);
 
-      // SOVEREIGN ROSTER CLEANUP: Only the owner sweeps to save Firestore costs
       if (isOwner && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
           const staleThreshold = new Date(Date.now() - 60000); 

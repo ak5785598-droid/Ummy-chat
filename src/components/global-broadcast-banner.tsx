@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,24 +9,23 @@ import { cn } from '@/lib/utils';
 
 /**
  * High-Fidelity Global Broadcast Portal.
- * Listens to the global frequency for Lucky Bag dispatches and renders an interactive banner.
+ * DEFERRED SYNC: Prevents hydration mismatch.
  */
 export function GlobalBroadcastBanner() {
   const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
-  // DEFERRED SYNC: Initialized to null to prevent hydration discrepancy.
+  // DEFERRED IDENTITY SYNC
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    // SYNC INITIALIZATION: Initialize 'now' on client mount only.
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const broadcastsQuery = useMemoFirebase(() => {
-    if (!firestore || !now) return null; // Wait for client synchronization
+    if (!firestore || !now) return null;
     return query(
       collection(firestore, 'globalBroadcasts'),
       where('expiresAt', '>', Timestamp.fromDate(now)),
@@ -39,7 +37,6 @@ export function GlobalBroadcastBanner() {
   const { data: broadcasts } = useCollection(broadcastsQuery);
   const activeBroadcast = broadcasts?.[0];
 
-  // Prevent showing the banner inside the room where it originated
   const isSelfRoom = activeBroadcast && pathname === `/rooms/${activeBroadcast.roomId}`;
 
   if (!activeBroadcast || isSelfRoom || !now) return null;

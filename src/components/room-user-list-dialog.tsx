@@ -24,16 +24,15 @@ interface RoomUserListDialogProps {
 
 /**
  * High-Fidelity Room Roster Dimension.
- * ANTI-GHOST FILTER: Prunes display list of any participant not pulsing in the last 60s.
+ * DEFERRED SYNC: Hydration mismatch protection.
  */
 export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListDialogProps) {
   const firestore = useFirestore();
-  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
+  // DEFERRED IDENTITY SYNC: Initialize to null for hydration safety
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     if (open) {
-      // SYNC INITIALIZATION: Initialize 'now' on client mount
       setNow(Date.now());
       const timer = setInterval(() => setNow(Date.now()), 15000);
       return () => clearInterval(timer);
@@ -49,7 +48,6 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
 
   const participants = useMemo(() => {
     if (!rawParticipants) return [];
-    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
     if (now === null) return rawParticipants;
 
     return rawParticipants.filter(p => {

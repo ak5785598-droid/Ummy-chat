@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -56,15 +55,7 @@ const DEFAULT_SLIDES = [
   }
 ];
 
-interface ScrollingBannerProps {
-  slides?: any[];
-  isSovereign?: boolean;
-}
-
-/**
- * High-Fidelity Scrolling Banner.
- */
-function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerProps) {
+function ScrollingBanner({ slides: customSlides, isSovereign }: { slides?: any[]; isSovereign?: boolean; }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -220,33 +211,29 @@ export default function RoomsPage() {
   const { data: bannerConfig } = useDoc(bannerRef);
 
   const displayRooms = useMemo(() => {
-    if (!roomsData) return [];
+    const list = roomsData ? [...roomsData] : [];
     
+    // OFFICIAL INGRESS: Inject and prioritize official help centers
     const helpRoomId = 'ummy-help-center';
-    
-    const helpRoomStub = {
-      id: helpRoomId,
-      roomNumber: '0000',
-      title: 'Ummy Official Help',
-      coverUrl: PlaceHolderImages.find(img => img.id === 'room-cover-2')?.imageUrl,
-      participantCount: 0,
-      ownerId: CREATOR_ID,
-      category: 'Chat'
-    };
-
-    const list = [...roomsData];
-    const hasHelp = list.some(r => r.id === helpRoomId);
-    if (!hasHelp) list.push(helpRoomStub as any);
+    if (!list.find(r => r.id === helpRoomId)) {
+      list.push({
+        id: helpRoomId,
+        roomNumber: '0000',
+        title: 'Ummy Official Help',
+        coverUrl: PlaceHolderImages.find(img => img.id === 'room-cover-2')?.imageUrl,
+        participantCount: 0,
+        ownerId: CREATOR_ID,
+        category: 'Chat'
+      } as any);
+    }
 
     return list.sort((a, b) => {
       if (a.id === helpRoomId) return -1;
       if (b.id === helpRoomId) return 1;
-      
       const aIsOfficial = a.ownerId === CREATOR_ID;
       const bIsOfficial = b.ownerId === CREATOR_ID;
       if (aIsOfficial && !bIsOfficial) return -1;
       if (bIsOfficial && !aIsOfficial) return 1;
-      
       return (b.participantCount || 0) - (a.participantCount || 0);
     });
   }, [roomsData]);
@@ -352,7 +339,7 @@ export default function RoomsPage() {
                        </div>
                        <div className="space-y-1">
                           <h3 className="text-xl font-black uppercase italic">Launch Frequency</h3>
-                          <p className="text-muted-foreground font-body italic text-sm">One tribe, one room. Your ID will synchronize with your profile.</p>
+                          <p className="text-muted-foreground font-body italic text-sm">One tribe, one room. Sync with your profile.</p>
                        </div>
                        <CreateRoomDialog trigger={<Button className="w-full h-14 rounded-2xl font-black uppercase italic shadow-xl shadow-primary/20">Launch Room</Button>} />
                     </div>

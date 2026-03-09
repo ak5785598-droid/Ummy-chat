@@ -166,7 +166,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
-  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
+  // HYDRATION SYNC: Set to null initially
   const [now, setNow] = useState<number | null>(null);
   
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -188,7 +188,6 @@ export function RoomClient({ room }: { room: Room }) {
   const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
 
-  // Follow Frequency Logic
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !room.id) return null;
     return doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
@@ -215,7 +214,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   useEffect(() => {
-    // SYNC INITIALIZATION: Initialize 'now' on client mount
+    // CLIENT MOUNT SYNC: Initialize timer
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
@@ -230,7 +229,6 @@ export function RoomClient({ room }: { room: Room }) {
   
   const participants = useMemo(() => {
     if (!participantsData) return [];
-    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
     if (now === null) return participantsData;
 
     return participantsData.filter(p => {
@@ -289,8 +287,11 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
   const handleExit = () => { 
     if (firestore && currentUser) {
+      // PRO-ACTIVE IDENTITY PURGE
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
+      const uRef = doc(firestore, 'users', currentUser.uid);
+      updateDocumentNonBlocking(uRef, { currentRoomId: null });
     }
     setActiveRoom(null); 
     router.push('/rooms'); 
@@ -384,7 +385,6 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* Sovereign Logo Watermark Overlay - Official Ummy Mascot Sync */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-10">
          <div className="relative w-64 h-64">
             <UmmyLogoIcon className="h-full w-full" />

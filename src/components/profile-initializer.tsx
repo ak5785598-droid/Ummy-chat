@@ -6,11 +6,6 @@ import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, incre
 
 /**
  * Production Profile Initializer.
- * GHOST IDENTITY RECOVERY: 
- * If a user returns and has a stale currentRoomId, we perform an immediate physical cleanup 
- * of the previous frequency participant record before allowing a new entry.
- * REGISTRATION GUARD: Synchronized counter update allows unique sequence ID generation.
- * ACCOUNT NUMBER SYNC: Persists the original sequential ID for future restoration.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -27,45 +22,29 @@ export function ProfileInitializer() {
       try {
         const userSnap = await getDoc(userRef);
         
-        // 1. GHOST IDENTITY RECOVERY PROTOCOL
+        // 1. IDENTITY SYNC & RECOVERY
         if (userSnap.exists()) {
           const userData = userSnap.data();
           const staleRoomId = userData.currentRoomId;
+          const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
           
           if (staleRoomId) {
-            console.log(`[Identity Sync] Commencing absolute purge of stale presence in room: ${staleRoomId}`);
+            console.log(`[Identity Sync] Purging stale room reference: ${staleRoomId}`);
             try {
               const batch = writeBatch(firestore);
               const roomDocRef = doc(firestore, 'chatRooms', staleRoomId);
               const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
-              const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
               
-              batch.update(roomDocRef, { 
-                participantCount: increment(-1), 
-                updatedAt: serverTimestamp() 
-              });
+              batch.update(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
               batch.delete(participantRef);
-              batch.update(userRef, { 
-                currentRoomId: null, 
-                isOnline: true, 
-                lastSeen: serverTimestamp(),
-                updatedAt: serverTimestamp() 
-              });
-              batch.update(profileRef, { 
-                currentRoomId: null, 
-                isOnline: true, 
-                lastSeen: serverTimestamp(),
-                updatedAt: serverTimestamp() 
-              });
-              
+              batch.update(userRef, { currentRoomId: null, isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
+              batch.update(profileRef, { currentRoomId: null, isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
               await batch.commit();
-              console.log(`[Identity Sync] Stale presence successfully terminated.`);
             } catch (e) {
-              console.warn(`[Identity Sync] Cleanup handshake aborted:`, e);
+              console.warn(`[Identity Sync] Background cleanup handshake aborted.`);
             }
           } else {
             const pulseBatch = writeBatch(firestore);
-            const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
             pulseBatch.update(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
             pulseBatch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
             await pulseBatch.commit();
@@ -75,7 +54,7 @@ export function ProfileInitializer() {
           return;
         }
 
-        // 2. NEW IDENTITY CREATION
+        // 2. NEW IDENTITY REGISTRATION
         hasInitialized.current = profileId;
 
         const finalData = await runTransaction(firestore, async (transaction) => {
@@ -84,42 +63,30 @@ export function ProfileInitializer() {
           let nextUserId = 1;
 
           if (countersSnap.exists()) {
-            const current = countersSnap.data().userCounter || 0;
-            nextUserId = current + 1;
+            nextUserId = (countersSnap.data().userCounter || 0) + 1;
           }
 
           transaction.set(countersRef, { userCounter: nextUserId }, { merge: true });
           const specialId = String(nextUserId).padStart(3, '0');
 
-          const initialData = {
+          return {
             id: profileId,
             specialId: specialId,
-            accountNumber: specialId, // THE ANCHOR IDENTITY: Stored for future reversion
+            accountNumber: specialId,
             username: user.displayName || `Tribe_${specialId}`,
             avatarUrl: user.photoURL || '', 
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
-            gender: null,
-            country: null,
-            currentRoomId: null,
             isOnline: true,
             lastSeen: serverTimestamp(),
-            wallet: { 
-              coins: 1000000, 
-              diamonds: 0,
-              totalSpent: 0,
-              dailySpent: 0 
-            },
+            wallet: { coins: 1000000, diamonds: 0, totalSpent: 0, dailySpent: 0 },
             inventory: { ownedItems: [], activeFrame: 'f5', activeBubble: 'Default' },
             stats: { followers: 0, fans: 0, dailyFans: 0 },
             level: { rich: 1, charm: 1 },
             tags: ['Tribe Member'], 
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            isNewUser: true,
           };
-
-          return initialData;
         });
 
         const userSummaryRef = doc(firestore, 'users', profileId);
@@ -128,24 +95,19 @@ export function ProfileInitializer() {
         await setDoc(userSummaryRef, {
           id: profileId,
           specialId: finalData.specialId,
-          accountNumber: finalData.accountNumber,
           username: finalData.username,
           avatarUrl: finalData.avatarUrl,
           wallet: finalData.wallet,
-          stats: finalData.stats,
-          level: finalData.level,
-          tags: finalData.tags, 
           isOnline: true,
           lastSeen: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          joinedAt: serverTimestamp(),
         }, { merge: true });
 
         await setDoc(userProfileRef, finalData, { merge: true });
 
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
-          title: 'Welcome Reward',
-          content: `Welcome! Your Tribal ID is ${finalData.specialId}.`,
+          title: 'Tribe Established',
+          content: `Welcome to Ummy! Your Tribal ID is ${finalData.specialId}.`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false
@@ -153,7 +115,7 @@ export function ProfileInitializer() {
 
       } catch (e: any) {
         hasInitialized.current = null; 
-        console.error("Initialization Error:", e);
+        console.error("[Identity Sync] Fatal Error:", e);
       }
     };
 
