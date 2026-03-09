@@ -113,12 +113,12 @@ export default function LoginPage() {
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between bg-ummy-gradient p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
-      {/* Background Soft Glow Blobs */}
+      {/* Background Soft Glow Blobs for Depth */}
       <div className="absolute top-[-10%] -left-20 w-96 h-96 bg-purple-600/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[10%] -right-20 w-96 h-96 bg-blue-600/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-pink-500/5 blur-[150px] rounded-full pointer-events-none" />
 
-      {/* Header Section */}
+      {/* Header Section: Logo & Brand Identity */}
       <header className="relative z-10 flex flex-col items-center text-center mt-12 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="relative group mb-6">
           <div className="absolute inset-0 bg-accent/20 rounded-[3rem] blur-3xl group-hover:scale-110 transition-transform duration-700" />
@@ -134,9 +134,9 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Glass Interaction Card */}
+      {/* Main Glass Interaction Card */}
       <main className="relative z-10 w-full max-w-sm flex flex-col items-center animate-in fade-in zoom-in duration-700">
-        <div className="w-full glass-card p-8 rounded-[2.5rem] shadow-2xl flex flex-col gap-6">
+        <div className="w-full glass-card p-8 rounded-[20px] shadow-2xl flex flex-col gap-6">
           {!showPhoneInput ? (
             <>
               {/* Login with Phone - Primary Action */}
@@ -165,23 +165,25 @@ export default function LoginPage() {
                     <Phone className="h-4 w-4" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Phone Entry</span>
                  </div>
-                 <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white p-1"><X className="h-5 w-5" /></button>
+                 <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white p-1 transition-colors"><X className="h-5 w-5" /></button>
               </div>
 
               {phoneLoginStep === 'number' ? (
                 <div className="space-y-4">
-                  <Input
-                    type="tel"
-                    placeholder="+91 00000 00000"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    disabled={isSigningIn}
-                    className="h-14 bg-white/5 border-white/10 text-white rounded-2xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="tel"
+                      placeholder="+91 00000 00000"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      disabled={isSigningIn}
+                      className="h-14 bg-white/5 border-white/10 text-white rounded-2xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20 transition-all"
+                    />
+                  </div>
                   <Button 
                     onClick={handlePhoneSignIn} 
                     disabled={isSigningIn || !phoneNumber} 
-                    className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none"
+                    className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none active:scale-95 transition-all"
                   >
                     {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Get OTP'}
                   </Button>
@@ -201,11 +203,11 @@ export default function LoginPage() {
                   <Button 
                     onClick={handleVerifyCode} 
                     disabled={isSigningIn || !verificationCode} 
-                    className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none"
+                    className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none active:scale-95 transition-all"
                   >
                     {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Enter Ummy'}
                   </Button>
-                  <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Back</button>
+                  <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Back</button>
                 </div>
               )}
             </div>
@@ -213,11 +215,11 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer Section */}
+      {/* Footer Section: Legal & Compliance */}
       <footer className="relative z-10 flex flex-col items-center space-y-6 text-center mb-8 animate-in fade-in duration-1000 delay-500">
         <div className="text-[10px] text-white/40 leading-relaxed max-w-[240px] uppercase tracking-tighter">
           By continuing you agree to the<br/>
-          <Link href="/help-center" className="underline font-bold text-white/60">User Agreement</Link> & <Link href="/help-center" className="underline font-bold text-white/60">Privacy Policy</Link>
+          <Link href="/help-center" className="underline font-bold text-white/60 hover:text-white transition-colors">User Agreement</Link> & <Link href="/help-center" className="underline font-bold text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
         </div>
         
         <div className="flex items-center gap-3 opacity-20">
