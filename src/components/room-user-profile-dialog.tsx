@@ -157,7 +157,7 @@ export function RoomUserProfileDialog({
                        <MoreHorizontal className="h-6 w-6" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
+                  <DropdownMenuContent className="bg-card border-white/5 text-card-foreground rounded-2xl p-2 w-48 shadow-2xl">
                      {isOwner && !isMe && (
                        <DropdownMenuItem onClick={() => onToggleMod(userId)} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl text-blue-400 cursor-pointer">
                           {isTargetPMod ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
