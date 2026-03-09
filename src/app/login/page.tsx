@@ -116,12 +116,12 @@ export default function LoginPage() {
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
-      {/* Immersive Background Synchronization */}
-      <div className="absolute inset-0 z-0">
+      {/* Immersive Background Synchronization layer */}
+      <div className="absolute inset-0 -z-10">
         {loginBg && (
           <Image 
             src={loginBg.imageUrl}
-            alt="Neon Background"
+            alt="Background"
             fill
             className="object-cover"
             priority
@@ -130,7 +130,7 @@ export default function LoginPage() {
           />
         )}
         {/* Depth Overlay Protocol */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm z-10" />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       </div>
 
       {/* Header Section: Sovereign Branding */}
