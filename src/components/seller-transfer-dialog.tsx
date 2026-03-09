@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit, getDoc } from 'firebase/firestore';
 import { 
   Dialog, 
   DialogContent, 
@@ -18,16 +17,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck, Loader, ArrowRightLeft, BadgeCheck, ChevronRight, User, CheckCircle2, Send } from 'lucide-react';
+import { ShieldCheck, Loader, BadgeCheck, ChevronRight, User, CheckCircle2, Send, AlertCircle } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+
 /**
  * Official Seller Transfer Portal.
  * Handles the high-fidelity dispatch of Gold Coins to tribe members by ID.
- * Features a Balance Verification Protocol and Real-time Identity Sync.
- * Hardened: Performs a final authorization check before every dispatch.
+ * Hardened with a Fresh Database Verification Handshake to prevent unauthorized transfers after revocation.
  */
 export function SellerTransferDialog() {
   const [open, setOpen] = useState(false);
@@ -72,7 +72,7 @@ export function SellerTransferDialog() {
       }
     };
 
-    const timer = setTimeout(lookupRecipient, 500); // Debounce lookup
+    const timer = setTimeout(lookupRecipient, 500);
     return () => clearTimeout(timer);
   }, [recipientId, firestore]);
 
@@ -80,48 +80,52 @@ export function SellerTransferDialog() {
     e.preventDefault();
     if (!user || !firestore || !foundRecipient || !amount || !userProfile) return;
 
-    // 1. FINAL AUTHORIZATION HANDSHAKE
-    // Ensure the seller certification is still active before processing
-    const isAuthorized = userProfile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
-    
-    if (!isAuthorized) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Authority Revoked', 
-        description: 'Your seller certification has been suspended by tribal command.' 
-      });
-      setOpen(false);
-      return;
-    }
-
-    const coinsToTransfer = parseInt(amount);
-    if (isNaN(coinsToTransfer) || coinsToTransfer <= 0) {
-      toast({ variant: 'destructive', title: 'Invalid Amount' });
-      return;
-    }
-
-    const currentBalance = userProfile.wallet?.coins || 0;
-    if (coinsToTransfer > currentBalance) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Insufficient Coins', 
-        description: 'Your frequency balance is too low for this dispatch.' 
-      });
-      return;
-    }
-
-    if (foundRecipient.id === user.uid) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Invalid Sync', 
-        description: 'You cannot dispatch coins to your own frequency.' 
-      });
-      return;
-    }
-
     setIsProcessing(true);
 
     try {
+      // 1. FRESH AUTHORITY VERIFICATION (Anti-Ghost Protocol)
+      // Perform a fresh fetch from DB to ensure authority hasn't been revoked in another tab/session
+      const freshUserSnap = await getDoc(doc(firestore, 'users', user.uid));
+      const freshTags = freshUserSnap.data()?.tags || [];
+      const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
+      const isAuthorized = freshTags.some((t: string) => sellerTags.includes(t)) || user.uid === CREATOR_ID;
+
+      if (!isAuthorized) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Authority Expired', 
+          description: 'Your seller certification is no longer active. Transfer blocked.' 
+        });
+        setOpen(false);
+        setIsProcessing(false);
+        return;
+      }
+
+      const coinsToTransfer = parseInt(amount);
+      if (isNaN(coinsToTransfer) || coinsToTransfer <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Amount' });
+        setIsProcessing(false);
+        return;
+      }
+
+      const currentBalance = userProfile.wallet?.coins || 0;
+      if (coinsToTransfer > currentBalance) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Insufficient Coins', 
+          description: 'Your frequency balance is too low for this dispatch.' 
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      if (foundRecipient.id === user.uid) {
+        toast({ variant: 'destructive', title: 'Invalid Sync', description: 'Cannot dispatch to your own frequency.' });
+        setIsProcessing(false);
+        return;
+      }
+
+      // 2. ATOMIC DISPATCH HANDSHAKE
       const batch = writeBatch(firestore);
       const senderRef = doc(firestore, 'users', user.uid);
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
@@ -129,13 +133,11 @@ export function SellerTransferDialog() {
       const receiverProfileRef = doc(firestore, 'users', foundRecipient.id, 'profile', foundRecipient.id);
       const receiverNotifRef = doc(collection(firestore, 'users', foundRecipient.id, 'notifications'));
 
-      // Atomic Balance Sync
       batch.update(senderRef, { 'wallet.coins': increment(-coinsToTransfer), updatedAt: serverTimestamp() });
       batch.update(senderProfileRef, { 'wallet.coins': increment(-coinsToTransfer), updatedAt: serverTimestamp() });
       batch.update(receiverRef, { 'wallet.coins': increment(coinsToTransfer), updatedAt: serverTimestamp() });
       batch.update(receiverProfileRef, { 'wallet.coins': increment(coinsToTransfer), updatedAt: serverTimestamp() });
 
-      // Official Notification Sync
       batch.set(receiverNotifRef, {
         title: 'Dispatch Received',
         content: `You received ${coinsToTransfer.toLocaleString()} Gold Coins from an Official Seller.`,
@@ -207,7 +209,6 @@ export function SellerTransferDialog() {
                 />
               </div>
 
-              {/* Recipient Profile Sync Display */}
               <div className="relative h-24 flex items-center justify-center">
                 {foundRecipient ? (
                   <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-green-100 w-full animate-in zoom-in duration-300">
@@ -253,9 +254,10 @@ export function SellerTransferDialog() {
               </div>
             </div>
             
-            <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100/50">
-               <p className="text-[9px] text-purple-700 leading-relaxed uppercase font-bold text-center">
-                 Ensure the profile matches your target recipient. Dispatch frequency cannot be reversed once synchronized.
+            <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100/50 flex gap-2">
+               <AlertCircle className="h-4 w-4 text-purple-600 shrink-0" />
+               <p className="text-[9px] text-purple-700 leading-relaxed uppercase font-bold">
+                 Ensure identity match. Authorization is verified in real-time before coins are dispatched.
                </p>
             </div>
           </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -42,6 +41,8 @@ import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { doc, serverTimestamp } from 'firebase/firestore';
+
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
   <div className="flex flex-col items-center justify-center flex-1 py-4 relative">
@@ -356,8 +357,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic. Only visible if specifically assigned via Supreme Command.
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic based on current DB tags.
+    // Reactive sync ensures this value updates immediately upon Admin revocation.
+    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === CREATOR_ID;
 
     return (
       <AppLayout>
@@ -452,7 +454,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {/* DYNAMIC SELLER PORTAL: Strictly dynamic based on specifically assigned seller roles. */}
+            {/* DYNAMIC SELLER PORTAL: Renders only when specific authority tags are active. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 
