@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone, MessageSquareText, Palette } from 'lucide-react';
+import { Shield, Loader, Search, ClipboardList, Gift, CheckCircle2, UserCheck, Star, Crown, Zap, Heart, MessageSquare, Tag, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, X, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -22,6 +22,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -70,9 +71,9 @@ const DISPATCH_ASSETS = {
 };
 
 const DEFAULT_SLIDES = [
-  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: 'https://picsum.photos/seed/banner1/800/200' },
-  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: 'https://picsum.photos/seed/banner2/800/200' },
-  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: 'https://picsum.photos/seed/banner3/800/200' }
+  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl },
+  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-2')?.imageUrl },
+  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-3')?.imageUrl }
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
@@ -118,6 +119,12 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   
+  // Assign Center States
+  const [centerSearchId, setCenterSearchId] = useState('');
+  const [centerSearchName, setCenterSearchName] = useState('');
+  const [targetUserForCenter, setTargetUserForCenter] = useState<any>(null);
+  const [isSearchingCenter, setIsSearchingCenter] = useState(false);
+
   // Tag States
   const [tagSearchId, setTagSearchId] = useState('');
   const [tagSearchName, setTagSearchName] = useState('');
@@ -448,11 +455,13 @@ export default function AdminPage() {
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
     
+    const updatedTags = hasRole ? (currentTags || []).filter((t: string) => t !== roleId) : [...(currentTags || []), roleId];
+
     if (targetUserForTags && targetUserForTags.id === targetUid) {
-      setTargetUserForTags((prev: any) => ({
-        ...prev,
-        tags: hasRole ? (prev.tags || []).filter((t: string) => t !== roleId) : [...(prev.tags || []), roleId]
-      }));
+      setTargetUserForTags((prev: any) => ({ ...prev, tags: updatedTags }));
+    }
+    if (targetUserForCenter && targetUserForCenter.id === targetUid) {
+      setTargetUserForCenter((prev: any) => ({ ...prev, tags: updatedTags }));
     }
     
     toast({ title: 'Authority Updated' });
@@ -468,6 +477,9 @@ export default function AdminPage() {
     
     if (targetUserForTags && targetUserForTags.id === targetUid) {
       setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
+    }
+    if (targetUserForCenter && targetUserForCenter.id === targetUid) {
+      setTargetUserForCenter((prev: any) => ({ ...prev, tags: [] }));
     }
     toast({ title: 'Authority Purged' });
   };
@@ -553,6 +565,9 @@ export default function AdminPage() {
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
+              <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
+                <ShieldCheck className="h-4 w-4 text-indigo-500" /> Assign Center
+              </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
               </TabsTrigger>
@@ -593,7 +608,7 @@ export default function AdminPage() {
                         {foundUsers.map((u) => (
                           <div key={u.id} className="p-4 bg-white rounded-2xl border border-slate-100 flex flex-col gap-4 shadow-sm">
                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
                                 <div className="flex-1">
                                    <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
                                    {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
@@ -612,6 +627,73 @@ export default function AdminPage() {
                         ))}
                      </div>
                   </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="assign-center" className="m-0 space-y-6 focus-visible:ring-0">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900">
+                        <ShieldCheck className="h-6 w-6 text-indigo-500" /> Assign Center Portal
+                     </CardTitle>
+                     <CardDescription>Authorize or revoke Seller Center access for tribe members. Syncs instantly to their profile dashboards.</CardDescription>
+                  </CardHeader>
+                  
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
+                     </div>
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Username..." value={centerSearchName} onChange={(e) => setCenterSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2 border-slate-200" />
+                        <Button onClick={() => handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingCenter}>Find Name</Button>
+                     </div>
+                  </div>
+
+                  {targetUserForCenter && (
+                    <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
+                       <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>
+                                {targetUserForCenter.specialId && <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} />}
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[10px] font-black uppercase text-gray-400 mb-1">Current Status</p>
+                             {targetUserForCenter.tags?.includes('Seller') ? (
+                               <Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Center Active</Badge>
+                             ) : (
+                               <Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">Center Inactive</Badge>
+                             )}
+                          </div>
+                       </div>
+
+                       <div className="space-y-6">
+                          <div className="space-y-4">
+                             <h4 className="font-black uppercase italic text-sm text-slate-900">Seller Center Protocol</h4>
+                             <p className="text-xs text-muted-foreground font-body italic">Activating the Seller Center grants this user authority to transfer Gold Coins to other tribe members via the Dispatch Portal.</p>
+                          </div>
+
+                          <Button 
+                            onClick={() => toggleUserRole(targetUserForCenter.id, 'Seller', targetUserForCenter.tags)}
+                            className={cn(
+                              "w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all active:scale-95",
+                              targetUserForCenter.tags?.includes('Seller') 
+                                ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100 shadow-none" 
+                                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-900/20"
+                            )}
+                          >
+                             {targetUserForCenter.tags?.includes('Seller') ? (
+                               <><UserX className="mr-2 h-6 w-6" /> Revoke Seller Center</>
+                             ) : (
+                               <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Seller Center</>
+                             )}
+                          </Button>
+                       </div>
+                    </div>
+                  )}
                </Card>
             </TabsContent>
 
@@ -768,7 +850,7 @@ export default function AdminPage() {
                   {targetUserForDm && (
                     <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
                        <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
                              {targetUserForDm.specialId && <SpecialIdBadge id={targetUserForDm.specialId} color={targetUserForDm.specialIdColor} />}
@@ -897,7 +979,7 @@ export default function AdminPage() {
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
                                 {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
@@ -961,7 +1043,7 @@ export default function AdminPage() {
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
                              <div className="mt-1">
@@ -1059,7 +1141,7 @@ export default function AdminPage() {
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
                        <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForRewards.username}</p>
                              {targetUserForRewards.specialId && <SpecialIdBadge id={targetUserForRewards.specialId} color={targetUserForRewards.specialIdColor} />}
