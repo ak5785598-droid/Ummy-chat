@@ -140,7 +140,10 @@ export function SellerTransferDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className="flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0">
+        <button 
+          type="button"
+          className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0"
+        >
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm bg-purple-100 text-purple-600">
               <BadgeCheck className="h-5 w-5" />
@@ -151,7 +154,7 @@ export function SellerTransferDialog() {
             <span className="text-[10px] font-bold text-green-500 uppercase italic">Transfer Portal</span>
             <ChevronRight className="h-4 w-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
           </div>
-        </div>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[3rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline">
         <form onSubmit={handleTransfer}>

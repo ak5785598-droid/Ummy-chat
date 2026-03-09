@@ -364,6 +364,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               <div className="absolute top-10 right-6">
                 <EditProfileDialog profile={profile} trigger={
                   <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
+                    <span className="sr-only">Edit Profile</span>
                     <Pen className="h-5 w-5 text-gray-600" />
                   </button>
                 } />
@@ -403,8 +404,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-10" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
@@ -452,7 +453,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             {isSeller ? (
               <SellerTransferDialog />
             ) : (
-              <MenuItem label="Seller center" icon={BadgeCheck} colorClass="bg-purple-100 text-purple-600" />
+              <MenuItem 
+                label="Seller center" 
+                icon={BadgeCheck} 
+                colorClass="bg-purple-100 text-purple-600" 
+                onClick={() => toast({ variant: 'destructive', title: 'Access Restricted', description: 'This portal is restricted to Certified Sellers.' })}
+              />
             )}
           </div>
 
