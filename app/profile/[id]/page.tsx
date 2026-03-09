@@ -23,7 +23,8 @@ import {
   Pen,
   ShieldCheck,
   BadgeCheck,
-  Check
+  Check,
+  Flag
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -41,6 +42,12 @@ import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { doc, serverTimestamp } from 'firebase/firestore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -119,6 +126,10 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
     toast({ title: 'ID Copied' });
   };
 
+  const handleReport = () => {
+    window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank');
+  };
+
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
       <div className="relative bg-[#689f38] h-[40vh] flex flex-col pt-12">
@@ -127,8 +138,21 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
         </div>
 
         <div className="relative z-10 flex justify-between px-6 mb-8">
-           <button onClick={onBack} className="p-1 text-white"><ChevronLeft className="h-8 w-8" /></button>
-           <button className="p-1 text-white"><MoreHorizontal className="h-8 w-8" /></button>
+           <button onClick={onBack} className="p-1 text-white active:scale-90 transition-transform"><ChevronLeft className="h-8 w-8" /></button>
+           <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                 <button className="p-1 text-white active:scale-95 transition-transform"><MoreHorizontal className="h-8 w-8" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
+                 <DropdownMenuItem 
+                   onClick={handleReport}
+                   className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400"
+                 >
+                    <Flag className="h-4 w-4" />
+                    <span className="font-black uppercase text-[10px]">Report</span>
+                 </DropdownMenuItem>
+              </DropdownMenuContent>
+           </DropdownMenu>
         </div>
 
         <div className="relative z-10 px-6 mt-auto pb-10">
@@ -408,8 +432,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
