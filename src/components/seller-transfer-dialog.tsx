@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
  * Official Seller Transfer Portal.
  * Handles the high-fidelity dispatch of Gold Coins to tribe members by ID.
  * Features a Balance Verification Protocol and Real-time Identity Sync.
+ * Hardened: Performs a final authorization check before every dispatch.
  */
 export function SellerTransferDialog() {
   const [open, setOpen] = useState(false);
@@ -78,6 +79,20 @@ export function SellerTransferDialog() {
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !firestore || !foundRecipient || !amount || !userProfile) return;
+
+    // 1. FINAL AUTHORIZATION HANDSHAKE
+    // Ensure the seller certification is still active before processing
+    const isAuthorized = userProfile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    
+    if (!isAuthorized) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Authority Revoked', 
+        description: 'Your seller certification has been suspended by tribal command.' 
+      });
+      setOpen(false);
+      return;
+    }
 
     const coinsToTransfer = parseInt(amount);
     if (isNaN(coinsToTransfer) || coinsToTransfer <= 0) {
