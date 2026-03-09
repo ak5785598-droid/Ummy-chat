@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { signOut } from 'firebase/auth';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 
 /**
  * Sanctuary of Exclusion - High-Fidelity Banned Page.
@@ -76,10 +77,10 @@ export default function BannedPage() {
             </div>
          </div>
 
-         <div className="space-y-4">
-            <h1 className="text-5xl font-black uppercase italic tracking-tighter text-red-500">Identity Blocked</h1>
-            <p className="text-white/60 font-body text-lg italic leading-relaxed">
-               Your ID frequency has been excluded from the social graph due to administrative protocol violations.
+         <div className="space-y-4 px-2">
+            <h1 className="text-5xl font-black uppercase italic tracking-tighter text-red-500 leading-none">Identity Blocked</h1>
+            <p className="text-white/80 font-body text-xl italic leading-relaxed">
+               You have ban ({timeLeft}). Contact ummy official team for any support.
             </p>
          </div>
 
@@ -87,7 +88,7 @@ export default function BannedPage() {
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
                <div className="flex items-center gap-3 text-red-400">
                   <Clock className="h-5 w-5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Ban Duration</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Time Remaining</span>
                </div>
                <span className="text-xl font-black italic">{timeLeft}</span>
             </div>
@@ -95,7 +96,9 @@ export default function BannedPage() {
             <div className="space-y-2">
                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-left ml-1">Restricted Member</p>
                <div className="flex items-center gap-4 bg-black/40 p-3 rounded-2xl border border-white/5">
-                  <Avatar className="h-10 w-10 border-2 border-white/10"><AvatarImage src={userProfile?.avatarUrl}/></Avatar>
+                  <Avatar className="h-10 w-10 border-2 border-white/10">
+                    <AvatarImage src={userProfile?.avatarUrl || undefined} />
+                  </Avatar>
                   <div className="text-left">
                      <p className="font-black text-sm uppercase truncate">{userProfile?.username}</p>
                      <p className="text-[8px] font-bold text-white/40 uppercase">ID: {userProfile?.specialId || 'Syncing...'}</p>
