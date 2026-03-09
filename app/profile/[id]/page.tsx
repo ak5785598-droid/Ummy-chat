@@ -153,7 +153,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                        {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-4" />}
+                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-2" />}
                        {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                        {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
@@ -404,7 +404,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-4" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-2" />}
                    {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                    {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
