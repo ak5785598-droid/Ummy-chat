@@ -355,8 +355,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // HARDENED SELLER PROTOCOL: Authorize Supreme Creator and specific tags
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    // HARDENED SELLER PROTOCOL: Authorize Supreme Creator and specific tags assigned via Admin
+    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
     return (
       <AppLayout>
@@ -451,16 +451,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {isSeller ? (
-              <SellerTransferDialog />
-            ) : (
-              <MenuItem 
-                label="Seller center" 
-                icon={BadgeCheck} 
-                colorClass="bg-purple-100 text-purple-600" 
-                onClick={() => toast({ variant: 'destructive', title: 'Access Restricted', description: 'This portal is restricted to Certified Sellers.' })}
-              />
-            )}
+            {/* DYNAMIC SELLER PORTAL: Only added to user profile when assigned by admin portal */}
+            {isSeller && <SellerTransferDialog />}
           </div>
 
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
