@@ -35,6 +35,7 @@ const FALLBACK_GAMES = [
 
 /**
  * High-Fidelity Room Games Portal.
+ * Re-engineered to restrict visual identity sync strictly to the Supreme Creator.
  */
 export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const router = useRouter();
@@ -45,8 +46,8 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
 
-  const isSovereign = user?.uid === CREATOR_ID || 
-                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
+  // SOVEREIGN ACCESS PROTOCOL: Restricted strictly to the Creator ID
+  const isSovereign = user?.uid === CREATOR_ID;
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;

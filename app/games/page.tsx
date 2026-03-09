@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -29,6 +28,7 @@ const FALLBACK_GAMES: Game[] = [
  * 3D Tribe Arena - Global Game Frequencies.
  * Re-engineered for absolute visual synchronization via slug-based identity.
  * Features Sovereign-only DP Sync tools visible directly on the game grid.
+ * Restricted strictly to the Supreme Creator.
  */
 export default function GamesPage() {
   const { user } = useUser();
@@ -47,8 +47,8 @@ export default function GamesPage() {
     setLiveCounts(counts);
   }, []);
 
-  const isSovereign = user?.uid === CREATOR_ID || 
-                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
+  // SOVEREIGN ACCESS PROTOCOL: Restricted strictly to the Creator ID
+  const isSovereign = user?.uid === CREATOR_ID;
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
