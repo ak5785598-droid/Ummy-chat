@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,7 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
@@ -222,7 +220,7 @@ export default function LoginPage() {
                     disabled={isSigningIn || !verificationCode} 
                     className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl border-none active:scale-95 transition-all"
                   >
-                    {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Synchronize Identity'}
+                    {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Synchronize Identity'}
                   </Button>
                   <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Back to Frequency</button>
                 </div>
