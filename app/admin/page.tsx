@@ -449,7 +449,7 @@ export default function AdminPage() {
 
   const toggleUserRole = async (targetUid: string, roleId: string, currentTags: string[] = []) => {
     if (!firestore) return;
-    const hasRole = currentTags.includes(roleId);
+    const hasRole = (currentTags || []).includes(roleId);
     const userRef = doc(firestore, 'users', targetUid);
     const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
@@ -466,6 +466,37 @@ export default function AdminPage() {
     }
     
     toast({ title: 'Authority Updated' });
+  };
+
+  /**
+   * SOVEREIGN MASTER REVOCATION: Atomically purges ALL seller-related tags.
+   */
+  const handleToggleSellerCenter = async () => {
+    if (!firestore || !targetUserForCenter) return;
+    const tags = targetUserForCenter.tags || [];
+    const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
+    const isCurrentlyActive = tags.some(t => sellerTags.includes(t));
+    
+    const userRef = doc(firestore, 'users', targetUserForCenter.id);
+    const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
+    
+    let newTags;
+    if (isCurrentlyActive) {
+      // MASTER PURGE: Remove all potential access identifiers
+      newTags = tags.filter(t => !sellerTags.includes(t));
+    } else {
+      // MASTER ACTIVATION: Synchronize primary seller identifier
+      newTags = [...tags, 'Seller'];
+    }
+
+    const updateData = { tags: newTags, updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    
+    setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
+    if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
+    
+    toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
   };
 
   const handleRemoveAllTags = async (targetUid: string) => {
@@ -663,7 +694,7 @@ export default function AdminPage() {
                           </div>
                           <div className="text-right">
                              <p className="text-[10px] font-black uppercase text-gray-400 mb-1">Current Status</p>
-                             {targetUserForCenter.tags?.includes('Seller') ? (
+                             {targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (
                                <Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Center Active</Badge>
                              ) : (
                                <Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">Center Inactive</Badge>
@@ -678,15 +709,15 @@ export default function AdminPage() {
                           </div>
 
                           <Button 
-                            onClick={() => toggleUserRole(targetUserForCenter.id, 'Seller', targetUserForCenter.tags)}
+                            onClick={handleToggleSellerCenter}
                             className={cn(
                               "w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all active:scale-95",
-                              targetUserForCenter.tags?.includes('Seller') 
+                              targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) 
                                 ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100 shadow-none" 
                                 : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-900/20"
                             )}
                           >
-                             {targetUserForCenter.tags?.includes('Seller') ? (
+                             {targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (
                                <><UserX className="mr-2 h-6 w-6" /> Revoke Seller Center</>
                              ) : (
                                <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Seller Center</>
