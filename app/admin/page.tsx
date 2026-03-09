@@ -150,7 +150,6 @@ export default function AdminPage() {
   const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
   const [isSearchingBan, setIsSearchingBan] = useState(false);
   
-  // High-Precision Ban States
   const [banDays, setBanDays] = useState('1');
   const [banHours, setBanHours] = useState('0');
   const [banMinutes, setBanMinutes] = useState('0');
@@ -513,6 +512,8 @@ export default function AdminPage() {
     if (targetUserForTags && targetUserForTags.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: updatedTags }));
     if (targetUserForCenter && targetUserForCenter.id === targetUid) setTargetUserForCenter((prev: any) => ({ ...prev, tags: updatedTags }));
     
+    setFoundUsers(prev => prev.map(u => u.id === targetUid ? { ...u, tags: updatedTags } : u));
+    
     toast({ title: 'Authority Updated' });
   };
 
@@ -538,6 +539,7 @@ export default function AdminPage() {
     
     setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
     if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
+    setFoundUsers(prev => prev.map(u => u.id === targetUserForCenter.id ? { ...u, tags: newTags } : u));
     
     toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
   };
@@ -552,6 +554,7 @@ export default function AdminPage() {
     
     if (targetUserForTags && targetUserForTags.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
     if (targetUserForCenter && targetUserForCenter.id === targetUid) setTargetUserForCenter((prev: any) => ({ ...prev, tags: [] }));
+    setFoundUsers(prev => prev.map(u => u.id === targetUid ? { ...u, tags: [] } : u));
     toast({ title: 'Authority Purged' });
   };
 

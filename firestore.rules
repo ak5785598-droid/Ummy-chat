@@ -29,9 +29,14 @@ service cloud.firestore {
 
     function isAdmin() {
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      let adminTags = [
+        'Admin', 'Official', 'Super Admin', 'Admin Management', 
+        'App Manager', 'Seller', 'Seller center', 'Coin Seller', 
+        'Customer Service', 'Assistant', 'Official center'
+      ];
       return isSignedIn() && isNotBanned() && (
         isCreator() || 
-        (exists(userPath) && get(userPath).data.get('tags', []).hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager', 'Seller', 'Seller center']))
+        (exists(userPath) && get(userPath).data.get('tags', []).hasAny(adminTags))
       );
     }
 

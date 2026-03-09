@@ -6,6 +6,7 @@ import { doc } from 'firebase/firestore';
 export interface UserProfile {
     id: string;
     specialId: string;
+    specialIdColor?: string;
     username: string;
     avatarUrl: string;
     bio?: string;
@@ -34,6 +35,11 @@ export interface UserProfile {
       activeBubble?: string;
       activeWave?: string;
       ownedItems: string[];
+    };
+    banStatus?: {
+      isBanned: boolean;
+      bannedUntil: any;
+      reason: string;
     };
     tags?: string[];
     createdAt?: any;
