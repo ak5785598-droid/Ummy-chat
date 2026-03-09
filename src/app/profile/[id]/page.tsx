@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -355,8 +356,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center only visible if authorized by Admin Portal
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic. Only visible if specifically assigned via Supreme Command.
+    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
     return (
       <AppLayout>
@@ -389,7 +390,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <div className="space-y-1">
               <div className="flex items-center justify-center gap-2">
                 <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
-                <div className="bg-blue-500 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♂</div>
+                <div className="bg-blue-50 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-blue-500">♂</div>
                 <span className="text-lg">🇮🇳</span>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -451,7 +452,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {/* DYNAMIC SELLER PORTAL: Only visible if authorized by Supreme Command Portal */}
+            {/* DYNAMIC SELLER PORTAL: Strictly dynamic based on specifically assigned seller roles. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 

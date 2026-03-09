@@ -356,8 +356,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center only visible if authorized by Supreme Command Portal
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic. Only visible if specifically assigned via Supreme Command.
+    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
     return (
       <AppLayout>
@@ -452,7 +452,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {/* DYNAMIC SELLER PORTAL: Only visible if authorized by Supreme Command Portal */}
+            {/* DYNAMIC SELLER PORTAL: Strictly dynamic based on specifically assigned seller roles. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 
