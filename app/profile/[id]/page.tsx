@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -355,7 +356,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center only visible if authorized by Admin Portal
+    // SOVEREIGN ACCESS PROTOCOL: Seller Center only visible if authorized by Supreme Command Portal
     const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t)) || profile.id === '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
     return (
