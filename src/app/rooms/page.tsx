@@ -18,6 +18,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -37,21 +38,21 @@ const DEFAULT_SLIDES = [
     subtitle: "Global Frequency Sync",
     iconName: "Sparkles",
     color: "from-orange-500/40",
-    imageUrl: 'https://picsum.photos/seed/banner1/800/200'
+    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl
   },
   {
     title: "Elite Rewards",
     subtitle: "Claim Your Daily Throne",
     iconName: "Trophy",
     color: "from-yellow-500/40",
-    imageUrl: 'https://picsum.photos/seed/banner2/800/200'
+    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-2')?.imageUrl
   },
   {
     title: "Game Zone",
     subtitle: "Enter the 3D Arena",
     iconName: "Gamepad2",
     color: "from-purple-500/40",
-    imageUrl: 'https://picsum.photos/seed/banner3/800/200'
+    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-3')?.imageUrl
   }
 ];
 
@@ -125,13 +126,15 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: ScrollingBannerP
   return (
     <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black">
       <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
-        <Image 
-          src={slide.imageUrl || undefined} 
-          alt={slide.title} 
-          fill 
-          className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
-          unoptimized
-        />
+        {slide.imageUrl && (
+          <Image 
+            src={slide.imageUrl} 
+            alt={slide.title} 
+            fill 
+            className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[5000ms]"
+            unoptimized
+          />
+        )}
         <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color || "from-black/40")}>
           <div className="flex items-center gap-2 mb-1">
              <Icon className="h-4 w-4 text-white animate-pulse" />
@@ -196,13 +199,11 @@ export default function RoomsPage() {
     );
   }, [firestore]);
 
-  // My Personal Frequency Sync
   const myRoomRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'chatRooms', user.uid);
   }, [firestore, user]);
 
-  // Followed Frequencies Sync
   const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
@@ -221,14 +222,13 @@ export default function RoomsPage() {
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     
-    // SOVEREIGN PRIORITY PROTOCOL: Pin Help Center and Official Room to top
     const helpRoomId = 'ummy-help-center';
     
     const helpRoomStub = {
       id: helpRoomId,
       roomNumber: '0000',
       title: 'Ummy Official Help',
-      coverUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000',
+      coverUrl: PlaceHolderImages.find(img => img.id === 'room-cover-2')?.imageUrl,
       participantCount: 0,
       ownerId: CREATOR_ID,
       category: 'Chat'
@@ -239,17 +239,14 @@ export default function RoomsPage() {
     if (!hasHelp) list.push(helpRoomStub as any);
 
     return list.sort((a, b) => {
-      // 1. Help Center always #1
       if (a.id === helpRoomId) return -1;
       if (b.id === helpRoomId) return 1;
       
-      // 2. Creator Owned Room #2
       const aIsOfficial = a.ownerId === CREATOR_ID;
       const bIsOfficial = b.ownerId === CREATOR_ID;
       if (aIsOfficial && !bIsOfficial) return -1;
       if (bIsOfficial && !aIsOfficial) return 1;
       
-      // 3. Others by participant count
       return (b.participantCount || 0) - (a.participantCount || 0);
     });
   }, [roomsData]);
@@ -386,6 +383,7 @@ export default function RoomsPage() {
           )}
         </div>
       </div>
+      <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </AppLayout>
   );
 }

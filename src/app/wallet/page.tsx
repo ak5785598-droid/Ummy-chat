@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { createOrderAction, verifyPaymentAction } from '@/actions/payments';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const COIN_PACKAGES = [
   { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
@@ -25,7 +27,6 @@ const COIN_PACKAGES = [
 
 /**
  * Tribal Vault - High-Fidelity Economic Dimension.
- * Re-engineered for Razorpay UPI integration and fixed withdrawal logic.
  */
 export default function WalletPage() {
   const router = useRouter();
@@ -74,7 +75,6 @@ export default function WalletPage() {
     try {
       const inrAmount = parseInt(pkg.price.replace(' INR', ''));
       
-      // 1. Create order on server frequency
       const orderRes = await createOrderAction(inrAmount);
       if (!orderRes.success) {
         toast({ variant: 'destructive', title: 'Sync Failed', description: orderRes.error });
@@ -82,7 +82,6 @@ export default function WalletPage() {
         return;
       }
 
-      // 2. Open High-Fidelity Razorpay Checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: inrAmount * 100,
@@ -91,7 +90,6 @@ export default function WalletPage() {
         description: `Recharge ${pkg.amount} Coins`,
         order_id: orderRes.orderId,
         handler: async (response: any) => {
-          // 3. Verify payment signature protocol
           const verifyRes = await verifyPaymentAction(
             response.razorpay_order_id,
             response.razorpay_payment_id,
@@ -107,7 +105,6 @@ export default function WalletPage() {
             const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
             const transRef = doc(collection(firestore, 'transactions'));
 
-            // Record Atomic Transaction Ledger
             setDocumentNonBlocking(transRef, {
               userId: user.uid,
               coins: totalGain,
@@ -118,7 +115,6 @@ export default function WalletPage() {
               createdAt: serverTimestamp()
             }, { merge: true });
 
-            // Synchronize Wallet Balance
             const updateData = { 
               'wallet.coins': increment(totalGain), 
               updatedAt: serverTimestamp() 
@@ -177,11 +173,12 @@ export default function WalletPage() {
 
   if (!user) return null;
 
+  const promoAsset = PlaceHolderImages.find(img => img.id === 'wallet-promo');
+
   return (
     <AppLayout hideSidebarOnMobile hideBottomNav>
       <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
         
-        {/* Header Protocol */}
         <header className="px-6 pt-8 pb-3 flex items-center justify-between bg-white sticky top-0 z-50 border-b border-gray-50">
            <button onClick={() => router.back()} className="p-1.5 -ml-1.5 hover:bg-gray-50 rounded-full transition-all">
               <ChevronLeft className="h-5 w-5 text-gray-800" />
@@ -220,7 +217,6 @@ export default function WalletPage() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Category Frequencies */}
             <div className="flex justify-around border-b border-gray-50 bg-white shrink-0">
                <button 
                  onClick={() => setActiveTab('Coins')}
@@ -248,7 +244,6 @@ export default function WalletPage() {
                
                {activeTab === 'Coins' ? (
                  <>
-                   {/* Compact Balance Vibe Card */}
                    <div className="relative h-36 w-full rounded-[1.5rem] bg-gradient-to-br from-[#ff9d2f] via-[#ffa726] to-[#ffc107] p-6 text-white shadow-xl overflow-hidden mb-4 group active:scale-[0.98] transition-all">
                       <div className="relative z-10 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
@@ -261,19 +256,21 @@ export default function WalletPage() {
                             {(userProfile?.wallet?.coins || 0).toLocaleString()}
                          </h2>
                       </div>
-                      {/* Sovereign Large Coin Visual */}
                       <div className="absolute -top-4 -right-10 w-44 h-44 opacity-30 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
                          <GoldCoinIcon className="w-full h-full" />
                       </div>
                    </div>
 
-                   {/* Compact Promo Broadcast */}
                    <div className="relative h-16 w-full rounded-xl overflow-hidden mb-4 shadow-sm border border-red-100">
-                      <img 
-                        src="https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=1000" 
-                        className="w-full h-full object-cover brightness-75" 
-                        alt="Promo"
-                      />
+                      {promoAsset && (
+                        <Image 
+                          src={promoAsset.imageUrl} 
+                          alt="Promo" 
+                          fill 
+                          className="object-cover brightness-75" 
+                          unoptimized
+                        />
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-r from-red-600/80 to-transparent flex items-center px-4">
                          <div className="flex flex-col">
                             <span className="text-white font-black uppercase italic text-sm tracking-tighter">$1 = 800,000 coins</span>
@@ -282,7 +279,6 @@ export default function WalletPage() {
                       </div>
                    </div>
 
-                   {/* Compact Recharge Package Grid */}
                    <div className="grid grid-cols-3 gap-2 mb-6">
                       {COIN_PACKAGES.map((pkg) => (
                         <button 
@@ -318,7 +314,6 @@ export default function WalletPage() {
                  </>
                ) : (
                  <div className="space-y-4 animate-in fade-in duration-500">
-                   {/* Compact Diamonds Balance Card */}
                    <div className="relative h-36 w-full rounded-[1.5rem] bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-6 text-white shadow-xl overflow-hidden group active:scale-[0.98] transition-all">
                       <div className="relative z-10 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
@@ -331,13 +326,11 @@ export default function WalletPage() {
                             {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                          </h2>
                       </div>
-                      {/* Sovereign Large Diamond Visual */}
                       <div className="absolute -top-4 -right-10 w-44 h-44 opacity-30 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
                          <Gem className="w-full h-full text-white fill-current" />
                       </div>
                    </div>
 
-                   {/* Compact Exchange Interaction Portal */}
                    <div className="p-0.5">
                       <button 
                         className="w-full bg-[#fffef0] border border-orange-100 rounded-2xl p-4 flex items-center justify-between shadow-sm group active:scale-[0.98] transition-all"
@@ -362,7 +355,6 @@ export default function WalletPage() {
                  </div>
                )}
 
-               {/* Compact Help Dimension */}
                <div className="space-y-2 px-1 mt-4">
                   <p className="text-[9px] text-gray-400 font-bold leading-relaxed">
                     If your recharge can not be completed, please click here for help
@@ -373,7 +365,6 @@ export default function WalletPage() {
                </div>
             </div>
 
-            {/* Bottom Sovereign Portal */}
             {!showRecords && (
               <footer className="p-4 bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
                  <Button 
@@ -389,6 +380,6 @@ export default function WalletPage() {
         )}
       </div>
       <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-    </div>
+    </AppLayout>
   );
 }

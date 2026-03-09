@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -15,11 +16,11 @@ export function GlobalBroadcastBanner() {
   const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
-  // DEFERRED SYNC: now set to null to prevent hydration discrepancy
+  // DEFERRED SYNC: Initialized to null to prevent hydration discrepancy.
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    // SYNC INITIALIZATION: Initialize 'now' on client mount
+    // SYNC INITIALIZATION: Initialize 'now' on client mount only.
     setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
@@ -41,7 +42,7 @@ export function GlobalBroadcastBanner() {
   // Prevent showing the banner inside the room where it originated
   const isSelfRoom = activeBroadcast && pathname === `/rooms/${activeBroadcast.roomId}`;
 
-  if (!activeBroadcast || isSelfRoom) return null;
+  if (!activeBroadcast || isSelfRoom || !now) return null;
 
   return (
     <div 
@@ -50,7 +51,6 @@ export function GlobalBroadcastBanner() {
     >
       <div className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 p-0.5 rounded-2xl shadow-[0_0_30px_rgba(234,179,8,0.4)] border-2 border-yellow-400/40">
          <div className="bg-black/60 backdrop-blur-xl rounded-[calc(1rem-2px)] px-4 py-3 flex items-center justify-between overflow-hidden relative">
-            {/* SVGA Shine Overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-45deg] animate-shine" style={{ animationDuration: '3s' }} />
             
             <div className="flex items-center gap-3 relative z-10">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -22,6 +23,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -44,13 +46,14 @@ const ELITE_TAGS = [
 
 const DISPATCH_ASSETS = {
   frames: [
+    { id: 'f-official-hq', name: 'Sovereign Official HQ' },
     { id: 'f1', name: 'Golden Official' },
+    { id: 'f5', name: 'Golden wings' },
+    { id: 'f7', name: 'Celestial Wings' },
     { id: 'f2', name: 'Cyberpunk Red' },
     { id: 'f3', name: 'Royal Purple' },
     { id: 'f4', name: 'Imperial Bloom' },
-    { id: 'f5', name: 'Golden wings' },
     { id: 'f6', name: 'Bronze Sky' },
-    { id: 'f7', name: 'Celestial Wings' },
   ],
   bubbles: [
     { id: 'b1', name: 'Kawaii Pink' },
@@ -69,9 +72,9 @@ const DISPATCH_ASSETS = {
 };
 
 const DEFAULT_SLIDES = [
-  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: 'https://picsum.photos/seed/banner1/800/200' },
-  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: 'https://picsum.photos/seed/banner2/800/200' },
-  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: 'https://picsum.photos/seed/banner3/800/200' }
+  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl },
+  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-2')?.imageUrl },
+  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-3')?.imageUrl }
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
@@ -115,6 +118,7 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState('authority');
   const [searchQuery, setSearchQuery] = useState('');
+  const [foundUsers, setFoundUsers] = useState<any[]>([]);
   
   // Tag States
   const [tagSearchId, setTagSearchId] = useState('');
@@ -326,8 +330,6 @@ export default function AdminPage() {
       setIsSearching(false);
     }
   };
-
-  const [foundUsers, setFoundUsers] = useState<any[]>([]);
 
   const handleGenericSearch = async (mode: 'id' | 'name', value: string, setter: (u: any) => void, loadingSetter: (l: boolean) => void) => {
     if (!firestore || !value) return;
@@ -593,7 +595,7 @@ export default function AdminPage() {
                         {foundUsers.map((u) => (
                           <div key={u.id} className="p-4 bg-white rounded-2xl border border-slate-100 flex flex-col gap-4 shadow-sm">
                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
                                 <div className="flex-1">
                                    <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
                                    {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
@@ -768,7 +770,7 @@ export default function AdminPage() {
                   {targetUserForDm && (
                     <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
                        <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
                              {targetUserForDm.specialId && <SpecialIdBadge id={targetUserForDm.specialId} color={targetUserForDm.specialIdColor} />}
@@ -897,7 +899,7 @@ export default function AdminPage() {
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl}/></Avatar>
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
                                 {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID: {targetUserForTags.id.slice(0, 6)}</p>}
@@ -961,7 +963,7 @@ export default function AdminPage() {
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 border-slate-50 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/30">
                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
                              <div className="mt-1">
@@ -1059,7 +1061,7 @@ export default function AdminPage() {
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 border-slate-50 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 duration-500 bg-slate-50/20">
                        <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl}/></Avatar>
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForRewards.username}</p>
                              {targetUserForRewards.specialId && <SpecialIdBadge id={targetUserForRewards.specialId} color={targetUserForRewards.specialIdColor} />}
@@ -1163,7 +1165,7 @@ export default function AdminPage() {
                                      disabled={isSendingDm || !dmContent.trim()} 
                                      className="h-14 px-8 bg-indigo-600 text-white rounded-2xl font-black uppercase italic"
                                    >
-                                      {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="h-5 w-5" />}
+                                      {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />}
                                    </Button>
                                 </div>
                              </div>

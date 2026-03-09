@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const ICON_MAP: Record<string, any> = {
   Sparkles,
@@ -126,7 +127,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
           </Link>
         )}
 
-        <div className="flex items-end justify-center gap-3 w-full max-w-sm px-2 relative z-20">
+        <div className="flex items-end justify-center gap-3 w-full max-sm px-2 relative z-20">
            {top2 && (
              <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-[2rem] border-2 border-blue-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24">
@@ -223,7 +224,7 @@ const BannerDisplay = () => {
          const Icon = ICON_MAP[slide.iconName] || Sparkles;
          return (
            <div key={idx} className="relative h-40 w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black group active:scale-[0.98] transition-all">
-              <Image src={slide.imageUrl || 'https://picsum.photos/seed/promo/800/200'} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
+              <Image src={slide.imageUrl || PlaceHolderImages.find(img => img.id === 'generic-promo')?.imageUrl} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" unoptimized />
               <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-10", slide.color || "from-black/40")}>
                  <div className="flex items-center gap-3 mb-2">
                     <Icon className="h-6 w-6 text-white animate-pulse" />
