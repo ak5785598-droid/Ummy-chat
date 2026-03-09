@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   BadgeCheck,
   Check,
-  Flag
+  Flag,
+  ClipboardList
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -143,7 +144,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
               <DropdownMenuTrigger asChild>
                  <button className="p-1 text-white active:scale-95 transition-transform"><MoreHorizontal className="h-8 w-8" /></button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-white/5 text-card-foreground rounded-2xl p-2 w-48 shadow-2xl">
+              <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
                  <DropdownMenuItem 
                    onClick={handleReport}
                    className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400"
@@ -157,12 +158,10 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
 
         <div className="relative z-10 px-6 mt-auto pb-10">
            <div className="flex items-end gap-4">
-              <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
-                <Avatar className="h-24 w-24 border-[3px] border-white/40 shadow-xl">
-                   <AvatarImage src={profile.avatarUrl || undefined} />
-                   <AvatarFallback className="text-2xl bg-white/20 text-white">{firstLetter}</AvatarFallback>
-                </Avatar>
-              </AvatarFrame>
+              <Avatar className="h-20 w-20 border-[3px] border-white/40 shadow-xl">
+                 <AvatarImage src={profile.avatarUrl || undefined} />
+                 <AvatarFallback className="text-2xl bg-white/20 text-white">{firstLetter}</AvatarFallback>
+              </Avatar>
               <div className="flex-1 pb-1">
                  <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{profile.username}</h1>
                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
@@ -180,10 +179,10 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                       {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
-                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-1" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-1" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                       {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
+                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
+                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
                  </div>
               </div>
@@ -383,7 +382,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || profile.id === CREATOR_ID;
+    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic based on current DB tags.
+    // Reactive sync ensures this value updates immediately upon Admin revocation.
+    const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
+    const isSeller = profile.tags?.some(t => sellerTags.includes(t)) || profile.id === CREATOR_ID;
 
     return (
       <AppLayout>
@@ -430,10 +432,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                   {profile.tags?.includes('Seller') && <SellerTag size="sm" />}
-                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-1" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-1" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                   {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
@@ -476,8 +478,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
-            <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
+            <MenuItem label="Task center" icon={ClipboardList} colorClass="bg-blue-100 text-blue-600" href="/tasks" />
             
+            {/* DYNAMIC SELLER PORTAL: Renders only when specific authority tags are active. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 
