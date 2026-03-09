@@ -23,7 +23,7 @@ service cloud.firestore {
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
         isCreator() || 
-        (exists(userPath) && get(userPath).data.get('tags', []).hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager']))
+        (exists(userPath) && get(userPath).data.get('tags', []).hasAny(['Admin', 'Official', 'Super Admin', 'Admin Management', 'App Manager', 'Seller', 'Seller center']))
       );
     }
 

@@ -21,10 +21,9 @@ import {
   Plus,
   User,
   Pen,
-  UserCheck,
-  Check,
   ShieldCheck,
-  BadgeCheck
+  BadgeCheck,
+  Check
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -40,6 +39,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
+import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
 const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
@@ -152,7 +152,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                     <div className="flex items-center gap-1 shrink-0">
                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                        {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-8" />}
+                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-10" />}
                        {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                        {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
@@ -354,6 +354,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
+    const isSeller = profile.tags?.some(t => ['Seller', 'Seller center', 'Admin', 'Super Admin', 'Supreme Creator'].includes(t));
+
     return (
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
@@ -400,9 +402,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-8" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-10" />}
+                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
@@ -446,7 +448,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
-            <MenuItem label="Seller center" icon={BadgeCheck} colorClass="bg-purple-100 text-purple-600" />
+            
+            {isSeller ? (
+              <SellerTransferDialog />
+            ) : (
+              <MenuItem label="Seller center" icon={BadgeCheck} colorClass="bg-purple-100 text-purple-600" />
+            )}
           </div>
 
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
