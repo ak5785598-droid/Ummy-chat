@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit, getDoc } from 'firebase/firestore';
 import { 
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck, Loader, BadgeCheck, ChevronRight, User, CheckCircle2, Send, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Loader, BadgeCheck, ChevronRight, User, CheckCircle2, Send, AlertCircle, Ban } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,6 +41,9 @@ export function SellerTransferDialog() {
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  // AUTH STATUS SYNC: Reactive check for seller tags
+  const isAuthorized = userProfile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user?.uid === CREATOR_ID;
 
   // REAL-TIME IDENTITY SYNC
   useEffect(() => {
@@ -88,12 +91,12 @@ export function SellerTransferDialog() {
       const freshUserSnap = await getDoc(doc(firestore, 'users', user.uid));
       const freshTags = freshUserSnap.data()?.tags || [];
       const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
-      const isAuthorized = freshTags.some((t: string) => sellerTags.includes(t)) || user.uid === CREATOR_ID;
+      const isStillAuthorized = freshTags.some((t: string) => sellerTags.includes(t)) || user.uid === CREATOR_ID;
 
-      if (!isAuthorized) {
+      if (!isStillAuthorized) {
         toast({ 
           variant: 'destructive', 
-          title: 'Authority Expired', 
+          title: 'Authority Revoked', 
           description: 'Your seller certification is no longer active. Transfer blocked.' 
         });
         setOpen(false);
@@ -193,7 +196,16 @@ export function SellerTransferDialog() {
             </DialogDescription>
           </DialogHeader>
           <div className="p-8 space-y-6">
-            <div className="space-y-4">
+            {!isAuthorized && (
+              <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 animate-in fade-in duration-300">
+                 <Ban className="h-5 w-5 text-red-500 shrink-0" />
+                 <p className="text-[10px] font-bold text-red-800 leading-relaxed uppercase">
+                    Your seller certification has been revoked. You cannot use this transfer option until the admin portal re-activates your center.
+                 </p>
+              </div>
+            )}
+
+            <div className={cn("space-y-4", !isAuthorized && "opacity-40 grayscale pointer-events-none")}>
               <div className="grid gap-2">
                 <div className="flex items-center justify-between px-1">
                   <Label htmlFor="recipientId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Recipient Tribal ID</Label>
@@ -206,6 +218,7 @@ export function SellerTransferDialog() {
                   onChange={(e) => setRecipientId(e.target.value.replace(/\D/g, ''))}
                   className="h-14 rounded-2xl border-2 focus:border-purple-500 transition-all text-xl font-black text-center text-slate-900 bg-slate-50 placeholder:text-slate-300"
                   required
+                  disabled={!isAuthorized}
                 />
               </div>
 
@@ -245,6 +258,7 @@ export function SellerTransferDialog() {
                     onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
                     className="h-14 pl-12 rounded-2xl border-2 focus:border-purple-500 transition-all text-2xl font-black italic text-slate-900 bg-slate-50 placeholder:text-slate-300"
                     required
+                    disabled={!isAuthorized}
                   />
                 </div>
                 <p className="text-[10px] font-bold text-muted-foreground ml-1 uppercase flex items-center justify-between">
@@ -257,14 +271,16 @@ export function SellerTransferDialog() {
             <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100/50 flex gap-2">
                <AlertCircle className="h-4 w-4 text-purple-600 shrink-0" />
                <p className="text-[9px] text-purple-700 leading-relaxed uppercase font-bold">
-                 Ensure identity match. Authorization is verified in real-time before coins are dispatched.
+                 {isAuthorized 
+                   ? "Ensure identity match. Authorization is verified in real-time before coins are dispatched."
+                   : "Sovereign Access Required. This option is unusable without an active admin assignment."}
                </p>
             </div>
           </div>
           <DialogFooter className="p-8 pt-0">
             <Button 
               type="submit" 
-              disabled={isProcessing || !foundRecipient || !amount}
+              disabled={isProcessing || !foundRecipient || !amount || !isAuthorized}
               className="w-full h-16 bg-purple-600 hover:bg-purple-700 text-white rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl shadow-purple-500/20 active:scale-95 transition-all"
             >
               {isProcessing ? <Loader className="animate-spin h-6 w-6" /> : <><Send className="mr-2 h-6 w-6" /> Synchronize Transfer</>}
