@@ -1000,11 +1000,11 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
                         <Input placeholder="Enter User Tribal ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find by ID</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find by ID</Button>
                      </div>
                      <div className="flex gap-4">
                         <Input placeholder="Or Enter Username..." value={tagSearchName} onChange={(e) => setTagSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', tagSearchName, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('name', tagSearchName, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingTag}>Find by Name</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'name', tagSearchName, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingTag}>Find by Name</Button>
                      </div>
                   </div>
                   {targetUserForTags && (
@@ -1065,11 +1065,11 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
                         <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearching}>Find by ID</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearching}>Find by ID</Button>
                      </div>
                      <div className="flex gap-4">
                         <Input placeholder="Enter Username..." value={nameSearchInput} onChange={(e) => setNameSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', nameSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('name', nameSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearching}>Find by Name</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'name', nameSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearching}>Find by Name</Button>
                      </div>
                   </div>
                   {targetUserForId && (
@@ -1162,11 +1162,11 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
                         <Input placeholder="Recipient I'd..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find ID</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find ID</Button>
                      </div>
                      <div className="flex gap-4">
                         <Input placeholder="Recipient Username..." value={rewardSearchName} onChange={(e) => setRewardSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', rewardSearchName, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2 border-slate-200" />
-                        <Button onClick={() => handleGenericSearch('name', rewardSearchName, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingRewards}>Find Name</Button>
+                        <Button onClick={handleGenericSearch.bind(null, 'name', rewardSearchName, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 border-slate-200 font-black uppercase italic" disabled={isSearchingRewards}>Find Name</Button>
                      </div>
                   </div>
 

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit } from 'firebase/firestore';
 import { 
@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck, Loader, ArrowRightLeft, BadgeCheck, ChevronRight, User, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Loader, ArrowRightLeft, BadgeCheck, ChevronRight, User, CheckCircle2, Send } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -265,7 +265,7 @@ export function SellerTransferDialog() {
               disabled={isProcessing || !foundRecipient || !amount}
               className="w-full h-16 bg-purple-600 hover:bg-purple-700 text-white rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl shadow-purple-500/20 active:scale-95 transition-all"
             >
-              {isProcessing ? <Loader className="animate-spin h-6 w-6" /> : 'Synchronize Transfer'}
+              {isProcessing ? <Loader className="animate-spin h-6 w-6" /> : <><Send className="mr-2 h-6 w-6" /> Synchronize Transfer</>}
             </Button>
           </DialogFooter>
         </form>
