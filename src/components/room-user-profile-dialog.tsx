@@ -41,6 +41,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { OfficialTag } from '@/components/official-tag';
+import { SellerTag } from '@/components/seller-tag';
+import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { useRouter } from 'next/navigation';
 import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -64,7 +66,7 @@ interface RoomUserProfileDialogProps {
 
 const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) => (
   <div className={cn(
-    "flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/20 shadow-sm scale-90",
+    "flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0",
     type === 'rich' ? "bg-gradient-to-r from-blue-400 to-blue-600" : "bg-gradient-to-r from-pink-400 to-pink-600"
   )}>
     {type === 'rich' ? <Star className="h-2 w-2 fill-white text-white" /> : <Sparkles className="h-2 w-2 fill-white text-white" />}
@@ -75,7 +77,7 @@ const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) 
 /**
  * High-Fidelity Room User Profile Dialog.
  * Perfectly matches the provided white-theme blueprint.
- * Features restricted administrative actions for owners/admins.
+ * Features real-time sync for Color IDs and Authority Tags beside the level badges.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -109,6 +111,10 @@ export function RoomUserProfileDialog({
     onOpenChange(false);
     router.push(`/profile/${userId}`);
   };
+
+  const isOfficial = profile?.tags?.includes('Official');
+  const isSeller = profile?.tags?.includes('Seller') || profile?.tags?.includes('Coin Seller');
+  const isCS = profile?.tags?.includes('Customer Service');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,12 +150,30 @@ export function RoomUserProfileDialog({
                </AvatarFrame>
             </div>
 
-            {/* Name & Levels */}
-            <div className="text-center space-y-2 mb-4">
+            {/* Name & Levels & Tags */}
+            <div className="text-center space-y-2 mb-4 w-full px-6">
                <h2 className="text-2xl font-black text-gray-900 tracking-tight">{profile.username}</h2>
-               <div className="flex justify-center gap-1">
+               <div className="flex flex-wrap justify-center items-center gap-1.5">
                   <LevelBadge level={profile.level?.rich || 1} type="rich" />
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
+                  
+                  {/* TAG SYNC: Displayed beside pink level badge */}
+                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center -ml-4" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-4" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-1" />}
+                  
+                  {/* COLOR ID SYNC */}
+                  {profile.specialId && profile.specialIdColor && (
+                    <div className={cn(
+                      "relative overflow-hidden px-2.5 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r shadow-md scale-90",
+                      profile.specialIdColor === 'blue' 
+                        ? "from-blue-400 via-blue-500 to-blue-400"
+                        : "from-rose-400 via-rose-500 to-rose-400"
+                    )}>
+                      <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+                      <span className="relative z-10 text-[8px] font-black text-white uppercase italic tracking-widest">ID:{profile.specialId}</span>
+                    </div>
+                  )}
                </div>
             </div>
 
