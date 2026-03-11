@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -52,10 +52,6 @@ const BET_OPTIONS = [
   { id: 'double', label: 'Double', multiplier: 2, color: 'bg-emerald-700' },
 ];
 
-/**
- * High-Fidelity Roulette Dimension.
- * Re-engineered for absolute visual stability and elite chip synchronization.
- */
 export default function RoulettePage() {
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -96,7 +92,6 @@ export default function RoulettePage() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(1200, ctx.currentTime);
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
@@ -119,11 +114,26 @@ export default function RoulettePage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    const targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
-    const targetIdx = NUMBERS.indexOf(targetNum);
     
+    // ORACLE SYNC CHECK
+    let targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'roulette'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          const forced = oracleSnap.data().forcedResult;
+          if (NUMBERS.includes(forced)) {
+            targetNum = forced;
+            // Clear override after use
+            updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'roulette'), { isActive: false });
+          }
+        }
+      } catch (e) {}
+    }
+
+    const targetIdx = NUMBERS.indexOf(targetNum);
     const sliceDeg = 360 / 37;
     const extraSpins = 5 + Math.floor(Math.random() * 5);
     const targetRotation = rotation + (extraSpins * 360) + (targetIdx * sliceDeg);
@@ -237,7 +247,7 @@ export default function RoulettePage() {
                 {winners.map((winner, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
                      <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
+                        <AvatarImage src={winner.avatar}/><AvatarFallback>W</AvatarFallback>
                      </Avatar>
                      <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
                         <span className="text-3xl">🥇</span>
@@ -345,7 +355,7 @@ export default function RoulettePage() {
            </div>
         </div>
 
-        <div className="bg-emerald-600/20 backdrop-blur-3xl rounded-t-[3rem] p-4 pb-10 border-t-2 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.3)]">
+        <div className="bg-emerald-600/20 backdrop-blur-3xl rounded-t-[3rem] p-4 pb-10 border-t-2 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] -translate-y-12">
            <div className="grid grid-cols-4 gap-2 mb-6">
               {BET_OPTIONS.map((opt) => (
                 <button

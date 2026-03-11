@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -174,6 +174,10 @@ export default function AdminPage() {
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
 
+  // Oracle States
+  const [oracleRoulette, setOracleRoulette] = useState('');
+  const [isSyncingOracle, setIsSyncingOracle] = useState<string | null>(null);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, 'games'));
@@ -204,6 +208,27 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
+
+  const oracleRef = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return collection(firestore, 'gameOracle');
+  }, [firestore, isCreator]);
+  const { data: oracleData } = useCollection(oracleRef);
+
+  const handleSetOracle = async (gameId: string, result: any) => {
+    if (!firestore || !isCreator) return;
+    setIsSyncingOracle(gameId);
+    try {
+      await setDoc(doc(firestore, 'gameOracle', gameId), {
+        forcedResult: result,
+        updatedAt: serverTimestamp(),
+        isActive: true
+      });
+      toast({ title: 'Oracle Synchronized', description: `Outcome forced: ${result}` });
+    } finally {
+      setIsSyncingOracle(null);
+    }
+  };
 
   const handleSystemBroadcast = async () => {
     if (!firestore || !broadcastContent.trim() || !isCreator) return;
@@ -854,65 +879,82 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-500">
-                        <Dices className="h-6 w-6" /> Oracle Sync (Game Results)
+                        <Dices className="h-6 w-6" /> Oracle Sync (Manual Control)
                      </CardTitle>
-                     <CardDescription>Monitor upcoming tribal game frequencies and predicted outcomes.</CardDescription>
+                     <CardDescription>Select the winner of upcoming tribal game frequencies. Manual override syncs in real-time.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {/* Roulette Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Roulette Sync</h4>
-                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                           <div className="h-16 w-16 bg-red-600 rounded-2xl flex items-center justify-center text-2xl font-black italic text-white shadow-xl animate-shimmer-gold">32</div>
-                           <div>
-                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
-                              <p className="text-lg font-black text-slate-900 uppercase italic">Red / Even Outcome</p>
-                           </div>
+                        <div className="flex items-center gap-2">
+                           <Input 
+                             placeholder="Num (0-36)" 
+                             value={oracleRoulette} 
+                             onChange={(e) => setOracleRoulette(e.target.value.replace(/\D/g, ''))}
+                             className="h-12 rounded-xl text-center font-black italic text-lg" 
+                           />
+                           <Button 
+                             onClick={() => handleSetOracle('roulette', parseInt(oracleRoulette))}
+                             disabled={isSyncingOracle === 'roulette' || !oracleRoulette}
+                             className="bg-black text-white rounded-xl h-12 px-6"
+                           >
+                              {isSyncingOracle === 'roulette' ? <Loader className="animate-spin h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+                           </Button>
                         </div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'roulette')?.forcedResult ?? 'None'}</p>
                      </div>
 
+                     {/* Lion Fight Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Lion Fight Sync</h4>
-                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                           <div className="h-16 w-16 bg-blue-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-bounce">🐯</div>
-                           <div>
-                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
-                              <p className="text-lg font-black text-slate-900 uppercase italic">Tiger Victory</p>
-                           </div>
+                        <div className="grid grid-cols-3 gap-2">
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'TIGER')} className="text-[8px] font-black border-blue-200 text-blue-600">🐯 TIGER</Button>
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'TIE')} className="text-[8px] font-black border-purple-200 text-purple-600">🤝 TIE</Button>
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'LION')} className="text-[8px] font-black border-pink-200 text-pink-600">🦁 LION</Button>
                         </div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'lion-fight')?.forcedResult ?? 'None'}</p>
                      </div>
 
+                     {/* Teen Patti Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Teen Patti Sync</h4>
-                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                           <div className="h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-pulse">🐺</div>
-                           <div>
-                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
-                              <p className="text-lg font-black text-slate-900 uppercase italic">Wolf / Sequence</p>
-                           </div>
+                        <div className="grid grid-cols-3 gap-2">
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'WOLF')} className="text-[8px] font-black border-blue-200 text-blue-600">🐺 WOLF</Button>
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'LION')} className="text-[8px] font-black border-yellow-200 text-yellow-600">🦁 LION</Button>
+                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'FISH')} className="text-[8px] font-black border-cyan-200 text-cyan-600">🐟 FISH</Button>
                         </div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'teen-patti')?.forcedResult ?? 'None'}</p>
                      </div>
 
+                     {/* Wild Party Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Wild Party Sync</h4>
-                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                           <div className="h-16 w-16 bg-yellow-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-float">🦁</div>
-                           <div>
-                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
-                              <p className="text-lg font-black text-slate-900 uppercase italic">Lion x45 Multiplier</p>
-                           </div>
-                        </div>
+                        <Select onValueChange={(val) => handleSetOracle('wild-party', val)}>
+                           <SelectTrigger className="h-12 rounded-xl italic font-black">
+                              <SelectValue placeholder="Select Winner" />
+                           </SelectTrigger>
+                           <SelectContent className="font-black italic">
+                              <SelectItem value="lion">🦁 Lion x45</SelectItem>
+                              <SelectItem value="tiger">🐯 Tiger x25</SelectItem>
+                              <SelectItem value="elephant">🐘 Elephant x15</SelectItem>
+                              <SelectItem value="rhino">🦏 Rhino x10</SelectItem>
+                              <SelectItem value="fox">🦊 Fox x5</SelectItem>
+                           </SelectContent>
+                        </Select>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'wild-party')?.forcedResult ?? 'None'}</p>
                      </div>
                   </CardContent>
                </Card>

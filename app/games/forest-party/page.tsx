@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -127,10 +127,22 @@ export default function WildPartyPage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    const targetIdx = Math.floor(Math.random() * ANIMALS.length);
     
+    // ORACLE SYNC CHECK
+    let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'wild-party'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          winningId = oracleSnap.data().forcedResult;
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'wild-party'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
+    const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
     let currentStep = 0;
     const totalSteps = 32 + targetIdx;
     let speed = 50;
@@ -143,7 +155,7 @@ export default function WildPartyPage() {
         if (totalSteps - currentStep < 10) speed += 30;
         setTimeout(runChase, speed);
       } else {
-        setTimeout(() => showResult(ANIMALS[targetIdx].id), 800);
+        setTimeout(() => showResult(winningId), 800);
       }
     };
     runChase();
@@ -266,7 +278,7 @@ export default function WildPartyPage() {
 
         <div className="relative z-50 flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2">
-              <button onClick={() => router.back()} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg"><ChevronLeft className="h-5 w-5" /></button>
+              <button onClick={() => router.back()} className="bg-yellow-50 p-2 rounded-full text-black shadow-lg"><ChevronLeft className="h-5 w-5" /></button>
               <button onClick={() => setIsMuted(!isMuted)} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg">
                 {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>

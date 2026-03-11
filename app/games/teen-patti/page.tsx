@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   ChevronRight,
@@ -70,12 +70,25 @@ export default function TeenPattiGamePage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startReveal = () => {
+  const startReveal = async () => {
     setGameState('reveal');
     const newCards: Record<string, string[]> = {};
     FACTIONS.forEach(f => { newCards[f.id] = [CARDS[Math.floor(Math.random() * CARDS.length)], CARDS[Math.floor(Math.random() * CARDS.length)], CARDS[Math.floor(Math.random() * CARDS.length)]]; });
     setCardReveal(newCards);
-    setTimeout(() => { finalizeRound(FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id); }, 3000);
+
+    // ORACLE SYNC CHECK
+    let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'teen-patti'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          winId = oracleSnap.data().forcedResult;
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'teen-patti'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
+    setTimeout(() => { finalizeRound(winId); }, 3000);
   };
 
   const finalizeRound = (winId: string) => {
