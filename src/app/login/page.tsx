@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 /**
  * High-Fidelity Identity Portal.
  * Redesigned to match the user-provided blueprint exactly.
- * Features full-screen /login-bg.png sync, pill-shaped buttons, and centered mascot branding.
+ * Features full-screen background sync, pill-shaped buttons, and centered mascot branding.
  */
 export default function LoginPage() {
   const router = useRouter();

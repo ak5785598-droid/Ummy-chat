@@ -302,7 +302,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
-      // RULE: Clicking occupied seat always triggers high-fidelity identity synchronization
+      // SOVEREIGN INTERACTION: Always open identity card for occupied seats
       setSelectedParticipantUid(occupant.uid);
       setIsUserProfileCardOpen(true);
     } else {
