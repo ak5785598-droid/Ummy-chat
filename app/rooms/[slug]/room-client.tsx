@@ -86,7 +86,7 @@ import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
-  const audioRef = useRef<AudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
@@ -303,7 +303,6 @@ export function RoomClient({ room }: { room: Room }) {
     setSelectedSeatIdx(index);
     if (occupant) {
       setSelectedParticipantUid(occupant.uid);
-      // SOVEREIGN SYNC: Always open Profile Card if slot is occupied
       setIsUserProfileCardOpen(true);
     } else {
       setSelectedParticipantUid(null);

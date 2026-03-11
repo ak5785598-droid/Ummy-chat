@@ -1,6 +1,47 @@
-
 {
   "placeholderImages": [
+    {
+      "id": "game-aladdin",
+      "description": "Aladdin theme slot icon",
+      "imageUrl": "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000",
+      "imageHint": "aladdin magic lamp"
+    },
+    {
+      "id": "admin-banner-1",
+      "description": "Admin banner 1",
+      "imageUrl": "https://images.unsplash.com/photo-1550745679-5651f6fbcbb7?q=80&w=1000",
+      "imageHint": "modern tech"
+    },
+    {
+      "id": "admin-banner-2",
+      "description": "Admin banner 2",
+      "imageUrl": "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1000",
+      "imageHint": "abstract colors"
+    },
+    {
+      "id": "admin-banner-3",
+      "description": "Admin banner 3",
+      "imageUrl": "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1000",
+      "imageHint": "cyberpunk city"
+    },
+    {
+      "id": "wallet-promo",
+      "description": "Wallet promo banner",
+      "imageUrl": "https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=1000",
+      "imageHint": "neon coins"
+    },
+    {
+      "id": "generic-promo",
+      "description": "Generic promo banner",
+      "imageUrl": "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000",
+      "imageHint": "abstract gradient"
+    },
+    {
+      "id": "login-bg",
+      "description": "Login background",
+      "imageUrl": "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2000",
+      "imageHint": "space stars"
+    },
     {
       "id": "user-avatar-1",
       "description": "User avatar 1",

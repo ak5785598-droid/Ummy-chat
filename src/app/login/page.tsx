@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Identity Portal.
@@ -110,17 +111,22 @@ export default function LoginPage() {
     );
   }
 
+  const bgAsset = PlaceHolderImages.find(img => img.id === 'login-bg');
+
   return (
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
       {/* Immersive Background Synchronization Layer */}
       <div className="absolute inset-0 -z-10">
-        <img
-          src="/login-bg.png"
-          alt="Login Background"
-          className="w-full h-full object-cover"
-        />
+        {bgAsset && (
+          <img
+            src={bgAsset.imageUrl}
+            alt="Login Background"
+            className="w-full h-full object-cover"
+            data-ai-hint={bgAsset.imageHint}
+          />
+        )}
         {/* Subtle Stardust Overlay for High-Fidelity Finish */}
         <div className="absolute inset-0 bg-black/20" />
       </div>
