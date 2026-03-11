@@ -12,7 +12,7 @@ interface AvatarFrameProps {
 
 /**
  * High-fidelity Avatar Frame component.
- * Features the new Sovereign Official HQ frame and the elite SVIP Ringneck Eagle frame.
+ * Features the new "Ummy CS" emerald and gold majestic frame.
  */
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   if (!frameId || frameId === 'None' || frameId === 'Default') {
@@ -28,11 +28,81 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   const isCelestial = frameId === 'f7'; // Celestial Wings
   const isOfficialHQ = frameId === 'f-official-hq'; // High-Fidelity Official HQ
   const isRingneckEagle = frameId === 'svip-eagle-1'; // SVIP Eagle Set
+  const isUmmyCS = frameId === 'ummy-cs'; // High-Fidelity Emerald/Gold CS Frame
 
   return (
     <div className={cn('relative flex items-center justify-center p-1', className)}>
       <div className="absolute inset-0 z-20 pointer-events-none scale-110">
         
+        {isUmmyCS && (
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
+            <defs>
+              <linearGradient id="csGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFF281" />
+                <stop offset="30%" stopColor="#FFD700" />
+                <stop offset="60%" stopColor="#FFFFFF" />
+                <stop offset="80%" stopColor="#FFD700" />
+                <stop offset="100%" stopColor="#B8860B" />
+              </linearGradient>
+              <linearGradient id="csEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#10b981" />
+                <stop offset="100%" stopColor="#064e3b" />
+              </linearGradient>
+              <radialGradient id="csGem" cx="30%" cy="30%" r="50%">
+                <stop offset="0%" stopColor="#6ee7b7" />
+                <stop offset="100%" stopColor="#065f46" />
+              </radialGradient>
+            </defs>
+
+            {/* Majestic Golden Wings */}
+            <g fill="url(#csGold)" stroke="#854d0e" strokeWidth="0.1" className="animate-wing-flap origin-center">
+               {/* Left Side */}
+               <path d="M20 50 C -5 30, -15 60, 5 85 L20 75 Z" opacity="0.9" />
+               <path d="M15 40 C -10 20, -20 50, 0 70 L15 65 Z" opacity="0.8" />
+               <path d="M10 30 C -15 10, -25 40, -5 55 L10 50 Z" opacity="0.7" />
+               {/* Right Side */}
+               <path d="M80 50 C 105 30, 115 60, 95 85 L80 75 Z" opacity="0.9" />
+               <path d="M85 40 C 110 20, 120 50, 100 70 L85 65 Z" opacity="0.8" />
+               <path d="M90 30 C 115 10, 125 40, 105 55 L90 50 Z" opacity="0.7" />
+            </g>
+
+            {/* Emerald Frame Body */}
+            <circle cx="50" cy="50" r="46" fill="none" stroke="url(#csEmerald)" strokeWidth="5" />
+            <circle cx="50" cy="50" r="43" fill="none" stroke="url(#csGold)" strokeWidth="1.5" className="animate-shimmer-gold" />
+            
+            {/* Top Filigree & Gem */}
+            <g transform="translate(50, 8)">
+               <path d="M -18 2 Q -15 -12 0 -12 Q 15 -12 18 2 L 0 8 Z" fill="url(#csGold)" stroke="#854d0e" strokeWidth="0.3" />
+               <path d="M 0 -6 L 5 0 L 0 6 L -5 0 Z" fill="url(#csGem)" stroke="#064e3b" strokeWidth="0.5" />
+               <path d="M -2 0 L 0 -3 L 2 0 L 0 3 Z" fill="white" opacity="0.4" />
+            </g>
+
+            {/* Bottom Ribbon Portal */}
+            <g transform="translate(50, 88)">
+               {/* Ribbon Shadow */}
+               <path d="M -48 -12 Q 0 -22 48 -12 L 48 12 Q 0 2 -48 12 Z" fill="black" opacity="0.3" transform="translate(0, 2)" />
+               {/* Ribbon Body */}
+               <path d="M -48 -12 Q 0 -22 48 -12 L 48 12 Q 0 2 -48 12 Z" fill="url(#csEmerald)" stroke="url(#csGold)" strokeWidth="1.5" />
+               {/* Medallions */}
+               <g transform="translate(-35, 12)">
+                  <path d="M -8 0 L 0 12 L 8 0 Z" fill="url(#csEmerald)" stroke="url(#csGold)" strokeWidth="0.5" />
+                  <circle cx="0" cy="4" r="2" fill="url(#csGold)" />
+               </g>
+               <g transform="translate(35, 12)">
+                  <path d="M -8 0 L 0 12 L 8 0 Z" fill="url(#csEmerald)" stroke="url(#csGold)" strokeWidth="0.5" />
+                  <circle cx="0" cy="4" r="2" fill="url(#csGold)" />
+               </g>
+               {/* Text Signature */}
+               <text y="2" fontSize="9" textAnchor="middle" fill="#FFD700" fontWeight="900" style={{fontFamily: 'serif', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))'}}>Ummy CS</text>
+            </g>
+
+            {/* Visual Polish Shine Streak */}
+            <rect x="0" y="0" width="15" height="150" fill="white" opacity="0.25" transform="rotate(45) translate(0, -100)">
+               <animateTransform attributeName="transform" type="translate" from="-150, -100" to="250, 100" dur="2.5s" repeatCount="indefinite" />
+            </rect>
+          </svg>
+        )}
+
         {isRingneckEagle && (
           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
             <defs>
