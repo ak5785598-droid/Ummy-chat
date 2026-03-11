@@ -161,8 +161,8 @@ export function RoomUserProfileDialog({
                   
                   {/* TAG SYNC: Displayed beside level badges */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
                </div>
             </div>
 
