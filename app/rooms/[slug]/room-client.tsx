@@ -25,7 +25,8 @@ import {
   Ban,
   Heart,
   Plus,
-  SmilePlus
+  SmilePlus,
+  MessageSquare
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -476,10 +477,11 @@ export function RoomClient({ room }: { room: Room }) {
            <div 
              onClick={handleInputClick} 
              className={cn(
-               "backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center font-bold text-sm cursor-pointer transition-all",
+               "backdrop-blur-xl rounded-full h-12 flex-1 px-4 flex items-center font-bold text-sm cursor-pointer transition-all",
                isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white/60"
              )}
            >
+              <MessageSquare className="h-5 w-5 mr-2" />
               {isChatMuted && !canManageRoom ? 'Chat Restricted' : 'Say Hi'}
            </div>
            <div className="flex items-center gap-3">
