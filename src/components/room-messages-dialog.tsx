@@ -16,7 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limit } from 'firebase/firestore';
+import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -88,19 +88,17 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
 function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
   const [text, setText] = useState('');
   const firestore = useFirestore();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
-    return query(collection(firestore, 'privateChats', chatId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
+    return query(collection(firestore, 'privateChats', chatId, 'messages'), orderBy('timestamp', 'asc'), limitToLast(50));
   }, [firestore, chatId]);
 
   const { data: messages } = useCollection(messagesQuery);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -140,7 +138,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
          </div>
       </header>
 
-      <ScrollArea className="flex-1 px-4 py-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 px-4 py-4">
          <div className="flex flex-col gap-3 pb-4">
             {messages?.map((msg: any) => {
               const isMe = msg.senderId === currentUser?.uid;
@@ -158,6 +156,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
                 </div>
               );
             })}
+            <div ref={messagesEndRef} />
          </div>
       </ScrollArea>
 

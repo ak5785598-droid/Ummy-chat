@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -16,7 +15,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limit } from 'firebase/firestore';
+import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
   Dialog,
@@ -123,19 +122,17 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
   const [text, setText] = useState('');
   const firestore = useFirestore();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
-    return query(collection(firestore, 'privateChats', chatId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
+    return query(collection(firestore, 'privateChats', chatId, 'messages'), orderBy('timestamp', 'asc'), limitToLast(100));
   }, [firestore, chatId]);
 
   const { data: messages } = useCollection(messagesQuery);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -180,7 +177,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </DialogHeader>
 
         <main className="flex-1 overflow-hidden relative">
-           <ScrollArea className="h-full px-4 pt-6" ref={scrollRef}>
+           <ScrollArea className="h-full px-4 pt-6">
               <div className="flex flex-col gap-4 pb-10">
                  {messages?.map((msg: any) => {
                    const isMe = msg.senderId === currentUser?.uid;
@@ -198,6 +195,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                      </div>
                    );
                  })}
+                 <div ref={messagesEndRef} />
               </div>
            </ScrollArea>
         </main>
