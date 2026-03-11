@@ -20,7 +20,12 @@ import {
   AtSign,
   Sparkles,
   ChevronRight,
-  Flag
+  Flag,
+  AlertTriangle,
+  Lock,
+  MessageSquare,
+  MapPin,
+  Users
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -36,8 +41,6 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { OfficialTag } from '@/components/official-tag';
-import { SellerTag } from '@/components/seller-tag';
-import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { useRouter } from 'next/navigation';
 import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -59,29 +62,20 @@ interface RoomUserProfileDialogProps {
   isMe: boolean;
 }
 
-const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: string | null, onClick?: () => void }) => {
-  const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
-
-  return (
-    <div 
-      onClick={onClick}
-      className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer active:scale-95 transition-transform",
-        theme
-      )}
-    >
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
-    </div>
-  );
-};
+const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) => (
+  <div className={cn(
+    "flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/20 shadow-sm scale-90",
+    type === 'rich' ? "bg-gradient-to-r from-blue-400 to-blue-600" : "bg-gradient-to-r from-pink-400 to-pink-600"
+  )}>
+    {type === 'rich' ? <Star className="h-2 w-2 fill-white text-white" /> : <Sparkles className="h-2 w-2 fill-white text-white" />}
+    <span className="text-[8px] font-black text-white">{level}</span>
+  </div>
+);
 
 /**
  * High-Fidelity Room User Profile Dialog.
- * Perfectly matches the production visual blueprint with dark-slate aesthetic.
- * Now features the clean white theme for self-identity sync.
+ * Perfectly matches the provided white-theme blueprint.
+ * Features restricted administrative actions for owners/admins.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -118,198 +112,123 @@ export function RoomUserProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "sm:max-w-[425px] border-none p-0 rounded-t-[3rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 duration-500 font-headline",
-        isMe ? "bg-white text-black" : "bg-[#0a0a0a]/95 backdrop-blur-2xl text-white"
-      )}>
+      <DialogContent className="sm:max-w-[400px] border-none p-0 rounded-t-[3rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white text-black font-headline animate-in slide-in-from-bottom-10 duration-500">
         <DialogHeader className="sr-only">
-          <DialogTitle>Tribe Member Profile</DialogTitle>
-          <DialogDescription>High-fidelity identity synchronization.</DialogDescription>
+          <DialogTitle>User Profile</DialogTitle>
+          <DialogDescription>Identity Frequency Synchronization</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="h-[500px] flex items-center justify-center">
+          <div className="h-[400px] flex items-center justify-center">
             <Loader className="animate-spin h-8 w-8 text-primary" />
           </div>
         ) : profile ? (
-          isMe ? (
-            // SELF-IDENTITY BLUEPRINT (Clean White)
-            <div className="p-10 flex flex-col items-center">
-               <div className="w-full flex justify-end mb-4">
-                  <button onClick={handleViewFullProfile} className="text-gray-300 hover:text-gray-600 transition-colors">
-                     <MoreHorizontal className="h-6 w-6" />
-                  </button>
-               </div>
-               
-               <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-6">
-                  <Avatar className="h-28 w-28 border-4 border-slate-50 shadow-xl">
+          <div className="flex flex-col items-center">
+            {/* Top Toolbar */}
+            <div className="w-full flex justify-between p-6 pb-0">
+               <button onClick={handleViewFullProfile} className="text-gray-300 hover:text-gray-600 transition-colors">
+                  <MoreHorizontal className="h-6 w-6" />
+               </button>
+               <button className="text-gray-300 hover:text-red-500 transition-colors">
+                  <AlertTriangle className="h-5 w-5" />
+               </button>
+            </div>
+
+            {/* Avatar Sync */}
+            <div className="mt-2 mb-4">
+               <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
+                  <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
                      <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                </AvatarFrame>
+            </div>
 
-               <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 text-slate-900">{profile.username}</h2>
-               
-               <div className="flex gap-2 mb-6">
-                  <Badge className="bg-blue-500 text-white font-black text-[8px] h-4 px-2">Lv {profile.level?.rich || 1}</Badge>
-                  <Badge className="bg-pink-500 text-white font-black text-[8px] h-4 px-2">Lv {profile.level?.charm || 1}</Badge>
+            {/* Name & Levels */}
+            <div className="text-center space-y-2 mb-4">
+               <h2 className="text-2xl font-black text-gray-900 tracking-tight">{profile.username}</h2>
+               <div className="flex justify-center gap-1">
+                  <LevelBadge level={profile.level?.rich || 1} type="rich" />
+                  <LevelBadge level={profile.level?.charm || 1} type="charm" />
                </div>
+            </div>
 
-               <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400 mb-10 uppercase tracking-widest cursor-pointer group" onClick={handleCopyId}>
-                  <span>ID: {profile.specialId}</span>
-                  <span className="opacity-30">|</span>
-                  <span>Fans: {profile.stats?.fans || 0}</span>
-                  <span className="opacity-30">|</span>
-                  <span className="flex items-center gap-1">🇮🇳 India</span>
+            {/* Metadata Row: ID | Fans | Country */}
+            <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
+               <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
+                  <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  <Copy className="h-2.5 w-2.5 opacity-40" />
                </div>
+               <span className="opacity-20 text-lg">|</span>
+               <div className="flex items-center gap-1">
+                  <span>{profile.stats?.fans || 0} Fans</span>
+               </div>
+               <span className="opacity-20 text-lg">|</span>
+               <div className="flex items-center gap-1">
+                  <MapPin className="h-2.5 w-2.5" />
+                  <span>{profile.country || 'India'}</span>
+               </div>
+            </div>
 
-               <Button 
-                 onClick={() => onLeaveSeat(userId)}
-                 className="w-full h-16 rounded-full bg-[#00E676] hover:bg-[#00C853] text-white font-black uppercase italic text-xl shadow-xl shadow-green-500/20 active:scale-95 transition-all"
+            {/* Social Interaction Row */}
+            <div className="w-full flex items-center justify-between px-10 mb-10">
+               <button className="flex items-center gap-2 group active:scale-95 transition-transform">
+                  <Heart className="h-6 w-6 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
+                  <span className="text-sm font-black text-pink-500 uppercase">Follow</span>
+               </button>
+
+               <button className="flex items-center gap-2 group active:scale-95 transition-transform">
+                  <MessageSquare className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
+                  <span className="text-sm font-black text-gray-800 uppercase">Chat</span>
+               </button>
+
+               <button className="p-2 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90">
+                  <AtSign className="h-6 w-6" strokeWidth={3} />
+               </button>
+
+               <button 
+                 onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
+                 className="relative h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"
                >
-                  <LogOut className="mr-2 h-7 w-7 rotate-90" /> Leave
-               </Button>
+                  <GiftIcon className="h-6 w-6 text-white fill-white" />
+               </button>
             </div>
-          ) : (
-            // PUBLIC IDENTITY BLUEPRINT (Dark Slate)
-            <div className="relative flex flex-col items-center">
-              <div className="w-full flex justify-end p-6 absolute top-0 right-0 z-50">
-                 <button onClick={handleViewFullProfile} className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 hover:text-white transition-colors border border-white/5 shadow-xl">
-                    <MoreHorizontal className="h-6 w-6" />
-                 </button>
-              </div>
 
-              <div className="pt-16 pb-6 flex flex-col items-center w-full">
-                 <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl" className="mb-4">
-                    <Avatar className="h-28 w-28 border-4 border-white/10 shadow-2xl">
-                       <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
-                       <AvatarFallback className="text-3xl bg-slate-800">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                 </AvatarFrame>
-
-                 <h2 className="text-2xl font-black uppercase tracking-tighter mb-3">{profile.username}</h2>
-                 
-                 <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className={cn(
-                      "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg",
-                      profile.gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
-                    )}>
-                      {profile.gender === 'Female' ? '♀' : '♂'}
-                    </div>
-                    <span className="text-lg">🇮🇳</span>
-                    <SpecialIdBadge id={profile.specialId || profile.id.slice(0, 6)} color="red" onClick={handleCopyId} />
-                    <OfficialTag size="sm" className="-ml-1" />
-                 </div>
-
-                 <div className="mb-8">
-                    <div className="bg-[#00E676] px-5 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(0,230,118,0.4)]">
-                       <CheckCircle2 className="h-3.5 w-3.5 text-white fill-current" />
-                       <span className="text-[11px] font-black text-white uppercase tracking-widest">Verified</span>
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-4 w-full px-8 mb-10">
-                    <div className="bg-gradient-to-br from-[#2563eb] to-[#1e1b4b] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
-                       <div className="relative z-10 space-y-2">
-                          <div className="flex items-center gap-2">
-                             <div className="h-6 w-6 bg-white/20 rounded-lg flex items-center justify-center">
-                                <Star className="h-3.5 w-3.5 fill-white text-white" />
-                             </div>
-                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-white/60 uppercase leading-none">Rich</span>
-                                <span className="text-sm font-black italic">Lv {profile.level?.rich || 0}</span>
-                             </div>
-                          </div>
-                          <div className="h-px bg-white/10 w-full" />
-                          <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Send: 0</p>
-                       </div>
-                       <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
-                          <Star className="h-20 w-20 fill-current" />
-                       </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-[#db2777] to-[#4c0519] rounded-2xl p-4 text-white shadow-xl relative overflow-hidden group">
-                       <div className="relative z-10 space-y-2">
-                          <div className="flex items-center gap-2">
-                             <div className="h-6 w-6 bg-white/20 rounded-lg flex items-center justify-center">
-                                <Sparkles className="h-3.5 w-3.5 fill-white text-white" />
-                             </div>
-                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-white/60 uppercase leading-none">Charm</span>
-                                <span className="text-sm font-black italic">Lv {profile.level?.charm || 0}</span>
-                             </div>
-                          </div>
-                          <div className="h-px bg-white/10 w-full" />
-                          <p className="text-[9px] font-black uppercase tracking-tighter text-white/40 italic">Mthly Received: 0</p>
-                       </div>
-                       <div className="absolute -bottom-4 -right-4 opacity-10 rotate-12 transition-transform group-hover:scale-110">
-                          <Heart className="h-20 w-20 fill-current" />
-                       </div>
-                    </div>
-                 </div>
-
-                 {canManage && (
-                   <div className="w-full px-8 mb-10 animate-in fade-in zoom-in duration-500">
-                      <div className="grid grid-cols-3 gap-3">
-                         <button 
-                           onClick={() => onSilence(userId, isSilenced)}
-                           className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-lg"
-                         >
-                            <MicOff className={cn("h-6 w-6", isSilenced ? "text-green-500" : "text-white/60")} />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Turn off</span>
-                         </button>
-                         
-                         <button 
-                           onClick={() => onLeaveSeat(userId)}
-                           className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-lg"
-                         >
-                            <LogOut className="h-6 w-6 text-white/60" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Seat Leave</span>
-                         </button>
-
-                         <button 
-                           onClick={() => onKick(userId, 10)}
-                           className={cn(
-                             "flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all shadow-lg"
-                           )}
-                         >
-                            <Ban className="h-6 w-6 text-red-500" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-red-500/80">Kick out</span>
-                         </button>
-                      </div>
-                   </div>
-                 )}
-
-                 <div className="w-full border-t border-white/5 bg-black/40 px-10 py-8 flex items-center justify-between mt-auto">
-                    <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
-                       <AtSign className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" />
-                       <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">at</span>
-                    </button>
-
-                    <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
-                       <Plus className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" strokeWidth={3} />
-                       <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Follow</span>
-                    </button>
-
-                    <button className="flex flex-col items-center gap-2 group active:scale-90 transition-transform">
-                       <MessageCircle className="h-7 w-7 text-white/40 group-hover:text-white transition-colors" />
-                       <span className="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Chat</span>
-                    </button>
-
+            {/* Sovereign Admin Row: Only visible to Owners/Admins */}
+            {canManage && (
+              <div className="w-full border-t border-gray-50 py-6 px-8 animate-in fade-in duration-500">
+                 <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-400">
                     <button 
-                      onClick={() => { onOpenChange(false); onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' }); }}
-                      className="flex flex-col items-center gap-2 group active:scale-90 transition-transform"
+                      onClick={() => onSilence(userId, isSilenced)}
+                      className="hover:text-primary transition-colors active:scale-95"
                     >
-                       <div className="relative">
-                          <GiftIcon className="h-7 w-7 text-yellow-500 fill-yellow-500 animate-reaction-heartbeat" />
-                          <div className="absolute inset-0 bg-yellow-400 blur-lg opacity-20" />
-                       </div>
-                       <span className="text-[10px] font-black uppercase text-yellow-500">Gift</span>
+                       {isSilenced ? 'Unmute' : 'Mute'}
+                    </button>
+                    <span className="opacity-20 text-lg">|</span>
+                    <button 
+                      onClick={() => onLeaveSeat(userId)}
+                      className="hover:text-orange-600 transition-colors active:scale-95"
+                    >
+                       Leave
+                    </button>
+                    <span className="opacity-20 text-lg">|</span>
+                    <button 
+                      onClick={() => { toast({ title: 'Slot Locked' }); onOpenChange(false); }}
+                      className="hover:text-indigo-600 transition-colors active:scale-95"
+                    >
+                       Lock
+                    </button>
+                    <span className="opacity-20 text-lg">|</span>
+                    <button 
+                      onClick={() => onKick(userId, 10)}
+                      className="hover:text-red-600 transition-colors active:scale-95"
+                    >
+                       Kick out
                     </button>
                  </div>
               </div>
-            </div>
-          )
+            )}
+          </div>
         ) : null}
       </DialogContent>
     </Dialog>
