@@ -16,7 +16,7 @@
     {
       "id": "user-avatar-3",
       "description": "User avatar 3",
-      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "man glasses"
     },
     {
@@ -28,7 +28,7 @@
     {
       "id": "user-avatar-5",
       "description": "User avatar 5",
-      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman nature"
     },
     {
@@ -52,7 +52,7 @@
     {
       "id": "room-cover-4",
       "description": "Chat room cover 4",
-      "imageUrl": "https://images.unsplash.com/photo-1728734704163-3d13e0c86f5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Ym9vS3MlMjBsaWJyYXJ5fGVufDB8fHx8MTc3MjQwNDY2MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1728734704163-3d13e0c86f5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Ym9va3MlMjBsaWJyYXJ5fGVufDB8fHx8MTc3MjQwNDY2MXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "books library"
     },
     {
@@ -98,22 +98,22 @@
       "imageHint": "golden crown"
     },
     {
-      "id": "wallet-promo",
-      "description": "Wallet recharge promo banner",
-      "imageUrl": "https://images.unsplash.com/photo-1514525253361-bee8718a300a?q=80&w=1000",
-      "imageHint": "recharge promo"
+      "id": "lion-fight-bg",
+      "description": "Shining boxing ring stage for lion fight",
+      "imageUrl": "https://images.unsplash.com/photo-1590556409324-aa1d726e5c3c?q=80&w=2000",
+      "imageHint": "boxing ring stage"
     },
     {
-      "id": "generic-promo",
-      "description": "Generic promotional banner",
-      "imageUrl": "https://picsum.photos/seed/promo/800/200",
-      "imageHint": "promo banner"
+      "id": "lion-fighter",
+      "description": "3D glossy lion character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000",
+      "imageHint": "3d lion character"
     },
     {
-      "id": "login-bg",
-      "description": "Gradient abstract neon background image for login",
-      "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000",
-      "imageHint": "neon abstract shapes"
+      "id": "tiger-fighter",
+      "description": "3D glossy tiger character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1508817628294-5a453fa6b8fb?q=80&w=1000",
+      "imageHint": "3d tiger character"
     }
   ]
 }

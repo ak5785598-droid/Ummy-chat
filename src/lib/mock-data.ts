@@ -1,3 +1,4 @@
+
 import type { User, Room, Game, CoinPackage, Task } from './types';
 
 /**
@@ -9,6 +10,14 @@ const users: User[] = [];
 const rooms: Room[] = []; 
 
 const games: Game[] = [
+  { 
+    id: 'g7', 
+    title: 'Lion Fight', 
+    slug: 'lion-fight', 
+    coverUrl: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000', 
+    cost: 0, 
+    imageHint: '3d lion fighting' 
+  },
   { 
     id: 'g1', 
     title: 'Ludo Masters', 

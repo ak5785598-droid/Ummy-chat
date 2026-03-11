@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -18,6 +19,7 @@ import type { Game } from '@/lib/types';
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const FALLBACK_GAMES: Game[] = [
+  { id: 'g7', title: 'Lion Fight', slug: 'lion-fight', coverUrl: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000', cost: 0, imageHint: '3d lion fighting' },
   { id: 'fallback-roulette', title: 'Roulette', slug: 'roulette', coverUrl: '', cost: 0, imageHint: 'roulette wheel' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d fruit icons' },
