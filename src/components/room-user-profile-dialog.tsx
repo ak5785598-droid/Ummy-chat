@@ -158,9 +158,9 @@ export function RoomUserProfileDialog({
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
                   
                   {/* TAG SYNC: Displayed beside pink level badge */}
-                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center -ml-4" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-4" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-1" />}
+                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
                   
                   {/* COLOR ID SYNC */}
                   {profile.specialId && profile.specialIdColor && (
