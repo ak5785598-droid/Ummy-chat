@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -78,6 +79,7 @@ const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) 
  * High-Fidelity Room User Profile Dialog.
  * Perfectly matches the provided white-theme blueprint.
  * Features real-time sync for Color IDs at the metadata position.
+ * Security Protocol: Administrative tools (Mute, Kick, Lock) are strictly hidden for self-identity view.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -231,8 +233,8 @@ export function RoomUserProfileDialog({
               </div>
             )}
 
-            {/* Sovereign Admin Row: Only visible to Owners/Admins */}
-            {canManage && (
+            {/* Sovereign Admin Row: Only visible to Owners/Admins when viewing OTHERS */}
+            {canManage && !isMe && (
               <div className="w-full border-t border-gray-50 py-6 px-8 animate-in fade-in duration-500">
                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-400">
                     <button 
