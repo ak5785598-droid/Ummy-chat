@@ -156,7 +156,7 @@ export function RoomUserProfileDialog({
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
                   
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center -ml-6" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
                </div>
