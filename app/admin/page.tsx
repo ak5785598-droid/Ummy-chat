@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -640,6 +640,9 @@ export default function AdminPage() {
               <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
               </TabsTrigger>
+              <TabsTrigger value="game-results" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Dices className="h-4 w-4 text-pink-500" /> Game Results
+              </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
               </TabsTrigger>
@@ -844,6 +847,74 @@ export default function AdminPage() {
                        )}
                     </div>
                   )}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="game-results" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-500">
+                        <Dices className="h-6 w-6" /> Oracle Sync (Game Results)
+                     </CardTitle>
+                     <CardDescription>Monitor upcoming tribal game frequencies and predicted outcomes.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                           <h4 className="font-black uppercase italic text-sm text-slate-900">Roulette Sync</h4>
+                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="h-16 w-16 bg-red-600 rounded-2xl flex items-center justify-center text-2xl font-black italic text-white shadow-xl animate-shimmer-gold">32</div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
+                              <p className="text-lg font-black text-slate-900 uppercase italic">Red / Even Outcome</p>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                           <h4 className="font-black uppercase italic text-sm text-slate-900">Lion Fight Sync</h4>
+                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="h-16 w-16 bg-blue-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-bounce">🐯</div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
+                              <p className="text-lg font-black text-slate-900 uppercase italic">Tiger Victory</p>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                           <h4 className="font-black uppercase italic text-sm text-slate-900">Teen Patti Sync</h4>
+                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-pulse">🐺</div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
+                              <p className="text-lg font-black text-slate-900 uppercase italic">Wolf / Sequence</p>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                           <h4 className="font-black uppercase italic text-sm text-slate-900">Wild Party Sync</h4>
+                           <Badge className="bg-green-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Live Sync</Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="h-16 w-16 bg-yellow-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl animate-reaction-float">🦁</div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Next Frequency</p>
+                              <p className="text-lg font-black text-slate-900 uppercase italic">Lion x45 Multiplier</p>
+                           </div>
+                        </div>
+                     </div>
+                  </CardContent>
                </Card>
             </TabsContent>
 
