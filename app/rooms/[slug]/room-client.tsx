@@ -358,6 +358,12 @@ export function RoomClient({ room }: { room: Room }) {
     setIsSeatMenuOpen(false);
   };
 
+  const handleMention = (username: string) => {
+    setIsUserProfileCardOpen(false);
+    setMessageText(`@${username} `);
+    setShowInput(true);
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
@@ -564,6 +570,7 @@ export function RoomClient({ room }: { room: Room }) {
         onLeaveSeat={handleLeaveSeat}
         onToggleMod={handleToggleMod}
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
+        onMention={handleMention}
         isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
         isMe={selectedParticipantUid === currentUser?.uid}
       />

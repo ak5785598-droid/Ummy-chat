@@ -61,6 +61,7 @@ interface RoomUserProfileDialogProps {
   onLeaveSeat: (uid: string) => void;
   onToggleMod: (uid: string) => void;
   onOpenGiftPicker: (recipient: any) => void;
+  onMention: (username: string) => void;
   isSilenced: boolean;
   isMe: boolean;
 }
@@ -92,6 +93,7 @@ export function RoomUserProfileDialog({
   onLeaveSeat,
   onToggleMod,
   onOpenGiftPicker,
+  onMention,
   isSilenced,
   isMe
 }: RoomUserProfileDialogProps) {
@@ -201,7 +203,10 @@ export function RoomUserProfileDialog({
                   <span className="text-sm font-black text-gray-800 uppercase">Chat</span>
                </button>
 
-               <button className="p-2 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90">
+               <button 
+                 onClick={() => onMention(profile.username)}
+                 className="p-2 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90"
+               >
                   <AtSign className="h-6 w-6" strokeWidth={3} />
                </button>
 
