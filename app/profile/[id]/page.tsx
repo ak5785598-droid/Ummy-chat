@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -26,7 +25,8 @@ import {
   BadgeCheck,
   Check,
   Flag,
-  ClipboardList
+  ClipboardList,
+  Sparkles
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
