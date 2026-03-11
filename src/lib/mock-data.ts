@@ -1,4 +1,3 @@
-
 import type { User, Room, Game, CoinPackage, Task } from './types';
 
 /**
@@ -41,7 +40,31 @@ const games: Game[] = [
     coverUrl: '', 
     cost: 0, 
     imageHint: 'forest animals' 
-  }
+  },
+  { 
+    id: 'g4', 
+    title: 'Lucky Slot 777', 
+    slug: 'lucky-slot-777', 
+    coverUrl: '', 
+    cost: 0, 
+    imageHint: 'lucky 777 slot' 
+  },
+  { 
+    id: 'g5', 
+    title: 'Pyramid Battle', 
+    slug: 'pyramid-battle', 
+    coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', 
+    cost: 0, 
+    imageHint: 'egyptian pyramid' 
+  },
+  { 
+    id: 'g6', 
+    title: 'Teen Patti', 
+    slug: 'teen-patti', 
+    coverUrl: '', 
+    cost: 0, 
+    imageHint: '3d cards poker' 
+  },
 ];
 
 const coinPackages: CoinPackage[] = [

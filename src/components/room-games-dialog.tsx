@@ -27,7 +27,8 @@ interface RoomGamesDialogProps {
 }
 
 const FALLBACK_GAMES = [
-  { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: true, slug: 'roulette' },
+  { id: 'lion-fight', title: 'Lion Fight', iconId: 'game-lion-fight', isNew: true, slug: 'lion-fight' },
+  { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: false, slug: 'roulette' },
   { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
   { id: 'wild-party', title: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
   { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
@@ -36,6 +37,7 @@ const FALLBACK_GAMES = [
 /**
  * High-Fidelity Room Games Portal.
  * Re-engineered to restrict visual identity sync strictly to the Supreme Creator.
+ * Added Lion Fight as the flagship premium combat frequency.
  */
 export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const router = useRouter();
@@ -120,7 +122,7 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
                  {activeGames.map((game) => {
                    const assetId = (game as any).iconId || `game-${game.slug}`;
                    const asset = PlaceHolderImages.find(img => img.id === assetId);
-                   const displayUrl = (game as any).coverUrl || asset?.imageUrl;
+                   const displayUrl = (game as any).coverUrl || asset?.imageUrl || 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000';
 
                    return (
                      <div 

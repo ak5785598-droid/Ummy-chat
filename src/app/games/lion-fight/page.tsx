@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -19,7 +18,8 @@ import {
   Minus,
   Plus,
   Zap,
-  Star
+  Star,
+  Loader
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -240,7 +240,6 @@ export default function LionFightPage() {
                        <AvatarImage src={tigerAsset?.imageUrl} className="object-cover" />
                        <AvatarFallback className="text-4xl">🐯</AvatarFallback>
                     </Avatar>
-                    {/* Blue Boxing Glove Icon */}
                     <div className="absolute -bottom-2 -right-4 bg-blue-600 p-2 rounded-2xl border-2 border-white shadow-xl animate-reaction-shock">
                        <Zap className="h-6 w-6 text-white fill-current" />
                     </div>
@@ -250,10 +249,10 @@ export default function LionFightPage() {
               {/* VS Centerpiece */}
               <div className="flex flex-col items-center gap-4">
                  <div className="relative">
-                    <span className="text-5xl font-black text-white italic tracking-tighter opacity-20 select-none">LION OR TIGER</span>
+                    <span className="text-5xl font-black text-white italic tracking-tighter opacity-20 select-none uppercase">Lion Fight</span>
                     <div className="absolute inset-0 flex items-center justify-center">
                        <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1 rounded-lg">
-                          <span className="text-xl font-black italic text-white">OR</span>
+                          <span className="text-xl font-black italic text-white">VS</span>
                        </div>
                     </div>
                  </div>
@@ -271,7 +270,6 @@ export default function LionFightPage() {
                        <AvatarImage src={lionAsset?.imageUrl} className="object-cover" />
                        <AvatarFallback className="text-4xl">🦁</AvatarFallback>
                     </Avatar>
-                    {/* Red Boxing Glove Icon */}
                     <div className="absolute -bottom-2 -left-4 bg-pink-600 p-2 rounded-2xl border-2 border-white shadow-xl animate-reaction-shock">
                        <Star className="h-6 w-6 text-white fill-current" />
                     </div>
@@ -353,7 +351,7 @@ export default function LionFightPage() {
                    onClick={() => setCurrency('diamonds')}
                    className={cn("h-10 px-4 rounded-full flex items-center gap-2 transition-all", currency === 'diamonds' ? "bg-cyan-500 shadow-lg" : "opacity-40")}
                  >
-                    <Gem className="h-5 w-5 text-white fill-current" />
+                    <GemIcon className="h-5 w-5 text-white fill-current" />
                  </button>
               </div>
 
@@ -388,7 +386,7 @@ export default function LionFightPage() {
   );
 }
 
-function Gem(props: any) {
+function GemIcon(props: any) {
   return (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l10 12"/><path d="M13 3l3 6-10 12"/><path d="M2 9h20"/>
