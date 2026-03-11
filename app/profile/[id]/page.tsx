@@ -186,14 +186,18 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
 
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                <div className="flex items-center gap-1 cursor-pointer active:opacity-60" onClick={handleCopyId}>
-                  <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  {profile.specialIdColor ? (
+                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
+                  ) : (
+                    <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  )}
                   <Copy className="h-3 w-3" />
                </div>
                <span className="opacity-20">|</span>
                <span>{profile.stats?.fans || 149} Fans</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
                   <Star className="h-2 w-2 fill-white text-white" />
                   <span className="text-[9px] font-black text-white">{profile.level?.rich || 1}</span>
@@ -201,6 +205,14 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
                   <Sparkles className="h-2 w-2 fill-white text-white" />
                   <span className="text-[9px] font-black text-white">{profile.level?.charm || 0}</span>
+               </div>
+               {/* REAL-TIME TAG SYNC: Displayed beside Charm Level pill */}
+               <div className="flex items-center gap-1 shrink-0">
+                  {profile.tags?.includes('Official') && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {profile.tags?.includes('Seller') && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
+                  {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
+                  {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="scale-75 origin-center -ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
+                  {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="scale-75 origin-center -ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                </div>
             </div>
          </div>
@@ -245,7 +257,7 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
          <DirectMessageDialog 
            recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
            trigger={
-             <button className="flex-1 h-14 rounded-full border-2 border-[#00E5FF] bg-white text-[#00E5FF] flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-cyan-50 active:scale-95 transition-all">
+             <button className="flex-1 h-14 rounded-full border-2 border-[#00E5FF] bg-white text-[#00E5FF] flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-cyan active:scale-95 transition-all">
                 <MessageCircle className="h-6 w-6 fill-current" />
                 Chat
              </button>
