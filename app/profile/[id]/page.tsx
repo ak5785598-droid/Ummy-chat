@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -116,6 +117,7 @@ const CenterTag = ({ label, gradient, className }: { label: string, gradient: st
 
 /**
  * Public Profile View.
+ * Redesigned to match the high-fidelity white-theme blueprint from the reference image.
  */
 const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => void }) => {
   const { toast } = useToast();
@@ -132,17 +134,23 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
   };
 
   return (
-    <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
-      <div className="relative bg-[#689f38] h-[40vh] flex flex-col pt-12">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-           <span className="text-[25rem] font-black text-white/20 select-none leading-none -mt-10">{firstLetter}</span>
+    <div className="min-h-full bg-[#f8f9fa] font-headline pb-32 animate-in fade-in duration-700">
+      {/* Immersive Visual Header */}
+      <div className="relative h-[45vh] w-full overflow-hidden">
+        <div className="absolute inset-0 scale-110">
+           <img 
+             src={profile.avatarUrl || 'https://picsum.photos/seed/bg/800/800'} 
+             className="w-full h-full object-cover blur-sm brightness-75"
+             alt="Header Background"
+           />
+           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#f8f9fa]" />
         </div>
 
-        <div className="relative z-10 flex justify-between px-6 mb-8">
-           <button onClick={onBack} className="p-1 text-white active:scale-90 transition-transform"><ChevronLeft className="h-8 w-8" /></button>
+        <div className="relative z-10 flex justify-between px-6 pt-12">
+           <button onClick={onBack} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform"><ChevronLeft className="h-6 w-6" /></button>
            <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                 <button className="p-1 text-white active:scale-95 transition-transform"><MoreHorizontal className="h-8 w-8" /></button>
+                 <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-transform"><MoreHorizontal className="h-6 w-6" /></button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
                  <DropdownMenuItem 
@@ -156,139 +164,93 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
            </DropdownMenu>
         </div>
 
-        <div className="relative z-10 px-6 mt-auto pb-10">
-           <div className="flex items-end gap-4">
-              <Avatar className="h-20 w-20 border-[3px] border-white/40 shadow-xl">
-                 <AvatarImage src={profile.avatarUrl || undefined} />
-                 <AvatarFallback className="text-2xl bg-white/20 text-white">{firstLetter}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 pb-1">
-                 <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{profile.username}</h1>
-                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                    <div className="flex items-center gap-2">
-                       <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
-                       <span className="text-lg">🇮🇳</span>
-                       <div className="flex items-center gap-1">
-                          {profile.specialIdColor ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
-                            <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
-                               <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.specialId || profile.id.slice(0, 6)}</span>
-                               <Copy className="h-3 w-3 text-white/40" />
-                            </div>
-                          )}
-                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                       {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                       {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
-                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
-                    </div>
-                 </div>
-              </div>
-           </div>
+        {/* Floating Profile Avatar Sync */}
+        <div className="absolute bottom-10 left-6 z-20">
+           <Avatar className="h-24 w-24 border-2 border-white shadow-2xl">
+              <AvatarImage src={profile.avatarUrl} className="object-cover" />
+              <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">{firstLetter}</AvatarFallback>
+           </Avatar>
         </div>
       </div>
 
-      <div className="relative z-20 bg-white rounded-t-[2.5rem] -mt-6 p-6 space-y-8">
-         <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-[#6a11cb] to-[#2575fc] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
-               <div className="relative z-10 space-y-1">
-                  <div className="flex items-center gap-2">
-                     <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center"><Star className="h-5 w-5 fill-current" /></div>
-                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">Rich</span>
-                        <span className="text-sm font-black italic">Lv {profile.level?.rich || 0}</span>
-                     </div>
-                  </div>
-                  <div className="h-px bg-white/20 w-full my-2" />
-                  <p className="text-[9px] font-black uppercase tracking-tighter italic">Mthly Send:0</p>
-               </div>
-               <div className="absolute -bottom-2 -right-2 opacity-10 rotate-12 group-hover:scale-110 transition-transform">
-                  <Star className="h-16 w-16 fill-current" />
-               </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
-               <div className="relative z-10 space-y-1">
-                  <div className="flex items-center gap-2">
-                     <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center"><Heart className="h-5 w-5 fill-current" /></div>
-                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">Charm</span>
-                        <span className="text-sm font-black italic">Lv {profile.level?.charm || 0}</span>
-                     </div>
-                  </div>
-                  <div className="h-px bg-white/20 w-full my-2" />
-                  <p className="text-[9px] font-black uppercase tracking-tighter italic">Mthly Received:0</p>
-               </div>
-               <div className="absolute -bottom-2 -right-2 opacity-10 rotate-12 group-hover:scale-110 transition-transform">
-                  <Heart className="h-16 w-16 fill-current" />
-               </div>
-            </div>
-         </div>
-
-         <div className="flex justify-between items-center px-2">
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Followers</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Follow</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span></div>
-         </div>
-
+      {/* Identity Card Dimension */}
+      <div className="relative z-30 bg-white rounded-t-[2.5rem] -mt-10 p-6 space-y-8 min-h-screen">
          <div className="space-y-4">
-            <h3 className="font-black text-lg uppercase tracking-tight">Profile</h3>
-            <div className="space-y-4">
-               <div className="flex items-center gap-4 text-gray-400">
-                  <Cake className="h-5 w-5" />
-                  <span className="text-sm font-bold">1990-06-18</span>
+            <div className="flex items-center gap-2">
+               <Badge className="bg-[#00E5FF] text-white text-[10px] font-black uppercase px-2 h-5 border-none rounded-md">New</Badge>
+               <h1 className="text-2xl font-black text-gray-900 tracking-tight">{profile.username}</h1>
+               <div className="h-5 w-5 bg-[#ff4081] rounded-full flex items-center justify-center">
+                  <span className="text-[10px] font-black text-white">♀</span>
                </div>
-               <div className="flex items-center gap-4 text-gray-400">
-                  <Pencil className="h-5 w-5" />
-                  <span className="text-sm font-bold">{profile.bio || 'Hey'}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+               <div className="flex items-center gap-1 cursor-pointer active:opacity-60" onClick={handleCopyId}>
+                  <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  <Copy className="h-3 w-3" />
+               </div>
+               <span className="opacity-20">|</span>
+               <span>{profile.stats?.fans || 149} Fans</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
+                  <Star className="h-2 w-2 fill-white text-white" />
+                  <span className="text-[9px] font-black text-white">{profile.level?.rich || 1}</span>
+               </div>
+               <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
+                  <Sparkles className="h-2 w-2 fill-white text-white" />
+                  <span className="text-[9px] font-black text-white">{profile.level?.charm || 0}</span>
                </div>
             </div>
          </div>
 
-         <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-               <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Top 3 User Contributions</span>
-               <div className="flex -space-x-2">
+         {/* Top 3 User Contributions Dimension */}
+         <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+               <h3 className="text-[13px] font-black text-[#9333ea] uppercase tracking-tight">Top 3 User Contributions</h3>
+               <div className="flex -space-x-3">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="relative h-10 w-10">
-                       <div className={cn(
-                         "absolute -top-3 left-1/2 -translate-x-1/2 z-10 h-5 w-5",
-                         i === 1 ? "text-yellow-500" : i === 2 ? "text-slate-300" : "text-amber-600"
-                       )}><Crown className="h-full w-full fill-current" /></div>
-                       <Avatar className="h-full w-full border-2 border-white shadow-sm">
-                         <AvatarFallback className="bg-gray-50">
-                           <User className="h-5 w-5 text-gray-200" />
-                         </AvatarFallback>
+                    <div key={i} className="relative">
+                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 scale-75">
+                          <Crown className={cn(
+                            "h-5 w-5 fill-current",
+                            i === 1 ? "text-yellow-500" : i === 2 ? "text-slate-300" : "text-orange-400"
+                          )} />
+                       </div>
+                       <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                          <AvatarImage src={`https://picsum.photos/seed/contributor${i}/100`} />
+                          <AvatarFallback><User className="h-4 w-4 text-gray-200" /></AvatarFallback>
                        </Avatar>
                     </div>
                   ))}
                </div>
             </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase italic">This Month</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase italic">This Month</p>
          </div>
 
-         <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
-            <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Moments</span>
+         {/* Moments Link Card */}
+         <div className="bg-white rounded-3xl border border-gray-100 p-6 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
+            <span className="text-[13px] font-black text-[#9333ea] uppercase tracking-tight">Moments</span>
             <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" />
          </div>
       </div>
 
+      {/* Bottom Sync Actions */}
       <div className="fixed bottom-0 left-0 right-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-4">
+         <button className="flex-1 h-14 rounded-full border-2 border-[#ff4081] bg-white text-[#ff4081] flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-pink-100 active:scale-95 transition-all">
+            <Heart className="h-6 w-6" strokeWidth={2.5} />
+            Follow
+         </button>
          <DirectMessageDialog 
            recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
            trigger={
-             <button className="flex-1 h-14 rounded-full bg-[#42a5f5] text-white flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all">
+             <button className="flex-1 h-14 rounded-full border-2 border-[#00E5FF] bg-white text-[#00E5FF] flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-cyan-50 active:scale-95 transition-all">
                 <MessageCircle className="h-6 w-6 fill-current" />
                 Chat
              </button>
            }
          />
-         <button className="flex-1 h-14 rounded-full bg-[#ffb300] text-white flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-orange-500/20 active:scale-95 transition-all">
-            <Plus className="h-6 w-6" strokeWidth={3} />
-            Follow
-         </button>
       </div>
     </div>
   );
@@ -382,8 +344,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic based on current DB tags.
-    // Reactive sync ensures this value updates immediately upon Admin revocation.
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
     const isSeller = profile.tags?.some(t => sellerTags.includes(t)) || profile.id === CREATOR_ID;
 
@@ -449,7 +409,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">
-            <div onClick={() => router.push('/svip')} className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-all cursor-pointer">
+            <div className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-all cursor-pointer">
                <div className="relative z-10 flex flex-col h-full justify-between">
                   <span className="text-[13px] font-black text-yellow-500 uppercase tracking-tighter italic">SVIP Club</span>
                   <span className="text-[10px] text-white/60 font-bold uppercase">Distinguished</span>
@@ -478,9 +438,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
-            <MenuItem label="Task center" icon={ClipboardList} colorClass="bg-blue-100 text-blue-600" href="/tasks" />
+            <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {/* DYNAMIC SELLER PORTAL: Renders only when specific authority tags are active. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 
