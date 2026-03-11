@@ -24,7 +24,6 @@ import {
   Volume2,
   VolumeX,
   Plus,
-  SmilePlus,
   Music,
   Search,
   Play
@@ -52,12 +51,10 @@ interface RoomPlayDialogProps {
   onOpenGames: () => void;
 }
 
-const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
-
 /**
  * High-Fidelity Room Play Portal.
  * Re-engineered for absolute stability and interactive sync.
- * Hardened with high-fidelity accessibility synchronization.
+ * Removed "Reactions" from the play grid as per Sovereign request.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -69,7 +66,7 @@ export function RoomPlayDialog({
   setIsMutedLocal,
   onOpenGames
 }: RoomPlayDialogProps) {
-  const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'emojis' | 'music'>('grid');
+  const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'music'>('grid');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
   const [isClearingChat, setIsClearingChat] = useState(false);
@@ -131,18 +128,6 @@ export function RoomPlayDialog({
     onOpenChange(false);
   };
 
-  const handleSendEmoji = (emoji: string) => {
-    if (!firestore || !roomId || !user) return;
-    const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
-    updateDocumentNonBlocking(pRef, { activeEmoji: emoji, updatedAt: serverTimestamp() });
-    
-    setTimeout(() => {
-      updateDocumentNonBlocking(pRef, { activeEmoji: null });
-    }, 4000);
-    
-    onOpenChange(false);
-  };
-
   const handleSearchMusic = async () => {
     if (!musicSearch.trim()) return;
     setIsSearchingMusic(true);
@@ -201,18 +186,6 @@ export function RoomPlayDialog({
         <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
            <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
               <Music className="h-8 w-8 text-white drop-shadow-md" />
-           </div>
-        </div>
-      )
-    },
-    { 
-      id: 'emoji', 
-      label: 'Reactions', 
-      onClick: () => setView('emojis'),
-      icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-              <SmilePlus className="h-8 w-8 text-white drop-shadow-md" />
            </div>
         </div>
       )
@@ -361,28 +334,6 @@ export function RoomPlayDialog({
                   )}
                </div>
             </ScrollArea>
-          </div>
-        )}
-
-        {view === 'emojis' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <header className="p-6 pb-2 flex items-center justify-between border-b border-white/5">
-               <div className="flex items-center gap-3">
-                  <button onClick={() => setView('grid')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-6 w-6 text-white/60" /></button>
-                  <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Reaction Sync</h2>
-               </div>
-            </header>
-            <div className="p-8 grid grid-cols-3 gap-6 pb-20">
-               {REACTIONS.map((emoji) => (
-                 <button 
-                   key={emoji} 
-                   onClick={() => handleSendEmoji(emoji)}
-                   className="h-20 w-20 rounded-3xl bg-white/5 border-2 border-white/10 flex items-center justify-center text-5xl hover:bg-white/10 active:scale-90 transition-all shadow-xl"
-                 >
-                    {emoji}
-                 </button>
-               ))}
-            </div>
           </div>
         )}
 
