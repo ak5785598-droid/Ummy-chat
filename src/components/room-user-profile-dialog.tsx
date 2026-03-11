@@ -195,7 +195,7 @@ export function RoomUserProfileDialog({
             </div>
 
             {/* Social Interaction Row */}
-            <div className="w-full flex items-center justify-between px-10 mb-10">
+            <div className="w-full flex items-center justify-between px-10 mb-6">
                <button className="flex items-center gap-2 group active:scale-95 transition-transform">
                   <Heart className="h-6 w-6 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
                   <span className="text-sm font-black text-pink-500 uppercase">Follow</span>
@@ -217,6 +217,19 @@ export function RoomUserProfileDialog({
                   <GiftIcon className="h-6 w-6 text-white fill-white" />
                </button>
             </div>
+
+            {/* SEAT LEAVE OPTIMIZATION: Prominent button for self-identity sync, positioned below the chat row */}
+            {isMe && (
+              <div className="w-full px-10 mb-8">
+                 <button 
+                   onClick={() => onLeaveSeat(userId)}
+                   className="w-full h-14 rounded-full bg-[#00E676] text-white flex items-center justify-center gap-3 font-black uppercase text-lg shadow-xl shadow-green-500/20 active:scale-95 transition-all"
+                 >
+                    <Mic className="h-6 w-6 rotate-180" />
+                    Seat leave
+                 </button>
+              </div>
+            )}
 
             {/* Sovereign Admin Row: Only visible to Owners/Admins */}
             {canManage && (
