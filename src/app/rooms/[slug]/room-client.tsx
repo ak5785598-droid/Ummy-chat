@@ -25,7 +25,8 @@ import {
   Ban,
   Heart,
   Plus,
-  SmilePlus
+  SmilePlus,
+  MessageSquare
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -302,7 +303,6 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
-      // SOVEREIGN INTERACTION: Always open identity card for occupied seats
       setSelectedParticipantUid(occupant.uid);
       setIsUserProfileCardOpen(true);
     } else {
@@ -357,6 +357,12 @@ export function RoomClient({ room }: { room: Room }) {
     setGiftRecipient(recipient);
     setIsGiftPickerOpen(true);
     setIsSeatMenuOpen(false);
+  };
+
+  const handleMention = (username: string) => {
+    setIsUserProfileCardOpen(false);
+    setMessageText(`@${username} `);
+    setShowInput(true);
   };
 
   return (
@@ -446,7 +452,14 @@ export function RoomClient({ room }: { room: Room }) {
            <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
-                   <div key={msg.id} className="flex items-start gap-2 bg-black/40 backdrop-blur-md rounded-xl p-1.5 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-1">
+                   <div 
+                    key={msg.id} 
+                    onClick={() => {
+                      setSelectedParticipantUid(msg.senderId);
+                      setIsUserProfileCardOpen(true);
+                    }}
+                    className="flex items-start gap-2 bg-black/40 backdrop-blur-md rounded-xl p-1.5 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-1 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+                   >
                       <Avatar className="h-6 w-6 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
@@ -461,15 +474,15 @@ export function RoomClient({ room }: { room: Room }) {
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 pt-4">
         <div className="flex-1 flex items-center gap-3">
-           <div 
+           <button 
              onClick={handleInputClick} 
              className={cn(
-               "backdrop-blur-xl rounded-full h-12 flex-1 px-6 flex items-center font-bold text-sm cursor-pointer transition-all",
-               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white/60"
+               "backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0",
+               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
              )}
            >
-              {isChatMuted && !canManageRoom ? 'Chat Restricted' : 'Say Hi'}
-           </div>
+              <MessageSquare className="h-6 w-6" />
+           </button>
            <div className="flex items-center gap-3">
               <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
               
@@ -558,6 +571,7 @@ export function RoomClient({ room }: { room: Room }) {
         onLeaveSeat={handleLeaveSeat}
         onToggleMod={handleToggleMod}
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
+        onMention={handleMention}
         isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
         isMe={selectedParticipantUid === currentUser?.uid}
       />
