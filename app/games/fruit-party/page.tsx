@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   X,
   Volume2,
@@ -123,10 +123,22 @@ export default function FruitPartyPage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    const targetIdx = Math.floor(Math.random() * ITEMS.length);
     
+    // ORACLE SYNC CHECK
+    let winningId = ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'fruit-party'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          winningId = oracleSnap.data().forcedResult;
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'fruit-party'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
+    const targetIdx = ITEMS.findIndex(i => i.id === winningId);
     let currentStep = 0;
     const totalSteps = 32 + targetIdx;
     let speed = 50;
@@ -139,7 +151,7 @@ export default function FruitPartyPage() {
         if (totalSteps - currentStep < 10) speed += 30;
         setTimeout(runChase, speed);
       } else {
-        setTimeout(() => showResult(ITEMS[targetIdx].id), 800);
+        setTimeout(() => showResult(winningId), 800);
       }
     };
     runChase();
@@ -211,7 +223,7 @@ export default function FruitPartyPage() {
   if (isLaunching) {
     return (
       <div className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce">🎡</div>
+        <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
         <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
         <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
       </div>
@@ -264,7 +276,7 @@ export default function FruitPartyPage() {
               <button className="bg-white/10 p-1.5 rounded-full"><HelpCircle className="h-4 w-4" /></button>
               <button className="bg-white/10 p-1.5 rounded-full"><BarChart2 className="h-4 w-4" /></button>
            </div>
-           <h1 className="text-2xl font-black text-white uppercase italic tracking-tight">Fruit Party</h1>
+           <h1 className="text-xl font-black text-white uppercase italic tracking-tight drop-shadow-md">Fruit Party</h1>
            <div className="flex gap-1">
               <button className="bg-white/10 p-1.5 rounded-full"><MoreHorizontal className="h-4 w-4" /></button>
               <button className="bg-white/10 p-1.5 rounded-full"><ChevronDown className="h-4 w-4" /></button>
@@ -272,16 +284,18 @@ export default function FruitPartyPage() {
            </div>
         </div>
 
-        <div className="absolute top-44 left-4 z-40 opacity-80 animate-in slide-in-from-left-4 duration-1000">
-           <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 p-2">
+        <div className="absolute top-44 left-4 z-40 animate-in slide-in-from-left-4 duration-1000">
+           <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 p-2 group shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-shimmer-gold">
               {specialChicken && (
                 <img 
                   src={specialChicken.imageUrl} 
                   alt={specialChicken.description} 
-                  className="object-contain" 
+                  className="object-contain relative z-10" 
                   data-ai-hint={specialChicken.imageHint} 
                 />
               )}
+              <div className="absolute inset-0 z-20 bg-gradient-to-tr from-white/20 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-30" />
            </div>
         </div>
         <div className="absolute top-44 right-4 z-40 opacity-80 animate-in slide-in-from-right-4 duration-1000">
@@ -294,11 +308,11 @@ export default function FruitPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
-           <div className="relative w-full max-sm aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[300px] aspect-square flex items-center justify-center">
               <div className="absolute inset-0 border-[6px] border-white/10 rounded-full m-12" />
               
-              <div className="relative z-20 w-36 h-36 bg-[#4c1d95] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
-                 <span className="text-7xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              <div className="relative z-20 w-32 h-32 bg-[#4c1d95] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
+                 <span className="text-6xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
                     {gameState === 'betting' ? timeLeft : '🎲'}
                  </span>
                  <p className="text-[10px] font-bold uppercase text-white/60 tracking-widest mt-1">
@@ -325,11 +339,13 @@ export default function FruitPartyPage() {
                   )}
                 >
                    <div className={cn(
-                     "h-24 w-24 rounded-2xl flex flex-col items-center justify-center p-1 transition-all border-2",
+                     "h-20 w-20 rounded-2xl flex flex-col items-center justify-center p-1 transition-all border-2 relative overflow-hidden",
                      highlightIdx === idx ? "bg-[#7c3aed] border-yellow-400" : "bg-black/30 border-white/5 group-hover:bg-black/40"
                    )}>
-                      <span className="text-5xl drop-shadow-md">{item.emoji}</span>
-                      <span className="text-[8px] font-black text-white/60 uppercase mt-1 leading-tight">{item.label}</span>
+                      <span className="text-4xl drop-shadow-md relative z-10">{item.emoji}</span>
+                      <span className="text-[7px] font-black text-white/60 uppercase mt-1 leading-tight relative z-10">{item.label}</span>
+                      <div className="absolute inset-0 z-20 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 w-1/2 h-full bg-white/5 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                    </div>
                    {myBets[item.id] > 0 && (
                      <div className="mt-1 bg-yellow-400 text-black px-2 py-0.5 rounded-full font-black text-[8px] shadow-lg animate-in zoom-in flex items-center gap-1">

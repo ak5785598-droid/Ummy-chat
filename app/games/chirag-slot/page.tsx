@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -19,7 +19,9 @@ import {
   ChevronDown,
   Plus,
   Minus,
-  LayoutGrid
+  LayoutGrid,
+  Star as StarIcon,
+  Wand2
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -39,10 +41,6 @@ const SYMBOLS = [
   { id: 'helmet', emoji: '🕌', value: 500, label: 'Jackpot' },
 ];
 
-/**
- * Chirag Slot - High-Fidelity interactive slot experience.
- * Perfectly matches the AladdinSlot visual blueprint with glossy purple UI.
- */
 export default function ChiragSlotPage() {
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -78,8 +76,8 @@ export default function ChiragSlotPage() {
     setWinAmount(null);
 
     const updateData = { 'wallet.coins': increment(-totalBet), updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+    updateDocumentNonBlocking(doc(firestore!, 'users', currentUser.uid), updateData);
+    updateDocumentNonBlocking(doc(firestore!, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
     let iterations = 0;
     const interval = setInterval(() => {
@@ -87,21 +85,47 @@ export default function ChiragSlotPage() {
         Array(3).fill(null).map(() => Math.floor(Math.random() * SYMBOLS.length))
       ));
       iterations++;
-      if (iterations >= 20) {
+      if (iterations >= 25) {
         clearInterval(interval);
         finalizeSpin();
       }
     }, 80);
   };
 
-  const finalizeSpin = () => {
+  const finalizeSpin = async () => {
+    let forced = false;
+    let forceWin = 0;
+
+    // ORACLE SYNC CHECK
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'chirag-slot'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          const result = oracleSnap.data().forcedResult;
+          if (result === 'JACKPOT') {
+            forceWin = 5000;
+            forced = true;
+          } else if (typeof result === 'number') {
+            forceWin = result;
+            forced = true;
+          }
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'chirag-slot'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
     const finalReels = Array(5).fill(null).map(() => 
       Array(3).fill(null).map(() => Math.floor(Math.random() * SYMBOLS.length))
     );
+    
+    // If jackpot forced, ensure first row has helmets
+    if (forced && forceWin >= 5000) {
+      finalReels.forEach(r => r[1] = SYMBOLS.findIndex(s => s.label === 'Jackpot'));
+    }
+
     setReels(finalReels);
 
-    // High-fidelity win detection (Simplified)
-    const win = Math.random() > 0.7 ? Math.floor(Math.random() * 500) : 0;
+    const win = forced ? forceWin : (Math.random() > 0.8 ? Math.floor(Math.random() * 500) : 0);
     
     if (win > 0 && currentUser && firestore) {
       setWinAmount(win);
@@ -133,14 +157,12 @@ export default function ChiragSlotPage() {
       <div className="h-[100dvh] w-full bg-[#05051a] flex flex-col relative overflow-hidden font-headline text-white select-none animate-in fade-in duration-1000">
         <CompactRoomView />
 
-        {/* Cinematic Backdrop */}
         <div className="absolute inset-0 z-0">
            <div className="absolute inset-0 bg-gradient-to-b from-[#1a0533] via-[#05051a] to-[#0a0a2e]" />
            <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
         </div>
 
-        {/* High-Fidelity Header Control Sync */}
         <header className="relative z-[110] flex items-center justify-between px-4 pt-32 pb-4">
            <div className="flex gap-1.5">
               <button className="bg-white/10 p-2 rounded-lg border border-white/5 backdrop-blur-md active:scale-90 transition-all"><Maximize2 className="h-4 w-4" /></button>
@@ -160,7 +182,6 @@ export default function ChiragSlotPage() {
            </div>
         </header>
 
-        {/* Top Status Layer: Balance & Jackpot */}
         <div className="relative z-50 flex items-center justify-between px-6 mb-4">
            <div className="flex flex-col gap-1">
               <div className="bg-[#3d1a5a] border-2 border-purple-500/40 rounded-xl flex items-center gap-2 pl-2 pr-4 py-1.5 shadow-xl">
@@ -172,7 +193,7 @@ export default function ChiragSlotPage() {
 
            <div className="flex flex-col items-center">
               <div className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mb-1 drop-shadow-md flex items-center gap-2">
-                 <Star className="h-3 w-3 fill-current" /> JACKPOT <Star className="h-3 w-3 fill-current" />
+                 <StarIcon className="h-3 w-3 fill-current" /> JACKPOT <StarIcon className="h-3 w-3 fill-current" />
               </div>
               <div className="bg-gradient-to-b from-[#4c1d95] to-[#1e1b4b] border-[3px] border-[#a78bfa]/40 rounded-2xl px-6 py-2 shadow-[0_0_30px_rgba(167,139,250,0.3)]">
                  <span className="text-3xl font-black text-white italic tracking-widest tabular-nums">
@@ -188,28 +209,13 @@ export default function ChiragSlotPage() {
                     <AvatarFallback>U</AvatarFallback>
                  </Avatar>
                  <div className="absolute -top-2 -left-2 bg-yellow-400 text-black px-2 py-0.5 rounded-full font-black text-[8px] uppercase border border-white">Top 1</div>
-                 <div className="mt-1 bg-orange-500/80 backdrop-blur-md rounded-lg px-2 py-0.5 text-center">
-                    <span className="text-[10px] font-black text-white">355,600</span>
-                 </div>
               </div>
            </div>
         </div>
 
-        {/* Main Slot Container */}
         <main className="flex-1 flex flex-col items-center justify-center px-4 relative z-10 pb-40">
            <div className="w-full max-w-sm relative p-2 bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.6)] border-4 border-purple-400/30">
-              {/* Glossy Reel Window */}
               <div className="relative bg-[#05051a] rounded-[2rem] overflow-hidden border-2 border-purple-900/80 shadow-inner flex h-[300px] p-1 gap-1">
-                 
-                 {/* Slot Paylines - Visual Sync */}
-                 <div className="absolute inset-0 pointer-events-none z-20 opacity-40">
-                    <svg viewBox="0 0 100 100" className="w-full h-full">
-                       <line x1="0" y1="50" x2="100" y2="50" stroke="#ff00ff" strokeWidth="0.5" />
-                       <line x1="0" y1="20" x2="100" y2="80" stroke="#00ffff" strokeWidth="0.5" />
-                       <line x1="0" y1="80" x2="100" y2="20" stroke="#ffff00" strokeWidth="0.5" />
-                    </svg>
-                 </div>
-
                  {reels.map((reel, rIdx) => (
                    <div key={rIdx} className="flex-1 flex flex-col gap-1 relative z-10">
                       {reel.map((symbolIdx, sIdx) => {
@@ -227,24 +233,14 @@ export default function ChiragSlotPage() {
                                   {symbol.label}
                                </span>
                              )}
-                             <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-transparent pointer-events-none" />
                           </div>
                         );
                       })}
                    </div>
                  ))}
-
-                 {/* Lateral Lever Visual Sync */}
-                 <div className="absolute -right-4 top-1/2 -translate-y-1/2 h-40 w-8 bg-purple-900/80 border-2 border-white/10 rounded-full flex flex-col items-center justify-start py-2 z-30">
-                    <div className={cn(
-                      "w-6 h-6 rounded-full bg-red-600 shadow-lg border-2 border-white/20 transition-all duration-300",
-                      gameState === 'spinning' ? "translate-y-28 scale-90" : "translate-y-0"
-                    )} />
-                 </div>
               </div>
            </div>
 
-           {/* Controls Section */}
            <div className="mt-8 w-full max-w-sm flex items-end justify-between px-2">
               <div className="flex gap-3">
                  <div className="flex flex-col items-center gap-1">
@@ -296,7 +292,6 @@ export default function ChiragSlotPage() {
            </div>
         </main>
 
-        {/* Global Win Sync Overlay */}
         {gameState === 'result' && winAmount && winAmount > 0 && (
           <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
              <div className="relative mb-12 flex flex-col items-center gap-4">
@@ -323,13 +318,5 @@ export default function ChiragSlotPage() {
         <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
       </div>
     </AppLayout>
-  );
-}
-
-function Star(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
   );
 }

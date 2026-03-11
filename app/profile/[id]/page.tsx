@@ -25,7 +25,9 @@ import {
   BadgeCheck,
   Check,
   Flag,
-  Sparkles
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -118,7 +120,7 @@ const CenterTag = ({ label, gradient, className }: { label: string, gradient: st
 /**
  * Public Profile View.
  */
-const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => void }) => {
+const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProcessingFollow }: { profile: any, onBack: () => void, handleFollow: () => void, followData: any, isProcessingFollow: boolean }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
@@ -136,6 +138,8 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
   const isSeller = profile.tags?.includes('Seller') || profile.tags?.includes('Coin Seller');
   const isCS = profile.tags?.includes('Customer Service');
   const isCSLeader = profile.tags?.includes('CS Leader');
+
+  const isNewUser = profile.createdAt && (Date.now() - profile.createdAt.toMillis()) < 86400000;
 
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
@@ -169,7 +173,12 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                  <AvatarFallback className="text-2xl bg-white/20 text-white">{firstLetter}</AvatarFallback>
               </Avatar>
               <div className="flex-1 pb-1">
-                 <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{profile.username}</h1>
+                 <div className="flex items-center gap-2 mb-2">
+                    <h1 className="text-2xl font-black text-white tracking-tight leading-none">{profile.username}</h1>
+                    {isNewUser && (
+                      <Badge className="bg-yellow-400 text-black font-black uppercase text-[8px] h-4 italic">New</Badge>
+                    )}
+                 </div>
                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                     <div className="flex items-center gap-2">
                        <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
@@ -184,10 +193,18 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                        </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                       {isOfficial && <OfficialTag size="sm" />}
+                       <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
+                          <Star className="h-2 w-2 fill-white text-white" />
+                          <span className="text-[9px] font-black text-white">{profile.level?.rich || 0}</span>
+                       </div>
+                       <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
+                          <Sparkles className="h-2 w-2 fill-white text-white" />
+                          <span className="text-[9px] font-black text-white">{profile.level?.charm || 0}</span>
+                       </div>
+                       {isOfficial && <OfficialTag size="sm" className="ml-1" />}
                        {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
                        {isSeller && <SellerTag size="sm" className="-ml-6" />}
-                       {isCS && <CustomerServiceTag size="sm" className="-ml-1" />}
+                       {isCS && <CustomerServiceTag size="sm" className="-ml-6" />}
                        {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                        {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
@@ -198,42 +215,6 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
       </div>
 
       <div className="relative z-20 bg-white rounded-t-[2.5rem] -mt-6 p-6 space-y-8">
-         <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-[#6a11cb] to-[#2575fc] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
-               <div className="relative z-10 space-y-1">
-                  <div className="flex items-center gap-2">
-                     <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center"><Star className="h-5 w-5 fill-current" /></div>
-                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">Rich</span>
-                        <span className="text-sm font-black italic">Lv {profile.level?.rich || 0}</span>
-                     </div>
-                  </div>
-                  <div className="h-px bg-white/20 w-full my-2" />
-                  <p className="text-[9px] font-black uppercase tracking-tighter italic">Mthly Send:0</p>
-               </div>
-               <div className="absolute -bottom-2 -right-2 opacity-10 rotate-12 group-hover:scale-110 transition-transform">
-                  <Star className="h-16 w-16 fill-current" />
-               </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#ff9a9e] to-[#fecfef] rounded-2xl p-4 text-white shadow-lg overflow-hidden relative group">
-               <div className="relative z-10 space-y-1">
-                  <div className="flex items-center gap-2">
-                     <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center"><Heart className="h-5 w-5 fill-current" /></div>
-                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">Charm</span>
-                        <span className="text-sm font-black italic">Lv {profile.level?.charm || 0}</span>
-                     </div>
-                  </div>
-                  <div className="h-px bg-white/20 w-full my-2" />
-                  <p className="text-[9px] font-black uppercase tracking-tighter italic">Mthly Received:0</p>
-               </div>
-               <div className="absolute -bottom-2 -right-2 opacity-10 rotate-12 group-hover:scale-110 transition-transform">
-                  <Heart className="h-16 w-16 fill-current" />
-               </div>
-            </div>
-         </div>
-
          <div className="flex justify-between items-center px-2">
             <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Followers</span></div>
             <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Follow</span></div>
@@ -292,9 +273,20 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
              </button>
            }
          />
-         <button className="flex-1 h-14 rounded-full bg-[#ffb300] text-white flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl shadow-orange-500/20 active:scale-95 transition-all">
-            <Plus className="h-6 w-6" strokeWidth={3} />
-            Follow
+         <button 
+           onClick={handleFollow}
+           disabled={isProcessingFollow}
+           className={cn(
+             "flex-1 h-14 rounded-full flex items-center justify-center gap-2 font-black uppercase text-lg shadow-xl active:scale-95 transition-all",
+             followData ? "bg-red-500 text-white shadow-red-500/20" : "bg-[#ffb300] text-white shadow-orange-500/20"
+           )}
+         >
+            {isProcessingFollow ? <Loader className="animate-spin h-6 w-6" /> : (
+              <>
+                {followData ? <CheckCircle2 className="h-6 w-6" /> : <Plus className="h-6 w-6" strokeWidth={3} />}
+                {followData ? 'Following' : 'Follow'}
+              </>
+            )}
          </button>
       </div>
     </div>
@@ -513,7 +505,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <AppLayout hideSidebarOnMobile>
-       <PublicProfileView profile={profile} onBack={() => router.back()} />
+       <PublicProfileView 
+         profile={profile} 
+         onBack={() => router.back()} 
+         handleFollow={handleFollow}
+         followData={followData}
+         isProcessingFollow={isProcessingFollow}
+       />
     </AppLayout>
   );
 }

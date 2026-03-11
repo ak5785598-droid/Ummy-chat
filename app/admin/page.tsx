@@ -980,7 +980,7 @@ export default function AdminPage() {
                               <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">{isUploadingTheme ? <Loader className="animate-spin h-8 w-8" /> : <Upload className="h-8 w-8" />}</div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload visual sync</span>
                            </button>
-                           <input type="file" ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} />
+                           <input type="file" theme-ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} />
                         </div>
                      </div>
                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1045,7 +1045,7 @@ export default function AdminPage() {
                  {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
                    <Card key={idx} className="rounded-2xl overflow-hidden border-none shadow-lg bg-white">
                       <div className="relative aspect-[8/2] bg-muted">{slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />}{isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}</div>
-                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
+                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" banner-ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
                    </Card>
                  ))}
                </div>
@@ -1063,7 +1063,7 @@ export default function AdminPage() {
                      ))}
                   </CardContent>
                </Card>
-               <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
+               <input type="file" game-input-ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
             </TabsContent>
 
             <TabsContent value="tags" className="m-0 space-y-6">
