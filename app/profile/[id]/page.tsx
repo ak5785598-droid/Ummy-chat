@@ -449,7 +449,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">
-            <div className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-all cursor-pointer">
+            <div onClick={() => router.push('/svip')} className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-all cursor-pointer">
                <div className="relative z-10 flex flex-col h-full justify-between">
                   <span className="text-[13px] font-black text-yellow-500 uppercase tracking-tighter italic">SVIP Club</span>
                   <span className="text-[10px] text-white/60 font-bold uppercase">Distinguished</span>

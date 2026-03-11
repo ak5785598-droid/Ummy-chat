@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -13,7 +12,7 @@ interface AvatarFrameProps {
 
 /**
  * High-fidelity Avatar Frame component.
- * Features the new Sovereign Official HQ frame with glossy shine animations.
+ * Features the new Sovereign Official HQ frame and the elite SVIP Ringneck Eagle frame.
  */
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   if (!frameId || frameId === 'None' || frameId === 'Default') {
@@ -28,11 +27,51 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   const isBronzeSky = frameId === 'f6'; // Bronze Sky
   const isCelestial = frameId === 'f7'; // Celestial Wings
   const isOfficialHQ = frameId === 'f-official-hq'; // High-Fidelity Official HQ
+  const isRingneckEagle = frameId === 'svip-eagle-1'; // SVIP Eagle Set
 
   return (
     <div className={cn('relative flex items-center justify-center p-1', className)}>
       <div className="absolute inset-0 z-20 pointer-events-none scale-110">
         
+        {isRingneckEagle && (
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
+            <defs>
+              <linearGradient id="eagleFeather" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#4ade80" />
+                <stop offset="33%" stopColor="#2dd4bf" />
+                <stop offset="66%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#a78bfa" />
+              </linearGradient>
+              <linearGradient id="neonEdge" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#facc15" />
+                <stop offset="100%" stopColor="#ffffff" />
+              </linearGradient>
+            </defs>
+            {/* Eagle Wings Backdrop */}
+            <g className="animate-wing-flap origin-center">
+               <path d="M20 50 C 0 40, -15 60, 5 85 L20 75 Z" fill="url(#eagleFeather)" opacity="0.8" stroke="#ffffff" strokeWidth="0.5" />
+               <path d="M80 50 C 100 40, 115 60, 95 85 L80 75 Z" fill="url(#eagleFeather)" opacity="0.8" stroke="#ffffff" strokeWidth="0.5" />
+            </g>
+            {/* Crystal Ring */}
+            <circle cx="50" cy="50" r="46" fill="none" stroke="url(#eagleFeather)" strokeWidth="4" className="animate-shimmer-gold" />
+            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#neonEdge)" strokeWidth="1" opacity="0.6" />
+            {/* Eagle Head Top */}
+            <g transform="translate(50, 8)">
+               <path d="M -8 -4 Q 0 -12 8 -4 L 0 8 Z" fill="#ffffff" stroke="#facc15" strokeWidth="0.5" />
+               <circle cx="0" cy="0" r="1.5" fill="#facc15" />
+            </g>
+            {/* SVIP Label Bottom */}
+            <g transform="translate(50, 90)">
+               <rect x="-15" y="-6" width="30" height="12" rx="6" fill="url(#eagleFeather)" stroke="#ffffff" strokeWidth="1" />
+               <text y="2.5" fontSize="6" textAnchor="middle" fill="white" fontWeight="900">SVIP 1</text>
+            </g>
+            {/* Shine */}
+            <rect x="0" y="0" width="10" height="150" fill="white" opacity="0.3" transform="rotate(45) translate(0, -100)">
+               <animateTransform attributeName="transform" type="translate" from="-150, -100" to="250, 100" dur="2s" repeatCount="indefinite" />
+            </rect>
+          </svg>
+        )}
+
         {isOfficialHQ && (
           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
             <defs>
