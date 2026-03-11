@@ -77,7 +77,7 @@ const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) 
 /**
  * High-Fidelity Room User Profile Dialog.
  * Perfectly matches the provided white-theme blueprint.
- * Features real-time sync for Color IDs and Authority Tags beside the level badges.
+ * Features real-time sync for Color IDs at the metadata position.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -157,30 +157,30 @@ export function RoomUserProfileDialog({
                   <LevelBadge level={profile.level?.rich || 1} type="rich" />
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
                   
-                  {/* TAG SYNC: Displayed beside pink level badge */}
+                  {/* TAG SYNC: Displayed beside level badges */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
-                  
-                  {/* COLOR ID SYNC */}
-                  {profile.specialId && profile.specialIdColor && (
-                    <div className={cn(
-                      "relative overflow-hidden px-2.5 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r shadow-md scale-90",
-                      profile.specialIdColor === 'blue' 
-                        ? "from-blue-400 via-blue-500 to-blue-400"
-                        : "from-rose-400 via-rose-500 to-rose-400"
-                    )}>
-                      <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-                      <span className="relative z-10 text-[8px] font-black text-white uppercase italic tracking-widest">ID:{profile.specialId}</span>
-                    </div>
-                  )}
                </div>
             </div>
 
             {/* Metadata Row: ID | Fans | Country */}
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
                <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                  <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  {/* COLOR ID SYNC: Now shown on the ID position */}
+                  {profile.specialId && profile.specialIdColor ? (
+                    <div className={cn(
+                      "relative overflow-hidden px-2 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r shadow-md",
+                      profile.specialIdColor === 'blue' 
+                        ? "from-blue-400 via-blue-500 to-blue-400"
+                        : "from-rose-400 via-rose-500 to-rose-400"
+                    )}>
+                      <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+                      <span className="relative z-10 text-[8px] font-black text-white uppercase italic tracking-widest leading-none">ID:{profile.specialId}</span>
+                    </div>
+                  ) : (
+                    <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                  )}
                   <Copy className="h-2.5 w-2.5 opacity-40" />
                </div>
                <span className="opacity-20 text-lg">|</span>
