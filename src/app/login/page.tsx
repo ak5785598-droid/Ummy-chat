@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
+import { FaFacebook } from 'react-icons/fa';
 import { Loader, Phone, Smartphone, X, Zap, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
@@ -17,11 +18,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 /**
  * High-Fidelity Identity Portal.
- * Redesigned for a modern social app experience inspired by Wafa, Mico, and Tango.
- * Synchronized with the /login-bg.png asset and premium glassmorphism.
+ * Redesigned to match the user-provided blueprint exactly.
+ * Features full-screen /login-bg.png sync, pill-shaped buttons, and centered mascot branding.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -119,118 +121,118 @@ export default function LoginPage() {
           alt="Login Background"
           className="w-full h-full object-cover"
         />
-        {/* Cinematic Blur Overlay for Depth */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        {/* Subtle Stardust Overlay for High-Fidelity Finish */}
+        <div className="absolute inset-0 bg-black/20" />
       </div>
 
-      {/* Header Section: Sovereign Branding */}
-      <header className="relative z-20 flex flex-col items-center text-center mt-12 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="relative group mb-6">
-          <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl group-hover:scale-110 transition-transform duration-700" />
-          <UmmyLogoIcon className="h-28 w-28 relative z-10 logo-glow" />
+      {/* Header Section: Sovereign Branding matching the blueprint */}
+      <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <div className="relative mb-4">
+          <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
+            <UmmyLogoIcon className="h-full w-full" />
+          </div>
         </div>
-        <div className="space-y-2">
-          <h1 className="text-5xl font-black uppercase tracking-tighter text-white drop-shadow-2xl">
-            UMMY
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight">
+            Ummy
           </h1>
-          <p className="text-white/80 text-sm font-bold tracking-widest uppercase italic">
-            Find your vibe, connect with your tribe
+          <p className="text-white text-sm font-medium opacity-90">
+            Find your vibe. Connect with your Tribe
           </p>
         </div>
       </header>
 
-      {/* Main Interaction Hub: Glassmorphism Sync */}
-      <main className="relative z-20 w-full max-w-sm flex flex-col items-center animate-in fade-in zoom-in duration-700">
-        <div className="w-full glass-card p-8 rounded-[20px] shadow-2xl flex flex-col gap-6 bg-black/20 border-white/10 backdrop-blur-xl">
-          {!showPhoneInput ? (
-            <>
-              {/* Primary Interaction: Login with Phone */}
-              <Button
-                onClick={() => setShowPhoneInput(true)}
-                className="w-full h-16 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-indigo-900/40 border-none transition-all active:scale-95"
-              >
-                <Smartphone className="mr-3 h-6 w-6" />
-                Login with Phone
-              </Button>
+      {/* Interaction Zone: Synchronized pill-shaped handshake buttons */}
+      <main className="relative z-20 w-full max-w-[280px] flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
+        {!showPhoneInput ? (
+          <>
+            {/* Facebook Sync Button (Cyan Pill) */}
+            <Button
+              className="w-full h-12 bg-[#00A3FF] hover:bg-[#0094E5] text-white rounded-full font-black text-sm shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              <FaFacebook className="h-5 w-5" />
+              Facebook
+            </Button>
 
-              {/* Secondary Interaction: Continue with Google */}
-              <Button
-                onClick={handleGoogleSignIn}
-                disabled={isSigningIn}
-                className="w-full h-16 bg-white text-black hover:bg-slate-50 rounded-2xl font-black uppercase italic text-lg shadow-lg transition-all active:scale-95 border-none"
-              >
-                {isSigningIn ? <Loader className="animate-spin h-6 w-6 mr-3 text-primary" /> : <FcGoogle className="h-7 w-7 mr-3" />}
-                Continue with Google
-              </Button>
-            </>
-          ) : (
-            <div className="space-y-6 animate-in zoom-in duration-300 w-full">
-              <div className="flex justify-between items-center mb-2">
-                 <div className="flex items-center gap-2 text-white/80">
-                    <Phone className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Phone Entry Sync</span>
-                 </div>
-                 <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white p-1 transition-colors"><X className="h-5 w-5" /></button>
-              </div>
+            {/* Google Sync Button (White Pill) */}
+            <Button
+              onClick={handleGoogleSignIn}
+              disabled={isSigningIn}
+              className="w-full h-12 bg-white text-black hover:bg-slate-50 rounded-full font-black text-sm shadow-lg transition-all active:scale-95 border-none flex items-center justify-center gap-3"
+            >
+              {isSigningIn ? <Loader className="animate-spin h-5 w-5 text-primary" /> : <FcGoogle className="h-5 w-5" />}
+              Sign in with Google
+            </Button>
 
-              {phoneLoginStep === 'number' ? (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Input
-                      type="tel"
-                      placeholder="+91 00000 00000"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      disabled={isSigningIn}
-                      className="h-14 bg-black/40 border-white/10 text-white rounded-2xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20 transition-all font-black italic"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handlePhoneSignIn} 
-                    disabled={isSigningIn || !phoneNumber} 
-                    className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl border-none active:scale-95 transition-all"
-                  >
-                    {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Get OTP Sync'}
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-[10px] text-white/60 text-center uppercase font-bold">Enter code sent to {phoneNumber}</p>
-                  <Input
-                    type="text"
-                    placeholder="000000"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    disabled={isSigningIn}
-                    className="h-16 bg-black/40 border-white/10 text-white rounded-2xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
-                    maxLength={6}
-                  />
-                  <Button 
-                    onClick={handleVerifyCode} 
-                    disabled={isSigningIn || !verificationCode} 
-                    className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-2xl shadow-xl border-none active:scale-95 transition-all"
-                  >
-                    {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Synchronize Identity'}
-                  </Button>
-                  <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Back to Frequency</button>
-                </div>
-              )}
+            {/* Ghost Phone Divider */}
+            <div className="flex flex-col items-center w-full gap-3 mt-2">
+               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">- or -</span>
+               <button 
+                 onClick={() => setShowPhoneInput(true)}
+                 className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-90"
+               >
+                  <Smartphone className="h-5 w-5" />
+               </button>
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="space-y-6 animate-in zoom-in duration-300 w-full bg-black/20 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
+            <div className="flex justify-between items-center mb-2">
+               <div className="flex items-center gap-2 text-white/80">
+                  <Phone className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Phone Entry</span>
+               </div>
+               <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
+            </div>
+
+            {phoneLoginStep === 'number' ? (
+              <div className="space-y-4">
+                <Input
+                  type="tel"
+                  placeholder="+91 00000 00000"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={isSigningIn}
+                  className="h-12 bg-white/5 border-white/10 text-white rounded-xl text-center text-sm focus:ring-primary/20 placeholder:text-white/20 font-bold italic"
+                />
+                <Button 
+                  onClick={handlePhoneSignIn} 
+                  disabled={isSigningIn || !phoneNumber} 
+                  className="w-full h-12 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
+                >
+                  {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Get OTP'}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-[10px] text-white/60 text-center uppercase font-bold">Code for {phoneNumber}</p>
+                <Input
+                  type="text"
+                  placeholder="000000"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  disabled={isSigningIn}
+                  className="h-14 bg-white/5 border-white/10 text-white rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
+                  maxLength={6}
+                />
+                <Button 
+                  onClick={handleVerifyCode} 
+                  disabled={isSigningIn || !verificationCode} 
+                  className="w-full h-12 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
+                >
+                  {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Verify Sync'}
+                </Button>
+                <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Change Number</button>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
-      {/* Footer Section: Legal Sync */}
-      <footer className="relative z-20 flex flex-col items-center space-y-6 text-center mb-8 animate-in fade-in duration-1000 delay-500">
-        <div className="text-[10px] text-white/60 leading-relaxed max-w-[240px] uppercase tracking-tighter font-bold">
-          By continuing you agree to the<br/>
-          <Link href="/help-center" className="underline font-black text-white hover:text-primary transition-colors">User Agreement</Link> & <Link href="/help-center" className="underline font-black text-white hover:text-primary transition-colors">Privacy Policy</Link>
-        </div>
-        
-        <div className="flex items-center gap-3 opacity-30">
-           <div className="h-[1px] w-12 bg-white" />
-           <UmmyLogoIcon className="h-4 w-4 grayscale brightness-200" />
-           <div className="h-[1px] w-12 bg-white" />
+      {/* Footer Section: Legal Sync matching the blueprint */}
+      <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
+        <div className="text-[10px] text-white/80 leading-relaxed max-w-[260px] font-medium drop-shadow-md">
+          By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
         </div>
       </footer>
     </div>
