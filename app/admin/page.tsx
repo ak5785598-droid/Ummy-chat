@@ -37,6 +37,7 @@ const AUTHORITY_ROLES = [
 
 const ELITE_TAGS = [
   { id: 'Official', label: 'Official', color: 'bg-green-500', icon: BadgeCheck },
+  { id: 'CS Leader', label: 'CS Leader', color: 'bg-gradient-to-r from-blue-500 to-magenta-500', icon: Sparkles },
   { id: 'Customer Service', label: 'Customer Service', color: 'bg-blue-500', icon: MessageSquare },
   { id: 'Seller', label: 'Seller', color: 'bg-purple-500', icon: Heart },
   { id: 'Official center', label: 'Official center', color: 'bg-indigo-500', icon: ShieldCheck },

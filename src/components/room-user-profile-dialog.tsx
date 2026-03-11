@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -44,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
+import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { useRouter } from 'next/navigation';
 import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -78,8 +78,6 @@ const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) 
 /**
  * High-Fidelity Room User Profile Dialog.
  * Perfectly matches the provided white-theme blueprint.
- * Features real-time sync for Color IDs at the metadata position.
- * Security Protocol: Administrative tools (Mute, Kick, Lock) are strictly hidden for self-identity view.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -117,6 +115,7 @@ export function RoomUserProfileDialog({
   const isOfficial = profile?.tags?.includes('Official');
   const isSeller = profile?.tags?.includes('Seller') || profile?.tags?.includes('Coin Seller');
   const isCS = profile?.tags?.includes('Customer Service');
+  const isCSLeader = profile?.tags?.includes('CS Leader');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +131,6 @@ export function RoomUserProfileDialog({
           </div>
         ) : profile ? (
           <div className="flex flex-col items-center">
-            {/* Top Toolbar */}
             <div className="w-full flex justify-between p-6 pb-0">
                <button onClick={handleViewFullProfile} className="text-gray-300 hover:text-gray-600 transition-colors">
                   <MoreHorizontal className="h-6 w-6" />
@@ -142,7 +140,6 @@ export function RoomUserProfileDialog({
                </button>
             </div>
 
-            {/* Avatar Sync */}
             <div className="mt-2 mb-4">
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
                   <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
@@ -152,24 +149,21 @@ export function RoomUserProfileDialog({
                </AvatarFrame>
             </div>
 
-            {/* Name & Levels & Tags */}
             <div className="text-center space-y-2 mb-4 w-full px-6">
                <h2 className="text-2xl font-black text-gray-900 tracking-tight">{profile.username}</h2>
                <div className="flex flex-wrap justify-center items-center gap-1.5">
                   <LevelBadge level={profile.level?.rich || 1} type="rich" />
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
                   
-                  {/* TAG SYNC: Displayed beside level badges */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center -ml-6" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
                </div>
             </div>
 
-            {/* Metadata Row: ID | Fans | Country */}
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
                <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                  {/* COLOR ID SYNC: Now shown on the ID position */}
                   {profile.specialId && profile.specialIdColor ? (
                     <div className={cn(
                       "relative overflow-hidden px-2 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r shadow-md",
@@ -196,7 +190,6 @@ export function RoomUserProfileDialog({
                </div>
             </div>
 
-            {/* Social Interaction Row */}
             <div className="w-full flex items-center justify-between px-10 mb-6">
                <button className="flex items-center gap-2 group active:scale-95 transition-transform">
                   <Heart className="h-6 w-6 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
@@ -220,7 +213,6 @@ export function RoomUserProfileDialog({
                </button>
             </div>
 
-            {/* SEAT LEAVE OPTIMIZATION: Prominent button for self-identity sync, positioned below the chat row */}
             {isMe && (
               <div className="w-full px-10 mb-8">
                  <button 
@@ -233,7 +225,6 @@ export function RoomUserProfileDialog({
               </div>
             )}
 
-            {/* Sovereign Admin Row: Only visible to Owners/Admins when viewing OTHERS */}
             {canManage && !isMe && (
               <div className="w-full border-t border-gray-50 py-6 px-8 animate-in fade-in duration-500">
                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-400">

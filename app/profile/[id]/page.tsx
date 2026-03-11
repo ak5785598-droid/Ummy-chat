@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -42,6 +41,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
+import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import {
@@ -103,7 +103,7 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
       )}
     >
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm leading-none">ID:{id}</span>
     </div>
   );
 };
@@ -131,6 +131,11 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
   const handleReport = () => {
     window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank');
   };
+
+  const isOfficial = profile.tags?.includes('Official');
+  const isSeller = profile.tags?.includes('Seller') || profile.tags?.includes('Coin Seller');
+  const isCS = profile.tags?.includes('Customer Service');
+  const isCSLeader = profile.tags?.includes('CS Leader');
 
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
@@ -179,9 +184,10 @@ const PublicProfileView = ({ profile, onBack }: { profile: any, onBack: () => vo
                        </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                       {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                       {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
+                       {isOfficial && <OfficialTag size="sm" />}
+                       {isCSLeader && <CsLeaderTag size="sm" className="-ml-6" />}
+                       {isSeller && <SellerTag size="sm" className="-ml-6" />}
+                       {isCS && <CustomerServiceTag size="sm" className="-ml-1" />}
                        {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
                        {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
@@ -385,6 +391,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (isOwnProfile) {
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
     const isSeller = profile.tags?.some(t => sellerTags.includes(t)) || profile.id === CREATOR_ID;
+    const isCSLeader = profile.tags?.includes('CS Leader');
 
     return (
       <AppLayout>
@@ -420,7 +427,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="bg-blue-50 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-blue-500">♂</div>
                 <span className="text-lg">🇮🇳</span>
                 
-                {/* HIGH-FIDELITY LEVEL BADGES beside Flag */}
                 <div className="flex items-center gap-1.5 ml-1">
                    <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
                       <Star className="h-2 w-2 fill-white text-white" />
@@ -444,6 +450,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                   {isCSLeader && <CsLeaderTag size="sm" className="-ml-6" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
                    {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
