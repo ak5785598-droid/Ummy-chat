@@ -27,7 +27,8 @@ interface RoomGamesDialogProps {
 }
 
 const FALLBACK_GAMES = [
-  { id: 'lion-fight', title: 'Lion Fight', iconId: 'game-lion-fight', isNew: true, slug: 'lion-fight' },
+  { id: 'chirag-slot', title: 'Chirag Slot', iconId: 'game-aladdin', isNew: true, slug: 'chirag-slot' },
+  { id: 'lion-fight', title: 'Lion Fight', iconId: 'game-lion-fight', isNew: false, slug: 'lion-fight' },
   { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: false, slug: 'roulette' },
   { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
   { id: 'wild-party', title: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
@@ -36,19 +37,16 @@ const FALLBACK_GAMES = [
 
 /**
  * High-Fidelity Room Games Portal.
- * Re-engineered to restrict visual identity sync strictly to the Supreme Creator.
- * Added Lion Fight as the flagship premium combat frequency.
+ * Features the new Chirag Slot flagship frequency.
  */
 export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const router = useRouter();
   const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { isUploading, uploadGameLogo } = useGameLogoUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
 
-  // SOVEREIGN ACCESS PROTOCOL: Restricted strictly to the Creator ID
   const isSovereign = user?.uid === CREATOR_ID;
 
   const gamesQuery = useMemoFirebase(() => {

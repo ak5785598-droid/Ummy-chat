@@ -1,6 +1,12 @@
 {
   "placeholderImages": [
     {
+      "id": "game-aladdin",
+      "description": "Aladdin theme slot icon",
+      "imageUrl": "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000",
+      "imageHint": "aladdin magic lamp"
+    },
+    {
       "id": "user-avatar-1",
       "description": "User avatar 1",
       "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzcyMzYxNTczfDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -15,7 +21,7 @@
     {
       "id": "user-avatar-3",
       "description": "User avatar 3",
-      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "man glasses"
     },
     {
@@ -27,7 +33,7 @@
     {
       "id": "user-avatar-5",
       "description": "User avatar 5",
-      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman nature"
     },
     {
@@ -95,6 +101,24 @@
       "description": "Golden crown for winners",
       "imageUrl": "https://images.unsplash.com/photo-1646769762753-565020b3bb2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnb2xkZW4lMjBjcm93bnxlbnwwfHx8fDE3NzI0NjY4MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "golden crown"
+    },
+    {
+      "id": "lion-fight-bg",
+      "description": "Shining boxing ring stage for lion fight",
+      "imageUrl": "https://images.unsplash.com/photo-1590556409324-aa1d726e5c3c?q=80&w=2000",
+      "imageHint": "boxing ring stage"
+    },
+    {
+      "id": "lion-fighter",
+      "description": "3D glossy lion character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000",
+      "imageHint": "3d lion character"
+    },
+    {
+      "id": "tiger-fighter",
+      "description": "3D glossy tiger character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1508817628294-5a453fa6b8fb?q=80&w=1000",
+      "imageHint": "3d tiger character"
     }
   ]
 }
