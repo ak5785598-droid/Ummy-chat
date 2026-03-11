@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   BadgeCheck,
   Check,
-  Flag
+  Flag,
+  Sparkles
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -381,8 +382,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (!profile) return null;
 
   if (isOwnProfile) {
-    // SOVEREIGN ACCESS PROTOCOL: Seller Center strictly dynamic based on current DB tags.
-    // Reactive sync ensures this value updates immediately upon Admin revocation.
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
     const isSeller = profile.tags?.some(t => sellerTags.includes(t)) || profile.id === CREATOR_ID;
 
@@ -419,7 +418,20 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
                 <div className="bg-blue-50 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-blue-500">♂</div>
                 <span className="text-lg">🇮🇳</span>
+                
+                {/* HIGH-FIDELITY LEVEL BADGES beside Flag */}
+                <div className="flex items-center gap-1.5 ml-1">
+                   <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
+                      <Star className="h-2 w-2 fill-white text-white" />
+                      <span className="text-[8px] font-black text-white">{profile.level?.rich || 1}</span>
+                   </div>
+                   <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
+                      <Sparkles className="h-2 w-2 fill-white text-white" />
+                      <span className="text-[8px] font-black text-white">{profile.level?.charm || 1}</span>
+                   </div>
+                </div>
               </div>
+              
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5">
                   {profile.specialIdColor ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
@@ -479,7 +491,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
             <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
             
-            {/* DYNAMIC SELLER PORTAL: Renders only when specific authority tags are active. */}
             {isSeller && <SellerTransferDialog />}
           </div>
 
