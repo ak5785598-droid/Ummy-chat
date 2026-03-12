@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -212,25 +211,12 @@ export default function RoomsPage() {
   const { data: bannerConfig } = useDoc(bannerRef);
 
   const displayRooms = useMemo(() => {
-    const list = roomsData ? [...roomsData] : [];
+    if (!roomsData) return [];
     
-    // OFFICIAL INGRESS: Inject and prioritize official help centers
-    const helpRoomId = 'ummy-help-center';
-    if (!list.find(r => r.id === helpRoomId)) {
-      list.push({
-        id: helpRoomId,
-        roomNumber: '0000',
-        title: 'Ummy Official Help',
-        coverUrl: PlaceHolderImages.find(img => img.id === 'room-cover-2')?.imageUrl,
-        participantCount: 0,
-        ownerId: CREATOR_ID,
-        category: 'Chat'
-      } as any);
-    }
+    // STRICT VISIBILITY PROTOCOL: Remove empty rooms from the listing
+    const activeRooms = roomsData.filter(room => (room.participantCount || 0) > 0);
 
-    return list.sort((a, b) => {
-      if (a.id === helpRoomId) return -1;
-      if (b.id === helpRoomId) return 1;
+    return activeRooms.sort((a, b) => {
       const aIsOfficial = a.ownerId === CREATOR_ID;
       const bIsOfficial = b.ownerId === CREATOR_ID;
       if (aIsOfficial && !bIsOfficial) return -1;
@@ -323,6 +309,7 @@ export default function RoomsPage() {
             </>
           ) : (
             <div className="flex flex-col space-y-10 animate-in fade-in duration-500 pb-10">
+               {/* User's Own Frequency Pin */}
                <section className="space-y-4">
                   <h3 className="text-xl font-black uppercase italic tracking-tighter px-2 flex items-center gap-2">
                      <Pin className="h-5 w-5 text-primary" /> My Frequency
@@ -347,6 +334,7 @@ export default function RoomsPage() {
                   )}
                </section>
 
+               {/* Followed Frequencies Dimension */}
                <section className="space-y-4">
                   <h3 className="text-xl font-black uppercase italic tracking-tighter px-2 flex items-center gap-2">
                      <Heart className="h-5 w-5 text-red-500 fill-current" /> Followed Tribes
