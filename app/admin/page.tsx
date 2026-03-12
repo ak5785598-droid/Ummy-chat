@@ -182,11 +182,9 @@ export default function AdminPage() {
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
 
-  // App Data States
   const [appStats, setAppDataStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
   const [isSyncingAppData, setIsSyncingAppData] = useState(false);
 
-  // Chat Inspector States
   const [inspectId1, setInspectId1] = useState('');
   const [inspectId2, setInspectId2] = useState('');
   const [inspectChatId, setInspectChatId] = useState<string | null>(null);
@@ -194,11 +192,9 @@ export default function AdminPage() {
   const [inspectUser1, setInspectUser1] = useState<any>(null);
   const [inspectUser2, setInspectUser2] = useState<any>(null);
 
-  // Oracle States
   const [oracleRoulette, setOracleRoulette] = useState('');
   const [isSyncingOracle, setIsSyncingOracle] = useState<string | null>(null);
 
-  // Task Sync States
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [taskReward, setTaskReward] = useState('1000');
@@ -206,7 +202,6 @@ export default function AdminPage() {
   const [taskCtaHref, setTaskCtaHref] = useState('/rooms');
   const [isAddingTask, setIsAddingTask] = useState(false);
 
-  // Tribal Directory States
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
 
@@ -314,8 +309,13 @@ export default function AdminPage() {
     try {
       let q;
       if (mode === 'id') {
-        const paddedId = value.padStart(3, '0');
-        q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+        const inputId = value.trim();
+        if (inputId.length <= 4) {
+          const paddedId = inputId.padStart(3, '0');
+          q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+        } else {
+          q = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+        }
       } else {
         q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
       }
@@ -1471,6 +1471,86 @@ export default function AdminPage() {
                              <div className="p-3 text-center border-t"><p className="text-[10px] font-black uppercase truncate">{theme.name}</p><Badge className="mt-1 text-[6px] h-3 px-1 font-black uppercase bg-slate-100 text-slate-500 border-none">{theme.category}</Badge></div>
                           </Card>
                         ))}
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="banners" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Global Banners</CardTitle>
+                        <CardDescription>Manage unlimited event banners. Set titles, subtitles, and icons.</CardDescription>
+                     </div>
+                     <Button onClick={handleAddBanner} className="bg-primary text-black font-black uppercase italic rounded-xl h-12 shadow-lg shadow-primary/20">
+                        <Plus className="h-4 w-4 mr-2" /> Add Banner Slot
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 gap-8">
+                       {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
+                         <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8 group relative transition-all hover:border-blue-100">
+                            <div className="w-full md:w-72 shrink-0 h-40 relative rounded-2xl overflow-hidden shadow-xl bg-slate-200">
+                               {slide.imageUrl ? (
+                                 <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />
+                               ) : (
+                                 <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 text-slate-400" /></div>
+                               )}
+                               {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                               <button 
+                                 onClick={() => bannerFileInputRefs.current[idx]?.click()}
+                                 className="absolute bottom-3 right-3 bg-primary text-black p-3 rounded-full shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white"
+                               >
+                                  <Camera className="h-5 w-5" />
+                               </button>
+                               <input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
+                            </div>
+
+                            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Banner Title</Label>
+                                  <Input 
+                                    value={slide.title} 
+                                    onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)}
+                                    placeholder="e.g. Tribe Events"
+                                    className="h-14 rounded-2xl border-2 font-black italic"
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Subtitle Frequency</Label>
+                                  <Input 
+                                    value={slide.subtitle} 
+                                    onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)}
+                                    placeholder="e.g. Global Frequency Sync"
+                                    className="h-14 rounded-2xl border-2 font-body italic"
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Icon Signature</Label>
+                                  <Select value={slide.iconName} onValueChange={(val) => handleUpdateBannerMeta(idx, 'iconName', val)}>
+                                     <SelectTrigger className="h-14 rounded-2xl border-2 font-black italic">
+                                        <SelectValue placeholder="Select Icon" />
+                                     </SelectTrigger>
+                                     <SelectContent className="rounded-2xl font-black italic">
+                                        {['Sparkles', 'Trophy', 'Gamepad2', 'Zap', 'Star', 'Users', 'Heart'].map(icon => (
+                                          <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                                        ))}
+                                     </SelectContent>
+                                  </Select>
+                               </div>
+                               <div className="flex items-end">
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => handleRemoveBanner(idx)}
+                                    className="w-full h-14 rounded-2xl uppercase font-black italic text-sm shadow-lg shadow-red-500/10"
+                                  >
+                                     <Trash2 className="h-5 w-5 mr-2" /> Purge Banner
+                                  </Button>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
                      </div>
                   </CardContent>
                </Card>

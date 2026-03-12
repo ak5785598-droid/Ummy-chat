@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -7,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, UserSearch, Wallet, History, Sparkles, Activity, RefreshCcw, Users } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +20,11 @@ import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -470,6 +472,36 @@ export default function AdminPage() {
     }
   };
 
+  const handleAddBanner = async () => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
+    const newSlide = {
+      title: "New Tribe Event",
+      subtitle: "Join the Frequency",
+      iconName: "Sparkles",
+      color: "from-blue-500/40",
+      imageUrl: ""
+    };
+    const newSlides = [...currentSlides, newSlide];
+    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
+    toast({ title: 'New Banner Slot Added' });
+  };
+
+  const handleRemoveBanner = async (index: number) => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
+    const newSlides = currentSlides.filter((_, i) => i !== index);
+    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
+    toast({ title: 'Banner Removed' });
+  };
+
+  const handleUpdateBannerMeta = async (index: number, field: string, value: string) => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = [...(bannerConfig?.slides || DEFAULT_SLIDES)];
+    currentSlides[index] = { ...currentSlides[index], [field]: value };
+    await setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true });
+  };
+
   const handleThemeUpload = async (file: File) => {
     if (!storage || !firestore || !newThemeName.trim()) return;
     setIsUploadingTheme(true);
@@ -705,7 +737,7 @@ export default function AdminPage() {
                   </CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
                      </div>
                      <div className="flex gap-4">
@@ -877,6 +909,86 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
+            <TabsContent value="banners" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Global Banners</CardTitle>
+                        <CardDescription>Manage unlimited event banners. Set titles, subtitles, and icons.</CardDescription>
+                     </div>
+                     <Button onClick={handleAddBanner} className="bg-primary text-black font-black uppercase italic rounded-xl h-12 shadow-lg shadow-primary/20">
+                        <Plus className="h-4 w-4 mr-2" /> Add Banner Slot
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 gap-8">
+                       {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
+                         <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8 group relative transition-all hover:border-blue-100">
+                            <div className="w-full md:w-72 shrink-0 h-40 relative rounded-2xl overflow-hidden shadow-xl bg-slate-200">
+                               {slide.imageUrl ? (
+                                 <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />
+                               ) : (
+                                 <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 text-slate-400" /></div>
+                               )}
+                               {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                               <button 
+                                 onClick={() => bannerFileInputRefs.current[idx]?.click()}
+                                 className="absolute bottom-3 right-3 bg-primary text-black p-3 rounded-full shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white"
+                               >
+                                  <Camera className="h-5 w-5" />
+                               </button>
+                               <input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
+                            </div>
+
+                            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Banner Title</Label>
+                                  <Input 
+                                    value={slide.title} 
+                                    onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)}
+                                    placeholder="e.g. Tribe Events"
+                                    className="h-14 rounded-2xl border-2 font-black italic"
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Subtitle Frequency</Label>
+                                  <Input 
+                                    value={slide.subtitle} 
+                                    onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)}
+                                    placeholder="e.g. Global Frequency Sync"
+                                    className="h-14 rounded-2xl border-2 font-body italic"
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Icon Signature</Label>
+                                  <Select value={slide.iconName} onValueChange={(val) => handleUpdateBannerMeta(idx, 'iconName', val)}>
+                                     <SelectTrigger className="h-14 rounded-2xl border-2 font-black italic">
+                                        <SelectValue placeholder="Select Icon" />
+                                     </SelectTrigger>
+                                     <SelectContent className="rounded-2xl font-black italic">
+                                        {['Sparkles', 'Trophy', 'Gamepad2', 'Zap', 'Star', 'Users', 'Heart'].map(icon => (
+                                          <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                                        ))}
+                                     </SelectContent>
+                                  </Select>
+                               </div>
+                               <div className="flex items-end">
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => handleRemoveBanner(idx)}
+                                    className="w-full h-14 rounded-2xl uppercase font-black italic text-sm shadow-lg shadow-red-500/10"
+                                  >
+                                     <Trash2 className="h-5 w-5 mr-2" /> Purge Banner
+                                  </Button>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
             <TabsContent value="broadcaster" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Megaphone className="h-6 w-6 text-primary" /> Global Broadcaster</CardTitle></CardHeader>
@@ -920,17 +1032,6 @@ export default function AdminPage() {
                     </div>
                   )}
                </Card>
-            </TabsContent>
-
-            <TabsContent value="banners" className="m-0 space-y-6">
-               <div className="grid grid-cols-1 gap-6">
-                 {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
-                   <Card key={idx} className="rounded-2xl overflow-hidden border-none shadow-lg bg-white">
-                      <div className="relative aspect-[8/2] bg-muted">{slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />}{isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}</div>
-                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
-                   </Card>
-                 ))}
-               </div>
             </TabsContent>
 
             <TabsContent value="games" className="m-0 space-y-6">
