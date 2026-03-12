@@ -27,11 +27,12 @@ import {
   Flag,
   Sparkles,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +46,7 @@ import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -216,9 +217,9 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
 
       <div className="relative z-20 bg-white rounded-t-[2.5rem] -mt-6 p-6 space-y-8">
          <div className="flex justify-between items-center px-2">
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Followers</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Follow</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">0</span><span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span></div>
+            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Fans</span></div>
+            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.following || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Following</span></div>
+            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.friends || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span></div>
          </div>
 
          <div className="space-y-4">
@@ -329,42 +330,78 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     toast({ title: 'ID Copied' });
   };
 
-  const handleFriendRequest = async () => {
-    if (!firestore || !currentUser || !profileId || isProcessingFriend) return;
-    if (friendRequest) return;
-
-    setIsProcessingFriend(true);
-    const requestRef = doc(firestore, 'friend_requests', `${currentUser.uid}_${profileId}`);
-    
-    setDocumentNonBlocking(requestRef, {
-      senderId: currentUser.uid,
-      receiverId: profileId,
-      status: 'pending',
-      timestamp: serverTimestamp()
-    }, { merge: true });
-
-    toast({ title: 'Request Sent', description: 'Your friend request is synchronized.' });
-    setIsProcessingFriend(false);
-  };
-
   const handleFollow = async () => {
     if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
     
     setIsProcessingFollow(true);
     const fRef = doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
+    const rRef = doc(firestore, 'followers', `${profileId}_${currentUser.uid}`);
 
-    if (followData) {
-      deleteDocumentNonBlocking(fRef);
-      toast({ title: 'Unfollowed' });
-    } else {
-      setDocumentNonBlocking(fRef, {
-        followerId: currentUser.uid,
-        followingId: profileId,
-        timestamp: serverTimestamp()
-      }, { merge: true });
-      toast({ title: 'Following' });
+    const currentUserSummaryRef = doc(firestore, 'users', currentUser.uid);
+    const currentUserProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    const targetUserSummaryRef = doc(firestore, 'users', profileId);
+    const targetUserProfileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+
+    try {
+      if (followData) {
+        // UNFOLLOW PROTOCOL
+        await deleteDocumentNonBlocking(fRef);
+        
+        // 1. Decrement following/fans
+        const decStats = { 'stats.following': increment(-1), updatedAt: serverTimestamp() };
+        const decFans = { 'stats.fans': increment(-1), updatedAt: serverTimestamp() };
+        
+        updateDocumentNonBlocking(currentUserSummaryRef, decStats);
+        updateDocumentNonBlocking(currentUserProfileRef, decStats);
+        updateDocumentNonBlocking(targetUserSummaryRef, decFans);
+        updateDocumentNonBlocking(targetUserProfileRef, decFans);
+
+        // 2. Check if they were friends (mutual follow)
+        const reverseSnap = await getDoc(rRef);
+        if (reverseSnap.exists()) {
+          const decFriends = { 'stats.friends': increment(-1) };
+          updateDocumentNonBlocking(currentUserSummaryRef, decFriends);
+          updateDocumentNonBlocking(currentUserProfileRef, decFriends);
+          updateDocumentNonBlocking(targetUserSummaryRef, decFriends);
+          updateDocumentNonBlocking(targetUserProfileRef, decFriends);
+        }
+
+        toast({ title: 'Unfollowed' });
+      } else {
+        // FOLLOW PROTOCOL
+        await setDocumentNonBlocking(fRef, {
+          followerId: currentUser.uid,
+          followingId: profileId,
+          timestamp: serverTimestamp()
+        }, { merge: true });
+
+        // 1. Increment following/fans
+        const incStats = { 'stats.following': increment(1), updatedAt: serverTimestamp() };
+        const incFans = { 'stats.fans': increment(1), updatedAt: serverTimestamp() };
+        
+        updateDocumentNonBlocking(currentUserSummaryRef, incStats);
+        updateDocumentNonBlocking(currentUserProfileRef, incStats);
+        updateDocumentNonBlocking(targetUserSummaryRef, incFans);
+        updateDocumentNonBlocking(targetUserProfileRef, incFans);
+
+        // 2. Mutual Check for Friends
+        const reverseSnap = await getDoc(rRef);
+        if (reverseSnap.exists()) {
+          const incFriends = { 'stats.friends': increment(1) };
+          updateDocumentNonBlocking(currentUserSummaryRef, incFriends);
+          updateDocumentNonBlocking(currentUserProfileRef, incFriends);
+          updateDocumentNonBlocking(targetUserSummaryRef, incFriends);
+          updateDocumentNonBlocking(targetUserProfileRef, incFriends);
+          toast({ title: 'New Friend Sync!', description: 'You both follow each other.' });
+        } else {
+          toast({ title: 'Following' });
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setIsProcessingFollow(false);
     }
-    setIsProcessingFollow(false);
   };
 
   if (isUserLoading || isProfileLoading) {
@@ -453,8 +490,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="bg-white flex divide-x divide-gray-50 border-b border-gray-50 mb-4">
-            <StatItem label="Friend" value={0} />
-            <StatItem label="Following" value={0} />
+            <StatItem label="Friend" value={profile.stats?.friends || 0} />
+            <StatItem label="Following" value={profile.stats?.following || 0} />
             <StatItem label="Fans" value={profile.stats?.fans || 0} />
             <StatItem label="Visitors" value={0} hasNotification />
           </div>
@@ -490,7 +527,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Level" icon={Star} colorClass="bg-blue-100 text-blue-600" href="/level" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
-            <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
+            <MenuItem label="Task center" icon={ClipboardList} colorClass="bg-amber-100 text-amber-600" href="/tasks" />
             
             {isSeller && <SellerTransferDialog />}
           </div>
