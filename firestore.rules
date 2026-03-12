@@ -91,6 +91,11 @@ service cloud.firestore {
 
       match /completedTasks/{taskId} {
         allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isNotBanned();
+      }
+
+      match /collectedTasks/{taskId} {
+        allow read: if isOwner(userId);
         allow create: if isOwner(userId) && isNotBanned();
       }
 

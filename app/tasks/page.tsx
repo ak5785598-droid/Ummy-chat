@@ -16,17 +16,20 @@ import {
   Image as ImageIcon,
   Rocket,
   ArrowRight,
-  Zap
+  Zap,
+  Gift as GiftIcon
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 export default function TasksPage() {
   const { user } = useUser();
@@ -36,6 +39,7 @@ export default function TasksPage() {
   
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [isCollecting, setIsCollecting] = useState<string | null>(null);
 
   useEffect(() => {
     if (userProfile) {
@@ -61,13 +65,20 @@ export default function TasksPage() {
   }, [firestore, user]);
   const { data: completedTasks } = useCollection(completedTasksQuery);
 
+  const collectedTasksQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'collectedTasks'));
+  }, [firestore, user]);
+  const { data: collectedTasks } = useCollection(collectedTasksQuery);
+
   const tasksWithStatus = useMemo(() => {
     if (!globalTasks) return [];
     return globalTasks.map(gt => ({
       ...gt,
-      isCompleted: !!completedTasks?.find(ct => ct.id === gt.id)
+      isCompleted: !!completedTasks?.find(ct => ct.id === gt.id),
+      isCollected: !!collectedTasks?.find(ct => ct.id === gt.id)
     }));
-  }, [globalTasks, completedTasks]);
+  }, [globalTasks, completedTasks, collectedTasks]);
 
   const handleSignIn = async () => {
     if (!user || !firestore || !userProfile || isCheckedIn) return;
@@ -97,6 +108,47 @@ export default function TasksPage() {
     } finally {
       setIsSigningIn(false);
     }
+  };
+
+  const handleCollect = async (task: any) => {
+    if (!user || !firestore || isCollecting) return;
+    setIsCollecting(task.id);
+
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const collectRef = doc(firestore, 'users', user.uid, 'collectedTasks', task.id);
+
+      const updateData = {
+        'wallet.coins': increment(task.coinReward || 0),
+        'updatedAt': serverTimestamp()
+      };
+
+      // Atomic Dispatch Handshake
+      updateDocumentNonBlocking(userRef, updateData);
+      updateDocumentNonBlocking(profileRef, updateData);
+      
+      await setDocumentNonBlocking(collectRef, {
+        collectedAt: serverTimestamp(),
+        reward: task.coinReward
+      }, { merge: true });
+
+      toast({
+        title: 'Reward Synchronized!',
+        description: `${task.coinReward.toLocaleString()} Coins added to vault.`,
+      });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Collection Failed' });
+    } finally {
+      setIsCollecting(null);
+    }
+  };
+
+  const handleSimulateComplete = async (taskId: string) => {
+    if (!user || !firestore) return;
+    const ref = doc(firestore, 'users', user.uid, 'completedTasks', taskId);
+    await setDocumentNonBlocking(ref, { completedAt: serverTimestamp() }, { merge: true });
+    toast({ title: 'Simulation Sync: Task Marked Completed' });
   };
 
   const AttendanceCard = ({ day, amount, label, icon: Icon, isBig = false }: any) => (
@@ -187,11 +239,11 @@ export default function TasksPage() {
               tasksWithStatus.map((task) => (
                 <Card key={task.id} className={cn(
                   "rounded-[2.5rem] border-none shadow-xl transition-all relative overflow-hidden group", 
-                  task.isCompleted 
+                  task.isCollected 
                     ? 'bg-slate-50 opacity-60 grayscale-[0.5]' 
                     : 'bg-gradient-to-br from-[#e0f7fa] via-white to-[#e1f5fe] border-2 border-cyan-100 hover:shadow-cyan-200/50 hover:-translate-y-1'
                 )}>
-                  {!task.isCompleted && (
+                  {!task.isCollected && (
                     <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-10" />
                   )}
                   
@@ -199,11 +251,11 @@ export default function TasksPage() {
                     <div className="flex justify-between items-start">
                        <CardTitle className={cn(
                          "text-lg uppercase italic tracking-tight",
-                         task.isCompleted ? "text-slate-400" : "text-cyan-900"
+                         task.isCollected ? "text-slate-400" : "text-cyan-900"
                        )}>
                          {task.title}
                        </CardTitle>
-                       {!task.isCompleted && (
+                       {!task.isCollected && (
                          <div className="bg-cyan-500 rounded-full p-1 shadow-lg animate-pulse">
                             <Zap className="h-3 w-3 text-white fill-current" />
                          </div>
@@ -211,34 +263,56 @@ export default function TasksPage() {
                     </div>
                     <CardDescription className={cn(
                       "text-xs font-body italic min-h-[32px]",
-                      task.isCompleted ? "text-slate-300" : "text-cyan-700/70"
+                      task.isCollected ? "text-slate-300" : "text-cyan-700/70"
                     )}>
                       {task.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex items-center justify-between relative z-20">
-                    <div className={cn(
-                      "flex items-center gap-1 font-black italic",
-                      task.isCompleted ? "text-slate-300" : "text-cyan-600 text-xl"
-                    )}>
-                      <GoldCoinIcon className={cn("h-5 w-5", task.isCompleted ? "grayscale opacity-30" : "")} />
-                      <span>+{task.coinReward?.toLocaleString()}</span>
+                  <CardContent className="flex flex-col gap-4 relative z-20">
+                    <div className="flex items-center justify-between">
+                       <div className={cn(
+                         "flex items-center gap-1 font-black italic",
+                         task.isCollected ? "text-slate-300" : "text-cyan-600 text-xl"
+                       )}>
+                         <GoldCoinIcon className={cn("h-5 w-5", task.isCollected ? "grayscale opacity-30" : "")} />
+                         <span>+{task.coinReward?.toLocaleString()}</span>
+                       </div>
+                       
+                       {task.isCollected ? (
+                         <div className="flex items-center gap-1 text-green-500 text-[10px] font-black uppercase italic bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                           <CheckCircle className="h-4 w-4" /> Synchronized
+                         </div>
+                       ) : task.isCompleted ? (
+                         <Button 
+                           onClick={() => handleCollect(task)} 
+                           disabled={isCollecting === task.id}
+                           className="rounded-full px-8 font-black uppercase italic text-[10px] h-10 bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg shadow-yellow-900/20 active:scale-95 transition-all"
+                         >
+                           {isCollecting === task.id ? <Loader className="animate-spin h-4 w-4" /> : <GiftIcon className="h-4 w-4 mr-2" />}
+                           Collect
+                         </Button>
+                       ) : (
+                         <Button asChild size="sm" className="rounded-full px-8 font-black uppercase italic text-[10px] h-10 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20 active:scale-95 transition-all">
+                           <Link href={task.cta?.href || '/rooms'}>
+                             {task.cta?.label || 'Go'} <ArrowRight className="ml-1 h-3 w-3" />
+                           </Link>
+                         </Button>
+                       )}
                     </div>
-                    {task.isCompleted ? (
-                      <div className="flex items-center gap-1 text-green-500 text-[10px] font-black uppercase italic bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                        <CheckCircle className="h-4 w-4" /> Synchronized
-                      </div>
-                    ) : (
-                      <Button asChild size="sm" className="rounded-full px-8 font-black uppercase italic text-[10px] h-10 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20 active:scale-95 transition-all">
-                        <Link href={task.cta?.href || '/rooms'}>
-                          {task.cta?.label || 'Go'} <ArrowRight className="ml-1 h-3 w-3" />
-                        </Link>
-                      </Button>
+
+                    {/* Sim Protocol for Creator */}
+                    {user?.uid === CREATOR_ID && !task.isCompleted && !task.isCollected && (
+                      <button 
+                        onClick={() => handleSimulateComplete(task.id)}
+                        className="text-[8px] font-black uppercase tracking-widest text-slate-300 hover:text-slate-500 transition-colors"
+                      >
+                        [ Simulation: Mark Complete ]
+                      </button>
                     )}
                   </CardContent>
                   
                   {/* Glossy Overlay Highlight */}
-                  {!task.isCompleted && (
+                  {!task.isCollected && (
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-60 pointer-events-none z-0" />
                   )}
                 </Card>

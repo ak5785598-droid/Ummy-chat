@@ -206,6 +206,10 @@ export default function AdminPage() {
   const [taskCtaHref, setTaskCtaHref] = useState('/rooms');
   const [isAddingTask, setIsAddingTask] = useState(false);
 
+  // Tribal Directory States
+  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
+  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, 'games'));
@@ -277,6 +281,18 @@ export default function AdminPage() {
       toast({ title: 'Global Ledger Synchronized' });
     } finally {
       setIsSyncingAppData(false);
+    }
+  };
+
+  const handleSyncDirectory = async () => {
+    if (!firestore || !isCreator) return;
+    setIsSyncingDirectory(true);
+    try {
+      const snap = await getDocs(query(collection(firestore, 'users'), limit(50)));
+      setTribalMembers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      toast({ title: 'Member Directory Synchronized' });
+    } finally {
+      setIsSyncingDirectory(false);
     }
   };
 
@@ -812,6 +828,9 @@ export default function AdminPage() {
               <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <UserSearch className="h-4 w-4 text-rose-500" /> User Records
               </TabsTrigger>
+              <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Users className="h-4 w-4 text-slate-500" /> Member Directory
+              </TabsTrigger>
               <TabsTrigger value="task-sync" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ClipboardList className="h-4 w-4 text-amber-500" /> Task Center
               </TabsTrigger>
@@ -1070,6 +1089,47 @@ export default function AdminPage() {
                           </div>
                        </div>
                      )}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="member-directory" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Users className="h-6 w-6" /> Tribal Member Archive</CardTitle>
+                        <CardDescription>Comprehensive list of all synchronized tribe members and their signatures.</CardDescription>
+                     </div>
+                     <Button onClick={handleSyncDirectory} disabled={isSyncingDirectory} className="bg-black h-12 rounded-xl">
+                        {isSyncingDirectory ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Directory
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0">
+                     <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">
+                        {tribalMembers.length === 0 ? (
+                          <div className="py-40 text-center opacity-20 italic">Awaiting Synchronized Directory...</div>
+                        ) : tribalMembers.map(member => (
+                          <div key={member.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
+                             <div className="flex items-center gap-4">
+                                <Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={member.avatarUrl || undefined} /></Avatar>
+                                <div>
+                                   <p className="font-black text-sm uppercase text-slate-900">{member.username}</p>
+                                   <div className="flex items-center gap-2 mt-0.5">
+                                      <SpecialIdBadge id={member.specialId} />
+                                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Spent: {member.wallet?.totalSpent.toLocaleString() || 0}</span>
+                                   </div>
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                <div className="flex items-center gap-1.5 justify-end text-blue-600 font-black italic">
+                                   <GoldCoinIcon className="h-4 w-4" />
+                                   {member.wallet?.coins.toLocaleString() || 0}
+                                </div>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {member.isOnline ? 'ONLINE' : 'STARDUST'}</p>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
                   </CardContent>
                </Card>
             </TabsContent>
