@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -10,12 +11,11 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2 } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
@@ -175,6 +175,18 @@ export default function AdminPage() {
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
 
+  // App Data States
+  const [appStats, setAppDataStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
+  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
+
+  // Chat Inspector States
+  const [inspectId1, setInspectId1] = useState('');
+  const [inspectId2, setInspectId2] = useState('');
+  const [inspectChatId, setInspectChatId] = useState<string | null>(null);
+  const [isInspecting, setIsInspecting] = useState(false);
+  const [inspectUser1, setInspectUser1] = useState<any>(null);
+  const [inspectUser2, setInspectUser2] = useState<any>(null);
+
   // Oracle States
   const [oracleRoulette, setOracleRoulette] = useState('');
   const [isSyncingOracle, setIsSyncingOracle] = useState<string | null>(null);
@@ -190,6 +202,18 @@ export default function AdminPage() {
     return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
   }, [firestore, isCreator]);
   const { data: customThemes } = useCollection(themesQuery);
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return query(collection(firestore, 'transactions'), orderBy('createdAt', 'desc'), limit(20));
+  }, [firestore, isCreator]);
+  const { data: recentTransactions } = useCollection(transactionsQuery);
+
+  const inspectedMessagesQuery = useMemoFirebase(() => {
+    if (!firestore || !inspectChatId || !isCreator) return null;
+    return query(collection(firestore, 'privateChats', inspectChatId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
+  }, [firestore, inspectChatId, isCreator]);
+  const { data: inspectedMessages } = useCollection(inspectedMessagesQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -215,6 +239,56 @@ export default function AdminPage() {
     return collection(firestore, 'gameOracle');
   }, [firestore, isCreator]);
   const { data: oracleData } = useCollection(oracleRef);
+
+  const handleSyncAppData = async () => {
+    if (!firestore || !isCreator) return;
+    setIsSyncingAppData(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      let tc = 0, td = 0, ts = 0;
+      usersSnap.docs.forEach(d => {
+        const w = d.data().wallet || {};
+        tc += (w.coins || 0);
+        td += (w.diamonds || 0);
+        ts += (w.totalSpent || 0);
+      });
+      setAppDataStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
+      toast({ title: 'Global Ledger Synchronized' });
+    } finally {
+      setIsSyncingAppData(false);
+    }
+  };
+
+  const handleInspectChat = async () => {
+    if (!firestore || !inspectId1 || !inspectId2 || !isCreator) return;
+    setIsInspecting(true);
+    try {
+      const p1 = inspectId1.padStart(3, '0');
+      const p2 = inspectId2.padStart(3, '0');
+      
+      const q1 = query(collection(firestore, 'users'), where('specialId', '==', p1), limit(1));
+      const q2 = query(collection(firestore, 'users'), where('specialId', '==', p2), limit(1));
+      
+      const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      
+      if (s1.empty || s2.empty) {
+        toast({ variant: 'destructive', title: 'Identity Mismatch', description: 'One or both IDs do not exist.' });
+        return;
+      }
+
+      const u1 = { ...s1.docs[0].data(), id: s1.docs[0].id };
+      const u2 = { ...s2.docs[0].data(), id: s2.docs[0].id };
+      
+      setInspectUser1(u1);
+      setInspectUser2(u2);
+      
+      const ids = [u1.id, u2.id].sort();
+      setInspectChatId(ids.join('_'));
+      toast({ title: 'Frequency Intercepted' });
+    } finally {
+      setIsInspecting(false);
+    }
+  };
 
   const handleSetOracle = async (gameId: string, result: any) => {
     if (!firestore || !isCreator) return;
@@ -657,6 +731,12 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-10 items-start">
           <div className="w-full md:w-72 shrink-0 sticky top-24">
             <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
+              <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Database className="h-4 w-4 text-blue-500" /> App Data
+              </TabsTrigger>
+              <TabsTrigger value="chat-inspector" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Eye className="h-4 w-4 text-emerald-500" /> Chat Inspector
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -697,6 +777,146 @@ export default function AdminPage() {
           </div>
 
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="app-data" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><BarChart3 className="h-6 w-6" /> App Economic Ledger</CardTitle>
+                        <CardDescription>Global coin circulation and economic sync metrics.</CardDescription>
+                     </div>
+                     <Button onClick={handleSyncAppData} disabled={isSyncingAppData} className="bg-blue-600 h-12 rounded-xl">
+                        {isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Data
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-10">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Total Coins in Tribe</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic">
+                              <GoldCoinIcon className="h-6 w-6" />
+                              {appStats.totalCoins.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Total Diamonds Accumulated</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic">
+                              <Sparkles className="h-6 w-6" />
+                              {appStats.totalDiamonds.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Total Economic Output (Spent)</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic">
+                              <BarChart3 className="h-6 w-6" />
+                              {appStats.totalSpent.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Synchronized Users</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-slate-900 italic">
+                              <Users className="h-6 w-6" />
+                              {appStats.totalUsers.toLocaleString()}
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="space-y-4">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 px-2">Recent Recharge Transactions</h3>
+                        <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">
+                           {recentTransactions?.map(tx => (
+                             <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                   <div className="h-10 w-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
+                                      <CheckCircle2 className="h-5 w-5" />
+                                   </div>
+                                   <div>
+                                      <p className="font-black text-xs uppercase text-slate-900">User Sync ID: {tx.userId.slice(0, 8)}</p>
+                                      <p className="text-[10px] text-muted-foreground uppercase">{tx.createdAt?.toDate() ? format(tx.createdAt.toDate(), 'PPP HH:mm') : 'Syncing...'}</p>
+                                   </div>
+                                </div>
+                                <div className="text-right">
+                                   <p className="font-black text-blue-600 italic">+{tx.coins.toLocaleString()} Coins</p>
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase">{tx.amount} INR • {tx.paymentMethod}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="chat-inspector" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600"><Eye className="h-6 w-6" /> Frequency Chat Inspector</CardTitle>
+                     <CardDescription>Intercept and monitor private messaging frequencies between tribe members.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                        <div className="space-y-4">
+                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Identity One (Special ID)</Label>
+                           <Input placeholder="e.g. 001" value={inspectId1} onChange={(e) => setInspectId1(e.target.value)} className="h-14 rounded-2xl border-2 bg-white text-xl font-black text-center italic" />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Identity Two (Special ID)</Label>
+                           <Input placeholder="e.g. 005" value={inspectId2} onChange={(e) => setInspectId2(e.target.value)} className="h-14 rounded-2xl border-2 bg-white text-xl font-black text-center italic" />
+                        </div>
+                        <Button onClick={handleInspectChat} disabled={isInspecting || !inspectId1 || !inspectId2} className="md:col-span-2 h-16 rounded-3xl bg-emerald-600 text-white font-black uppercase italic text-lg shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+                           {isInspecting ? <Loader className="animate-spin" /> : <Search className="h-6 w-6 mr-2" />} Intercept Conversation
+                        </Button>
+                     </div>
+
+                     {inspectChatId && inspectUser1 && inspectUser2 && (
+                       <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                          <div className="flex items-center justify-around p-6 bg-slate-50 rounded-3xl border-2 border-emerald-100">
+                             <div className="flex flex-col items-center gap-2">
+                                <Avatar className="h-16 w-16 border-2 border-emerald-200"><AvatarImage src={inspectUser1.avatarUrl} /></Avatar>
+                                <span className="font-black text-xs uppercase">{inspectUser1.username}</span>
+                             </div>
+                             <div className="h-0.5 w-24 bg-emerald-200 relative">
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-100 px-2 rounded-full text-[10px] font-black text-emerald-600 uppercase">SYNC</div>
+                             </div>
+                             <div className="flex flex-col items-center gap-2">
+                                <Avatar className="h-16 w-16 border-2 border-emerald-200"><AvatarImage src={inspectUser2.avatarUrl} /></Avatar>
+                                <span className="font-black text-xs uppercase">{inspectUser2.username}</span>
+                             </div>
+                          </div>
+
+                          <div className="bg-slate-950 rounded-[2.5rem] p-6 h-[500px] overflow-hidden flex flex-col shadow-inner">
+                             <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest italic">Encrypted Ledger Transcript</h4>
+                                <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[8px] font-black uppercase">Live Inspection Active</Badge>
+                             </div>
+                             <ScrollArea className="flex-1 pr-4">
+                                <div className="flex flex-col gap-4 pb-10">
+                                   {inspectedMessages?.length === 0 ? (
+                                     <div className="py-20 text-center opacity-20 text-white italic">No messages detected in this frequency.</div>
+                                   ) : inspectedMessages?.map(msg => {
+                                     const isU1 = msg.senderId === inspectUser1.id;
+                                     return (
+                                       <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isU1 ? "self-start items-start" : "self-end items-end")}>
+                                          <div className={cn(
+                                            "px-4 py-3 rounded-2xl text-sm font-body shadow-sm",
+                                            isU1 ? "bg-white/10 text-white rounded-bl-none" : "bg-emerald-600 text-white rounded-br-none"
+                                          )}>
+                                             <p className="leading-relaxed">{msg.text}</p>
+                                          </div>
+                                          <span className="text-[8px] font-bold text-white/20 uppercase mt-1 px-1">
+                                             {isU1 ? inspectUser1.username : inspectUser2.username} • {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
+                                          </span>
+                                       </div>
+                                     );
+                                   })}
+                                </div>
+                             </ScrollArea>
+                          </div>
+                       </div>
+                     )}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
             <TabsContent value="authority" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
@@ -779,9 +999,7 @@ export default function AdminPage() {
             <TabsContent value="id-ban" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600">
-                        <Gavel className="h-6 w-6" /> Supreme ID Ban Protocol
-                     </CardTitle>
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600"><Gavel className="h-6 w-6" /> Supreme ID Ban Protocol</CardTitle>
                      <CardDescription>Exclude members from the entire Ummy frequency network. Enter high-precision temporal offsets.</CardDescription>
                   </CardHeader>
                   
@@ -885,7 +1103,6 @@ export default function AdminPage() {
                      <CardDescription>Select the winner of upcoming tribal game frequencies. Manual override syncs in real-time.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {/* Roulette Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Roulette Sync</h4>
@@ -909,7 +1126,6 @@ export default function AdminPage() {
                         <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'roulette')?.forcedResult ?? 'None'}</p>
                      </div>
 
-                     {/* Lion Fight Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Lion Fight Sync</h4>
@@ -923,7 +1139,6 @@ export default function AdminPage() {
                         <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'lion-fight')?.forcedResult ?? 'None'}</p>
                      </div>
 
-                     {/* Teen Patti Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Teen Patti Sync</h4>
@@ -937,7 +1152,6 @@ export default function AdminPage() {
                         <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'teen-patti')?.forcedResult ?? 'None'}</p>
                      </div>
 
-                     {/* Wild Party Oracle Control */}
                      <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                            <h4 className="font-black uppercase italic text-sm text-slate-900">Wild Party Sync</h4>
@@ -980,7 +1194,7 @@ export default function AdminPage() {
                               <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">{isUploadingTheme ? <Loader className="animate-spin h-8 w-8" /> : <Upload className="h-8 w-8" />}</div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload visual sync</span>
                            </button>
-                           <input type="file" theme-ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} />
+                           <input type="file" ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} />
                         </div>
                      </div>
                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1045,7 +1259,7 @@ export default function AdminPage() {
                  {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
                    <Card key={idx} className="rounded-2xl overflow-hidden border-none shadow-lg bg-white">
                       <div className="relative aspect-[8/2] bg-muted">{slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />}{isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}</div>
-                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" banner-ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
+                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
                    </Card>
                  ))}
                </div>
@@ -1063,7 +1277,7 @@ export default function AdminPage() {
                      ))}
                   </CardContent>
                </Card>
-               <input type="file" game-input-ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
+               <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
             </TabsContent>
 
             <TabsContent value="tags" className="m-0 space-y-6">
