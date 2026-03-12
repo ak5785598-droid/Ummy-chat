@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -202,7 +201,6 @@ export function RoomClient({ room }: { room: Room }) {
       deleteDocumentNonBlocking(ref);
       toast({ title: 'Unfollowed Frequency' });
     } else {
-      // PREVENT FIREBASE ERROR: Ensure all field values are defined before calling setDoc
       setDocumentNonBlocking(ref, {
         id: room.id,
         title: room.title || 'Frequency',
@@ -484,8 +482,8 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
-        {/* Left Side: Chat Trigger */}
-        <div className="flex items-center">
+        {/* Left Side: Chat Trigger - Shifted right slightly */}
+        <div className="flex items-center ml-4">
            <button 
              onClick={handleInputClick} 
              className={cn(
@@ -497,8 +495,8 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        {/* Center: Gift Boutique Portal - Moved downward as requested */}
-        <div className="absolute left-1/2 -translate-x-1/2 translate-y-1">
+        {/* Center: Gift Boutique Portal */}
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
