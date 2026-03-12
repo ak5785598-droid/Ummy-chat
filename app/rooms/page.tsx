@@ -37,21 +37,21 @@ const DEFAULT_SLIDES = [
     subtitle: "Global Frequency Sync",
     iconName: "Sparkles",
     color: "from-orange-500/40",
-    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl
+    imageUrl: "https://images.unsplash.com/photo-1550745679-5651f6fbcbb7?q=80&w=1000"
   },
   {
     title: "Elite Rewards",
     subtitle: "Claim Your Daily Throne",
     iconName: "Trophy",
     color: "from-yellow-500/40",
-    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-2')?.imageUrl
+    imageUrl: "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1000"
   },
   {
     title: "Game Zone",
     subtitle: "Enter the 3D Arena",
     iconName: "Gamepad2",
     color: "from-purple-500/40",
-    imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-3')?.imageUrl
+    imageUrl: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1000"
   }
 ];
 
@@ -178,7 +178,6 @@ export default function RoomsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Popular' | 'Me'>('Popular');
 
-  // SOVEREIGN AUTHORITY PROTOCOL: Strict check for Creator ID
   const isSovereign = user?.uid === CREATOR_ID;
 
   const roomsQuery = useMemoFirebase(() => {
@@ -213,7 +212,7 @@ export default function RoomsPage() {
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     
-    // STRICT VISIBILITY PROTOCOL: Remove empty rooms from the listing
+    // DYNAMIC PRUNING PROTOCOL: Remove empty rooms from the Popular discovery list
     const activeRooms = roomsData.filter(room => (room.participantCount || 0) > 0);
 
     return activeRooms.sort((a, b) => {
