@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -393,74 +393,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleSystemBroadcast = async () => {
-    if (!firestore || !broadcastContent.trim() || !isCreator) return;
-    setIsBroadcasting(true);
-    try {
-      const usersSnap = await getDocs(collection(firestore, 'users'));
-      const totalUsers = usersSnap.docs.length;
-      
-      if (totalUsers === 0) {
-        toast({ title: 'No users detected.' });
-        return;
-      }
-
-      const batches = [];
-      let currentBatch = writeBatch(firestore);
-      let count = 0;
-
-      for (const userDoc of usersSnap.docs) {
-        const notifRef = doc(collection(firestore, 'users', userDoc.id, 'notifications'));
-        currentBatch.set(notifRef, {
-          title: broadcastTitle,
-          content: broadcastContent,
-          type: 'system',
-          timestamp: serverTimestamp(),
-          isRead: false
-        });
-        
-        count++;
-        if (count === 499) {
-          batches.push(currentBatch.commit());
-          currentBatch = writeBatch(firestore);
-          count = 0;
-        }
-      }
-      
-      if (count > 0) batches.push(currentBatch.commit());
-
-      await Promise.all(batches);
-      toast({ title: 'Broadcast Synchronized' });
-      setBroadcastContent('');
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Broadcast Failed' });
-    } finally {
-      setIsBroadcasting(false);
-    }
-  };
-
-  const handleDirectMessage = async (overrideTarget?: any) => {
-    const target = overrideTarget || targetUserForDm;
-    if (!firestore || !target || !dmContent.trim() || !isCreator) return;
-    setIsSendingDm(true);
-    try {
-      const notifRef = collection(firestore, 'users', target.id, 'notifications');
-      await addDoc(notifRef, {
-        title: dmTitle,
-        content: dmContent,
-        type: 'direct_system',
-        timestamp: serverTimestamp(),
-        isRead: false
-      });
-      toast({ title: 'Message Dispatched' });
-      setDmContent('');
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Dispatch Failed' });
-    } finally {
-      setIsSendingDm(false);
-    }
-  };
-
   const handleDistributeDailyRewards = async () => {
     if (!firestore || !isCreator) return;
     setIsSaving(true);
@@ -509,72 +441,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleSearchUsers = async () => {
-    if (!firestore || !searchQuery) return;
-    setIsSearching(true);
-    try {
-      const q = query(collection(firestore, 'users'), where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'), limit(10));
-      const snap = await getDocs(q);
-      setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleGenericSearch = async (mode: 'id' | 'name', value: string, setter: (u: any) => void, loadingSetter: (l: boolean) => void) => {
-    if (!firestore || !value) return;
-    loadingSetter(true);
-    try {
-      let q;
-      if (mode === 'id') {
-        const paddedId = value.padStart(3, '0');
-        q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
-      } else {
-        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
-      }
-      
-      const snap = await getDocs(q);
-      if (!snap.empty) setter({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
-    } finally {
-      loadingSetter(false);
-    }
-  };
-
-  const handleDispatchCoins = async () => {
-    if (!firestore || !targetUserForRewards || !coinDispatchAmount) return;
-    const amt = parseInt(coinDispatchAmount);
-    if (isNaN(amt) || amt <= 0) return;
-
-    setIsDispatching(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForRewards.id);
-      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
-      
-      const updateData = { 'wallet.coins': increment(amt), updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(uRef, updateData);
-      updateDocumentNonBlocking(pRef, updateData);
-      
-      toast({ title: 'Coins Dispatched' });
-      setCoinDispatchAmount('');
-    } finally {
-      setIsDispatching(false);
-    }
-  };
-
-  const handleDispatchItem = async (itemId: string, type: 'ownedItems' | 'purchasedThemes') => {
-    if (!firestore || !targetUserForRewards) return;
-    setIsDispatching(true);
-    try {
-      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
-      const updateData = { [`inventory.${type}`]: arrayUnion(itemId), updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(pRef, updateData);
-      toast({ title: 'Asset Dispatched' });
-    } finally {
-      setIsDispatching(false);
-    }
-  };
-
   const handleUpdateId = async () => {
     if (!firestore || !targetUserForId || !newIdInput) return;
     setIsSavingId(true);
@@ -613,66 +479,6 @@ export default function AdminPage() {
       toast({ title: 'ID Color Removed' });
     } finally {
       setIsSavingId(false);
-    }
-  };
-
-  const handleBanUser = async () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
-    setIsBanning(true);
-    try {
-      const days = parseInt(banDays) || 0;
-      const hours = parseInt(banHours) || 0;
-      const mins = parseInt(banMinutes) || 0;
-      const secs = parseInt(banSeconds) || 0;
-      
-      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
-      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
-      
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      
-      const banData = {
-        banStatus: {
-          isBanned: true,
-          bannedAt: serverTimestamp(),
-          bannedUntil: bannedUntil,
-          reason: 'Administrative Exclusion'
-        }
-      };
-
-      await setDoc(uRef, banData, { merge: true });
-      await setDoc(pRef, banData, { merge: true });
-      
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
-      toast({ title: 'ID Banned', description: 'Member restricted from tribal frequencies.' });
-    } finally {
-      setIsBanning(false);
-    }
-  };
-
-  const handleUnbanUser = async () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
-    setIsBanning(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      
-      const unbanData = {
-        banStatus: {
-          isBanned: false,
-          bannedAt: null,
-          bannedUntil: null,
-          reason: null
-        }
-      };
-
-      await setDoc(uRef, unbanData, { merge: true });
-      await setDoc(pRef, unbanData, { merge: true });
-      
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
-      toast({ title: 'ID Unbanned', description: 'Member frequency restored.' });
-    } finally {
-      setIsBanning(false);
     }
   };
 
@@ -732,20 +538,6 @@ export default function AdminPage() {
     toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
   };
 
-  const handleRemoveAllTags = async (targetUid: string) => {
-    if (!firestore) return;
-    const userRef = doc(firestore, 'users', targetUid);
-    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
-    const updateData = { tags: [], updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(userRef, updateData);
-    updateDocumentNonBlocking(profileRef, updateData);
-    
-    if (targetUserForTags && targetUserForTags.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
-    if (targetUserForCenter && targetUserForCenter.id === targetUid) setTargetUserForCenter((prev: any) => ({ ...prev, tags: [] }));
-    setFoundUsers(prev => prev.map(u => u.id === targetUid ? { ...u, tags: [] } : u));
-    toast({ title: 'Authority Purged' });
-  };
-
   const handleBannerImageUpload = async (index: number, file: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);
@@ -761,6 +553,36 @@ export default function AdminPage() {
     } finally {
       setIsUploadingBanner(null);
     }
+  };
+
+  const handleAddBanner = async () => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
+    const newSlide = {
+      title: "New Tribe Event",
+      subtitle: "Join the Frequency",
+      iconName: "Sparkles",
+      color: "from-blue-500/40",
+      imageUrl: ""
+    };
+    const newSlides = [...currentSlides, newSlide];
+    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
+    toast({ title: 'New Banner Slot Added' });
+  };
+
+  const handleRemoveBanner = async (index: number) => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
+    const newSlides = currentSlides.filter((_, i) => i !== index);
+    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
+    toast({ title: 'Banner Removed' });
+  };
+
+  const handleUpdateBannerMeta = async (index: number, field: string, value: string) => {
+    if (!firestore || !isCreator) return;
+    const currentSlides = [...(bannerConfig?.slides || DEFAULT_SLIDES)];
+    currentSlides[index] = { ...currentSlides[index], [field]: value };
+    await setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true });
   };
 
   const handleThemeUpload = async (file: File) => {
@@ -787,19 +609,6 @@ export default function AdminPage() {
       setNewThemeName('');
     } finally {
       setIsUploadingTheme(false);
-    }
-  };
-
-  const handleGameDPUploadClick = (game: any) => {
-    setSelectedGameForDP(game);
-    gameFileInputRef.current?.click();
-  };
-
-  const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && selectedGameForDP) {
-      await uploadGameLogo(selectedGameForDP, file);
-      setSelectedGameForDP(null);
     }
   };
 
@@ -834,6 +643,9 @@ export default function AdminPage() {
               <TabsTrigger value="task-sync" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ClipboardList className="h-4 w-4 text-amber-500" /> Task Center
               </TabsTrigger>
+              <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -848,9 +660,6 @@ export default function AdminPage() {
               </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
-              </TabsTrigger>
-              <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
               </TabsTrigger>
               <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gamepad2 className="h-4 w-4 text-purple-500" /> Game Sync
@@ -938,6 +747,81 @@ export default function AdminPage() {
                              </div>
                            ))}
                         </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="banners" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Global Banner Console</CardTitle>
+                        <CardDescription>Manage the unlimited roster of tribal event slides.</CardDescription>
+                     </div>
+                     <Button onClick={handleAddBanner} className="bg-primary text-black h-12 rounded-xl font-black uppercase italic">
+                        <Plus className="h-4 w-4 mr-2" /> Add Slide
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-6">
+                     <div className="grid grid-cols-1 gap-8">
+                       {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
+                         <div key={idx} className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-100 space-y-6 relative group">
+                            <button 
+                              onClick={() => handleRemoveBanner(idx)}
+                              className="absolute top-4 right-4 h-10 w-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200"
+                            >
+                               <Trash2 className="h-5 w-5" />
+                            </button>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                               <div className="space-y-4">
+                                  <div className="relative aspect-[16/5] bg-muted rounded-2xl overflow-hidden border-2 border-white shadow-md">
+                                     {slide.imageUrl ? (
+                                       <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />
+                                     ) : (
+                                       <div className="h-full w-full flex items-center justify-center bg-slate-200">
+                                          <ImageIcon className="h-10 w-10 text-slate-400" />
+                                       </div>
+                                     )}
+                                     {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                                  </div>
+                                  <input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
+                                  <Button onClick={() => bannerFileInputRefs.current[idx]?.click()} variant="outline" className="w-full h-12 rounded-xl font-black uppercase italic text-xs">
+                                     <Upload className="h-4 w-4 mr-2" /> Update Visual
+                                  </Button>
+                               </div>
+
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div className="space-y-1.5">
+                                     <Label className="text-[10px] font-black uppercase text-slate-400">Title</Label>
+                                     <Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl font-black italic bg-white" />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                     <Label className="text-[10px] font-black uppercase text-slate-400">Subtitle</Label>
+                                     <Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl font-bold italic bg-white" />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                     <Label className="text-[10px] font-black uppercase text-slate-400">Icon Signature</Label>
+                                     <Select value={slide.iconName} onValueChange={(val) => handleUpdateBannerMeta(idx, 'iconName', val)}>
+                                        <SelectTrigger className="h-12 rounded-xl font-black italic bg-white">
+                                           <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="font-black italic">
+                                           {['Sparkles', 'Trophy', 'Gamepad2', 'Zap', 'Star', 'Users', 'Heart'].map(name => (
+                                             <SelectItem key={name} value={name}>{name}</SelectItem>
+                                           ))}
+                                        </SelectContent>
+                                     </Select>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                     <Label className="text-[10px] font-black uppercase text-slate-400">Glow Pattern (Tailwind from-class)</Label>
+                                     <Input value={slide.color} onChange={(e) => handleUpdateBannerMeta(idx, 'color', e.target.value)} className="h-12 rounded-xl font-black italic bg-white" placeholder="from-orange-500/40" />
+                                  </div>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
                      </div>
                   </CardContent>
                </Card>
@@ -1537,17 +1421,6 @@ export default function AdminPage() {
                     </div>
                   )}
                </Card>
-            </TabsContent>
-
-            <TabsContent value="banners" className="m-0 space-y-6">
-               <div className="grid grid-cols-1 gap-6">
-                 {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
-                   <Card key={idx} className="rounded-2xl overflow-hidden border-none shadow-lg bg-white">
-                      <div className="relative aspect-[8/2] bg-muted">{slide.imageUrl && <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />}{isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}</div>
-                      <CardContent className="p-4 flex justify-between items-center"><p className="font-black uppercase italic text-xs text-slate-900">{slide.title}</p><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /><Button onClick={() => bannerFileInputRefs.current[idx]?.click()} size="sm" className="rounded-full h-8 text-[10px]">Update Visual</Button></CardContent>
-                   </Card>
-                 ))}
-               </div>
             </TabsContent>
 
             <TabsContent value="games" className="m-0 space-y-6">

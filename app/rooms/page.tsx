@@ -65,7 +65,7 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: { slides?: any[]
   const storage = useStorage();
   const { toast } = useToast();
   
-  const slides = customSlides || DEFAULT_SLIDES;
+  const slides = customSlides && customSlides.length > 0 ? customSlides : DEFAULT_SLIDES;
 
   useEffect(() => {
     setMounted(true);
@@ -112,12 +112,12 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: { slides?: any[]
   if (!mounted || slides.length === 0) return <div className="rounded-[1.5rem] h-28 bg-black/5 animate-pulse mb-6" />;
 
   const slide = slides[currentSlide];
-  const Icon = ICON_MAP[slide.iconName] || Sparkles;
+  const Icon = ICON_MAP[slide?.iconName] || Sparkles;
 
   return (
     <div className="rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black mb-6">
       <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
-        {slide.imageUrl && (
+        {slide?.imageUrl && (
           <Image 
             src={slide.imageUrl} 
             alt={slide.title} 
@@ -126,12 +126,12 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: { slides?: any[]
             unoptimized
           />
         )}
-        <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color || "from-black/40")}>
+        <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide?.color || "from-black/40")}>
           <div className="flex items-center gap-2 mb-1">
              <Icon className="h-4 w-4 text-white animate-pulse" />
-             <h4 className="text-white font-black uppercase italic text-xl tracking-tighter leading-none drop-shadow-lg">{slide.title}</h4>
+             <h4 className="text-white font-black uppercase italic text-xl tracking-tighter leading-none drop-shadow-lg">{slide?.title || "Event"}</h4>
           </div>
-          <p className="text-white/80 font-bold uppercase text-[8px] tracking-[0.3em] drop-shadow-md">{slide.subtitle}</p>
+          <p className="text-white/80 font-bold uppercase text-[8px] tracking-[0.3em] drop-shadow-md">{slide?.subtitle || "Syncing Frequency"}</p>
         </div>
       </div>
       
@@ -178,8 +178,8 @@ export default function RoomsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Popular' | 'Me'>('Popular');
 
-  const isSovereign = user?.uid === CREATOR_ID || 
-                      userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin', 'App Manager', 'Supreme Creator'].includes(t));
+  // SOVEREIGN AUTHORITY PROTOCOL: Strict check for Creator ID
+  const isSovereign = user?.uid === CREATOR_ID;
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
