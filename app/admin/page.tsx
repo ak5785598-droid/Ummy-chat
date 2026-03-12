@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -296,6 +296,38 @@ export default function AdminPage() {
     }
   };
 
+  const handleSearchUsers = async () => {
+    if (!firestore || !searchQuery) return;
+    setIsSearching(true);
+    try {
+      const q = query(collection(firestore, 'users'), where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'), limit(10));
+      const snap = await getDocs(q);
+      setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleGenericSearch = async (mode: 'id' | 'name', value: string, setter: (u: any) => void, loadingSetter: (l: boolean) => void) => {
+    if (!firestore || !value) return;
+    loadingSetter(true);
+    try {
+      let q;
+      if (mode === 'id') {
+        const paddedId = value.padStart(3, '0');
+        q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+      } else {
+        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
+      }
+      
+      const snap = await getDocs(q);
+      if (!snap.empty) setter({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+    } finally {
+      loadingSetter(false);
+    }
+  };
+
   const handleInspectChat = async () => {
     if (!firestore || !inspectId1 || !inspectId2 || !isCreator) return;
     setIsInspecting(true);
@@ -482,6 +514,131 @@ export default function AdminPage() {
     }
   };
 
+  const handleBanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const days = parseInt(banDays) || 0;
+      const hours = parseInt(banHours) || 0;
+      const mins = parseInt(banMinutes) || 0;
+      const secs = parseInt(banSeconds) || 0;
+      
+      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
+      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
+      
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      
+      const banData = {
+        banStatus: {
+          isBanned: true,
+          bannedAt: serverTimestamp(),
+          bannedUntil: bannedUntil,
+          reason: 'Administrative Exclusion'
+        }
+      };
+
+      await setDoc(uRef, banData, { merge: true });
+      await setDoc(pRef, banData, { merge: true });
+      
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
+      toast({ title: 'ID Banned' });
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
+  const handleUnbanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
+      await setDoc(uRef, unbanData, { merge: true });
+      await setDoc(pRef, unbanData, { merge: true });
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
+      toast({ title: 'ID Unbanned' });
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
+  const handleSystemBroadcast = async () => {
+    if (!firestore || !broadcastContent.trim() || !isCreator) return;
+    setIsBroadcasting(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      const batches = [];
+      let currentBatch = writeBatch(firestore);
+      let count = 0;
+      for (const userDoc of usersSnap.docs) {
+        const notifRef = doc(collection(firestore, 'users', userDoc.id, 'notifications'));
+        currentBatch.set(notifRef, { title: broadcastTitle, content: broadcastContent, type: 'system', timestamp: serverTimestamp(), isRead: false });
+        count++;
+        if (count === 499) { batches.push(currentBatch.commit()); currentBatch = writeBatch(firestore); count = 0; }
+      }
+      if (count > 0) batches.push(currentBatch.commit());
+      await Promise.all(batches);
+      toast({ title: 'Broadcast Synchronized' });
+      setBroadcastContent('');
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
+  const handleDirectMessage = async () => {
+    if (!firestore || !targetUserForDm || !dmContent.trim() || !isCreator) return;
+    setIsSendingDm(true);
+    try {
+      const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
+      await addDoc(notifRef, { title: dmTitle, content: dmContent, type: 'direct_system', timestamp: serverTimestamp(), isRead: false });
+      toast({ title: 'Message Dispatched' });
+      setDmContent('');
+    } finally {
+      setIsSendingDm(false);
+    }
+  };
+
+  const handleDispatchCoins = async () => {
+    if (!firestore || !targetUserForRewards || !coinDispatchAmount) return;
+    setIsDispatching(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForRewards.id);
+      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
+      const amt = parseInt(coinDispatchAmount);
+      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(amt) });
+      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(amt) });
+      toast({ title: 'Coins Dispatched' });
+      setCoinDispatchAmount('');
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
+  const handleDispatchItem = async (itemId: string, type: string) => {
+    if (!firestore || !targetUserForRewards) return;
+    setIsDispatching(true);
+    try {
+      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
+      updateDocumentNonBlocking(pRef, { [`inventory.${type}`]: arrayUnion(itemId) });
+      toast({ title: 'Asset Dispatched' });
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
+  const handleRemoveAllTags = async (targetUid: string) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', targetUid);
+    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
+    const updateData = { tags: [], updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    if (targetUserForTags?.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
+    toast({ title: 'Authority Purged' });
+  };
+
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', targetUserId);
@@ -609,6 +766,19 @@ export default function AdminPage() {
       setNewThemeName('');
     } finally {
       setIsUploadingTheme(false);
+    }
+  };
+
+  const handleGameDPUploadClick = (game: any) => {
+    setSelectedGameForDP(game);
+    gameFileInputRef.current?.click();
+  };
+
+  const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedGameForDP) {
+      await uploadGameLogo(selectedGameForDP, file);
+      setSelectedGameForDP(null);
     }
   };
 
@@ -747,81 +917,6 @@ export default function AdminPage() {
                              </div>
                            ))}
                         </div>
-                     </div>
-                  </CardContent>
-               </Card>
-            </TabsContent>
-
-            <TabsContent value="banners" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0 flex flex-row items-center justify-between">
-                     <div>
-                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Global Banner Console</CardTitle>
-                        <CardDescription>Manage the unlimited roster of tribal event slides.</CardDescription>
-                     </div>
-                     <Button onClick={handleAddBanner} className="bg-primary text-black h-12 rounded-xl font-black uppercase italic">
-                        <Plus className="h-4 w-4 mr-2" /> Add Slide
-                     </Button>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-6">
-                     <div className="grid grid-cols-1 gap-8">
-                       {(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
-                         <div key={idx} className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-100 space-y-6 relative group">
-                            <button 
-                              onClick={() => handleRemoveBanner(idx)}
-                              className="absolute top-4 right-4 h-10 w-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200"
-                            >
-                               <Trash2 className="h-5 w-5" />
-                            </button>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                               <div className="space-y-4">
-                                  <div className="relative aspect-[16/5] bg-muted rounded-2xl overflow-hidden border-2 border-white shadow-md">
-                                     {slide.imageUrl ? (
-                                       <Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />
-                                     ) : (
-                                       <div className="h-full w-full flex items-center justify-center bg-slate-200">
-                                          <ImageIcon className="h-10 w-10 text-slate-400" />
-                                       </div>
-                                     )}
-                                     {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
-                                  </div>
-                                  <input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} />
-                                  <Button onClick={() => bannerFileInputRefs.current[idx]?.click()} variant="outline" className="w-full h-12 rounded-xl font-black uppercase italic text-xs">
-                                     <Upload className="h-4 w-4 mr-2" /> Update Visual
-                                  </Button>
-                               </div>
-
-                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                     <Label className="text-[10px] font-black uppercase text-slate-400">Title</Label>
-                                     <Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl font-black italic bg-white" />
-                                  </div>
-                                  <div className="space-y-1.5">
-                                     <Label className="text-[10px] font-black uppercase text-slate-400">Subtitle</Label>
-                                     <Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl font-bold italic bg-white" />
-                                  </div>
-                                  <div className="space-y-1.5">
-                                     <Label className="text-[10px] font-black uppercase text-slate-400">Icon Signature</Label>
-                                     <Select value={slide.iconName} onValueChange={(val) => handleUpdateBannerMeta(idx, 'iconName', val)}>
-                                        <SelectTrigger className="h-12 rounded-xl font-black italic bg-white">
-                                           <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="font-black italic">
-                                           {['Sparkles', 'Trophy', 'Gamepad2', 'Zap', 'Star', 'Users', 'Heart'].map(name => (
-                                             <SelectItem key={name} value={name}>{name}</SelectItem>
-                                           ))}
-                                        </SelectContent>
-                                     </Select>
-                                  </div>
-                                  <div className="space-y-1.5">
-                                     <Label className="text-[10px] font-black uppercase text-slate-400">Glow Pattern (Tailwind from-class)</Label>
-                                     <Input value={slide.color} onChange={(e) => handleUpdateBannerMeta(idx, 'color', e.target.value)} className="h-12 rounded-xl font-black italic bg-white" placeholder="from-orange-500/40" />
-                                  </div>
-                               </div>
-                            </div>
-                         </div>
-                       ))}
                      </div>
                   </CardContent>
                </Card>
@@ -1488,7 +1583,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
                      <Input placeholder="Recipient I'd..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={handleGenericSearch.bind(null, 'id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                     <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
