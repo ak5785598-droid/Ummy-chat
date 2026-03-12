@@ -28,7 +28,8 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  ClipboardList
+  ClipboardList,
+  HelpCircle
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -534,6 +535,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
              <MenuItem label="Setting" icon={SettingsIcon} href="/settings" />
+             <MenuItem label="Help Center" icon={HelpCircle} href="/help-center" colorClass="bg-orange-100 text-orange-600" />
           </div>
         </div>
       </AppLayout>
