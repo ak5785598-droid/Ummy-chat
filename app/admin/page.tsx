@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -9,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2 } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +136,11 @@ export default function AdminPage() {
   const [targetUserForRewards, setTargetUserForRewards] = useState<any>(null);
   const [coinDispatchAmount, setCoinDispatchAmount] = useState('');
   const [isDispatching, setIsDispatching] = useState(false);
+
+  const [recordSearchId, setRecordSearchId] = useState('');
+  const [targetUserForRecord, setTargetUserForRecord] = useState<any>(null);
+  const [isSearchingRecord, setIsSearchingRecord] = useState(false);
+  const [isResettingWallet, setIsResettingWallet] = useState(false);
 
   const [broadcastTitle, setBroadcastTitle] = useState('Official Notice');
   const [broadcastContent, setBroadcastContent] = useState('');
@@ -305,6 +309,37 @@ export default function AdminPage() {
       toast({ title: 'Oracle Synchronized', description: `Outcome forced: ${result}` });
     } finally {
       setIsSyncingOracle(null);
+    }
+  };
+
+  const handleResetWallet = async () => {
+    if (!firestore || !targetUserForRecord || !isCreator) return;
+    if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet to zero? This cannot be undone.")) return;
+    
+    setIsResettingWallet(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForRecord.id);
+      const pRef = doc(firestore, 'users', targetUserForRecord.id, 'profile', targetUserForRecord.id);
+      
+      const resetData = {
+        'wallet.coins': 0,
+        'wallet.diamonds': 0,
+        'wallet.totalSpent': 0,
+        'wallet.dailySpent': 0,
+        updatedAt: serverTimestamp()
+      };
+
+      await updateDoc(uRef, resetData);
+      await updateDoc(pRef, resetData);
+      
+      setTargetUserForRecord((prev: any) => ({ 
+        ...prev, 
+        wallet: { ...prev.wallet, coins: 0, diamonds: 0, totalSpent: 0, dailySpent: 0 } 
+      }));
+      
+      toast({ title: 'Wallet Purged', description: 'User economic frequency has been reset to zero.' });
+    } finally {
+      setIsResettingWallet(false);
     }
   };
 
@@ -740,6 +775,9 @@ export default function AdminPage() {
               <TabsTrigger value="chat-inspector" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Eye className="h-4 w-4 text-emerald-500" /> Chat Inspector
               </TabsTrigger>
+              <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <UserSearch className="h-4 w-4 text-rose-500" /> User Records
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -913,6 +951,85 @@ export default function AdminPage() {
                                    })}
                                 </div>
                              </ScrollArea>
+                          </div>
+                       </div>
+                     )}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="user-records" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-600"><UserSearch className="h-6 w-6" /> Tribe Member Records</CardTitle>
+                     <CardDescription>Audit the economic and social signatures of any tribe member. Full wallet history visibility.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter Member Special ID (e.g. 001)..." value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit Identity</Button>
+                     </div>
+
+                     {targetUserForRecord && (
+                       <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
+                          <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between">
+                             <div className="flex items-center gap-4">
+                                <Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar>
+                                <div>
+                                   <h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3>
+                                   <div className="flex items-center gap-2 mt-1">
+                                      <SpecialIdBadge id={targetUserForRecord.specialId} />
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sync ID: {targetUserForRecord.id.slice(0, 8)}</span>
+                                   </div>
+                                </div>
+                             </div>
+                             <div className="text-right space-y-1">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Established</p>
+                                <p className="font-black text-slate-900 uppercase italic">{targetUserForRecord.createdAt?.toDate() ? format(targetUserForRecord.createdAt.toDate(), 'PPP') : 'Stardust'}</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2">
+                                <div className="flex items-center gap-2 text-blue-600 mb-2">
+                                   <Wallet className="h-4 w-4" />
+                                   <span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic">
+                                   <GoldCoinIcon className="h-6 w-6" />
+                                   {targetUserForRecord.wallet?.coins.toLocaleString() || 0}
+                                </div>
+                             </div>
+                             <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2">
+                                <div className="flex items-center gap-2 text-cyan-600 mb-2">
+                                   <Sparkles className="h-4 w-4" />
+                                   <span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic">
+                                   <Activity className="h-6 w-6" />
+                                   {targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}
+                                </div>
+                             </div>
+                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2">
+                                <div className="flex items-center gap-2 text-purple-600 mb-2">
+                                   <History className="h-4 w-4" />
+                                   <span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic">
+                                   <BarChart3 className="h-6 w-6" />
+                                   {targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}
+                                </div>
+                             </div>
+                          </div>
+
+                          <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
+                             <div className="text-center space-y-2">
+                                <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
+                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
+                             </div>
+                             <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
+                                {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
+                             </Button>
                           </div>
                        </div>
                      )}
