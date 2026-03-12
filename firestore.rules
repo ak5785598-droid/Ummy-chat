@@ -67,6 +67,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /globalTasks/{taskId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     match /users/{userId} {
       allow get: if true;
       allow list: if isSignedIn();
@@ -82,6 +87,11 @@ service cloud.firestore {
       
       match /notifications/{notifId} {
         allow get, list, write: if (isOwner(userId) && isNotBanned()) || isAdmin() || isCreator();
+      }
+
+      match /completedTasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isNotBanned();
       }
 
       match /followedRooms/{roomId} {
@@ -157,6 +167,11 @@ service cloud.firestore {
     match /games/{gameId} {
       allow get, list: if true;
       allow write: if isCreator();
+    }
+    
+    match /gameOracle/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

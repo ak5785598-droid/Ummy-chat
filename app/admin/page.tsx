@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -198,6 +198,14 @@ export default function AdminPage() {
   const [oracleRoulette, setOracleRoulette] = useState('');
   const [isSyncingOracle, setIsSyncingOracle] = useState<string | null>(null);
 
+  // Task Sync States
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskReward, setTaskReward] = useState('1000');
+  const [taskCtaLabel, setTaskCtaLabel] = useState('Go');
+  const [taskCtaHref, setTaskCtaHref] = useState('/rooms');
+  const [isAddingTask, setIsAddingTask] = useState(false);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, 'games'));
@@ -221,6 +229,12 @@ export default function AdminPage() {
     return query(collection(firestore, 'privateChats', inspectChatId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
   }, [firestore, inspectChatId, isCreator]);
   const { data: inspectedMessages } = useCollection(inspectedMessagesQuery);
+
+  const globalTasksQuery = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return query(collection(firestore, 'globalTasks'), orderBy('createdAt', 'desc'));
+  }, [firestore, isCreator]);
+  const { data: globalTasks } = useCollection(globalTasksQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -309,6 +323,26 @@ export default function AdminPage() {
       toast({ title: 'Oracle Synchronized', description: `Outcome forced: ${result}` });
     } finally {
       setIsSyncingOracle(null);
+    }
+  };
+
+  const handleAddTask = async () => {
+    if (!firestore || !taskTitle.trim() || !isCreator) return;
+    setIsAddingTask(true);
+    try {
+      const taskRef = collection(firestore, 'globalTasks');
+      await addDoc(taskRef, {
+        title: taskTitle,
+        description: taskDescription,
+        coinReward: parseInt(taskReward) || 0,
+        createdAt: serverTimestamp(),
+        cta: { label: taskCtaLabel, href: taskCtaHref }
+      });
+      toast({ title: 'Task Sync Active' });
+      setTaskTitle('');
+      setTaskDescription('');
+    } finally {
+      setIsAddingTask(false);
     }
   };
 
@@ -778,6 +812,9 @@ export default function AdminPage() {
               <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <UserSearch className="h-4 w-4 text-rose-500" /> User Records
               </TabsTrigger>
+              <TabsTrigger value="task-sync" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <ClipboardList className="h-4 w-4 text-amber-500" /> Task Center
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -1033,6 +1070,74 @@ export default function AdminPage() {
                           </div>
                        </div>
                      )}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="task-sync" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-amber-600">
+                        <ClipboardList className="h-6 w-6" /> Task Center Command
+                     </CardTitle>
+                     <CardDescription>Dispatch global challenges and duties to the entire tribal graph. Assigned tasks sync to all profiles.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-10">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
+                        <div className="space-y-4">
+                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Task Identity</Label>
+                           <Input placeholder="Task Title (e.g. Daily Check-in)" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="h-14 rounded-2xl border-2" />
+                           <Textarea placeholder="Task Description..." value={taskDescription} onChange={(e) => setTaskDescription(e.target.value)} className="h-24 rounded-2xl border-2 resize-none" />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Economic Handshake (Reward)</Label>
+                           <div className="relative">
+                              <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6" />
+                              <Input type="number" placeholder="Coin Reward" value={taskReward} onChange={(e) => setTaskReward(e.target.value)} className="h-14 pl-12 rounded-2xl border-2 font-black italic" />
+                           </div>
+                           <div className="grid grid-cols-2 gap-2">
+                              <Input placeholder="CTA Label (Go)" value={taskCtaLabel} onChange={(e) => setTaskCtaLabel(e.target.value)} className="h-12 rounded-xl border-2" />
+                              <Input placeholder="CTA Href (/rooms)" value={taskCtaHref} onChange={(e) => setTaskCtaHref(e.target.value)} className="h-12 rounded-xl border-2" />
+                           </div>
+                        </div>
+                        <Button onClick={handleAddTask} disabled={isAddingTask || !taskTitle.trim()} className="md:col-span-2 h-16 rounded-[1.5rem] bg-black text-white font-black uppercase italic text-xl shadow-xl active:scale-95 transition-all">
+                           {isAddingTask ? <Loader className="animate-spin" /> : <><Send className="mr-2 h-6 w-6" /> Synchronize Global Task</>}
+                        </Button>
+                     </div>
+
+                     <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-2">Active Frequency Tasks</h3>
+                        <div className="bg-slate-50 rounded-[2.5rem] border border-slate-100 overflow-hidden divide-y divide-slate-200">
+                           {globalTasks?.map(task => (
+                             <div key={task.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                   <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                                      <ListTodo className="h-6 w-6" />
+                                   </div>
+                                   <div>
+                                      <p className="font-black text-sm uppercase text-slate-900">{task.title}</p>
+                                      <p className="text-xs text-muted-foreground font-body italic">{task.description}</p>
+                                   </div>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                   <div className="text-right">
+                                      <div className="flex items-center gap-1.5 justify-end">
+                                         <span className="font-black text-amber-600 italic">+{task.coinReward.toLocaleString()}</span>
+                                         <GoldCoinIcon className="h-4 w-4" />
+                                      </div>
+                                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{task.cta.label} • {task.cta.href}</p>
+                                   </div>
+                                   <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'globalTasks', task.id))} className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
+                                      <Trash2 className="h-5 w-5" />
+                                   </Button>
+                                </div>
+                             </div>
+                           ))}
+                           {(!globalTasks || globalTasks.length === 0) && (
+                             <div className="py-20 text-center opacity-20 italic">No global tasks synchronized.</div>
+                           )}
+                        </div>
+                     </div>
                   </CardContent>
                </Card>
             </TabsContent>
