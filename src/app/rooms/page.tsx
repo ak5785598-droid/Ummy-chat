@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -109,13 +110,13 @@ function ScrollingBanner({ slides: customSlides, isSovereign }: { slides?: any[]
     }
   };
 
-  if (!mounted || slides.length === 0) return <div className="col-span-2 my-2 rounded-[1.5rem] h-28 bg-black/5 animate-pulse" />;
+  if (!mounted || slides.length === 0) return <div className="rounded-[1.5rem] h-28 bg-black/5 animate-pulse mb-6" />;
 
   const slide = slides[currentSlide];
   const Icon = ICON_MAP[slide.iconName] || Sparkles;
 
   return (
-    <div className="col-span-2 my-2 rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black">
+    <div className="rounded-[1.5rem] overflow-hidden relative h-28 shadow-xl border-2 border-white/20 group active:scale-[0.98] transition-all cursor-pointer bg-black mb-6">
       <div key={currentSlide} className="absolute inset-0 animate-in fade-in slide-in-from-right-4 duration-700">
         {slide.imageUrl && (
           <Image 
@@ -300,6 +301,9 @@ export default function RoomsPage() {
         <div className="px-4 space-y-6 overflow-y-auto no-scrollbar flex-1">
           {activeTab === 'Popular' ? (
             <>
+              {/* Event Banner Sync - Absolute Top Priority */}
+              <ScrollingBanner slides={bannerConfig?.slides} isSovereign={isSovereign} />
+
               <div className="flex gap-2">
                  <CategoryCard title="Ranking" label="Ranking" gradient="bg-gradient-to-br from-orange-400 to-yellow-600" onClick={() => router.push('/leaderboard')} />
                  <CategoryCard title="CP" label="CP" gradient="bg-gradient-to-br from-pink-400 to-purple-600" onClick={() => router.push('/cp-challenge')} />
@@ -311,11 +315,8 @@ export default function RoomsPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6">
-                  {displayRooms.map((room: any, index: number) => (
-                    <React.Fragment key={room.id}>
-                      <ChatRoomCard room={room} variant="modern" />
-                      {index === 3 && <ScrollingBanner slides={bannerConfig?.slides} isSovereign={isSovereign} />}
-                    </React.Fragment>
+                  {displayRooms.map((room: any) => (
+                    <ChatRoomCard key={room.id} room={room} variant="modern" />
                   ))}
                 </div>
               )}

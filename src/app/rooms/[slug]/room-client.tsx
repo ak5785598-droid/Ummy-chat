@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -26,7 +27,8 @@ import {
   Heart,
   Plus,
   SmilePlus,
-  MessageSquare
+  MessageSquare,
+  Trophy
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -388,14 +390,23 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
-            <AvatarImage src={room.coverUrl || undefined} />
-            <AvatarFallback>UM</AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-3 ml-12">
+          <div className="relative">
+            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
+              <AvatarImage src={room.coverUrl || undefined} />
+              <AvatarFallback>UM</AvatarFallback>
+            </Avatar>
+            {/* High-Fidelity Trophy Counter Badge */}
+            <div className="absolute -bottom-2 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
+               <Trophy className="h-2.5 w-2.5 text-yellow-400 fill-current" />
+               <span className="text-[8px] font-black text-yellow-400 leading-none">
+                 {room.stats?.totalGifts?.toLocaleString() || 0}
+               </span>
+            </div>
+          </div>
           <div className="flex flex-col">
              <div className="flex items-center gap-2">
-                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white">{room.title}</h1>
+                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none">{room.title}</h1>
                 <button 
                   onClick={handleFollowRoom}
                   className={cn(
@@ -413,7 +424,7 @@ export function RoomClient({ room }: { room: Room }) {
                    )}
                 </button>
              </div>
-             <p className="text-[10px] font-bold text-white/60 uppercase">ID:{room.roomNumber}</p>
+             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5">ID:{room.roomNumber}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -472,28 +483,47 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-4 pb-10 flex items-center justify-between gap-3 pt-4">
-        <div className="flex-1 flex items-center gap-3">
+      <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
+        {/* Left Side: Chat Trigger */}
+        <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
              className={cn(
-               "backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0",
+               "backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
                isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
              )}
            >
               <MessageSquare className="h-6 w-6" />
            </button>
-           <div className="flex items-center gap-3">
-              <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
-              
-              <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform">
-                <SmilePlus className="h-5 w-5 text-white" />
-              </button>
+        </div>
 
-              <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><Mail className="h-5 w-5 text-white" /></button>
-              <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><GiftIcon className="h-6 w-6 text-white fill-white" /></button>
-              <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform"><LayoutGrid className="h-5 w-5 text-white" /></button>
-           </div>
+        {/* Center: Gift Boutique Portal */}
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-4">
+           <button 
+             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
+             className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
+           >
+              <GiftIcon className="h-7 w-7 text-white fill-white" />
+           </button>
+        </div>
+
+        {/* Right Side: Social Utility Group */}
+        <div className="flex items-center gap-2">
+           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+           </button>
+           
+           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+             <SmilePlus className="h-5 w-5 text-white" />
+           </button>
+
+           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <Mail className="h-5 w-5 text-white" />
+           </button>
+
+           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <LayoutGrid className="h-5 w-5 text-white" />
+           </button>
         </div>
       </footer>
 
