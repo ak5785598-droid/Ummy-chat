@@ -484,6 +484,7 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
+        {/* Left Side: Chat Trigger */}
         <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
@@ -496,7 +497,8 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-4">
+        {/* Center: Gift Boutique Portal - Moved downward as requested */}
+        <div className="absolute left-1/2 -translate-x-1/2 translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
@@ -505,6 +507,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
+        {/* Right Side: Social Utility Group */}
         <div className="flex items-center gap-2">
            <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
               {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
