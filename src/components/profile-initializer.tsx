@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -6,6 +7,9 @@ import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, incre
 
 /**
  * Production Profile Initializer.
+ * Re-engineered for the Dual-ID Protocol:
+ * 1. Automatic 8-digit Account Number (e.g. 10046272) using staggered increments.
+ * 2. Special 3-digit ID remains NULL until manually assigned by Admin.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -54,26 +58,30 @@ export function ProfileInitializer() {
           return;
         }
 
-        // 2. NEW IDENTITY REGISTRATION
+        // 2. NEW IDENTITY REGISTRATION (Staggered 8-digit Account ID)
         hasInitialized.current = profileId;
 
         const finalData = await runTransaction(firestore, async (transaction) => {
           const countersRef = doc(firestore, 'appConfig', 'counters');
           const countersSnap = await transaction.get(countersRef);
-          let nextUserId = 1;
-
-          if (countersSnap.exists()) {
-            nextUserId = (countersSnap.data().userCounter || 0) + 1;
+          
+          let nextAccBase = 10000000;
+          if (countersSnap.exists() && countersSnap.data().accCounter) {
+            nextAccBase = countersSnap.data().accCounter;
           }
 
-          transaction.set(countersRef, { userCounter: nextUserId }, { merge: true });
-          const specialId = String(nextUserId).padStart(3, '0');
+          // Generate a non-sequential but unique 8-digit step
+          const randomStep = Math.floor(Math.random() * 9000) + 1000; 
+          const newAccCounter = nextAccBase + randomStep;
+          const accountNumber = String(newAccCounter);
+
+          transaction.set(countersRef, { accCounter: newAccCounter }, { merge: true });
 
           return {
             id: profileId,
-            specialId: specialId,
-            accountNumber: specialId,
-            username: user.displayName || `Tribe_${specialId}`,
+            specialId: null, // RESTRICTED: Admin only assignment
+            accountNumber: accountNumber,
+            username: user.displayName || `Tribe_${accountNumber}`,
             avatarUrl: user.photoURL || '', 
             email: user.email || '',
             bio: 'Synchronized with the Ummy frequency.',
@@ -94,7 +102,8 @@ export function ProfileInitializer() {
 
         await setDoc(userSummaryRef, {
           id: profileId,
-          specialId: finalData.specialId,
+          specialId: null,
+          accountNumber: finalData.accountNumber,
           username: finalData.username,
           avatarUrl: finalData.avatarUrl,
           wallet: finalData.wallet,
@@ -107,7 +116,7 @@ export function ProfileInitializer() {
 
         addDocumentNonBlocking(collection(firestore, 'users', profileId, 'notifications'), {
           title: 'Tribe Established',
-          content: `Welcome to Ummy! Your Tribal ID is ${finalData.specialId}.`,
+          content: `Welcome to Ummy! Your Tribal ID is ${finalData.accountNumber}.`,
           type: 'system',
           timestamp: serverTimestamp(),
           isRead: false

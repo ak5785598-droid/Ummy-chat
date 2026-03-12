@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -27,7 +28,10 @@ import {
   Flag,
   Sparkles,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList,
+  HelpCircle,
+  MapPin
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -125,21 +129,15 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
   const handleCopyId = () => {
-    const idToCopy = profile.specialId || profile.id;
+    const idToCopy = profile.specialId || profile.accountNumber || profile.id;
     navigator.clipboard.writeText(idToCopy);
     toast({ title: 'ID Copied' });
-  };
-
-  const handleReport = () => {
-    window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank');
   };
 
   const isOfficial = profile.tags?.includes('Official');
   const isSeller = profile.tags?.includes('Seller') || profile.tags?.includes('Coin Seller');
   const isCS = profile.tags?.includes('Customer Service');
   const isCSLeader = profile.tags?.includes('CS Leader');
-
-  const isNewUser = profile.createdAt && (Date.now() - profile.createdAt.toMillis()) < 86400000;
 
   return (
     <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
@@ -155,10 +153,7 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
                  <button className="p-1 text-white active:scale-95 transition-transform"><MoreHorizontal className="h-8 w-8" /></button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                 <DropdownMenuItem 
-                   onClick={handleReport}
-                   className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400"
-                 >
+                 <DropdownMenuItem onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400">
                     <Flag className="h-4 w-4" />
                     <span className="font-black uppercase text-[10px]">Report</span>
                  </DropdownMenuItem>
@@ -175,18 +170,16 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
               <div className="flex-1 pb-1">
                  <div className="flex items-center gap-2 mb-2">
                     <h1 className="text-2xl font-black text-white tracking-tight leading-none">{profile.username}</h1>
-                    {isNewUser && (
-                      <Badge className="bg-yellow-400 text-black font-black uppercase text-[8px] h-4 italic">New</Badge>
-                    )}
                  </div>
                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                     <div className="flex items-center gap-2">
-                       <div className="bg-pink-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-white">♀</div>
                        <span className="text-lg">🇮🇳</span>
                        <div className="flex items-center gap-1">
-                          {profile.specialIdColor ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
+                          {profile.specialId ? (
+                            <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
+                          ) : (
                             <div className="flex items-center gap-1 cursor-pointer" onClick={handleCopyId}>
-                               <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.specialId || profile.id.slice(0, 6)}</span>
+                               <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">ID: {profile.accountNumber}</span>
                                <Copy className="h-3 w-3 text-white/40" />
                             </div>
                           )}
@@ -197,16 +190,10 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
                           <Star className="h-2 w-2 fill-white text-white" />
                           <span className="text-[9px] font-black text-white">{profile.level?.rich || 0}</span>
                        </div>
-                       <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
-                          <Sparkles className="h-2 w-2 fill-white text-white" />
-                          <span className="text-[9px] font-black text-white">{profile.level?.charm || 0}</span>
-                       </div>
                        {isOfficial && <OfficialTag size="sm" className="ml-1" />}
                        {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
                        {isSeller && <SellerTag size="sm" className="-ml-6" />}
                        {isCS && <CustomerServiceTag size="sm" className="-ml-6" />}
-                       {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-6" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                       {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-6" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                     </div>
                  </div>
               </div>
@@ -225,41 +212,14 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
             <h3 className="font-black text-lg uppercase tracking-tight">Profile</h3>
             <div className="space-y-4">
                <div className="flex items-center gap-4 text-gray-400">
-                  <Cake className="h-5 w-5" />
-                  <span className="text-sm font-bold">1990-06-18</span>
+                  <MapPin className="h-5 w-5" />
+                  <span className="text-sm font-bold">{profile.country || 'India'}</span>
                </div>
                <div className="flex items-center gap-4 text-gray-400">
                   <Pencil className="h-5 w-5" />
                   <span className="text-sm font-bold">{profile.bio || 'Hey'}</span>
                </div>
             </div>
-         </div>
-
-         <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-               <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Top 3 User Contributions</span>
-               <div className="flex -space-x-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="relative h-10 w-10">
-                       <div className={cn(
-                         "absolute -top-3 left-1/2 -translate-x-1/2 z-10 h-5 w-5",
-                         i === 1 ? "text-yellow-500" : i === 2 ? "text-slate-300" : "text-amber-600"
-                       )}><Crown className="h-full w-full fill-current" /></div>
-                       <Avatar className="h-full w-full border-2 border-white shadow-sm">
-                         <AvatarFallback className="bg-gray-50">
-                           <User className="h-5 w-5 text-gray-200" />
-                         </AvatarFallback>
-                       </Avatar>
-                    </div>
-                  ))}
-               </div>
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase italic">This Month</p>
-         </div>
-
-         <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
-            <span className="text-[13px] font-black text-purple-500 uppercase tracking-tight">Moments</span>
-            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" />
          </div>
       </div>
 
@@ -301,14 +261,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
-  const [isProcessingFriend, setIsProcessingFriend] = useState(false);
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
-
-  const friendRequestRef = useMemoFirebase(() => {
-    if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
-    return doc(firestore, 'friend_requests', `${currentUser.uid}_${profileId}`);
-  }, [firestore, currentUser, profileId]);
-  const { data: friendRequest } = useDoc(friendRequestRef);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -324,18 +277,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const handleCopyId = () => {
     if (!profile) return;
-    const idToCopy = profile.specialId || profile.id;
+    const idToCopy = profile.specialId || profile.accountNumber || profile.id;
     navigator.clipboard.writeText(idToCopy);
     toast({ title: 'ID Copied' });
   };
 
   const handleFollow = async () => {
     if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
-    
     setIsProcessingFollow(true);
     const fRef = doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
     const rRef = doc(firestore, 'followers', `${profileId}_${currentUser.uid}`);
-
     const currentUserSummaryRef = doc(firestore, 'users', currentUser.uid);
     const currentUserProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     const targetUserSummaryRef = doc(firestore, 'users', profileId);
@@ -343,19 +294,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
     try {
       if (followData) {
-        // UNFOLLOW PROTOCOL
         await deleteDocumentNonBlocking(fRef);
-        
-        // 1. Decrement following/fans
         const decStats = { 'stats.following': increment(-1), updatedAt: serverTimestamp() };
         const decFans = { 'stats.fans': increment(-1), updatedAt: serverTimestamp() };
-        
         updateDocumentNonBlocking(currentUserSummaryRef, decStats);
         updateDocumentNonBlocking(currentUserProfileRef, decStats);
         updateDocumentNonBlocking(targetUserSummaryRef, decFans);
         updateDocumentNonBlocking(targetUserProfileRef, decFans);
-
-        // 2. Check if they were friends (mutual follow)
         const reverseSnap = await getDoc(rRef);
         if (reverseSnap.exists()) {
           const decFriends = { 'stats.friends': increment(-1) };
@@ -364,26 +309,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           updateDocumentNonBlocking(targetUserSummaryRef, decFriends);
           updateDocumentNonBlocking(targetUserProfileRef, decFriends);
         }
-
         toast({ title: 'Unfollowed' });
       } else {
-        // FOLLOW PROTOCOL
-        await setDocumentNonBlocking(fRef, {
-          followerId: currentUser.uid,
-          followingId: profileId,
-          timestamp: serverTimestamp()
-        }, { merge: true });
-
-        // 1. Increment following/fans
+        await setDocumentNonBlocking(fRef, { followerId: currentUser.uid, followingId: profileId, timestamp: serverTimestamp() }, { merge: true });
         const incStats = { 'stats.following': increment(1), updatedAt: serverTimestamp() };
         const incFans = { 'stats.fans': increment(1), updatedAt: serverTimestamp() };
-        
         updateDocumentNonBlocking(currentUserSummaryRef, incStats);
         updateDocumentNonBlocking(currentUserProfileRef, incStats);
         updateDocumentNonBlocking(targetUserSummaryRef, incFans);
         updateDocumentNonBlocking(targetUserProfileRef, incFans);
-
-        // 2. Mutual Check for Friends
         const reverseSnap = await getDoc(rRef);
         if (reverseSnap.exists()) {
           const incFriends = { 'stats.friends': increment(1) };
@@ -391,16 +325,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           updateDocumentNonBlocking(currentUserProfileRef, incFriends);
           updateDocumentNonBlocking(targetUserSummaryRef, incFriends);
           updateDocumentNonBlocking(targetUserProfileRef, incFriends);
-          toast({ title: 'New Friend Sync!', description: 'You both follow each other.' });
-        } else {
-          toast({ title: 'Following' });
-        }
+          toast({ title: 'New Friend Sync!' });
+        } else { toast({ title: 'Following' }); }
       }
-    } catch (e: any) {
-      console.error(e);
-    } finally {
-      setIsProcessingFollow(false);
-    }
+    } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
 
   if (isUserLoading || isProfileLoading) {
@@ -425,15 +353,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
           <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
-            {isOwnProfile && (
-              <div className="absolute top-10 right-6">
-                <EditProfileDialog profile={profile} trigger={
-                  <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
-                    <Pen className="h-5 w-5 text-gray-600" />
-                  </button>
-                } />
-              </div>
-            )}
+            <div className="absolute top-10 right-6">
+              <EditProfileDialog profile={profile} trigger={
+                <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
+                  <Pen className="h-5 w-5 text-gray-600" />
+                </button>
+              } />
+            </div>
 
             <div className="relative">
               <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
@@ -452,26 +378,21 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <div className="space-y-1">
               <div className="flex items-center justify-center gap-2">
                 <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
-                <div className="bg-blue-50 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-black text-blue-500">♂</div>
-                <span className="text-lg">🇮🇳</span>
-                
                 <div className="flex items-center gap-1.5 ml-1">
                    <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
                       <Star className="h-2 w-2 fill-white text-white" />
                       <span className="text-[8px] font-black text-white">{profile.level?.rich || 1}</span>
-                   </div>
-                   <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-pink-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
-                      <Sparkles className="h-2 w-2 fill-white text-white" />
-                      <span className="text-[8px] font-black text-white">{profile.level?.charm || 1}</span>
                    </div>
                 </div>
               </div>
               
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  {profile.specialIdColor ? <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} /> : (
+                  {profile.specialId ? (
+                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
+                  ) : (
                     <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.specialId || profile.id.slice(0, 6)}</span>
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.accountNumber}</span>
                       <Copy className="h-3 w-3 text-gray-300" />
                     </div>
                   )}
@@ -481,8 +402,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
                    {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
-                   {profile.tags?.includes('Official center') && <CenterTag label="Official center" className="-ml-8" gradient="bg-gradient-to-r from-indigo-600 to-blue-800" />}
-                   {profile.tags?.includes('Seller center') && <CenterTag label="Seller center" className="-ml-8" gradient="bg-gradient-to-r from-orange-600 to-red-800" />}
                 </div>
               </div>
             </div>
@@ -501,9 +420,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   <span className="text-[13px] font-black text-yellow-500 uppercase tracking-tighter italic">SVIP Club</span>
                   <span className="text-[10px] text-white/60 font-bold uppercase">Distinguished</span>
                </div>
-               <div className="absolute -bottom-2 -right-2 opacity-40 group-hover:scale-110 transition-transform">
-                  <Crown className="h-16 w-16 text-yellow-500 fill-current" />
-               </div>
+               <div className="absolute -bottom-2 -right-2 opacity-40 group-hover:scale-110 transition-transform"><Crown className="h-16 w-16 text-yellow-500 fill-current" /></div>
             </div>
 
             <div onClick={() => router.push('/wallet')} className="h-24 rounded-2xl bg-gradient-to-br from-[#0ea5e9] to-[#0369a1] p-4 relative overflow-hidden shadow-lg group active:scale-95 transition-all cursor-pointer">
@@ -514,9 +431,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <span className="text-[10px] text-white font-black">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                   </div>
                </div>
-               <div className="absolute -bottom-2 -right-2 opacity-40 group-hover:scale-110 transition-transform">
-                  <Briefcase className="h-16 w-16 text-yellow-400 fill-current" />
-               </div>
+               <div className="absolute -bottom-2 -right-2 opacity-40 group-hover:scale-110 transition-transform"><Briefcase className="h-16 w-16 text-yellow-400 fill-current" /></div>
             </div>
           </div>
 
@@ -526,13 +441,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <MenuItem label="Level" icon={Star} colorClass="bg-blue-100 text-blue-600" href="/level" />
             <MenuItem label="Store" icon={ShoppingBag} colorClass="bg-orange-100 text-orange-600" href="/store" />
             <MenuItem label="Bag" icon={Briefcase} colorClass="bg-amber-100 text-amber-600" />
-            <MenuItem label="Official center" icon={ShieldCheck} colorClass="bg-indigo-100 text-indigo-600" />
+            <MenuItem label="Task center" icon={ClipboardList} colorClass="bg-amber-100 text-amber-600" href="/tasks" />
             
             {isSeller && <SellerTransferDialog />}
           </div>
 
           <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
              <MenuItem label="Setting" icon={SettingsIcon} href="/settings" />
+             <MenuItem label="Help Center" icon={HelpCircle} href="/help-center" colorClass="bg-orange-100 text-orange-600" />
           </div>
         </div>
       </AppLayout>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -28,9 +29,6 @@ interface CreateRoomDialogProps {
 
 /**
  * Production Room Creation Portal.
- * Enforces the "One user, one room" tribal protocol.
- * DIRECT ENTRY: If iconOnly is true, clicking skips to existing room if found.
- * IDENTITY SYNC: Room Number is synchronized with the User's Profile ID (specialId).
  */
 export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialogProps) {
   const [open, setOpen] = useState(false);
@@ -48,13 +46,11 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
   const handleDirectEntryCheck = async (e: React.MouseEvent) => {
     if (!user || !firestore) return;
 
-    // Direct entry protocol for icon or specific triggers
     if (iconOnly || !open) {
       e.preventDefault();
       setIsSubmitting(true);
       
       try {
-        // ATOMIC ID SYNC: Room document ID is the user's UID
         const roomRef = doc(firestore, 'chatRooms', user.uid);
         const roomSnap = await getDoc(roomRef);
         
@@ -63,10 +59,9 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
           return;
         }
         
-        // No room found, proceed to show dialog
         setOpen(true);
       } catch (error: any) {
-        setOpen(true); // Fallback to dialog
+        setOpen(true);
       } finally {
         setIsSubmitting(false);
       }
@@ -80,7 +75,6 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
     setIsSubmitting(true);
 
     try {
-      // 1. Identity Verification (One Room Protocol via Document ID)
       const roomRef = doc(firestore, 'chatRooms', user.uid);
       const roomSnap = await getDoc(roomRef);
       
@@ -95,10 +89,10 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
         return;
       }
 
-      // 2. Identity Sync Protocol (Room ID No = User Profile ID)
-      const roomNumber = userProfile.specialId;
+      // IDENTITY SYNC PROTOCOL: 
+      // Room Number matches Special ID if assigned, else fallback to automatic Account Number.
+      const roomNumber = userProfile.specialId || userProfile.accountNumber || '0000';
 
-      // 3. Frequency Initialization
       await setDoc(roomRef, {
         id: user.uid,
         name, 
@@ -112,7 +106,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
         lockedSeats: [], 
         participantCount: 0, 
         announcement: 'Welcome to the frequency!',
-        roomThemeId: 'misty' // Initial theme
+        roomThemeId: 'misty' 
       });
       
       setOpen(false);
@@ -150,7 +144,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
           <DialogHeader className="p-8 pb-0 text-center">
             <DialogTitle className="font-headline text-3xl uppercase italic tracking-tighter">Launch Tribe</DialogTitle>
             <DialogDescription className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">
-              Identity Sync: Room ID No will match your Profile ID
+              Identity Sync: Room ID will match your Tribal Signature.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-8 px-8">
