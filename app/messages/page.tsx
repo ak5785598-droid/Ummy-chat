@@ -206,7 +206,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Say something..."
-                className="flex-1 h-12 rounded-full border-2 border-gray-50 focus:border-primary px-6 text-sm italic"
+                className="flex-1 h-12 rounded-full border-2 border-yellow-200 bg-yellow-50 focus:border-primary px-6 text-sm italic text-gray-900 placeholder:text-yellow-600/40"
               />
               <button 
                 type="submit" 
