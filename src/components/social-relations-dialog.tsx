@@ -25,7 +25,7 @@ interface UserListItemProps {
 
 /**
  * High-Fidelity User List Item.
- * Matches the provided image: Avatar, Username, Flag, Gender, and Dual Level Badges.
+ * Matches the requested visual: Avatar, Username, Flag, Gender circle, and Dual Level Badges.
  */
 const UserListItem = ({ userId, onClick }: UserListItemProps) => {
   const { userProfile: profile, isLoading } = useUserProfile(userId);
@@ -58,24 +58,24 @@ const UserListItem = ({ userId, onClick }: UserListItemProps) => {
         <h4 className="font-black text-[16px] text-gray-900 truncate uppercase tracking-tight mb-1">{profile.username}</h4>
         
         <div className="flex items-center gap-2">
-          {/* Flag & Gender */}
+          {/* Flag & Gender Signature */}
           <span className="text-base leading-none">🇮🇳</span>
           <div className={cn(
-            "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0",
+            "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-sm",
             profile.gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
           )}>
             {profile.gender === 'Female' ? '♀' : '♂'}
           </div>
 
-          {/* Rich Level Badge (Blue/Gold Diamond) */}
-          <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
+          {/* Rich Level Badge (Cyan Diamond Style) */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2.5 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
              <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
              <span className="text-[9px] font-black text-white drop-shadow-sm leading-none">{profile.level?.rich || 1}</span>
           </div>
 
-          {/* Charm Level Badge (Heart style) */}
-          <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
+          {/* Charm Level Badge (Pink Heart Style) */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2.5 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
              <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
              <span className="text-[9px] font-black text-white drop-shadow-sm leading-none">{profile.level?.charm || 1}</span>
@@ -94,10 +94,12 @@ interface SocialRelationsDialogProps {
   username?: string;
 }
 
+/**
+ * Social Relations Portal - High-Fidelity Social Graph.
+ */
 export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab = 'followers', username }: SocialRelationsDialogProps) {
   const firestore = useFirestore();
   const router = useRouter();
-  const { user: currentUser } = useUser();
 
   const followersQuery = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -132,7 +134,7 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
            </button>
            <div className="flex-1">
               <DialogTitle className="text-xl font-black uppercase italic tracking-tighter truncate">{username || 'Social Graph'}</DialogTitle>
-              <DialogDescription className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tribal Relationships</DialogDescription>
+              <DialogDescription className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tribal Frequencies</DialogDescription>
            </div>
         </DialogHeader>
 
