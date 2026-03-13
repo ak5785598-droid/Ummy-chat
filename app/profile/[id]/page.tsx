@@ -142,7 +142,6 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
 
 /**
  * Public Profile View.
- * Unified name row with all identity tags.
  */
 const PublicProfileView = ({ 
   profile, 
@@ -178,14 +177,14 @@ const PublicProfileView = ({
   return (
     <div className="min-h-screen bg-white font-headline pb-32 flex flex-col animate-in fade-in duration-700 relative">
       
-      {/* High-Fidelity Identity Background (Blurred DP) */}
+      {/* High-Fidelity Identity Background (Ambient DP) */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
          {profile.avatarUrl && (
            <Image 
              src={profile.avatarUrl} 
              fill 
-             className="object-cover blur-3xl opacity-20 scale-110" 
-             alt="Ambient Background" 
+             className="object-cover blur-3xl opacity-30 scale-110" 
+             alt="Ambient Backdrop" 
              unoptimized 
            />
          )}
@@ -193,7 +192,7 @@ const PublicProfileView = ({
 
       <div className="relative h-[45vh] w-full shrink-0">
         <Image 
-          src={profile.coverUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} 
+          src={profile.coverUrl || profile.avatarUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} 
           alt="Cover" fill className="object-cover" 
           unoptimized
         />
@@ -213,7 +212,7 @@ const PublicProfileView = ({
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[2.5rem] -mt-10 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 space-y-8">
+      <div className="flex-1 bg-white/95 backdrop-blur-md rounded-t-[2.5rem] -mt-10 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 space-y-8">
          <div className="flex items-start gap-4">
             <div className="shrink-0 -mt-14 relative">
                <AvatarFrame frameId={profile.inventory?.activeFrame} size="lg">
@@ -225,7 +224,6 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0">
-               {/* Unified Identity Row: New, Name, Flag, Gender, Rich, Charm */}
                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   {isNew && <Badge className="bg-[#00A3FF] text-white text-[8px] font-black uppercase h-4 px-2 rounded-full border-none shrink-0">New</Badge>}
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
@@ -429,20 +427,20 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
           
-          {/* High-Fidelity Identity Background (Blurred DP) */}
+          {/* High-Fidelity Identity Background (Ambient DP) */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
              {profile.avatarUrl && (
                <Image 
                  src={profile.avatarUrl} 
                  fill 
-                 className="object-cover blur-3xl opacity-10 scale-110" 
+                 className="object-cover blur-3xl opacity-20 scale-110" 
                  alt="Ambient Backdrop" 
                  unoptimized 
                />
              )}
           </div>
 
-          <div className="bg-white/80 backdrop-blur-md px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
+          <div className="bg-white/85 backdrop-blur-md px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
             <div className="absolute top-10 right-6">
               <EditProfileDialog profile={profile} trigger={
                 <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
