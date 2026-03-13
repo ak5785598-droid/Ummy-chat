@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
@@ -35,10 +35,6 @@ const BET_OPTIONS = [
   { id: 'LION', label: 'LION', multiplier: 2, color: 'bg-[#FF0066]', ringColor: 'border-[#FF0066]/40', icon: '🦁' },
 ];
 
-/**
- * Lion Fight - High-Fidelity Combat Arena.
- * Re-engineered to match the shining, glossy Midjourney-style blueprint.
- */
 export default function LionFightPage() {
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -56,6 +52,9 @@ export default function LionFightPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winner, setWinner] = useState<string | null>(null);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'lion-fight'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -101,12 +100,23 @@ export default function LionFightPage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startFight = () => {
+  const startFight = async () => {
     setGameState('fighting');
-    playSound(400, 'sawtooth'); // Bell sound
+    playSound(400, 'sawtooth');
+
+    // ORACLE SYNC CHECK
+    let winId = ['TIGER', 'LION', 'TIE'][Math.floor(Math.random() * 3)];
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'lion-fight'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          winId = oracleSnap.data().forcedResult;
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'lion-fight'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
     setTimeout(() => {
-      const results = ['TIGER', 'LION', 'TIE'];
-      const winId = results[Math.floor(Math.random() * results.length)];
       showResult(winId);
     }, 4000);
   };
@@ -183,7 +193,6 @@ export default function LionFightPage() {
       <div className="h-[100dvh] w-full bg-[#1a0a2e] flex flex-col relative overflow-hidden font-headline text-white select-none">
         <CompactRoomView />
 
-        {/* Global Victory Overlay */}
         {gameState === 'result' && winner && (
           <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
              <div className="relative mb-12 flex flex-col items-center gap-4">
@@ -195,15 +204,16 @@ export default function LionFightPage() {
           </div>
         )}
 
-        {/* Background Visual Sync */}
+        {/* Dynamic Sovereign Background Sync */}
         <div className="absolute inset-0 z-0">
-           {stageAsset && (
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Stage" fill className="object-cover opacity-40 scale-110 animate-in fade-in duration-1000" unoptimized />
+           ) : stageAsset && (
              <img src={stageAsset.imageUrl} className="h-full w-full object-cover opacity-40 scale-110" alt="Stage" />
            )}
            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-[#1a0a2e]" />
         </div>
 
-        {/* Header Sync */}
         <header className="relative z-50 flex items-center justify-between p-4 pt-32 px-6">
            <div className="flex gap-2">
               <button onClick={() => setIsMuted(!isMuted)} className="bg-indigo-600/80 p-2 rounded-full backdrop-blur-md border border-white/10 shadow-lg active:scale-90 transition-all">
@@ -224,11 +234,8 @@ export default function LionFightPage() {
            </div>
         </header>
 
-        {/* Combat Dimension */}
         <main className="flex-1 relative z-10 flex flex-col pt-4">
-           {/* Fighters Row */}
            <div className="flex justify-between items-center px-10 h-48 relative">
-              {/* Tiger Side */}
               <div className={cn(
                 "relative flex flex-col items-center transition-all duration-500",
                 gameState === 'fighting' ? "animate-bounce scale-110" : "scale-100",
@@ -246,7 +253,6 @@ export default function LionFightPage() {
                  </div>
               </div>
 
-              {/* VS Centerpiece */}
               <div className="flex flex-col items-center gap-4">
                  <div className="relative">
                     <span className="text-5xl font-black text-white italic tracking-tighter opacity-20 select-none uppercase">Lion Fight</span>
@@ -258,7 +264,6 @@ export default function LionFightPage() {
                  </div>
               </div>
 
-              {/* Lion Side */}
               <div className={cn(
                 "relative flex flex-col items-center transition-all duration-500",
                 gameState === 'fighting' ? "animate-bounce scale-110" : "scale-100",
@@ -277,14 +282,12 @@ export default function LionFightPage() {
               </div>
            </div>
 
-           {/* Betting Countdown Sync */}
            <div className="w-full text-center py-4 bg-black/20 backdrop-blur-sm border-y border-white/5 mt-4">
               <span className="text-lg font-black uppercase italic text-white/90">
                  {gameState === 'betting' ? `Bet time: ${timeLeft}s` : 'FIGHTING...'}
               </span>
            </div>
 
-           {/* Betting Grid - The 3 Main Capsules */}
            <div className="flex-1 px-4 py-6 grid grid-cols-3 gap-3">
               {BET_OPTIONS.map((opt) => (
                 <button
@@ -298,17 +301,14 @@ export default function LionFightPage() {
                     winner === opt.id && "ring-4 ring-yellow-400 z-20 scale-105"
                   )}
                 >
-                   {/* Shining Gloss Overlay */}
                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent z-10" />
                    <div className="absolute inset-0 w-1/2 h-full bg-white/5 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
 
-                   {/* Header Tag */}
                    <div className={cn("w-full py-2 flex items-center justify-center gap-1 shadow-inner", opt.color)}>
                       <span className="text-lg">{opt.icon}</span>
                       <span className="text-sm font-black text-white italic">X {opt.multiplier}</span>
                    </div>
 
-                   {/* Main Betting Info */}
                    <div className="flex-1 w-full bg-[#1a1a3a] p-4 flex flex-col items-center justify-center gap-4">
                       <div className="flex flex-col items-center">
                          <div className="flex items-center gap-1.5 text-yellow-500 mb-1">
@@ -320,7 +320,6 @@ export default function LionFightPage() {
                          </span>
                       </div>
 
-                      {/* User Specific Bet Box */}
                       <div className="w-full bg-black/40 rounded-2xl py-2 px-3 flex flex-col items-center border border-white/5 shadow-inner">
                          <div className="flex items-center gap-1.5 text-yellow-500">
                             <GoldCoinIcon className="h-3 w-3" />
@@ -336,10 +335,8 @@ export default function LionFightPage() {
            </div>
         </main>
 
-        {/* High-Fidelity Bottom Sync Portal */}
         <footer className="relative z-50 p-6 bg-gradient-to-t from-indigo-950 via-indigo-900/80 to-transparent pb-12">
            <div className="max-w-md mx-auto flex items-center justify-between gap-6">
-              {/* Currency Toggle */}
               <div className="bg-black/40 p-1 rounded-full border border-white/10 flex items-center shadow-inner">
                  <button 
                    onClick={() => setCurrency('coins')}
@@ -355,7 +352,6 @@ export default function LionFightPage() {
                  </button>
               </div>
 
-              {/* Amount Synchronizer */}
               <div className="flex-1 flex items-center justify-between bg-indigo-950/60 rounded-full border-2 border-indigo-500/40 p-1 shadow-2xl">
                  <button 
                    onClick={() => adjustBet('minus')}

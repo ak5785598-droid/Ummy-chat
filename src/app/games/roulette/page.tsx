@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
 
 const NUMBERS = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -52,10 +53,6 @@ const BET_OPTIONS = [
   { id: 'double', label: 'Double', multiplier: 2, color: 'bg-emerald-700' },
 ];
 
-/**
- * High-Fidelity Roulette Dimension.
- * Re-engineered for 5-second high-fidelity visual roll sync and upward-shifted UI.
- */
 export default function RoulettePage() {
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -74,6 +71,9 @@ export default function RoulettePage() {
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'roulette'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -118,18 +118,31 @@ export default function RoulettePage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    const targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
-    const targetIdx = NUMBERS.indexOf(targetNum);
     
+    // ORACLE SYNC CHECK
+    let targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'roulette'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          const forced = oracleSnap.data().forcedResult;
+          if (NUMBERS.includes(forced)) {
+            targetNum = forced;
+            updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'roulette'), { isActive: false });
+          }
+        }
+      } catch (e) {}
+    }
+
+    const targetIdx = NUMBERS.indexOf(targetNum);
     const sliceDeg = 360 / 37;
     const extraSpins = 5 + Math.floor(Math.random() * 5);
     const targetRotation = rotation + (extraSpins * 360) + (targetIdx * sliceDeg);
     
     setRotation(targetRotation);
 
-    // Roll for exactly 5 seconds
     setTimeout(() => {
       showResult(targetNum);
     }, 5000);
@@ -226,6 +239,16 @@ export default function RoulettePage() {
     <AppLayout fullScreen>
       <div className="h-[100dvh] w-full bg-[#311b92] flex flex-col relative overflow-hidden font-headline text-white select-none">
         <CompactRoomView />
+
+        {/* Dynamic Sovereign Background Sync */}
+        <div className="absolute inset-0 z-0">
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Casino Theme" fill className="object-cover opacity-40 animate-in fade-in duration-1000" unoptimized />
+           ) : (
+             <div className="absolute inset-0 bg-gradient-to-b from-[#4a148c] via-[#311b92] to-[#1a237e]" />
+           )}
+           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#311b92] z-10" />
+        </div>
 
         {gameState === 'result' && winners.length > 0 && (
           <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">

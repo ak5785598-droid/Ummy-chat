@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
@@ -21,8 +21,8 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
 
-// CLOCKWISE ORDER SYNC: Top -> Right -> Bottom -> Left sequence for high-fidelity chase
 const ANIMALS = [
   { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
@@ -42,8 +42,8 @@ const CHIPS = [
   { value: 100000, label: '100K', color: 'bg-red-500' },
   { value: 300000, label: '300K', color: 'bg-pink-500' },
   { value: 1000000, label: '1M', color: 'bg-purple-500' },
-  { id: 'high-val', value: 10000000, label: '10M', color: 'bg-indigo-500' },
-  { id: 'max-val', value: 100000000, label: '100M', color: 'bg-cyan-500' },
+  { value: 10000000, label: '10M', color: 'bg-indigo-500' },
+  { value: 100000000, label: '100M', color: 'bg-cyan-500' },
 ];
 
 export default function WildPartyPage() {
@@ -63,6 +63,9 @@ export default function WildPartyPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -241,6 +244,19 @@ export default function WildPartyPage() {
     <AppLayout fullScreen>
       <div className="h-screen w-full bg-[#051a05] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
+
+        {/* Dynamic Sovereign Background Sync */}
+        <div className="absolute inset-0 z-0">
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Jungle Theme" fill className="object-cover opacity-60 animate-in fade-in duration-1000" unoptimized />
+           ) : (
+             <>
+               <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e0a] via-[#051a05] to-[#000000]" />
+               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+             </>
+           )}
+           <div className="absolute inset-0 bg-gradient-to-t from-[#051a05] via-transparent to-transparent opacity-80" />
+        </div>
 
         {/* Global Victory Overlay */}
         {gameState === 'result' && winners.length > 0 && (

@@ -10,12 +10,13 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { useGameBackgroundUpload } from '@/hooks/use-game-background-upload';
 import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,6 +86,7 @@ const ACTIVE_GAME_FREQUENCIES = [
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
+  { id: 'lion-fight', title: 'Lion Fight', slug: 'lion-fight', imageHint: '3d lion fighting' },
 ];
 
 const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
@@ -110,6 +112,7 @@ export default function AdminPage() {
   const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   const { isUploading: isUploadingGameDP, uploadGameLogo } = useGameLogoUpload();
+  const { isUploading: isUploadingGameBG, uploadGameBackground } = useGameBackgroundUpload();
   
   const isCreator = user?.uid === CREATOR_ID;
 
@@ -174,7 +177,8 @@ export default function AdminPage() {
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const gameFileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
+  const gameBGFileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
 
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
@@ -564,15 +568,28 @@ export default function AdminPage() {
   };
 
   const handleGameDPUploadClick = (game: any) => {
-    setSelectedGameForDP(game);
+    setSelectedGameForSync(game);
     gameFileInputRef.current?.click();
+  };
+
+  const handleGameBGUploadClick = (game: any) => {
+    setSelectedGameForSync(game);
+    gameBGFileInputRef.current?.click();
   };
 
   const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && selectedGameForDP) {
-      await uploadGameLogo(selectedGameForDP, file);
-      setSelectedGameForDP(null);
+    if (file && selectedGameForSync) {
+      await uploadGameLogo(selectedGameForSync, file);
+      setSelectedGameForSync(null);
+    }
+  };
+
+  const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedGameForSync) {
+      await uploadGameBackground(selectedGameForSync, file);
+      setSelectedGameForSync(null);
     }
   };
 
@@ -791,18 +808,9 @@ export default function AdminPage() {
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                             <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2">
-                                <div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span></div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div>
-                             </div>
-                             <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2">
-                                <div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span></div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div>
-                             </div>
-                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2">
-                                <div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span></div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div>
-                             </div>
+                             <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
                           </div>
 
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
@@ -841,7 +849,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>
-                                {targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForCenter.accountNumber}</span>}
+                                {targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
@@ -1124,14 +1132,35 @@ export default function AdminPage() {
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Gamepad2 className="h-6 w-6" /> Game Identity Sync</CardTitle><CardDescription>Synchronize visuals for the 3D Tribe Arena.</CardDescription></CardHeader>
                   <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                      {gamesList.map((game) => (
-                       <Card key={game.slug} className="rounded-3xl overflow-hidden border-2 shadow-sm bg-white">
-                          <div className="relative aspect-square flex items-center justify-center bg-slate-50">{game.coverUrl ? <Image src={game.coverUrl} alt={game.title} fill unoptimized className="object-cover" /> : <Gamepad2 className="h-12 w-12 text-slate-200" />}{isUploadingGameDP && selectedGameForDP?.slug === game.slug && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="h-8 w-8 animate-spin text-white" /></div>}</div>
-                          <CardHeader className="p-4 text-center"><CardTitle className="text-sm font-black uppercase italic text-slate-900">{game.title}</CardTitle><Button onClick={() => handleGameDPUploadClick(game)} className="w-full mt-2 h-10 rounded-2xl bg-primary text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameDP}><Camera className="h-3 w-3 mr-2" /> Sync DP</Button></CardHeader>
+                       <Card key={game.slug} className="rounded-3xl overflow-hidden border-2 shadow-sm bg-white flex flex-col">
+                          <div className="relative aspect-square flex items-center justify-center bg-slate-50">
+                             {game.coverUrl ? <Image src={game.coverUrl} alt={game.title} fill unoptimized className="object-cover" /> : <Gamepad2 className="h-12 w-12 text-slate-200" />}
+                             {isUploadingGameDP && selectedGameForSync?.slug === game.slug && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="h-8 w-8 animate-spin text-white" /></div>}
+                          </div>
+                          <div className="p-4 flex-1 flex flex-col gap-3">
+                             <CardTitle className="text-sm font-black uppercase italic text-slate-900 text-center">{game.title}</CardTitle>
+                             <div className="flex flex-col gap-2">
+                                <Button onClick={() => handleGameDPUploadClick(game)} className="w-full h-10 rounded-2xl bg-primary text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameDP}>
+                                   <Camera className="h-3 w-3 mr-2" /> Sync Cover (DP)
+                                </Button>
+                                <Button onClick={() => handleGameBGUploadClick(game)} className="w-full h-10 rounded-2xl bg-indigo-600 text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameBG}>
+                                   <Monitor className="h-3 w-3 mr-2" /> Sync Theme (BG)
+                                </Button>
+                             </div>
+                             {game.backgroundUrl && (
+                               <div className="mt-2 text-center">
+                                  <p className="text-[8px] font-black text-green-600 uppercase tracking-widest flex items-center justify-center gap-1">
+                                     <CheckCircle2 className="h-2 w-2" /> Custom Theme Active
+                                  </p>
+                               </div>
+                             )}
+                          </div>
                        </Card>
                      ))}
                   </CardContent>
                </Card>
                <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
+               <input type="file" ref={gameBGFileInputRef} className="hidden" accept="image/*" onChange={handleGameBGFileChange} />
             </TabsContent>
 
             <TabsContent value="tags" className="m-0 space-y-6">

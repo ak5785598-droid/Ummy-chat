@@ -124,6 +124,7 @@ export type Game = {
   title: string;
   slug: string;
   coverUrl: string;
+  backgroundUrl?: string;
   cost: number;
   imageHint: string;
 };
