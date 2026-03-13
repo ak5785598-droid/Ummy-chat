@@ -202,7 +202,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                        required
                        disabled={isSubmitting}
                        placeholder="Enter your name"
-                       className="rounded-2xl h-14 text-lg border-2 focus:border-primary transition-all"
+                       className="rounded-2xl h-14 text-lg border-2 border-yellow-200 bg-yellow-50 focus:border-primary transition-all italic font-bold text-yellow-900 placeholder:text-yellow-600/40"
                      />
                    </div>
 
@@ -213,7 +213,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                         {isGenderFixed && <span className="text-[8px] font-black uppercase text-green-500 bg-green-50 px-2 py-0.5 rounded-full">Locked</span>}
                      </div>
                      <Select value={gender} onValueChange={setGender} disabled={isGenderFixed || isSubmitting}>
-                        <SelectTrigger className="rounded-2xl h-14 border-2 focus:ring-primary">
+                        <SelectTrigger className="rounded-2xl h-14 border-2 border-yellow-200 bg-yellow-50 focus:ring-primary font-bold italic text-yellow-900">
                            <SelectValue placeholder="Select Gender" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-2 rounded-2xl">
@@ -230,7 +230,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                         {isCountryFixed && <span className="text-[8px] font-black uppercase text-green-500 bg-green-50 px-2 py-0.5 rounded-full">Locked</span>}
                      </div>
                      <Select value={country} onValueChange={setCountry} disabled={isCountryFixed || isSubmitting}>
-                        <SelectTrigger className="rounded-2xl h-14 border-2 focus:ring-primary">
+                        <SelectTrigger className="rounded-2xl h-14 border-2 border-yellow-200 bg-yellow-50 focus:ring-primary font-bold italic text-yellow-900">
                            <SelectValue placeholder="Select Country" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-2 rounded-2xl max-h-[300px]">
@@ -250,7 +250,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                        value={bio}
                        onChange={(e) => setBio(e.target.value)}
                        placeholder="Tell your tribe about yourself..."
-                       className="resize-none h-28 rounded-2xl border-2 focus:border-primary transition-all"
+                       className="resize-none h-28 rounded-2xl border-2 border-yellow-200 bg-yellow-50 focus:border-primary transition-all font-body italic text-yellow-900 placeholder:text-yellow-600/40"
                        disabled={isSubmitting}
                      />
                    </div>
