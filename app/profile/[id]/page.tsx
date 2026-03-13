@@ -59,6 +59,32 @@ import {
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
+/**
+ * High-Fidelity Identity Signature Components
+ */
+const RichLevelBadge = ({ level }: { level: number }) => (
+  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-2 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
+    <Star className="h-2 w-2 fill-white text-white" />
+    <span className="text-[8px] font-black text-white">{level}</span>
+  </div>
+);
+
+const CharmLevelBadge = ({ level }: { level: number }) => (
+  <div className="flex items-center gap-1 bg-gradient-to-r from-pink-400 to-purple-500 px-2 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
+    <Sparkles className="h-2 w-2 fill-white text-white" />
+    <span className="text-[8px] font-black text-white">{level}</span>
+  </div>
+);
+
+const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
+  <div className={cn(
+    "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-sm",
+    gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
+  )}>
+    {gender === 'Female' ? '♀' : '♂'}
+  </div>
+);
+
 const StatItem = ({ label, value, hasNotification = false, onClick }: { label: string, value: number | string, hasNotification?: boolean, onClick?: () => void }) => (
   <button 
     onClick={onClick}
@@ -184,6 +210,7 @@ const PublicProfileView = ({
                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                     <div className="flex items-center gap-2">
                        <span className="text-lg">🇮🇳</span>
+                       <GenderCircle gender={profile.gender} />
                        <div className="flex items-center gap-1">
                           {profile.specialId ? (
                             <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
@@ -195,11 +222,9 @@ const PublicProfileView = ({
                           )}
                        </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                       <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-3 py-0.5 rounded-full border border-white/20 shadow-md">
-                          <Star className="h-2 w-2 fill-white text-white" />
-                          <span className="text-[9px] font-black text-white">{profile.level?.rich || 0}</span>
-                       </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                       <RichLevelBadge level={profile.level?.rich || 0} />
+                       <CharmLevelBadge level={profile.level?.charm || 0} />
                        {isOfficial && <OfficialTag size="sm" className="ml-1" />}
                        {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
                        {isSeller && <SellerTag size="sm" className="-ml-6" />}
@@ -404,16 +429,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <div className="space-y-1">
               <div className="flex items-center justify-center gap-2">
                 <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
-                <div className="flex items-center gap-1.5 ml-1">
-                   <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 to-blue-600 px-2.5 py-0.5 rounded-full border border-white/20 shadow-sm shrink-0">
-                      <Star className="h-2 w-2 fill-white text-white" />
-                      <span className="text-[8px] font-black text-white">{profile.level?.rich || 1}</span>
-                   </div>
-                </div>
               </div>
               
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <div className="flex items-center gap-1.5">
+                {/* Visual Identity Handshake: Country, Gender, and Levels */}
+                <span className="text-base leading-none">🇮🇳</span>
+                <GenderCircle gender={profile.gender} />
+                <RichLevelBadge level={profile.level?.rich || 1} />
+                <CharmLevelBadge level={profile.level?.charm || 1} />
+
+                <div className="flex items-center gap-1.5 ml-1">
                   {profile.specialId ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
                   ) : (
@@ -423,12 +448,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                   {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
-                   {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
-                </div>
+              </div>
+
+              <div className="flex flex-wrap justify-center items-center gap-1 pt-1">
+                 {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                 {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
+                 {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
+                 {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
               </div>
             </div>
           </div>
