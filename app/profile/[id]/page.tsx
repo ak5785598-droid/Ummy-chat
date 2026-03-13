@@ -261,7 +261,7 @@ const PublicProfileView = ({
          </div>
 
          <div className="space-y-4">
-            {/* Top Contributors Leaderboard Sync */}
+            {/* Top Contributors Leaderboard Sync - ONLY IN PUBLIC VIEW */}
             <div className="p-4 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex items-center justify-between group active:scale-[0.98] transition-all">
                <div className="space-y-0.5">
                   <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">Top 3 User Contributions</h3>
@@ -527,43 +527,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => openSocial('following')} />
             <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => openSocial('followers')} />
             <StatItem label="Visitors" value={0} hasNotification />
-          </div>
-
-          <div className="px-4 space-y-4 mb-6">
-            <div className="p-4 rounded-3xl border-2 border-white bg-white/40 shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all">
-               <div className="space-y-0.5">
-                  <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">My Top Contributors</h3>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Sync</p>
-               </div>
-               <div className="flex -space-x-3 pr-2">
-                  {topContributors && topContributors.length > 0 ? (
-                    topContributors.map((c: any, i: number) => (
-                      <div key={c.id} className="relative">
-                         <Avatar className={cn(
-                           "h-10 w-10 border-2 border-white shadow-md",
-                           i === 0 && "border-yellow-400",
-                           i === 1 && "border-slate-300",
-                           i === 2 && "border-orange-200"
-                         )}>
-                            <AvatarImage src={c.avatarUrl} className="object-cover" />
-                            <AvatarFallback className="bg-slate-100 text-[10px] font-black">{i+1}</AvatarFallback>
-                         </Avatar>
-                         <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] drop-shadow-md">
-                            {i === 0 ? '👑' : i === 1 ? '🥈' : '🥉'}
-                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    [1,2,3].map(i => (
-                      <div key={i} className="relative opacity-20">
-                         <div className="h-10 w-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-                            <User className="h-4 w-4 text-gray-300" />
-                         </div>
-                      </div>
-                    ))
-                  )}
-               </div>
-            </div>
           </div>
 
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">

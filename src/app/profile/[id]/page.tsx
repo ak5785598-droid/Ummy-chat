@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -49,13 +49,14 @@ import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
-import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -152,14 +153,16 @@ const PublicProfileView = ({
   handleFollow, 
   followData, 
   isProcessingFollow,
-  onOpenSocial 
+  onOpenSocial,
+  topContributors
 }: { 
   profile: any, 
   onBack: () => void, 
   handleFollow: () => void, 
   followData: any, 
   isProcessingFollow: boolean,
-  onOpenSocial: (tab: any) => void
+  onOpenSocial: (tab: any) => void,
+  topContributors: any[] | null
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -176,7 +179,21 @@ const PublicProfileView = ({
   const isCSLeader = profile.tags?.includes('CS Leader');
 
   return (
-    <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
+    <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700 relative">
+      
+      {/* High-Fidelity Identity Background (Ambient DP) */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+         {profile.avatarUrl && (
+           <Image 
+             src={profile.avatarUrl} 
+             fill 
+             className="object-cover blur-3xl opacity-30 scale-110" 
+             alt="Ambient Backdrop" 
+             unoptimized 
+           />
+         )}
+      </div>
+
       <div className="relative bg-[#689f38] h-[40vh] flex flex-col pt-12">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
            <span className="text-[25rem] font-black text-white/20 select-none leading-none -mt-10">{firstLetter}</span>
@@ -252,6 +269,42 @@ const PublicProfileView = ({
             </button>
          </div>
 
+         {/* Top Contributors Leaderboard Sync - ONLY IN PUBLIC VIEW */}
+         <div className="p-4 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex items-center justify-between group active:scale-[0.98] transition-all">
+            <div className="space-y-0.5">
+               <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">Top 3 User Contributions</h3>
+               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Sync</p>
+            </div>
+            <div className="flex -space-x-3 pr-2">
+               {topContributors && topContributors.length > 0 ? (
+                 topContributors.map((c: any, i: number) => (
+                   <div key={c.id} className="relative">
+                      <Avatar className={cn(
+                        "h-10 w-10 border-2 border-white shadow-md",
+                        i === 0 && "border-yellow-400",
+                        i === 1 && "border-slate-300",
+                        i === 2 && "border-orange-200"
+                      )}>
+                         <AvatarImage src={c.avatarUrl} className="object-cover" />
+                         <AvatarFallback className="bg-slate-100 text-[10px] font-black">{i+1}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] drop-shadow-md">
+                         {i === 0 ? '👑' : i === 1 ? '🥈' : '🥉'}
+                      </div>
+                   </div>
+                 ))
+               ) : (
+                 [1,2,3].map(i => (
+                   <div key={i} className="relative opacity-20">
+                      <div className="h-10 w-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                         <User className="h-4 w-4 text-gray-300" />
+                      </div>
+                   </div>
+                 ))
+               )}
+            </div>
+         </div>
+
          <div className="space-y-4">
             <h3 className="font-black text-lg uppercase tracking-tight">Profile</h3>
             <div className="space-y-4">
@@ -314,6 +367,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
   const { data: followData } = useDoc(followRef);
+
+  // Top Contributors Ledger Sync
+  const contributorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'users', profileId, 'topContributors'), orderBy('amount', 'desc'), limit(3));
+  }, [firestore, profileId]);
+  const { data: topContributors } = useCollection(contributorsQuery);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -403,7 +463,21 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return (
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
-          <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
+          
+          {/* High-Fidelity Identity Background (Ambient DP) */}
+          <div className="absolute inset-0 -z-10 overflow-hidden">
+             {profile.avatarUrl && (
+               <Image 
+                 src={profile.avatarUrl} 
+                 fill 
+                 className="object-cover blur-3xl opacity-20 scale-110" 
+                 alt="Ambient Backdrop" 
+                 unoptimized 
+               />
+             )}
+          </div>
+
+          <div className="bg-white/85 backdrop-blur-md px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
             <div className="absolute top-10 right-6">
               <EditProfileDialog profile={profile} trigger={
                 <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
@@ -521,6 +595,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
          followData={followData}
          isProcessingFollow={isProcessingFollow}
          onOpenSocial={openSocial}
+         topContributors={topContributors}
        />
        <SocialRelationsDialog 
           open={socialOpen} 
