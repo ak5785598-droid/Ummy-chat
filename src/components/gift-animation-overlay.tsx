@@ -1,21 +1,19 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Trophy, Gift, Heart } from 'lucide-react';
+import { Trophy, Gift, Heart, Sparkles as SparklesIcon, Star, Music } from 'lucide-react';
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
   onComplete: () => void;
+  senderName?: string | null;
 }
 
 /**
  * High-Fidelity Universal Gift Animation Engine.
- * Features SVGA-style cinematic sequences for ALL gifts.
- * Re-engineered with high-fidelity box opening for Proposals.
  */
-export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverlayProps) {
+export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAnimationOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [triggerKey, setTriggerKey] = useState(0);
 
@@ -24,9 +22,8 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       setIsVisible(true);
       setTriggerKey(prev => prev + 1);
       
-      // Dynamic duration based on gift tier
       let duration = 3000;
-      const highTier = ['galaxy', 'rolex', 'color-carnival', 'lucky-jackpot', 'dragon', 'celebration', 'propose-ring', 'jet', 'supernova'];
+      const highTier = ['galaxy', 'rolex', 'color-carnival', 'lucky-jackpot', 'dragon', 'celebration', 'propose-ring', 'jet', 'supernova', 'cake'];
       if (highTier.includes(giftId)) duration = 5000;
 
       const timer = setTimeout(() => {
@@ -59,21 +56,20 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
       case 'rolex': return '⌚';
       case 'celebration': return '🥳';
       case 'color-carnival': return '🌈';
+      case 'cake': return '🎂';
       default: return '🎁';
     }
   };
 
-  const isHighTier = ['dragon', 'supernova', 'rolex', 'celebration', 'lucky-jackpot', 'jet', 'galaxy', 'color-carnival'].includes(giftId);
+  const isHighTier = ['dragon', 'supernova', 'rolex', 'celebration', 'lucky-jackpot', 'jet', 'galaxy', 'color-carnival', 'cake'].includes(giftId);
 
   return (
     <div key={triggerKey} className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden">
       
-      {/* Screen Flash Protocol */}
       {isHighTier && (
         <div className="absolute inset-0 animate-screen-flash bg-white pointer-events-none z-[301]" />
       )}
 
-      {/* Lucky Jackpot Protocol */}
       {giftId === 'lucky-jackpot' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-in zoom-in duration-700 z-[305]">
            <div className="relative mb-8">
@@ -86,11 +82,11 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
         </div>
       )}
 
-      {/* Propose Ring Cinematic SVGA Sequence */}
       {giftId === 'propose-ring' && <ProposeRingAnimation />}
+      
+      {giftId === 'cake' && <CakeAnimation senderName={senderName} />}
 
-      {/* Particle Engine for Lucky & High Tier */}
-      {(giftId.startsWith('lucky-') || isHighTier) && giftId !== 'propose-ring' && (
+      {(giftId.startsWith('lucky-') || (isHighTier && giftId !== 'propose-ring' && giftId !== 'cake')) && (
         <div className="absolute inset-0 z-[302] flex items-center justify-center">
            {Array.from({ length: 30 }).map((_, i) => (
              <div 
@@ -117,8 +113,7 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
         </div>
       )}
 
-      {/* Main Visual Asset (if not propose-ring which has its own component) */}
-      {giftId !== 'propose-ring' && (
+      {giftId !== 'propose-ring' && giftId !== 'cake' && (
         <div className={cn(
           "filter drop-shadow-[0_0_50px_rgba(255,255,255,0.8)] transition-all",
           isHighTier ? "text-[12rem] animate-lucky-center-pop" : "text-9xl animate-standard-gift-pop"
@@ -163,6 +158,126 @@ export function GiftAnimationOverlay({ giftId, onComplete }: GiftAnimationOverla
     </div>
   );
 }
+
+const CakeAnimation = ({ senderName }: { senderName?: string | null }) => (
+  <div className="relative flex flex-col items-center justify-center animate-cake-pop-in duration-1000">
+    {/* Floating Elements Engine */}
+    <div className="absolute inset-0 pointer-events-none overflow-visible">
+       {[...Array(12)].map((_, i) => (
+         <div key={i} className="absolute animate-cake-particle" style={{
+           left: '50%', top: '50%',
+           animationDelay: `${i * 0.2}s`,
+           transform: `rotate(${i * 30}deg)`
+         }}>
+            <div className="text-2xl opacity-0 animate-cake-fade-out" style={{ animationDelay: `${i * 0.2}s` }}>
+               {i % 3 === 0 ? '✨' : i % 3 === 1 ? '⭐' : '🎵'}
+            </div>
+         </div>
+       ))}
+       {[...Array(6)].map((_, i) => (
+         <div key={`orbit-${i}`} className="absolute animate-cake-orbit" style={{
+           left: '50%', top: '50%',
+           animationDelay: `${i * 0.5}s`,
+           width: `${150 + i * 20}px`,
+           height: `${150 + i * 20}px`,
+           marginLeft: `-${(150 + i * 20)/2}px`,
+           marginTop: `-${(150 + i * 20)/2}px`,
+         }}>
+            <div className="text-xl">
+               {i % 2 === 0 ? '❤️' : '⭐'}
+            </div>
+         </div>
+       ))}
+    </div>
+
+    {/* Sender Identity Label */}
+    <div className="absolute -top-24 z-50 bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border-2 border-white/20 shadow-2xl animate-in slide-in-from-top-4 duration-1000">
+       <p className="text-sm font-black uppercase italic text-pink-400 drop-shadow-md">
+          {senderName || 'Tribe Member'} sent a Cake
+       </p>
+    </div>
+
+    {/* The Glowing Three-Layer Cake SVG */}
+    <div className="relative z-10 filter drop-shadow-[0_0_40px_rgba(255,105,180,0.6)] animate-cake-float">
+       <svg width="240" height="240" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+             <linearGradient id="cakePink" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFB6C1" />
+                <stop offset="100%" stopColor="#FF69B4" />
+             </linearGradient>
+             <filter id="cakeGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+             </filter>
+          </defs>
+
+          {/* Bottom Layer */}
+          <path d="M40 140 Q40 135 45 135 L155 135 Q160 135 160 140 L160 175 Q160 185 155 185 L45 185 Q40 185 40 175 Z" fill="url(#cakePink)" stroke="#880e4f" strokeWidth="1" />
+          <path d="M40 140 Q50 155 65 140 Q80 125 95 140 Q110 155 125 140 Q140 125 150 140 Q160 155 160 140" stroke="white" strokeWidth="6" strokeLinecap="round" opacity="0.9" />
+
+          {/* Middle Layer with Candies */}
+          <path d="M55 90 Q55 85 60 85 L140 85 Q145 85 145 90 L145 135 L55 135 Z" fill="url(#cakePink)" stroke="#880e4f" strokeWidth="1" />
+          <circle cx="70" cy="110" r="4" fill="#FF6B6B" className="animate-pulse" />
+          <circle cx="100" cy="100" r="4" fill="#4ECDC4" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <circle cx="130" cy="115" r="4" fill="#FFE66D" className="animate-pulse" style={{ animationDelay: '1s' }} />
+          
+          {/* Top Layer */}
+          <path d="M70 50 Q70 45 75 45 L125 45 Q130 45 130 50 L130 85 L70 85 Z" fill="url(#cakePink)" stroke="#880e4f" strokeWidth="1" />
+          <path d="M70 50 Q80 60 90 50 Q100 40 110 50 Q120 60 130 50" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9" />
+
+          {/* Cake Topper */}
+          <g transform="translate(100, 30)">
+             <path d="M0 -15 L4 -5 L14 -5 L6 2 L10 12 L0 6 L-10 12 L-6 2 L-14 -5 L-4 -5 Z" fill="#FFD700" stroke="#b45309" strokeWidth="1" className="animate-shimmer-gold" />
+             <circle cx="-15" cy="10" r="5" fill="#f472b6" />
+             <circle cx="15" cy="10" r="5" fill="#f472b6" />
+          </g>
+
+          {/* Candy Shine Sweep */}
+          <rect x="0" y="0" width="10" height="200" fill="white" opacity="0.3" transform="rotate(45) translate(0, -100)">
+             <animateTransform attributeName="transform" type="translate" from="-100, -100" to="200, 100" dur="2s" repeatCount="indefinite" />
+          </rect>
+       </svg>
+    </div>
+
+    <style jsx>{`
+      @keyframes cake-pop-in {
+        0% { transform: scale(0); opacity: 0; }
+        60% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .animate-cake-pop-in { animation: cake-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+      @keyframes cake-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+      .animate-cake-float { animation: cake-float 3s ease-in-out infinite; }
+
+      @keyframes cake-particle {
+        0% { transform: rotate(var(--rot)) translateY(0); opacity: 0; }
+        20% { opacity: 1; }
+        100% { transform: rotate(var(--rot)) translateY(-150px); opacity: 0; }
+      }
+      .animate-cake-particle { 
+        animation: cake-particle 1.5s ease-out forwards; 
+        --rot: inherit;
+      }
+
+      @keyframes cake-fade-out {
+        0% { opacity: 0; transform: scale(0.5); }
+        50% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.5); }
+      }
+      .animate-cake-fade-out { animation: cake-fade-out 1.5s ease-out forwards; }
+
+      @keyframes cake-orbit {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-cake-orbit { animation: cake-orbit 8s linear infinite; }
+    `}</style>
+  </div>
+);
 
 const ProposeRingAnimation = () => (
   <div className="relative w-full h-full flex items-center justify-center bg-black/60 backdrop-blur-[8px] animate-in fade-in duration-700 z-[310]">
@@ -229,7 +344,7 @@ const ProposeRingAnimation = () => (
       @keyframes box-entrance { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.1) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
       @keyframes lid-open { 0%, 20% { transform: rotateX(0); opacity: 1; } 60%, 100% { transform: rotateX(-120deg) translateY(-150px) translateZ(50px); opacity: 0; } }
       @keyframes ring-rise { 0%, 40% { opacity: 0; transform: translate(-50%, 40px) scale(0.5); } 75% { opacity: 1; transform: translate(-50%, -60px) scale(1.8); } 100% { opacity: 0; transform: translate(-50%, -120px) scale(2.5); } }
-      @keyframes box-heart-pop { 0%, 45% { opacity: 0; transform: translate(-50%, -50%) scale(0); } 70% { opacity: 1; transform: translate(-50%, -150%) scale(1.2) translateX(${Math.random() > 0.5 ? '50px' : '-50px'}); } 100% { opacity: 0; transform: translate(-50%, -250%) scale(1.5) translateX(${Math.random() > 0.5 ? '100px' : '-100px'}); } }
+      @keyframes box-heart-pop { 0%, 45% { opacity: 0; transform: translate(-50%, -50%) scale(0); } 70% { opacity: 1; transform: translate(-50%, -150%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -250%) scale(1.5); } }
       
       .animate-box-entrance { animation: box-entrance 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
       .animate-lid-open { animation: lid-open 5s cubic-bezier(0.45, 0, 0.55, 1) forwards; }

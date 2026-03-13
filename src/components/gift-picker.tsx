@@ -56,6 +56,7 @@ const GIFTS: Record<string, GiftItem[]> = {
     { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', animationId: 'lucky-star', type: 'lucky' },
   ],
   'Luxury': [
+    { id: 'cake', name: 'Cake', price: 500000, icon: '🎂', animationId: 'cake' },
     { id: 'l1', name: 'Rolex Sync', price: 200000, icon: '⌚', animationId: 'rolex' },
     { id: 'l2', name: 'Elite Jet', price: 500000, icon: '🛩️', animationId: 'jet' },
   ],
@@ -74,8 +75,6 @@ interface GiftPickerProps {
 
 /**
  * High-Fidelity Gift Vault.
- * Ensures absolute 40% Diamond Yield sync for recipients.
- * Now synchronizes the contribution ledger for profile leaderboards.
  */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
@@ -130,7 +129,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         }
       }
 
-      // 1. ECONOMIC DISPATCH PROTOCOL
       const senderUpdateData = {
         'wallet.coins': increment(-(totalCost - winAmount)),
         'wallet.totalSpent': increment(totalCost),
@@ -146,7 +144,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         updatedAt: serverTimestamp()
       });
 
-      // 2. RECIPIENT YIELD PROTOCOL: 40% Diamond conversion
       if (recipient && recipient.uid && recipient.uid !== user.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
@@ -160,7 +157,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         updateDocumentNonBlocking(recipientRef, recUpdateData);
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
 
-        // 3. CONTRIBUTION LEDGER SYNC (Profile Leaderboard)
         const contribRef = doc(firestore, 'users', recipient.uid, 'topContributors', user.uid);
         setDocumentNonBlocking(contribRef, {
           uid: user.uid,
@@ -171,7 +167,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         }, { merge: true });
       }
 
-      // 4. BROADCAST SYNC
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,

@@ -172,7 +172,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
-  const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
+  const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -201,7 +201,6 @@ export function RoomClient({ room }: { room: Room }) {
       deleteDocumentNonBlocking(ref);
       toast({ title: 'Unfollowed Frequency' });
     } else {
-      // PREVENT FIREBASE ERROR: Ensure all field values are defined before calling setDoc
       setDocumentNonBlocking(ref, {
         id: room.id,
         title: room.title || room.name || 'Frequency',
@@ -257,7 +256,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (firestoreMessages && firestoreMessages.length > 0) {
       const lastMsg = firestoreMessages[firestoreMessages.length - 1];
       if (lastMsg.type === 'gift') {
-        setActiveGiftAnimation(lastMsg.giftId);
+        setActiveGiftSync({ id: lastMsg.giftId, senderName: lastMsg.senderName });
       } else if (lastMsg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
@@ -288,14 +287,12 @@ export function RoomClient({ room }: { room: Room }) {
   
   const handleExit = () => { 
     if (firestore && currentUser) {
-      // 1. Atomic Exit Decrement: Ensure room disappears from discovery immediately
       const roomDocRef = doc(firestore, 'chatRooms', room.id);
       updateDocumentNonBlocking(roomDocRef, { 
         participantCount: increment(-1),
         updatedAt: serverTimestamp() 
       });
 
-      // 2. Identity Purge
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
       
@@ -382,7 +379,11 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
-      <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
+      <GiftAnimationOverlay 
+        giftId={activeGiftSync?.id || null} 
+        senderName={activeGiftSync?.senderName}
+        onComplete={() => setActiveGiftSync(null)} 
+      />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />

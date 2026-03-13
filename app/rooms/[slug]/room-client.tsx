@@ -172,7 +172,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
-  const [activeGiftAnimation, setActiveGiftAnimation] = useState<string | null>(null);
+  const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -203,7 +203,7 @@ export function RoomClient({ room }: { room: Room }) {
     } else {
       setDocumentNonBlocking(ref, {
         id: room.id,
-        title: room.title || 'Frequency',
+        title: room.title || room.name || 'Frequency',
         coverUrl: room.coverUrl || '',
         roomNumber: room.roomNumber || '0000',
         ownerId: room.ownerId || '',
@@ -256,7 +256,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (firestoreMessages && firestoreMessages.length > 0) {
       const lastMsg = firestoreMessages[firestoreMessages.length - 1];
       if (lastMsg.type === 'gift') {
-        setActiveGiftAnimation(lastMsg.giftId);
+        setActiveGiftSync({ id: lastMsg.giftId, senderName: lastMsg.senderName });
       } else if (lastMsg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
@@ -284,12 +284,22 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
+  
   const handleExit = () => { 
     if (firestore && currentUser) {
+      const roomDocRef = doc(firestore, 'chatRooms', room.id);
+      updateDocumentNonBlocking(roomDocRef, { 
+        participantCount: increment(-1),
+        updatedAt: serverTimestamp() 
+      });
+
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
+      
       const uRef = doc(firestore, 'users', currentUser.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null });
+      const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
     }
     setActiveRoom(null); 
     router.push('/rooms'); 
@@ -369,7 +379,11 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
-      <GiftAnimationOverlay giftId={activeGiftAnimation} onComplete={() => setActiveGiftAnimation(null)} />
+      <GiftAnimationOverlay 
+        giftId={activeGiftSync?.id || null} 
+        senderName={activeGiftSync?.senderName}
+        onComplete={() => setActiveGiftSync(null)} 
+      />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
@@ -482,7 +496,6 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
-        {/* Left Side: Chat Trigger - Shifted right slightly */}
         <div className="flex items-center ml-4">
            <button 
              onClick={handleInputClick} 
@@ -495,7 +508,6 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        {/* Center: Gift Boutique Portal */}
         <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
@@ -505,7 +517,6 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        {/* Right Side: Social Utility Group */}
         <div className="flex items-center gap-2">
            <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
               {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
