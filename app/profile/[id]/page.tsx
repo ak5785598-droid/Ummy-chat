@@ -204,13 +204,15 @@ const PublicProfileView = ({
                  <AvatarFallback className="text-2xl bg-white/20 text-white">{firstLetter}</AvatarFallback>
               </Avatar>
               <div className="flex-1 pb-1">
-                 <div className="flex items-center gap-2 mb-2">
+                 <div className="flex flex-wrap items-center gap-2 mb-2">
                     <h1 className="text-2xl font-black text-white tracking-tight leading-none">{profile.username}</h1>
+                    <span className="text-lg leading-none">🇮🇳</span>
+                    <GenderCircle gender={profile.gender} />
+                    <RichLevelBadge level={profile.level?.rich || 0} />
+                    <CharmLevelBadge level={profile.level?.charm || 0} />
                  </div>
                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                     <div className="flex items-center gap-2">
-                       <span className="text-lg">🇮🇳</span>
-                       <GenderCircle gender={profile.gender} />
                        <div className="flex items-center gap-1">
                           {profile.specialId ? (
                             <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
@@ -223,8 +225,6 @@ const PublicProfileView = ({
                        </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                       <RichLevelBadge level={profile.level?.rich || 0} />
-                       <CharmLevelBadge level={profile.level?.charm || 0} />
                        {isOfficial && <OfficialTag size="sm" className="ml-1" />}
                        {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
                        {isSeller && <SellerTag size="sm" className="-ml-6" />}
@@ -427,18 +427,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-center gap-2">
-                <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
-              </div>
-              
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {/* Visual Identity Handshake: Country, Gender, and Levels */}
+                <h1 className="text-2xl font-black tracking-tighter uppercase">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
                 <RichLevelBadge level={profile.level?.rich || 1} />
                 <CharmLevelBadge level={profile.level?.charm || 1} />
-
-                <div className="flex items-center gap-1.5 ml-1">
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {profile.specialId ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
                   ) : (
@@ -448,13 +446,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="flex flex-wrap justify-center items-center gap-1 pt-1">
-                 {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                 {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
-                 {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
-                 {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
+                <div className="flex items-center gap-1 shrink-0">
+                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                   {isCSLeader && <CsLeaderTag size="sm" className="ml-1" />}
+                   {profile.tags?.includes('Seller') && <SellerTag size="sm" className="-ml-6" />}
+                   {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="-ml-1" />}
+                </div>
               </div>
             </div>
           </div>
