@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState } from 'react';
@@ -113,13 +112,6 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
     </div>
   );
 };
-
-const CenterTag = ({ label, gradient, className }: { label: string, gradient: string, className?: string }) => (
-  <div className={cn("px-3 py-0.5 rounded-full border border-white/30 shadow-lg animate-shimmer-gold relative overflow-hidden", gradient, className)}>
-    <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
-    <span className="text-[8px] font-black text-white uppercase italic tracking-tighter relative z-10">{label}</span>
-  </div>
-);
 
 /**
  * Public Profile View.

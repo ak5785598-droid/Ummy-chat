@@ -1,7 +1,7 @@
 export type User = {
   id: string;
-  specialId: string; // Sequential numeric ID starting 1001
-  accountNumber?: string; // Original sequential ID for reversion
+  specialId: string | null; // Sequential numeric ID manually assigned by Admin
+  accountNumber: string; // Automatic 8-digit unique signature
   specialIdColor?: string; // red or blue
   name: string;
   username?: string;
@@ -23,6 +23,8 @@ export type User = {
     fans?: number;
     totalGifts?: number;
     dailyGameWins?: number;
+    friends?: number;
+    following?: number;
   };
   wallet?: {
     coins: number;
@@ -36,6 +38,15 @@ export type User = {
     activeWave?: string;
     ownedItems: string[];
   };
+  banStatus?: {
+    isBanned: boolean;
+    bannedUntil: any;
+    reason: string;
+  };
+  createdAt?: any;
+  updatedAt?: any;
+  lastSignInAt?: any;
+  currentRoomId?: string | null;
 };
 
 export type Message = {

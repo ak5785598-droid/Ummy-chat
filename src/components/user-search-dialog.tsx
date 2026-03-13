@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Universal Tribe & Room Search Portal.
- * Re-engineered to support any digit ID lookup for both members and room frequencies.
+ * Re-engineered to support both 8-digit Account Numbers and manually assigned Special IDs.
  * Features a high-fidelity yellow visual signature.
  */
 export function UserSearchDialog() {
@@ -37,12 +37,17 @@ export function UserSearchDialog() {
     try {
       const inputId = searchId.trim();
       
-      // Step 1: Search Users (Special ID or Account Number)
-      // Special IDs are manually assigned, Account Numbers are automatic 8-digit signatures.
+      // IDENTITY RESOLVER PROTOCOL:
+      // Parallel scan for Special IDs, Account Numbers, and Room Numbers.
       const userQ1 = query(collection(firestore, 'users'), where('specialId', '==', inputId), limit(1));
       const userQ2 = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+      const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
       
-      const [uSnap1, uSnap2] = await Promise.all([getDocs(userQ1), getDocs(userQ2)]);
+      const [uSnap1, uSnap2, rSnap] = await Promise.all([
+        getDocs(userQ1), 
+        getDocs(userQ2),
+        getDocs(roomQ)
+      ]);
       
       if (!uSnap1.empty) {
         router.push(`/profile/${uSnap1.docs[0].id}`);
@@ -58,10 +63,6 @@ export function UserSearchDialog() {
         return;
       }
 
-      // Step 2: Search Rooms (Room Number Sync)
-      const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
-      const rSnap = await getDocs(roomQ);
-      
       if (!rSnap.empty) {
         router.push(`/rooms/${rSnap.docs[0].id}`);
         setOpen(false);
@@ -127,7 +128,7 @@ export function UserSearchDialog() {
                 <Search className="h-8 w-8 text-yellow-600 group-focus-within:text-yellow-700 transition-colors" />
               </div>
               <Input 
-                placeholder="ANY ID" 
+                placeholder="ENTER ID" 
                 className="pl-16 h-24 rounded-[2rem] border-4 border-yellow-100 bg-yellow-50 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/10 transition-all text-5xl font-black tracking-[0.2em] text-center text-yellow-900 placeholder:text-yellow-200 italic"
                 value={searchId}
                 autoFocus
