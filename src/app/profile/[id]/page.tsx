@@ -48,6 +48,7 @@ import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
+import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
@@ -58,14 +59,17 @@ import {
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
-const StatItem = ({ label, value, hasNotification = false }: { label: string, value: number | string, hasNotification?: boolean }) => (
-  <div className="flex flex-col items-center justify-center flex-1 py-4 relative">
+const StatItem = ({ label, value, hasNotification = false, onClick }: { label: string, value: number | string, hasNotification?: boolean, onClick?: () => void }) => (
+  <button 
+    onClick={onClick}
+    className="flex flex-col items-center justify-center flex-1 py-4 relative active:bg-gray-50 transition-colors"
+  >
     <span className="text-xl font-black text-gray-900 leading-none">{value}</span>
     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight mt-1">{label}</span>
     {hasNotification && (
       <div className="absolute top-3 right-4 h-2 w-2 bg-red-500 rounded-full border-2 border-white" />
     )}
-  </div>
+  </button>
 );
 
 const MenuItem = ({ label, icon: Icon, extra, colorClass, onClick, href }: any) => {
@@ -116,7 +120,21 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
 /**
  * Public Profile View.
  */
-const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProcessingFollow }: { profile: any, onBack: () => void, handleFollow: () => void, followData: any, isProcessingFollow: boolean }) => {
+const PublicProfileView = ({ 
+  profile, 
+  onBack, 
+  handleFollow, 
+  followData, 
+  isProcessingFollow,
+  onOpenSocial 
+}: { 
+  profile: any, 
+  onBack: () => void, 
+  handleFollow: () => void, 
+  followData: any, 
+  isProcessingFollow: boolean,
+  onOpenSocial: (tab: any) => void
+}) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
@@ -195,9 +213,18 @@ const PublicProfileView = ({ profile, onBack, handleFollow, followData, isProces
 
       <div className="relative z-20 bg-white rounded-t-[2.5rem] -mt-6 p-6 space-y-8">
          <div className="flex justify-between items-center px-2">
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.fans || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Fans</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.following || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Following</span></div>
-            <div className="flex items-baseline gap-1.5"><span className="text-lg font-black">{profile.stats?.friends || 0}</span><span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span></div>
+            <button onClick={() => onOpenSocial('followers')} className="flex items-baseline gap-1.5 active:bg-gray-50 px-2 py-1 rounded-xl transition-colors">
+              <span className="text-lg font-black">{profile.stats?.fans || 0}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Fans</span>
+            </button>
+            <button onClick={() => onOpenSocial('following')} className="flex items-baseline gap-1.5 active:bg-gray-50 px-2 py-1 rounded-xl transition-colors">
+              <span className="text-lg font-black">{profile.stats?.following || 0}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Following</span>
+            </button>
+            <button onClick={() => onOpenSocial('friends')} className="flex items-baseline gap-1.5 active:bg-gray-50 px-2 py-1 rounded-xl transition-colors">
+              <span className="text-lg font-black">{profile.stats?.friends || 0}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Friend</span>
+            </button>
          </div>
 
          <div className="space-y-4">
@@ -254,6 +281,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
+  const [socialOpen, setSocialOpen] = useState(false);
+  const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends'>('followers');
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -321,6 +350,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         } else { toast({ title: 'Following' }); }
       }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
+  };
+
+  const openSocial = (tab: any) => {
+    setSocialTab(tab);
+    setSocialOpen(true);
   };
 
   if (isUserLoading || isProfileLoading) {
@@ -400,9 +434,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="bg-white flex divide-x divide-gray-50 border-b border-gray-50 mb-4">
-            <StatItem label="Friend" value={profile.stats?.friends || 0} />
-            <StatItem label="Following" value={profile.stats?.following || 0} />
-            <StatItem label="Fans" value={profile.stats?.fans || 0} />
+            <StatItem label="Friend" value={profile.stats?.friends || 0} onClick={() => openSocial('friends')} />
+            <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => openSocial('following')} />
+            <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => openSocial('followers')} />
             <StatItem label="Visitors" value={0} hasNotification />
           </div>
 
@@ -443,6 +477,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <MenuItem label="Help Center" icon={HelpCircle} href="/help-center" colorClass="bg-orange-100 text-orange-600" />
           </div>
         </div>
+
+        <SocialRelationsDialog 
+          open={socialOpen} 
+          onOpenChange={setSocialOpen} 
+          userId={profileId} 
+          initialTab={socialTab} 
+          username={profile.username}
+        />
       </AppLayout>
     );
   }
@@ -455,7 +497,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
          handleFollow={handleFollow}
          followData={followData}
          isProcessingFollow={isProcessingFollow}
+         onOpenSocial={openSocial}
        />
+       <SocialRelationsDialog 
+          open={socialOpen} 
+          onOpenChange={setSocialOpen} 
+          userId={profileId} 
+          initialTab={socialTab} 
+          username={profile.username}
+        />
     </AppLayout>
   );
 }
