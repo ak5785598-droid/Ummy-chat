@@ -235,10 +235,10 @@ const PublicProfileView = ({
                
                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
                   <div className="flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
-                     {profile.specialId ? (
+                     {profile.specialId && profile.specialIdColor ? (
                        <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                      ) : (
-                       <span>ID:{profile.accountNumber}</span>
+                       <span>ID:{profile.specialId || profile.accountNumber}</span>
                      )}
                      <Copy className="h-2.5 w-2.5 opacity-40" />
                   </div>
@@ -474,11 +474,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  {profile.specialId ? (
+                  {profile.specialId && profile.specialIdColor ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} onClick={handleCopyId} />
                   ) : (
                     <div className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.accountNumber}</span>
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">ID: {profile.specialId || profile.accountNumber}</span>
                       <Copy className="h-3 w-3 text-gray-300" />
                     </div>
                   )}
