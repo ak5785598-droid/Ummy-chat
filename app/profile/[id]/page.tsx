@@ -142,7 +142,7 @@ const SpecialIdBadge = ({ id, color = 'red', onClick }: { id: string, color?: st
 
 /**
  * Public Profile View.
- * Perfectly synchronized with the provided visual blueprint.
+ * Unified name row with all identity tags.
  */
 const PublicProfileView = ({ 
   profile, 
@@ -177,7 +177,6 @@ const PublicProfileView = ({
 
   return (
     <div className="min-h-screen bg-white font-headline pb-32 flex flex-col animate-in fade-in duration-700">
-      {/* Immersive Cover Section */}
       <div className="relative h-[45vh] w-full shrink-0">
         <Image 
           src={profile.coverUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} 
@@ -200,7 +199,6 @@ const PublicProfileView = ({
         </div>
       </div>
 
-      {/* Identity Card Dimension */}
       <div className="flex-1 bg-white rounded-t-[2.5rem] -mt-10 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-6 space-y-8">
          <div className="flex items-start gap-4">
             <div className="shrink-0 -mt-14 relative">
@@ -213,18 +211,20 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  {isNew && <Badge className="bg-[#00A3FF] text-white text-[8px] font-black uppercase h-4 px-2 rounded-full border-none">New</Badge>}
+               {/* Unified Identity Row: New, Name, Flag, Gender, Rich, Charm */}
+               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {isNew && <Badge className="bg-[#00A3FF] text-white text-[8px] font-black uppercase h-4 px-2 rounded-full border-none shrink-0">New</Badge>}
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
+                  <span className="text-base leading-none shrink-0" title={profile.country || 'India'}>🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
+                  <RichLevelBadge level={profile.level?.rich || 1} />
+                  <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
                
                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
                   <div className="flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
                      {profile.specialId ? (
-                       <span className={cn("font-black", profile.specialIdColor === 'blue' ? "text-blue-500" : "text-rose-500")}>
-                         ID:{profile.specialId}
-                       </span>
+                       <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                      ) : (
                        <span>ID:{profile.accountNumber}</span>
                      )}
@@ -236,9 +236,7 @@ const PublicProfileView = ({
                   </button>
                </div>
 
-               <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                  <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} />
+               <div className="flex items-center gap-2 mt-3 flex-wrap">
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left -ml-4" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
@@ -247,9 +245,7 @@ const PublicProfileView = ({
             </div>
          </div>
 
-         {/* Stats & Sections */}
          <div className="space-y-4">
-            {/* Top 3 Contributors Component */}
             <div className="p-4 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex items-center justify-between group active:scale-[0.98] transition-all">
                <div className="space-y-0.5">
                   <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">Top 3 User Contributions</h3>
@@ -267,13 +263,11 @@ const PublicProfileView = ({
                </div>
             </div>
 
-            {/* Moments Hub Link */}
             <div className="p-5 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer">
                <span className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">Moments</span>
                <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" />
             </div>
 
-            {/* Biography */}
             <div className="px-2 pt-2">
                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2 ml-1">Signature Bio</h4>
                <p className="text-sm font-body italic text-gray-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -283,7 +277,6 @@ const PublicProfileView = ({
          </div>
       </div>
 
-      {/* Public Action Handshake Buttons */}
       <div className="fixed bottom-0 left-0 right-0 p-6 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-4">
          <button 
            onClick={handleFollow}
