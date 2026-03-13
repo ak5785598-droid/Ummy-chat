@@ -217,8 +217,6 @@ export default function WildPartyPage() {
     );
   }
 
-  const backgroundAsset = PlaceHolderImages.find(img => img.id === 'lion-fight-bg');
-
   return (
     <AppLayout fullScreen>
       <div className="h-screen w-full bg-[#051a05] flex flex-col relative overflow-hidden font-headline text-white">
@@ -289,16 +287,16 @@ export default function WildPartyPage() {
 
         {/* Main Game Arena */}
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[280px] aspect-square flex items-center justify-center">
               
               {/* Central Glowing Oracle Hub */}
-              <div className="relative z-20 w-36 h-36 bg-gradient-to-b from-[#3d2b1f] to-[#1a0a05] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-4 text-center overflow-hidden">
+              <div className="relative z-20 w-28 h-28 bg-gradient-to-b from-[#3d2b1f] to-[#1a0a05] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
                  <div className="absolute inset-0 bg-white/5 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-                 <p className="text-[10px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
+                 <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
                     {gameState === 'betting' ? 'BETTING' : 'ROLLING'}
                  </p>
                  <span className={cn(
-                   "text-6xl font-black italic tracking-tighter transition-all duration-500",
+                   "text-4xl font-black italic tracking-tighter transition-all duration-500",
                    gameState === 'betting' ? "text-white" : "text-yellow-400 animate-reaction-heartbeat"
                  )}>
                     {gameState === 'betting' ? timeLeft : '🎲'}
@@ -330,13 +328,13 @@ export default function WildPartyPage() {
                   >
                      <div className="relative">
                         <div className={cn(
-                          "h-20 w-20 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-2xl",
+                          "h-14 w-14 rounded-[1.2rem] flex flex-col items-center justify-center transition-all border-[2px] relative overflow-hidden shadow-2xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-4xl drop-shadow-xl relative z-10 transition-transform group-hover:scale-110">
+                           <span className="text-3xl drop-shadow-xl relative z-10 transition-transform group-hover:scale-110">
                               {animal.emoji}
                            </span>
-                           <span className="text-[8px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
+                           <span className="text-[7px] font-black text-white/80 uppercase mt-0.5 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
                            {/* Glossy Overlays */}
@@ -346,14 +344,14 @@ export default function WildPartyPage() {
                         
                         {/* Winner Aura */}
                         {isActive && gameState === 'result' && (
-                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.5rem] animate-ping" />
+                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.2rem] animate-ping" />
                         )}
                      </div>
 
                      {hasWin && (
-                       <div className="mt-2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5 animate-in zoom-in shadow-xl">
-                          <GoldCoinIcon className="h-3 w-3" />
-                          <span className="text-[10px] font-black text-yellow-400 italic">{(myBets[animal.id]).toLocaleString()}</span>
+                       <div className="mt-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1 animate-in zoom-in shadow-xl">
+                          <GoldCoinIcon className="h-2 w-2" />
+                          <span className="text-[8px] font-black text-yellow-400 italic">{(myBets[animal.id]).toLocaleString()}</span>
                        </div>
                      )}
                   </button>
