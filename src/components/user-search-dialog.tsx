@@ -26,7 +26,7 @@ export function UserSearchDialog() {
   const [open, setOpen] = useState(false);
   const [searchId, setSearchId] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  router = useRouter();
+  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
 
