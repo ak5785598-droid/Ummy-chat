@@ -176,7 +176,21 @@ const PublicProfileView = ({
   const isNew = profile.createdAt ? (Date.now() - (profile.createdAt.toMillis?.() || 0)) < 7 * 24 * 60 * 60 * 1000 : false;
 
   return (
-    <div className="min-h-screen bg-white font-headline pb-32 flex flex-col animate-in fade-in duration-700">
+    <div className="min-h-screen bg-white font-headline pb-32 flex flex-col animate-in fade-in duration-700 relative">
+      
+      {/* High-Fidelity Identity Background (Blurred DP) */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+         {profile.avatarUrl && (
+           <Image 
+             src={profile.avatarUrl} 
+             fill 
+             className="object-cover blur-3xl opacity-20 scale-110" 
+             alt="Ambient Background" 
+             unoptimized 
+           />
+         )}
+      </div>
+
       <div className="relative h-[45vh] w-full shrink-0">
         <Image 
           src={profile.coverUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} 
@@ -414,7 +428,21 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return (
       <AppLayout>
         <div className="min-h-full bg-[#f8f9fa] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-700">
-          <div className="bg-white px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
+          
+          {/* High-Fidelity Identity Background (Blurred DP) */}
+          <div className="absolute inset-0 -z-10 overflow-hidden">
+             {profile.avatarUrl && (
+               <Image 
+                 src={profile.avatarUrl} 
+                 fill 
+                 className="object-cover blur-3xl opacity-10 scale-110" 
+                 alt="Ambient Backdrop" 
+                 unoptimized 
+               />
+             )}
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-md px-6 pt-12 pb-8 flex flex-col items-center text-center space-y-4 border-b border-gray-50 relative">
             <div className="absolute top-10 right-6">
               <EditProfileDialog profile={profile} trigger={
                 <button className="p-3 bg-secondary/50 rounded-full hover:bg-secondary transition-all shadow-sm active:scale-95 border border-gray-100">
@@ -467,7 +495,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
-          <div className="bg-white flex divide-x divide-gray-50 border-b border-gray-50 mb-4">
+          <div className="bg-white/60 backdrop-blur-sm flex divide-x divide-gray-50 border-b border-gray-50 mb-4">
             <StatItem label="Friend" value={profile.stats?.friends || 0} onClick={() => openSocial('friends')} />
             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => openSocial('following')} />
             <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => openSocial('followers')} />
@@ -495,7 +523,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
-          <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-8">
+          <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-8">
             <MenuItem label="Invite Friends" icon={UserPlus} colorClass="bg-green-100 text-green-600" />
             <MenuItem label="CP Space" icon={Heart} colorClass="bg-pink-100 text-pink-600" href="/cp-house" />
             <MenuItem label="Level" icon={Star} colorClass="bg-blue-100 text-blue-600" href="/level" />
@@ -506,7 +534,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             {isSeller && <SellerTransferDialog />}
           </div>
 
-          <div className="bg-white rounded-[2rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
+          <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] mx-4 shadow-sm border border-gray-100 overflow-hidden mb-12">
              <MenuItem label="Setting" icon={SettingsIcon} href="/settings" />
              <MenuItem label="Help Center" icon={HelpCircle} href="/help-center" colorClass="bg-orange-100 text-orange-600" />
           </div>
