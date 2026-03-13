@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
 
 const SYMBOLS = [
   { id: 'lamp', emoji: '🪔', value: 100, label: 'Scatter' },
@@ -58,6 +59,9 @@ export default function ChiragSlotPage() {
   const [lines, setLines] = useState(9);
   const [cost, setCost] = useState(1);
   const [winAmount, setWinAmount] = useState<number | null>(null);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'chirag-slot'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -118,7 +122,6 @@ export default function ChiragSlotPage() {
       Array(3).fill(null).map(() => Math.floor(Math.random() * SYMBOLS.length))
     );
     
-    // If jackpot forced, ensure first row has helmets
     if (forced && forceWin >= 5000) {
       finalReels.forEach(r => r[1] = SYMBOLS.findIndex(s => s.label === 'Jackpot'));
     }
@@ -158,9 +161,15 @@ export default function ChiragSlotPage() {
         <CompactRoomView />
 
         <div className="absolute inset-0 z-0">
-           <div className="absolute inset-0 bg-gradient-to-b from-[#1a0533] via-[#05051a] to-[#0a0a2e]" />
-           <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Theme" fill className="object-cover opacity-60 animate-in fade-in duration-1000" unoptimized />
+           ) : (
+             <>
+               <div className="absolute inset-0 bg-gradient-to-b from-[#1a0533] via-[#05051a] to-[#0a0a2e]" />
+               <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
+             </>
+           )}
         </div>
 
         <header className="relative z-[110] flex items-center justify-between px-4 pt-32 pb-4">
