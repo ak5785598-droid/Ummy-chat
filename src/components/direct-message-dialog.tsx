@@ -30,7 +30,7 @@ interface DirectMessageDialogProps {
 
 /**
  * High-Fidelity Direct Message Dispatcher.
- * Re-engineered to ensure deterministic chatId and immediate real-time sync.
+ * Re-engineered to feature a yellow color signature for the message input.
  */
 export function DirectMessageDialog({ recipient, trigger }: DirectMessageDialogProps) {
   const [open, setOpen] = useState(false);

@@ -25,11 +25,12 @@ import {
   MapPin,
   ChevronRight,
   Flag,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +45,7 @@ import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
-import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -149,14 +150,16 @@ const PublicProfileView = ({
   handleFollow, 
   followData, 
   isProcessingFollow,
-  onOpenSocial 
+  onOpenSocial,
+  topContributors
 }: { 
   profile: any, 
   onBack: () => void, 
   handleFollow: () => void, 
   followData: any, 
   isProcessingFollow: boolean,
-  onOpenSocial: (tab: any) => void
+  onOpenSocial: (tab: any) => void,
+  topContributors: any[] | null
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -258,20 +261,39 @@ const PublicProfileView = ({
          </div>
 
          <div className="space-y-4">
+            {/* Top Contributors Leaderboard Sync */}
             <div className="p-4 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex items-center justify-between group active:scale-[0.98] transition-all">
                <div className="space-y-0.5">
                   <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">Top 3 User Contributions</h3>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">This Month</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Sync</p>
                </div>
                <div className="flex -space-x-3 pr-2">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="relative">
-                       <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                          <AvatarImage src={`https://picsum.photos/seed/contrib${i}/100`} />
-                       </Avatar>
-                       <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] drop-shadow-md">👑</div>
-                    </div>
-                  ))}
+                  {topContributors && topContributors.length > 0 ? (
+                    topContributors.map((c: any, i: number) => (
+                      <div key={c.id} className="relative">
+                         <Avatar className={cn(
+                           "h-10 w-10 border-2 border-white shadow-md",
+                           i === 0 && "border-yellow-400",
+                           i === 1 && "border-slate-300",
+                           i === 2 && "border-orange-200"
+                         )}>
+                            <AvatarImage src={c.avatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-slate-100 text-[10px] font-black">{i+1}</AvatarFallback>
+                         </Avatar>
+                         <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] drop-shadow-md">
+                            {i === 0 ? '👑' : i === 1 ? '🥈' : '🥉'}
+                         </div>
+                      </div>
+                    ))
+                  ) : (
+                    [1,2,3].map(i => (
+                      <div key={i} className="relative opacity-20">
+                         <div className="h-10 w-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                            <User className="h-4 w-4 text-gray-300" />
+                         </div>
+                      </div>
+                    ))
+                  )}
                </div>
             </div>
 
@@ -337,6 +359,13 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
   const { data: followData } = useDoc(followRef);
+
+  // Top Contributors Ledger Sync
+  const contributorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'users', profileId, 'topContributors'), orderBy('amount', 'desc'), limit(3));
+  }, [firestore, profileId]);
+  const { data: topContributors } = useCollection(contributorsQuery);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -500,6 +529,43 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <StatItem label="Visitors" value={0} hasNotification />
           </div>
 
+          <div className="px-4 space-y-4 mb-6">
+            <div className="p-4 rounded-3xl border-2 border-white bg-white/40 shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all">
+               <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-purple-600 uppercase italic tracking-tighter">My Top Contributors</h3>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Sync</p>
+               </div>
+               <div className="flex -space-x-3 pr-2">
+                  {topContributors && topContributors.length > 0 ? (
+                    topContributors.map((c: any, i: number) => (
+                      <div key={c.id} className="relative">
+                         <Avatar className={cn(
+                           "h-10 w-10 border-2 border-white shadow-md",
+                           i === 0 && "border-yellow-400",
+                           i === 1 && "border-slate-300",
+                           i === 2 && "border-orange-200"
+                         )}>
+                            <AvatarImage src={c.avatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-slate-100 text-[10px] font-black">{i+1}</AvatarFallback>
+                         </Avatar>
+                         <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] drop-shadow-md">
+                            {i === 0 ? '👑' : i === 1 ? '🥈' : '🥉'}
+                         </div>
+                      </div>
+                    ))
+                  ) : (
+                    [1,2,3].map(i => (
+                      <div key={i} className="relative opacity-20">
+                         <div className="h-10 w-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                            <User className="h-4 w-4 text-gray-300" />
+                         </div>
+                      </div>
+                    ))
+                  )}
+               </div>
+            </div>
+          </div>
+
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">
             <div className="h-24 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-all cursor-pointer">
                <div className="relative z-10 flex flex-col h-full justify-between">
@@ -558,6 +624,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
          followData={followData}
          isProcessingFollow={isProcessingFollow}
          onOpenSocial={openSocial}
+         topContributors={topContributors}
        />
        <SocialRelationsDialog 
           open={socialOpen} 

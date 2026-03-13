@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
 import { Mic, Home, ChevronRight, Send, Loader, User, Info, Sparkles } from 'lucide-react';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -75,6 +75,7 @@ interface GiftPickerProps {
 /**
  * High-Fidelity Gift Vault.
  * Ensures absolute 40% Diamond Yield sync for recipients.
+ * Now synchronizes the contribution ledger for profile leaderboards.
  */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
@@ -158,9 +159,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
         updateDocumentNonBlocking(recipientRef, recUpdateData);
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
+
+        // 3. CONTRIBUTION LEDGER SYNC (Profile Leaderboard)
+        const contribRef = doc(firestore, 'users', recipient.uid, 'topContributors', user.uid);
+        setDocumentNonBlocking(contribRef, {
+          uid: user.uid,
+          username: userProfile.username,
+          avatarUrl: userProfile.avatarUrl || '',
+          amount: increment(totalCost),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
 
-      // 3. BROADCAST SYNC
+      // 4. BROADCAST SYNC
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,
