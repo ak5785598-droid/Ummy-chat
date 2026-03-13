@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -205,7 +204,7 @@ export function RoomClient({ room }: { room: Room }) {
       // PREVENT FIREBASE ERROR: Ensure all field values are defined before calling setDoc
       setDocumentNonBlocking(ref, {
         id: room.id,
-        title: room.title || 'Frequency',
+        title: room.title || room.name || 'Frequency',
         coverUrl: room.coverUrl || '',
         roomNumber: room.roomNumber || '0000',
         ownerId: room.ownerId || '',
@@ -286,12 +285,24 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
+  
   const handleExit = () => { 
     if (firestore && currentUser) {
+      // 1. Atomic Exit Decrement: Ensure room disappears from discovery immediately
+      const roomDocRef = doc(firestore, 'chatRooms', room.id);
+      updateDocumentNonBlocking(roomDocRef, { 
+        participantCount: increment(-1),
+        updatedAt: serverTimestamp() 
+      });
+
+      // 2. Identity Purge
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
+      
       const uRef = doc(firestore, 'users', currentUser.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null });
+      const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
     }
     setActiveRoom(null); 
     router.push('/rooms'); 
@@ -397,7 +408,6 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
-            {/* High-Fidelity Trophy Counter Badge */}
             <div className="absolute -bottom-2 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
                <Trophy className="h-2.5 w-2.5 text-yellow-400 fill-current" />
                <span className="text-[8px] font-black text-yellow-400 leading-none">
@@ -485,8 +495,7 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
-        {/* Left Side: Chat Trigger */}
-        <div className="flex items-center">
+        <div className="flex items-center ml-4">
            <button 
              onClick={handleInputClick} 
              className={cn(
@@ -498,7 +507,6 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        {/* Center: Gift Boutique Portal - Moved downward as requested */}
         <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
@@ -508,7 +516,6 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        {/* Right Side: Social Utility Group */}
         <div className="flex items-center gap-2">
            <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
               {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}

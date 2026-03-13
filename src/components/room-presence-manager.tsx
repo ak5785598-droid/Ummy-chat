@@ -8,6 +8,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
 /**
  * Maintains Firestore presence while a room is active.
+ * Re-engineered for high-fidelity cleanup: Owners and Moderators now perform ghost pruning.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -32,6 +33,8 @@ export function RoomPresenceManager() {
     const roomId = activeRoom.id;
     const uid = user.uid;
     const isOwner = uid === activeRoom.ownerId;
+    const isMod = activeRoom.moderatorIds?.includes(uid);
+    const canCleanup = isOwner || isMod;
 
     const performJoin = async () => {
       const roomDocRef = doc(firestore, 'chatRooms', roomId);
@@ -93,9 +96,10 @@ export function RoomPresenceManager() {
         setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
       }, 20000);
 
-      if (isOwner && !cleanupInterval.current) {
+      // GHOST PRUNING PROTOCOL: Restricted to authorities to maintain network stability
+      if (canCleanup && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
-          const staleThreshold = new Date(Date.now() - 60000); 
+          const staleThreshold = new Date(Date.now() - 65000); 
           const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
           const snap = await getDocs(participantsRef);
           
@@ -106,6 +110,7 @@ export function RoomPresenceManager() {
             snap.docs.forEach(d => {
               const data = d.data();
               const lastSeen = data.lastSeen?.toDate?.() || new Date(0);
+              // PURGE SIGNATURE: Delete stale documents, exclude current authority from auto-purge
               if (lastSeen < staleThreshold && d.id !== uid) {
                 purgeBatch.delete(d.ref);
               } else {
@@ -113,6 +118,7 @@ export function RoomPresenceManager() {
               }
             });
 
+            // Sync final verified count to Discovery dimension
             purgeBatch.update(roomDocRef, { 
               participantCount: activeCount,
               updatedAt: serverTimestamp() 
@@ -127,7 +133,7 @@ export function RoomPresenceManager() {
     performJoin();
 
     return () => {};
-  }, [firestore, activeRoom?.id, user?.uid, userMetadata, activeRoom?.ownerId]); 
+  }, [firestore, activeRoom?.id, user?.uid, userMetadata, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
 
   useEffect(() => {
     return () => {

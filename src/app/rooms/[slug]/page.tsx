@@ -62,13 +62,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     if (firestoreRoom) {
       return {
         id: firestoreRoom.id,
-        roomNumber: firestoreRoom.roomNumber,
+        roomNumber: firestoreRoom.roomNumber || '0000',
         slug: firestoreRoom.id,
         title: firestoreRoom.name || 'Frequency',
         topic: firestoreRoom.description || '',
         category: (firestoreRoom.category as any) || 'Chat',
         coverUrl: firestoreRoom.coverUrl || '',
-        ownerId: firestoreRoom.ownerId,
+        ownerId: firestoreRoom.ownerId || '',
         moderatorIds: firestoreRoom.moderatorIds || [],
         lockedSeats: firestoreRoom.lockedSeats || [],
         announcement: firestoreRoom.announcement || "Enjoy the vibe!",
