@@ -113,13 +113,18 @@ export default function WildPartyPage() {
   const startSpin = async () => {
     setGameState('spinning');
     
-    // ORACLE SYNC CHECK
+    // Determine the absolute winner before starting animation
     let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+    
+    // ORACLE SYNC CHECK
     if (firestore) {
       try {
         const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'wild-party'));
         if (oracleSnap.exists() && oracleSnap.data().isActive) {
-          winningId = oracleSnap.data().forcedResult;
+          const forcedResult = oracleSnap.data().forcedResult;
+          if (ANIMALS.some(a => a.id === forcedResult)) {
+            winningId = forcedResult;
+          }
           updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'wild-party'), { isActive: false });
         }
       } catch (e) {}
@@ -127,19 +132,22 @@ export default function WildPartyPage() {
 
     const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
     let currentStep = 0;
-    const totalSteps = 32 + targetIdx;
+    // Ensure at least 4 full laps before landing on winner
+    const totalSteps = (ANIMALS.length * 4) + targetIdx;
     let speed = 50;
 
     const runChase = () => {
       setHighlightIdx(currentStep % ANIMALS.length);
       playTickSound();
       currentStep++;
-      if (currentStep < totalSteps) {
-        // Realistic deceleration sync
-        if (totalSteps - currentStep < 12) speed += 25;
-        if (totalSteps - currentStep < 6) speed += 50;
+      if (currentStep <= totalSteps) {
+        // Realistic deceleration sync as we approach the locked winner index
+        const remaining = totalSteps - currentStep;
+        if (remaining < 12) speed += 25;
+        if (remaining < 6) speed += 50;
         setTimeout(runChase, speed);
       } else {
+        // Animation finished exactly on the winner
         setTimeout(() => showResult(winningId), 800);
       }
     };
@@ -209,7 +217,7 @@ export default function WildPartyPage() {
 
   if (isLaunching) {
     return (
-      <div className="h-screen w-full bg-[#0a2e0a] flex flex-col items-center justify-center space-y-6 font-headline">
+      <div className="h-screen w-full bg-[#051a05] flex flex-col items-center justify-center space-y-6 font-headline">
         <div className="text-8xl animate-bounce">🦁</div>
         <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Wild Party</h1>
         <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Entering the Jungle...</p>
@@ -257,15 +265,15 @@ export default function WildPartyPage() {
 
         <div className="relative z-50 flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2">
-              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10 active:scale-90 transition-all"><ChevronLeft className="h-5 w-5" /></button>
-              <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10 active:scale-90 transition-all">
+              <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10 transition-all"><ChevronLeft className="h-5 w-5" /></button>
+              <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10 transition-all">
                 {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>
            </div>
            <h1 className="text-3xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-lg">Wild Party</h1>
            <div className="flex gap-2">
               <button className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10"><HelpCircle className="h-5 w-5" /></button>
-              <button className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10"><X className="h-5 w-5" onClick={() => router.back()} /></button>
+              <button className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md border border-white/10" onClick={() => router.back()}><X className="h-5 w-5" /></button>
            </div>
         </div>
 
@@ -306,7 +314,7 @@ export default function WildPartyPage() {
               {/* Glossy Animal Grid */}
               {ANIMALS.map((animal, idx) => {
                 const isActive = highlightIdx === idx;
-                const hasWin = myBets[animal.id] > 0;
+                const betOnThis = myBets[animal.id] || 0;
 
                 return (
                   <button 
@@ -314,7 +322,7 @@ export default function WildPartyPage() {
                     onClick={() => handlePlaceBet(animal.id)}
                     disabled={gameState !== 'betting'}
                     className={cn(
-                      "absolute transition-all duration-300 flex flex-col items-center group active:scale-95",
+                      "absolute transition-all duration-300 flex flex-col items-center group",
                       animal.pos === 'top' && "top-0",
                       animal.pos === 'top-right' && "top-[12%] right-[12%]",
                       animal.pos === 'right' && "right-0",
@@ -331,7 +339,7 @@ export default function WildPartyPage() {
                           "h-14 w-14 rounded-[1.2rem] flex flex-col items-center justify-center transition-all border-[2px] relative overflow-hidden shadow-2xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-3xl drop-shadow-xl relative z-10 transition-transform group-hover:scale-110">
+                           <span className="text-3xl drop-shadow-xl relative z-10 transition-transform">
                               {animal.emoji}
                            </span>
                            <span className="text-[7px] font-black text-white/80 uppercase mt-0.5 leading-none tracking-widest relative z-10">
@@ -346,14 +354,17 @@ export default function WildPartyPage() {
                         {isActive && gameState === 'result' && (
                           <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.2rem] animate-ping" />
                         )}
-                     </div>
 
-                     {hasWin && (
-                       <div className="mt-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1 animate-in zoom-in shadow-xl">
-                          <GoldCoinIcon className="h-2 w-2" />
-                          <span className="text-[8px] font-black text-yellow-400 italic">{(myBets[animal.id]).toLocaleString()}</span>
-                       </div>
-                     )}
+                        {/* On-Character Bet Display Sync */}
+                        {betOnThis > 0 && (
+                          <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                             <div className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-yellow-500/40 flex items-center gap-1 shadow-2xl animate-in zoom-in">
+                                <GoldCoinIcon className="h-2 w-2 text-yellow-400" />
+                                <span className="text-[8px] font-black text-yellow-400 italic">{betOnThis.toLocaleString()}</span>
+                             </div>
+                          </div>
+                        )}
+                     </div>
                   </button>
                 );
               })}
@@ -368,7 +379,7 @@ export default function WildPartyPage() {
                     <GoldCoinIcon className="h-6 w-6 text-yellow-400" />
                     <span className="text-xl font-black text-yellow-500 italic tracking-tight">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
                  </div>
-                 <button className="bg-white/10 p-3 rounded-full border border-white/10 text-yellow-500 active:scale-90 transition-transform shadow-xl">
+                 <button className="bg-white/10 p-3 rounded-full border border-white/10 text-yellow-500 transition-transform shadow-xl">
                     <Users className="h-6 w-6" />
                  </button>
               </div>
