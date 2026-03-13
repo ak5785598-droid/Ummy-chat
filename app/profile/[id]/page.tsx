@@ -352,13 +352,19 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
-  const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends'>('followers');
+  const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
   const { data: followData } = useDoc(followRef);
+
+  const visitorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'users', profileId, 'profileVisitors'), limit(100));
+  }, [firestore, profileId]);
+  const { data: visitorsData } = useCollection(visitorsQuery);
 
   // Top Contributors Ledger Sync
   const contributorsQuery = useMemoFirebase(() => {
@@ -372,6 +378,20 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   }, [currentUser, isUserLoading, router]);
 
   const isOwnProfile = currentUser?.uid === profileId;
+
+  useEffect(() => {
+    if (!firestore || !currentUser || !profileId || isOwnProfile) return;
+
+    const recordVisit = async () => {
+      const visitRef = doc(firestore, 'users', profileId, 'profileVisitors', currentUser.uid);
+      setDocumentNonBlocking(visitRef, {
+        visitorId: currentUser.uid,
+        timestamp: serverTimestamp()
+      }, { merge: true });
+    };
+
+    recordVisit();
+  }, [firestore, currentUser, profileId, isOwnProfile]);
 
   const handleCopyId = () => {
     if (!profile) return;
@@ -526,7 +546,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             <StatItem label="Friend" value={profile.stats?.friends || 0} onClick={() => openSocial('friends')} />
             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => openSocial('following')} />
             <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => openSocial('followers')} />
-            <StatItem label="Visitors" value={0} hasNotification />
+            <StatItem label="Visitors" value={visitorsData?.length || 0} onClick={() => openSocial('visitors')} hasNotification />
           </div>
 
           <div className="px-4 grid grid-cols-2 gap-3 mb-6">

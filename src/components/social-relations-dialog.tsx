@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader, User as UserIcon, Star, Sparkles, ChevronLeft, Search } from 'lucide-react';
+import { Loader, User as UserIcon, Star, Sparkles, ChevronLeft, Search, Eye } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, getDocs, doc, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, limit, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -90,7 +90,7 @@ interface SocialRelationsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
-  initialTab?: 'followers' | 'following' | 'friends';
+  initialTab?: 'followers' | 'following' | 'friends' | 'visitors';
   username?: string;
 }
 
@@ -111,8 +111,14 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
     return query(collection(firestore, 'followers'), where('followerId', '==', userId));
   }, [firestore, userId]);
 
+  const visitorsQuery = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return query(collection(firestore, 'users', userId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
+  }, [firestore, userId]);
+
   const { data: followers, isLoading: isFollowersLoading } = useCollection(followersQuery);
   const { data: following, isLoading: isFollowingLoading } = useCollection(followingQuery);
+  const { data: visitors, isLoading: isVisitorsLoading } = useCollection(visitorsQuery);
 
   const friends = useMemo(() => {
     if (!followers || !following) return [];
@@ -139,24 +145,30 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
         </DialogHeader>
 
         <Tabs defaultValue={initialTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="bg-white border-b border-gray-50 rounded-none p-0 h-14 justify-around gap-0 shrink-0">
+          <TabsList className="bg-white border-b border-gray-50 rounded-none p-0 h-14 justify-around gap-0 shrink-0 overflow-x-auto no-scrollbar">
             <TabsTrigger 
               value="followers" 
-              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-xs text-gray-400 data-[state=active]:text-gray-900"
+              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
             >
               Fans ({followers?.length || 0})
             </TabsTrigger>
             <TabsTrigger 
               value="following" 
-              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-xs text-gray-400 data-[state=active]:text-gray-900"
+              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
             >
               Following ({following?.length || 0})
             </TabsTrigger>
             <TabsTrigger 
               value="friends" 
-              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-xs text-gray-400 data-[state=active]:text-gray-900"
+              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
             >
               Friend ({friends?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="visitors" 
+              className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-black uppercase italic text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
+            >
+              Visitors ({visitors?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -199,6 +211,23 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
                   <div className="py-20 text-center space-y-4 opacity-20 italic">
                     <UserIcon className="h-12 w-12 mx-auto" />
                     <p className="font-bold text-sm">No mutual friend sync detected.</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="visitors" className="h-full m-0">
+              <ScrollArea className="h-full">
+                {isVisitorsLoading ? (
+                  <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /><p className="text-[10px] font-black uppercase text-gray-300">Syncing Visitors...</p></div>
+                ) : visitors && visitors.length > 0 ? (
+                  <div className="flex flex-col">
+                    {visitors.map(v => <UserListItem key={v.id} userId={v.visitorId || v.id} onClick={() => handleUserClick(v.visitorId || v.id)} />)}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center opacity-20 italic space-y-2">
+                    <Eye className="h-10 w-10 mx-auto opacity-20" />
+                    <p className="font-bold text-sm">No visitors detected in this frequency.</p>
                   </div>
                 )}
               </ScrollArea>

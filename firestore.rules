@@ -107,6 +107,11 @@ service cloud.firestore {
         allow read: if isOwner(userId) && isNotBanned();
         allow create: if isOwner(userId) && isNotBanned();
       }
+
+      match /profileVisitors/{visitorId} {
+        allow read: if isOwner(userId);
+        allow write: if isSignedIn() && isNotBanned();
+      }
     }
 
     match /chatRooms/{chatRoomId} {
