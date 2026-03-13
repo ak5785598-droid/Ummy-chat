@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -266,7 +266,7 @@ export default function WildPartyPage() {
 
         <div className="relative z-50 flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2">
-              <button onClick={() => router.back()} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg"><ChevronLeft className="h-5 w-5" /></button>
+              <button onClick={() => router.back()} className="bg-yellow-50 p-2 rounded-full text-black shadow-lg"><ChevronLeft className="h-5 w-5" /></button>
               <button onClick={() => setIsMuted(!isMuted)} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg">
                 {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
               </button>

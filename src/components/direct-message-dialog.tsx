@@ -101,7 +101,7 @@ export function DirectMessageDialog({ recipient, trigger }: DirectMessageDialogP
             placeholder="Type your message..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="resize-none h-32 rounded-[1.5rem] border-2 border-gray-100 focus:border-primary transition-all p-4 text-sm font-body italic placeholder:text-gray-300"
+            className="resize-none h-32 rounded-[1.5rem] border-2 border-yellow-200 bg-yellow-50 focus:border-primary transition-all p-4 text-sm font-body italic placeholder:text-yellow-600/40 text-yellow-900"
             disabled={isSubmitting}
           />
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -96,7 +96,6 @@ export default function RoulettePage() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(1200, ctx.currentTime);
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();

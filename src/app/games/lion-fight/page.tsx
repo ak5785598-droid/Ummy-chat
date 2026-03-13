@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -213,7 +213,7 @@ export default function LionFightPage() {
            
            <div className="relative">
               <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
-              <div className="bg-gradient-to-b from-indigo-500 to-indigo-900 border-2 border-indigo-400 rounded-full px-8 py-1.5 shadow-2xl relative z-10">
+              <div className="bg-gradient-to-b from-indigo-50 to-indigo-900 border-2 border-indigo-400 rounded-full px-8 py-1.5 shadow-2xl relative z-10">
                  <span className="text-lg font-black text-white italic tracking-tight">Round: {roundNumber}</span>
               </div>
            </div>
