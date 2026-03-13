@@ -76,9 +76,18 @@ const LevelBadge = ({ level, type }: { level: number, type: 'rich' | 'charm' }) 
   </div>
 );
 
+const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
+  <div className={cn(
+    "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-sm",
+    gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
+  )}>
+    {gender === 'Female' ? '♀' : '♂'}
+  </div>
+);
+
 /**
  * High-Fidelity Room User Profile Dialog.
- * Perfectly matches the provided white-theme blueprint.
+ * Re-engineered for consistent identity signature sequence.
  */
 export function RoomUserProfileDialog({ 
   userId, 
@@ -104,7 +113,7 @@ export function RoomUserProfileDialog({
   if (!userId) return null;
 
   const handleCopyId = () => {
-    const idToCopy = profile?.specialId || userId;
+    const idToCopy = profile?.specialId || profile?.accountNumber || userId;
     navigator.clipboard.writeText(idToCopy);
     toast({ title: 'ID Copied' });
   };
@@ -152,12 +161,16 @@ export function RoomUserProfileDialog({
             </div>
 
             <div className="text-center space-y-2 mb-4 w-full px-6">
-               <h2 className="text-2xl font-black text-gray-900 tracking-tight">{profile.username}</h2>
-               <div className="flex flex-wrap justify-center items-center gap-1.5">
+               <div className="flex flex-wrap justify-center items-center gap-2">
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
+                  <span className="text-lg leading-none">🇮🇳</span>
+                  <GenderCircle gender={profile.gender} />
                   <LevelBadge level={profile.level?.rich || 1} type="rich" />
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
-                  
-                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center ml-1" />}
+               </div>
+               
+               <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
+                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
@@ -166,18 +179,15 @@ export function RoomUserProfileDialog({
 
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
                <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-                  {profile.specialId && profile.specialIdColor ? (
+                  {profile.specialId ? (
                     <div className={cn(
-                      "relative overflow-hidden px-2 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r shadow-md",
-                      profile.specialIdColor === 'blue' 
-                        ? "from-blue-400 via-blue-500 to-blue-400"
-                        : "from-rose-400 via-rose-500 to-rose-400"
+                      "relative overflow-hidden px-2 py-0.5 rounded-full border border-white/30 group bg-gradient-to-r shadow-md",
+                      profile.specialIdColor === 'blue' ? "from-blue-400 to-blue-600" : "from-rose-400 to-rose-600"
                     )}>
-                      <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
                       <span className="relative z-10 text-[8px] font-black text-white uppercase italic tracking-widest leading-none">ID:{profile.specialId}</span>
                     </div>
                   ) : (
-                    <span>ID:{profile.specialId || profile.id.slice(0, 8)}</span>
+                    <span>ID:{profile.accountNumber}</span>
                   )}
                   <Copy className="h-2.5 w-2.5 opacity-40" />
                </div>
@@ -233,33 +243,13 @@ export function RoomUserProfileDialog({
             {canManage && !isMe && (
               <div className="w-full border-t border-gray-50 py-6 px-8 animate-in fade-in duration-500">
                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-400">
-                    <button 
-                      onClick={() => onSilence(userId, isSilenced)}
-                      className="hover:text-primary transition-colors active:scale-95"
-                    >
-                       {isSilenced ? 'Unmute' : 'Mute'}
-                    </button>
+                    <button onClick={() => onSilence(userId, isSilenced)} className="hover:text-primary transition-colors">{isSilenced ? 'Unmute' : 'Mute'}</button>
                     <span className="opacity-20 text-lg">|</span>
-                    <button 
-                      onClick={() => onLeaveSeat(userId)}
-                      className="hover:text-orange-600 transition-colors active:scale-95"
-                    >
-                       Leave
-                    </button>
+                    <button onClick={() => onLeaveSeat(userId)} className="hover:text-orange-600 transition-colors">Leave</button>
                     <span className="opacity-20 text-lg">|</span>
-                    <button 
-                      onClick={() => { toast({ title: 'Slot Locked' }); onOpenChange(false); }}
-                      className="hover:text-indigo-600 transition-colors active:scale-95"
-                    >
-                       Lock
-                    </button>
+                    <button onClick={() => { toast({ title: 'Slot Locked' }); onOpenChange(false); }} className="hover:text-indigo-600 transition-colors">Lock</button>
                     <span className="opacity-20 text-lg">|</span>
-                    <button 
-                      onClick={() => onKick(userId, 10)}
-                      className="hover:text-red-600 transition-colors active:scale-95"
-                    >
-                       Kick out
-                    </button>
+                    <button onClick={() => onKick(userId, 10)} className="hover:text-red-600 transition-colors">Kick out</button>
                  </div>
               </div>
             )}

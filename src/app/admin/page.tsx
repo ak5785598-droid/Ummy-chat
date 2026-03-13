@@ -39,11 +39,40 @@ const AUTHORITY_ROLES = [
 
 const ELITE_TAGS = [
   { id: 'Official', label: 'Official', color: 'bg-green-500', icon: BadgeCheck },
+  { id: 'CS Leader', label: 'CS Leader', color: 'bg-gradient-to-r from-blue-500 to-magenta-500', icon: Sparkles },
   { id: 'Customer Service', label: 'Customer Service', color: 'bg-blue-500', icon: MessageSquare },
   { id: 'Seller', label: 'Seller', color: 'bg-purple-500', icon: Heart },
   { id: 'Official center', label: 'Official center', color: 'bg-indigo-500', icon: ShieldCheck },
   { id: 'Seller center', label: 'Seller center', color: 'bg-orange-500', icon: Store },
 ];
+
+const DISPATCH_ASSETS = {
+  frames: [
+    { id: 'ummy-cs', name: 'Ummy CS Majestic' },
+    { id: 'f-official-hq', name: 'Sovereign Official HQ' },
+    { id: 'f1', name: 'Golden Official' },
+    { id: 'f5', name: 'Golden wings' },
+    { id: 'f7', name: 'Celestial Wings' },
+    { id: 'f2', name: 'Cyberpunk Red' },
+    { id: 'f3', name: 'Royal Purple' },
+    { id: 'f4', name: 'Imperial Bloom' },
+    { id: 'f6', name: 'Bronze Sky' },
+  ],
+  bubbles: [
+    { id: 'b1', name: 'Kawaii Pink' },
+    { id: 'b2', name: 'Midnight Blue' },
+  ],
+  waves: [
+    { id: 'w1', name: 'Ocean Waves' },
+    { id: 'w2', name: 'Flame Pulse' },
+  ],
+  themes: [
+    { id: 'neon_universe', name: 'Neon Universe' },
+    { id: 'emoji_party', name: 'Emoji Party' },
+    { id: 'gaming_arcade', name: 'Gaming Arcade' },
+    { id: 'official_ummy', name: 'Official Ummy' },
+  ]
+};
 
 const DEFAULT_SLIDES = [
   { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl },
@@ -89,22 +118,18 @@ export default function AdminPage() {
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   
   const [centerSearchId, setCenterSearchId] = useState('');
-  const [centerSearchName, setCenterSearchName] = useState('');
   const [targetUserForCenter, setTargetUserForCenter] = useState<any>(null);
   const [isSearchingCenter, setIsSearchingCenter] = useState(false);
 
   const [tagSearchId, setTagSearchId] = useState('');
-  const [tagSearchName, setTagSearchName] = useState('');
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
   
   const [idSearchInput, setIdSearchInput] = useState('');
-  const [nameSearchInput, setNameSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>('red');
   const [targetUserForId, setTargetUserForId] = useState<any>(null);
   
   const [rewardSearchId, setRewardSearchId] = useState('');
-  const [rewardSearchName, setRewardSearchName] = useState('');
   const [targetUserForRewards, setTargetUserForRewards] = useState<any>(null);
   const [coinDispatchAmount, setCoinDispatchAmount] = useState('');
   const [isDispatching, setIsDispatching] = useState(false);
@@ -119,14 +144,12 @@ export default function AdminPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const [dmSearchId, setDmSearchId] = useState('');
-  const [dmSearchName, setDmSearchName] = useState('');
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
   const [dmTitle, setDmTitle] = useState('Official System Notice');
   const [dmContent, setDmContent] = useState('');
   const [isSendingDm, setIsSendingDm] = useState(false);
 
   const [banSearchId, setBanSearchId] = useState('');
-  const [banSearchName, setBanSearchName] = useState('');
   const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
   const [isSearchingBan, setIsSearchingBan] = useState(false);
   
@@ -146,7 +169,6 @@ export default function AdminPage() {
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
   const [isSearchingDm, setIsSearchingDm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isSavingId, setIsSavingId] = useState(false);
   
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
@@ -156,6 +178,9 @@ export default function AdminPage() {
 
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
+
+  const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
+  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -187,6 +212,25 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
+
+  const handleSyncAppData = async () => {
+    if (!firestore || !isCreator) return;
+    setIsSyncingAppData(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      let tc = 0, td = 0, ts = 0;
+      usersSnap.docs.forEach(d => {
+        const w = d.data().wallet || {};
+        tc += (w.coins || 0);
+        td += (w.diamonds || 0);
+        ts += (w.totalSpent || 0);
+      });
+      setAppStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
+      toast({ title: 'Economic Ledger Synchronized' });
+    } finally {
+      setIsSyncingAppData(false);
+    }
+  };
 
   const handleSyncDirectory = async () => {
     if (!firestore || !isCreator) return;
@@ -548,6 +592,9 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-10 items-start">
           <div className="w-full md:w-72 shrink-0 sticky top-24">
             <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
+              <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Database className="h-4 w-4 text-blue-500" /> App Ledger
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -591,6 +638,52 @@ export default function AdminPage() {
           </div>
 
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="app-data" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><BarChart3 className="h-6 w-6" /> App Economic Ledger</CardTitle>
+                        <CardDescription>Global coin circulation and economic sync metrics.</CardDescription>
+                     </div>
+                     <Button onClick={handleSyncAppData} disabled={isSyncingAppData} className="bg-blue-600 h-12 rounded-xl">
+                        {isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Ledger
+                     </Button>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-10">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Total Coins in Tribe</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic">
+                              <GoldCoinIcon className="h-6 w-6" />
+                              {appStats.totalCoins.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Total Diamonds Accumulated</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic">
+                              <Sparkles className="h-6 w-6" />
+                              {appStats.totalDiamonds.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Total Economic Output (Spent)</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic">
+                              <BarChart3 className="h-6 w-6" />
+                              {appStats.totalSpent.toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-1">
+                           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Synchronized Users</p>
+                           <div className="flex items-center gap-2 text-2xl font-black text-slate-900 italic">
+                              <Users className="h-6 w-6" />
+                              {appStats.totalUsers.toLocaleString()}
+                           </div>
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
             <TabsContent value="authority" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
@@ -740,10 +833,6 @@ export default function AdminPage() {
                         <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
                      </div>
-                     <div className="flex gap-4">
-                        <Input placeholder="Enter Username..." value={centerSearchName} onChange={(e) => setCenterSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 font-black uppercase italic" disabled={isSearchingCenter}>Find Name</Button>
-                     </div>
                   </div>
                   {targetUserForCenter && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
@@ -785,10 +874,6 @@ export default function AdminPage() {
                      <div className="flex gap-4">
                         <Input placeholder="Enter Target ID..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate ID</Button>
-                     </div>
-                     <div className="flex gap-4">
-                        <Input placeholder="Enter Username..." value={banSearchName} onChange={(e) => setBanSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 font-black uppercase italic" disabled={isSearchingBan}>Locate Name</Button>
                      </div>
                   </div>
 
@@ -1019,7 +1104,7 @@ export default function AdminPage() {
                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
-                             {targetUserForDm.specialId ? <SpecialIdBadge id={targetUserForDm.specialId} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForDm.accountNumber}</span>}
+                             {targetUserForDm.specialId ? <SpecialIdBadge id={targetUserForDm.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForDm.accountNumber}</span>}
                           </div>
                        </div>
                        <div className="space-y-4">
@@ -1130,7 +1215,7 @@ export default function AdminPage() {
                        </div>
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                           <div className="space-y-4"><div className="flex items-center gap-2 text-primary"><GoldCoinIcon className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Coin Frequency</h4></div><div className="flex gap-2"><Input placeholder="Volume..." value={coinDispatchAmount} onChange={(e) => setCoinDispatchAmount(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-lg font-black italic" /><Button onClick={handleDispatchCoins} disabled={isDispatching} className="h-14 px-8 bg-primary text-white rounded-2xl"><Send className="h-5 w-5" /></Button></div></div>
-                          <div className="space-y-4"><div className="flex items-center gap-2 text-purple-500"><Star className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Sync Elite Frames</h4></div><div className="flex flex-wrap gap-2">{[ { id: 'ummy-cs', name: 'Ummy CS Majestic' }, { id: 'f-official-hq', name: 'Sovereign Official HQ' }, { id: 'f1', name: 'Golden Official' }, { id: 'f5', name: 'Golden wings' } ].map(frame => (<Button key={frame.id} variant="outline" size="sm" onClick={() => handleDispatchItem(frame.id as any, 'ownedItems')} className="h-10 text-[8px] font-black uppercase rounded-xl">{frame.name}</Button>))}</div></div>
+                          <div className="space-y-4"><div className="flex items-center gap-2 text-purple-500"><Star className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Sync Elite Frames</h4></div><div className="flex flex-wrap gap-2">{DISPATCH_ASSETS.frames.map(frame => (<Button key={frame.id} variant="outline" size="sm" onClick={() => handleDispatchItem(frame.id as any, 'ownedItems')} className="h-10 text-[8px] font-black uppercase rounded-xl">{frame.name}</Button>))}</div></div>
                        </div>
                     </div>
                   )}

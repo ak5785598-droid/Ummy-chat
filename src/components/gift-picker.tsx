@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -75,7 +74,7 @@ interface GiftPickerProps {
 
 /**
  * High-Fidelity Gift Vault.
- * Re-engineered for "narrow breath" visual optimization and elite Diamond Yield (40%).
+ * Ensures absolute 40% Diamond Yield sync for recipients.
  */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
@@ -130,10 +129,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         }
       }
 
-      const netCost = totalCost - winAmount;
-
+      // 1. ECONOMIC DISPATCH PROTOCOL
       const senderUpdateData = {
-        'wallet.coins': increment(-netCost),
+        'wallet.coins': increment(-(totalCost - winAmount)),
         'wallet.totalSpent': increment(totalCost),
         'wallet.dailySpent': increment(totalCost),
         updatedAt: serverTimestamp()
@@ -143,10 +141,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
       updateDocumentNonBlocking(profileRef, senderUpdateData);
       updateDocumentNonBlocking(roomRef, { 
         'stats.totalGifts': increment(totalCost),
-        'stats.dailyGifts': increment(totalCost)
+        'stats.dailyGifts': increment(totalCost),
+        updatedAt: serverTimestamp()
       });
 
-      // ECONOMIC YIELD PROTOCOL: Recipient receives 40% of the coin value in Diamonds
+      // 2. RECIPIENT YIELD PROTOCOL: 40% Diamond conversion
       if (recipient && recipient.uid && recipient.uid !== user.uid) {
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
@@ -161,6 +160,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
       }
 
+      // 3. BROADCAST SYNC
       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
         type: 'gift',
         senderId: user.uid,
@@ -173,9 +173,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         timestamp: serverTimestamp()
       });
 
-      if (onGiftSent) {
-        onGiftSent(selectedGift, qtyNum, recipient);
-      }
+      if (onGiftSent) onGiftSent(selectedGift, qtyNum, recipient);
       
       if (winAmount > 0) {
         toast({ 
