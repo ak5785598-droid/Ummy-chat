@@ -23,7 +23,9 @@ import {
   ClipboardList,
   HelpCircle,
   MapPin,
-  ChevronRight
+  ChevronRight,
+  Flag,
+  Sparkles
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
