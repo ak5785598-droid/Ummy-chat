@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -31,8 +30,8 @@ const ANIMALS = [
   { id: 'fox', emoji: '🦊', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
   { id: 'rhino', emoji: '🦏', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
   { id: 'elephant', emoji: '🐘', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
-  { id: 'lion', emoji: 'lion', multiplier: 45, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
-  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'top-left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
+  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
+  { id: 'lion', emoji: 'lion', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
 ];
 
 const CHIPS = [
