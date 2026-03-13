@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -22,14 +23,15 @@ import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+// CLOCKWISE ORDER SYNC: Top -> Right -> Bottom -> Left sequence for high-fidelity chase
 const ANIMALS = [
-  { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
   { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
   { id: 'sheep', emoji: '🐑', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white' },
   { id: 'fox', emoji: '🦊', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
   { id: 'rhino', emoji: '🦏', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
   { id: 'elephant', emoji: '🐘', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
+  { id: 'lion', emoji: 'lion', multiplier: 45, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
   { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'top-left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
 ];
 
@@ -285,7 +287,7 @@ export default function WildPartyPage() {
               {history.map((id, i) => (
                 <div key={i} className="relative shrink-0">
                    <div className="h-8 w-8 bg-white/10 rounded-full flex items-center justify-center text-xl shadow-inner">
-                      {ANIMALS.find(a => a.id === id)?.emoji}
+                      {id === 'lion' ? '🦁' : ANIMALS.find(a => a.id === id)?.emoji}
                    </div>
                    {i === 0 && <div className="absolute -top-1 -right-1 bg-red-500 text-[6px] font-black px-1 rounded-full animate-pulse">NEW</div>}
                 </div>
@@ -339,7 +341,9 @@ export default function WildPartyPage() {
                           "h-16 w-16 rounded-[1.2rem] flex flex-col items-center justify-center transition-all border-[2px] relative overflow-hidden shadow-xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-3xl drop-shadow-lg relative z-10">{animal.emoji}</span>
+                           <span className="text-3xl drop-shadow-lg relative z-10">
+                              {animal.id === 'lion' ? '🦁' : animal.emoji}
+                           </span>
                            <span className="text-[7px] font-black text-white/80 uppercase mt-0.5 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
