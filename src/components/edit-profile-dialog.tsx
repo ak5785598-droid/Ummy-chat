@@ -176,7 +176,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                        variant="outline" 
                        size="sm" 
                        onClick={() => fileInputRef.current?.click()}
-                       className="rounded-full h-10 px-6 text-[10px] font-black uppercase italic border-2"
+                       className="rounded-full h-10 px-6 text-[10px] font-black uppercase italic border-2 bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-500 hover:border-yellow-500"
                      >
                        <Upload className="h-3 w-3 mr-2" /> Upload
                      </Button>
