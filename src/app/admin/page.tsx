@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -92,16 +92,21 @@ const ACTIVE_GAME_FREQUENCIES = [
 
 const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
   const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
+    : color === 'red'
+    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
+    : "from-slate-50 to-slate-100 border-slate-200 shadow-none";
 
   return (
     <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
+      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
+      <span className={cn(
+        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm",
+        !color ? "text-slate-500" : "text-white"
+      )}>ID: {id}</span>
     </div>
   );
 };
@@ -117,10 +122,19 @@ export default function AdminPage() {
   
   const isCreator = user?.uid === CREATOR_ID;
 
-  const [activeTab, setActiveTab] = useState('authority');
+  const [activeTab, setActiveTab] = useState('app-data');
   const [searchQuery, setSearchQuery] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   
+  // Search Modes
+  const [recordSearchMode, setRecordSearchMode] = useState<'id' | 'name'>('id');
+  const [centerSearchMode, setCenterSearchMode] = useState<'id' | 'name'>('id');
+  const [banSearchMode, setBanSearchMode] = useState<'id' | 'name'>('id');
+  const [dmSearchMode, setDmSearchMode] = useState<'id' | 'name'>('id');
+  const [tagSearchMode, setTagSearchMode] = useState<'id' | 'name'>('id');
+  const [specialIdSearchMode, setSpecialIdSearchMode] = useState<'id' | 'name'>('id');
+  const [rewardSearchMode, setRewardSearchMode] = useState<'id' | 'name'>('id');
+
   const [centerSearchId, setCenterSearchId] = useState('');
   const [targetUserForCenter, setTargetUserForCenter] = useState<any>(null);
   const [isSearchingCenter, setIsSearchingCenter] = useState(false);
@@ -177,15 +191,18 @@ export default function AdminPage() {
   
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const rankingBGFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingRankingKey, setUploadingRankingKey] = useState<string | null>(null);
+
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const gameBGFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
 
-  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
-  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
-
   const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
   const [isSyncingAppData, setIsSyncingAppData] = useState(false);
+
+  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
+  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -265,22 +282,43 @@ export default function AdminPage() {
     if (!firestore || !value) return;
     loadingSetter(true);
     try {
-      let q;
+      const inputVal = value.trim();
+      let foundUser = null;
+
       if (mode === 'id') {
-        const inputId = value.trim();
-        if (inputId.length <= 4) {
-          const paddedId = inputId.padStart(3, '0');
-          q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
-        } else {
-          q = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+        const qAcc = query(collection(firestore, 'users'), where('accountNumber', '==', inputVal), limit(1));
+        const snapAcc = await getDocs(qAcc);
+        if (!snapAcc.empty) {
+          foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id };
+        }
+
+        if (!foundUser) {
+          const paddedId = inputVal.padStart(3, '0');
+          const qSpec = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+          const snapSpec = await getDocs(qSpec);
+          if (!snapSpec.empty) {
+            foundUser = { ...snapSpec.docs[0].data(), id: snapSpec.docs[0].id };
+          }
         }
       } else {
-        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
+        // Prefix Search Sync
+        const qName = query(
+          collection(firestore, 'users'), 
+          where('username', '>=', inputVal), 
+          where('username', '<=', inputVal + '\uf8ff'), 
+          limit(1)
+        );
+        const snapName = await getDocs(qName);
+        if (!snapName.empty) {
+          foundUser = { ...snapName.docs[0].data(), id: snapName.docs[0].id };
+        }
       }
       
-      const snap = await getDocs(q);
-      if (!snap.empty) setter({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+      if (foundUser) {
+        setter(foundUser);
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found' });
+      }
     } finally {
       loadingSetter(false);
     }
@@ -347,8 +385,8 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForRewards.id);
       const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
       const amt = parseInt(coinDispatchAmount);
-      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(amt) });
-      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(amt) });
+      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(count) });
+      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(count) });
       toast({ title: 'Coins Dispatched' });
       setCoinDispatchAmount('');
     } finally {
@@ -399,11 +437,11 @@ export default function AdminPage() {
     try {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-      const updateData = { specialIdColor: null, updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(uRef, updateData);
-      updateDocumentNonBlocking(pRef, updateData);
-      setTargetUserForId((prev: any) => ({ ...prev, specialIdColor: null }));
-      toast({ title: 'ID Color Removed' });
+      const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
+      await updateDocumentNonBlocking(uRef, updateData);
+      await updateDocumentNonBlocking(pRef, updateData);
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
+      toast({ title: 'ID Signature Purged' });
     } finally {
       setIsSavingId(false);
     }
@@ -596,6 +634,13 @@ export default function AdminPage() {
 
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
 
+  const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
+    <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+       <button onClick={() => setMode('id')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'id' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By ID</button>
+       <button onClick={() => setMode('name')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By Name</button>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="space-y-8 max-w-7xl mx-auto p-4 animate-in fade-in duration-700 font-headline bg-white min-h-full">
@@ -650,7 +695,7 @@ export default function AdminPage() {
                 <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
               </TabsTrigger>
               <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Type className="h-4 w-4 text-red-500" /> Special I'd
+                <Type className="h-4 w-4 text-red-500" /> Special ID
               </TabsTrigger>
               <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gift className="h-4 w-4 text-pink-500" /> Rewards
@@ -705,51 +750,12 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
-            <TabsContent value="game-themes" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600">
-                        <Monitor className="h-6 w-6" /> Sovereign Game Themes
-                     </CardTitle>
-                     <CardDescription>Dispatch high-resolution environmental assets to the 3D Tribe Arena.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                     {gamesList.map((game) => (
-                       <div key={game.slug} className="flex flex-col gap-3 group">
-                          <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl border-2 border-white/10">
-                             {game.backgroundUrl ? (
-                               <Image src={game.backgroundUrl} fill className="object-cover" alt="BG" unoptimized />
-                             ) : (
-                               <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
-                                  <Monitor className="h-10 w-10" />
-                                  <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
-                               </div>
-                             )}
-                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button 
-                                  onClick={() => handleGameBGUploadClick(game)}
-                                  className="h-14 w-14 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl active:scale-90 transition-transform"
-                                >
-                                   {isUploadingGameBG && selectedGameForSync?.slug === game.slug ? <Loader className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6" />}
-                                </button>
-                             </div>
-                          </div>
-                          <div className="flex items-center justify-between px-2">
-                             <p className="font-black uppercase italic text-sm text-slate-900">{game.title}</p>
-                             {game.backgroundUrl && <Badge className="bg-green-100 text-green-600 border-none font-black text-[8px] uppercase">Custom Synced</Badge>}
-                          </div>
-                       </div>
-                     ))}
-                  </CardContent>
-               </Card>
-            </TabsContent>
-
             <TabsContent value="authority" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
                   <CardContent className="space-y-6">
                      <div className="flex gap-4">
-                        <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
+                        <Input placeholder="Search member by name..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
                         <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
                      </div>
                      <div className="space-y-4">
@@ -826,9 +832,12 @@ export default function AdminPage() {
                      <CardDescription>Audit the economic and social signatures of any tribe member. Full wallet history visibility.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 space-y-8">
-                     <div className="flex gap-4">
-                        <Input placeholder="Enter ID (Special or Account)..." value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit Identity</Button>
+                     <div className="flex flex-col gap-4">
+                        <SearchToggle mode={recordSearchMode} setMode={setRecordSearchMode} />
+                        <div className="flex gap-4">
+                           <Input placeholder={recordSearchMode === 'id' ? "Enter ID (Special or Account)..." : "Enter Username..."} value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" />
+                           <Button onClick={() => handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit Identity</Button>
+                        </div>
                      </div>
 
                      {targetUserForRecord && (
@@ -880,9 +889,10 @@ export default function AdminPage() {
                      <CardDescription>Authorize or revoke Seller Center access for tribe members. Updates are instantaneous.</CardDescription>
                   </CardHeader>
                   <div className="flex flex-col gap-4">
+                     <SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
+                        <Input placeholder={centerSearchMode === 'id' ? "Enter User ID (Special or Account)..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForCenter && (
@@ -922,9 +932,10 @@ export default function AdminPage() {
                   </CardHeader>
                   
                   <div className="flex flex-col gap-4">
+                     <SearchToggle mode={banSearchMode} setMode={setBanSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Target ID..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate ID</Button>
+                        <Input placeholder={banSearchMode === 'id' ? "Enter Target ID (Special or Account)..." : "Enter Target Username..."} value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate Identity</Button>
                      </div>
                   </div>
 
@@ -1069,7 +1080,7 @@ export default function AdminPage() {
                                {isUploadingBanner === idx && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
                                <button 
                                  onClick={() => bannerFileInputRefs.current[idx]?.click()}
-                                 className="absolute bottom-3 right-3 bg-primary text-black p-3 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-2 border-white"
+                                 className="absolute bottom-3 right-3 bg-primary text-black p-3 rounded-full shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white"
                                >
                                   <Camera className="h-5 w-5" />
                                </button>
@@ -1136,7 +1147,7 @@ export default function AdminPage() {
                      <Button onClick={handleSystemBroadcast} disabled={isBroadcasting || !broadcastContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase italic text-xl shadow-xl">
                         {isBroadcasting ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />} Synchronize Global Broadcast
                      </Button>
-                  </CardContent>
+                  </CardHeader>
                </Card>
             </TabsContent>
 
@@ -1144,9 +1155,10 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
+                     <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Recipient ID..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find ID</Button>
+                        <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
@@ -1210,9 +1222,10 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><BadgeCheck className="h-6 w-6 text-primary" /> Assign Official Tags</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
+                     <SearchToggle mode={tagSearchMode} setMode={setTagSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find ID</Button>
+                        <Input placeholder={tagSearchMode === 'id' ? "Enter User ID (Special or Account)..." : "Enter Username..."} value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(tagSearchMode, tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(tagSearchMode, tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForTags && (
@@ -1240,10 +1253,13 @@ export default function AdminPage() {
 
             <TabsContent value="special-id" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6 text-primary" /> Manage Special I'd</CardTitle></CardHeader>
-                  <div className="flex gap-4">
-                     <Input placeholder="Enter Current ID..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6 text-primary" /> Manage Special ID</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4">
+                     <SearchToggle mode={specialIdSearchMode} setMode={setSpecialIdSearchMode} />
+                     <div className="flex gap-4">
+                        <Input placeholder={specialIdSearchMode === 'id' ? "Enter Current ID (Special or Account)..." : "Enter Username..."} value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find Identity</Button>
+                     </div>
                   </div>
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/30">
@@ -1261,8 +1277,12 @@ export default function AdminPage() {
                           </div>
                        </div>
                        <div className="space-y-6">
-                          <div className="flex gap-4 ml-2"><button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center", selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}</button><button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button></div>
-                          <div className="flex gap-2"><Input placeholder="Enter New Numeric I'd" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
+                          <div className="flex gap-4 ml-2">
+                             <button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center", selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}</button>
+                             <button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button>
+                             <button onClick={() => setSelectedColor(null)} className={cn("h-10 w-10 rounded-full bg-slate-200 border-4 transition-all flex items-center justify-center", selectedColor === null ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === null && <X className="h-4 w-4 text-slate-600" />}</button>
+                          </div>
+                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
                        </div>
                     </div>
                   )}
@@ -1272,9 +1292,12 @@ export default function AdminPage() {
             <TabsContent value="rewards" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
-                  <div className="flex gap-4">
-                     <Input placeholder="Recipient ID..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                  <div className="flex flex-col gap-4">
+                     <SearchToggle mode={rewardSearchMode} setMode={setRewardSearchMode} />
+                     <div className="flex gap-4">
+                        <Input placeholder={rewardSearchMode === 'id' ? "Recipient ID (Special or Account)..." : "Recipient Username..."} value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find Identity</Button>
+                     </div>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
