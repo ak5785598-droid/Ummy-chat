@@ -176,6 +176,10 @@ export function RoomClient({ room }: { room: Room }) {
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
+  // Music Streaming State
+  const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
+  const musicAudioRef = useRef<HTMLAudioElement>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -243,7 +247,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
+  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -377,6 +381,24 @@ export function RoomClient({ room }: { room: Room }) {
     setShowInput(true);
   };
 
+  const handlePlayLocalMusic = (file: File) => {
+    if (musicAudioRef.current) {
+      const url = URL.createObjectURL(file);
+      musicAudioRef.current.src = url;
+      musicAudioRef.current.play().catch(e => {
+        console.warn('[Music Sync] Play failed:', e);
+        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
+      });
+      
+      // Capture stream from audio element for WebRTC broadcasting
+      // @ts-ignore
+      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+      if (stream) {
+        setMusicStream(stream);
+      }
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
@@ -390,6 +412,9 @@ export function RoomClient({ room }: { room: Room }) {
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
       
+      {/* Hidden high-fidelity audio engine for local music sync */}
+      <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
+
       <div className="absolute inset-0 z-0">
         <Image 
           key={`${room.roomThemeId}`} 
@@ -590,6 +615,7 @@ export function RoomClient({ room }: { room: Room }) {
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
+        onPlayLocalMusic={handlePlayLocalMusic}
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />

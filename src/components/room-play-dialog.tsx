@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -26,7 +26,9 @@ import {
   Plus,
   Music,
   Search,
-  Play
+  Play,
+  Upload,
+  FileAudio
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -49,12 +51,12 @@ interface RoomPlayDialogProps {
   isMutedLocal: boolean;
   setIsMutedLocal: (val: boolean) => void;
   onOpenGames: () => void;
+  onPlayLocalMusic?: (file: File) => void;
 }
 
 /**
  * High-Fidelity Room Play Portal.
- * Re-engineered for absolute stability and interactive sync.
- * Removed "Reactions" from the play grid as per Sovereign request.
+ * Features both Global Online Music and Local Device Synchronization.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -64,9 +66,11 @@ export function RoomPlayDialog({
   room,
   isMutedLocal,
   setIsMutedLocal,
-  onOpenGames
+  onOpenGames,
+  onPlayLocalMusic
 }: RoomPlayDialogProps) {
   const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'music'>('grid');
+  const [musicTab, setMusicTab] = useState<'online' | 'device'>('online');
   const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
   const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
   const [isClearingChat, setIsClearingChat] = useState(false);
@@ -74,6 +78,8 @@ export function RoomPlayDialog({
   const [musicSearch, setMusicSearch] = useState('');
   const [isSearchingMusic, setIsSearchingMusic] = useState(false);
   const [musicResults, setMusicResults] = useState<any[]>([]);
+  const [localPlaylist, setLocalPlaylist] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [blueTeam, setBlueTeam] = useState<string[]>([]);
   const [redTeam, setRedTeam] = useState<string[]>([]);
@@ -149,6 +155,25 @@ export function RoomPlayDialog({
     });
     toast({ title: 'Music Synchronized', description: `${video.title} is now playing.` });
     onOpenChange(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('audio/')) {
+        toast({ variant: 'destructive', title: 'Invalid File', description: 'Please select a valid audio frequency.' });
+        return;
+      }
+      setLocalPlaylist(prev => [file, ...prev]);
+      toast({ title: 'Track Added', description: `${file.name} added to session list.` });
+    }
+  };
+
+  const handlePlayDeviceTrack = (file: File) => {
+    if (onPlayLocalMusic) {
+      onPlayLocalMusic(file);
+      toast({ title: 'Broadcasting Track', description: `Syncing ${file.name} to room.` });
+    }
   };
 
   const toggleSelection = (uid: string) => {
@@ -267,6 +292,8 @@ export function RoomPlayDialog({
           <DialogDescription>Interactive room tools and games frequency selection.</DialogDescription>
         </DialogHeader>
 
+        <input type="file" ref={fileInputRef} className="hidden" accept="audio/*" onChange={handleFileChange} />
+
         {view === 'grid' && (
           <div className="animate-in fade-in duration-500">
             <header className="p-8 pb-4">
@@ -288,52 +315,124 @@ export function RoomPlayDialog({
         )}
 
         {view === 'music' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-[60vh]">
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-[65vh]">
             <header className="p-6 pb-2 flex items-center justify-between shrink-0 border-b border-white/5">
                <div className="flex items-center gap-3">
                   <button onClick={() => setView('grid')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-6 w-6 text-white/60" /></button>
                   <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Music Frequency</h2>
                </div>
             </header>
-            <div className="p-6 space-y-4 shrink-0">
-               <div className="flex gap-2">
-                  <Input 
-                    placeholder="Search tribe vibes..." 
-                    className="flex-1 bg-white/5 border-white/10 h-12 rounded-2xl" 
-                    value={musicSearch}
-                    onChange={(e) => setMusicSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchMusic()}
-                  />
-                  <Button onClick={handleSearchMusic} className="h-12 w-12 rounded-2xl bg-primary text-black">
-                     {isSearchingMusic ? <Loader className="animate-spin h-5 w-5" /> : <Search className="h-5 w-5" />}
-                  </Button>
+            
+            <div className="p-4 px-6 shrink-0">
+               <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                  <button 
+                    onClick={() => setMusicTab('online')}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl font-black uppercase italic text-[10px] transition-all",
+                      musicTab === 'online' ? "bg-white/10 text-white shadow-lg" : "text-white/40"
+                    )}
+                  >
+                    Online Sync
+                  </button>
+                  <button 
+                    onClick={() => setMusicTab('device')}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl font-black uppercase italic text-[10px] transition-all",
+                      musicTab === 'device' ? "bg-white/10 text-white shadow-lg" : "text-white/40"
+                    )}
+                  >
+                    Device Playlist
+                  </button>
                </div>
             </div>
-            <ScrollArea className="flex-1 px-6">
-               <div className="space-y-3 pb-10">
-                  {musicResults.length > 0 ? musicResults.map((video) => (
+
+            {musicTab === 'online' ? (
+              <>
+                <div className="p-6 pt-2 space-y-4 shrink-0">
+                   <div className="flex gap-2">
+                      <Input 
+                        placeholder="Search tribe vibes..." 
+                        className="flex-1 bg-white/5 border-white/10 h-12 rounded-2xl" 
+                        value={musicSearch}
+                        onChange={(e) => setMusicSearch(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchMusic()}
+                      />
+                      <Button onClick={handleSearchMusic} className="h-12 w-12 rounded-2xl bg-primary text-black">
+                         {isSearchingMusic ? <Loader className="animate-spin h-5 w-5" /> : <Search className="h-5 w-5" />}
+                      </Button>
+                   </div>
+                </div>
+                <ScrollArea className="flex-1 px-6">
+                   <div className="space-y-3 pb-10">
+                      {musicResults.length > 0 ? musicResults.map((video) => (
+                        <button 
+                          key={video.videoId} 
+                          onClick={() => handleSyncMusic(video)}
+                          className="w-full flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-left border border-white/5"
+                        >
+                           <div className="relative h-14 w-20 rounded-lg overflow-hidden shrink-0">
+                              <img src={video.thumbnailUrl} className="h-full w-full object-cover" alt={video.title} />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Play className="h-4 w-4 text-white" /></div>
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black uppercase italic text-white truncate">{video.title}</p>
+                              <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mt-1">Global Frequency</p>
+                           </div>
+                        </button>
+                      )) : (
+                        <div className="py-20 text-center opacity-20 italic">
+                           <Music className="h-12 w-12 mx-auto mb-4" />
+                           <p className="text-sm font-bold">Search for your favorite tribal tracks.</p>
+                        </div>
+                      )}
+                   </div>
+                </ScrollArea>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                 <div className="p-6 pt-2 shrink-0">
                     <button 
-                      key={video.videoId} 
-                      onClick={() => handleSyncMusic(video)}
-                      className="w-full flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-left border border-white/5"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-black uppercase italic text-sm active:scale-95 transition-all"
                     >
-                       <div className="relative h-14 w-20 rounded-lg overflow-hidden shrink-0">
-                          <img src={video.thumbnailUrl} className="h-full w-full object-cover" alt={video.title} />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Play className="h-4 w-4 text-white" /></div>
-                       </div>
-                       <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black uppercase italic text-white truncate">{video.title}</p>
-                          <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mt-1">Global Frequency</p>
-                       </div>
+                       <Upload className="h-5 w-5" />
+                       Add from Device
                     </button>
-                  )) : (
-                    <div className="py-20 text-center opacity-20 italic">
-                       <Music className="h-12 w-12 mx-auto mb-4" />
-                       <p className="text-sm font-bold">Search for your favorite tribal tracks.</p>
+                 </div>
+                 
+                 <ScrollArea className="flex-1 px-6">
+                    <div className="space-y-3 pb-10">
+                       {localPlaylist.length > 0 ? localPlaylist.map((file, idx) => (
+                         <button 
+                           key={idx} 
+                           onClick={() => handlePlayDeviceTrack(file)}
+                           className="w-full flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-left border border-white/5 group"
+                         >
+                            <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                               <FileAudio className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                               <p className="text-xs font-black uppercase italic text-white truncate">{file.name}</p>
+                               <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Local Track</span>
+                                  <div className="h-1 w-1 rounded-full bg-white/20" />
+                                  <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                               </div>
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                               <Play className="h-4 w-4 text-white" />
+                            </div>
+                         </button>
+                       )) : (
+                         <div className="py-20 text-center opacity-20 italic">
+                            <Upload className="h-12 w-12 mx-auto mb-4" />
+                            <p className="text-sm font-bold">Pick music from your mobile settings.</p>
+                         </div>
+                       )}
                     </div>
-                  )}
-               </div>
-            </ScrollArea>
+                 </ScrollArea>
+              </div>
+            )}
           </div>
         )}
 
