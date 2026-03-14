@@ -265,22 +265,40 @@ export default function AdminPage() {
     if (!firestore || !value) return;
     loadingSetter(true);
     try {
-      let q;
+      const inputId = value.trim();
+      let foundUser = null;
+
       if (mode === 'id') {
-        const inputId = value.trim();
-        if (inputId.length <= 4) {
+        // 1. Try exact match on accountNumber (8 digits)
+        const qAcc = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+        const snapAcc = await getDocs(qAcc);
+        if (!snapAcc.empty) {
+          foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id };
+        }
+
+        // 2. If not found, try specialId (padded to 3 digits)
+        if (!foundUser) {
           const paddedId = inputId.padStart(3, '0');
-          q = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
-        } else {
-          q = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+          const qSpec = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
+          const snapSpec = await getDocs(qSpec);
+          if (!snapSpec.empty) {
+            foundUser = { ...snapSpec.docs[0].data(), id: snapSpec.docs[0].id };
+          }
         }
       } else {
-        q = query(collection(firestore, 'users'), where('username', '==', value), limit(1));
+        // Name search
+        const qName = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
+        const snapName = await getDocs(qName);
+        if (!snapName.empty) {
+          foundUser = { ...snapName.docs[0].data(), id: snapName.docs[0].id };
+        }
       }
       
-      const snap = await getDocs(q);
-      if (!snap.empty) setter({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      else toast({ variant: 'destructive', title: 'Identity Not Found' });
+      if (foundUser) {
+        setter(foundUser);
+      } else {
+        toast({ variant: 'destructive', title: 'Identity Not Found' });
+      }
     } finally {
       loadingSetter(false);
     }
@@ -749,7 +767,7 @@ export default function AdminPage() {
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
                   <CardContent className="space-y-6">
                      <div className="flex gap-4">
-                        <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
+                        <Input placeholder="Search member by name..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
                         <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
                      </div>
                      <div className="space-y-4">
@@ -881,7 +899,7 @@ export default function AdminPage() {
                   </CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter User ID (Special or Account)..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
                      </div>
                   </div>
@@ -923,7 +941,7 @@ export default function AdminPage() {
                   
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Target ID..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter Target ID (Special or Account)..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate ID</Button>
                      </div>
                   </div>
@@ -1145,7 +1163,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Recipient ID..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter Recipient ID (Special or Account)..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find ID</Button>
                      </div>
                   </div>
@@ -1211,7 +1229,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><BadgeCheck className="h-6 w-6 text-primary" /> Assign Official Tags</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter User ID (Special or Account)..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find ID</Button>
                      </div>
                   </div>
@@ -1242,7 +1260,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6 text-primary" /> Manage Special ID</CardTitle></CardHeader>
                   <div className="flex gap-4">
-                     <Input placeholder="Enter Current ID..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
+                     <Input placeholder="Enter Current ID (Special or Account)..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
                      <Button onClick={() => handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForId && (
@@ -1273,7 +1291,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
-                     <Input placeholder="Recipient ID..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
+                     <Input placeholder="Recipient ID (Special or Account)..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
                      <Button onClick={handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForRewards && (
