@@ -337,6 +337,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isSeller = isCertifiedSeller;
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -397,7 +398,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="flex-1 min-w-0">
                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h1 className="text-2xl font-black tracking-tighter text-gray-800 truncate pr-2 leading-none">{profile.username}</h1>
+                      <h1 className="text-2xl font-black text-gray-800 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-lg leading-none">🇮🇳</span>
                       <RichLevelBadge level={profile.level?.rich || 1} />
                       <CharmLevelBadge level={profile.level?.charm || 1} />

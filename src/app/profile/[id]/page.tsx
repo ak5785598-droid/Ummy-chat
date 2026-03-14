@@ -337,6 +337,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isSeller = isCertifiedSeller;
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -383,7 +384,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="relative shrink-0">
                    <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                      <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10">
+                      <Avatar className="h-24 w-24 border-4 border-white shadow-2xl relative z-10">
                          <AvatarImage src={profile.avatarUrl || undefined} />
                          <AvatarFallback className="text-3xl font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                       </Avatar>
@@ -397,7 +398,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="flex-1 min-w-0">
                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h1 className="text-2xl font-black tracking-tighter text-gray-800 truncate pr-2 leading-none">{profile.username}</h1>
+                      <h1 className="text-2xl font-black text-gray-800 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-lg leading-none">🇮🇳</span>
                       <RichLevelBadge level={profile.level?.rich || 1} />
                       <CharmLevelBadge level={profile.level?.charm || 1} />
