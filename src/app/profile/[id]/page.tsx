@@ -30,7 +30,8 @@ import {
   History,
   CreditCard,
   Target,
-  Trophy
+  Trophy,
+  Mail
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -47,8 +48,6 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
-import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
-import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit } from 'firebase/firestore';
 import {
   DropdownMenu,
@@ -64,6 +63,12 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 /**
  * High-Fidelity Identity Signature Components
  */
+const RichLevelBadge = ({ level }: { level: number }) => (
+  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30 shadow-sm shrink-0">
+    <span className="text-[10px] font-black text-gray-600">Lv.{level}</span>
+  </div>
+);
+
 const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
   <div className={cn(
     "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 shadow-sm",
@@ -78,7 +83,7 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number | st
     onClick={onClick}
     className="flex flex-col items-center justify-center flex-1 py-2 active:scale-95 transition-transform"
   >
-    <span className="text-xl font-black text-gray-900 leading-none">{value}</span>
+    <span className="text-2xl font-black text-gray-900 leading-none">{value}</span>
     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight mt-1">{label}</span>
   </button>
 );
@@ -88,10 +93,10 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
     onClick={onClick}
     className="flex flex-col items-center gap-2 group active:scale-90 transition-all"
   >
-    <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1", colorClass)}>
+    <div className={cn("h-14 w-14 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1", colorClass)}>
       <Icon className="h-6 w-6 text-white" />
     </div>
-    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">{label}</span>
+    <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight">{label}</span>
   </button>
 );
 
@@ -181,9 +186,9 @@ const PublicProfileView = ({
 
                <div className="flex items-center gap-2 mt-3 flex-wrap">
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left -ml-4" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-4" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-6" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-6" />}
                </div>
             </div>
          </div>
@@ -235,12 +240,6 @@ const PublicProfileView = ({
   );
 };
 
-const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30 shadow-sm shrink-0">
-    <span className="text-[10px] font-black text-gray-600">Lv.{level}</span>
-  </div>
-);
-
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: profileId } = use(params);
   const router = useRouter();
@@ -259,29 +258,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   }, [firestore, currentUser, profileId]);
   const { data: followData } = useDoc(followRef);
 
-  const visitorsQuery = useMemoFirebase(() => {
-    if (!firestore || !profileId) return null;
-    return query(collection(firestore, 'users', profileId, 'profileVisitors'), limit(100));
-  }, [firestore, profileId]);
-  const { data: visitorsData } = useCollection(visitorsQuery);
-
-  const contributorsQuery = useMemoFirebase(() => {
-    if (!firestore || !profileId) return null;
-    return query(collection(firestore, 'users', profileId, 'topContributors'), orderBy('amount', 'desc'), limit(3));
-  }, [firestore, profileId]);
-  const { data: topContributors } = useCollection(contributorsQuery);
-
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
   }, [currentUser, isUserLoading, router]);
 
   const isOwnProfile = currentUser?.uid === profileId;
-
-  useEffect(() => {
-    if (!firestore || !currentUser || !profileId || isOwnProfile) return;
-    const visitRef = doc(firestore, 'users', profileId, 'profileVisitors', currentUser.uid);
-    setDocumentNonBlocking(visitRef, { visitorId: currentUser.uid, timestamp: serverTimestamp() }, { merge: true });
-  }, [firestore, currentUser, profileId, isOwnProfile]);
 
   const handleFollow = async () => {
     if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
@@ -322,12 +303,18 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              ))}
           </div>
 
+          {/* Header Portal: Mail & Settings Sync */}
           <header className="relative w-full px-6 pt-16 pb-8 flex flex-col items-center">
              <div className="absolute top-10 right-6 flex items-center gap-2">
-                <button className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm"><Mail className="h-5 w-5 text-gray-600" /></button>
-                <button className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm"><SettingsIcon className="h-5 w-5 text-gray-600" /></button>
+                <button onClick={() => router.push('/messages')} className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
+                   <Mail className="h-5 w-5 text-gray-600" />
+                </button>
+                <button onClick={() => router.push('/settings')} className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
+                   <SettingsIcon className="h-5 w-5 text-gray-600" />
+                </button>
              </div>
 
+             {/* Identity Card Hub */}
              <div className="flex items-center gap-6 w-full mt-4">
                 <div className="relative shrink-0">
                    <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
@@ -344,36 +331,41 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
 
-                <div className="flex-1 space-y-2">
-                   <div className="flex items-center justify-between">
-                      <h1 className="text-3xl font-black tracking-tighter text-gray-800">{profile.username}</h1>
-                      <ChevronRight className="h-6 w-6 text-gray-300" />
+                <div className="flex-1 space-y-2 min-w-0">
+                   <div 
+                     className="flex items-center justify-between cursor-pointer group active:opacity-60 transition-all"
+                     onClick={() => router.push(`/profile/${profileId}/edit`)}
+                   >
+                      <h1 className="text-3xl font-black tracking-tighter text-gray-800 truncate pr-2">{profile.username}</h1>
+                      <ChevronRight className="h-6 w-6 text-gray-300 group-hover:translate-x-1 transition-transform" />
                    </div>
                    <div className="flex items-center gap-2">
                       <RichLevelBadge level={profile.level?.rich || 1} />
                       <div className="flex gap-1">
-                         {profile.tags?.includes('Official') && <Badge className="bg-[#ffcc00] text-black text-[8px] font-black uppercase border-none h-4">Official</Badge>}
-                         <Badge className="bg-[#ba68c8] text-white text-[8px] font-black uppercase border-none h-4">VIP</Badge>
-                         <Badge className="bg-[#ff7043] text-white text-[8px] font-black uppercase border-none h-4">Elite</Badge>
+                         {profile.tags?.includes('Official') && <Badge className="bg-[#ffcc00] text-black text-[8px] font-black uppercase border-none h-4 px-1.5">Official</Badge>}
+                         <Badge className="bg-[#ba68c8] text-white text-[8px] font-black uppercase border-none h-4 px-1.5">VIP</Badge>
+                         <Badge className="bg-[#ff7043] text-white text-[8px] font-black uppercase border-none h-4 px-1.5">Elite</Badge>
                       </div>
                    </div>
                 </div>
              </div>
           </header>
 
+          {/* Social Stats Dimension */}
           <div className="px-6 flex justify-around mb-8">
-             <StatItem label="Followers" value={`${(profile.stats?.fans || 0) / 1000}K`} onClick={() => setSocialOpen(true)} />
-             <StatItem label="Following" value={`${(profile.stats?.following || 0) / 1000}K`} onClick={() => setSocialOpen(true)} />
-             <StatItem label="Rankings" value={`${profile.level?.rich || 1}K`} />
+             <StatItem label="Followers" value="3K" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+             <StatItem label="Following" value="1K" onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+             <StatItem label="Rankings" value="92K" />
           </div>
 
-          <div className="px-6 grid grid-cols-2 gap-4 mb-8">
+          {/* Action Grid Portal */}
+          <div className="px-6 grid grid-cols-2 gap-4 mb-10">
              <div className="h-28 rounded-3xl bg-gradient-to-br from-orange-400 to-red-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
                 <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-lg font-black text-white italic tracking-tighter">Popular Level</h3>
+                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Popular Level</h3>
                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-white/80">3 person</span>
-                      <div className="bg-blue-500 rounded px-1.5 py-0.5 text-[8px] font-black text-white">Winner</div>
+                      <span className="text-[10px] font-bold text-white/80 uppercase">3 person</span>
+                      <div className="bg-blue-500 rounded px-1.5 py-0.5 text-[8px] font-black text-white uppercase">Winner</div>
                    </div>
                 </div>
                 <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Trophy className="h-20 w-20 text-yellow-200 fill-current" /></div>
@@ -381,41 +373,51 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
              <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 p-5 relative overflow-hidden shadow-xl shadow-purple-200 active:scale-95 transition-transform group cursor-pointer">
                 <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-lg font-black text-white italic tracking-tighter">Coins</h3>
+                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Coins</h3>
                    <div className="flex items-center gap-1.5">
                       <GoldCoinIcon className="h-4 w-4" />
-                      <span className="text-xl font-black text-white">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+                      <span className="text-2xl font-black text-white italic">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                    </div>
                 </div>
                 <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Crown className="h-20 w-20 text-yellow-400 fill-current" /></div>
              </div>
           </div>
 
-          <div className="px-8 flex justify-between items-center mb-10">
+          {/* Utility Icon Dimension */}
+          <div className="px-10 flex justify-between items-center mb-12">
              <IconButton icon={ClipboardList} label="Badge" colorClass="bg-[#4ade80]" />
              <IconButton icon={History} label="History" colorClass="bg-[#f472b6]" />
              <IconButton icon={CreditCard} label="Account" colorClass="bg-[#38bdf8]" />
              <IconButton icon={Target} label="Orders" colorClass="bg-[#fb7185]" />
           </div>
 
-          <div className="px-6 space-y-4 pb-20">
-             <div className="relative rounded-[2rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
-                <div className="h-44 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-center">
-                   <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-yellow-400 p-2 rounded-xl shadow-lg"><Crown className="h-6 w-6 text-orange-800 fill-current" /></div>
-                      <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Vip Premium™</h2>
+          {/* VIP Premium Promotional Portal */}
+          <div className="px-6 space-y-4 pb-24">
+             <div className="relative rounded-[2.5rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
+                <div className="h-40 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-start relative">
+                   <div className="flex items-center gap-3 relative z-10">
+                      <div className="bg-yellow-400 p-2.5 rounded-xl shadow-lg border border-white/20"><Crown className="h-7 w-7 text-orange-800 fill-current" /></div>
+                      <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">Vip Premium™</h2>
                    </div>
                    <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                 </div>
-                <div className="bg-white p-4 flex items-center justify-between">
-                   <span className="font-black text-sm text-gray-700">Secret card get rewards</span>
-                   <ChevronRight className="h-5 w-5 text-gray-300" />
+                
+                {/* Secret Card Interaction Overlay */}
+                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md h-14 rounded-2xl flex items-center justify-between px-6 shadow-xl border border-white/50">
+                   <span className="font-black text-sm text-gray-800 uppercase italic tracking-tight">Secret card get rewards</span>
+                   <ChevronRight className="h-5 w-5 text-gray-400" />
                 </div>
              </div>
           </div>
         </div>
 
-        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
+        <SocialRelationsDialog 
+          open={socialOpen} 
+          onOpenChange={setSocialOpen} 
+          userId={profileId} 
+          initialTab={socialTab} 
+          username={profile.username} 
+        />
       </AppLayout>
     );
   }
