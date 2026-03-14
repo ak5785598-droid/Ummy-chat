@@ -153,13 +153,35 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
 
   return (
     <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
+      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
       <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
         ID: {id}
       </span>
+    </div>
+  );
+};
+
+const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: number }) => {
+  const colors = [
+    "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]", // Gold
+    "border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.4)]", // Silver
+    "border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.4)]", // Bronze
+  ];
+  const badges = ["🥇", "🥈", "🥉"];
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative">
+        <Avatar className={cn("h-12 w-12 border-2", colors[rank - 1])}>
+          <AvatarImage src={contributor.avatarUrl || undefined} className="object-cover" />
+          <AvatarFallback className="bg-slate-100 text-[10px] font-black">{rank}</AvatarFallback>
+        </Avatar>
+        <div className="absolute -top-2 -right-1 text-sm drop-shadow-md">{badges[rank - 1]}</div>
+      </div>
+      <span className="text-[8px] font-black uppercase text-gray-400 truncate w-14 text-center">{contributor.username || '...'}</span>
     </div>
   );
 };
@@ -174,6 +196,8 @@ const PublicProfileView = ({
   followData, 
   isProcessingFollow,
   onOpenSocial,
+  contributors,
+  isContributorsLoading
 }: { 
   profile: any, 
   onBack: () => void, 
@@ -181,6 +205,8 @@ const PublicProfileView = ({
   followData: any, 
   isProcessingFollow: boolean,
   onOpenSocial: (tab: any) => void,
+  contributors: any[] | null,
+  isContributorsLoading: boolean
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -266,6 +292,25 @@ const PublicProfileView = ({
             <StatItem label="Visitors" value="12K" onClick={() => onOpenSocial('visitors')} />
          </div>
 
+         {/* Top 3 Contribution Section */}
+         <div className="px-2 pt-2">
+            <div className="flex items-center justify-between mb-4 px-1">
+               <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] italic">Top Contribution</h4>
+               <ChevronRight className="h-3 w-3 text-gray-300" />
+            </div>
+            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-4 flex justify-around items-center">
+               {isContributorsLoading ? (
+                 <div className="py-4 flex justify-center w-full"><Loader className="animate-spin h-4 w-4 text-primary/40" /></div>
+               ) : contributors && contributors.length > 0 ? (
+                 contributors.map((c, i) => (
+                   <ContributorAvatar key={c.id} contributor={c} rank={i + 1} />
+                 ))
+               ) : (
+                 <p className="text-[10px] font-bold text-gray-300 uppercase italic py-4">Awaiting Sync...</p>
+               )}
+            </div>
+         </div>
+
          <div className="space-y-4">
             <div className="px-2 pt-2">
                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2 ml-1">Signature Bio</h4>
@@ -325,6 +370,17 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
   }, [firestore, currentUser, profileId]);
   const { data: followData } = useDoc(followRef);
+
+  const contributorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(
+      collection(firestore, 'users', profileId, 'topContributors'),
+      orderBy('amount', 'desc'),
+      limit(3)
+    );
+  }, [firestore, profileId]);
+
+  const { data: contributors, isLoading: isContributorsLoading } = useCollection(contributorsQuery);
 
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
@@ -568,7 +624,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <AppLayout hideSidebarOnMobile>
-       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} />
+       <PublicProfileView 
+         profile={profile} 
+         onBack={() => router.back()} 
+         handleFollow={handleFollow} 
+         followData={followData} 
+         isProcessingFollow={isProcessingFollow} 
+         onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} 
+         contributors={contributors}
+         isContributorsLoading={isContributorsLoading}
+       />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
   );
