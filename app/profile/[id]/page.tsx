@@ -333,12 +333,17 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              ))}
           </div>
 
-          {/* Header Portal: Mail & Settings Sync */}
+          {/* Header Portal: Identity Editor & Settings Sync */}
           <header className="relative w-full px-6 pt-16 pb-8 flex flex-col items-center">
              <div className="absolute top-10 right-6 flex items-center gap-2">
-                <button onClick={() => router.push('/messages')} className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
-                   <Mail className="h-5 w-5 text-gray-600" />
-                </button>
+                <EditProfileDialog 
+                  profile={profile} 
+                  trigger={
+                    <button className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
+                       <Pencil className="h-5 w-5 text-gray-600" />
+                    </button>
+                  } 
+                />
                 <button onClick={() => router.push('/settings')} className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
                    <SettingsIcon className="h-5 w-5 text-gray-600" />
                 </button>
