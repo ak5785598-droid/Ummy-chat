@@ -227,6 +227,7 @@ const PublicProfileView = ({
                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
                   <span className="text-base leading-none">🇮🇳</span>
+                  <GenderCircle gender={profile.gender} />
                   <RichLevelBadge level={profile.level?.rich || 1} />
                   <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
@@ -400,6 +401,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h1 className="text-2xl font-black text-gray-800 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-lg leading-none">🇮🇳</span>
+                      <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
                       <CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
