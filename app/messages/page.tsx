@@ -268,13 +268,15 @@ export default function MessagesPage() {
     <AppLayout>
       <div className="min-h-full bg-white flex flex-col relative font-headline animate-in fade-in duration-700">
         
-        {/* Header Protocol: Yellow-to-White Gradient */}
-        <header className="relative shrink-0 pt-10 pb-6 px-6">
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#FFCC00] via-[#FFCC00]/40 to-white pointer-events-none" />
-          <div className="relative z-10 flex items-center justify-between">
+        {/* Header Protocol: Deep Blue Sovereign Signature */}
+        <header className="relative shrink-0 pt-12 pb-8 px-6 bg-[#0f172a] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full animate-pulse" />
+          
+          <div className="relative z-10 flex items-center justify-between text-white">
             <div className="w-10" /> {/* Balancer */}
-            <h1 className="text-3xl font-black text-black tracking-tight">Message</h1>
-            <button className="text-black hover:scale-110 transition-transform p-1">
+            <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white drop-shadow-md">Message</h1>
+            <button className="text-white/60 hover:text-white hover:scale-110 transition-all p-1 active:scale-95">
                <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
             </button>
           </div>
