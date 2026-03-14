@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -135,6 +135,7 @@ export default function RoomsPage() {
               </Carousel>
             </section>
 
+            {/* High-Fidelity Attractive Grid: Wallet-Style Cards */}
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
               <button 
                 onClick={() => router.push('/leaderboard?type=rich')}

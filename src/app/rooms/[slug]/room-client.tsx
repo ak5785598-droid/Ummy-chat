@@ -90,8 +90,6 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
 /**
  * High-Fidelity Media Volume Router.
- * Uses AudioContext to force audio output to the "Media" channel.
- * Ensures headsets work correctly and volume is controlled via media slider.
  */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -102,13 +100,11 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
   useEffect(() => {
     if (!stream) return;
 
-    // 1. Initialize High-Fidelity AudioContext
     if (!contextRef.current) {
       contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     const ctx = contextRef.current;
 
-    // 2. Connect Remote Frequency to Context
     if (sourceRef.current) {
       sourceRef.current.disconnect();
     }
@@ -119,17 +115,14 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
     sourceRef.current.connect(gainRef.current);
     gainRef.current.connect(ctx.destination);
 
-    // 3. Sync Mute State
     gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
 
-    // 4. Autoplay Handshake
     if (ctx.state === 'suspended') {
       const resume = () => ctx.resume().catch(() => {});
       window.addEventListener('click', resume, { once: true });
       window.addEventListener('touchstart', resume, { once: true });
     }
 
-    // 5. Standard Tag Fallback (Kept muted to maintain WebRTC lifecycle)
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
       audioRef.current.muted = true;
@@ -473,6 +466,16 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
+      {/* Persistent Visual Sync for Room Announcement */}
+      <div className="absolute top-2 left-4 z-[100] flex items-center gap-2 pointer-events-none">
+         <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
+         <div className="max-w-[200px] overflow-hidden">
+            <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md truncate">
+               {room.announcement || "Welcome to the frequency!"}
+            </p>
+         </div>
+      </div>
+
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3 ml-12">
           <div className="relative">
@@ -521,16 +524,6 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
-        {/* Minimalist Announcement Sync - Left Corner Protocol */}
-        <div className="absolute top-2 left-4 z-[60] flex items-center gap-2 pointer-events-none">
-           <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
-           <div className="max-w-[200px] overflow-hidden">
-              <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md truncate">
-                 {room.announcement || "Welcome to the frequency!"}
-              </p>
-           </div>
-        </div>
-
         <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
@@ -552,6 +545,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
+        {/* Glossy Unified Comment Section Sync */}
         <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-4 pb-0">
            <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
@@ -567,7 +561,7 @@ export function RoomClient({ room }: { room: Room }) {
                       <Avatar className="h-6 w-6 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
+                        <p className="text-[11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
                       </div>
                    </div>
                  ))}

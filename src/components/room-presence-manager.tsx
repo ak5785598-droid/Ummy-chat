@@ -51,16 +51,18 @@ export function RoomPresenceManager() {
 
         const batch = writeBatch(firestore);
         
+        // DISPATCH ENTRANCE SYNC: Every new session entry triggers a comment card
+        addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+          content: 'entered the room',
+          senderId: uid,
+          senderName: userMetadata.username || 'Tribe Member',
+          senderAvatar: userMetadata.avatarUrl || null,
+          chatRoomId: roomId,
+          timestamp: serverTimestamp(),
+          type: 'entrance'
+        });
+
         if (!existingSnap.exists()) {
-          addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
-            content: 'entered the room',
-            senderId: uid,
-            senderName: userMetadata.username || 'Tribe Member',
-            senderAvatar: userMetadata.avatarUrl || null,
-            chatRoomId: roomId,
-            timestamp: serverTimestamp(),
-            type: 'entrance'
-          });
           batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
         }
 
