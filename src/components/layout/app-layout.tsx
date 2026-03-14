@@ -136,10 +136,6 @@ export function AppLayout({
                 <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Discover</span>
               </Link>
-              <Link href="/leaderboard" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/leaderboard' ? "text-[#00E5FF]" : "text-white/40")}>
-                <Crown className={cn("h-6 w-6", pathname === '/leaderboard' ? "fill-current" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Ranking</span>
-              </Link>
               <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Message</span>
