@@ -221,9 +221,10 @@ const PublicProfileView = ({
          </div>
 
          <div className="flex divide-x divide-gray-100 py-2">
-            <StatItem label="Followers" value={profile.stats?.fans || 0} onClick={() => onOpenSocial('followers')} />
+            <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => onOpenSocial('followers')} />
             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => onOpenSocial('following')} />
-            <StatItem label="Rankings" value={`${profile.level?.rich || 1}K`} />
+            <StatItem label="Friends" value={profile.stats?.friends || 0} onClick={() => onOpenSocial('friends')} />
+            <StatItem label="Visitors" value="12K" onClick={() => onOpenSocial('visitors')} />
          </div>
 
          <div className="space-y-4">
@@ -344,9 +345,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     </button>
                   } 
                 />
-                <button onClick={() => router.push('/settings')} className="p-2 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
-                   <SettingsIcon className="h-5 w-5 text-gray-600" />
-                </button>
              </div>
 
              {/* Identity Card Hub */}
@@ -387,10 +385,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </header>
 
           {/* Social Stats Dimension */}
-          <div className="px-6 flex justify-around mb-8">
-             <StatItem label="Followers" value="3K" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+          <div className="px-6 flex justify-around mb-8 gap-2">
+             <StatItem label="Fans" value="3K" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
              <StatItem label="Following" value="1K" onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-             <StatItem label="Rankings" value="92K" />
+             <StatItem label="Friends" value="500" onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+             <StatItem label="Visitors" value="12K" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
           {/* Action Grid Portal */}
