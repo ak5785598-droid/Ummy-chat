@@ -31,7 +31,8 @@ import {
   CreditCard,
   Target,
   Trophy,
-  Mail
+  Mail,
+  Gem
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -359,20 +360,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label="Rankings" value="92K" />
           </div>
 
-          {/* Action Grid Portal */}
+          {/* Action Grid Portal - Re-engineered for Coins and Diamonds */}
           <div className="px-6 grid grid-cols-2 gap-4 mb-10">
-             <div className="h-28 rounded-3xl bg-gradient-to-br from-orange-400 to-red-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Popular Level</h3>
-                   <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-white/80 uppercase">3 person</span>
-                      <div className="bg-blue-500 rounded px-1.5 py-0.5 text-[8px] font-black text-white uppercase">Winner</div>
-                   </div>
-                </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Trophy className="h-20 w-20 text-yellow-200 fill-current" /></div>
-             </div>
-
-             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 p-5 relative overflow-hidden shadow-xl shadow-purple-200 active:scale-95 transition-transform group cursor-pointer">
+             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
                 <div className="relative z-10 flex flex-col h-full justify-between">
                    <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Coins</h3>
                    <div className="flex items-center gap-1.5">
@@ -380,7 +370,24 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <span className="text-2xl font-black text-white italic">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                    </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Crown className="h-20 w-20 text-yellow-400 fill-current" /></div>
+                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+                   <GoldCoinIcon className="h-20 w-20" />
+                </div>
+             </div>
+
+             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-5 relative overflow-hidden shadow-xl shadow-blue-200 active:scale-95 transition-transform group cursor-pointer">
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Diamonds</h3>
+                   <div className="flex items-center gap-1.5">
+                      <Gem className="h-4 w-4 text-white fill-current" />
+                      <span className="text-2xl font-black text-white italic">
+                         {(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </span>
+                   </div>
+                </div>
+                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+                   <Gem className="h-20 w-20 text-white fill-current" />
+                </div>
              </div>
           </div>
 
@@ -425,7 +432,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <AppLayout hideSidebarOnMobile>
-       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} topContributors={topContributors} />
+       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} topContributors={null} />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
   );
