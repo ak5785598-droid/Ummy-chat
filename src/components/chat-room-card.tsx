@@ -6,7 +6,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Star } from 'lucide-react';
+import { Trophy, Star, Users } from 'lucide-react';
 
 interface ChatRoomCardProps {
   room: any;
@@ -24,6 +24,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const roomTitle = room.name || room.title || 'Frequency';
   const roomTopic = room.description || room.topic || 'Synchronizing...';
   const ownerName = owner?.username || 'Tribe Member';
+  const liveCount = Number(room.participantCount || 0);
 
   /**
    * IDENTITY COLOR SYNC ENGINE
@@ -47,7 +48,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline active:scale-95 transition-transform">
         <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col relative">
-          {/* Glass Glossy Overlay for the entire card */}
+          {/* Glass Glossy Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30" />
           
           {/* Cover Image Dimension */}
@@ -74,10 +75,11 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
                </div>
             </div>
 
-            {/* Top-Right Overlays */}
+            {/* Top-Right Live Indicator Protocol */}
             <div className="absolute top-3 right-3 z-20">
-               <div className="bg-gradient-to-r from-yellow-300 to-yellow-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-xl border border-white/20 italic">
-                  Lv.25
+               <div className="bg-black/40 backdrop-blur-md text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-xl border border-white/20 italic flex items-center gap-1">
+                  <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                  LIVE {liveCount}
                </div>
             </div>
 

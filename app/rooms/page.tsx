@@ -6,7 +6,7 @@ import { ChatRoomCard } from '@/components/chat-room-card';
 import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
+import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,11 +27,12 @@ export default function RoomsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
 
-  // PUBLIC GRID QUERY
+  // PUBLIC GRID QUERY: Re-engineered for Live-Only Sync
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'chatRooms'), 
+      where('participantCount', '>', 0), // SERVER SIDE FILTER: Only show live rooms
       orderBy('participantCount', 'desc'),
       limit(50)
     );
@@ -52,7 +53,7 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
-  // VISIBILITY PROTOCOL: Recommend only shows live rooms (count > 0)
+  // VISIBILITY PROTOCOL: Recommend grid strictly hides empty rooms
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     return roomsData.filter(room => (room.participantCount || 0) > 0);
@@ -109,7 +110,6 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
-            {/* Banners Section */}
             <section className="px-6 mb-6">
               <Carousel className="w-full" opts={{ loop: true }}>
                 <CarouselContent>
@@ -137,7 +137,6 @@ export default function RoomsPage() {
               </Carousel>
             </section>
 
-            {/* Featured Categories */}
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
               <button className="flex flex-col items-center gap-2 group">
                 <div className="w-full aspect-[16/10] bg-gradient-to-br from-orange-400 to-red-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
@@ -162,7 +161,6 @@ export default function RoomsPage() {
               </button>
             </section>
 
-            {/* Top Rooms Pill */}
             <div className="px-6 mb-8">
               <div className="bg-gradient-to-r from-[#9C27B0] via-[#E91E63] to-[#9C27B0] h-14 rounded-full shadow-2xl border-2 border-white/40 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
@@ -181,7 +179,6 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            {/* Sub-Category Navigation */}
             <div className="px-6 mb-6">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {CATEGORIES.map((cat) => (
@@ -221,7 +218,6 @@ export default function RoomsPage() {
             </main>
           </>
         ) : (
-          /* ME DIMENSION: MY ROOM & FOLLOWED ROOMS */
           <main className="px-6 flex-1 animate-in slide-in-from-right-4 duration-500">
              <section className="mb-10">
                 <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 mb-6 flex items-center gap-2">
