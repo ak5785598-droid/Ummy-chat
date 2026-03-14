@@ -314,7 +314,7 @@ function LeaderboardContent() {
                     <DialogDescription className="sr-only">Detailed tribal ranking policy.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 font-body italic text-gray-400 leading-relaxed pt-2 text-sm">
-                    <p>1. Honor rankings are based on the total Gold Coins spent during the selected period.</p>
+                    <p>1. Rich rankings are based on the total Gold Coins spent during the selected period.</p>
                     <p>2. Charm rankings reflect the increase in fan count during the period.</p>
                     <p>3. Room rankings track the total gifts received in specific frequencies.</p>
                     <p>4. Game rankings track successful frequencies in the 3D Tribe Arena.</p>
@@ -325,7 +325,7 @@ function LeaderboardContent() {
 
           <div className="flex items-center justify-between gap-1.5 bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/5 shadow-2xl mb-4 overflow-x-auto no-scrollbar">
              {[
-               { id: 'rich', label: 'Honor' },
+               { id: 'rich', label: 'Rich' },
                { id: 'charm', label: 'Charm' },
                { id: 'rooms', label: 'Room' },
                { id: 'games', label: 'Game' }
