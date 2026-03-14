@@ -24,7 +24,7 @@ const COIN_PACKAGES = [
 
 /**
  * Tribal Vault - High-Fidelity Economic Dimension.
- * Re-engineered for absolute routing stability.
+ * Re-engineered for absolute routing stability and ultra-glossy visuals.
  */
 export default function WalletPage() {
   const router = useRouter();
@@ -168,21 +168,25 @@ export default function WalletPage() {
                
                {activeTab === 'Coins' ? (
                  <>
-                   {/* Main Balance Vibe Card */}
-                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#ff9d2f] via-[#ffa726] to-[#ffc107] p-8 text-white shadow-2xl overflow-hidden mb-4 group active:scale-[0.98] transition-all">
-                      <div className="relative z-10 flex flex-col h-full justify-between">
+                   {/* Main Balance Vibe Card - ULTRA GLOSSY */}
+                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-8 text-white shadow-[0_20px_40px_rgba(255,152,0,0.3)] overflow-hidden mb-4 group active:scale-[0.98] transition-all border-2 border-white/20">
+                      {/* Visual Shine Engine */}
+                      <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+                      <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+                      
+                      <div className="relative z-30 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
                             <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
                             <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
                                History <ChevronRight className="h-3 w-3" />
                             </button>
                          </div>
-                         <h2 className="text-5xl font-black italic tracking-tighter drop-shadow-md">
+                         <h2 className="text-5xl font-black italic tracking-tighter drop-shadow-lg">
                             {(userProfile?.wallet?.coins || 0).toLocaleString()}
                          </h2>
                       </div>
                       {/* Sovereign Large Coin Visual */}
-                      <div className="absolute -top-4 -right-10 w-56 h-56 opacity-40 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                      <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 rotate-12 pointer-events-none group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
                          <GoldCoinIcon className="w-full h-full" />
                       </div>
                    </div>
@@ -238,9 +242,13 @@ export default function WalletPage() {
                  </>
                ) : (
                  <div className="space-y-6 animate-in fade-in duration-500">
-                   {/* Diamonds Balance Card */}
-                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-8 text-white shadow-2xl overflow-hidden group active:scale-[0.98] transition-all">
-                      <div className="relative z-10 flex flex-col h-full justify-between">
+                   {/* Diamonds Balance Card - ULTRA GLOSSY */}
+                   <div className="relative h-48 w-full rounded-[2.5rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-8 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group active:scale-[0.98] transition-all border-2 border-white/20">
+                      {/* Visual Shine Engine */}
+                      <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
+                      <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
+
+                      <div className="relative z-30 flex flex-col h-full justify-between">
                          <div className="flex justify-between items-start">
                             <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
                             <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border border-white/10">
@@ -252,7 +260,7 @@ export default function WalletPage() {
                          </h2>
                       </div>
                       {/* Sovereign Large Diamond Visual */}
-                      <div className="absolute -top-4 -right-10 w-56 h-56 opacity-40 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                      <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
                          <Gem className="w-full h-full text-white fill-current" />
                       </div>
                    </div>
