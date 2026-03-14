@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
@@ -11,6 +11,12 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { UmmyLogoIcon } from '@/components/icons';
 
 const CATEGORIES = ["All", "Chat", "Games", "Newcomers", "Party"];
 
@@ -72,31 +78,56 @@ export default function RoomsPage() {
           </div>
         </header>
 
+        {/* Banners Section */}
+        <section className="px-6 mb-6">
+          <Carousel className="w-full" opts={{ loop: true }}>
+            <CarouselContent>
+              {[
+                { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', sub: 'Join the frequency', icon: Sparkles },
+                { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
+              ].map((b) => (
+                <CarouselItem key={b.id}>
+                  <div className={cn("h-32 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-lg", b.color)}>
+                     <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-1">
+                           <b.icon className="h-4 w-4 text-white animate-pulse" />
+                           <h3 className="text-xl font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
+                        </div>
+                        <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{b.sub}</p>
+                     </div>
+                     <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <UmmyLogoIcon className="h-32 w-32 rotate-12" />
+                     </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        </section>
+
+        {/* Featured Categories: Decreased Length aspect-[16/10] */}
         <section className="px-6 grid grid-cols-3 gap-4 mb-8">
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[4/5] bg-gradient-to-br from-orange-400 to-red-600 rounded-[2.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-4 relative overflow-hidden active:scale-95 transition-all">
-               <span className="absolute top-4 left-4 text-white font-black uppercase text-[10px] tracking-widest opacity-80">Official</span>
-               <div className="text-5xl drop-shadow-2xl mb-2 group-hover:scale-110 transition-transform">🐷</div>
-               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-orange-400 to-red-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Official</span>
+               <div className="text-3xl drop-shadow-2xl group-hover:scale-110 transition-transform">🐷</div>
             </div>
           </button>
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[4/5] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[2.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-4 relative overflow-hidden active:scale-95 transition-all">
-               <span className="absolute top-4 left-4 text-white font-black uppercase text-[10px] tracking-widest opacity-80">Party</span>
-               <div className="text-5xl drop-shadow-2xl mb-2 animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
-               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
+               <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
             </div>
           </button>
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[4/5] bg-gradient-to-br from-blue-400 to-indigo-600 rounded-[2.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-4 relative overflow-hidden active:scale-95 transition-all">
-               <span className="absolute top-4 left-4 text-white font-black uppercase text-[10px] tracking-widest opacity-80">Speed</span>
-               <div className="text-5xl drop-shadow-2xl mb-2 group-hover:scale-110 transition-transform">🚀</div>
-               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-blue-400 to-indigo-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Speed</span>
+               <div className="text-3xl drop-shadow-2xl group-hover:scale-110 transition-transform">🚀</div>
             </div>
           </button>
         </section>
 
-        {/* Top Rooms Pill: Luxury Status Dimension */}
+        {/* Top Rooms Pill: Moved above tabs */}
         <div className="px-6 mb-8">
           <div className="bg-gradient-to-r from-[#9C27B0] to-[#E91E63] h-14 rounded-full shadow-2xl border-2 border-white/30 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
             <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
@@ -115,25 +146,23 @@ export default function RoomsPage() {
           </div>
         </div>
 
-        {/* Sub-Category Navigation: Removed color signatures as requested */}
+        {/* Sub-Category Navigation: Transparent and positioned below pill */}
         <div className="px-6 mb-6">
-          <div className="relative overflow-hidden group">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar relative z-20">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={cn(
-                    "flex-1 px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap",
-                    activeCategory === cat 
-                      ? "bg-white text-purple-600 shadow-sm scale-[1.02]" 
-                      : "text-purple-400/70 hover:text-purple-500"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={cn(
+                  "flex-1 px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap",
+                  activeCategory === cat 
+                    ? "bg-white text-purple-600 shadow-sm scale-[1.02]" 
+                    : "text-purple-400/70 hover:text-purple-500"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
