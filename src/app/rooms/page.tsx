@@ -95,12 +95,9 @@ export default function RoomsPage() {
           </button>
         </section>
 
-        {/* Sub-Category Navigation: Glossy Lavender Tabs Scroll */}
+        {/* Sub-Category Navigation: Removed color signatures as requested */}
         <div className="px-6 mb-6">
-          <div className="relative bg-gradient-to-br from-purple-100/80 to-purple-50/80 backdrop-blur-md rounded-2xl border-2 border-white p-1 shadow-lg overflow-hidden group">
-            {/* Glossy Shine Handshake */}
-            <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-10" />
-            
+          <div className="relative overflow-hidden group">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar relative z-20">
               {CATEGORIES.map((cat) => (
                 <button
