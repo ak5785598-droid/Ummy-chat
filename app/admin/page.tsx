@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -177,6 +177,9 @@ export default function AdminPage() {
   
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const rankingBGFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingRankingKey, setUploadingRankingKey] = useState<string | null>(null);
+
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const gameBGFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
@@ -217,6 +220,12 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'banners');
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
+
+  const rankingConfigRef = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return doc(firestore, 'appConfig', 'rankings');
+  }, [firestore, isCreator]);
+  const { data: rankingConfig } = useDoc(rankingConfigRef);
 
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
@@ -269,14 +278,12 @@ export default function AdminPage() {
       let foundUser = null;
 
       if (mode === 'id') {
-        // 1. Try exact match on accountNumber (8 digits)
         const qAcc = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
         const snapAcc = await getDocs(qAcc);
         if (!snapAcc.empty) {
           foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id };
         }
 
-        // 2. If not found, try specialId (padded to 3 digits)
         if (!foundUser) {
           const paddedId = inputId.padStart(3, '0');
           const qSpec = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
@@ -286,7 +293,6 @@ export default function AdminPage() {
           }
         }
       } else {
-        // Name search
         const qName = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
         const snapName = await getDocs(qName);
         if (!snapName.empty) {
@@ -539,6 +545,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleRankingBGUpload = async (key: string, file: File) => {
+    if (!storage || !rankingConfigRef) return;
+    setUploadingRankingKey(key);
+    try {
+      const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+      await setDoc(rankingConfigRef, { [key]: url }, { merge: true });
+      toast({ title: `${key.toUpperCase()} Background Updated` });
+    } finally {
+      setUploadingRankingKey(null);
+    }
+  };
+
   const handleAddBanner = async () => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
@@ -637,6 +657,9 @@ export default function AdminPage() {
               <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Users className="h-4 w-4 text-blue-500" /> Member Directory
               </TabsTrigger>
+              <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Trophy className="h-4 w-4 text-yellow-500" /> Ranking Themes
+              </TabsTrigger>
               <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
               </TabsTrigger>
@@ -721,6 +744,51 @@ export default function AdminPage() {
                      </div>
                   </CardContent>
                </Card>
+            </TabsContent>
+
+            <TabsContent value="ranking-themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-yellow-600"><Trophy className="h-6 w-6" /> Ranking Environmental Themes</CardTitle>
+                     <CardDescription>Dispatch high-fidelity backgrounds for global ranking dimensions.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {[
+                       { key: 'honor', label: 'Honor (Rich)', icon: Crown },
+                       { key: 'charm', label: 'Charm', icon: Sparkles },
+                       { key: 'room', label: 'Room Rankings', icon: Home },
+                       { key: 'cp', label: 'Couple Challenge', icon: Heart }
+                     ].map((item) => (
+                       <div key={item.key} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                          <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                                <item.icon className="h-5 w-5 text-yellow-600" />
+                                <span className="font-black uppercase italic text-sm">{item.label}</span>
+                             </div>
+                             {rankingConfig?.[item.key] && (
+                               <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(rankingConfigRef!, { [item.key]: null })}>Reset</Button>
+                             )}
+                          </div>
+                          
+                          <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-200 border-2 border-white shadow-inner flex items-center justify-center">
+                             {rankingConfig?.[item.key] ? (
+                               <Image src={rankingConfig[item.key]} fill className="object-cover" alt="BG" unoptimized />
+                             ) : (
+                               <div className="text-center opacity-20"><ImageIcon className="h-8 w-8 mx-auto mb-1" /><span className="text-[8px] font-black uppercase">Nebula Default Active</span></div>
+                             )}
+                             {uploadingRankingKey === item.key && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                             <button 
+                               onClick={() => { setUploadingRankingKey(item.key); rankingBGFileInputRef.current?.click(); }}
+                               className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-yellow-600 active:scale-90 transition-transform"
+                             >
+                                <Camera className="h-4 w-4" />
+                             </button>
+                          </div>
+                       </div>
+                     ))}
+                  </CardContent>
+               </Card>
+               <input type="file" ref={rankingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadingRankingKey && handleRankingBGUpload(uploadingRankingKey, e.target.files[0])} />
             </TabsContent>
 
             <TabsContent value="game-themes" className="m-0 space-y-6">
@@ -1292,7 +1360,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
                      <Input placeholder="Recipient ID (Special or Account)..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                     <Button onClick={handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find ID</Button>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
