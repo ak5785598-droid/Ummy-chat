@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Background: Light Blue #E3F2FD */
-    --background: 207 90% 94%;
+    /* Background: Soft Lavender #f3e5f5 */
+    --background: 280 40% 93%;
     --foreground: 270 100% 8%;
     
     --card: 0 0% 100%;
@@ -35,7 +35,7 @@
     --ring: 291 64% 42%;
     --radius: 1.25rem;
 
-    --sidebar-background: 207 90% 94%;
+    --sidebar-background: 280 40% 93%;
     --sidebar-foreground: 270 100% 8%;
     --sidebar-primary: 291 64% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -54,7 +54,7 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-hidden bg-[#E3F2FD];
+    @apply h-[100dvh] w-full overflow-hidden bg-[#f3e5f5];
     height: 100dvh;
     min-height: 100dvh;
     position: fixed;
@@ -65,14 +65,14 @@
   }
 
   body {
-    @apply bg-[#E3F2FD] text-foreground antialiased;
+    @apply bg-[#f3e5f5] text-foreground antialiased;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
 
 @layer utilities {
   .bg-ummy-gradient {
-    background: linear-gradient(180deg, #E3F2FD 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, #f3e5f5 0%, #FFFFFF 100%);
   }
   .glass-card {
     @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
