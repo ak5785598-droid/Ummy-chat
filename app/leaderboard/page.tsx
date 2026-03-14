@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -33,43 +32,34 @@ const ICON_MAP: Record<string, any> = {
   Heart
 };
 
-/**
- * High-Fidelity SVIP Signature Badge.
- */
 const SVIPBadge = ({ level }: { level: number }) => (
   <div className={cn(
-    "flex items-center gap-0.5 px-1 py-0.5 rounded-sm border border-orange-500/50 shadow-lg scale-90 origin-left",
+    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm border border-orange-500/50 shadow-lg scale-90 origin-left",
     "bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 animate-shimmer-gold"
   )}>
-    <span className="text-[6px] font-black text-white uppercase italic tracking-tighter">SVIP {level}</span>
+    <span className="text-[7px] font-black text-white uppercase italic tracking-tighter">SVIP {level}</span>
   </div>
 );
 
-/**
- * High-Fidelity Level Signature Badge.
- */
 const LevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
-    <Star className="h-1.5 w-1.5 text-white fill-current" />
-    <span className="text-[6px] font-black text-white italic">Lv.{level}</span>
+  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
+    <Star className="h-2 w-2 text-white fill-current" />
+    <span className="text-[7px] font-black text-white italic">Lv.{level}</span>
   </div>
 );
 
-/**
- * Specialized Ranking List Component.
- */
 const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
   if (isLoading) return (
-    <div className="flex flex-col items-center py-20 gap-4">
-      <Loader className="animate-spin text-primary h-8 w-8" />
+    <div className="flex flex-col items-center py-40 gap-4">
+      <Loader className="animate-spin text-primary h-10 w-10" />
       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 animate-pulse">Ascending the Throne...</p>
     </div>
   );
 
   if (!items || items.length === 0) return (
-    <div className="text-center py-20 opacity-40">
-      <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/20" />
-      <p className="font-black uppercase italic text-xs text-white/40">The chronicles are empty.</p>
+    <div className="text-center py-40 opacity-40">
+      <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
+      <p className="font-black uppercase italic text-sm text-white/40">The chronicles are empty.</p>
     </div>
   );
 
@@ -102,67 +92,67 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-1000 relative pb-24">
-      <div className="relative pt-2 flex flex-col items-center">
+    <div className="space-y-4 animate-in fade-in duration-1000 relative pb-40">
+      <div className="relative pt-4 flex flex-col items-center">
         {top1 && (
-          <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-6 group transition-all active:scale-95">
+          <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
              <div className="relative">
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-24 bg-yellow-500/10 blur-2xl opacity-50" />
-                <div className="relative z-10 w-32 h-32">
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20">
-                      <img src="https://img.icons8.com/color/96/crown.png" className="h-8 w-8 drop-shadow-2xl animate-bounce" alt="Crown" />
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-yellow-500/10 blur-3xl opacity-50" />
+                <div className="relative z-10 w-44 h-44">
+                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
+                      <img src="https://img.icons8.com/color/96/crown.png" className="h-12 w-12 drop-shadow-2xl animate-bounce" alt="Crown" />
                    </div>
-                   <div className="relative w-full h-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_30px_rgba(251,191,36,0.4)] border-[4px] border-[#1a1a1a]">
-                      <Avatar className="h-full w-full border-2 border-yellow-200">
+                   <div className="relative w-full h-full p-2 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_40px_rgba(251,191,36,0.5)] border-[6px] border-[#1a1a1a]">
+                      <Avatar className="h-full w-full border-4 border-yellow-200">
                          <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
-                         <AvatarFallback className="bg-slate-900 text-white font-black text-xl">1</AvatarFallback>
+                         <AvatarFallback className="bg-slate-900 text-white font-black text-2xl">1</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-4 py-0.5 rounded-full font-black text-[8px] shadow-xl border-2 border-yellow-400 italic whitespace-nowrap">TOP 1</div>
+                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-6 py-1 rounded-full font-black text-xs shadow-xl border-2 border-yellow-400 italic">TOP 1</div>
                    </div>
                 </div>
              </div>
-             <div className="mt-6 text-center space-y-0.5">
-                <h2 className="text-lg font-black text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
-                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+             <div className="mt-8 text-center space-y-1">
+                <h2 className="text-xl font-black text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
+                <div className="flex items-center justify-center gap-2 mb-1">
                    <SVIPBadge level={8} />
                    <LevelBadge level={91} />
                 </div>
-                <div className="flex items-center justify-center gap-1 text-yellow-500 font-black">
-                   <GoldCoinIcon className="h-3.5 w-3.5" />
-                   <span className="text-base italic">{formatValue(getValue(top1))}</span>
+                <div className="flex items-center justify-center gap-1.5 text-yellow-500 font-black">
+                   <GoldCoinIcon className="h-4 w-4" />
+                   <span className="text-lg italic">{formatValue(getValue(top1))}</span>
                 </div>
              </div>
           </Link>
         )}
 
-        <div className="flex items-end justify-center gap-2 w-full max-w-sm px-4 relative z-20">
+        <div className="flex items-end justify-center gap-3 w-full max-sm px-2 relative z-20">
            {top2 && (
-             <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-2xl border-2 border-blue-400/20 p-3 pt-10 flex flex-col items-center gap-1.5 shadow-2xl relative transition-all active:scale-95 group">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
-                   <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1 border-2 border-[#1a1a1a]">
-                      <Avatar className="h-full w-full border border-white/20">
+             <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-[2rem] border-2 border-blue-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24">
+                   <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1.5 border-4 border-[#1a1a1a]">
+                      <Avatar className="h-full w-full border-2 border-white/20">
                          <AvatarImage src={getDisplayImage(top2)} />
-                         <AvatarFallback className="font-black text-xs">2</AvatarFallback>
+                         <AvatarFallback className="font-black">2</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-2 py-0.5 rounded-full font-black text-[6px] border border-blue-200 shadow-lg">TOP 2</div>
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-3 py-0.5 rounded-full font-black text-[8px] border border-blue-200 shadow-lg">TOP 2</div>
                    </div>
                 </div>
-                <p className="font-black text-xs text-[#fbc02d] uppercase truncate w-20 text-center mt-1 tracking-tighter">{getDisplayName(top2)}</p>
-                <div className="flex items-center gap-1 scale-75 origin-center -my-1">
+                <p className="font-black text-sm text-[#fbc02d] uppercase truncate w-24 text-center mt-2 tracking-tighter">{getDisplayName(top2)}</p>
+                <div className="flex items-center gap-1 scale-75 origin-center">
                    <SVIPBadge level={5} />
                    <LevelBadge level={61} />
                 </div>
-                <div className="flex items-center justify-center gap-1 text-yellow-500">
-                   <GoldCoinIcon className="h-2.5 w-2.5" />
-                   <span className="text-[10px] font-black italic">{formatValue(getValue(top2))}</span>
+                <div className="flex items-center justify-center gap-1 mt-1 text-yellow-500">
+                   <GoldCoinIcon className="h-3 w-3" />
+                   <span className="text-xs font-black italic">{formatValue(getValue(top2))}</span>
                 </div>
              </Link>
            )}
 
            {top3 && (
-             <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 bg-gradient-to-b from-[#2d221a] to-[#1f1610] rounded-2xl border-2 border-amber-400/20 p-3 pt-10 flex flex-col items-center gap-1.5 shadow-2xl relative transition-all active:scale-95 group">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
-                   <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1 border-2 border-[#1a1a1a]">
+             <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 bg-gradient-to-b from-[#2d221a] to-[#1f1610] rounded-[2rem] border-2 border-amber-400/20 p-4 pt-12 flex flex-col items-center gap-2 shadow-2xl relative transition-all active:scale-95 group">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24">
+                   <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1.5 border-4 border-[#1a1a1a]">
                       <Avatar className="h-full w-full border border-white/20">
                          <AvatarImage src={getDisplayImage(top3)} />
                          <AvatarFallback className="font-black text-xs">3</AvatarFallback>
@@ -270,6 +260,9 @@ function LeaderboardContent() {
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
   const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
 
+  const rankingsConfigRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'rankings'), [firestore]);
+  const { data: rankingsConfig } = useDoc(rankingsConfigRef);
+
   const activeItems = useMemo(() => {
     if (rankingType === 'rich') return richUsers;
     if (rankingType === 'charm') return charmUsers;
@@ -279,13 +272,29 @@ function LeaderboardContent() {
 
   const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
 
+  // Visual Sync: Category-to-Config key mapping for Dynamic Backgrounds
+  const currentBG = useMemo(() => {
+    if (rankingType === 'rich') return rankingsConfig?.honor;
+    if (rankingType === 'charm') return rankingsConfig?.charm;
+    if (rankingType === 'rooms') return rankingsConfig?.room;
+    return null;
+  }, [rankingType, rankingsConfig]);
+
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
+        {/* Cinematic Environmental Backdrop synchronized with Admin Dispatch */}
         <div className="absolute inset-0 z-0 pointer-events-none">
-           <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
-           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+           {currentBG ? (
+             <Image src={currentBG} fill className="object-cover opacity-60 animate-in fade-in duration-1000" alt="BG" unoptimized />
+           ) : (
+             <>
+               <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#1a1a1a] via-[#050505] to-transparent" />
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+             </>
+           )}
+           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#050505]" />
         </div>
 
         <header className="relative z-50 p-4 pt-8 shrink-0">
