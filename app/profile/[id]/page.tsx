@@ -432,32 +432,62 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label="Visitors" value="12K" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          {/* Action Grid Portal */}
+          {/* Action Grid Portal: High-Fidelity Wallet Dimensions */}
           <div className="px-6 grid grid-cols-2 gap-4 mb-10">
-             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Coins</h3>
-                   <div className="flex items-center gap-1.5">
-                      <GoldCoinIcon className="h-4 w-4" />
-                      <span className="text-2xl font-black text-white italic">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+             {/* Glossy Coins Portal */}
+             <div 
+               onClick={() => router.push('/wallet')} 
+               className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(255,152,0,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+             >
+                {/* Visual Shine Engine */}
+                <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+                <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+                
+                <div className="relative z-30 flex flex-col h-full justify-between">
+                   <div className="flex items-center gap-2">
+                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30">
+                         <GoldCoinIcon className="h-5 w-5 drop-shadow-md" />
+                      </div>
+                      <h3 className="text-sm font-black text-white uppercase italic tracking-widest drop-shadow-sm">Coins</h3>
+                   </div>
+                   <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">
+                         {(profile.wallet?.coins || 0).toLocaleString()}
+                      </span>
                    </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+
+                {/* Massive Background Icon Sync */}
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
                    <GoldCoinIcon className="w-full h-full" />
                 </div>
              </div>
 
-             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-5 relative overflow-hidden shadow-xl shadow-blue-200 active:scale-95 transition-transform group cursor-pointer">
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Diamonds</h3>
-                   <div className="flex items-center gap-1.5">
-                      <Gem className="h-4 w-4 text-white fill-current" />
-                      <span className="text-2xl font-black text-white italic">
+             {/* Glossy Diamonds Portal */}
+             <div 
+               onClick={() => router.push('/wallet')} 
+               className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(2,132,199,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+             >
+                {/* Visual Shine Engine */}
+                <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
+                <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
+
+                <div className="relative z-30 flex flex-col h-full justify-between">
+                   <div className="flex items-center gap-2">
+                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30">
+                         <Gem className="h-5 w-5 text-white fill-current drop-shadow-md" />
+                      </div>
+                      <h3 className="text-sm font-black text-white uppercase italic tracking-widest drop-shadow-sm">Diamonds</h3>
+                   </div>
+                   <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">
                          {(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                       </span>
                    </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+
+                {/* Massive Background Icon Sync */}
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
                    <Gem className="w-full h-full text-white fill-current" />
                 </div>
              </div>
