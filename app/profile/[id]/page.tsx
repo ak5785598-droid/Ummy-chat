@@ -393,10 +393,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           {/* Utility Icon Dimension */}
           <div className="px-10 flex justify-between items-center mb-12">
-             <IconButton icon={ClipboardList} label="Badge" colorClass="bg-[#4ade80]" />
-             <IconButton icon={History} label="History" colorClass="bg-[#f472b6]" />
-             <IconButton icon={CreditCard} label="Account" colorClass="bg-[#38bdf8]" />
-             <IconButton icon={Target} label="Orders" colorClass="bg-[#fb7185]" />
+             <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+             <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-400" onClick={() => router.push('/store')} />
+             <IconButton icon={History} label="Budget" colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
+             <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
           {/* VIP Premium Promotional Portal */}
