@@ -85,10 +85,27 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
   </div>
 );
 
-/**
- * High-Fidelity Room User Profile Dialog.
- * Re-engineered for consistent identity signature sequence.
- */
+const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
+    : color === 'red'
+    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
+    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
+
+  return (
+    <div className={cn(
+      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
+      theme
+    )}>
+      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
+      <span className={cn(
+        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
+        !color ? "text-slate-500" : "text-white"
+      )}>ID: {id}</span>
+    </div>
+  );
+};
+
 export function RoomUserProfileDialog({ 
   userId, 
   open, 
@@ -180,12 +197,7 @@ export function RoomUserProfileDialog({
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
                <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
                   {profile.specialId ? (
-                    <div className={cn(
-                      "relative overflow-hidden px-2 py-0.5 rounded-full border border-white/30 group bg-gradient-to-r shadow-md",
-                      profile.specialIdColor === 'blue' ? "from-blue-400 to-blue-600" : "from-rose-400 to-rose-600"
-                    )}>
-                      <span className="relative z-10 text-[8px] font-black text-white uppercase italic tracking-widest leading-none">ID:{profile.specialId}</span>
-                    </div>
+                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                   ) : (
                     <span>ID:{profile.accountNumber}</span>
                   )}

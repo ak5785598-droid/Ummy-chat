@@ -90,12 +90,12 @@ const ACTIVE_GAME_FREQUENCIES = [
   { id: 'lion-fight', title: 'Lion Fight', slug: 'lion-fight', imageHint: '3d lion fighting' },
 ];
 
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
+const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
     : color === 'red'
     ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
-    : "from-slate-50 to-slate-100 border-slate-200 shadow-none";
+    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
 
   return (
     <div className={cn(
@@ -913,7 +913,7 @@ export default function AdminPage() {
                                 <div>
                                    <p className="font-black text-sm uppercase text-slate-900">{member.username}</p>
                                    <div className="flex items-center gap-2 mt-0.5">
-                                      {member.specialId ? <SpecialIdBadge id={member.specialId} /> : <span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span>}
+                                      {member.specialId ? <SpecialIdBadge id={member.specialId} color={member.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span>}
                                       <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Spent: {member.wallet?.totalSpent.toLocaleString() || 0}</span>
                                    </div>
                                 </div>
@@ -955,7 +955,7 @@ export default function AdminPage() {
                                 <div>
                                    <h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3>
                                    <div className="flex flex-col gap-1 mt-1">
-                                      {targetUserForRecord.specialId && <SpecialIdBadge id={targetUserForRecord.specialId} />}
+                                      {targetUserForRecord.specialId && <SpecialIdBadge id={targetUserForRecord.specialId} color={targetUserForRecord.specialIdColor} />}
                                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account: {targetUserForRecord.accountNumber}</span>
                                    </div>
                                 </div>
@@ -969,7 +969,7 @@ export default function AdminPage() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                              <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div>
                              <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div>
-                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px) font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
                           </div>
 
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
@@ -1009,7 +1009,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>
-                                {targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}
+                                {targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
@@ -1053,7 +1053,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p>
-                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForBan.accountNumber}</span>}
+                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForBan.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
@@ -1260,12 +1260,12 @@ export default function AdminPage() {
 
             <TabsContent value="direct-messenger" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500" /> Direct Messenger</CardTitle>
                   <div className="flex flex-col gap-4">
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(mode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
@@ -1274,14 +1274,14 @@ export default function AdminPage() {
                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
-                             {targetUserForDm.specialId ? <SpecialIdBadge id={targetUserForDm.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForDm.accountNumber}</span>}
+                             {targetUserForDm.specialId ? <SpecialIdBadge id={targetUserForDm.specialId} color={targetUserForDm.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForDm.accountNumber}</span>}
                           </div>
                        </div>
                        <div className="space-y-4">
                           <Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl border-2 text-lg font-black italic" />
                           <Textarea placeholder="Type private system message..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl border-2 p-6 text-base font-body italic resize-none" />
                        </div>
-                       <Button onClick={handleDirectMessage} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl">
+                       <Button onClick={() => handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl">
                           {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />} Synchronize Direct Sync
                        </Button>
                     </div>
@@ -1342,7 +1342,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
-                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForTags.accountNumber}</span>}
+                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForTags.accountNumber}</span>}
                              </div>
                           </div>
                           {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
@@ -1412,7 +1412,7 @@ export default function AdminPage() {
                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar>
                           <div>
                              <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForRewards.username}</p>
-                             {targetUserForRewards.specialId ? <SpecialIdBadge id={targetUserForRewards.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRewards.accountNumber}</span>}
+                             {targetUserForRewards.specialId ? <SpecialIdBadge id={targetUserForRewards.specialId} color={targetUserForRewards.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRewards.accountNumber}</span>}
                           </div>
                        </div>
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">

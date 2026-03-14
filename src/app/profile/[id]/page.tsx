@@ -138,18 +138,23 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
-const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
+const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+    : color === 'red'
+    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]"
+    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
 
   return (
     <div className={cn(
       "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm leading-none">ID: {id}</span>
+      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
+      <span className={cn(
+        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
+        !color ? "text-slate-500" : "text-white"
+      )}>ID: {id}</span>
     </div>
   );
 };
@@ -243,8 +248,8 @@ const PublicProfileView = ({
                   {/* Designed Tags Row 2 */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                </div>
             </div>
          </div>
