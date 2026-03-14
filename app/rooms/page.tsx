@@ -150,7 +150,7 @@ export default function RoomsPage() {
                 </div>
               </button>
               <button 
-                onClick={() => router.push('/games')}
+                onClick={() => router.push('/leaderboard?type=games')}
                 className="flex flex-col items-center gap-2 group"
               >
                 <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
