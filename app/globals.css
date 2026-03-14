@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 270 100% 8%;
     
-    /* Highlight color: Vibrant Purple */
+    /* Primary: Vibrant Purple #9C27B0 */
     --primary: 291 64% 42%;
     --primary-foreground: 0 0% 100%;
     
@@ -24,7 +24,6 @@
     --muted: 340 10% 90%;
     --muted-foreground: 340 10% 40%;
     
-    /* Accent glow: #FF4FA3 (Pink) */
     --accent: 331 100% 66%;
     --accent-foreground: 0 0% 100%;
     
@@ -79,7 +78,7 @@
     @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
   }
   .logo-glow {
-    filter: drop-shadow(0 0 45px rgba(255, 79, 163, 0.9));
+    filter: drop-shadow(0 0 45px rgba(156, 39, 176, 0.4));
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -98,3 +97,6 @@
 
 @keyframes shine { 0% { transform: translateX(-200%) skewX(-30deg); } 100% { transform: translateX(200%) skewX(-30deg); } }
 .animate-shine { animation: shine 3s infinite; }
+
+@keyframes reaction-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.animate-reaction-float { animation: reaction-float 3s ease-in-out infinite; }

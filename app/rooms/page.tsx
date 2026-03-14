@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Loader, Bell, User, Star, Plus, Zap, Ghost } from 'lucide-react';
+import { Bell, User, Ghost, Star } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
@@ -33,14 +33,13 @@ export default function RoomsPage() {
 
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
-    // Only show rooms with active participants in the Recommend grid
     const activeRooms = roomsData.filter(room => (room.participantCount || 0) > 0);
     return activeRooms.sort((a, b) => (b.participantCount || 0) - (a.participantCount || 0));
   }, [roomsData]);
 
   const RoomSkeleton = () => (
     <div className="space-y-3">
-      <Skeleton className="aspect-[4/5] w-full rounded-[2rem]" />
+      <Skeleton className="aspect-[4/5] w-full rounded-[2.5rem]" />
       <div className="space-y-2 px-1">
         <Skeleton className="h-4 w-3/4 rounded-md" />
         <Skeleton className="h-3 w-1/2 rounded-md" />
@@ -52,7 +51,6 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-full bg-ummy-gradient flex flex-col font-headline animate-in fade-in duration-700 pb-24">
         
-        {/* Recommend Header Section */}
         <header className="flex items-center justify-between px-6 pt-10 pb-6 shrink-0">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Recommend</h1>
@@ -74,7 +72,6 @@ export default function RoomsPage() {
           </div>
         </header>
 
-        {/* Featured Category Grid: Matches High-Fidelity Blueprint */}
         <section className="px-6 grid grid-cols-3 gap-4 mb-8">
           <button className="flex flex-col items-center gap-2 group">
             <div className="w-full aspect-[4/5] bg-gradient-to-br from-orange-400 to-red-600 rounded-[2.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-4 relative overflow-hidden active:scale-95 transition-all">
@@ -99,10 +96,28 @@ export default function RoomsPage() {
           </button>
         </section>
 
+        {/* Top Rooms Pill: Luxury Status Dimension */}
+        <div className="px-6 mb-8">
+          <div className="bg-gradient-to-r from-[#9C27B0] to-[#E91E63] h-14 rounded-full shadow-2xl border-2 border-white/30 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
+            <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+            <div className="flex items-center gap-3 relative z-10">
+               <Star className="h-5 w-5 text-yellow-400 fill-current animate-pulse" />
+               <span className="text-white font-black uppercase italic text-sm tracking-widest drop-shadow-md">Top Rooms Grid</span>
+            </div>
+            <div className="flex -space-x-3 relative z-10">
+              {[1, 2, 3, 4].map((i) => (
+                <Avatar key={i} className="h-8 w-8 border-2 border-white shadow-xl">
+                  <AvatarImage src={`https://picsum.photos/seed/${i + 50}/100`} />
+                  <AvatarFallback className="text-[8px] bg-slate-200">U</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Sub-Category Navigation: Glossy Lavender Tabs Scroll */}
         <div className="px-6 mb-6">
           <div className="relative bg-gradient-to-br from-purple-100/80 to-purple-50/80 backdrop-blur-md rounded-2xl border-2 border-white p-1 shadow-lg overflow-hidden group">
-            {/* Glossy Shine Handshake */}
             <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-10" />
             
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar relative z-20">
@@ -124,26 +139,6 @@ export default function RoomsPage() {
           </div>
         </div>
 
-        {/* Top Rooms Pill: Luxury Status Dimension */}
-        <div className="px-6 mb-8">
-          <div className="bg-gradient-to-r from-[#9C27B0] to-[#E91E63] h-14 rounded-full shadow-2xl border-2 border-white/30 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
-            <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-            <div className="flex items-center gap-3 relative z-10">
-               <Star className="h-5 w-5 text-yellow-400 fill-current animate-pulse" />
-               <span className="text-white font-black uppercase italic text-sm tracking-widest drop-shadow-md">Top Rooms Grid</span>
-            </div>
-            <div className="flex -space-x-3 relative z-10">
-              {[1, 2, 3, 4].map((i) => (
-                <Avatar key={i} className="h-8 w-8 border-2 border-white shadow-xl">
-                  <AvatarImage src={`https://picsum.photos/seed/${i + 50}/100`} />
-                  <AvatarFallback className="text-[8px] bg-slate-200">U</AvatarFallback>
-                </Avatar>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Room Grid Dimension */}
         <main className="px-4 flex-1">
           {isRoomsLoading && !roomsData ? (
             <div className="grid grid-cols-2 gap-x-4 gap-y-10">

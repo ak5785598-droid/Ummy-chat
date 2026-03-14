@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,13 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { useGameBackgroundUpload } from '@/hooks/use-game-background-upload';
 import { OfficialTag } from '@/components/official-tag';
 import { GoldCoinIcon } from '@/components/icons';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,6 +49,7 @@ const ELITE_TAGS = [
 
 const DISPATCH_ASSETS = {
   frames: [
+    { id: 'ummy-cs', name: 'Ummy CS Majestic' },
     { id: 'f-official-hq', name: 'Sovereign Official HQ' },
     { id: 'f1', name: 'Golden Official' },
     { id: 'f5', name: 'Golden wings' },
@@ -80,10 +82,12 @@ const DEFAULT_SLIDES = [
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
+  { id: 'chirag-slot', title: 'Chirag Slot', slug: 'chirag-slot', imageHint: 'aladdin magic lamp' },
   { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
+  { id: 'lion-fight', title: 'Lion Fight', slug: 'lion-fight', imageHint: '3d lion fighting' },
 ];
 
 const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
@@ -109,30 +113,27 @@ export default function AdminPage() {
   const { userProfile } = useUserProfile(user?.uid);
   const { toast } = useToast();
   const { isUploading: isUploadingGameDP, uploadGameLogo } = useGameLogoUpload();
+  const { isUploading: isUploadingGameBG, uploadGameBackground } = useGameBackgroundUpload();
   
   const isCreator = user?.uid === CREATOR_ID;
 
-  const [activeTab, setActiveTab] = useState('authority');
+  const [activeTab, setActiveTab] = useState('app-data');
   const [searchQuery, setSearchQuery] = useState('');
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   
   const [centerSearchId, setCenterSearchId] = useState('');
-  const [centerSearchName, setCenterSearchName] = useState('');
   const [targetUserForCenter, setTargetUserForCenter] = useState<any>(null);
   const [isSearchingCenter, setIsSearchingCenter] = useState(false);
 
   const [tagSearchId, setTagSearchId] = useState('');
-  const [tagSearchName, setTagSearchName] = useState('');
   const [targetUserForTags, setTargetUserForTags] = useState<any>(null);
   
   const [idSearchInput, setIdSearchInput] = useState('');
-  const [nameSearchInput, setNameSearchInput] = useState('');
   const [newIdInput, setNewIdInput] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>('red');
   const [targetUserForId, setTargetUserForId] = useState<any>(null);
   
   const [rewardSearchId, setRewardSearchId] = useState('');
-  const [rewardSearchName, setRewardSearchName] = useState('');
   const [targetUserForRewards, setTargetUserForRewards] = useState<any>(null);
   const [coinDispatchAmount, setCoinDispatchAmount] = useState('');
   const [isDispatching, setIsDispatching] = useState(false);
@@ -147,14 +148,12 @@ export default function AdminPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const [dmSearchId, setDmSearchId] = useState('');
-  const [dmSearchName, setDmSearchName] = useState('');
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
   const [dmTitle, setDmTitle] = useState('Official System Notice');
   const [dmContent, setDmContent] = useState('');
   const [isSendingDm, setIsSendingDm] = useState(false);
 
   const [banSearchId, setBanSearchId] = useState('');
-  const [banSearchName, setBanSearchName] = useState('');
   const [targetUserForBan, setTargetUserForBan] = useState<any>(null);
   const [isSearchingBan, setIsSearchingBan] = useState(false);
   
@@ -174,36 +173,19 @@ export default function AdminPage() {
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
   const [isSearchingDm, setIsSearchingDm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isSavingId, setIsSavingId] = useState(false);
   
   const [isUploadingBanner, setIsUploadingBanner] = useState<number | null>(null);
   const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const gameFileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedGameForDP, setSelectedGameForDP] = useState<any>(null);
-
-  const [appStats, setAppDataStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
-  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
-
-  const [inspectId1, setInspectId1] = useState('');
-  const [inspectId2, setInspectId2] = useState('');
-  const [inspectChatId, setInspectChatId] = useState<string | null>(null);
-  const [isInspecting, setIsInspecting] = useState(false);
-  const [inspectUser1, setInspectUser1] = useState<any>(null);
-  const [inspectUser2, setInspectUser2] = useState<any>(null);
-
-  const [oracleRoulette, setOracleRoulette] = useState('');
-  const [isSyncingOracle, setIsSyncingOracle] = useState<string | null>(null);
-
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDescription, setTaskDescription] = useState('');
-  const [taskReward, setTaskReward] = useState('1000');
-  const [taskCtaLabel, setTaskCtaLabel] = useState('Go');
-  const [taskCtaHref, setTaskCtaHref] = useState('/rooms');
-  const [isAddingTask, setIsAddingTask] = useState(false);
+  const gameBGFileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
 
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
+
+  const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
+  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -216,24 +198,6 @@ export default function AdminPage() {
     return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
   }, [firestore, isCreator]);
   const { data: customThemes } = useCollection(themesQuery);
-
-  const transactionsQuery = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
-    return query(collection(firestore, 'transactions'), orderBy('createdAt', 'desc'), limit(20));
-  }, [firestore, isCreator]);
-  const { data: recentTransactions } = useCollection(transactionsQuery);
-
-  const inspectedMessagesQuery = useMemoFirebase(() => {
-    if (!firestore || !inspectChatId || !isCreator) return null;
-    return query(collection(firestore, 'privateChats', inspectChatId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
-  }, [firestore, inspectChatId, isCreator]);
-  const { data: inspectedMessages } = useCollection(inspectedMessagesQuery);
-
-  const globalTasksQuery = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
-    return query(collection(firestore, 'globalTasks'), orderBy('createdAt', 'desc'));
-  }, [firestore, isCreator]);
-  const { data: globalTasks } = useCollection(globalTasksQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -254,12 +218,6 @@ export default function AdminPage() {
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  const oracleRef = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
-    return collection(firestore, 'gameOracle');
-  }, [firestore, isCreator]);
-  const { data: oracleData } = useCollection(oracleRef);
-
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
     setIsSyncingAppData(true);
@@ -272,8 +230,8 @@ export default function AdminPage() {
         td += (w.diamonds || 0);
         ts += (w.totalSpent || 0);
       });
-      setAppDataStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
-      toast({ title: 'Global Ledger Synchronized' });
+      setAppStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
+      toast({ title: 'Economic Ledger Synchronized' });
     } finally {
       setIsSyncingAppData(false);
     }
@@ -328,239 +286,21 @@ export default function AdminPage() {
     }
   };
 
-  const handleInspectChat = async () => {
-    if (!firestore || !inspectId1 || !inspectId2 || !isCreator) return;
-    setIsInspecting(true);
-    try {
-      const p1 = inspectId1.padStart(3, '0');
-      const p2 = inspectId2.padStart(3, '0');
-      
-      const q1 = query(collection(firestore, 'users'), where('specialId', '==', p1), limit(1));
-      const q2 = query(collection(firestore, 'users'), where('specialId', '==', p2), limit(1));
-      
-      const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-      
-      if (s1.empty || s2.empty) {
-        toast({ variant: 'destructive', title: 'Identity Mismatch', description: 'One or both IDs do not exist.' });
-        return;
-      }
-
-      const u1 = { ...s1.docs[0].data(), id: s1.docs[0].id };
-      const u2 = { ...s2.docs[0].data(), id: s2.docs[0].id };
-      
-      setInspectUser1(u1);
-      setInspectUser2(u2);
-      
-      const ids = [u1.id, u2.id].sort();
-      setInspectChatId(ids.join('_'));
-      toast({ title: 'Frequency Intercepted' });
-    } finally {
-      setIsInspecting(false);
-    }
-  };
-
-  const handleSetOracle = async (gameId: string, result: any) => {
-    if (!firestore || !isCreator) return;
-    setIsSyncingOracle(gameId);
-    try {
-      await setDoc(doc(firestore, 'gameOracle', gameId), {
-        forcedResult: result,
-        updatedAt: serverTimestamp(),
-        isActive: true
-      });
-      toast({ title: 'Oracle Synchronized', description: `Outcome forced: ${result}` });
-    } finally {
-      setIsSyncingOracle(null);
-    }
-  };
-
-  const handleAddTask = async () => {
-    if (!firestore || !taskTitle.trim() || !isCreator) return;
-    setIsAddingTask(true);
-    try {
-      const taskRef = collection(firestore, 'globalTasks');
-      await addDoc(taskRef, {
-        title: taskTitle,
-        description: taskDescription,
-        coinReward: parseInt(taskReward) || 0,
-        createdAt: serverTimestamp(),
-        cta: { label: taskCtaLabel, href: taskCtaHref }
-      });
-      toast({ title: 'Task Sync Active' });
-      setTaskTitle('');
-      setTaskDescription('');
-    } finally {
-      setIsAddingTask(false);
-    }
-  };
-
   const handleResetWallet = async () => {
     if (!firestore || !targetUserForRecord || !isCreator) return;
-    if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet to zero? This cannot be undone.")) return;
+    if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet?")) return;
     
     setIsResettingWallet(true);
     try {
       const uRef = doc(firestore, 'users', targetUserForRecord.id);
       const pRef = doc(firestore, 'users', targetUserForRecord.id, 'profile', targetUserForRecord.id);
-      
-      const resetData = {
-        'wallet.coins': 0,
-        'wallet.diamonds': 0,
-        'wallet.totalSpent': 0,
-        'wallet.dailySpent': 0,
-        updatedAt: serverTimestamp()
-      };
-
-      await updateDoc(uRef, resetData);
-      await updateDoc(pRef, resetData);
-      
-      setTargetUserForRecord((prev: any) => ({ 
-        ...prev, 
-        wallet: { ...prev.wallet, coins: 0, diamonds: 0, totalSpent: 0, dailySpent: 0 } 
-      }));
-      
-      toast({ title: 'Wallet Purged', description: 'User economic frequency has been reset to zero.' });
+      const resetData = { 'wallet.coins': 0, 'wallet.diamonds': 0, 'wallet.totalSpent': 0, 'wallet.dailySpent': 0, updatedAt: serverTimestamp() };
+      await updateDocumentNonBlocking(uRef, resetData);
+      await updateDocumentNonBlocking(pRef, resetData);
+      setTargetUserForRecord((prev: any) => ({ ...prev, wallet: { coins: 0, diamonds: 0, totalSpent: 0, dailySpent: 0 } }));
+      toast({ title: 'Wallet Purged' });
     } finally {
       setIsResettingWallet(false);
-    }
-  };
-
-  const handleDistributeDailyRewards = async () => {
-    if (!firestore || !isCreator) return;
-    setIsSaving(true);
-    
-    try {
-      const batch = writeBatch(firestore);
-      const rewardConfig = [100000, 80000, 50000, 35000, 20000, 20000, 20000, 20000, 20000, 20000];
-      
-      const processRankings = async (colPath: string, field: string, type: 'User' | 'Room') => {
-        const q = query(collection(firestore, colPath), where(field, '>', 0), orderBy(field, 'desc'), limit(10));
-        const snap = await getDocs(q);
-
-        snap.docs.forEach((d, i) => {
-          const reward = rewardConfig[i] || 0;
-          const targetUid = type === 'User' ? d.id : d.data().ownerId;
-          if (!targetUid) return;
-
-          const uRef = doc(firestore, 'users', targetUid);
-          const pRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
-          const notifRef = doc(collection(firestore, 'users', targetUid, 'notifications'));
-
-          batch.update(uRef, { 'wallet.coins': increment(reward) });
-          batch.update(pRef, { 'wallet.coins': increment(reward) });
-          batch.set(notifRef, {
-            title: `Official Notice`,
-            content: `Notice.. You receive ${reward.toLocaleString()} coins..... Best regard Ummy official`,
-            type: 'system',
-            timestamp: serverTimestamp(),
-            isRead: false
-          });
-        });
-      };
-
-      await processRankings('users', 'wallet.dailySpent', 'User');
-      await processRankings('users', 'stats.dailyFans', 'User');
-      await processRankings('users', 'stats.dailyGameWins', 'User');
-      await processRankings('chatRooms', 'stats.dailyGifts', 'Room');
-
-      batch.set(configRef!, { lastRewardReset: serverTimestamp() }, { merge: true });
-      await batch.commit();
-      toast({ title: 'Daily Distribution Complete' });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Reset Failed' });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleUpdateId = async () => {
-    if (!firestore || !targetUserForId || !newIdInput) return;
-    setIsSavingId(true);
-    try {
-      const paddedNewId = newIdInput.padStart(3, '0');
-      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
-        toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned.' });
-        return;
-      }
-
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-      const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(uRef, updateData);
-      updateDocumentNonBlocking(pRef, updateData);
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
-      toast({ title: 'ID Synchronized' });
-      setNewIdInput('');
-    } finally {
-      setIsSavingId(false);
-    }
-  };
-
-  const handleRemoveId = async () => {
-    if (!firestore || !targetUserForId) return;
-    setIsSavingId(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-      const updateData = { specialIdColor: null, updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(uRef, updateData);
-      updateDocumentNonBlocking(pRef, updateData);
-      setTargetUserForId((prev: any) => ({ ...prev, specialIdColor: null }));
-      toast({ title: 'ID Color Removed' });
-    } finally {
-      setIsSavingId(false);
-    }
-  };
-
-  const handleBanUser = async () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
-    setIsBanning(true);
-    try {
-      const days = parseInt(banDays) || 0;
-      const hours = parseInt(banHours) || 0;
-      const mins = parseInt(banMinutes) || 0;
-      const secs = parseInt(banSeconds) || 0;
-      
-      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
-      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
-      
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      
-      const banData = {
-        banStatus: {
-          isBanned: true,
-          bannedAt: serverTimestamp(),
-          bannedUntil: bannedUntil,
-          reason: 'Administrative Exclusion'
-        }
-      };
-
-      await setDoc(uRef, banData, { merge: true });
-      await setDoc(pRef, banData, { merge: true });
-      
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
-      toast({ title: 'ID Banned' });
-    } finally {
-      setIsBanning(false);
-    }
-  };
-
-  const handleUnbanUser = async () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
-    setIsBanning(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
-      await setDoc(uRef, unbanData, { merge: true });
-      await setDoc(pRef, unbanData, { merge: true });
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
-      toast({ title: 'ID Unbanned' });
-    } finally {
-      setIsBanning(false);
     }
   };
 
@@ -616,7 +356,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleDispatchItem = async (itemId: string, type: string) => {
+  const handleDispatchItem = async (itemId: string, type: 'ownedItems' | 'purchasedThemes') => {
     if (!firestore || !targetUserForRewards) return;
     setIsDispatching(true);
     try {
@@ -628,15 +368,83 @@ export default function AdminPage() {
     }
   };
 
-  const handleRemoveAllTags = async (targetUid: string) => {
-    if (!firestore) return;
-    const userRef = doc(firestore, 'users', targetUid);
-    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
-    const updateData = { tags: [], updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(userRef, updateData);
-    updateDocumentNonBlocking(profileRef, updateData);
-    if (targetUserForTags?.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
-    toast({ title: 'Authority Purged' });
+  const handleUpdateId = async () => {
+    if (!firestore || !targetUserForId || !newIdInput) return;
+    setIsSavingId(true);
+    try {
+      const paddedNewId = newIdInput.padStart(3, '0');
+      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
+        toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned.' });
+        return;
+      }
+
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
+      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
+      toast({ title: 'ID Synchronized' });
+      setNewIdInput('');
+    } finally {
+      setIsSavingId(false);
+    }
+  };
+
+  const handleRemoveId = async () => {
+    if (!firestore || !targetUserForId) return;
+    setIsSavingId(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      const updateData = { specialIdColor: null, updatedAt: serverTimestamp() };
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
+      setTargetUserForId((prev: any) => ({ ...prev, specialIdColor: null }));
+      toast({ title: 'ID Color Removed' });
+    } finally {
+      setIsSavingId(false);
+    }
+  };
+
+  const handleBanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const days = parseInt(banDays) || 0;
+      const hours = parseInt(banHours) || 0;
+      const mins = parseInt(banMinutes) || 0;
+      const secs = parseInt(banSeconds) || 0;
+      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
+      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      const banData = { banStatus: { isBanned: true, bannedAt: serverTimestamp(), bannedUntil: bannedUntil, reason: 'Administrative Exclusion' } };
+      await setDoc(uRef, banData, { merge: true });
+      await setDoc(pRef, banData, { merge: true });
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
+      toast({ title: 'ID Banned' });
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
+  const handleUnbanUser = async () => {
+    if (!firestore || !targetUserForBan || !isCreator) return;
+    setIsBanning(true);
+    try {
+      const uRef = doc(firestore, 'users', targetUserForBan.id);
+      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+      const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
+      await setDoc(uRef, unbanData, { merge: true });
+      await setDoc(pRef, unbanData, { merge: true });
+      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
+      toast({ title: 'ID Unbanned' });
+    } finally {
+      setIsBanning(false);
+    }
   };
 
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
@@ -657,14 +465,10 @@ export default function AdminPage() {
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    
     const updatedTags = hasRole ? (currentTags || []).filter((t: string) => t !== roleId) : [...(currentTags || []), roleId];
-
     if (targetUserForTags && targetUserForTags.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: updatedTags }));
     if (targetUserForCenter && targetUserForCenter.id === targetUid) setTargetUserForCenter((prev: any) => ({ ...prev, tags: updatedTags }));
-    
     setFoundUsers(prev => prev.map(u => u.id === targetUid ? { ...u, tags: updatedTags } : u));
-    
     toast({ title: 'Authority Updated' });
   };
 
@@ -673,26 +477,31 @@ export default function AdminPage() {
     const tags = targetUserForCenter.tags || [];
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
     const isCurrentlyActive = tags.some(t => sellerTags.includes(t));
-    
     const userRef = doc(firestore, 'users', targetUserForCenter.id);
     const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
-    
     let newTags;
-    if (isCurrentlyActive) {
-      newTags = tags.filter(t => !sellerTags.includes(t));
-    } else {
-      newTags = [...tags, 'Seller'];
-    }
-
+    if (isCurrentlyActive) { newTags = tags.filter(t => !sellerTags.includes(t)); }
+    else { newTags = [...tags, 'Seller']; }
     const updateData = { tags: newTags, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    
     setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
     if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
     setFoundUsers(prev => prev.map(u => u.id === targetUserForCenter.id ? { ...u, tags: newTags } : u));
-    
     toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
+  };
+
+  const handleRemoveAllTags = async (targetUid: string) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', targetUid);
+    const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
+    const updateData = { tags: [], updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
+    if (targetUserForTags && targetUserForTags.id === targetUid) setTargetUserForTags((prev: any) => ({ ...prev, tags: [] }));
+    if (targetUserForCenter && targetUserForCenter.id === targetUid) setTargetUserForCenter((prev: any) => ({ ...prev, tags: [] }));
+    setFoundUsers(prev => prev.map(u => u.id === targetUid ? { ...u, tags: [] } : u));
+    toast({ title: 'Authority Purged' });
   };
 
   const handleBannerImageUpload = async (index: number, file: File) => {
@@ -750,18 +559,8 @@ export default function AdminPage() {
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, {
-        id: themeRef.id,
-        name: newThemeName,
-        url: url,
-        category: newThemeCategory,
-        createdAt: serverTimestamp(),
-        accentColor: '#FFCC00',
-        seatColor: 'rgba(255, 255, 255, 0.1)'
-      });
-
+      await setDoc(themeRef, { id: themeRef.id, name: newThemeName, url: url, category: newThemeCategory, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' });
       toast({ title: 'Theme Synchronized' });
       setNewThemeName('');
     } finally {
@@ -770,15 +569,28 @@ export default function AdminPage() {
   };
 
   const handleGameDPUploadClick = (game: any) => {
-    setSelectedGameForDP(game);
+    setSelectedGameForSync(game);
     gameFileInputRef.current?.click();
+  };
+
+  const handleGameBGUploadClick = (game: any) => {
+    setSelectedGameForSync(game);
+    gameBGFileInputRef.current?.click();
   };
 
   const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && selectedGameForDP) {
-      await uploadGameLogo(selectedGameForDP, file);
-      setSelectedGameForDP(null);
+    if (file && selectedGameForSync) {
+      await uploadGameLogo(selectedGameForSync, file);
+      setSelectedGameForSync(null);
+    }
+  };
+
+  const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedGameForSync) {
+      await uploadGameBackground(selectedGameForSync, file);
+      setSelectedGameForSync(null);
     }
   };
 
@@ -799,25 +611,16 @@ export default function AdminPage() {
           <div className="w-full md:w-72 shrink-0 sticky top-24">
             <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
               <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Database className="h-4 w-4 text-blue-500" /> App Data
-              </TabsTrigger>
-              <TabsTrigger value="chat-inspector" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Eye className="h-4 w-4 text-emerald-500" /> Chat Inspector
-              </TabsTrigger>
-              <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <UserSearch className="h-4 w-4 text-rose-500" /> User Records
-              </TabsTrigger>
-              <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Users className="h-4 w-4 text-slate-500" /> Member Directory
-              </TabsTrigger>
-              <TabsTrigger value="task-sync" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <ClipboardList className="h-4 w-4 text-amber-500" /> Task Center
-              </TabsTrigger>
-              <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
+                <Database className="h-4 w-4 text-blue-500" /> App Ledger
               </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
+              </TabsTrigger>
+              <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Users className="h-4 w-4 text-blue-500" /> Member Directory
+              </TabsTrigger>
+              <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
               </TabsTrigger>
               <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ShieldCheck className="h-4 w-4 text-indigo-500" /> Assign Center
@@ -825,11 +628,14 @@ export default function AdminPage() {
               <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
               </TabsTrigger>
-              <TabsTrigger value="game-results" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Dices className="h-4 w-4 text-pink-500" /> Game Results
+              <TabsTrigger value="game-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Monitor className="h-4 w-4 text-indigo-500" /> Game Themes
               </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
+              </TabsTrigger>
+              <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
               </TabsTrigger>
               <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gamepad2 className="h-4 w-4 text-purple-500" /> Game Sync
@@ -844,7 +650,7 @@ export default function AdminPage() {
                 <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
               </TabsTrigger>
               <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Type className="h-4 w-4 text-red-500" /> Special I'd
+                <Type className="h-4 w-4 text-red-500" /> Special ID
               </TabsTrigger>
               <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gift className="h-4 w-4 text-pink-500" /> Rewards
@@ -861,7 +667,7 @@ export default function AdminPage() {
                         <CardDescription>Global coin circulation and economic sync metrics.</CardDescription>
                      </div>
                      <Button onClick={handleSyncAppData} disabled={isSyncingAppData} className="bg-blue-600 h-12 rounded-xl">
-                        {isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Data
+                        {isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Ledger
                      </Button>
                   </CardHeader>
                   <CardContent className="px-0 space-y-10">
@@ -895,179 +701,79 @@ export default function AdminPage() {
                            </div>
                         </div>
                      </div>
-
-                     <div className="space-y-4">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 px-2">Recent Recharge Transactions</h3>
-                        <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">
-                           {recentTransactions?.map(tx => (
-                             <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                   <div className="h-10 w-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
-                                      <CheckCircle2 className="h-5 w-5" />
-                                   </div>
-                                   <div>
-                                      <p className="font-black text-xs uppercase text-slate-900">User Sync ID: {tx.userId.slice(0, 8)}</p>
-                                      <p className="text-[10px] text-muted-foreground uppercase">{tx.createdAt?.toDate() ? format(tx.createdAt.toDate(), 'PPP HH:mm') : 'Syncing...'}</p>
-                                   </div>
-                                </div>
-                                <div className="text-right">
-                                   <p className="font-black text-blue-600 italic">+{tx.coins.toLocaleString()} Coins</p>
-                                   <p className="text-[10px] font-bold text-slate-400 uppercase">{tx.amount} INR • {tx.paymentMethod}</p>
-                                </div>
-                             </div>
-                           ))}
-                        </div>
-                     </div>
                   </CardContent>
                </Card>
             </TabsContent>
 
-            <TabsContent value="chat-inspector" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+            <TabsContent value="game-themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600"><Eye className="h-6 w-6" /> Frequency Chat Inspector</CardTitle>
-                     <CardDescription>Intercept and monitor private messaging frequencies between tribe members.</CardDescription>
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600">
+                        <Monitor className="h-6 w-6" /> Sovereign Game Themes
+                     </CardTitle>
+                     <CardDescription>Dispatch high-resolution environmental assets to the 3D Tribe Arena.</CardDescription>
                   </CardHeader>
-                  <CardContent className="px-0 space-y-8">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <div className="space-y-4">
-                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Identity One (Special ID)</Label>
-                           <Input placeholder="e.g. 001" value={inspectId1} onChange={(e) => setInspectId1(e.target.value)} className="h-14 rounded-2xl border-2 bg-white text-xl font-black text-center italic" />
-                        </div>
-                        <div className="space-y-4">
-                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Identity Two (Special ID)</Label>
-                           <Input placeholder="e.g. 005" value={inspectId2} onChange={(e) => setInspectId2(e.target.value)} className="h-14 rounded-2xl border-2 bg-white text-xl font-black text-center italic" />
-                        </div>
-                        <Button onClick={handleInspectChat} disabled={isInspecting || !inspectId1 || !inspectId2} className="md:col-span-2 h-16 rounded-3xl bg-emerald-600 text-white font-black uppercase italic text-lg shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-                           {isInspecting ? <Loader className="animate-spin" /> : <Search className="h-6 w-6 mr-2" />} Intercept Conversation
-                        </Button>
-                     </div>
-
-                     {inspectChatId && inspectUser1 && inspectUser2 && (
-                       <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                          <div className="flex items-center justify-around p-6 bg-slate-50 rounded-3xl border-2 border-emerald-100">
-                             <div className="flex flex-col items-center gap-2">
-                                <Avatar className="h-16 w-16 border-2 border-emerald-200"><AvatarImage src={inspectUser1.avatarUrl} /></Avatar>
-                                <span className="font-black text-xs uppercase">{inspectUser1.username}</span>
-                             </div>
-                             <div className="h-0.5 w-24 bg-emerald-200 relative">
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-100 px-2 rounded-full text-[10px] font-black text-emerald-600 uppercase">SYNC</div>
-                             </div>
-                             <div className="flex flex-col items-center gap-2">
-                                <Avatar className="h-16 w-16 border-2 border-emerald-200"><AvatarImage src={inspectUser2.avatarUrl} /></Avatar>
-                                <span className="font-black text-xs uppercase">{inspectUser2.username}</span>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     {gamesList.map((game) => (
+                       <div key={game.slug} className="flex flex-col gap-3 group">
+                          <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl border-2 border-white/10">
+                             {game.backgroundUrl ? (
+                               <Image src={game.backgroundUrl} fill className="object-cover" alt="BG" unoptimized />
+                             ) : (
+                               <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
+                                  <Monitor className="h-10 w-10" />
+                                  <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
+                               </div>
+                             )}
+                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button 
+                                  onClick={() => handleGameBGUploadClick(game)}
+                                  className="h-14 w-14 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl active:scale-90 transition-transform"
+                                >
+                                   {isUploadingGameBG && selectedGameForSync?.slug === game.slug ? <Loader className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6" />}
+                                </button>
                              </div>
                           </div>
-
-                          <div className="bg-slate-950 rounded-[2.5rem] p-6 h-[500px] overflow-hidden flex flex-col shadow-inner">
-                             <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest italic">Encrypted Ledger Transcript</h4>
-                                <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[8px] font-black uppercase">Live Inspection Active</Badge>
-                             </div>
-                             <ScrollArea className="flex-1 pr-4">
-                                <div className="flex flex-col gap-4 pb-10">
-                                   {inspectedMessages?.length === 0 ? (
-                                     <div className="py-20 text-center opacity-20 text-white italic">No messages detected in this frequency.</div>
-                                   ) : inspectedMessages?.map(msg => {
-                                     const isU1 = msg.senderId === inspectUser1.id;
-                                     return (
-                                       <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isU1 ? "self-start items-start" : "self-end items-end")}>
-                                          <div className={cn(
-                                            "px-4 py-3 rounded-2xl text-sm font-body shadow-sm",
-                                            isU1 ? "bg-white/10 text-white rounded-bl-none" : "bg-emerald-600 text-white rounded-br-none"
-                                          )}>
-                                             <p className="leading-relaxed">{msg.text}</p>
-                                          </div>
-                                          <span className="text-[8px] font-bold text-white/20 uppercase mt-1 px-1">
-                                             {isU1 ? inspectUser1.username : inspectUser2.username} • {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
-                                          </span>
-                                       </div>
-                                     );
-                                   })}
-                                </div>
-                             </ScrollArea>
+                          <div className="flex items-center justify-between px-2">
+                             <p className="font-black uppercase italic text-sm text-slate-900">{game.title}</p>
+                             {game.backgroundUrl && <Badge className="bg-green-100 text-green-600 border-none font-black text-[8px] uppercase">Custom Synced</Badge>}
                           </div>
                        </div>
-                     )}
+                     ))}
                   </CardContent>
                </Card>
             </TabsContent>
 
-            <TabsContent value="user-records" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-600"><UserSearch className="h-6 w-6" /> Tribe Member Records</CardTitle>
-                     <CardDescription>Audit the economic and social signatures of any tribe member. Full wallet history visibility.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-8">
+            <TabsContent value="authority" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
+                  <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
+                  <CardContent className="space-y-6">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Member Special ID (e.g. 001)..." value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit Identity</Button>
+                        <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
+                        <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
                      </div>
-
-                     {targetUserForRecord && (
-                       <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
-                          <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between">
+                     <div className="space-y-4">
+                        {foundUsers.map((u) => (
+                          <div key={u.id} className="p-4 bg-white rounded-2xl border flex flex-col gap-4 shadow-sm">
                              <div className="flex items-center gap-4">
-                                <Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar>
-                                <div>
-                                   <h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3>
-                                   <div className="flex items-center gap-2 mt-1">
-                                      <SpecialIdBadge id={targetUserForRecord.specialId} />
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sync ID: {targetUserForRecord.id.slice(0, 8)}</span>
-                                   </div>
+                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
+                                <div className="flex-1">
+                                   <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
+                                   {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.accountNumber || u.id.slice(0, 6)}</p>}
+                                </div>
+                                <div className="flex gap-2">
+                                   <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px]">+1k</Button>
+                                   <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'diamonds', 100)} className="rounded-full h-8 text-[10px]">+100</Button>
                                 </div>
                              </div>
-                             <div className="text-right space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Established</p>
-                                <p className="font-black text-slate-900 uppercase italic">{targetUserForRecord.createdAt?.toDate() ? format(targetUserForRecord.createdAt.toDate(), 'PPP') : 'Stardust'}</p>
-                             </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                             <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2">
-                                <div className="flex items-center gap-2 text-blue-600 mb-2">
-                                   <Wallet className="h-4 w-4" />
-                                   <span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic">
-                                   <GoldCoinIcon className="h-6 w-6" />
-                                   {targetUserForRecord.wallet?.coins.toLocaleString() || 0}
-                                </div>
-                             </div>
-                             <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2">
-                                <div className="flex items-center gap-2 text-cyan-600 mb-2">
-                                   <Sparkles className="h-4 w-4" />
-                                   <span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic">
-                                   <Activity className="h-6 w-6" />
-                                   {targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}
-                                </div>
-                             </div>
-                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2">
-                                <div className="flex items-center gap-2 text-purple-600 mb-2">
-                                   <History className="h-4 w-4" />
-                                   <span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic">
-                                   <BarChart3 className="h-6 w-6" />
-                                   {targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}
-                                </div>
+                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {AUTHORITY_ROLES.map(role => (
+                                  <Button key={role.id} variant={u.tags?.includes(role.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(u.id, role.id, u.tags)} className="h-10 text-[8px] font-black uppercase rounded-xl">{role.label}</Button>
+                                ))}
                              </div>
                           </div>
-
-                          <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
-                             <div className="text-center space-y-2">
-                                <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
-                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
-                             </div>
-                             <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
-                                {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
-                             </Button>
-                          </div>
-                       </div>
-                     )}
+                        ))}
+                     </div>
                   </CardContent>
                </Card>
             </TabsContent>
@@ -1094,7 +800,7 @@ export default function AdminPage() {
                                 <div>
                                    <p className="font-black text-sm uppercase text-slate-900">{member.username}</p>
                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <SpecialIdBadge id={member.specialId} />
+                                      {member.specialId ? <SpecialIdBadge id={member.specialId} /> : <span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span>}
                                       <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Spent: {member.wallet?.totalSpent.toLocaleString() || 0}</span>
                                    </div>
                                 </div>
@@ -1113,104 +819,54 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
-            <TabsContent value="task-sync" className="m-0 space-y-6">
+            <TabsContent value="user-records" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-amber-600">
-                        <ClipboardList className="h-6 w-6" /> Task Center Command
-                     </CardTitle>
-                     <CardDescription>Dispatch global challenges and duties to the entire tribal graph. Assigned tasks sync to all profiles.</CardDescription>
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-600"><UserSearch className="h-6 w-6" /> Tribe Member Records</CardTitle>
+                     <CardDescription>Audit the economic and social signatures of any tribe member. Full wallet history visibility.</CardDescription>
                   </CardHeader>
-                  <CardContent className="px-0 space-y-10">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
-                        <div className="space-y-4">
-                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Task Identity</Label>
-                           <Input placeholder="Task Title (e.g. Daily Check-in)" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="h-14 rounded-2xl border-2" />
-                           <Textarea placeholder="Task Description..." value={taskDescription} onChange={(e) => setTaskDescription(e.target.value)} className="h-24 rounded-2xl border-2 resize-none" />
-                        </div>
-                        <div className="space-y-4">
-                           <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">Economic Handshake (Reward)</Label>
-                           <div className="relative">
-                              <GoldCoinIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6" />
-                              <Input type="number" placeholder="Coin Reward" value={taskReward} onChange={(e) => setTaskReward(e.target.value)} className="h-14 pl-12 rounded-2xl border-2 font-black italic" />
-                           </div>
-                           <div className="grid grid-cols-2 gap-2">
-                              <Input placeholder="CTA Label (Go)" value={taskCtaLabel} onChange={(e) => setTaskCtaLabel(e.target.value)} className="h-12 rounded-xl border-2" />
-                              <Input placeholder="CTA Href (/rooms)" value={taskCtaHref} onChange={(e) => setTaskCtaHref(e.target.value)} className="h-12 rounded-xl border-2" />
-                           </div>
-                        </div>
-                        <Button onClick={handleAddTask} disabled={isAddingTask || !taskTitle.trim()} className="md:col-span-2 h-16 rounded-[1.5rem] bg-black text-white font-black uppercase italic text-xl shadow-xl active:scale-95 transition-all">
-                           {isAddingTask ? <Loader className="animate-spin" /> : <><Send className="mr-2 h-6 w-6" /> Synchronize Global Task</>}
-                        </Button>
-                     </div>
-
-                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-2">Active Frequency Tasks</h3>
-                        <div className="bg-slate-50 rounded-[2.5rem] border border-slate-100 overflow-hidden divide-y divide-slate-200">
-                           {globalTasks?.map(task => (
-                             <div key={task.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                   <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
-                                      <ListTodo className="h-6 w-6" />
-                                   </div>
-                                   <div>
-                                      <p className="font-black text-sm uppercase text-slate-900">{task.title}</p>
-                                      <p className="text-xs text-muted-foreground font-body italic">{task.description}</p>
-                                   </div>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                   <div className="text-right">
-                                      <div className="flex items-center gap-1.5 justify-end">
-                                         <span className="font-black text-amber-600 italic">+{task.coinReward.toLocaleString()}</span>
-                                         <GoldCoinIcon className="h-4 w-4" />
-                                      </div>
-                                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{task.cta.label} • {task.cta.href}</p>
-                                   </div>
-                                   <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'globalTasks', task.id))} className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl">
-                                      <Trash2 className="h-5 w-5" />
-                                   </Button>
-                                </div>
-                             </div>
-                           ))}
-                           {(!globalTasks || globalTasks.length === 0) && (
-                             <div className="py-20 text-center opacity-20 italic">No global tasks synchronized.</div>
-                           )}
-                        </div>
-                     </div>
-                  </CardContent>
-               </Card>
-            </TabsContent>
-
-            <TabsContent value="authority" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
-                  <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="px-0 space-y-8">
                      <div className="flex gap-4">
-                        <Input placeholder="Search member..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />
-                        <Button onClick={handleSearchUsers} className="h-12 rounded-xl bg-primary text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Search'}</Button>
+                        <Input placeholder="Enter ID (Special or Account)..." value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch('id', recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit Identity</Button>
                      </div>
-                     <div className="space-y-4">
-                        {foundUsers.map((u) => (
-                          <div key={u.id} className="p-4 bg-white rounded-2xl border flex flex-col gap-4 shadow-sm">
+
+                     {targetUserForRecord && (
+                       <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
+                          <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between">
                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 border-2 border-slate-50"><AvatarImage src={u.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
-                                <div className="flex-1">
-                                   <p className="font-black text-sm uppercase italic text-slate-900">{u.username}</p>
-                                   {u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground">ID: {u.id.slice(0, 6)}</p>}
-                                </div>
-                                <div className="flex gap-2">
-                                   <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'coins', 1000)} className="rounded-full h-8 text-[10px]">+1k</Button>
-                                   <Button variant="outline" size="sm" onClick={() => adjustBalance(u.id, 'diamonds', 100)} className="rounded-full h-8 text-[10px]">+100</Button>
+                                <Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar>
+                                <div>
+                                   <h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3>
+                                   <div className="flex flex-col gap-1 mt-1">
+                                      {targetUserForRecord.specialId && <SpecialIdBadge id={targetUserForRecord.specialId} />}
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account: {targetUserForRecord.accountNumber}</span>
+                                   </div>
                                 </div>
                              </div>
-                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {AUTHORITY_ROLES.map(role => (
-                                  <Button key={role.id} variant={u.tags?.includes(role.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(u.id, role.id, u.tags)} className="h-10 text-[8px] font-black uppercase rounded-xl">{role.label}</Button>
-                                ))}
+                             <div className="text-right space-y-1">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Established</p>
+                                <p className="font-black text-slate-900 uppercase italic">{targetUserForRecord.createdAt?.toDate() ? format(targetUserForRecord.createdAt.toDate(), 'PPP') : 'Stardust'}</p>
                              </div>
                           </div>
-                        ))}
-                     </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
+                          </div>
+
+                          <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
+                             <div className="text-center space-y-2">
+                                <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
+                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
+                             </div>
+                             <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
+                                {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
+                             </Button>
+                          </div>
+                       </div>
+                     )}
                   </CardContent>
                </Card>
             </TabsContent>
@@ -1228,10 +884,6 @@ export default function AdminPage() {
                         <Input placeholder="Enter User ID..." value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find ID</Button>
                      </div>
-                     <div className="flex gap-4">
-                        <Input placeholder="Enter Username..." value={centerSearchName} onChange={(e) => setCenterSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('name', centerSearchName, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 font-black uppercase italic" disabled={isSearchingCenter}>Find Name</Button>
-                     </div>
                   </div>
                   {targetUserForCenter && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
@@ -1240,7 +892,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>
-                                {targetUserForCenter.specialId && <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} />}
+                                {targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
@@ -1263,7 +915,9 @@ export default function AdminPage() {
             <TabsContent value="id-ban" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600"><Gavel className="h-6 w-6" /> Supreme ID Ban Protocol</CardTitle>
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600">
+                        <Gavel className="h-6 w-6" /> Supreme ID Ban Protocol
+                     </CardTitle>
                      <CardDescription>Exclude members from the entire Ummy frequency network. Enter high-precision temporal offsets.</CardDescription>
                   </CardHeader>
                   
@@ -1271,10 +925,6 @@ export default function AdminPage() {
                      <div className="flex gap-4">
                         <Input placeholder="Enter Target ID..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate ID</Button>
-                     </div>
-                     <div className="flex gap-4">
-                        <Input placeholder="Enter Username..." value={banSearchName} onChange={(e) => setBanSearchName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch('name', banSearchName, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 border-2 font-black uppercase italic" disabled={isSearchingBan}>Locate Name</Button>
                      </div>
                   </div>
 
@@ -1285,7 +935,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p>
-                                {targetUserForBan.specialId && <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} />}
+                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForBan.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
@@ -1355,87 +1005,6 @@ export default function AdminPage() {
                        )}
                     </div>
                   )}
-               </Card>
-            </TabsContent>
-
-            <TabsContent value="game-results" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-500">
-                        <Dices className="h-6 w-6" /> Oracle Sync (Manual Control)
-                     </CardTitle>
-                     <CardDescription>Select the winner of upcoming tribal game frequencies. Manual override syncs in real-time.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between">
-                           <h4 className="font-black uppercase italic text-sm text-slate-900">Roulette Sync</h4>
-                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                           <Input 
-                             placeholder="Num (0-36)" 
-                             value={oracleRoulette} 
-                             onChange={(e) => setOracleRoulette(e.target.value.replace(/\D/g, ''))}
-                             className="h-12 rounded-xl text-center font-black italic text-lg" 
-                           />
-                           <Button 
-                             onClick={() => handleSetOracle('roulette', parseInt(oracleRoulette))}
-                             disabled={isSyncingOracle === 'roulette' || !oracleRoulette}
-                             className="bg-black text-white rounded-xl h-12 px-6"
-                           >
-                              {isSyncingOracle === 'roulette' ? <Loader className="animate-spin h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-                           </Button>
-                        </div>
-                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'roulette')?.forcedResult ?? 'None'}</p>
-                     </div>
-
-                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between">
-                           <h4 className="font-black uppercase italic text-sm text-slate-900">Lion Fight Sync</h4>
-                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'TIGER')} className="text-[8px] font-black border-blue-200 text-blue-600">🐯 TIGER</Button>
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'TIE')} className="text-[8px] font-black border-purple-200 text-purple-600">🤝 TIE</Button>
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('lion-fight', 'LION')} className="text-[8px] font-black border-pink-200 text-pink-600">🦁 LION</Button>
-                        </div>
-                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'lion-fight')?.forcedResult ?? 'None'}</p>
-                     </div>
-
-                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between">
-                           <h4 className="font-black uppercase italic text-sm text-slate-900">Teen Patti Sync</h4>
-                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'WOLF')} className="text-[8px] font-black border-blue-200 text-blue-600">🐺 WOLF</Button>
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'LION')} className="text-[8px] font-black border-yellow-200 text-yellow-600">🦁 LION</Button>
-                           <Button variant="outline" size="sm" onClick={() => handleSetOracle('teen-patti', 'FISH')} className="text-[8px] font-black border-cyan-200 text-cyan-600">🐟 FISH</Button>
-                        </div>
-                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'teen-patti')?.forcedResult ?? 'None'}</p>
-                     </div>
-
-                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between">
-                           <h4 className="font-black uppercase italic text-sm text-slate-900">Wild Party Sync</h4>
-                           <Badge className="bg-pink-500 text-white font-black text-[8px] uppercase px-2 py-0.5">Manual Control</Badge>
-                        </div>
-                        <Select onValueChange={(val) => handleSetOracle('wild-party', val)}>
-                           <SelectTrigger className="h-12 rounded-xl italic font-black">
-                              <SelectValue placeholder="Select Winner" />
-                           </SelectTrigger>
-                           <SelectContent className="font-black italic">
-                              <SelectItem value="lion">🦁 Lion x45</SelectItem>
-                              <SelectItem value="tiger">🐯 Tiger x25</SelectItem>
-                              <SelectItem value="elephant">🐘 Elephant x15</SelectItem>
-                              <SelectItem value="rhino">🦏 Rhino x10</SelectItem>
-                              <SelectItem value="fox">🦊 Fox x5</SelectItem>
-                           </SelectContent>
-                        </Select>
-                        <p className="text-[8px] font-black uppercase text-gray-400">Current Force: {oracleData?.find(d => d.id === 'wild-party')?.forcedResult ?? 'None'}</p>
-                     </div>
-                  </CardContent>
                </Card>
             </TabsContent>
 
@@ -1576,7 +1145,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
-                        <Input placeholder="Enter Recipient I'd..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder="Enter Recipient ID..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find ID</Button>
                      </div>
                   </div>
@@ -1584,7 +1153,10 @@ export default function AdminPage() {
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
                        <div className="flex items-center gap-4 border-b pb-6">
                           <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar>
-                          <div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>{targetUserForDm.specialId && <SpecialIdBadge id={targetUserForDm.specialId} color={targetUserForDm.specialIdColor} />}</div>
+                          <div>
+                             <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForDm.username}</p>
+                             {targetUserForDm.specialId ? <SpecialIdBadge id={targetUserForDm.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForDm.accountNumber}</span>}
+                          </div>
                        </div>
                        <div className="space-y-4">
                           <Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl border-2 text-lg font-black italic" />
@@ -1603,14 +1175,35 @@ export default function AdminPage() {
                   <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Gamepad2 className="h-6 w-6" /> Game Identity Sync</CardTitle><CardDescription>Synchronize visuals for the 3D Tribe Arena.</CardDescription></CardHeader>
                   <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                      {gamesList.map((game) => (
-                       <Card key={game.slug} className="rounded-3xl overflow-hidden border-2 shadow-sm bg-white">
-                          <div className="relative aspect-square flex items-center justify-center bg-slate-50">{game.coverUrl ? <Image src={game.coverUrl} alt={game.title} fill unoptimized className="object-cover" /> : <Gamepad2 className="h-12 w-12 text-slate-200" />}{isUploadingGameDP && selectedGameForDP?.slug === game.slug && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="h-8 w-8 animate-spin text-white" /></div>}</div>
-                          <CardHeader className="p-4 text-center"><CardTitle className="text-sm font-black uppercase italic text-slate-900">{game.title}</CardTitle><Button onClick={() => handleGameDPUploadClick(game)} className="w-full mt-2 h-10 rounded-2xl bg-primary text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameDP}><Camera className="h-3 w-3 mr-2" /> Sync DP</Button></CardHeader>
+                       <Card key={game.slug} className="rounded-3xl overflow-hidden border-2 shadow-sm bg-white flex flex-col">
+                          <div className="relative aspect-square flex items-center justify-center bg-slate-50">
+                             {game.coverUrl ? <Image src={game.coverUrl} alt={game.title} fill unoptimized className="object-cover" /> : <Gamepad2 className="h-12 w-12 text-slate-200" />}
+                             {isUploadingGameDP && selectedGameForSync?.slug === game.slug && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="h-8 w-8 animate-spin text-white" /></div>}
+                          </div>
+                          <div className="p-4 flex-1 flex flex-col gap-3">
+                             <CardTitle className="text-sm font-black uppercase italic text-slate-900 text-center">{game.title}</CardTitle>
+                             <div className="flex flex-col gap-2">
+                                <Button onClick={() => handleGameDPUploadClick(game)} className="w-full h-10 rounded-2xl bg-primary text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameDP}>
+                                   <Camera className="h-3 w-3 mr-2" /> Sync Cover (DP)
+                                </Button>
+                                <Button onClick={() => handleGameBGUploadClick(game)} className="w-full h-10 rounded-2xl bg-indigo-600 text-white font-black uppercase text-[10px] italic shadow-lg" disabled={isUploadingGameBG}>
+                                   <Monitor className="h-3 w-3 mr-2" /> Sync Theme (BG)
+                                </Button>
+                             </div>
+                             {game.backgroundUrl && (
+                               <div className="mt-2 text-center">
+                                  <p className="text-[8px] font-black text-green-600 uppercase tracking-widest flex items-center justify-center gap-1">
+                                     <CheckCircle2 className="h-2 w-2" /> Custom Theme Active
+                                  </p>
+                               </div>
+                             )}
+                          </div>
                        </Card>
                      ))}
                   </CardContent>
                </Card>
                <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
+               <input type="file" ref={gameBGFileInputRef} className="hidden" accept="image/*" onChange={handleGameBGFileChange} />
             </TabsContent>
 
             <TabsContent value="tags" className="m-0 space-y-6">
@@ -1625,7 +1218,13 @@ export default function AdminPage() {
                   {targetUserForTags && (
                     <div className="mt-10 p-6 border-2 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 bg-slate-50/30">
                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>{targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} color={targetUserForTags.specialIdColor} /> : <p className="text-[10px] font-bold text-muted-foreground uppercase">ID:{targetUserForTags.id.slice(0, 6)}</p>}</div></div>
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForTags.username}</p>
+                                {targetUserForTags.specialId ? <SpecialIdBadge id={targetUserForTags.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForTags.accountNumber}</span>}
+                             </div>
+                          </div>
                           {targetUserForTags.tags?.includes('Official') && <OfficialTag />}
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1641,17 +1240,29 @@ export default function AdminPage() {
 
             <TabsContent value="special-id" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6 text-primary" /> Manage Special I'd</CardTitle></CardHeader>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6 text-primary" /> Manage Special ID</CardTitle></CardHeader>
                   <div className="flex gap-4">
-                     <Input placeholder="Enter Current I'd..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
+                     <Input placeholder="Enter Current ID..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl border-2" />
                      <Button onClick={() => handleGenericSearch('id', idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForId && (
                     <div className="mt-10 p-6 border-2 rounded-[2rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/30">
-                       <div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p><div className="mt-1">{targetUserForId.specialId ? <div className="flex items-center gap-2"><span className="text-[10px] uppercase text-gray-400">Current:</span><SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} /></div> : <p className="text-[10px] font-bold text-muted-foreground uppercase">Current Signature: None</p>}</div></div></div>
+                       <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar>
+                          <div>
+                             <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForId.username}</p>
+                             <div className="mt-1">
+                                {targetUserForId.specialId ? (
+                                  <div className="flex items-center gap-2"><span className="text-[10px] uppercase text-gray-400">Current:</span><SpecialIdBadge id={targetUserForId.specialId} color={targetUserForId.specialIdColor} /></div>
+                                ) : (
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account: {targetUserForId.accountNumber}</p>
+                                )}
+                             </div>
+                          </div>
+                       </div>
                        <div className="space-y-6">
                           <div className="flex gap-4 ml-2"><button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center", selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}</button><button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button></div>
-                          <div className="flex gap-2"><Input placeholder="Enter New Numeric I'd" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
+                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
                        </div>
                     </div>
                   )}
@@ -1662,19 +1273,24 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
-                     <Input placeholder="Recipient I'd..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                     <Input placeholder="Recipient ID..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
+                     <Button onClick={handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
-                       <div className="flex items-center gap-4 border-b pb-6"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForRewards.username}</p>{targetUserForRewards.specialId && <SpecialIdBadge id={targetUserForRewards.specialId} color={targetUserForRewards.specialIdColor} />}</div></div>
+                       <div className="flex items-center gap-4 border-b pb-6">
+                          <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar>
+                          <div>
+                             <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForRewards.username}</p>
+                             {targetUserForRewards.specialId ? <SpecialIdBadge id={targetUserForRewards.specialId} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRewards.accountNumber}</span>}
+                          </div>
+                       </div>
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                           <div className="space-y-4"><div className="flex items-center gap-2 text-primary"><GoldCoinIcon className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Coin Frequency</h4></div><div className="flex gap-2"><Input placeholder="Volume..." value={coinDispatchAmount} onChange={(e) => setCoinDispatchAmount(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-lg font-black italic" /><Button onClick={handleDispatchCoins} disabled={isDispatching} className="h-14 px-8 bg-primary text-white rounded-2xl"><Send className="h-5 w-5" /></Button></div></div>
-                          <div className="space-y-4"><div className="flex items-center gap-2 text-purple-500"><Star className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Sync Elite Frames</h4></div><div className="flex flex-wrap gap-2">{DISPATCH_ASSETS.frames.map(frame => (<Button key={frame.id} variant="outline" size="sm" onClick={() => handleDispatchItem(frame.id, 'ownedItems')} className="h-10 text-[8px] font-black uppercase rounded-xl">{frame.name}</Button>))}</div></div>
+                          <div className="space-y-4"><div className="flex items-center gap-2 text-purple-500"><Star className="h-5 w-5" /><h4 className="font-black uppercase italic text-sm">Sync Elite Frames</h4></div><div className="flex flex-wrap gap-2">{DISPATCH_ASSETS.frames.map(frame => (<Button key={frame.id} variant="outline" size="sm" onClick={() => handleDispatchItem(frame.id as any, 'ownedItems')} className="h-10 text-[8px] font-black uppercase rounded-xl">{frame.name}</Button>))}</div></div>
                        </div>
                     </div>
                   )}
-                  <div className="mt-20 pt-10 border-t flex flex-col items-center gap-6"><Button onClick={handleDistributeDailyRewards} disabled={isSaving} className="w-full max-w-md h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase italic text-lg shadow-xl">{isSaving ? <Loader className="animate-spin mr-2" /> : <Gift className="mr-2" />} Distribute & Reset All</Button></div>
                </Card>
             </TabsContent>
           </div>
