@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState, useMemo } from 'react';
@@ -32,11 +33,16 @@ import {
   Target,
   Trophy,
   Mail,
-  Gem
+  Gem,
+  Info,
+  LogOut,
+  UserX,
+  BadgeCheck,
+  Trash2
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -49,7 +55,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
-import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +65,9 @@ import {
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
+import { Card } from '@/components/ui/card';
+import { signOut } from 'firebase/auth';
+import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -102,6 +111,24 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
   </button>
 );
 
+const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
+  <button 
+    onClick={onClick}
+    className="w-full flex items-center justify-between py-5 border-b border-gray-50 last:border-0 px-2 hover:bg-gray-50 active:bg-gray-100 transition-all text-left"
+  >
+    <div className="flex items-center gap-4">
+      <div className={cn("p-2 rounded-2xl", iconColor || "bg-slate-100 text-slate-600")}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className={cn("font-black text-sm uppercase italic tracking-tight", destructive ? "text-red-500" : "text-gray-800")}>{label}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      {extra && <span className="text-[10px] font-black text-gray-400 italic uppercase">{extra}</span>}
+      <ChevronRight className="h-4 w-4 text-gray-300" />
+    </div>
+  </button>
+);
+
 /**
  * Public Profile View.
  */
@@ -112,7 +139,6 @@ const PublicProfileView = ({
   followData, 
   isProcessingFollow,
   onOpenSocial,
-  topContributors
 }: { 
   profile: any, 
   onBack: () => void, 
@@ -120,7 +146,6 @@ const PublicProfileView = ({
   followData: any, 
   isProcessingFollow: boolean,
   onOpenSocial: (tab: any) => void,
-  topContributors: any[] | null
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -247,6 +272,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
@@ -280,6 +306,39 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
+
+  const handleLogout = async () => {
+    if (!auth || !currentUser || !firestore) return;
+    try {
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      const currentRoomId = userSnap.data()?.currentRoomId;
+      const batch = writeBatch(firestore);
+      batch.update(userRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
+      batch.update(profileRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
+      if (currentRoomId) {
+        const roomRef = doc(firestore, 'chatRooms', currentRoomId);
+        const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', currentUser.uid);
+        batch.delete(participantRef);
+        batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+      }
+      await batch.commit();
+      await signOut(auth);
+      window.location.href = '/login';
+    } catch (error: any) {
+      await signOut(auth);
+      window.location.href = '/login';
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone and all your tribal assets will be lost.")) {
+      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review. Contact support.' });
+    }
+  };
+
+  const isCertifiedSeller = profile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -400,7 +459,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           {/* VIP Premium Promotional Portal */}
-          <div className="px-6 space-y-4 pb-24">
+          <div className="px-6 space-y-4 mb-8">
              <div className="relative rounded-[2.5rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-40 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-start relative">
                    <div className="flex items-center gap-3 relative z-10">
@@ -417,6 +476,32 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
              </div>
           </div>
+
+          {/* New Tribal Menu Sections */}
+          <div className="px-6 space-y-6 pb-24">
+             {/* General Resources Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered', description: 'Referral link dispatched.' })} />
+                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                {isCertifiedSeller && (
+                  <SellerTransferDialog />
+                )}
+             </Card>
+
+             {/* Support & About Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
+             </Card>
+
+             {/* System & Security Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
+                <ProfileMenuItem icon={LogOut} label="Log out" iconColor="bg-red-50 text-red-500" onClick={handleLogout} destructive />
+                <ProfileMenuItem icon={UserX} label="Delete account" iconColor="bg-red-50 text-red-500" onClick={handleDeleteAccount} destructive />
+             </Card>
+          </div>
         </div>
 
         <SocialRelationsDialog 
@@ -432,7 +517,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <AppLayout hideSidebarOnMobile>
-       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} topContributors={null} />
+       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
   );
