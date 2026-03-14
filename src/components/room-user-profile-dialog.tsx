@@ -140,8 +140,9 @@ export function RoomUserProfileDialog({
     router.push(`/profile/${userId}`);
   };
 
+  // IDENTITY SIGNATURE SYNC: Strictly from profile tags ledger
   const isOfficial = profile?.tags?.includes('Official');
-  const isSeller = profile?.tags?.includes('Seller') || profile?.tags?.includes('Coin Seller');
+  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
 
@@ -217,12 +218,12 @@ export function RoomUserProfileDialog({
             <div className="w-full flex items-center justify-between px-10 mb-6">
                <button className="flex items-center gap-2 group active:scale-95 transition-transform">
                   <Heart className="h-6 w-6 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
-                  <span className="text-sm font-black text-pink-500 uppercase">Follow</span>
+                  <span className="font-black text-[10px] uppercase text-pink-500">Follow</span>
                </button>
 
                <button className="flex items-center gap-2 group active:scale-95 transition-transform">
                   <MessageSquare className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
-                  <span className="text-sm font-black text-gray-800 uppercase">Chat</span>
+                  <span className="font-black text-[10px] uppercase text-gray-800">Chat</span>
                </button>
 
                <button 

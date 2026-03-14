@@ -70,7 +70,6 @@ export function ProfileInitializer() {
           }
 
           // Generate a non-sequential but unique 8-digit step
-          // Adding a random step between 1000 and 9999 makes the IDs look "different" as requested
           const randomStep = Math.floor(Math.random() * 9000) + 1000; 
           const newAccCounter = nextAccBase + randomStep;
           const accountNumber = String(newAccCounter);
@@ -91,7 +90,7 @@ export function ProfileInitializer() {
             inventory: { ownedItems: [], activeFrame: 'f5', activeBubble: 'Default' },
             stats: { followers: 0, fans: 0, dailyFans: 0, friends: 0, following: 0 },
             level: { rich: 1, charm: 1 },
-            tags: ['Tribe Member'], 
+            tags: [], // START CLEAN: Only admin provided tags will show
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           };
