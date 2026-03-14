@@ -88,15 +88,60 @@ import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
+/**
+ * High-Fidelity Media Volume Router.
+ * Uses AudioContext to force audio output to the "Media" channel.
+ * Ensures headsets work correctly and volume is controlled via media slider.
+ */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const contextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+
   useEffect(() => {
+    if (!stream) return;
+
+    // 1. Initialize High-Fidelity AudioContext
+    if (!contextRef.current) {
+      contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const ctx = contextRef.current;
+
+    // 2. Connect Remote Frequency to Context
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+    }
+    
+    sourceRef.current = ctx.createMediaStreamSource(stream);
+    gainRef.current = ctx.createGain();
+    
+    sourceRef.current.connect(gainRef.current);
+    gainRef.current.connect(ctx.destination);
+
+    // 3. Sync Mute State
+    gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
+
+    // 4. Autoplay Handshake
+    if (ctx.state === 'suspended') {
+      const resume = () => ctx.resume().catch(() => {});
+      window.addEventListener('click', resume, { once: true });
+      window.addEventListener('touchstart', resume, { once: true });
+    }
+
+    // 5. Standard Tag Fallback (Kept muted to maintain WebRTC lifecycle)
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
-      audioRef.current.muted = muted;
+      audioRef.current.muted = true;
       audioRef.current.play().catch(() => {});
     }
+
+    return () => {
+      if (sourceRef.current) sourceRef.current.disconnect();
+      if (gainRef.current) gainRef.current.disconnect();
+    };
   }, [stream, muted]);
+
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 
@@ -482,7 +527,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
            <div className="w-full flex justify-center gap-4 px-4">
               {[2, 3, 4, 5].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === 4)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
            <div className="w-full flex justify-center gap-4 px-4">

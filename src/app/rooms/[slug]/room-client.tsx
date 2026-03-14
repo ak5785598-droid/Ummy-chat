@@ -27,7 +27,8 @@ import {
   Plus,
   SmilePlus,
   MessageSquare,
-  Trophy
+  Trophy,
+  Megaphone
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -87,15 +88,60 @@ import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
+/**
+ * High-Fidelity Media Volume Router.
+ * Uses AudioContext to force audio output to the "Media" channel.
+ * Ensures headsets work correctly and volume is controlled via media slider.
+ */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const contextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+
   useEffect(() => {
+    if (!stream) return;
+
+    // 1. Initialize High-Fidelity AudioContext
+    if (!contextRef.current) {
+      contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const ctx = contextRef.current;
+
+    // 2. Connect Remote Frequency to Context
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+    }
+    
+    sourceRef.current = ctx.createMediaStreamSource(stream);
+    gainRef.current = ctx.createGain();
+    
+    sourceRef.current.connect(gainRef.current);
+    gainRef.current.connect(ctx.destination);
+
+    // 3. Sync Mute State
+    gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
+
+    // 4. Autoplay Handshake
+    if (ctx.state === 'suspended') {
+      const resume = () => ctx.resume().catch(() => {});
+      window.addEventListener('click', resume, { once: true });
+      window.addEventListener('touchstart', resume, { once: true });
+    }
+
+    // 5. Standard Tag Fallback (Kept muted to maintain WebRTC lifecycle)
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
-      audioRef.current.muted = muted;
+      audioRef.current.muted = true;
       audioRef.current.play().catch(() => {});
     }
+
+    return () => {
+      if (sourceRef.current) sourceRef.current.disconnect();
+      if (gainRef.current) gainRef.current.disconnect();
+    };
   }, [stream, muted]);
+
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 
@@ -175,6 +221,10 @@ export function RoomClient({ room }: { room: Room }) {
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
+  // Music Streaming State
+  const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
+  const musicAudioRef = useRef<HTMLAudioElement>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -230,12 +280,11 @@ export function RoomClient({ room }: { room: Room }) {
     if (!participantsData) return [];
     if (now === null) return participantsData;
 
-    // HIGH-FIDELITY PRESENCE FILTER: strictly 45s threshold
     return participantsData.filter(p => {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
-      return (now - lastSeen) < 45000;
+      return (now - lastSeen) < 65000;
     });
   }, [participantsData, now, currentUser?.uid]);
 
@@ -243,7 +292,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true);
+  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -377,6 +426,24 @@ export function RoomClient({ room }: { room: Room }) {
     setShowInput(true);
   };
 
+  const handlePlayLocalMusic = (file: File) => {
+    if (musicAudioRef.current) {
+      const url = URL.createObjectURL(file);
+      musicAudioRef.current.src = url;
+      musicAudioRef.current.play().catch(e => {
+        console.warn('[Music Sync] Play failed:', e);
+        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
+      });
+      
+      // Capture stream from audio element for WebRTC broadcasting
+      // @ts-ignore
+      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+      if (stream) {
+        setMusicStream(stream);
+      }
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
@@ -390,6 +457,9 @@ export function RoomClient({ room }: { room: Room }) {
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
       
+      {/* Hidden high-fidelity audio engine for local music sync */}
+      <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
+
       <div className="absolute inset-0 z-0">
         <Image 
           key={`${room.roomThemeId}`} 
@@ -469,6 +539,20 @@ export function RoomClient({ room }: { room: Room }) {
               {[10, 11, 12, 13].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
+           </div>
+
+           {/* High-Fidelity Announcement Sync Bar */}
+           <div className="w-full max-w-sm px-6 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <div className="bg-yellow-400/10 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-3 flex items-center gap-3 shadow-xl">
+                 <div className="bg-yellow-400 p-1.5 rounded-lg shadow-lg">
+                    <Megaphone className="h-3.5 w-3.5 text-black fill-current" />
+                 </div>
+                 <div className="flex-1 overflow-hidden">
+                    <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-wide truncate">
+                       {room.announcement || "Welcome to the frequency! Enjoy the vibe."}
+                    </p>
+                 </div>
+              </div>
            </div>
         </div>
 
@@ -576,6 +660,7 @@ export function RoomClient({ room }: { room: Room }) {
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
+        onPlayLocalMusic={handlePlayLocalMusic}
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
