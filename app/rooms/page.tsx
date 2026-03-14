@@ -99,24 +99,28 @@ export default function RoomsPage() {
           </button>
         </section>
 
-        {/* Sub-Category Navigation: Custom Tabs Scroll */}
+        {/* Sub-Category Navigation: Glossy Lavender Tabs Scroll */}
         <div className="px-6 mb-6">
-          <div className="flex items-center gap-8 overflow-x-auto no-scrollbar pb-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={cn(
-                  "text-[16px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap relative",
-                  activeCategory === cat ? "text-slate-900 scale-110" : "text-slate-400"
-                )}
-              >
-                {cat}
-                {activeCategory === cat && (
-                  <div className="absolute -bottom-2 left-0 right-0 h-1 bg-slate-900 rounded-full" />
-                )}
-              </button>
-            ))}
+          <div className="relative bg-gradient-to-br from-purple-100/80 to-purple-50/80 backdrop-blur-md rounded-2xl border-2 border-white p-1 shadow-lg overflow-hidden group">
+            {/* Glossy Shine Handshake */}
+            <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-10" />
+            
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar relative z-20">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                    "flex-1 px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap",
+                    activeCategory === cat 
+                      ? "bg-white text-purple-600 shadow-sm scale-[1.02]" 
+                      : "text-purple-400/70 hover:text-purple-500"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
