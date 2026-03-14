@@ -72,6 +72,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
     if (type === 'rich') return item.wallet?.dailySpent || 0;
     if (type === 'charm') return item.stats?.dailyFans || 0;
     if (type === 'rooms') return item.stats?.dailyGifts || 0;
+    if (type === 'games') return item.stats?.dailyGameWins || 0;
     return 0;
   };
 
@@ -222,7 +223,7 @@ const BannerDisplay = () => {
          const Icon = ICON_MAP[slide.iconName] || Sparkles;
          return (
            <div key={idx} className="relative h-32 w-full rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black group active:scale-[0.98] transition-all">
-              <Image src={slide.imageUrl || 'https://picsum.photos/seed/promo/800/200'} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
+              <Image src={slide.imageUrl || 'https://picsum.photos/seed/promo/800/200'} alt={slide.title} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" unoptimized />
               <div className={cn("absolute inset-0 bg-gradient-to-r via-transparent to-transparent flex flex-col justify-center px-8", slide.color || "from-black/40")}>
                  <div className="flex items-center gap-2 mb-1">
                     <Icon className="h-5 w-5 text-white animate-pulse" />
@@ -245,7 +246,7 @@ function LeaderboardContent() {
   const firestore = useFirestore();
   const { userProfile: me } = useUserProfile(user?.uid);
   
-  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'banner'>(initialType);
+  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [mounted, setMounted] = useState(false);
 
@@ -255,10 +256,12 @@ function LeaderboardContent() {
   const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
   const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50)), [firestore]);
   const roomsQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]);
+  const gamesQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50)), [firestore]);
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
   const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
+  const { data: gameUsers, isLoading: isLoadingGames } = useCollection(gamesQuery);
 
   const rankingsConfigRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'rankings'), [firestore]);
   const { data: rankingsConfig } = useDoc(rankingsConfigRef);
@@ -267,16 +270,18 @@ function LeaderboardContent() {
     if (rankingType === 'rich') return richUsers;
     if (rankingType === 'charm') return charmUsers;
     if (rankingType === 'rooms') return rankedRooms;
+    if (rankingType === 'games') return gameUsers;
     return null;
-  }, [rankingType, richUsers, charmUsers, rankedRooms]);
+  }, [rankingType, richUsers, charmUsers, rankedRooms, gameUsers]);
 
-  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
+  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'rooms' ? isLoadingRooms : isLoadingGames;
 
   // Visual Sync: Category-to-Config key mapping for Dynamic Backgrounds
   const currentBG = useMemo(() => {
     if (rankingType === 'rich') return rankingsConfig?.honor;
     if (rankingType === 'charm') return rankingsConfig?.charm;
     if (rankingType === 'rooms') return rankingsConfig?.room;
+    if (rankingType === 'games') return rankingsConfig?.arena;
     return null;
   }, [rankingType, rankingsConfig]);
 
@@ -312,6 +317,7 @@ function LeaderboardContent() {
                     <p>1. Honor rankings are based on the total Gold Coins spent during the selected period.</p>
                     <p>2. Charm rankings reflect the increase in fan count during the period.</p>
                     <p>3. Room rankings track the total gifts received in specific frequencies.</p>
+                    <p>4. Game rankings track successful frequencies in the 3D Tribe Arena.</p>
                   </div>
                 </DialogContent>
              </Dialog>
@@ -322,7 +328,7 @@ function LeaderboardContent() {
                { id: 'rich', label: 'Honor' },
                { id: 'charm', label: 'Charm' },
                { id: 'rooms', label: 'Room' },
-               { id: 'banner', label: 'Banner' }
+               { id: 'games', label: 'Game' }
              ].map((cat) => (
                <button 
                  key={cat.id} 
@@ -337,31 +343,25 @@ function LeaderboardContent() {
              ))}
           </div>
 
-          {rankingType !== 'banner' && (
-            <div className="flex items-center justify-center gap-10 px-4">
-               {['Daily', 'Weekly', 'Monthly'].map((p) => (
-                 <button 
-                   key={p} 
-                   onClick={() => setTimePeriod(p.toLowerCase() as any)} 
-                   className={cn(
-                     "text-[11px] font-black uppercase italic transition-all relative", 
-                     timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
-                   )}
-                 >
-                   {p}
-                   {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
-                 </button>
-               ))}
-            </div>
-          )}
+          <div className="flex items-center justify-center gap-10 px-4">
+             {['Daily', 'Weekly', 'Monthly'].map((p) => (
+               <button 
+                 key={p} 
+                 onClick={() => setTimePeriod(p.toLowerCase() as any)} 
+                 className={cn(
+                   "text-[11px] font-black uppercase italic transition-all relative", 
+                   timePeriod === p.toLowerCase() ? "text-yellow-500 scale-110" : "text-white/20 hover:text-white/40"
+                 )}
+               >
+                 {p}
+                 {timePeriod === p.toLowerCase() && <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-yellow-500 rounded-full" />}
+               </button>
+             ))}
+          </div>
         </header>
 
         <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-2">
-           {rankingType === 'banner' ? (
-             <BannerDisplay />
-           ) : (
-             <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
-           )}
+           <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
         </main>
 
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-3 h-16 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
