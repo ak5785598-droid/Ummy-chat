@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Gamepad2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -151,11 +151,17 @@ export default function RoomsPage() {
                    </div>
                 </div>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
-                   <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
+              <button 
+                onClick={() => router.push('/games')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
+                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Game</span>
+                   <div className="relative z-10 group-hover:scale-110 transition-transform">
+                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                   </div>
                 </div>
               </button>
               <button 
