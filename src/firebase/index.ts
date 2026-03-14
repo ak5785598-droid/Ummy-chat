@@ -3,8 +3,13 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+
+/**
+ * Global instance variable to ensure Firestore is only initialized once with the correct settings.
+ */
+let firestoreInstance: Firestore | null = null;
 
 /**
  * PRODUCTION FIREBASE INITIALIZATION
@@ -12,26 +17,40 @@ import { getStorage } from 'firebase/storage';
  * Utilizes the default bucket from the app config for maximum reliability.
  */
 export function initializeFirebase() {
+  let app: FirebaseApp;
   if (!getApps().length) {
-    const firebaseApp = initializeApp(firebaseConfig);
-    return getSdks(firebaseApp);
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
   }
 
-  return getSdks(getApp());
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  console.log(`[Firebase Init] Initializing services for project: ${firebaseConfig.projectId}`);
+  console.log(`[Firebase Init] Synchronizing services for project: ${firebaseConfig.projectId}`);
   
-  // CRITICAL: Switched to Force Long Polling for extreme network resilience.
-  // This resolves the "Could not reach Cloud Firestore backend" timeout errors by ensuring
-  // consistent connectivity in proxy or cloud-based development environments.
+  if (!firestoreInstance) {
+    try {
+      // CRITICAL: Switched to Force Long Polling for extreme network resilience.
+      // This resolves the "Could not reach Cloud Firestore backend" timeout errors by ensuring
+      // consistent connectivity in proxy or cloud-based development environments.
+      // experimentalAutoDetectLongPolling is added for additional fallback capability.
+      firestoreInstance = initializeFirestore(firebaseApp, {
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: true,
+      });
+      console.log('[Firebase Init] Firestore synchronized with Long-Polling protocol.');
+    } catch (error) {
+      console.warn('[Firebase Init] Firestore already established, retrieving existing instance.');
+      firestoreInstance = getFirestore(firebaseApp);
+    }
+  }
+
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: initializeFirestore(firebaseApp, {
-      experimentalForceLongPolling: true,
-    }),
+    firestore: firestoreInstance,
     // Using the default bucket from the initialized app is the most stable protocol.
     storage: getStorage(firebaseApp)
   };
