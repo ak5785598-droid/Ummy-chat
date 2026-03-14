@@ -15,11 +15,8 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Matches the requested visual:
- * - Rounded visual container (4/5 aspect).
- * - Upper overlays: Official Tag, Level Badge, Flag.
- * - Bottom Identity Pill: Host avatar and name.
- * - Info stack below: Title and Description.
+ * Re-engineered for Identity Color Sync: The room name now adopts 
+ * a gradient signature synchronized with its theme and DP vibe.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room.ownerId);
@@ -27,6 +24,27 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const roomTitle = room.name || room.title || 'Frequency';
   const roomTopic = room.description || room.topic || 'Synchronizing...';
   const ownerName = owner?.username || 'Tribe Member';
+
+  /**
+   * IDENTITY COLOR SYNC ENGINE
+   * Returns a gradient signature based on the room's dynamic identity metadata.
+   */
+  const getSyncGradient = () => {
+    const themeId = room.roomThemeId;
+    const category = room.category?.toLowerCase();
+
+    // High-Tier Theme Logic
+    if (themeId === 'official_ummy') return 'from-yellow-500 via-amber-500 to-orange-600';
+    if (themeId === 'gaming_arcade' || category === 'games') return 'from-blue-500 via-cyan-500 to-indigo-500';
+    if (themeId === 'neon_universe' || category === 'party') return 'from-purple-500 via-pink-500 to-rose-500';
+    if (themeId === 'emoji_party') return 'from-orange-400 via-yellow-500 to-amber-500';
+    
+    // Category Fallback Logic
+    if (category === 'chat') return 'from-sky-500 to-blue-600';
+    if (category === 'newcomers') return 'from-emerald-500 to-teal-400';
+
+    return 'from-slate-900 to-slate-700';
+  };
 
   if (variant === 'modern') {
     return (
@@ -80,9 +98,14 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 via-black/10 to-transparent z-10" />
           </div>
           
-          {/* Metadata Section: Positioned below visual */}
+          {/* Metadata Section: IDENTITY SYNCED ROOM NAME */}
           <div className="space-y-0.5 px-2 min-w-0">
-            <h3 className="font-black text-sm text-slate-900 truncate uppercase tracking-tight leading-none">{roomTitle}</h3>
+            <h3 className={cn(
+              "font-black text-sm truncate uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r",
+              getSyncGradient()
+            )}>
+              {roomTitle}
+            </h3>
             <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest opacity-80">{roomTopic}</p>
           </div>
         </div>
@@ -99,7 +122,12 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           )}
         </div>
         <div className="p-3">
-          <h3 className="font-bold text-slate-900 truncate uppercase text-sm">{roomTitle}</h3>
+          <h3 className={cn(
+            "font-black truncate uppercase text-sm bg-clip-text text-transparent bg-gradient-to-r",
+            getSyncGradient()
+          )}>
+            {roomTitle}
+          </h3>
         </div>
       </div>
     </Link>
