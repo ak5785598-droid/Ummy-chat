@@ -153,7 +153,7 @@ export default function RoomsPage() {
               </button>
               <button className="flex flex-col items-center gap-2 group">
                 <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
                    <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
                 </div>

@@ -143,8 +143,8 @@ export default function RoomsPage() {
                 className="flex flex-col items-center gap-2 group"
               >
                 <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-1000" />
+                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-1000" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Rich</span>
                    <div className="relative z-10 group-hover:scale-110 transition-transform">
                       <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
@@ -153,16 +153,22 @@ export default function RoomsPage() {
               </button>
               <button className="flex flex-col items-center gap-2 group">
                 <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
                    <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
                 </div>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-blue-400 to-indigo-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Speed</span>
-                   <div className="text-3xl drop-shadow-2xl group-hover:scale-110 transition-transform">🚀</div>
+              <button 
+                onClick={() => router.push('/cp-challenge')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
+                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Cp</span>
+                   <div className="relative z-10 group-hover:scale-110 transition-transform">
+                      <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                   </div>
                 </div>
               </button>
             </section>
