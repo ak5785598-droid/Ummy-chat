@@ -348,8 +348,8 @@ export function RoomClient({ room }: { room: Room }) {
       
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
     setActiveRoom(null); 
     router.push('/rooms'); 
@@ -473,16 +473,6 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* Persistent Visual Sync for Room Announcement */}
-      <div className="absolute top-2 left-4 z-[100] flex items-center gap-2 pointer-events-none">
-         <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
-         <div className="max-w-[200px] overflow-hidden">
-            <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md truncate">
-               {room.announcement || "Welcome to the frequency!"}
-            </p>
-         </div>
-      </div>
-
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3 ml-12">
           <div className="relative">
@@ -550,6 +540,16 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
+
+           {/* Repositioned Central Announcement Sync */}
+           <div className="mt-4 flex items-center justify-center gap-2 px-6 w-full animate-in fade-in duration-1000">
+              <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
+              <div className="max-w-[80%]">
+                 <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-center leading-relaxed">
+                    {room.announcement || "Welcome to the frequency!"}
+                 </p>
+              </div>
+           </div>
         </div>
 
         <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-4 pb-0">
@@ -567,7 +567,7 @@ export function RoomClient({ room }: { room: Room }) {
                       <Avatar className="h-6 w-6 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
+                        <p className="text-[11px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
                       </div>
                    </div>
                  ))}
