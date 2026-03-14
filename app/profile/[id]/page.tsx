@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, use, useState, useMemo } from 'react';
@@ -75,8 +74,18 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
  * High-Fidelity Identity Signature Components
  */
 const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30 shadow-sm shrink-0">
-    <span className="text-[10px] font-black text-gray-600">Lv.{level}</span>
+  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden">
+    <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+    <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+    <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
+  </div>
+);
+
+const CharmLevelBadge = ({ level }: { level: number }) => (
+  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden">
+    <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+    <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+    <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
   </div>
 );
 
@@ -128,6 +137,22 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
     </div>
   </button>
 );
+
+const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | null }) => {
+  const theme = color === 'blue' 
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]";
+
+  return (
+    <div className={cn(
+      "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
+      theme
+    )}>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+    </div>
+  );
+};
 
 /**
  * Public Profile View.
@@ -199,16 +224,21 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2 mb-2 flex-wrap">
+               <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
+                  <span className="text-base">🇮🇳</span>
                   <RichLevelBadge level={profile.level?.rich || 1} />
+                  <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
                
-               <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                  <div className="flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
-                     <span>ID:{profile.specialId || profile.accountNumber}</span>
-                     <Copy className="h-2.5 w-2.5 opacity-40" />
-                  </div>
+               <div className="mb-2">
+                  {profile.specialId ? (
+                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
+                  ) : (
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
+                       ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                    </p>
+                  )}
                </div>
 
                <div className="flex items-center gap-2 mt-3 flex-wrap">
@@ -364,21 +394,28 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
 
-                <div className="flex-1 space-y-2 min-w-0">
-                   <div 
-                     className="flex items-center justify-between cursor-pointer group active:opacity-60 transition-all"
-                     onClick={() => router.push(`/profile/${profileId}/edit`)}
-                   >
-                      <h1 className="text-3xl font-black tracking-tighter text-gray-800 truncate pr-2">{profile.username}</h1>
-                      <ChevronRight className="h-6 w-6 text-gray-300 group-hover:translate-x-1 transition-transform" />
-                   </div>
-                   <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                   <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h1 className="text-2xl font-black tracking-tighter text-gray-800 truncate pr-2 leading-none">{profile.username}</h1>
+                      <span className="text-lg leading-none">🇮🇳</span>
                       <RichLevelBadge level={profile.level?.rich || 1} />
-                      <div className="flex gap-1">
-                         {profile.tags?.includes('Official') && <Badge className="bg-[#ffcc00] text-black text-[8px] font-black uppercase border-none h-4 px-1.5">Official</Badge>}
-                         <Badge className="bg-[#ba68c8] text-white text-[8px] font-black uppercase border-none h-4 px-1.5">VIP</Badge>
-                         <Badge className="bg-[#ff7043] text-white text-[8px] font-black uppercase border-none h-4 px-1.5">Elite</Badge>
-                      </div>
+                      <CharmLevelBadge level={profile.level?.charm || 1} />
+                   </div>
+                   
+                   <div className="mb-2">
+                      {profile.specialId ? (
+                        <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
+                      ) : (
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { navigator.clipboard.writeText(profile.accountNumber); toast({ title: 'ID Copied' }); }}>
+                           ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                        </p>
+                      )}
+                   </div>
+
+                   <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {profile.tags?.includes('Official') && <Badge className="bg-[#ffcc00] text-black text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">Official</Badge>}
+                      <Badge className="bg-[#ba68c8] text-white text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">VIP</Badge>
+                      <Badge className="bg-[#ff7043] text-white text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">Elite</Badge>
                    </div>
                 </div>
              </div>
@@ -403,7 +440,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
                 <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
-                   <GoldCoinIcon className="h-20 w-20" />
+                   <GoldCoinIcon className="w-full h-full" />
                 </div>
              </div>
 
@@ -418,7 +455,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
                 <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
-                   <Gem className="h-20 w-20 text-white fill-current" />
+                   <Gem className="w-full h-full text-white fill-current" />
                 </div>
              </div>
           </div>
