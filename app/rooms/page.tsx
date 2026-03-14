@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Gamepad2 } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Gamepad2, Home } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -17,6 +17,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { UmmyLogoIcon } from '@/components/icons';
+import { UserSearchDialog } from '@/components/user-search-dialog';
 
 const CATEGORIES = ["All", "Chat", "Games", "Newcomers", "Party"];
 
@@ -94,16 +95,13 @@ export default function RoomsPage() {
               Me
             </button>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all">
-              <Bell className="h-6 w-6 text-slate-800" />
-              <div className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white" />
-            </button>
-            <button onClick={() => router.push('/profile')} className="h-10 w-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-slate-100 active:scale-95 transition-all">
-              <Avatar className="h-full w-full">
-                <AvatarImage src={user?.photoURL || undefined} />
-                <AvatarFallback><User className="h-5 w-5 text-slate-400" /></AvatarFallback>
-              </Avatar>
+          <div className="flex items-center gap-2">
+            <UserSearchDialog />
+            <button 
+              onClick={() => user?.uid && router.push(`/rooms/${user.uid}`)}
+              className="p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all text-slate-800"
+            >
+              <Home className="h-6 w-6" />
             </button>
           </div>
         </header>
