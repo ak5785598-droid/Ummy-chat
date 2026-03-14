@@ -110,7 +110,7 @@ export default function LoginPage() {
   const glassStyle = "bg-black/35 backdrop-blur-[20px] border border-white/[0.08]";
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient p-8 overflow-hidden font-headline">
+    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-[url('/images/stars-bg.png')] bg-cover bg-center p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm space-y-10 animate-in fade-in zoom-in duration-700">

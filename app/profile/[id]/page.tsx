@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -76,7 +76,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 const RichLevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
-    <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+    <Star className="h-2.5 w-2.5 fill-white text-white drop-shadow-sm" />
     <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
   </div>
 );
@@ -84,7 +84,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
 const CharmLevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
-    <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+    <Sparkles className="h-2.5 w-2.5 fill-white text-white drop-shadow-sm" />
     <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
   </div>
 );
@@ -139,9 +139,20 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const { toast } = useToast();
+  
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    toast({ title: 'ID Copied' });
+  };
+
   if (!color) {
     return (
-      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+      <span 
+        onClick={handleCopy}
+        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
+      >
         ID: {id}
       </span>
     );
@@ -152,10 +163,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
     : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={handleCopy}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
+        theme
+      )}
+    >
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
       <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
         ID: {id}
@@ -276,7 +290,6 @@ const PublicProfileView = ({
                        ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                     </p>
                   )}
-                  {/* Designed Tags Row 2 */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
@@ -420,7 +433,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       <AppLayout>
         <div className="min-h-full bg-gradient-to-b from-[#f3e5f5] via-[#f3e5f5] to-[#ffffff] text-gray-900 font-headline relative flex flex-col pb-32 overflow-x-hidden animate-in fade-in duration-1000">
           
-          {/* Ambient Stardust Layer */}
           <div className="absolute inset-0 pointer-events-none opacity-40">
              {Array.from({ length: 20 }).map((_, i) => (
                <div key={i} className="absolute bg-white rounded-full animate-pulse" style={{
@@ -433,7 +445,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              ))}
           </div>
 
-          {/* Header Portal: Identity Editor & Settings Sync */}
           <header className="relative w-full px-6 pt-16 pb-8 flex flex-col items-center">
              <div className="absolute top-10 right-6 flex items-center gap-2">
                 <EditProfileDialog 
@@ -446,7 +457,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 />
              </div>
 
-             {/* Identity Card Hub */}
              <div className="flex items-center gap-6 w-full mt-4">
                 <div className="relative shrink-0">
                    <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
@@ -465,7 +475,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="flex-1 min-w-0">
                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h1 className="text-2xl font-black text-gray-800 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 truncate pr-2 leading-none">{profile.username}</h1>
+                      <h1 className="text-2xl font-black text-gray-800 tracking-tighter truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-lg leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
@@ -480,7 +490,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                            ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
-                      {/* Designed Tags Row 2 - Integrated Admin Provider */}
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
                       {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
@@ -490,76 +499,45 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </div>
           </header>
 
-          {/* Social Stats Dimension */}
           <div className="px-6 flex justify-around mb-8 gap-2">
-             <StatItem label="Fans" value="3K" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-             <StatItem label="Following" value="1K" onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-             <StatItem label="Friends" value="500" onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+             <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+             <StatItem label="Friends" value={profile.stats?.friends || 0} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
              <StatItem label="Visitors" value="12K" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          {/* Action Grid Portal: High-Fidelity Wallet Dimensions */}
           <div className="px-6 grid grid-cols-2 gap-4 mb-10">
-             {/* Glossy Coins Portal */}
              <div 
                onClick={() => router.push('/wallet')} 
                className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(255,152,0,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
-                {/* Visual Shine Engine */}
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-                <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
-                
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
-                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30">
-                         <GoldCoinIcon className="h-5 w-5 drop-shadow-md" />
-                      </div>
+                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30"><GoldCoinIcon className="h-5 w-5 drop-shadow-md" /></div>
                       <h3 className="text-sm font-black text-white uppercase italic tracking-widest drop-shadow-sm">Coins</h3>
                    </div>
-                   <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">
-                         {(profile.wallet?.coins || 0).toLocaleString()}
-                      </span>
-                   </div>
+                   <div className="flex items-baseline gap-1"><span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
                 </div>
-
-                {/* Massive Background Icon Sync */}
-                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
-                   <GoldCoinIcon className="w-full h-full" />
-                </div>
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000"><GoldCoinIcon className="w-full h-full" /></div>
              </div>
 
-             {/* Glossy Diamonds Portal */}
              <div 
                onClick={() => router.push('/wallet')} 
                className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(2,132,199,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
-                {/* Visual Shine Engine */}
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
-                <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
-
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
-                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30">
-                         <Gem className="h-5 w-5 text-white fill-current drop-shadow-md" />
-                      </div>
+                      <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/30"><Gem className="h-5 w-5 text-white fill-current drop-shadow-md" /></div>
                       <h3 className="text-sm font-black text-white uppercase italic tracking-widest drop-shadow-sm">Diamonds</h3>
                    </div>
-                   <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">
-                         {(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                      </span>
-                   </div>
+                   <div className="flex items-baseline gap-1"><span className="text-3xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
                 </div>
-
-                {/* Massive Background Icon Sync */}
-                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
-                   <Gem className="w-full h-full text-white fill-current" />
-                </div>
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000"><Gem className="w-full h-full text-white fill-current" /></div>
              </div>
           </div>
 
-          {/* Utility Icon Dimension */}
           <div className="px-10 flex justify-between items-center mb-12">
              <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-400" onClick={() => router.push('/store')} />
@@ -567,7 +545,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
-          {/* VIP Premium Promotional Portal */}
           <div className="px-6 space-y-4 mb-8">
              <div className="relative rounded-[2.5rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-40 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-start relative">
@@ -577,8 +554,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                    <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                 </div>
-                
-                {/* Secret Card Interaction Overlay */}
                 <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md h-14 rounded-2xl flex items-center justify-between px-6 shadow-xl border border-white/50">
                    <span className="font-black text-sm text-gray-800 uppercase italic tracking-tight">Secret card get rewards</span>
                    <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -586,38 +561,24 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </div>
           </div>
 
-          {/* Tribal Menu Sections */}
           <div className="px-6 space-y-6 pb-24">
-             {/* General Resources Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
-                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered', description: 'Referral link dispatched.' })} />
+                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered' })} />
                 <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
-                {isCertifiedSeller && (
-                  <SellerTransferDialog />
-                )}
+                {isCertifiedSeller && <SellerTransferDialog />}
              </Card>
-
-             {/* Support & About Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                 <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
              </Card>
-
-             {/* System & Security Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
              </Card>
           </div>
         </div>
 
-        <SocialRelationsDialog 
-          open={socialOpen} 
-          onOpenChange={setSocialOpen} 
-          userId={profileId} 
-          initialTab={socialTab} 
-          username={profile.username} 
-        />
+        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
       </AppLayout>
     );
   }
