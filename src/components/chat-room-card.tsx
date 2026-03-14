@@ -46,7 +46,10 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   if (variant === 'modern') {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline active:scale-95 transition-transform">
-        <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col">
+        <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col relative">
+          {/* Glass Glossy Overlay for the entire card */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30" />
+          
           {/* Cover Image Dimension */}
           <div className="relative aspect-[4/5] w-full bg-slate-50">
             {room.coverUrl ? (
@@ -95,7 +98,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           </div>
           
           {/* Connected Content Section */}
-          <div className="p-3 bg-white space-y-0.5">
+          <div className="p-3 bg-white space-y-0.5 relative z-20">
             <h3 className={cn(
               "font-black text-sm truncate uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r",
               getSyncGradient()

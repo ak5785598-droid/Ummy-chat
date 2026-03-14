@@ -78,7 +78,7 @@ export default function RoomsPage() {
           </div>
         </header>
 
-        {/* Banners Section */}
+        {/* Banners Section - Glossy & High Fidelity */}
         <section className="px-6 mb-6">
           <Carousel className="w-full" opts={{ loop: true }}>
             <CarouselContent>
@@ -87,7 +87,10 @@ export default function RoomsPage() {
                 { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
               ].map((b) => (
                 <CarouselItem key={b.id}>
-                  <div className={cn("h-32 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-lg", b.color)}>
+                  <div className={cn("h-32 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
+                     {/* Shimmer Effect */}
+                     <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+                     
                      <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-1">
                            <b.icon className="h-4 w-4 text-white animate-pulse" />
@@ -105,32 +108,35 @@ export default function RoomsPage() {
           </Carousel>
         </section>
 
-        {/* Featured Categories: Decreased Length aspect-[16/10] */}
+        {/* Featured Categories - horizontal aspect-[16/10] */}
         <section className="px-6 grid grid-cols-3 gap-4 mb-8">
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[16/10] bg-gradient-to-br from-orange-400 to-red-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-orange-400 to-red-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" style={{ animationDuration: '4s' }} />
                <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Official</span>
                <div className="text-3xl drop-shadow-2xl group-hover:scale-110 transition-transform">🐷</div>
             </div>
           </button>
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" style={{ animationDuration: '5s' }} />
                <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
                <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
             </div>
           </button>
           <button className="flex flex-col items-center gap-2 group">
-            <div className="w-full aspect-[16/10] bg-gradient-to-br from-blue-400 to-indigo-600 rounded-[1.5rem] shadow-xl border-2 border-white/20 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+            <div className="w-full aspect-[16/10] bg-gradient-to-br from-blue-400 to-indigo-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine" style={{ animationDuration: '6s' }} />
                <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Speed</span>
                <div className="text-3xl drop-shadow-2xl group-hover:scale-110 transition-transform">🚀</div>
             </div>
           </button>
         </section>
 
-        {/* Top Rooms Pill: Moved above tabs */}
+        {/* Top Rooms Pill - Animated Shimmer */}
         <div className="px-6 mb-8">
-          <div className="bg-gradient-to-r from-[#9C27B0] to-[#E91E63] h-14 rounded-full shadow-2xl border-2 border-white/30 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
-            <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+          <div className="bg-gradient-to-r from-[#9C27B0] via-[#E91E63] to-[#9C27B0] h-14 rounded-full shadow-2xl border-2 border-white/40 flex items-center justify-between px-8 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
+            <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
             <div className="flex items-center gap-3 relative z-10">
                <Star className="h-5 w-5 text-yellow-400 fill-current animate-pulse" />
                <span className="text-white font-black uppercase italic text-sm tracking-widest drop-shadow-md">Top Rooms Grid</span>
@@ -146,18 +152,18 @@ export default function RoomsPage() {
           </div>
         </div>
 
-        {/* Sub-Category Navigation: Transparent and positioned below pill */}
+        {/* Sub-Category Navigation - Glassy Transparent */}
         <div className="px-6 mb-6">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  "flex-1 px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap",
+                  "px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap border-2 border-transparent",
                   activeCategory === cat 
-                    ? "bg-white text-purple-600 shadow-sm scale-[1.02]" 
-                    : "text-purple-400/70 hover:text-purple-500"
+                    ? "bg-white/80 backdrop-blur-md text-purple-600 shadow-lg border-white/40 scale-[1.05]" 
+                    : "text-purple-400/70 hover:text-purple-500 hover:bg-white/10"
                 )}
               >
                 {cat}
