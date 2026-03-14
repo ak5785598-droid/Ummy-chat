@@ -181,7 +181,7 @@ export default function AdminPage() {
   const [newThemeName, setNewThemeName] = useState('');
   const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
   const [isUploadingTheme, setIsUploadingTheme] = useState(false);
-  themeFileInputRef = useRef<HTMLInputElement>(null);
+  const themeFileInputRef = useRef<HTMLInputElement>(null);
 
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
@@ -307,7 +307,7 @@ export default function AdminPage() {
           }
         }
       } else {
-        // High-Fidelity Prefix Search Sync
+        // Robust Prefix Search Sync
         const qName = query(
           collection(firestore, 'users'), 
           where('username', '>=', inputVal), 
@@ -996,7 +996,7 @@ export default function AdminPage() {
                      <CardDescription>Authorize or revoke Seller Center access for tribe members. Updates are instantaneous.</CardDescription>
                   </CardHeader>
                   <div className="flex flex-col gap-4">
-                     <SearchToggle mode={centerSearchMode} setMode={setRecordSearchMode} />
+                     <SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={centerSearchMode === 'id' ? "Enter User ID (Special or Account)..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find Identity</Button>

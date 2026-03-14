@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -235,6 +235,12 @@ export default function AdminPage() {
   }, [firestore, isCreator]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
+  const rankingConfigRef = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return doc(firestore, 'appConfig', 'rankings');
+  }, [firestore, isCreator]);
+  const { data: rankingConfig } = useDoc(rankingConfigRef);
+
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
     setIsSyncingAppData(true);
@@ -301,7 +307,7 @@ export default function AdminPage() {
           }
         }
       } else {
-        // Prefix Search Sync
+        // Robust Prefix Search Sync
         const qName = query(
           collection(firestore, 'users'), 
           where('username', '>=', inputVal), 
@@ -385,8 +391,8 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForRewards.id);
       const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
       const amt = parseInt(coinDispatchAmount);
-      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(count) });
-      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(count) });
+      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(amt) });
+      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(amt) });
       toast({ title: 'Coins Dispatched' });
       setCoinDispatchAmount('');
     } finally {
@@ -559,6 +565,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleRankingBGUpload = async (key: string, file: File) => {
+    if (!storage || !rankingConfigRef) return;
+    setUploadingRankingKey(key);
+    try {
+      const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+      await setDoc(rankingConfigRef, { [key]: url }, { merge: true });
+      toast({ title: `${key.toUpperCase()} Background Updated` });
+    } finally {
+      setUploadingRankingKey(null);
+    }
+  };
+
   const handleAddBanner = async () => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
@@ -664,6 +684,9 @@ export default function AdminPage() {
               <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Users className="h-4 w-4 text-blue-500" /> Member Directory
               </TabsTrigger>
+              <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Trophy className="h-4 w-4 text-yellow-500" /> Ranking Themes
+              </TabsTrigger>
               <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
               </TabsTrigger>
@@ -746,6 +769,90 @@ export default function AdminPage() {
                            </div>
                         </div>
                      </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="ranking-themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-yellow-600"><Trophy className="h-6 w-6" /> Ranking Environmental Themes</CardTitle>
+                     <CardDescription>Dispatch high-fidelity backgrounds for global ranking dimensions.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {[
+                       { key: 'honor', label: 'Honor (Rich)', icon: Crown },
+                       { key: 'charm', label: 'Charm', icon: Sparkles },
+                       { key: 'room', label: 'Room Rankings', icon: Home },
+                       { key: 'cp', label: 'Couple Challenge', icon: Heart }
+                     ].map((item) => (
+                       <div key={item.key} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                          <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                                <item.icon className="h-5 w-5 text-yellow-600" />
+                                <span className="font-black uppercase italic text-sm">{item.label}</span>
+                             </div>
+                             {rankingConfig?.[item.key] && (
+                               <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(rankingConfigRef!, { [item.key]: null })}>Reset</Button>
+                             )}
+                          </div>
+                          
+                          <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-200 border-2 border-white shadow-inner flex items-center justify-center">
+                             {rankingConfig?.[item.key] ? (
+                               <Image src={rankingConfig[item.key]} fill className="object-cover" alt="BG" unoptimized />
+                             ) : (
+                               <div className="text-center opacity-20"><ImageIcon className="h-8 w-8 mx-auto mb-1" /><span className="text-[8px] font-black uppercase">Nebula Default Active</span></div>
+                             )}
+                             {uploadingRankingKey === item.key && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                             <button 
+                               onClick={() => { setUploadingRankingKey(item.key); rankingBGFileInputRef.current?.click(); }}
+                               className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-yellow-600 active:scale-90 transition-transform"
+                             >
+                                <Camera className="h-4 w-4" />
+                             </button>
+                          </div>
+                       </div>
+                     ))}
+                  </CardContent>
+               </Card>
+               <input type="file" ref={rankingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadingRankingKey && handleRankingBGUpload(uploadingRankingKey, e.target.files[0])} />
+            </TabsContent>
+
+            <TabsContent value="game-themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600">
+                        <Monitor className="h-6 w-6" /> Sovereign Game Themes
+                     </CardTitle>
+                     <CardDescription>Dispatch high-resolution environmental assets to the 3D Tribe Arena.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     {gamesList.map((game) => (
+                       <div key={game.slug} className="flex flex-col gap-3 group">
+                          <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl border-2 border-white/10">
+                             {game.backgroundUrl ? (
+                               <Image src={game.backgroundUrl} fill className="object-cover" alt="BG" unoptimized />
+                             ) : (
+                               <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
+                                  <Monitor className="h-10 w-10" />
+                                  <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
+                               </div>
+                             )}
+                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button 
+                                  onClick={() => handleGameBGUploadClick(game)}
+                                  className="h-14 w-14 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl active:scale-90 transition-transform"
+                                >
+                                   {isUploadingGameBG && selectedGameForSync?.slug === game.slug ? <Loader className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6" />}
+                                </button>
+                             </div>
+                          </div>
+                          <div className="flex items-center justify-between px-2">
+                             <p className="font-black uppercase italic text-sm text-slate-900">{game.title}</p>
+                             {game.backgroundUrl && <Badge className="bg-green-100 text-green-600 border-none font-black text-[8px] uppercase">Custom Synced</Badge>}
+                          </div>
+                       </div>
+                     ))}
                   </CardContent>
                </Card>
             </TabsContent>
@@ -862,7 +969,7 @@ export default function AdminPage() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                              <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet Balance</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div>
                              <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds Received</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div>
-                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
+                             <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px) font-black uppercase tracking-widest">Total Spend Record</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div>
                           </div>
 
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
@@ -1147,7 +1254,7 @@ export default function AdminPage() {
                      <Button onClick={handleSystemBroadcast} disabled={isBroadcasting || !broadcastContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase italic text-xl shadow-xl">
                         {isBroadcasting ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />} Synchronize Global Broadcast
                      </Button>
-                  </CardHeader>
+                  </CardContent>
                </Card>
             </TabsContent>
 
@@ -1158,7 +1265,7 @@ export default function AdminPage() {
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={() => handleGenericSearch(mode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
@@ -1174,7 +1281,7 @@ export default function AdminPage() {
                           <Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl border-2 text-lg font-black italic" />
                           <Textarea placeholder="Type private system message..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl border-2 p-6 text-base font-body italic resize-none" />
                        </div>
-                       <Button onClick={() => handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl">
+                       <Button onClick={handleDirectMessage} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-indigo-600 text-white font-black uppercase italic text-xl shadow-xl">
                           {isSendingDm ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />} Synchronize Direct Sync
                        </Button>
                     </div>
