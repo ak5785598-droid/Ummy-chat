@@ -230,11 +230,12 @@ export function RoomClient({ room }: { room: Room }) {
     if (!participantsData) return [];
     if (now === null) return participantsData;
 
+    // HIGH-FIDELITY PRESENCE FILTER: strictly 45s threshold
     return participantsData.filter(p => {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
-      return (now - lastSeen) < 65000;
+      return (now - lastSeen) < 45000;
     });
   }, [participantsData, now, currentUser?.uid]);
 

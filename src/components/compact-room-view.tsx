@@ -13,18 +13,16 @@ import { useRouter } from 'next/navigation';
 /**
  * High-Fidelity Compact Room Overlay.
  * Re-engineered to only show the room header when inside games.
- * Seats have been removed as per the Sovereign visual protocol to maximize game arena visibility.
+ * Tightened 45s presence threshold for real-time accuracy.
  */
 export function CompactRoomView() {
   const { activeRoom, setIsMinimized } = useRoomContext();
   const { user: currentUser } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  // DEFERRED IDENTITY SYNC: now set to null to prevent hydration discrepancy
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    // SYNC INITIALIZATION: Initialize 'now' on client mount
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
@@ -37,16 +35,15 @@ export function CompactRoomView() {
 
   const { data: rawParticipants } = useCollection(participantsQuery);
   
-  // ANTI-GHOST FILTER: Real-time UI purge for inactive participants
   const participants = useMemo(() => {
     if (!rawParticipants) return [];
-    // GHOST IDENTITY RECOVERY: If 'now' is null, return raw data to match server render
     if (now === null) return rawParticipants;
 
     return rawParticipants.filter(p => {
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
-      return (now - lastSeen) < 65000;
+      // VERIFIED REAL-TIME THRESHOLD: 45s
+      return (now - lastSeen) < 45000;
     });
   }, [rawParticipants, now]);
 

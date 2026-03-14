@@ -9,6 +9,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 /**
  * Maintains Firestore presence while a room is active.
  * Re-engineered for high-fidelity cleanup: Owners and Moderators now perform ghost pruning.
+ * Hardened with aggressive 15s heartbeat and 45s stale threshold.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -48,10 +49,8 @@ export function RoomPresenceManager() {
         const existingSnap = await getDoc(participantRef);
         const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-        // AUTH HANDSHAKE: Ensure clean slate
         const batch = writeBatch(firestore);
         
-        // Broadcast entrance only if not already established
         if (!existingSnap.exists()) {
           addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
             content: 'entered the room',
@@ -92,14 +91,16 @@ export function RoomPresenceManager() {
       }
 
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+      // HIGH-FIDELITY HEARTBEAT: 15 seconds pulse for real-time verification
       heartbeatInterval.current = setInterval(() => {
         setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
-      }, 20000);
+      }, 15000);
 
-      // GHOST PRUNING PROTOCOL: Restricted to authorities to maintain network stability
+      // GHOST PRUNING PROTOCOL: 30s frequency check
       if (canCleanup && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
-          const staleThreshold = new Date(Date.now() - 65000); 
+          // STALE THRESHOLD: 45 seconds (3 missed heartbeats)
+          const staleThreshold = new Date(Date.now() - 45000); 
           const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
           const snap = await getDocs(participantsRef);
           
@@ -110,7 +111,6 @@ export function RoomPresenceManager() {
             snap.docs.forEach(d => {
               const data = d.data();
               const lastSeen = data.lastSeen?.toDate?.() || new Date(0);
-              // PURGE SIGNATURE: Delete stale documents, exclude current authority from auto-purge
               if (lastSeen < staleThreshold && d.id !== uid) {
                 purgeBatch.delete(d.ref);
               } else {
@@ -118,7 +118,6 @@ export function RoomPresenceManager() {
               }
             });
 
-            // Sync final verified count to Discovery dimension
             purgeBatch.update(roomDocRef, { 
               participantCount: activeCount,
               updatedAt: serverTimestamp() 
@@ -126,7 +125,7 @@ export function RoomPresenceManager() {
 
             purgeBatch.commit().catch(() => {});
           }
-        }, 45000); 
+        }, 30000); 
       }
     };
 
