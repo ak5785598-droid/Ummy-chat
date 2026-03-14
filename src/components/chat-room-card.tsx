@@ -69,7 +69,6 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             
             {/* Top-Left Overlays */}
             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
-               <Badge className="bg-[#4CAF50] text-white text-[8px] font-black uppercase px-2 h-4 border-none shadow-lg">Official</Badge>
                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/10 w-fit">
                   <span className="text-[10px]">🇮🇳</span>
                </div>
