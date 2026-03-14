@@ -521,6 +521,16 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
+        {/* Minimalist Announcement Sync - Left Corner Protocol */}
+        <div className="absolute top-2 left-4 z-[60] flex items-center gap-2 pointer-events-none">
+           <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
+           <div className="max-w-[200px] overflow-hidden">
+              <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md truncate">
+                 {room.announcement || "Welcome to the frequency!"}
+              </p>
+           </div>
+        </div>
+
         <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
@@ -539,20 +549,6 @@ export function RoomClient({ room }: { room: Room }) {
               {[10, 11, 12, 13].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
-           </div>
-
-           {/* High-Fidelity Announcement Sync Bar */}
-           <div className="w-full max-w-sm px-6 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-              <div className="bg-yellow-400/10 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-3 flex items-center gap-3 shadow-xl">
-                 <div className="bg-yellow-400 p-1.5 rounded-lg shadow-lg">
-                    <Megaphone className="h-3.5 w-3.5 text-black fill-current" />
-                 </div>
-                 <div className="flex-1 overflow-hidden">
-                    <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-wide truncate">
-                       {room.announcement || "Welcome to the frequency! Enjoy the vibe."}
-                    </p>
-                 </div>
-              </div>
            </div>
         </div>
 
