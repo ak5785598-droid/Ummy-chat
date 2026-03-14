@@ -86,6 +86,14 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 );
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  if (!color) {
+    return (
+      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+        ID: {id}
+      </span>
+    );
+  }
+
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
     : color === 'red'

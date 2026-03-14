@@ -91,22 +91,27 @@ const ACTIVE_GAME_FREQUENCIES = [
 ];
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  if (!color) {
+    return (
+      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+        ID: {id}
+      </span>
+    );
+  }
+
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : color === 'red'
-    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
-    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
 
   return (
     <div className={cn(
       "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
-      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
-      <span className={cn(
-        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm",
-        !color ? "text-slate-500" : "text-white"
-      )}>ID: {id}</span>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
+        ID: {id}
+      </span>
     </div>
   );
 };
@@ -198,11 +203,11 @@ export default function AdminPage() {
   const gameBGFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
 
-  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
-  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
-
   const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
   const [isSyncingAppData, setIsSyncingAppData] = useState(false);
+
+  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
+  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -803,7 +808,7 @@ export default function AdminPage() {
                              ) : (
                                <div className="text-center opacity-20"><ImageIcon className="h-8 w-8 mx-auto mb-1" /><span className="text-[8px] font-black uppercase">Nebula Default Active</span></div>
                              )}
-                             {uploadingRankingKey === item.key && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                             {uploadingRankingKey === item.key && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}
                              <button 
                                onClick={() => { setUploadingRankingKey(item.key); rankingBGFileInputRef.current?.click(); }}
                                className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-yellow-600 active:scale-90 transition-transform"

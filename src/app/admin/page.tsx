@@ -91,22 +91,27 @@ const ACTIVE_GAME_FREQUENCIES = [
 ];
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  if (!color) {
+    return (
+      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+        ID: {id}
+      </span>
+    );
+  }
+
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : color === 'red'
-    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
-    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
 
   return (
     <div className={cn(
       "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
-      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
-      <span className={cn(
-        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm",
-        !color ? "text-slate-500" : "text-white"
-      )}>ID: {id}</span>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
+        ID: {id}
+      </span>
     </div>
   );
 };
@@ -1260,12 +1265,12 @@ export default function AdminPage() {
 
             <TabsContent value="direct-messenger" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500" /> Direct Messenger</CardTitle>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={(e) => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (

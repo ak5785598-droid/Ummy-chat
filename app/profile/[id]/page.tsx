@@ -139,22 +139,27 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  if (!color) {
+    return (
+      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+        ID: {id}
+      </span>
+    );
+  }
+
   const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
-    : color === 'red'
-    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)]"
-    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
+    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
 
   return (
     <div className={cn(
       "relative overflow-hidden px-3 py-0.5 rounded-full border border-white/30 group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
       theme
     )}>
-      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
-      <span className={cn(
-        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
-        !color ? "text-slate-500" : "text-white"
-      )}>ID: {id}</span>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
+        ID: {id}
+      </span>
     </div>
   );
 };
@@ -342,14 +347,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
 
-  // IDENTITY SIGNATURE SYNC: Decoding visuals strictly from profile tags
-  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
+  const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isSeller = isCertifiedSeller;
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
-
-  // PERMISSION SIGNATURE SYNC: Administrative access for creator
-  const isCertifiedSellerPermission = isSeller || currentUser?.uid === CREATOR_ID;
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -447,6 +449,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                onClick={() => router.push('/wallet')} 
                className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(255,152,0,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
+                {/* Visual Shine Engine */}
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
                 <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
                 
@@ -464,6 +467,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
 
+                {/* Massive Background Icon Sync */}
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
                    <GoldCoinIcon className="w-full h-full" />
                 </div>
@@ -474,6 +478,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                onClick={() => router.push('/wallet')} 
                className="h-32 rounded-[2.5rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(2,132,199,0.3)] active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
+                {/* Visual Shine Engine */}
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
                 <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
 
@@ -491,6 +496,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                 </div>
 
+                {/* Massive Background Icon Sync */}
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
                    <Gem className="w-full h-full text-white fill-current" />
                 </div>
@@ -505,6 +511,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
+          {/* VIP Premium Promotional Portal */}
           <div className="px-6 space-y-4 mb-8">
              <div className="relative rounded-[2.5rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-40 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-start relative">
@@ -515,6 +522,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                 </div>
                 
+                {/* Secret Card Interaction Overlay */}
                 <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md h-14 rounded-2xl flex items-center justify-between px-6 shadow-xl border border-white/50">
                    <span className="font-black text-sm text-gray-800 uppercase italic tracking-tight">Secret card get rewards</span>
                    <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -524,20 +532,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           {/* Tribal Menu Sections */}
           <div className="px-6 space-y-6 pb-24">
+             {/* General Resources Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered', description: 'Referral link dispatched.' })} />
                 <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
-                {isCertifiedSellerPermission && (
+                {isCertifiedSeller && (
                   <SellerTransferDialog />
                 )}
              </Card>
 
+             {/* Support & About Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                 <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
              </Card>
 
+             {/* System & Security Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
              </Card>
