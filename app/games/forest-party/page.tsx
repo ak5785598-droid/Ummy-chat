@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
 
 // CLOCKWISE ORDER SYNC: Top -> Right -> Bottom -> Left sequence for high-fidelity chase
 const ANIMALS = [
@@ -63,6 +64,9 @@ export default function WildPartyPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -242,6 +246,19 @@ export default function WildPartyPage() {
       <div className="h-screen w-full bg-[#051a05] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
 
+        {/* Dynamic Sovereign Background Sync */}
+        <div className="absolute inset-0 z-0">
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Jungle Theme" fill className="object-cover opacity-60 animate-in fade-in duration-1000" unoptimized />
+           ) : (
+             <>
+               <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e0a] via-[#051a05] to-[#000000]" />
+               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+             </>
+           )}
+           <div className="absolute inset-0 bg-gradient-to-t from-[#051a05] via-transparent to-transparent opacity-80" />
+        </div>
+
         {/* Global Victory Overlay */}
         {gameState === 'result' && winners.length > 0 && (
           <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
@@ -375,7 +392,7 @@ export default function WildPartyPage() {
         </main>
 
         {/* Interaction Hub */}
-        <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent -mt-12">
            <div className="max-w-md mx-auto space-y-4">
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2 bg-black/60 px-4 py-2 rounded-full border border-white/10 shadow-lg">

@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 
+// CLOCKWISE ORDER SYNC: Top -> Right -> Bottom -> Left sequence for high-fidelity chase
 const ANIMALS = [
   { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
@@ -391,7 +392,7 @@ export default function WildPartyPage() {
         </main>
 
         {/* Interaction Hub */}
-        <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent -mt-12">
            <div className="max-w-md mx-auto space-y-4">
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2 bg-black/60 px-4 py-2 rounded-full border border-white/10 shadow-lg">
