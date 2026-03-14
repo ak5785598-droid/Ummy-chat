@@ -70,7 +70,6 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
 /**
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
- * Now synchronizes with dynamic themes uploaded via the Admin Theme Hub.
  */
 export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
   const [open, setOpen] = useState(false);
@@ -114,27 +113,16 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
 
   const { data: customThemes } = useCollection(customThemesQuery);
 
-  // Filter themes based on official/help requirements and merge custom ones
   const filteredThemes = useMemo(() => {
     const baseline = ROOM_THEMES.filter(theme => {
-      if (isOfficialHelpRoom) {
-        return theme.category === 'help' || theme.category === 'general';
-      }
-      if (userIsOfficial || isOwner) {
-        if (theme.category === 'help') return false;
-        return true;
-      }
+      if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
+      if (userIsOfficial || isOwner) return theme.category !== 'help';
       return theme.category === 'general';
     });
 
     const dynamic = (customThemes || []).filter(theme => {
-      if (isOfficialHelpRoom) {
-        return theme.category === 'help' || theme.category === 'general';
-      }
-      if (userIsOfficial || isOwner) {
-        if (theme.category === 'help') return false;
-        return true;
-      }
+      if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
+      if (userIsOfficial || isOwner) return theme.category !== 'help';
       return theme.category === 'general';
     });
 
@@ -176,12 +164,12 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
     }
     handleUpdate('password', newPassword || null);
     setIsEditingPassword(false);
-    toast({ title: 'Privacy Sync Complete', description: newPassword ? 'Room frequency locked.' : 'Room frequency unlocked.' });
+    toast({ title: 'Privacy Sync Complete' });
   };
 
   const handleSelectTheme = (theme: RoomTheme) => {
     if (theme.isOfficial && !canUseOfficialThemes) {
-      toast({ variant: 'destructive', title: 'Access Denied', description: 'Official themes are restricted to system authorities.' });
+      toast({ variant: 'destructive', title: 'Access Denied' });
       return;
     }
     if (firestore) {
@@ -192,7 +180,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
       });
     }
     setIsEditingTheme(false);
-    toast({ title: 'Theme Synchronized', description: `${theme.name} is now live.` });
+    toast({ title: 'Theme Synchronized' });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,14 +208,14 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         <DialogTrigger asChild>
           {trigger}
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[450px] h-[90vh] md:h-auto overflow-hidden bg-white p-0 rounded-t-[3rem] md:rounded-[2.5rem] border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline">
+        <DialogContent className="sm:max-w-[450px] h-[90vh] md:h-auto overflow-hidden bg-white p-0 rounded-t-[3rem] md:rounded-[2.5rem] border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline text-black">
           <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between space-y-0 shrink-0">
              <button onClick={() => setOpen(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
                 <ChevronLeft className="h-6 w-6 text-gray-600" />
              </button>
              <DialogTitle className="text-xl font-black uppercase italic tracking-tighter">Settings</DialogTitle>
              <div className="w-10" />
-             <DialogDescription className="sr-only">Manage room identity and privacy frequency.</DialogDescription>
+             <DialogDescription className="sr-only">Manage room identity.</DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
@@ -252,55 +240,17 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                    <ChevronRight className="h-4 w-4 text-gray-300 ml-2" />
                 </SettingItem>
 
-                <SettingItem 
-                  label="Room Name" 
-                  value={room.title || room.name} 
-                  onClick={() => {
-                    setNewName(room.title || room.name);
-                    setIsEditingName(true);
-                  }} 
-                />
-
-                <SettingItem 
-                  label="Announcement" 
-                  value={room.announcement} 
-                  onClick={() => {
-                    setNewAnnouncement(room.announcement || '');
-                    setIsEditingAnnouncement(true);
-                  }} 
-                />
-
-                <SettingItem 
-                  label="Number of Mic" 
-                  extra={`${room.maxActiveMics || 9} people`} 
-                  onClick={() => {
-                    const nextMics = (room.maxActiveMics || 9) === 9 ? 13 : 9;
-                    handleUpdate('maxActiveMics', nextMics);
-                    toast({ title: 'Capacity Adjusted', description: `Room frequency synchronized to ${nextMics} slots.` });
-                  }}
-                />
-
-                <SettingItem 
-                  label="Room Password" 
-                  value={room.password ? 'Active' : 'Off'} 
-                  onClick={() => {
-                    if (!isOwner) {
-                      toast({ variant: 'destructive', title: 'Restricted Access', description: 'Only the room owner can manage the privacy code.' });
-                      return;
-                    }
-                    setNewPassword(room.password || '');
-                    setIsEditingPassword(true);
-                  }}
-                />
-
+                <SettingItem label="Room Name" value={room.title || room.name} onClick={() => setIsEditingName(true)} />
+                <SettingItem label="Announcement" value={room.announcement} onClick={() => setIsEditingAnnouncement(true)} />
+                <SettingItem label="Number of Mic" extra={`${room.maxActiveMics || 9} people`} onClick={() => handleUpdate('maxActiveMics', room.maxActiveMics === 9 ? 13 : 9)} />
+                <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
                 <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
-
                 <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
              </div>
           </ScrollArea>
 
           {isEditingPassword && (
-            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
                   <button onClick={() => setIsEditingPassword(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
                      <ChevronLeft className="h-6 w-6 text-gray-800" />
@@ -308,184 +258,95 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
                   <h3 className="font-black uppercase italic text-lg tracking-tighter">Privacy Code</h3>
                   <button onClick={handleSavePassword} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
                </header>
-               <div className="p-8 space-y-8">
-                  <div className="text-center space-y-2 mb-4">
-                     <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Lock className="h-8 w-8 text-primary" />
-                     </div>
-                     <h4 className="text-xl font-black uppercase italic">Room Password</h4>
-                     <p className="text-xs text-muted-foreground font-body italic">Enter a 4-digit code to lock this frequency.</p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-gray-400 ml-1">4-Digit Sync Code (Leave empty to unlock)</Label>
-                    <Input 
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={4}
-                      placeholder="0000"
-                      value={newPassword} 
-                      onChange={(e) => setNewPassword(e.target.value.replace(/\D/g, ''))} 
-                      className="h-20 rounded-[1.5rem] border-2 text-4xl font-black tracking-[1em] text-center focus:border-primary transition-all" 
-                      autoFocus 
-                    />
-                  </div>
-
-                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex gap-3">
-                     <ShieldCheck className="h-5 w-5 text-orange-500 shrink-0" />
-                     <p className="text-[10px] font-bold text-orange-800 leading-relaxed uppercase">
-                        When active, only you (the owner) can enter without verification. All others must provide the sync code.
-                     </p>
-                  </div>
+               <div className="p-8">
+                  <Input type="password" inputMode="numeric" maxLength={4} placeholder="0000" value={newPassword} onChange={(e) => setNewPassword(e.target.value.replace(/\D/g, ''))} className="h-20 rounded-[1.5rem] border-2 text-4xl font-black tracking-[1em] text-center focus:border-primary transition-all" autoFocus />
                </div>
             </div>
           )}
 
           {isEditingTheme && (
-            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
                   <button onClick={() => setIsEditingTheme(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
                      <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
-                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Room Themes</h3>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Themes</h3>
                   <div className="w-10" />
                </header>
                <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-2 gap-4 p-6 pb-20">
-                     {filteredThemes.map((theme) => {
-                       const isLocked = theme.isOfficial && !canUseOfficialThemes;
-                       return (
-                         <button 
-                           key={theme.id}
-                           onClick={() => handleSelectTheme(theme)}
-                           className={cn(
-                             "relative flex flex-col items-center gap-2 group transition-all",
-                             isLocked && "opacity-60 grayscale"
-                           )}
-                         >
-                            <div className={cn(
-                              "relative aspect-square w-full rounded-2xl overflow-hidden border-4 transition-all",
-                              room.roomThemeId === theme.id ? "border-primary scale-105 shadow-lg" : "border-transparent group-hover:border-gray-100"
-                            )}>
-                               <Image src={theme.url} alt={theme.name} fill className="object-cover" sizes="200px" unoptimized />
-                               {isLocked && (
-                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                    <Lock className="h-8 w-8 text-white/80" />
-                                 </div>
-                               )}
-                               {room.roomThemeId === theme.id && (
-                                 <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md">
-                                    <Check className="h-3 w-3 text-white" />
-                                 </div>
-                               )}
-                            </div>
-                            <span className={cn(
-                              "text-[10px] font-black uppercase tracking-tight text-center px-1",
-                              room.roomThemeId === theme.id ? "text-primary" : "text-gray-500"
-                            )}>{theme.name}</span>
-                         </button>
-                       );
-                     })}
+                  <div className="grid grid-cols-2 gap-4 p-6">
+                     {filteredThemes.map((theme) => (
+                       <button key={theme.id} onClick={() => handleSelectTheme(theme)} className={cn("relative flex flex-col items-center gap-2 group", theme.isOfficial && !canUseOfficialThemes && "opacity-60 grayscale")}>
+                          <div className={cn("relative aspect-square w-full rounded-2xl overflow-hidden border-4", room.roomThemeId === theme.id ? "border-primary scale-105 shadow-lg" : "border-transparent")}>
+                             <Image src={theme.url} alt={theme.name} fill className="object-cover" sizes="200px" unoptimized />
+                             {room.roomThemeId === theme.id && <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md"><Check className="h-3 w-3 text-white" /></div>}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-tight text-gray-500">{theme.name}</span>
+                       </button>
+                     ))}
                   </div>
                </ScrollArea>
             </div>
           )}
 
           {isEditingName && (
-            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
                   <button onClick={() => setIsEditingName(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
                      <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
-                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Edit Room Name</h3>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Room Name</h3>
                   <button onClick={handleSaveName} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
                </header>
                <div className="p-8">
-                  <Input 
-                    value={newName} 
-                    onChange={(e) => setNewName(e.target.value)} 
-                    className="h-16 rounded-2xl border-2 text-xl font-black italic focus:border-primary transition-all" 
-                    autoFocus 
-                  />
+                  <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="h-16 rounded-2xl border-2 text-xl font-black italic focus:border-primary transition-all" autoFocus />
                </div>
             </div>
           )}
 
           {isEditingAnnouncement && (
-            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
                   <button onClick={() => setIsEditingAnnouncement(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
                      <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
-                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Edit Announcement</h3>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Announcement</h3>
                   <button onClick={handleSaveAnnouncement} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
                </header>
                <div className="p-8">
-                  <Textarea 
-                    value={newAnnouncement} 
-                    onChange={(e) => setNewAnnouncement(e.target.value)} 
-                    className="h-40 rounded-2xl border-2 text-lg font-body italic focus:border-primary transition-all p-6" 
-                    placeholder="Broadcast your vibe..."
-                    autoFocus 
-                  />
+                  <Textarea value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)} className="h-40 rounded-2xl border-2 text-lg font-body italic focus:border-primary transition-all p-6" autoFocus />
                </div>
             </div>
           )}
 
           {isManagingAdmins && (
-            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col font-headline">
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
                <header className="p-6 border-b border-gray-50 flex items-center justify-between">
                   <button onClick={() => setIsManagingAdmins(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
                      <ChevronLeft className="h-6 w-6 text-gray-800" />
                   </button>
-                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Assign Administrators</h3>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Administrators</h3>
                   <div className="w-10" />
                </header>
                <ScrollArea className="flex-1 p-4">
                   {participants?.map((p: any) => (
-                    <div key={p.uid} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-all border-b border-gray-50 last:border-0">
+                    <div key={p.uid} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0">
                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
-                             <AvatarImage src={p.avatarUrl || undefined} />
-                             <AvatarFallback className="bg-slate-100">U</AvatarFallback>
-                          </Avatar>
-                          <div>
-                             <div className="flex items-center gap-2">
-                               <p className="font-black text-sm uppercase tracking-tight">{p.name}</p>
-                               {p.uid === room.ownerId && <Badge className="bg-yellow-500 text-black text-[8px] font-black h-4">OWNER</Badge>}
-                             </div>
-                             <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">Identity: {p.uid.slice(0, 8)}</p>
-                          </div>
+                          <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm"><AvatarImage src={p.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          <div><p className="font-black text-sm uppercase tracking-tight">{p.name}</p></div>
                        </div>
-                       {p.uid !== room.ownerId && (
-                         <Switch 
-                           checked={room.moderatorIds?.includes(p.uid)} 
-                           onCheckedChange={() => handleToggleMod(p.uid)}
-                         />
-                       )}
+                       {p.uid !== room.ownerId && <Switch checked={room.moderatorIds?.includes(p.uid)} onCheckedChange={() => handleToggleMod(p.uid)} />}
                     </div>
                   ))}
                </ScrollArea>
             </div>
           )}
 
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={(e) => handleFileChange(e)} 
-            className="hidden" 
-            accept="image/*" 
-          />
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
         </DialogContent>
       </Dialog>
 
-      <ImageCropDialog 
-        image={cropImage} 
-        open={isCropOpen} 
-        onOpenChange={setIsCropOpen} 
-        onCropComplete={handleCropComplete} 
-        aspect={4/5} 
-      />
+      <ImageCropDialog image={cropImage} open={isCropOpen} onOpenChange={setIsCropOpen} onCropComplete={handleCropComplete} aspect={4/5} />
     </>
   );
 }

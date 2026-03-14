@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -17,6 +17,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { UmmyLogoIcon } from '@/components/icons';
+import { UserSearchDialog } from '@/components/user-search-dialog';
 
 const CATEGORIES = ["All", "Chat", "Games", "Newcomers", "Party"];
 
@@ -94,16 +95,13 @@ export default function RoomsPage() {
               Me
             </button>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all">
-              <Bell className="h-6 w-6 text-slate-800" />
-              <div className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white" />
-            </button>
-            <button onClick={() => router.push('/profile')} className="h-10 w-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-slate-100 active:scale-95 transition-all">
-              <Avatar className="h-full w-full">
-                <AvatarImage src={user?.photoURL || undefined} />
-                <AvatarFallback><User className="h-5 w-5 text-slate-400" /></AvatarFallback>
-              </Avatar>
+          <div className="flex items-center gap-2">
+            <UserSearchDialog />
+            <button 
+              onClick={() => user?.uid && router.push(`/rooms/${user.uid}`)}
+              className="p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all text-slate-800"
+            >
+              <Home className="h-6 w-6" />
             </button>
           </div>
         </header>
@@ -151,11 +149,17 @@ export default function RoomsPage() {
                    </div>
                 </div>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-500 to-pink-600 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-80">Party</span>
-                   <div className="text-3xl drop-shadow-2xl animate-reaction-float group-hover:scale-110 transition-transform">🔮</div>
+              <button 
+                onClick={() => router.push('/leaderboard?type=games')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
+                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
+                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
+                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Game</span>
+                   <div className="relative z-10 group-hover:scale-110 transition-transform">
+                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                   </div>
                 </div>
               </button>
               <button 

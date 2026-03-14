@@ -88,7 +88,7 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
   if (!color) {
     return (
-      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none">
+      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none px-1">
         ID: {id}
       </span>
     );
@@ -148,7 +148,6 @@ export function RoomUserProfileDialog({
     router.push(`/profile/${userId}`);
   };
 
-  // IDENTITY SIGNATURE SYNC: Strictly from profile tags ledger
   const isOfficial = profile?.tags?.includes('Official');
   const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isCS = profile?.tags?.includes('Customer Service');
@@ -159,7 +158,7 @@ export function RoomUserProfileDialog({
       <DialogContent className="sm:max-w-[400px] border-none p-0 rounded-t-[3rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white text-black font-headline animate-in slide-in-from-bottom-10 duration-500">
         <DialogHeader className="sr-only">
           <DialogTitle>User Profile</DialogTitle>
-          <DialogDescription>Identity Frequency Synchronization</DialogDescription>
+          <DialogDescription>Identity Sync</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
