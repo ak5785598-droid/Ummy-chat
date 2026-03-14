@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    /* Primary Background: #140028 */
-    --background: 270 100% 8%;
-    --foreground: 0 0% 100%;
+    /* Background: Light Pink #FCE4EC */
+    --background: 340 82% 94%;
+    --foreground: 270 100% 8%;
     
-    --card: 270 100% 10%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 270 100% 8%;
     
-    --popover: 270 100% 8%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 100% 8%;
     
-    /* Highlight color: #FF9A00 (Orange) */
-    --primary: 36 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    /* Highlight color: Vibrant Purple */
+    --primary: 291 64% 42%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 270 100% 12%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 340 40% 97%;
+    --secondary-foreground: 270 100% 8%;
     
-    --muted: 270 40% 15%;
-    --muted-foreground: 270 10% 70%;
+    --muted: 340 10% 90%;
+    --muted-foreground: 340 10% 40%;
     
     /* Accent glow: #FF4FA3 (Pink) */
     --accent: 331 100% 66%;
@@ -31,18 +31,18 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 270 50% 15%;
-    --input: 270 50% 15%;
-    --ring: 331 100% 66%;
+    --border: 340 20% 90%;
+    --input: 340 20% 90%;
+    --ring: 291 64% 42%;
     --radius: 1.25rem;
 
-    --sidebar-background: 270 100% 8%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 36 100% 50%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 270 100% 12%;
+    --sidebar-background: 340 82% 94%;
+    --sidebar-foreground: 270 100% 8%;
+    --sidebar-primary: 291 64% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 340 40% 97%;
     --sidebar-accent-foreground: 331 100% 66%;
-    --sidebar-border: 270 50% 15%;
+    --sidebar-border: 340 20% 90%;
     --sidebar-ring: 331 100% 66%;
   }
 }
@@ -55,7 +55,7 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-hidden bg-[#140028];
+    @apply h-[100dvh] w-full overflow-hidden bg-[#FCE4EC];
     height: 100dvh;
     min-height: 100dvh;
     position: fixed;
@@ -66,17 +66,17 @@
   }
 
   body {
-    @apply bg-[#140028] text-foreground antialiased;
+    @apply bg-[#FCE4EC] text-foreground antialiased;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
 
 @layer utilities {
   .bg-ummy-gradient {
-    background: linear-gradient(135deg, #140028 0%, #2A0050 50%, #3D0073 100%);
+    background: linear-gradient(180deg, #FCE4EC 0%, #FFFFFF 100%);
   }
   .glass-card {
-    @apply bg-black/30 backdrop-blur-[20px] border border-white/10;
+    @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
   }
   .logo-glow {
     filter: drop-shadow(0 0 45px rgba(255, 79, 163, 0.9));

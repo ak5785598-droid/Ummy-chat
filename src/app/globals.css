@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Background: Light Lavender/Purple #F3E5F5 matching provided UI */
-    --background: 274 40% 93%;
+    /* Background: Light Pink #FCE4EC matching requested UI */
+    --background: 340 82% 94%;
     --foreground: 270 100% 8%;
     
     --card: 0 0% 100%;
@@ -18,11 +18,11 @@
     --primary: 291 64% 42%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 274 40% 96%;
+    --secondary: 340 40% 97%;
     --secondary-foreground: 270 100% 8%;
     
-    --muted: 270 10% 90%;
-    --muted-foreground: 270 10% 40%;
+    --muted: 340 10% 90%;
+    --muted-foreground: 340 10% 40%;
     
     /* Accent: Pinkish Purple */
     --accent: 331 100% 66%;
@@ -31,18 +31,18 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 270 20% 90%;
-    --input: 270 20% 90%;
+    --border: 340 20% 90%;
+    --input: 340 20% 90%;
     --ring: 291 64% 42%;
     --radius: 1.25rem;
 
-    --sidebar-background: 270 100% 8%;
-    --sidebar-foreground: 0 0% 100%;
+    --sidebar-background: 340 82% 94%;
+    --sidebar-foreground: 270 100% 8%;
     --sidebar-primary: 291 64% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 100% 12%;
+    --sidebar-accent: 340 40% 97%;
     --sidebar-accent-foreground: 331 100% 66%;
-    --sidebar-border: 270 50% 15%;
+    --sidebar-border: 340 20% 90%;
     --sidebar-ring: 331 100% 66%;
   }
 }
@@ -55,7 +55,7 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-hidden bg-[#F3E5F5];
+    @apply h-[100dvh] w-full overflow-hidden bg-[#FCE4EC];
     height: 100dvh;
     min-height: 100dvh;
     position: fixed;
@@ -66,14 +66,14 @@
   }
 
   body {
-    @apply bg-[#F3E5F5] text-foreground antialiased;
+    @apply bg-[#FCE4EC] text-foreground antialiased;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
 
 @layer utilities {
   .bg-ummy-gradient {
-    background: linear-gradient(180deg, #F3E5F5 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, #FCE4EC 0%, #FFFFFF 100%);
   }
   .glass-card {
     @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
