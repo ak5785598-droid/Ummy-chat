@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Background: Light Lavender/Purple #F3E5F5 */
+    /* Background: Light Lavender/Purple #F3E5F5 matching provided UI */
     --background: 274 40% 93%;
     --foreground: 270 100% 8%;
     
@@ -98,3 +98,6 @@
 
 @keyframes shine { 0% { transform: translateX(-200%) skewX(-30deg); } 100% { transform: translateX(200%) skewX(-30deg); } }
 .animate-shine { animation: shine 3s infinite; }
+
+@keyframes reaction-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.animate-reaction-float { animation: reaction-float 3s ease-in-out infinite; }

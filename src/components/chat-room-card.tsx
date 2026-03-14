@@ -6,6 +6,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Trophy, Star } from 'lucide-react';
 
 interface ChatRoomCardProps {
   room: any;
@@ -14,25 +15,25 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Re-engineered to match the provided layout:
- * - Image area with multiple overlays (Tags, Levels, Flags).
- * - Host identity at the bottom of the image.
- * - Room title and topic synchronized below the image.
+ * Matches the requested visual:
+ * - Rounded visual container (4/5 aspect).
+ * - Upper overlays: Official Tag, Level Badge, Flag.
+ * - Bottom Identity Pill: Host avatar and name.
+ * - Info stack below: Title and Description.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room.ownerId);
 
-  const onlineCount = Math.max(0, room.participantCount || 0);
-  const ownerName = owner?.username || 'Tribe Member';
   const roomTitle = room.name || room.title || 'Frequency';
-  const roomTopic = room.description || room.topic || 'Syncing tribe vibes...';
+  const roomTopic = room.description || room.topic || 'Synchronizing...';
+  const ownerName = owner?.username || 'Tribe Member';
 
   if (variant === 'modern') {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline active:scale-95 transition-transform">
         <div className="flex flex-col gap-3">
-          {/* Visual Container */}
-          <div className="relative aspect-[4/5] w-full rounded-[2rem] overflow-hidden shadow-xl bg-slate-200 border-2 border-white">
+          {/* Visual Container: High-Fidelity Rounded Dimension */}
+          <div className="relative aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border-2 border-white group-hover:shadow-primary/10 transition-shadow">
             {room.coverUrl ? (
               <Image
                 key={room.coverUrl}
@@ -40,49 +41,49 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
                 alt={roomTitle}
                 fill
                 unoptimized
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                className="object-cover transition-transform duration-1000 group-hover:scale-110"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                <span className="text-4xl opacity-20">🏠</span>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                <div className="text-slate-200 scale-150 opacity-20">🏠</div>
               </div>
             )}
             
-            {/* Top-Left Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
-               <Badge className="bg-green-500 text-white text-[8px] font-black uppercase px-2 py-0 h-4 border-none shadow-sm">Official</Badge>
-               <div className="flex items-center gap-1 bg-black/20 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/10">
-                  <span className="text-[8px]">🇮🇳</span>
+            {/* Top-Left Stack: Authority & Region */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
+               <Badge className="bg-[#4CAF50] text-white text-[9px] font-black uppercase px-2.5 h-5 border-none shadow-lg">Official</Badge>
+               <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10">
+                  <span className="text-xs">🇮🇳</span>
                </div>
             </div>
 
-            {/* Top-Right Levels */}
-            <div className="absolute top-3 right-3 z-20">
-               <div className="bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm italic">
+            {/* Top-Right Stack: Level Signature */}
+            <div className="absolute top-4 right-4 z-20">
+               <div className="bg-gradient-to-r from-yellow-300 to-yellow-500 text-black text-[9px] font-black px-3 py-1 rounded-full shadow-xl border border-white/20 italic">
                   Lv.25
                </div>
             </div>
 
-            {/* Bottom Identity Overlay */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 z-20">
-               <div className="bg-black/40 backdrop-blur-md rounded-full pl-1 pr-3 py-1 flex items-center gap-2 border border-white/10 max-w-full">
-                  <Avatar className="h-5 w-5 border border-white/20">
+            {/* Bottom Host Identity Pill: Glassmorphism Sync */}
+            <div className="absolute bottom-4 left-4 right-4 z-20">
+               <div className="bg-black/40 backdrop-blur-xl rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2 border border-white/10 w-fit max-w-full shadow-2xl">
+                  <Avatar className="h-6 w-6 border border-white/30 shadow-sm">
                      <AvatarImage src={owner?.avatarUrl} />
-                     <AvatarFallback className="text-[6px]">U</AvatarFallback>
+                     <AvatarFallback className="text-[8px] bg-slate-800 text-white">U</AvatarFallback>
                   </Avatar>
-                  <span className="text-[10px] font-black text-white truncate drop-shadow-md uppercase italic">{ownerName}</span>
+                  <span className="text-[11px] font-black text-white truncate drop-shadow-md uppercase italic tracking-tight">{ownerName}</span>
                </div>
             </div>
 
-            {/* Visual Depth Gradients */}
-            <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/20 to-transparent z-10" />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent z-10" />
+            {/* Visual Depth Overlay */}
+            <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/20 to-transparent z-10" />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 via-black/10 to-transparent z-10" />
           </div>
           
-          {/* Metadata Section (Below Image) */}
-          <div className="space-y-0.5 px-1 min-w-0">
-            <h3 className="font-black text-sm text-slate-900 truncate uppercase tracking-tight">{roomTitle}</h3>
-            <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest">{roomTopic}</p>
+          {/* Metadata Section: Positioned below visual */}
+          <div className="space-y-0.5 px-2 min-w-0">
+            <h3 className="font-black text-sm text-slate-900 truncate uppercase tracking-tight leading-none">{roomTitle}</h3>
+            <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest opacity-80">{roomTopic}</p>
           </div>
         </div>
       </Link>
