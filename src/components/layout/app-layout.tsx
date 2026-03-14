@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castle, MessageSquare, User } from "lucide-react";
+import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castle, Home, Users, User, Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -24,37 +24,6 @@ import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/firestore";
-
-/**
- * High-Fidelity Home Nav Icon.
- */
-const HomeNavIcon = ({ active }: { active: boolean }) => (
-  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="45" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth={6} />
-    <path d="M 30 65 Q 50 80 70 65" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth={6} fill="none" strokeLinecap="round" />
-  </svg>
-);
-
-/**
- * High-Fidelity Message Nav Icon.
- */
-const MessageNavIcon = ({ active }: { active: boolean }) => (
-  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 10 20 Q 10 10 30 10 L 70 10 Q 90 10 90 20 L 90 60 Q 90 70 70 70 L 40 70 L 20 90 L 20 70 Q 10 70 10 60 Z" fill={active ? "#FF4FA3" : "none"} stroke={active ? "#FF4FA3" : "#4A4A4A"} strokeWidth={6} />
-    <circle cx="40" cy="40" r="4" fill={active ? "#FFF" : "#4A4A4A"} />
-    <circle cx="60" cy="40" r="4" fill={active ? "#FFF" : "#4A4A4A"} />
-  </svg>
-);
-
-/**
- * High-Fidelity Me Nav Icon.
- */
-const MeNavIcon = ({ active }: { active: boolean }) => (
-  <svg viewBox="0 0 100 100" className="h-7 w-7 transition-all" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="35" r="20" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth={6} />
-    <path d="M 20 85 Q 20 60 50 60 Q 80 60 80 85" fill="none" stroke={active ? "#FF9A00" : "#4A4A4A"} strokeWidth={6} strokeLinecap="round" />
-  </svg>
-);
 
 export function AppLayout({ 
   children, 
@@ -150,7 +119,7 @@ export function AppLayout({
           </SidebarFooter>
         </Sidebar>
 
-        <SidebarInset className="bg-[#140028] flex-1 overflow-hidden flex flex-col p-0">
+        <SidebarInset className="bg-background flex-1 overflow-hidden flex flex-col p-0">
           <main className="flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar">
             <div className="min-h-full">
               {children}
@@ -158,18 +127,26 @@ export function AppLayout({
           </main>
           
           {shouldShowBottomNav && (
-            <nav className="md:hidden flex items-center justify-around glass-card h-16 pb-safe shrink-0 relative z-50 px-2 rounded-t-[2.5rem] border-x-0 border-b-0">
-              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-primary" : "text-white/20")}>
-                <HomeNavIcon active={pathname === '/rooms'} />
-                <span className="text-[9px] font-black uppercase tracking-tighter">Home</span>
+            <nav className="md:hidden flex items-center justify-around bg-slate-900 h-16 pb-safe shrink-0 relative z-50 px-2 rounded-t-[2rem] border-t border-white/5 shadow-2xl">
+              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
+                <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Home</span>
               </Link>
-              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-accent" : "text-white/20")}>
-                <MessageNavIcon active={pathname === '/messages'} />
-                <span className="text-[9px] font-black uppercase tracking-tighter">Message</span>
+              <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
+                <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Discover</span>
               </Link>
-              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-primary" : "text-white/20")}>
-                <MeNavIcon active={pathname?.startsWith('/profile')} />
-                <span className="text-[9px] font-black uppercase tracking-tighter">Me</span>
+              <Link href="/leaderboard" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/leaderboard' ? "text-[#00E5FF]" : "text-white/40")}>
+                <Crown className={cn("h-6 w-6", pathname === '/leaderboard' ? "fill-current" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Ranking</span>
+              </Link>
+              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
+                <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Message</span>
+              </Link>
+              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
+                <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Me</span>
               </Link>
             </nav>
           )}
