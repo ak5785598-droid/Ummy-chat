@@ -74,7 +74,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
  * High-Fidelity Identity Signature Components
  */
 const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden">
+  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
     <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
     <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
@@ -82,7 +82,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
 );
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden">
+  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
     <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
     <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
@@ -149,7 +149,7 @@ const SpecialIdBadge = ({ id, color = 'red' }: { id: string, color?: string | nu
       theme
     )}>
       <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">ID: {id}</span>
+      <span className="relative z-10 text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm leading-none">ID: {id}</span>
     </div>
   );
 };
@@ -182,7 +182,7 @@ const PublicProfileView = ({
   };
 
   const isOfficial = profile.tags?.includes('Official');
-  const isSeller = profile.tags?.includes('Seller') || profile.tags?.includes('Coin Seller');
+  const isSeller = profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isCS = profile.tags?.includes('Customer Service');
   const isCSLeader = profile.tags?.includes('CS Leader');
 
@@ -226,12 +226,12 @@ const PublicProfileView = ({
             <div className="flex-1 min-w-0">
                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
-                  <span className="text-base">🇮🇳</span>
+                  <span className="text-base leading-none">🇮🇳</span>
                   <RichLevelBadge level={profile.level?.rich || 1} />
                   <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
                
-               <div className="mb-2">
+               <div className="flex items-center gap-2 flex-wrap">
                   {profile.specialId ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                   ) : (
@@ -239,13 +239,11 @@ const PublicProfileView = ({
                        ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                     </p>
                   )}
-               </div>
-
-               <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  {/* Designed Tags Row 2 */}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-6" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-6" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                </div>
             </div>
          </div>
@@ -338,7 +336,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
 
-  const isCertifiedSeller = profile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isOfficial = profile?.tags?.includes('Official');
+  const isCS = profile?.tags?.includes('Customer Service');
+  const isCSLeader = profile?.tags?.includes('CS Leader');
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -402,7 +403,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
                    
-                   <div className="mb-2">
+                   <div className="flex items-center gap-2 flex-wrap">
                       {profile.specialId ? (
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
@@ -410,12 +411,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                            ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
-                   </div>
-
-                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {profile.tags?.includes('Official') && <Badge className="bg-[#ffcc00] text-black text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">Official</Badge>}
-                      <Badge className="bg-[#ba68c8] text-white text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">VIP</Badge>
-                      <Badge className="bg-[#ff7043] text-white text-[8px] font-black uppercase border-none h-4 px-1.5 shadow-sm">Elite</Badge>
+                      {/* Designed Tags Row 2 - Integrated Admin Provider */}
+                      {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
+                      {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
+                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                      {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                    </div>
                 </div>
              </div>
