@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   Bell,
   HelpCircle,
+  UserX,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
@@ -64,7 +66,6 @@ export default function SettingsPage() {
     try {
       console.log("[Identity Sync] Commencing absolute logout cleanup...");
       
-      // 1. Pro-active Identity Disconnect Handshake
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -73,7 +74,6 @@ export default function SettingsPage() {
 
       const batch = writeBatch(firestore);
       
-      // 2. Set Identity to Completely Off
       batch.update(userRef, { 
         isOnline: false, 
         currentRoomId: null, 
@@ -85,9 +85,7 @@ export default function SettingsPage() {
         updatedAt: serverTimestamp() 
       });
 
-      // 3. Atomic Removal from Frequencies
       if (currentRoomId) {
-        console.log(`[Identity Sync] Purging presence from room: ${currentRoomId}`);
         const roomRef = doc(firestore, 'chatRooms', currentRoomId);
         const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
         batch.delete(participantRef);
@@ -98,15 +96,19 @@ export default function SettingsPage() {
       }
 
       await batch.commit();
-      console.log("[Identity Sync] Cleanup complete. Finalizing sign out.");
       
       await signOut(auth);
       window.location.href = '/login';
     } catch (e: any) {
       console.error("[Identity Sync] Logout Cleanup Error:", e);
-      // Fallback: Hard sign out regardless of cleanup success to prevent lock-out
       await signOut(auth);
       window.location.href = '/login';
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone and all your tribal assets will be lost.")) {
+      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review. Contact support.' });
     }
   };
 
@@ -151,7 +153,7 @@ export default function SettingsPage() {
               </Card>
            </section>
 
-           <section className="pt-4 px-2">
+           <section className="pt-4 px-2 space-y-4">
               <Button 
                 onClick={handleLogout}
                 variant="destructive"
@@ -160,6 +162,16 @@ export default function SettingsPage() {
                 <LogOut className="h-6 w-6 mr-2" />
                 Exit Frequency (Sign Out)
               </Button>
+
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="ghost"
+                className="w-full h-12 text-red-400 font-black uppercase italic text-xs hover:text-red-500 transition-colors"
+              >
+                <UserX className="h-4 w-4 mr-2" />
+                Delete Account
+              </Button>
+
               <p className="text-center text-[8px] font-black uppercase tracking-[0.3em] text-gray-300 mt-4 italic">
                 Ummy Secure Protocol v1.4.2 • India Official
               </p>

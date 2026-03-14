@@ -307,37 +307,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
 
-  const handleLogout = async () => {
-    if (!auth || !currentUser || !firestore) return;
-    try {
-      const userRef = doc(firestore, 'users', currentUser.uid);
-      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      const userSnap = await getDoc(userRef);
-      const currentRoomId = userSnap.data()?.currentRoomId;
-      const batch = writeBatch(firestore);
-      batch.update(userRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
-      batch.update(profileRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
-      if (currentRoomId) {
-        const roomRef = doc(firestore, 'chatRooms', currentRoomId);
-        const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', currentUser.uid);
-        batch.delete(participantRef);
-        batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
-      }
-      await batch.commit();
-      await signOut(auth);
-      window.location.href = '/login';
-    } catch (error: any) {
-      await signOut(auth);
-      window.location.href = '/login';
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone and all your tribal assets will be lost.")) {
-      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review. Contact support.' });
-    }
-  };
-
   const isCertifiedSeller = profile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
 
   if (isUserLoading || isProfileLoading) return (
@@ -419,7 +388,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label="Rankings" value="92K" />
           </div>
 
-          {/* Action Grid Portal - Re-engineered for Coins and Diamonds */}
+          {/* Action Grid Portal */}
           <div className="px-6 grid grid-cols-2 gap-4 mb-10">
              <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
                 <div className="relative z-10 flex flex-col h-full justify-between">
@@ -477,7 +446,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </div>
           </div>
 
-          {/* New Tribal Menu Sections */}
+          {/* Tribal Menu Sections */}
           <div className="px-6 space-y-6 pb-24">
              {/* General Resources Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
@@ -498,8 +467,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              {/* System & Security Card */}
              <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
                 <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
-                <ProfileMenuItem icon={LogOut} label="Log out" iconColor="bg-red-50 text-red-500" onClick={handleLogout} destructive />
-                <ProfileMenuItem icon={UserX} label="Delete account" iconColor="bg-red-50 text-red-500" onClick={handleDeleteAccount} destructive />
              </Card>
           </div>
         </div>

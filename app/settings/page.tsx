@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   Bell,
   HelpCircle,
+  UserX,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
@@ -84,6 +86,12 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone and all your tribal assets will be lost.")) {
+      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review. Contact support.' });
+    }
+  };
+
   if (isUserLoading || isProfileLoading) {
     return (
       <AppLayout>
@@ -125,7 +133,7 @@ export default function SettingsPage() {
               </Card>
            </section>
 
-           <section className="pt-4 px-2">
+           <section className="pt-4 px-2 space-y-4">
               <Button 
                 onClick={handleLogout}
                 variant="destructive"
@@ -133,6 +141,15 @@ export default function SettingsPage() {
               >
                 <LogOut className="h-6 w-6 mr-2" />
                 Exit Frequency (Sign Out)
+              </Button>
+
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="ghost"
+                className="w-full h-12 text-red-400 font-black uppercase italic text-xs hover:text-red-500 transition-colors"
+              >
+                <UserX className="h-4 w-4 mr-2" />
+                Delete Account
               </Button>
            </section>
         </div>

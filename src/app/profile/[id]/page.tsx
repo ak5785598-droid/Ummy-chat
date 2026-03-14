@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, use, useState, useMemo } from 'react';
@@ -31,11 +32,17 @@ import {
   CreditCard,
   Target,
   Trophy,
-  Mail
+  Mail,
+  Gem,
+  Info,
+  LogOut,
+  UserX,
+  BadgeCheck,
+  Trash2
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -48,7 +55,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
-import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +64,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SocialRelationsDialog } from '@/components/social-relations-dialog';
+import { Card } from '@/components/ui/card';
+import { signOut } from 'firebase/auth';
+import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -100,6 +111,24 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
   </button>
 );
 
+const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
+  <button 
+    onClick={onClick}
+    className="w-full flex items-center justify-between py-5 border-b border-gray-50 last:border-0 px-2 hover:bg-gray-50 active:bg-gray-100 transition-all text-left"
+  >
+    <div className="flex items-center gap-4">
+      <div className={cn("p-2 rounded-2xl", iconColor || "bg-slate-100 text-slate-600")}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className={cn("font-black text-sm uppercase italic tracking-tight", destructive ? "text-red-500" : "text-gray-800")}>{label}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      {extra && <span className="text-[10px] font-black text-gray-400 italic uppercase">{extra}</span>}
+      <ChevronRight className="h-4 w-4 text-gray-300" />
+    </div>
+  </button>
+);
+
 /**
  * Public Profile View.
  */
@@ -110,7 +139,6 @@ const PublicProfileView = ({
   followData, 
   isProcessingFollow,
   onOpenSocial,
-  topContributors
 }: { 
   profile: any, 
   onBack: () => void, 
@@ -118,7 +146,6 @@ const PublicProfileView = ({
   followData: any, 
   isProcessingFollow: boolean,
   onOpenSocial: (tab: any) => void,
-  topContributors: any[] | null
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -245,6 +272,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
@@ -278,6 +306,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
   };
+
+  const isCertifiedSeller = profile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -360,18 +390,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           {/* Action Grid Portal */}
           <div className="px-6 grid grid-cols-2 gap-4 mb-10">
-             <div className="h-28 rounded-3xl bg-gradient-to-br from-orange-400 to-red-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Popular Level</h3>
-                   <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-white/80 uppercase">3 person</span>
-                      <div className="bg-blue-500 rounded px-1.5 py-0.5 text-[8px] font-black text-white uppercase">Winner</div>
-                   </div>
-                </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Trophy className="h-20 w-20 text-yellow-200 fill-current" /></div>
-             </div>
-
-             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 p-5 relative overflow-hidden shadow-xl shadow-purple-200 active:scale-95 transition-transform group cursor-pointer">
+             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 p-5 relative overflow-hidden shadow-xl shadow-orange-200 active:scale-95 transition-transform group cursor-pointer">
                 <div className="relative z-10 flex flex-col h-full justify-between">
                    <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Coins</h3>
                    <div className="flex items-center gap-1.5">
@@ -379,20 +398,37 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <span className="text-2xl font-black text-white italic">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                    </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform"><Crown className="h-20 w-20 text-yellow-400 fill-current" /></div>
+                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+                   <GoldCoinIcon className="h-20 w-20" />
+                </div>
+             </div>
+
+             <div onClick={() => router.push('/wallet')} className="h-28 rounded-3xl bg-gradient-to-br from-[#0ea5e9] via-[#38bdf8] to-[#0284c7] p-5 relative overflow-hidden shadow-xl shadow-blue-200 active:scale-95 transition-transform group cursor-pointer">
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                   <h3 className="text-xl font-black text-white italic tracking-tighter leading-none">Diamonds</h3>
+                   <div className="flex items-center gap-1.5">
+                      <Gem className="h-4 w-4 text-white fill-current" />
+                      <span className="text-2xl font-black text-white italic">
+                         {(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </span>
+                   </div>
+                </div>
+                <div className="absolute -bottom-2 -right-2 opacity-30 group-hover:scale-110 transition-transform">
+                   <Gem className="h-20 w-20 text-white fill-current" />
+                </div>
              </div>
           </div>
 
           {/* Utility Icon Dimension */}
           <div className="px-10 flex justify-between items-center mb-12">
-             <IconButton icon={ClipboardList} label="Badge" colorClass="bg-[#4ade80]" />
-             <IconButton icon={History} label="History" colorClass="bg-[#f472b6]" />
-             <IconButton icon={CreditCard} label="Account" colorClass="bg-[#38bdf8]" />
-             <IconButton icon={Target} label="Orders" colorClass="bg-[#fb7185]" />
+             <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+             <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-400" onClick={() => router.push('/store')} />
+             <IconButton icon={History} label="Budget" colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
+             <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
           {/* VIP Premium Promotional Portal */}
-          <div className="px-6 space-y-4 pb-24">
+          <div className="px-6 space-y-4 mb-8">
              <div className="relative rounded-[2.5rem] overflow-hidden group shadow-2xl active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-40 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-8 flex flex-col justify-start relative">
                    <div className="flex items-center gap-3 relative z-10">
@@ -409,6 +445,30 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
              </div>
           </div>
+
+          {/* Tribal Menu Sections */}
+          <div className="px-6 space-y-6 pb-24">
+             {/* General Resources Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered', description: 'Referral link dispatched.' })} />
+                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                {isCertifiedSeller && (
+                  <SellerTransferDialog />
+                )}
+             </Card>
+
+             {/* Support & About Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
+             </Card>
+
+             {/* System & Security Card */}
+             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white px-4">
+                <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
+             </Card>
+          </div>
         </div>
 
         <SocialRelationsDialog 
@@ -424,7 +484,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <AppLayout hideSidebarOnMobile>
-       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} topContributors={topContributors} />
+       <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
   );
