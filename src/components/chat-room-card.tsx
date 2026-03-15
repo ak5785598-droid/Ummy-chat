@@ -15,7 +15,7 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Re-engineered for Connected Card Architecture: The cover and name are one unit.
+ * Re-engineered for Square Card Identity (Squad Shape).
  * Features Identity Color Sync for the room name.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
@@ -51,8 +51,8 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           {/* Glass Glossy Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30" />
           
-          {/* Cover Image Dimension */}
-          <div className="relative aspect-[4/5] w-full bg-slate-50">
+          {/* Square Cover Image Dimension */}
+          <div className="relative aspect-square w-full bg-slate-50">
             {room.coverUrl ? (
               <Image
                 key={room.coverUrl}
@@ -116,7 +116,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   return (
     <Link href={`/rooms/${room.id}`} className="group block active:scale-95 transition-transform">
       <div className="overflow-hidden bg-white border-none rounded-2xl shadow-md flex flex-col">
-        <div className="relative h-40 w-full bg-slate-100">
+        <div className="relative aspect-square w-full bg-slate-100">
           {room.coverUrl && (
             <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill unoptimized className="object-cover" />
           )}
