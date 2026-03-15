@@ -480,12 +480,6 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-2 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
-               <Trophy className="h-2.5 w-2.5 text-yellow-400 fill-current" />
-               <span className="text-[8px] font-black text-yellow-400 leading-none">
-                 {room.stats?.totalGifts?.toLocaleString() || 0}
-               </span>
-            </div>
           </div>
           <div className="flex flex-col">
              <div className="flex items-center gap-2">
@@ -521,6 +515,14 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
+        {/* Global Gift Trophy Badge */}
+        <div className="absolute top-4 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-700">
+           <Trophy className="h-4 w-4 text-yellow-400 fill-current" />
+           <span className="text-sm font-black text-yellow-400 italic">
+             {room.stats?.totalGifts?.toLocaleString() || 0}
+           </span>
+        </div>
+
         <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
            <div className="w-full flex justify-center">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
