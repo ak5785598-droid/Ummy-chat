@@ -541,12 +541,11 @@ export function RoomClient({ room }: { room: Room }) {
               ))}
            </div>
 
-           {/* Repositioned Central Announcement Sync */}
-           <div className="mt-4 flex items-center justify-center gap-2 px-6 w-full animate-in fade-in duration-1000">
-              <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
-              <div className="max-w-[80%]">
-                 <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-center leading-relaxed">
-                    {room.announcement || "Welcome to the frequency!"}
+           {/* Left-Aligned Announcement Sync */}
+           <div className="mt-4 flex items-center justify-start px-6 w-full animate-in fade-in duration-1000">
+              <div className="max-w-full">
+                 <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
+                    Announcement: {room.announcement || "Welcome to Umm Chat"}
                  </p>
               </div>
            </div>
