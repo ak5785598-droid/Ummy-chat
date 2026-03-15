@@ -687,14 +687,14 @@ export default function AdminPage() {
     }
   };
 
-  if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
-
   const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
     <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
        <button onClick={() => setMode('id')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'id' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By ID</button>
        <button onClick={() => setMode('name')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By Name</button>
     </div>
   );
+
+  if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
 
   return (
     <AppLayout>
@@ -1344,7 +1344,7 @@ export default function AdminPage() {
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={(e) => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
@@ -1468,7 +1468,7 @@ export default function AdminPage() {
                              <button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button>
                              <button onClick={() => setSelectedColor(null)} className={cn("h-10 w-10 rounded-full bg-slate-200 border-4 transition-all flex items-center justify-center", selectedColor === null ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === null && <X className="h-4 w-4 text-slate-600" />}</button>
                           </div>
-                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
+                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={() => handleRemoveId()} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
                        </div>
                     </div>
                   )}
