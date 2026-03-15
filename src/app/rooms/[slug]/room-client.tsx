@@ -473,17 +473,17 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-4 pt-4">
-        <div className="flex items-center gap-2.5 ml-0">
+      <header className="relative z-50 flex items-center justify-between p-4 pt-8 px-6">
+        <div className="flex items-center gap-3 ml-0">
           <div className="relative">
-            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
+            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-lg">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
           </div>
           <div className="flex flex-col">
              <div className="flex items-center gap-2">
-                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none">{room.title}</h1>
+                <h1 className="font-black text-base uppercase tracking-tighter text-white leading-none drop-shadow-md">{room.title}</h1>
                 <button 
                   onClick={handleFollowRoom}
                   className={cn(
@@ -501,16 +501,16 @@ export function RoomClient({ room }: { room: Room }) {
                    )}
                 </button>
              </div>
-             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5">ID:{room.roomNumber}</p>
+             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5 tracking-widest">ID:{room.roomNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2.5 shadow-lg"><Users className="h-4 w-4 text-white/60" /><span className="text-[13px] font-black">{onlineCount}</span></button>
           {canManageRoom && (
-            <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
+            <RoomSettingsDialog room={room} trigger={<button className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />
           )}
-          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Power className="h-5 w-5" /></button>
+          <button onClick={() => setIsShareOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-5 w-5" /></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-5 w-5" /></button>
         </div>
       </header>
 
