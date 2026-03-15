@@ -83,9 +83,6 @@ import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
-/**
- * High-Fidelity Media Volume Router.
- */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const contextRef = useRef<AudioContext | null>(null);
@@ -94,36 +91,28 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
 
   useEffect(() => {
     if (!stream) return;
-
     if (!contextRef.current) {
       contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     const ctx = contextRef.current;
-
     if (sourceRef.current) {
       sourceRef.current.disconnect();
     }
-    
     sourceRef.current = ctx.createMediaStreamSource(stream);
     gainRef.current = ctx.createGain();
-    
     sourceRef.current.connect(gainRef.current);
     gainRef.current.connect(ctx.destination);
-
     gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
-
     if (ctx.state === 'suspended') {
       const resume = () => ctx.resume().catch(() => {});
       window.addEventListener('click', resume, { once: true });
       window.addEventListener('touchstart', resume, { once: true });
     }
-
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
       audioRef.current.muted = true;
       audioRef.current.play().catch(() => {});
     }
-
     return () => {
       if (sourceRef.current) sourceRef.current.disconnect();
       if (gainRef.current) gainRef.current.disconnect();
@@ -149,7 +138,7 @@ const Seat = ({
   onClick: (index: number, occupant?: RoomParticipant) => void 
 }) => {
   return (
-    <div className="flex flex-col items-center gap-1.5 w-full">
+    <div className="flex flex-col items-center gap-1 w-full">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
         {occupant && !occupant.isMuted && (
@@ -159,7 +148,7 @@ const Seat = ({
           <button 
             onClick={() => onClick(index, occupant)} 
             className={cn(
-              "h-16 w-16 rounded-full flex items-center justify-center border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10",
+              "h-14 w-14 rounded-full flex items-center justify-center border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10",
               isLocked ? "border-red-500/40" : "border-white/10"
             )}
             style={{ backgroundColor: theme.seatColor || 'rgba(255,255,255,0.1)' }}
@@ -180,7 +169,7 @@ const Seat = ({
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
-      <span className="text-[10px] font-black uppercase text-white/60 truncate w-full text-center px-1 drop-shadow-md">
+      <span className="text-[9px] font-black uppercase text-white/60 truncate w-full text-center px-1 drop-shadow-md leading-none">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -266,7 +255,6 @@ export function RoomClient({ room }: { room: Room }) {
   const participants = useMemo(() => {
     if (!participantsData) return [];
     if (now === null) return participantsData;
-
     return participantsData.filter(p => {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
@@ -303,12 +291,10 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
-    
     if (isChatMuted && !canManageRoom) {
-      toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
+      toast({ variant: 'destructive', title: 'Chat Restricted', description: 'Room authority restricted public messages.' });
       return;
     }
-
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || null, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
     });
@@ -325,14 +311,9 @@ export function RoomClient({ room }: { room: Room }) {
   const handleExit = () => { 
     if (firestore && currentUser) {
       const roomDocRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomDocRef, { 
-        participantCount: increment(-1),
-        updatedAt: serverTimestamp() 
-      });
-
+      updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
-      
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
@@ -342,10 +323,7 @@ export function RoomClient({ room }: { room: Room }) {
     router.push('/rooms'); 
   };
 
-  const currentTheme = useMemo(() => {
-    return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
-  }, [room.roomThemeId]);
-
+  const currentTheme = useMemo(() => ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0], [room.roomThemeId]);
   const bgUrl = currentTheme.url;
 
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
@@ -369,7 +347,7 @@ export function RoomClient({ room }: { room: Room }) {
     const expires = new Date(Date.now() + duration * 60000);
     setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'bans', uid), { expiresAt: Timestamp.fromDate(expires) }, { merge: true });
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
-    toast({ title: 'Member Excluded', description: `Restricted for ${duration} minutes.` });
+    toast({ title: 'Exclusion Sync', description: `Member restricted for ${duration}m.` });
     setIsUserProfileCardOpen(false);
     setIsSeatMenuOpen(false);
   };
@@ -384,27 +362,15 @@ export function RoomClient({ room }: { room: Room }) {
   const handleToggleMod = (uid: string) => {
     if (!firestore || !room.id) return;
     const isCurrentlyMod = room.moderatorIds?.includes(uid);
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
-      moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid)
-    });
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid) });
   };
 
   const handleInputClick = () => {
     if (isChatMuted && !canManageRoom) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Chat Restricted', 
-        description: 'Room authority has closed public messaging.' 
-      });
+      toast({ variant: 'destructive', title: 'Chat Restricted', description: 'Messaging is closed by authority.' });
       return;
     }
     setShowInput(true);
-  };
-
-  const handleOpenGiftPickerFromMenu = (recipient: any) => {
-    setGiftRecipient(recipient);
-    setIsGiftPickerOpen(true);
-    setIsSeatMenuOpen(false);
   };
 
   const handleMention = (username: string) => {
@@ -417,143 +383,84 @@ export function RoomClient({ room }: { room: Room }) {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
       musicAudioRef.current.src = url;
-      musicAudioRef.current.play().catch(e => {
-        console.warn('[Music Sync] Play failed:', e);
-        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
-      });
-      
+      musicAudioRef.current.play().catch(() => {});
       const stream = (musicAudioRef.current as any).captureStream?.() || (musicAudioRef.current as any).mozCaptureStream?.();
-      if (stream) {
-        setMusicStream(stream);
-      }
+      if (stream) setMusicStream(stream);
     }
   };
 
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline w-full max-w-full">
       <DailyRewardDialog />
-      <GiftAnimationOverlay 
-        giftId={activeGiftSync?.id || null} 
-        senderName={activeGiftSync?.senderName}
-        onComplete={() => setActiveGiftSync(null)} 
-      />
+      <GiftAnimationOverlay giftId={activeGiftSync?.id || null} senderName={activeGiftSync?.senderName} onComplete={() => setActiveGiftSync(null)} />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
-      
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
       <div className="absolute inset-0 z-0">
-        <Image 
-          key={`${room.roomThemeId}`} 
-          src={bgUrl} 
-          alt="Background" 
-          fill 
-          unoptimized
-          className="object-cover opacity-60 animate-in fade-in duration-1000" 
-          priority 
-        />
+        <Image key={`${room.roomThemeId}`} src={bgUrl} alt="Background" fill unoptimized className="object-cover opacity-60 animate-in fade-in duration-1000" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-6 pt-14 px-6 shrink-0">
-        <div className="flex items-center gap-3 max-w-[65%]">
-          <div className="relative shrink-0">
-            <Avatar className="h-14 w-14 rounded-xl border-2 border-white/20 shadow-xl">
-              <AvatarImage src={room.coverUrl || undefined} />
-              <AvatarFallback>UM</AvatarFallback>
-            </Avatar>
-          </div>
+      <header className="relative z-50 flex items-center justify-between p-4 pt-12 px-4 shrink-0 w-full">
+        <div className="flex items-center gap-2 max-w-[60%] min-w-0">
+          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-xl shrink-0">
+            <AvatarImage src={room.coverUrl || undefined} />
+            <AvatarFallback>UM</AvatarFallback>
+          </Avatar>
           <div className="flex flex-col min-w-0">
-             <div className="flex items-center gap-2 min-w-0">
-                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[140px]">{room.title}</h1>
-                <button 
-                  onClick={handleFollowRoom}
-                  className={cn(
-                    "h-7 w-7 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0",
-                    followData ? "bg-red-500" : "bg-[#00E676]"
-                  )}
-                >
-                   {followData ? (
-                     <Heart className="h-4 w-4 text-white fill-current" />
-                   ) : (
-                     <div className="relative flex items-center justify-center">
-                        <Heart className="h-4.5 w-4.5 text-white" strokeWidth={3} />
-                        <Plus className="h-2.5 w-2.5 text-white absolute mt-0.5" strokeWidth={4} />
-                     </div>
-                   )}
+             <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[100px]">{room.title}</h1>
+                <button onClick={handleFollowRoom} className={cn("h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-500" : "bg-[#00E676]")}>
+                   {followData ? <Heart className="h-3.5 w-3.5 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-4 w-4 text-white" strokeWidth={3} /><Plus className="h-2.5 w-2.5 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
              </div>
-             <p className="text-[11px] font-bold text-white/60 uppercase mt-1 tracking-widest">ID:{room.roomNumber}</p>
+             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-xl"><Users className="h-5 w-5 text-white/60" /><span className="text-[14px] font-black">{onlineCount}</span></button>
-          {canManageRoom && (
-            <RoomSettingsDialog room={room} trigger={<button className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-6 w-6" /></button>} />
-          )}
-          <button onClick={() => setIsShareOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-6 w-6" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-6 w-6" /></button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-1.5 shadow-xl"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
+          {canManageRoom && <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />}
+          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-5 w-5" /></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-5 w-5" /></button>
         </div>
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="absolute top-4 left-6 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-700">
-           <Trophy className="h-5 w-5 text-yellow-400 fill-current" />
-           <span className="text-[14px] font-black text-yellow-400 italic">
-             {room.stats?.totalGifts?.toLocaleString() || 0}
-           </span>
+        <div className="absolute top-2 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl">
+           <Trophy className="h-4 w-4 text-yellow-400 fill-current" />
+           <span className="text-[12px] font-black text-yellow-400 italic">{room.stats?.totalGifts?.toLocaleString() || 0}</span>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-start gap-6 pt-6 pb-40 overflow-y-auto no-scrollbar w-full">
-           <div className="w-full flex justify-center px-6 mb-4">
-              <div className="w-1/4 max-w-[120px]">
+        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-40 overflow-y-auto no-scrollbar w-full">
+           <div className="w-full flex justify-center px-6 mb-2">
+              <div className="w-1/4 max-w-[100px]">
                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
               </div>
            </div>
-           
-           <div className="w-full grid grid-cols-4 gap-3 px-6">
-              {[2, 3, 4, 5].map(idx => (
+           <div className="w-full grid grid-cols-4 gap-2 px-4">
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
-           <div className="w-full grid grid-cols-4 gap-3 px-6">
-              {[6, 7, 8, 9].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
-              ))}
-           </div>
-           <div className="w-full grid grid-cols-4 gap-3 px-6">
-              {[10, 11, 12, 13].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
-              ))}
-           </div>
-
-           <div className="mt-8 flex items-center justify-start px-8 w-full animate-in fade-in duration-1000">
-              <div className="max-w-full">
-                 <p className="text-[13px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
-                    Announcement: {room.announcement || "Welcome to Umm Chat"}
-                 </p>
-              </div>
+           <div className="mt-6 flex items-center justify-start px-6 w-full">
+              <p className="text-[12px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
+                 Announcement: {room.announcement || "Welcome to Umm Chat"}
+              </p>
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-44 z-20 pointer-events-none p-6 pb-0">
-           <ScrollArea className="h-full pr-6 pointer-events-auto" ref={scrollRef}>
-              <div className="flex flex-col gap-1.5 justify-end min-h-full">
+        <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-4 pb-0">
+           <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
+              <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
-                   <div 
-                    key={msg.id} 
-                    onClick={() => {
-                      setSelectedParticipantUid(msg.senderId);
-                      setIsUserProfileCardOpen(true);
-                    }}
-                    className="flex items-start gap-2.5 bg-black/40 backdrop-blur-md rounded-xl p-2 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-1.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
-                   >
-                      <Avatar className="h-7 w-7 shrink-0 border border-white/10 shadow-sm"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
+                   <div key={msg.id} onClick={() => { setSelectedParticipantUid(msg.senderId); setIsUserProfileCardOpen(true); }} className="flex items-start gap-2 bg-black/40 backdrop-blur-md rounded-xl p-1.5 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-1 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
+                      <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-sm"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback>{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
-                        <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-[12px] font-bold text-white leading-snug break-all">{msg.content || msg.text}</p>
+                        <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
+                        <p className="text-[11px] font-bold text-white leading-snug break-all">{msg.content || msg.text}</p>
                       </div>
                    </div>
                  ))}
@@ -562,126 +469,34 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-8 pb-12 flex items-center justify-between pt-6 shrink-0 bg-gradient-to-t from-black/80 to-transparent w-full">
-        <div className="flex items-center">
-           <button 
-             onClick={handleInputClick} 
-             className={cn(
-               "backdrop-blur-xl rounded-full h-14 w-14 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-2xl",
-               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white border border-white/10"
-             )}
-           >
-              <MessageSquare className="h-7 w-7" />
-           </button>
-        </div>
-
-        <div className="absolute left-1/2 -translate-x-1/2">
-           <button 
-             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_25px_rgba(168,85,247,0.5)] active:scale-90 transition-transform border-2 border-white/30"
-           >
-              <GiftIcon className="h-8 w-8 text-white fill-white" />
-           </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-3 rounded-full transition-all active:scale-90 shadow-xl border", !isInSeat ? "bg-white/5 text-white/20 opacity-50 border-white/5" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white border-white/10" : "bg-green-500 text-white border-white/30 shadow-[0_0_15px_rgba(34,197,94,0.4)]"))}>
-              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
-           </button>
-           
-           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-3 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10">
-             <SmilePlus className="h-6 w-6 text-white" />
-           </button>
-
-           <button onClick={() => setIsMessagesOpen(true)} className="p-3 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10">
-              <Mail className="h-6 w-6 text-white" />
-           </button>
-
-           <button onClick={() => setIsRoomPlayOpen(true)} className="p-3 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10">
-              <LayoutGrid className="h-6 w-6 text-white" />
-           </button>
+      <footer className="relative z-50 px-6 pb-10 flex items-center justify-between pt-4 shrink-0 bg-gradient-to-t from-black/80 to-transparent w-full">
+        <div className="flex items-center"><button onClick={handleInputClick} className={cn("backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-2xl", isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white border border-white/10")}><MessageSquare className="h-6 w-6" /></button></div>
+        <div className="absolute left-1/2 -translate-x-1/2"><button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_#a855f780] active:scale-90 transition-transform border-2 border-white/30"><GiftIcon className="h-7 w-7 text-white fill-white" /></button></div>
+        <div className="flex items-center gap-2">
+           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-xl border", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-[0_0_15px_#22c55e66] border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
+           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10"><SmilePlus className="h-5 w-5 text-white" /></button>
+           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10"><Mail className="h-5 w-5 text-white" /></button>
+           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-xl border border-white/10"><LayoutGrid className="h-5 w-5 text-white" /></button>
         </div>
       </footer>
 
       {showInput && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-6 font-headline">
-           <div className="bg-slate-900 rounded-[2.5rem] p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-10">
-              <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[11px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-6 w-6" /></button></div>
-              <form className="flex gap-3" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}><Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-16 bg-white/5 border-white/10 rounded-full px-8 text-white text-lg" placeholder="Type a message..." /><button className="bg-primary text-black h-16 w-16 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-xl"><Mail className="h-7 w-7" /></button></form>
-           </div>
-        </div>
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline"><div className="bg-slate-900 rounded-[2.5rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10"><div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[10px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-5 w-5" /></button></div><form className="flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}><Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-14 bg-white/5 border-white/10 rounded-full px-6 text-white text-base" placeholder="Type a message..." /><button className="bg-primary text-black h-14 w-14 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-xl"><Mail className="h-6 w-6" /></button></form></div></div>
       )}
 
       <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
-        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Exit Frequency</DialogTitle>
-            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
-          </DialogHeader>
-          <div className="p-12 flex items-center justify-around gap-10">
-            <button onClick={handleMinimize} className="flex flex-col items-center gap-5 active:scale-90 transition-transform">
-              <div className="h-24 w-24 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-10 w-10 text-black" /></div>
-              <span className="text-white font-black uppercase text-sm tracking-widest">Minimize</span>
-            </button>
-            <button onClick={handleExit} className="flex flex-col items-center gap-5 active:scale-90 transition-transform">
-              <div className="h-24 w-24 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-10 w-10 text-pink-500" /></div>
-              <span className="text-white font-black uppercase text-sm tracking-widest">Exit Room</span>
-            </button>
-          </div>
-        </DialogContent>
+        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline"><DialogHeader className="sr-only"><DialogTitle>Exit Frequency</DialogTitle><DialogDescription>Minimize or exit room.</DialogDescription></DialogHeader><div className="p-12 flex items-center justify-around gap-8"><button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span></button><button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span></button></div></DialogContent>
       </Dialog>
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
-      <RoomPlayDialog 
-        open={isRoomPlayOpen} 
-        onOpenChange={setIsRoomPlayOpen} 
-        participants={participants} 
-        roomId={room.id} 
-        room={room} 
-        isMutedLocal={isMutedLocal}
-        setIsMutedLocal={setIsMutedLocal}
-        onOpenGames={() => setIsRoomGamesOpen(true)}
-        onPlayLocalMusic={handlePlayLocalMusic}
-      />
+      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} participants={participants} roomId={room.id} room={room} isMutedLocal={isMutedLocal} setIsMutedLocal={setIsMutedLocal} onOpenGames={() => setIsRoomGamesOpen(true)} onPlayLocalMusic={handlePlayLocalMusic} />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
-      
-      <RoomSeatMenuDialog 
-        open={isSeatMenuOpen} 
-        onOpenChange={setIsSeatMenuOpen}
-        seatIndex={selectedSeatIdx}
-        roomId={room.id}
-        isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
-        occupantUid={selectedParticipantUid}
-        occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
-        occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
-        canManage={canManageRoom}
-        currentUserId={currentUser?.uid}
-        onLeaveSeat={handleLeaveSeat}
-        onKick={handleKick}
-        onSendGift={handleOpenGiftPickerFromMenu}
-      />
-
-      <RoomUserProfileDialog 
-        userId={selectedParticipantUid}
-        open={isUserProfileCardOpen}
-        onOpenChange={setIsUserProfileCardOpen}
-        canManage={canManageRoom}
-        isOwner={isOwner}
-        roomOwnerId={room.ownerId}
-        roomModeratorIds={room.moderatorIds || []}
-        onSilence={handleSilence}
-        onKick={handleKick}
-        onLeaveSeat={handleLeaveSeat}
-        onToggleMod={handleToggleMod}
-        onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
-        onMention={handleMention}
-        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
-        isMe={selectedParticipantUid === currentUser?.uid}
-      />
+      <RoomSeatMenuDialog open={isSeatMenuOpen} onOpenChange={setIsSeatMenuOpen} seatIndex={selectedSeatIdx} roomId={room.id} isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false} occupantUid={selectedParticipantUid} occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name} occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl} canManage={canManageRoom} currentUserId={currentUser?.uid} onLeaveSeat={handleLeaveSeat} onKick={handleKick} onSendGift={handleOpenGiftPickerFromMenu} />
+      <RoomUserProfileDialog userId={selectedParticipantUid} open={isUserProfileCardOpen} onOpenChange={setIsUserProfileCardOpen} canManage={canManageRoom} isOwner={isOwner} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} onSilence={handleSilence} onKick={handleKick} onLeaveSeat={handleLeaveSeat} onToggleMod={handleToggleMod} onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }} onMention={handleMention} isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false} isMe={selectedParticipantUid === currentUser?.uid} />
     </div>
   );
 }
