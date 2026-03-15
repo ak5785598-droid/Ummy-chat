@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Gamepad2, Home } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -28,12 +28,11 @@ export default function RoomsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
 
-  // PUBLIC GRID QUERY: Re-engineered for Live-Only Sync
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'chatRooms'), 
-      where('participantCount', '>', 0), // SERVER SIDE FILTER: Only show live rooms
+      where('participantCount', '>', 0), 
       orderBy('participantCount', 'desc'),
       limit(50)
     );
@@ -41,7 +40,6 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
-  // "ME" DIMENSION FETCHING
   const myRoomRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'chatRooms', user.uid);
@@ -54,7 +52,6 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
-  // VISIBILITY PROTOCOL: Recommend grid strictly hides empty rooms
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     return roomsData.filter(room => (room.participantCount || 0) > 0);
@@ -98,7 +95,7 @@ export default function RoomsPage() {
           <div className="flex items-center gap-2">
             <UserSearchDialog />
             <button 
-              onClick={() => user?.uid && router.push(`/rooms/${user.uid}`)}
+              onClick={() => user?.uid ? router.push(`/rooms/${user.uid}`) : null}
               className="p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all text-slate-800"
             >
               <Home className="h-6 w-6" />
@@ -109,44 +106,26 @@ export default function RoomsPage() {
         {headerTab === 'recommend' ? (
           <>
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
-              <button 
-                onClick={() => router.push('/leaderboard?type=rich')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-1000" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Rich</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Rich</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
-              <button 
-                onClick={() => router.push('/leaderboard?type=games')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Game</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/leaderboard?type=games')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-500" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Game</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
-              <button 
-                onClick={() => router.push('/cp-challenge')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Cp</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/cp-challenge')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-700" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Cp</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
             </section>
 
@@ -168,14 +147,14 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <div className="px-6 mb-6">
+            <div className="px-6 mb-4">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
                     className={cn(
-                      "px-6 py-2.5 rounded-xl text-[14px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap border-2 border-transparent",
+                      "px-4 py-1.5 rounded-xl text-[12px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap border-2 border-transparent",
                       activeCategory === cat 
                         ? "bg-white/80 backdrop-blur-md text-purple-600 shadow-lg border-white/40 scale-[1.05]" 
                         : "text-purple-400/70 hover:text-purple-500 hover:bg-white/10"
@@ -208,17 +187,17 @@ export default function RoomsPage() {
                           { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
                         ].map((b) => (
                           <CarouselItem key={b.id}>
-                            <div className={cn("h-28 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
+                            <div className={cn("h-24 w-full rounded-[2.5rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
                                <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
                                <div className="relative z-10">
                                   <div className="flex items-center gap-2 mb-1">
                                      <b.icon className="h-4 w-4 text-white animate-pulse" />
-                                     <h3 className="text-xl font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
+                                     <h3 className="text-lg font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
                                   </div>
                                   <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{b.sub}</p>
                                </div>
                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                  <UmmyLogoIcon className="h-24 w-24 rotate-12" />
+                                  <UmmyLogoIcon className="h-20 w-20 rotate-12" />
                                 </div>
                             </div>
                           </CarouselItem>
