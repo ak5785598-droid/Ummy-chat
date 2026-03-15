@@ -106,25 +106,25 @@ export default function RoomsPage() {
         {headerTab === 'recommend' ? (
           <>
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
-              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-20 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-28 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
                  <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
                  <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Rich</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
-                    <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                    <Crown className="h-12 w-12 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                  </div>
               </button>
-              <button onClick={() => router.push('/leaderboard?type=games')} className="group relative h-20 rounded-[1.5rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+              <button onClick={() => router.push('/leaderboard?type=games')} className="group relative h-28 rounded-[1.5rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
                  <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-500" />
                  <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Game</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
-                    <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                    <Gamepad2 className="h-12 w-12 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                  </div>
               </button>
-              <button onClick={() => router.push('/cp-challenge')} className="group relative h-20 rounded-[1.5rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+              <button onClick={() => router.push('/cp-challenge')} className="group relative h-28 rounded-[1.5rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
                  <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-700" />
                  <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Cp</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
-                    <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                    <Heart className="h-12 w-12 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                  </div>
               </button>
             </section>
