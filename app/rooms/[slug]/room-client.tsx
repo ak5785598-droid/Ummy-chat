@@ -576,7 +576,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-4 pb-10 flex items-center justify-between pt-4">
+      <footer className="relative z-50 px-10 pb-6 flex items-center justify-between pt-4">
         <div className="flex items-center ml-4">
            <button 
              onClick={handleInputClick} 
