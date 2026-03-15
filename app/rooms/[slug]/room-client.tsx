@@ -589,7 +589,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1 -ml-4">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"

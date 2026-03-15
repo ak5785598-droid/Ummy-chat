@@ -211,7 +211,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
-  const canManageRoom = isOwner || isModerator;
+  const canManage room = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
 
   const participantsQuery = useMemoFirebase(() => {
@@ -435,7 +435,7 @@ export function RoomClient({ room }: { room: Room }) {
               <MessageSquare className="h-6 w-6" />
            </button>
         </div>
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1 -ml-4">
            <button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform border-2 border-white/20">
               <GiftIcon className="h-7 w-7 text-white fill-white" />
            </button>
