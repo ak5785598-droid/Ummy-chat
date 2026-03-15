@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook } from 'react-icons/fa';
 import { Loader, Phone, Smartphone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -146,34 +145,25 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="relative z-20 w-full max-w-[280px] flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
+      <main className="relative z-20 w-full max-w-sm flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput ? (
           <>
             <Button
-              className="w-full h-12 bg-[#00A3FF] hover:bg-[#0094E5] text-white rounded-full font-black text-sm shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
+              onClick={() => setShowPhoneInput(true)}
+              className="w-full h-14 bg-white text-black hover:bg-slate-50 rounded-full font-black text-lg shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
             >
-              <FaFacebook className="h-5 w-5" />
-              Facebook
+              <Smartphone className="h-6 w-6" />
+              Phone Login
             </Button>
 
             <Button
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
-              className="w-full h-12 bg-white text-black hover:bg-slate-50 rounded-full font-black text-sm shadow-lg transition-all active:scale-95 border-none flex items-center justify-center gap-3"
+              className="w-full h-14 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 rounded-full font-black text-lg shadow-lg transition-all active:scale-95 border border-white/20 flex items-center justify-center gap-3"
             >
-              {isSigningIn ? <Loader className="animate-spin h-5 w-5 text-primary" /> : <FcGoogle className="h-5 w-5" />}
+              {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : <FcGoogle className="h-6 w-6" />}
               Sign in with Google
             </Button>
-
-            <div className="flex flex-col items-center w-full gap-3 mt-2">
-               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">- or -</span>
-               <button 
-                 onClick={() => setShowPhoneInput(true)}
-                 className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-90"
-               >
-                  <Smartphone className="h-5 w-5" />
-               </button>
-            </div>
           </>
         ) : (
           <div className="space-y-6 animate-in zoom-in duration-300 w-full bg-black/20 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
@@ -193,14 +183,14 @@ export default function LoginPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   disabled={isSigningIn}
-                  className="h-12 bg-white/5 border-white/10 text-white rounded-xl text-center text-sm focus:ring-primary/20 placeholder:text-white/20 font-bold italic"
+                  className="h-14 bg-white/5 border-white/10 text-white rounded-xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20 font-bold italic"
                 />
                 <Button 
                   onClick={handlePhoneSignIn} 
                   disabled={isSigningIn || !phoneNumber} 
-                  className="w-full h-12 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
+                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
                 >
-                  {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Get OTP'}
+                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Get OTP'}
                 </Button>
               </div>
             ) : (
@@ -212,15 +202,15 @@ export default function LoginPage() {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
                   disabled={isSigningIn}
-                  className="h-14 bg-white/5 border-white/10 text-white rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
+                  className="h-16 bg-white/5 border-white/10 text-white rounded-xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
                   maxLength={6}
                 />
                 <Button 
                   onClick={handleVerifyCode} 
                   disabled={isSigningIn || !verificationCode} 
-                  className="w-full h-12 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
+                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
                 >
-                  {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Verify Sync'}
+                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Verify Sync'}
                 </Button>
                 <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Change Number</button>
               </div>

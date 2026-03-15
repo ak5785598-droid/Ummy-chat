@@ -140,7 +140,7 @@ export default function ChiragSlotPage() {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-      // Record victory in the global winner ledger
+      // Record victory in global winner collection
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'chirag-slot',
         userId: currentUser.uid,

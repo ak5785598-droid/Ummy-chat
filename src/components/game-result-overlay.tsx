@@ -17,14 +17,13 @@ interface GameResultOverlayProps {
   gameId: string;
   winningSymbol?: string | React.ReactNode; 
   winAmount: number;
-  winners?: GameWinner[]; // Keep for immediate user result
 }
 
 /**
  * High-Fidelity Game Result Overlay.
  * Dynamically queries the globalGameWins ledger for real-time winners.
  */
-export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: localWinners }: GameResultOverlayProps) {
+export function GameResultOverlay({ gameId, winningSymbol, winAmount }: GameResultOverlayProps) {
   const firestore = useFirestore();
 
   const winsQuery = useMemoFirebase(() => {
@@ -40,13 +39,13 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: l
   const { data: dbWinners } = useCollection(winsQuery);
 
   const displayWinners = useMemo(() => {
-    if (!dbWinners || dbWinners.length === 0) return localWinners || [];
+    if (!dbWinners || dbWinners.length === 0) return [];
     return dbWinners.map(w => ({
       name: w.username,
       avatar: w.avatarUrl,
       win: w.amount
     }));
-  }, [dbWinners, localWinners]);
+  }, [dbWinners]);
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';

@@ -28,12 +28,11 @@ export default function RoomsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
 
-  // PUBLIC GRID QUERY: Re-engineered for Live-Only Sync
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'chatRooms'), 
-      where('participantCount', '>', 0), // SERVER SIDE FILTER: Only show live rooms
+      where('participantCount', '>', 0), 
       orderBy('participantCount', 'desc'),
       limit(50)
     );
@@ -41,7 +40,6 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
-  // "ME" DIMENSION FETCHING
   const myRoomRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'chatRooms', user.uid);
@@ -54,7 +52,6 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
-  // VISIBILITY PROTOCOL: Recommend grid strictly hides empty rooms
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     return roomsData.filter(room => (room.participantCount || 0) > 0);
@@ -136,44 +133,26 @@ export default function RoomsPage() {
             </section>
 
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
-              <button 
-                onClick={() => router.push('/leaderboard?type=rich')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-1000" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Rich</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Rich</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
-              <button 
-                onClick={() => router.push('/leaderboard?type=games')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Game</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/leaderboard?type=games')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-500" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Game</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
-              <button 
-                onClick={() => router.push('/cp-challenge')}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[16/10] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] rounded-[1.5rem] shadow-xl border-2 border-white/30 flex flex-col items-center justify-center p-2 relative overflow-hidden active:scale-95 transition-all">
-                   <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                   <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
-                   <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Cp</span>
-                   <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
-                   </div>
-                </div>
+              <button onClick={() => router.push('/cp-challenge')} className="group relative h-24 rounded-[1.5rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+                 <div className="absolute inset-0 bg-white/20 skew-x-[-30deg] -translate-x-[200%] animate-shine delay-700" />
+                 <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Cp</span>
+                 <div className="relative z-10 group-hover:scale-110 transition-transform">
+                    <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
+                 </div>
               </button>
             </section>
 
