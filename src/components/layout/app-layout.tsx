@@ -119,9 +119,9 @@ export function AppLayout({
           </SidebarFooter>
         </Sidebar>
 
-        <SidebarInset className="bg-background flex-1 overflow-hidden flex flex-col p-0">
+        <SidebarInset className="bg-background flex-1 overflow-x-hidden flex flex-col p-0 w-full max-w-full min-h-screen">
           <main className="flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar">
-            <div className="min-h-full">
+            <div className="min-h-full w-full">
               {children}
             </div>
           </main>

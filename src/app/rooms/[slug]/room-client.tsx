@@ -462,52 +462,52 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-4 pt-10 px-6 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-lg">
+      <header className="relative z-50 flex items-center justify-between p-4 pt-10 px-4 shrink-0">
+        <div className="flex items-center gap-2 max-w-[60%]">
+          <div className="relative shrink-0">
+            <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-lg">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
           </div>
-          <div className="flex flex-col">
-             <div className="flex items-center gap-2">
-                <h1 className="font-black text-base uppercase tracking-tighter text-white leading-none drop-shadow-md">{room.title}</h1>
+          <div className="flex flex-col min-w-0">
+             <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-black text-sm uppercase tracking-tighter text-white leading-none drop-shadow-md truncate max-w-[100px]">{room.title}</h1>
                 <button 
                   onClick={handleFollowRoom}
                   className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg shrink-0",
+                    "h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg shrink-0",
                     followData ? "bg-red-500" : "bg-[#00E676]"
                   )}
                 >
                    {followData ? (
-                     <Heart className="h-3.5 w-3.5 text-white fill-current" />
+                     <Heart className="h-2.5 w-2.5 text-white fill-current" />
                    ) : (
                      <div className="relative flex items-center justify-center">
-                        <Heart className="h-4 w-4 text-white" strokeWidth={3} />
-                        <Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} />
+                        <Heart className="h-3 w-3 text-white" strokeWidth={3} />
+                        <Plus className="h-1.5 w-1.5 text-white absolute mt-0.5" strokeWidth={4} />
                      </div>
                    )}
                 </button>
              </div>
-             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5 tracking-widest">ID:{room.roomNumber}</p>
+             <p className="text-[8px] font-bold text-white/60 uppercase mt-0.5 tracking-widest">ID:{room.roomNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg"><Users className="h-4 w-4 text-white/60" /><span className="text-[13px] font-black">{onlineCount}</span></button>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-1.5 shadow-lg"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[11px] font-black">{onlineCount}</span></button>
           {canManageRoom && (
-            <RoomSettingsDialog room={room} trigger={<button className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />
+            <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4.5 w-4.5" /></button>} />
           )}
-          <button onClick={() => setIsShareOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-5 w-5" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-5 w-5" /></button>
+          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4.5 w-4.5" /></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4.5 w-4.5" /></button>
         </div>
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        {/* Global Gift Trophy Badge */}
-        <div className="absolute top-4 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-700">
-           <Trophy className="h-4 w-4 text-yellow-400 fill-current" />
-           <span className="text-sm font-black text-yellow-400 italic">
+        {/* Global Gift Trophy Badge - Anchor Protocol */}
+        <div className="absolute top-2 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-700">
+           <Trophy className="h-3.5 w-3.5 text-yellow-400 fill-current" />
+           <span className="text-[11px] font-black text-yellow-400 italic">
              {room.stats?.totalGifts?.toLocaleString() || 0}
            </span>
         </div>
@@ -519,17 +519,17 @@ export function RoomClient({ room }: { room: Room }) {
               </div>
            </div>
            
-           <div className="w-full grid grid-cols-4 gap-2 px-4">
+           <div className="w-full grid grid-cols-4 gap-3 px-4">
               {[2, 3, 4, 5].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
-           <div className="w-full grid grid-cols-4 gap-2 px-4">
+           <div className="w-full grid grid-cols-4 gap-3 px-4">
               {[6, 7, 8, 9].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
-           <div className="w-full grid grid-cols-4 gap-2 px-4">
+           <div className="w-full grid grid-cols-4 gap-3 px-4">
               {[10, 11, 12, 13].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
@@ -568,43 +568,43 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-6 pb-8 flex items-center justify-between pt-4 shrink-0 bg-gradient-to-t from-black/60 to-transparent">
+      <footer className="relative z-50 px-6 pb-8 flex items-center justify-between pt-4 shrink-0 bg-gradient-to-t from-black/60 to-transparent w-full">
         <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
              className={cn(
-               "backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
+               "backdrop-blur-xl rounded-full h-11 w-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
                isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
              )}
            >
-              <MessageSquare className="h-6 w-6" />
+              <MessageSquare className="h-5.5 w-5.5" />
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-1/2 -translate-x-1/2">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
+             className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
            >
-              <GiftIcon className="h-7 w-7 text-white fill-white" />
+              <GiftIcon className="h-6 w-6 text-white fill-white" />
            </button>
         </div>
 
-        <div className="flex items-center gap-2">
-           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
-              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+        <div className="flex items-center gap-1.5">
+           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}
            </button>
            
-           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-             <SmilePlus className="h-5 w-5 text-white" />
+           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+             <SmilePlus className="h-4.5 w-4.5 text-white" />
            </button>
 
-           <button onClick={() => setIsMessagesOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <Mail className="h-5 w-5 text-white" />
+           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <Mail className="h-4.5 w-4.5 text-white" />
            </button>
 
-           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <LayoutGrid className="h-5 w-5 text-white" />
+           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <LayoutGrid className="h-4.5 w-4.5 text-white" />
            </button>
         </div>
       </footer>
