@@ -1,5 +1,5 @@
 'use client';
-// @ts-nocheck
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -400,8 +400,8 @@ export default function AdminPage() {
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       const updateData = { specialIdColor: null, updatedAt: serverTimestamp() };
-      await updateDocumentNonBlocking(uRef, updateData);
-      await updateDocumentNonBlocking(pRef, updateData);
+      updateDocumentNonBlocking(uRef, updateData);
+      updateDocumentNonBlocking(pRef, updateData);
       setTargetUserForId((prev: any) => ({ ...prev, specialIdColor: null }));
       toast({ title: 'ID Color Removed' });
     } finally {
@@ -476,11 +476,11 @@ export default function AdminPage() {
     if (!firestore || !targetUserForCenter) return;
     const tags = targetUserForCenter.tags || [];
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
-    const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
+    const isCurrentlyActive = tags.some(t => sellerTags.includes(t));
     const userRef = doc(firestore, 'users', targetUserForCenter.id);
     const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
     let newTags;
-    if (isCurrentlyActive) { newTags = tags.filter((t: string) => !sellerTags.includes(t)); }
+    if (isCurrentlyActive) { newTags = tags.filter(t => !sellerTags.includes(t)); }
     else { newTags = [...tags, 'Seller']; }
     const updateData = { tags: newTags, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
@@ -539,7 +539,7 @@ export default function AdminPage() {
   const handleRemoveBanner = async (index: number) => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
-    const newSlides = currentSlides.filter((_: any, i: number) => i !== index);
+    const newSlides = currentSlides.filter((_, i) => i !== index);
     await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
     toast({ title: 'Banner Removed' });
   };
@@ -596,16 +596,16 @@ export default function AdminPage() {
 
   if (!isCreator) {
     return (
-      <div>
+      <AppLayout>
         <div className="flex h-[50vh] items-center justify-center text-destructive font-headline">
           <Shield className="h-12 w-12 mr-2" /> Portal Access Restricted
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div>
+    <AppLayout>
       <div className="space-y-8 max-w-7xl mx-auto p-4 animate-in fade-in duration-700 font-headline bg-white min-h-full">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
           <div className="flex items-center gap-4">
@@ -1144,13 +1144,13 @@ export default function AdminPage() {
                      <Button onClick={handleSystemBroadcast} disabled={isBroadcasting || !broadcastContent.trim()} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black uppercase italic text-xl shadow-xl">
                         {isBroadcasting ? <Loader className="animate-spin mr-2" /> : <Send className="mr-2" />} Synchronize Global Broadcast
                      </Button>
-                  </CardContent>
+                  </CardHeader>
                </Card>
             </TabsContent>
 
             <TabsContent value="direct-messenger" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
                      <div className="flex gap-4">
                         <Input placeholder="Enter Recipient ID..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
@@ -1217,9 +1217,11 @@ export default function AdminPage() {
             <TabsContent value="tags" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><BadgeCheck className="h-6 w-6 text-primary" /> Assign Official Tags</CardTitle></CardHeader>
-                  <div className="flex gap-4">
-                     <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find ID</Button>
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input placeholder="Enter User ID..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch('id', tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingTag}>Find ID</Button>
+                     </div>
                   </div>
                   {targetUserForTags && (
                     <div className="mt-10 p-6 border-2 rounded-[2rem] flex flex-col gap-8 animate-in slide-in-from-bottom-4 bg-slate-50/30">
@@ -1267,12 +1269,8 @@ export default function AdminPage() {
                           </div>
                        </div>
                        <div className="space-y-6">
-                          <div className="flex gap-4 ml-2">
-                             <button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center", selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}</button>
-                             <button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button>
-                             <button onClick={() => setSelectedColor(null)} className={cn("h-10 w-10 rounded-full bg-slate-200 border-4 transition-all flex items-center justify-center", selectedColor === null ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === null && <X className="h-4 w-4 text-slate-600" />}</button>
-                          </div>
-                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={() => handleRemoveId()} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
+                          <div className="flex gap-4 ml-2"><button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500 border-4 transition-all flex items-center justify-center", selectedColor === 'red' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'red' && <Check className="h-4 w-4 text-white" />}</button><button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button></div>
+                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
                        </div>
                     </div>
                   )}
@@ -1284,7 +1282,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6 text-primary" /> Sovereign Dispatch Center</CardTitle></CardHeader>
                   <div className="flex gap-4">
                      <Input placeholder="Recipient ID..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                     <Button onClick={() => handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
+                     <Button onClick={handleGenericSearch('id', rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic">Find ID</Button>
                   </div>
                   {targetUserForRewards && (
                     <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
@@ -1306,6 +1304,6 @@ export default function AdminPage() {
           </div>
         </Tabs>
       </div>
-    </div>
+    </AppLayout>
   );
 }
