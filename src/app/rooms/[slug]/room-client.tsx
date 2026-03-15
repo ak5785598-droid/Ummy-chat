@@ -90,8 +90,6 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
 /**
  * High-Fidelity Media Volume Router.
- * Uses AudioContext to force audio output to the "Media" channel.
- * Ensures headsets work correctly and volume is controlled via media slider.
  */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -102,13 +100,11 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
   useEffect(() => {
     if (!stream) return;
 
-    // 1. Initialize High-Fidelity AudioContext
     if (!contextRef.current) {
       contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     const ctx = contextRef.current;
 
-    // 2. Connect Remote Frequency to Context
     if (sourceRef.current) {
       sourceRef.current.disconnect();
     }
@@ -119,17 +115,14 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
     sourceRef.current.connect(gainRef.current);
     gainRef.current.connect(ctx.destination);
 
-    // 3. Sync Mute State
     gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
 
-    // 4. Autoplay Handshake
     if (ctx.state === 'suspended') {
       const resume = () => ctx.resume().catch(() => {});
       window.addEventListener('click', resume, { once: true });
       window.addEventListener('touchstart', resume, { once: true });
     }
 
-    // 5. Standard Tag Fallback (Kept muted to maintain WebRTC lifecycle)
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
       audioRef.current.muted = true;
@@ -161,7 +154,7 @@ const Seat = ({
   onClick: (index: number, occupant?: RoomParticipant) => void 
 }) => {
   return (
-    <div className="flex flex-col items-center gap-1 w-[22%]">
+    <div className="flex flex-col items-center gap-1.5 w-full">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
         {occupant && !occupant.isMuted && (
@@ -192,7 +185,7 @@ const Seat = ({
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
-      <span className="text-[10px] font-bold text-white/60 uppercase truncate w-14 text-center">
+      <span className="text-[10px] font-bold text-white/60 uppercase truncate w-full text-center px-1">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -221,7 +214,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
 
-  // Music Streaming State
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -435,9 +427,7 @@ export function RoomClient({ room }: { room: Room }) {
         toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
       });
       
-      // Capture stream from audio element for WebRTC broadcasting
-      // @ts-ignore
-      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+      const stream = (musicAudioRef.current as any).captureStream?.() || (musicAudioRef.current as any).mozCaptureStream?.();
       if (stream) {
         setMusicStream(stream);
       }
@@ -445,7 +435,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   return (
-    <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
+    <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline w-full max-w-full">
       <DailyRewardDialog />
       <GiftAnimationOverlay 
         giftId={activeGiftSync?.id || null} 
@@ -457,7 +447,6 @@ export function RoomClient({ room }: { room: Room }) {
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
       
-      {/* Hidden high-fidelity audio engine for local music sync */}
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
       <div className="absolute inset-0 z-0">
@@ -473,8 +462,8 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-4 pt-8 px-6">
-        <div className="flex items-center gap-3 ml-0">
+      <header className="relative z-50 flex items-center justify-between p-4 pt-10 px-6 shrink-0">
+        <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-lg">
               <AvatarImage src={room.coverUrl || undefined} />
@@ -504,8 +493,8 @@ export function RoomClient({ room }: { room: Room }) {
              <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5 tracking-widest">ID:{room.roomNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2.5 shadow-lg"><Users className="h-4 w-4 text-white/60" /><span className="text-[13px] font-black">{onlineCount}</span></button>
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg"><Users className="h-4 w-4 text-white/60" /><span className="text-[13px] font-black">{onlineCount}</span></button>
           {canManageRoom && (
             <RoomSettingsDialog room={room} trigger={<button className="p-2.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />
           )}
@@ -514,7 +503,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
         {/* Global Gift Trophy Badge */}
         <div className="absolute top-4 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-700">
            <Trophy className="h-4 w-4 text-yellow-400 fill-current" />
@@ -523,27 +512,29 @@ export function RoomClient({ room }: { room: Room }) {
            </span>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
-           <div className="w-full flex justify-center">
-              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
+        <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar w-full">
+           <div className="w-full flex justify-center px-4">
+              <div className="w-1/4 max-w-[80px]">
+                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
+              </div>
            </div>
-           <div className="w-full flex justify-center gap-4 px-4">
+           
+           <div className="w-full grid grid-cols-4 gap-2 px-4">
               {[2, 3, 4, 5].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
-           <div className="w-full flex justify-center gap-4 px-4">
+           <div className="w-full grid grid-cols-4 gap-2 px-4">
               {[6, 7, 8, 9].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
-           <div className="w-full flex justify-center gap-4 px-4">
+           <div className="w-full grid grid-cols-4 gap-2 px-4">
               {[10, 11, 12, 13].map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
 
-           {/* Left-Aligned Announcement Sync */}
            <div className="mt-4 flex items-center justify-start px-6 w-full animate-in fade-in duration-1000">
               <div className="max-w-full">
                  <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
@@ -577,8 +568,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-10 pb-6 flex items-center justify-between pt-4">
-        <div className="flex items-center ml-4">
+      <footer className="relative z-50 px-6 pb-8 flex items-center justify-between pt-4 shrink-0 bg-gradient-to-t from-black/60 to-transparent">
+        <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
              className={cn(
@@ -590,7 +581,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1 -ml-4">
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
@@ -600,19 +591,19 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
 
         <div className="flex items-center gap-2">
-           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
               {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
            </button>
            
-           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
              <SmilePlus className="h-5 w-5 text-white" />
            </button>
 
-           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+           <button onClick={() => setIsMessagesOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
               <Mail className="h-5 w-5 text-white" />
            </button>
 
-           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+           <button onClick={() => setIsRoomPlayOpen(true)} className="p-2.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
               <LayoutGrid className="h-5 w-5 text-white" />
            </button>
         </div>
