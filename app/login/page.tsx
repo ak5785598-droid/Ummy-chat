@@ -6,7 +6,7 @@ import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { Loader, Phone, Smartphone, X, Zap, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -17,16 +17,18 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { doc } from 'firebase/firestore';
 
 /**
  * High-Fidelity Identity Portal.
- * Synchronized with the Ummy deep-purple brand palette and glassmorphism.
+ * Synchronized with the Ummy deep-purple brand palette and dynamic visual ledger.
  */
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [showPhoneInput, setShowPhoneInput] = useState(false);
@@ -34,6 +36,10 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  const loginBg = config?.loginBackgroundUrl || '/images/stars-bg.png';
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -110,7 +116,16 @@ export default function LoginPage() {
   const glassStyle = "bg-black/35 backdrop-blur-[20px] border border-white/[0.08]";
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-center bg-[url('/images/stars-bg.png')] bg-cover bg-center p-8 overflow-hidden font-headline">
+    <div 
+      className="relative flex h-[100dvh] w-full flex-col items-center justify-center p-8 overflow-hidden font-headline"
+      style={{
+        backgroundImage: `url('${loginBg}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      {/* Readability Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
       <div id="recaptcha-container"></div>
       
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm space-y-10 animate-in fade-in zoom-in duration-700">
@@ -154,7 +169,7 @@ export default function LoginPage() {
               </Button>
             </>
           ) : (
-            <div className={`space-y-6 animate-in zoom-in duration-300 ${glassStyle} p-8 rounded-[2.5rem] shadow-2xl w-full`}>
+            <div className={`space-y-6 animate-in zoom-in duration-300 ${glassStyle} p-6 rounded-[2.5rem] shadow-2xl w-full`}>
               <div className="flex justify-between items-center mb-2">
                  <div className="flex items-center gap-2 text-white/80">
                     <Phone className="h-4 w-4" />
@@ -198,7 +213,7 @@ export default function LoginPage() {
                     disabled={isSigningIn || !verificationCode} 
                     className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none"
                   >
-                    {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Enter Ummy'}
+                    {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Enter Ummy'}
                   </Button>
                   <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Back</button>
                 </div>
