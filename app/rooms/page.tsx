@@ -108,33 +108,6 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
-            <section className="px-6 mb-6">
-              <Carousel className="w-full" opts={{ loop: true }}>
-                <CarouselContent>
-                  {[
-                    { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', sub: 'Join the frequency', icon: Sparkles },
-                    { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
-                  ].map((b) => (
-                    <CarouselItem key={b.id}>
-                      <div className={cn("h-32 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
-                         <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-                         <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-1">
-                               <b.icon className="h-4 w-4 text-white animate-pulse" />
-                               <h3 className="text-xl font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
-                            </div>
-                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{b.sub}</p>
-                         </div>
-                         <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <UmmyLogoIcon className="h-32 w-32 rotate-12" />
-                         </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
-            </section>
-
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
               <button 
                 onClick={() => router.push('/leaderboard?type=rich')}
@@ -216,12 +189,46 @@ export default function RoomsPage() {
 
             <main className="px-4 flex-1">
               {isRoomsLoading && !roomsData ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
                   {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
                 </div>
               ) : displayRooms.length > 0 ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 pb-10">
-                  {displayRooms.map((room: any) => (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-6 pb-10">
+                  {/* First 4 Rooms */}
+                  {displayRooms.slice(0, 4).map((room: any) => (
+                    <ChatRoomCard key={room.id} room={room} variant="modern" />
+                  ))}
+
+                  {/* High-Fidelity Banner Synchronized after 4 rooms */}
+                  <div className="col-span-2 py-2">
+                    <Carousel className="w-full" opts={{ loop: true }}>
+                      <CarouselContent>
+                        {[
+                          { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', sub: 'Join the frequency', icon: Sparkles },
+                          { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
+                        ].map((b) => (
+                          <CarouselItem key={b.id}>
+                            <div className={cn("h-28 w-full rounded-[2.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
+                               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+                               <div className="relative z-10">
+                                  <div className="flex items-center gap-2 mb-1">
+                                     <b.icon className="h-4 w-4 text-white animate-pulse" />
+                                     <h3 className="text-xl font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
+                                  </div>
+                                  <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{b.sub}</p>
+                               </div>
+                               <div className="absolute top-0 right-0 p-4 opacity-10">
+                                  <UmmyLogoIcon className="h-24 w-24 rotate-12" />
+                                </div>
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                    </Carousel>
+                  </div>
+
+                  {/* Remaining Rooms */}
+                  {displayRooms.slice(4).map((room: any) => (
                     <ChatRoomCard key={room.id} room={room} variant="modern" />
                   ))}
                 </div>
