@@ -54,9 +54,10 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-x-hidden bg-[#f3e5f5];
+    @apply h-[100dvh] w-full overflow-hidden bg-[#f3e5f5];
     height: 100dvh;
     min-height: 100dvh;
+    min-height: -webkit-fill-available;
     position: fixed;
     touch-action: manipulation;
     -webkit-user-select: none;
