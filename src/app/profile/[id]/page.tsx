@@ -193,7 +193,7 @@ const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: numb
           <AvatarImage src={contributor.avatarUrl || undefined} className="object-cover" />
           <AvatarFallback className="bg-slate-100 text-[10px] font-black">{rank}</AvatarFallback>
         </Avatar>
-        <div className="absolute -top-2 -right-1 text-xs drop-shadow-md">{badges[rank - 1]}</div>
+        <div className="absolute -top-2 -right-1 text-sm drop-shadow-md">{badges[rank - 1]}</div>
       </div>
       <span className="text-[7px] font-black uppercase text-gray-400 truncate w-12 text-center">{contributor.username || '...'}</span>
     </div>
@@ -287,12 +287,12 @@ const PublicProfileView = ({
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                   ) : (
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
-                       ID:{profile.accountNumber} <Copy className="h-2 w-2 opacity-40" />
+                       ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                     </p>
                   )}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                </div>
             </div>
@@ -416,7 +416,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
-  const isSeller = isCertifiedSeller;
+  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -491,7 +491,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
                       {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                    </div>
                 </div>
@@ -505,7 +505,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label="Visitors" value="12K" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          <div className="px-6 grid grid-cols-2 gap-3 mb-6">
+          <div className="px-10 grid grid-cols-2 gap-3 mb-6">
              <div 
                onClick={() => router.push('/wallet')} 
                className="h-28 rounded-[2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
