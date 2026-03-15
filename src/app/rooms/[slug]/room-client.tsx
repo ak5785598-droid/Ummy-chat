@@ -341,8 +341,8 @@ export function RoomClient({ room }: { room: Room }) {
       
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
     setActiveRoom(null); 
     router.push('/rooms'); 
@@ -466,16 +466,6 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      {/* Persistent Visual Sync for Room Announcement */}
-      <div className="absolute top-2 left-4 z-[100] flex items-center gap-2 pointer-events-none">
-         <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
-         <div className="max-w-[200px] overflow-hidden">
-            <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md truncate">
-               {room.announcement || "Welcome to the frequency!"}
-            </p>
-         </div>
-      </div>
-
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
         <div className="flex items-center gap-3 ml-12">
           <div className="relative">
@@ -543,9 +533,18 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
               ))}
            </div>
+
+           {/* Repositioned Central Announcement Sync */}
+           <div className="mt-4 flex items-center justify-center gap-2 px-6 w-full animate-in fade-in duration-1000">
+              <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
+              <div className="max-w-[80%]">
+                 <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-center leading-relaxed">
+                    {room.announcement || "Welcome to the frequency!"}
+                 </p>
+              </div>
+           </div>
         </div>
 
-        {/* Glossy Unified Comment Section Sync */}
         <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-4 pb-0">
            <ScrollArea className="h-full pr-4 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">

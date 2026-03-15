@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
-import { Loader, Phone, Smartphone, X, Zap, Activity } from 'lucide-react';
+import { Loader, Phone, Smartphone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
@@ -19,9 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
-import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import Image from 'next/image';
 
 /**
  * High-Fidelity Identity Portal.
@@ -130,11 +128,8 @@ export default function LoginPage() {
       }}
     >
       <div id="recaptcha-container"></div>
-      
-      {/* Readability Overlay */}
       <div className="absolute inset-0 bg-black/40" />
 
-      {/* Header Section */}
       <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="relative mb-4">
           <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
@@ -151,7 +146,6 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Interaction Zone */}
       <main className="relative z-20 w-full max-w-[280px] flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput ? (
           <>
@@ -235,9 +229,8 @@ export default function LoginPage() {
         )}
       </main>
 
-      {/* Footer Section */}
       <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
-        <div className="text-[10px] text-white/80 leading-relaxed max-w-[260px] font-medium drop-shadow-md">
+        <div className="text-[10px] text-white/80 leading-relaxed max-w-[240px] font-medium drop-shadow-md">
           By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
         </div>
       </footer>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { Search, Loader, User, X, ArrowRight } from 'lucide-react';
+import { Search, Loader, User, X, ArrowRight, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,20 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const { toast } = useToast();
+  
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    toast({ title: 'ID Copied' });
+  };
+
   if (!color) {
     return (
-      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none px-1">
+      <span 
+        onClick={handleCopy}
+        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
+      >
         ID: {id}
       </span>
     );
@@ -34,10 +45,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
     : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={handleCopy}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
+        theme
+      )}
+    >
       {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
       <span className={cn(
         "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",

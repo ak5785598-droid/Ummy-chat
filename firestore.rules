@@ -188,5 +188,10 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn() && isNotBanned();
     }
+    
+    match /globalBroadcasts/{broadcastId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
