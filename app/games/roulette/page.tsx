@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
 import { 
@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GameResultOverlay } from '@/components/game-result-overlay';
+import Image from 'next/image';
 
 const NUMBERS = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -70,6 +72,10 @@ export default function RoulettePage() {
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'roulette'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -126,7 +132,6 @@ export default function RoulettePage() {
           const forced = oracleSnap.data().forcedResult;
           if (NUMBERS.includes(forced)) {
             targetNum = forced;
-            // Clear override after use
             updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'roulette'), { isActive: false });
           }
         }
@@ -164,10 +169,15 @@ export default function RoulettePage() {
     if (isSingle) winAmount += (myBets['single'] || 0) * 2;
     if (isDouble) winAmount += (myBets['double'] || 0) * 2;
 
+    setTotalWinAmount(winAmount);
+
     const sessionWinners = [];
     if (winAmount > 0 && userProfile) {
       sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
     }
+    // High-fidelity mock winners
+    if (Math.random() > 0.5) sessionWinners.push({ name: 'ZAYN_OP', win: 200000000, avatar: 'https://picsum.photos/seed/z/100', isMe: false });
+    if (Math.random() > 0.3) sessionWinners.push({ name: 'LUCKY_GIRL', win: 50000000, avatar: 'https://picsum.photos/seed/girl/100', isMe: false });
 
     setWinners(sessionWinners);
     setGameState('result');
@@ -232,32 +242,35 @@ export default function RoulettePage() {
     );
   }
 
+  const winningNumberBadge = winningNumber !== null ? (
+    <div className={cn(
+      "h-16 w-16 rounded-full flex items-center justify-center text-3xl font-black italic border-2 border-white shadow-xl",
+      RED_NUMBERS.includes(winningNumber) ? "bg-red-600" : winningNumber === 0 ? "bg-emerald-600" : "bg-slate-900"
+    )}>
+      {winningNumber}
+    </div>
+  ) : null;
+
   return (
     <AppLayout fullScreen>
       <div className="h-[100dvh] w-full bg-[#311b92] flex flex-col relative overflow-hidden font-headline text-white select-none">
         <CompactRoomView />
 
-        {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Tribe Winners</h2>
-             </div>
-             <div className="flex items-end justify-center gap-4 w-full max-w-lg">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
-                     <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar}/><AvatarFallback>W</AvatarFallback>
-                     </Avatar>
-                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
-                        <span className="text-3xl">🥇</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+        <div className="absolute inset-0 z-0">
+           {gameData?.backgroundUrl ? (
+             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Casino Theme" fill className="object-cover opacity-40 animate-in fade-in duration-1000" unoptimized />
+           ) : (
+             <div className="absolute inset-0 bg-gradient-to-b from-[#4a148c] via-[#311b92] to-[#1a237e]" />
+           )}
+           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#311b92] z-10" />
+        </div>
+
+        {gameState === 'result' && winningNumber !== null && (
+          <GameResultOverlay 
+            winningSymbol={winningNumberBadge} 
+            winAmount={totalWinAmount} 
+            winners={winners} 
+          />
         )}
 
         <header className="relative z-50 flex items-center justify-between p-4 pt-32">

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GameResultOverlay, GameWinner } from '@/components/game-result-overlay';
 
 const CHIPS = [
   { value: 10000, label: '10k', color: 'bg-[#00E5FF] border-[#00E5FF]/50 shadow-[#00E5FF]/40' },
@@ -53,9 +54,11 @@ export default function TeenPattiGamePage() {
   const [totalPots, setTotalPots] = useState<Record<string, number>>({ WOLF: 0, LION: 650000, FISH: 800000 });
   const [history, setHistory] = useState<string[]>(['WOLF', 'LION', 'FISH', 'WOLF']);
   const [isMuted, setIsMuted] = useState(false);
-  const [winner, setWinner] = useState<string | null>(null);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
+  const [winners, setWinners] = useState<GameWinner[]>([]);
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
 
@@ -92,14 +95,26 @@ export default function TeenPattiGamePage() {
   };
 
   const finalizeRound = (winId: string) => {
-    setWinner(winId); setHistory(prev => [winId, ...prev.slice(0, 7)]); setGameState('result');
+    setWinnerId(winId); setHistory(prev => [winId, ...prev.slice(0, 7)]); setGameState('result');
     const winAmount = (myBets[winId] || 0) * 1.95;
+    setTotalWinAmount(winAmount);
+
+    const sessionWinners: GameWinner[] = [];
+    if (winAmount > 0 && userProfile) {
+      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl });
+    }
+    // High-fidelity mocks
+    sessionWinners.push({ name: 'ZAYN_KING', win: 150000000, avatar: 'https://picsum.photos/seed/z/100' });
+    sessionWinners.push({ name: 'T_ANU_OP', win: 20000000, avatar: 'https://picsum.photos/seed/a/100' });
+
+    setWinners(sessionWinners);
+
     if (winAmount > 0 && currentUser && firestore) {
       const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
     }
-    setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinner(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
+    setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
   };
 
   const handlePlaceBet = (id: string) => {
@@ -114,10 +129,21 @@ export default function TeenPattiGamePage() {
 
   if (isLaunching) return <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6"><UmmyLogoIcon className="h-20 w-20 animate-bounce" /><h1 className="text-5xl font-black text-yellow-500 uppercase italic tracking-tighter">Teen Patti</h1></div>;
 
+  const winnerBanner = winnerId ? FACTIONS.find(f => f.id === winnerId)?.bannerUrl : null;
+
   return (
     <AppLayout fullScreen>
       <div className="h-[100dvh] w-full bg-[#581c87] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
+        
+        {gameState === 'result' && winnerId && (
+          <GameResultOverlay 
+            winningSymbol={<img src={winnerBanner || ''} className="h-16 w-16 object-contain" alt="Winner" />} 
+            winAmount={totalWinAmount} 
+            winners={winners} 
+          />
+        )}
+
         <header className="relative z-[110] flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2"><button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button></div>
            <div className="flex flex-col items-center">
@@ -131,7 +157,7 @@ export default function TeenPattiGamePage() {
            <div className="grid grid-cols-3 gap-2 px-4 h-44">
               {FACTIONS.map((f) => (
                 <div key={f.id} className="flex flex-col items-center gap-2">
-                   <div className={cn("w-full h-28 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/30 backdrop-blur-sm shadow-inner", winner === f.id ? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5")}>
+                   <div className={cn("w-full h-28 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/30 backdrop-blur-sm shadow-inner", winnerId === f.id ? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5")}>
                       <div className="flex gap-0.5 mb-1 scale-110">
                          {[0, 1, 2].map((i) => (
                            <div key={i} className={cn("w-8 h-12 rounded border transition-all duration-1000 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", gameState !== 'betting' ? "rotate-y-180" : "")}>

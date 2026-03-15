@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 
 const ITEMS = [
   { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times', pos: 'top' },
@@ -60,6 +61,8 @@ export default function FruitPartyPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
+  const [winningSymbol, setWinningSymbol] = useState<string>('');
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -162,10 +165,16 @@ export default function FruitPartyPage() {
     const winItem = ITEMS.find(i => i.id === id);
     const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
+    setWinningSymbol(winItem?.emoji || '🏆');
+    setTotalWinAmount(winAmount);
+
     const sessionWinners = [];
     if (winAmount > 0 && userProfile) {
       sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
     }
+    // Fidelity mock winners
+    if (Math.random() > 0.4) sessionWinners.push({ name: 'DJ BORHAN', win: 150000000, avatar: 'https://picsum.photos/seed/music/100', isMe: false });
+    if (Math.random() > 0.2) sessionWinners.push({ name: 'ANJAN', win: 30000000, avatar: 'https://picsum.photos/seed/vibe/100', isMe: false });
 
     setWinners(sessionWinners);
     setGameState('result');
@@ -238,27 +247,11 @@ export default function FruitPartyPage() {
         <CompactRoomView />
 
         {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Tribe Winners</h2>
-             </div>
-             
-             <div className="flex items-end justify-center gap-4 w-full max-w-lg">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
-                     <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
-                     </Avatar>
-                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
-                        <span className="text-3xl">🥇</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+          <GameResultOverlay 
+            winningSymbol={winningSymbol} 
+            winAmount={totalWinAmount} 
+            winners={winners} 
+          />
         )}
 
         <div className="absolute inset-0 z-0 pointer-events-none">

@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 
 const SYMBOLS = [
@@ -100,7 +101,6 @@ export default function ChiragSlotPage() {
     let forced = false;
     let forceWin = 0;
 
-    // ORACLE SYNC CHECK
     if (firestore) {
       try {
         const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'chirag-slot'));
@@ -142,7 +142,7 @@ export default function ChiragSlotPage() {
     }
 
     setGameState('result');
-    setTimeout(() => setGameState('betting'), 3000);
+    setTimeout(() => setGameState('betting'), 4000);
   };
 
   if (isLaunching) {
@@ -302,16 +302,11 @@ export default function ChiragSlotPage() {
         </main>
 
         {gameState === 'result' && winAmount && winAmount > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-24 w-24 text-yellow-400 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]" />
-                <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter text-center">BIG WIN SYNC</h2>
-                <div className="flex items-center gap-3 text-5xl font-black text-yellow-400 italic">
-                   <GoldCoinIcon className="h-12 w-12" />
-                   +{winAmount.toLocaleString()}
-                </div>
-             </div>
-          </div>
+          <GameResultOverlay 
+            winningSymbol="🪔" 
+            winAmount={winAmount} 
+            winners={[{ name: userProfile?.username || 'You', avatar: userProfile?.avatarUrl, win: winAmount }]} 
+          />
         )}
 
         <footer className="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-black/40 backdrop-blur-md border-t border-white/5">
