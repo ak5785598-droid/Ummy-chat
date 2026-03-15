@@ -188,6 +188,9 @@ export default function AdminPage() {
   const [isUploadingTheme, setIsUploadingTheme] = useState(false);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isUploadingLoginBG, setIsUploadingLoginBG] = useState(false);
+  const loginBGFileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
@@ -312,7 +315,6 @@ export default function AdminPage() {
           }
         }
       } else {
-        // Robust Prefix Search Sync
         const qName = query(
           collection(firestore, 'users'), 
           where('username', '>=', inputVal), 
@@ -631,6 +633,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleLoginBGUpload = async (file: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingLoginBG(true);
+    try {
+      const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+      await setDoc(configRef, { loginBackgroundUrl: url }, { merge: true });
+      toast({ title: 'Login Background Synchronized' });
+    } finally {
+      setIsUploadingLoginBG(false);
+    }
+  };
+
   const handleGameDPUploadClick = (game: any) => {
     setSelectedGameForSync(game);
     gameFileInputRef.current?.click();
@@ -682,6 +698,9 @@ export default function AdminPage() {
             <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
               <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Database className="h-4 w-4 text-blue-500" /> App Ledger
+              </TabsTrigger>
+              <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Palette className="h-4 w-4 text-pink-500" /> App Branding
               </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
@@ -778,6 +797,47 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
+            <TabsContent value="app-branding" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle>
+                     <CardDescription>Dispatch global visual assets across the entire Ummy network.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ImageIcon className="h-5 w-5 text-pink-600" />
+                              <span className="font-black uppercase italic text-sm">Login Page Background</span>
+                           </div>
+                           {config?.loginBackgroundUrl && (
+                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { loginBackgroundUrl: null })}>Reset to Default</Button>
+                           )}
+                        </div>
+                        
+                        <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-inner flex items-center justify-center">
+                           {config?.loginBackgroundUrl ? (
+                             <Image src={config.loginBackgroundUrl} fill className="object-cover" alt="Login BG" unoptimized />
+                           ) : (
+                             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
+                                <ImageIcon className="h-10 w-10" />
+                                <span className="uppercase font-black text-[10px] tracking-widest">Stars Default Active</span>
+                             </div>
+                           )}
+                           {isUploadingLoginBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}
+                           <button 
+                             onClick={() => loginBGFileInputRef.current?.click()}
+                             className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-pink-600 active:scale-90 transition-transform"
+                           >
+                              <Camera className="h-6 w-6" />
+                           </button>
+                        </div>
+                        <input type="file" ref={loginBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoginBGUpload(e.target.files[0])} />
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
             <TabsContent value="ranking-themes" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
@@ -864,7 +924,7 @@ export default function AdminPage() {
 
             <TabsContent value="authority" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-gradient-to-br from-primary/10 to-transparent">
-                  <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Tribal Authority Protocol</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Zap Authority Protocol</CardTitle></CardHeader>
                   <CardContent className="space-y-6">
                      <div className="flex gap-4">
                         <Input placeholder="Search member by name..." className="h-12 rounded-xl" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} />

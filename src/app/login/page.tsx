@@ -7,7 +7,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
 import { Loader, Phone, Smartphone, X, Zap, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -18,18 +18,20 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
 
 /**
  * High-Fidelity Identity Portal.
- * Redesigned to match the user-provided blueprint exactly.
- * Features full-screen background sync, pill-shaped buttons, and centered mascot branding.
+ * Features dynamic background sync managed via the Admin Portal.
  */
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -38,6 +40,13 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  // Global Branding Sync
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  const customBg = config?.loginBackgroundUrl;
+  const fallbackBg = PlaceHolderImages.find(img => img.id === 'login-bg')?.imageUrl;
+  const activeBg = customBg || fallbackBg;
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -111,27 +120,28 @@ export default function LoginPage() {
     );
   }
 
-  const bgAsset = PlaceHolderImages.find(img => img.id === 'login-bg');
-
   return (
     <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline">
       <div id="recaptcha-container"></div>
       
       {/* Immersive Background Synchronization Layer */}
-      <div className="absolute inset-0 -z-10">
-        {bgAsset && (
-          <img
-            src={bgAsset.imageUrl}
+      <div className="absolute inset-0 -z-10 bg-slate-950">
+        {activeBg && (
+          <Image
+            key={activeBg}
+            src={activeBg}
             alt="Login Background"
-            className="w-full h-full object-cover"
-            data-ai-hint={bgAsset.imageHint}
+            fill
+            className="object-cover animate-in fade-in duration-1000"
+            priority
+            unoptimized
           />
         )}
-        {/* Subtle Stardust Overlay for High-Fidelity Finish */}
-        <div className="absolute inset-0 bg-black/20" />
+        {/* Readability Overlay */}
+        <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* Header Section: Sovereign Branding matching the blueprint */}
+      {/* Header Section */}
       <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="relative mb-4">
           <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
@@ -148,11 +158,10 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* Interaction Zone: Synchronized pill-shaped handshake buttons */}
+      {/* Interaction Zone */}
       <main className="relative z-20 w-full max-w-[280px] flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput ? (
           <>
-            {/* Facebook Sync Button (Cyan Pill) */}
             <Button
               className="w-full h-12 bg-[#00A3FF] hover:bg-[#0094E5] text-white rounded-full font-black text-sm shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
             >
@@ -160,7 +169,6 @@ export default function LoginPage() {
               Facebook
             </Button>
 
-            {/* Google Sync Button (White Pill) */}
             <Button
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
@@ -170,7 +178,6 @@ export default function LoginPage() {
               Sign in with Google
             </Button>
 
-            {/* Ghost Phone Divider */}
             <div className="flex flex-col items-center w-full gap-3 mt-2">
                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">- or -</span>
                <button 
@@ -206,7 +213,7 @@ export default function LoginPage() {
                   disabled={isSigningIn || !phoneNumber} 
                   className="w-full h-12 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
                 >
-                  {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Get OTP'}
+                  {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Get OTP'}
                 </Button>
               </div>
             ) : (
@@ -235,7 +242,7 @@ export default function LoginPage() {
         )}
       </main>
 
-      {/* Footer Section: Legal Sync matching the blueprint */}
+      {/* Footer Section */}
       <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
         <div className="text-[10px] text-white/80 leading-relaxed max-w-[260px] font-medium drop-shadow-md">
           By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
