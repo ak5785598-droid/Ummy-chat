@@ -474,7 +474,7 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-4">
-        <div className="flex items-center gap-2.5 ml-4">
+        <div className="flex items-center gap-2.5 ml-0">
           <div className="relative">
             <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
               <AvatarImage src={room.coverUrl || undefined} />
