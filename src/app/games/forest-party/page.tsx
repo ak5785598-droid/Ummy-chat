@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -20,10 +20,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 
-// CLOCKWISE ORDER SYNC: Top -> Right -> Bottom -> Left sequence for high-fidelity chase
 const ANIMALS = [
   { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
@@ -31,8 +30,8 @@ const ANIMALS = [
   { id: 'fox', emoji: '🦊', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
   { id: 'rhino', emoji: '🦏', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
   { id: 'elephant', emoji: '🐘', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
-  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
-  { id: 'lion', emoji: 'lion', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
+  { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
+  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'top-left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
 ];
 
 const CHIPS = [
@@ -63,7 +62,8 @@ export default function WildPartyPage() {
   const [history, setHistory] = useState<string[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [winners, setWinners] = useState<any[]>([]);
+  const [winningSymbol, setWinningSymbol] = useState<string>('');
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
   const { data: gameData } = useDoc(gameDocRef);
@@ -130,10 +130,8 @@ export default function WildPartyPage() {
   const startSpin = async () => {
     setGameState('spinning');
     
-    // DETERMINISTIC WINNER PROTOCOL: Lock winner before animation starts
     let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
     
-    // ORACLE SYNC CHECK
     if (firestore) {
       try {
         const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'wild-party'));
@@ -147,7 +145,6 @@ export default function WildPartyPage() {
 
     const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
     let currentStep = 0;
-    // Calculation ensures we land exactly on targetIdx after 4 full laps
     const totalSteps = (ANIMALS.length * 4) + targetIdx;
     let speed = 50;
 
@@ -156,7 +153,6 @@ export default function WildPartyPage() {
       playTickSound();
       currentStep++;
       if (currentStep <= totalSteps) {
-        // Realistic deceleration sync
         const remaining = totalSteps - currentStep;
         if (remaining < 12) speed += 20;
         if (remaining < 6) speed += 40;
@@ -173,12 +169,8 @@ export default function WildPartyPage() {
     const winItem = ANIMALS.find(i => i.id === id);
     const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
-    const sessionWinners = [];
-    if (winAmount > 0 && userProfile) {
-      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-    }
-
-    setWinners(sessionWinners);
+    setWinningSymbol(winItem?.emoji || '🏆');
+    setTotalWinAmount(winAmount);
     setGameState('result');
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -189,12 +181,21 @@ export default function WildPartyPage() {
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      // Record victory in the global winner ledger
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'wild-party',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
       setLastBets(myBets);
       setMyBets({});
-      setWinners([]);
       setHighlightIdx(null);
       setGameState('betting');
       setTimeLeft(15);
@@ -246,7 +247,6 @@ export default function WildPartyPage() {
       <div className="h-screen w-full bg-[#051a05] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
 
-        {/* Dynamic Sovereign Background Sync */}
         <div className="absolute inset-0 z-0">
            {gameData?.backgroundUrl ? (
              <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Jungle Theme" fill className="object-cover opacity-60 animate-in fade-in duration-1000" unoptimized />
@@ -259,28 +259,12 @@ export default function WildPartyPage() {
            <div className="absolute inset-0 bg-gradient-to-t from-[#051a05] via-transparent to-transparent opacity-80" />
         </div>
 
-        {/* Global Victory Overlay */}
-        {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Tribe Winners</h2>
-             </div>
-             <div className="flex items-end justify-center gap-4 w-full max-w-lg">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
-                     <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
-                     </Avatar>
-                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
-                        <span className="text-3xl">🥇</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+        {gameState === 'result' && (
+          <GameResultOverlay 
+            gameId="wild-party"
+            winningSymbol={winningSymbol} 
+            winAmount={totalWinAmount} 
+          />
         )}
 
         <div className="relative z-50 flex items-center justify-between p-4 pt-32">
@@ -297,7 +281,6 @@ export default function WildPartyPage() {
            </div>
         </div>
 
-        {/* Global Result History */}
         <div className="relative z-50 px-4 py-2">
            <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 p-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
               {history.map((id, i) => (
@@ -311,11 +294,9 @@ export default function WildPartyPage() {
            </div>
         </div>
 
-        {/* COMPACT MAIN ARENA: Circular Layout matching blueprint */}
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
            <div className="relative w-full max-w-[260px] aspect-square flex items-center justify-center">
               
-              {/* High-Fidelity Central Timer Oracle */}
               <div className="relative z-20 w-24 h-24 bg-gradient-to-b from-[#2d1a12] to-[#1a0a05] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
                  <p className="text-[7px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
                     {gameState === 'betting' ? 'BETTING' : 'SPINNING'}
@@ -328,7 +309,6 @@ export default function WildPartyPage() {
                  </span>
               </div>
 
-              {/* Animal Grid - Absolute Positioning Protocol */}
               {ANIMALS.map((animal, idx) => {
                 const isActive = highlightIdx === idx;
                 const betOnThis = myBets[animal.id] || 0;
@@ -352,7 +332,6 @@ export default function WildPartyPage() {
                     )}
                   >
                      <div className="relative">
-                        {/* THE CHARACTER CARD: High-Fidelity Glossy Sync */}
                         <div className={cn(
                           "h-16 w-16 rounded-[1.2rem] flex flex-col items-center justify-center transition-all border-[2px] relative overflow-hidden shadow-xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
@@ -363,11 +342,9 @@ export default function WildPartyPage() {
                            <span className="text-[7px] font-black text-white/80 uppercase mt-0.5 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
-                           {/* Shine Streak Engine */}
                            <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
                         </div>
                         
-                        {/* BET OVERLAY LABEL: Matches magenta pill from blueprint */}
                         {betOnThis > 0 && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-40 animate-in zoom-in duration-300">
                              <div className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] px-3 py-0.5 rounded-full border border-white/40 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
@@ -380,7 +357,6 @@ export default function WildPartyPage() {
                           </div>
                         )}
 
-                        {/* Result Aura */}
                         {isActive && gameState === 'result' && (
                           <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.2rem] animate-ping" />
                         )}
@@ -391,7 +367,6 @@ export default function WildPartyPage() {
            </div>
         </main>
 
-        {/* Interaction Hub */}
         <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent -mt-12">
            <div className="max-w-md mx-auto space-y-4">
               <div className="flex items-center justify-between">

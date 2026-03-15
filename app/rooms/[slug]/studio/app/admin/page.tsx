@@ -596,16 +596,16 @@ export default function AdminPage() {
 
   if (!isCreator) {
     return (
-      <AppLayout>
+      <div>
         <div className="flex h-[50vh] items-center justify-center text-destructive font-headline">
           <Shield className="h-12 w-12 mr-2" /> Portal Access Restricted
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
+    <div>
       <div className="space-y-8 max-w-7xl mx-auto p-4 animate-in fade-in duration-700 font-headline bg-white min-h-full">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
           <div className="flex items-center gap-4">
@@ -1304,6 +1304,6 @@ export default function AdminPage() {
           </div>
         </Tabs>
       </div>
-    </AppLayout>
+    </div>
   );
 }

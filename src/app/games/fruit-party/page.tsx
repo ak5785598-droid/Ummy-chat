@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   X,
   Volume2,
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 
 const ITEMS = [
   { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times', pos: 'top' },
@@ -59,7 +60,8 @@ export default function FruitPartyPage() {
   const [history, setHistory] = useState<string[]>(['watermelon', 'skewers', 'pizza', 'pizza', 'strawberry', 'oranges', 'oranges']);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [winners, setWinners] = useState<any[]>([]);
+  const [winningSymbol, setWinningSymbol] = useState<string>('');
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -123,10 +125,22 @@ export default function FruitPartyPage() {
     return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    const targetIdx = Math.floor(Math.random() * ITEMS.length);
     
+    // ORACLE SYNC CHECK
+    let winningId = ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
+    if (firestore) {
+      try {
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'fruit-party'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive) {
+          winningId = oracleSnap.data().forcedResult;
+          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'fruit-party'), { isActive: false });
+        }
+      } catch (e) {}
+    }
+
+    const targetIdx = ITEMS.findIndex(i => i.id === winningId);
     let currentStep = 0;
     const totalSteps = 32 + targetIdx;
     let speed = 50;
@@ -139,7 +153,7 @@ export default function FruitPartyPage() {
         if (totalSteps - currentStep < 10) speed += 30;
         setTimeout(runChase, speed);
       } else {
-        setTimeout(() => showResult(ITEMS[targetIdx].id), 800);
+        setTimeout(() => showResult(winningId), 800);
       }
     };
     runChase();
@@ -150,12 +164,8 @@ export default function FruitPartyPage() {
     const winItem = ITEMS.find(i => i.id === id);
     const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
-    const sessionWinners = [];
-    if (winAmount > 0 && userProfile) {
-      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-    }
-
-    setWinners(sessionWinners);
+    setWinningSymbol(winItem?.emoji || '🏆');
+    setTotalWinAmount(winAmount);
     setGameState('result');
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -166,12 +176,21 @@ export default function FruitPartyPage() {
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      // Record victory
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'fruit-party',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
       setLastBets(myBets);
       setMyBets({});
-      setWinners([]);
       setHighlightIdx(null);
       setGameState('betting');
       setTimeLeft(15);
@@ -211,7 +230,7 @@ export default function FruitPartyPage() {
   if (isLaunching) {
     return (
       <div className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
+        <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_#facc1580]">🎡</div>
         <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
         <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
       </div>
@@ -225,28 +244,12 @@ export default function FruitPartyPage() {
       <div className="h-[100dvh] w-full bg-[#58319d] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
 
-        {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Tribe Winners</h2>
-             </div>
-             
-             <div className="flex items-end justify-center gap-4 w-full max-w-lg">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
-                     <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
-                     </Avatar>
-                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
-                        <span className="text-3xl">🥇</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+        {gameState === 'result' && (
+          <GameResultOverlay 
+            gameId="fruit-party"
+            winningSymbol={winningSymbol} 
+            winAmount={totalWinAmount} 
+          />
         )}
 
         <div className="absolute inset-0 z-0 pointer-events-none">
@@ -272,9 +275,8 @@ export default function FruitPartyPage() {
            </div>
         </div>
 
-        {/* Special Character - Glossy SVGA Animation */}
         <div className="absolute top-44 left-4 z-40 animate-in slide-in-from-left-4 duration-1000">
-           <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 p-2 group shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-shimmer-gold">
+           <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 p-2 group shadow-[0_0_20px_#ffffff33] animate-shimmer-gold">
               {specialChicken && (
                 <img 
                   src={specialChicken.imageUrl} 
@@ -283,7 +285,6 @@ export default function FruitPartyPage() {
                   data-ai-hint={specialChicken.imageHint} 
                 />
               )}
-              {/* Glossy Overlay */}
               <div className="absolute inset-0 z-20 bg-gradient-to-tr from-white/20 via-transparent to-transparent opacity-60 pointer-events-none" />
               <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-30" />
            </div>
@@ -297,14 +298,12 @@ export default function FruitPartyPage() {
            </div>
         </div>
 
-        {/* Main Arena - Decreased Size Sync */}
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
            <div className="relative w-full max-w-[300px] aspect-square flex items-center justify-center">
               <div className="absolute inset-0 border-[6px] border-white/10 rounded-full m-12" />
               
-              {/* Compact Central Timer */}
-              <div className="relative z-20 w-32 h-32 bg-[#4c1d95] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
-                 <span className="text-6xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              <div className="relative z-20 w-32 h-32 bg-[#4c1d95] rounded-full shadow-[0_0_40px_#00000080] flex flex-col items-center justify-center border-[6px] border-[#7c3aed] p-4 text-center">
+                 <span className="text-6xl font-black text-yellow-400 italic leading-none drop-shadow-[0_0_15px_#facc1580]">
                     {gameState === 'betting' ? timeLeft : '🎲'}
                  </span>
                  <p className="text-[10px] font-bold uppercase text-white/60 tracking-widest mt-1">
@@ -336,7 +335,6 @@ export default function FruitPartyPage() {
                    )}>
                       <span className="text-4xl drop-shadow-md relative z-10">{item.emoji}</span>
                       <span className="text-[7px] font-black text-white/60 uppercase mt-1 leading-tight relative z-10">{item.label}</span>
-                      {/* Gloss Overlay */}
                       <div className="absolute inset-0 z-20 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="absolute inset-0 w-1/2 h-full bg-white/5 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                    </div>
@@ -352,7 +350,7 @@ export default function FruitPartyPage() {
         </main>
 
         <footer className="relative z-50 p-4 pb-10 space-y-4 -translate-y-24">
-           <div className="max-w-md mx-auto bg-[#7c3aed]/40 backdrop-blur-xl rounded-[2rem] p-4 border border-white/10 shadow-2xl">
+           <div className="max-w-md mx-auto bg-[#7c3aed66] backdrop-blur-xl rounded-[2rem] p-4 border border-white/10 shadow-2xl">
               <div className="flex items-center justify-between mb-4 px-2">
                  <div className="bg-gradient-to-r from-[#ffd54f] to-[#ffca28] px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
                     <GoldCoinIcon className="h-4 w-4" />

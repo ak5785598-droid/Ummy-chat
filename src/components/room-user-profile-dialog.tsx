@@ -86,9 +86,20 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 );
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const { toast } = useToast();
+  
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    toast({ title: 'ID Copied' });
+  };
+
   if (!color) {
     return (
-      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none px-1">
+      <span 
+        onClick={handleCopy}
+        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
+      >
         ID: {id}
       </span>
     );
@@ -101,10 +112,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
     : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
-      theme
-    )}>
+    <div 
+      onClick={handleCopy}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
+        theme
+      )}
+    >
       {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
       <span className={cn(
         "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
@@ -178,7 +192,7 @@ export function RoomUserProfileDialog({
 
             <div className="mt-2 mb-4">
                <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
-                  <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
+                  <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl bg-slate-50">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
                      <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -197,8 +211,8 @@ export function RoomUserProfileDialog({
                <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center -ml-6" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center -ml-6" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
                </div>
             </div>
 

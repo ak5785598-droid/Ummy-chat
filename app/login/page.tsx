@@ -21,7 +21,7 @@ import { doc } from 'firebase/firestore';
 
 /**
  * High-Fidelity Identity Portal.
- * Synchronized with the Ummy deep-purple brand palette and dynamic visual ledger.
+ * Synchronized with global branding configuration from Firestore.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -193,7 +193,7 @@ export default function LoginPage() {
                     disabled={isSigningIn || !phoneNumber} 
                     className="w-full h-14 bg-primary text-black font-black uppercase rounded-2xl shadow-xl border-none"
                   >
-                    {isSigningIn ? <Loader className="h-5 w-5 animate-spin" /> : 'Get OTP'}
+                    {isSigningIn ? <Loader className="animate-spin h-5 w-5 animate-spin" /> : 'Get OTP'}
                   </Button>
                 </div>
               ) : (

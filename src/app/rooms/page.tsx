@@ -98,7 +98,7 @@ export default function RoomsPage() {
           <div className="flex items-center gap-2">
             <UserSearchDialog />
             <button 
-              onClick={() => user?.uid && router.push(`/rooms/${user.uid}`)}
+              onClick={() => user?.uid ? router.push(`/rooms/${user.uid}`) : null}
               className="p-2 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all text-slate-800"
             >
               <Home className="h-6 w-6" />
@@ -135,7 +135,6 @@ export default function RoomsPage() {
               </Carousel>
             </section>
 
-            {/* High-Fidelity Attractive Grid: Wallet-Style Cards */}
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
               <button 
                 onClick={() => router.push('/leaderboard?type=rich')}
@@ -146,7 +145,7 @@ export default function RoomsPage() {
                    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-1000" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Rich</span>
                    <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                      <Crown className="h-10 w-10 text-white fill-yellow-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                    </div>
                 </div>
               </button>
@@ -159,7 +158,7 @@ export default function RoomsPage() {
                    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Game</span>
                    <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                      <Gamepad2 className="h-10 w-10 text-white fill-indigo-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                    </div>
                 </div>
               </button>
@@ -172,7 +171,7 @@ export default function RoomsPage() {
                    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
                    <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90 drop-shadow-sm">Cp</span>
                    <div className="relative z-10 group-hover:scale-110 transition-transform">
-                      <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                      <Heart className="h-10 w-10 text-white fill-pink-200 drop-shadow-[0_0_15px_#ffffffcc]" />
                    </div>
                 </div>
               </button>

@@ -121,25 +121,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline">
+    <div 
+      className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline"
+      style={{
+        backgroundImage: `url('${activeBg}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
       <div id="recaptcha-container"></div>
       
-      {/* Immersive Background Synchronization Layer */}
-      <div className="absolute inset-0 -z-10 bg-slate-950">
-        {activeBg && (
-          <Image
-            key={activeBg}
-            src={activeBg}
-            alt="Login Background"
-            fill
-            className="object-cover animate-in fade-in duration-1000"
-            priority
-            unoptimized
-          />
-        )}
-        {/* Readability Overlay */}
-        <div className="absolute inset-0 bg-black/40" />
-      </div>
+      {/* Readability Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
 
       {/* Header Section */}
       <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">

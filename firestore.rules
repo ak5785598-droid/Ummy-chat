@@ -183,5 +183,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /globalGameWins/{winId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isNotBanned();
+    }
   }
 }

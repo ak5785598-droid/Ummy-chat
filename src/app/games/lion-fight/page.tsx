@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 
 const BET_OPTIONS = [
@@ -51,7 +52,8 @@ export default function LionFightPage() {
   const [roundNumber, setRoundNumber] = useState(524265);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [winner, setWinner] = useState<string | null>(null);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'lion-fight'), [firestore]);
   const { data: gameData } = useDoc(gameDocRef);
@@ -122,12 +124,15 @@ export default function LionFightPage() {
   };
 
   const showResult = (winId: string) => {
-    setWinner(winId);
-    setGameState('result');
+    setWinnerId(winId);
     setRoundNumber(prev => prev + 1);
 
-    const winMultiplier = BET_OPTIONS.find(o => o.id === winId)?.multiplier || 0;
+    const option = BET_OPTIONS.find(o => o.id === winId);
+    const winMultiplier = option?.multiplier || 0;
     const winAmount = (myBets[winId] || 0) * winMultiplier;
+
+    setTotalWinAmount(winAmount);
+    setGameState('result');
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
       const field = currency === 'coins' ? 'wallet.coins' : 'wallet.diamonds';
@@ -138,13 +143,22 @@ export default function LionFightPage() {
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-      toast({ title: 'Big Win Sync!', description: `Synchronized ${winAmount.toLocaleString()} to your vault.` });
+
+      // Record victory
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'lion-fight',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
       setMyBets({ TIGER: 0, TIE: 0, LION: 0 });
       setTotalBets({ TIGER: 22400 + Math.floor(Math.random() * 5000), TIE: 60700 + Math.floor(Math.random() * 2000), LION: 377600 + Math.floor(Math.random() * 10000) });
-      setWinner(null);
+      setWinnerId(null);
       setGameState('betting');
       setTimeLeft(15);
     }, 5000);
@@ -177,7 +191,7 @@ export default function LionFightPage() {
   if (isLaunching) {
     return (
       <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">🦁</div>
+        <div className="text-8xl animate-bounce drop-shadow-[0_0_30px_#ffffff66]">🦁</div>
         <h1 className="text-6xl font-black text-[#FFCC00] uppercase italic tracking-tighter drop-shadow-2xl">Lion Fight</h1>
         <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Initializing Arena...</p>
       </div>
@@ -188,23 +202,21 @@ export default function LionFightPage() {
   const tigerAsset = PlaceHolderImages.find(img => img.id === 'tiger-fighter');
   const lionAsset = PlaceHolderImages.find(img => img.id === 'lion-fighter');
 
+  const winnerIcon = winnerId ? BET_OPTIONS.find(o => o.id === winnerId)?.icon : null;
+
   return (
     <AppLayout fullScreen>
       <div className="h-[100dvh] w-full bg-[#1a0a2e] flex flex-col relative overflow-hidden font-headline text-white select-none">
         <CompactRoomView />
 
-        {gameState === 'result' && winner && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-24 w-24 text-yellow-400 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]" />
-                <h2 className="text-6xl font-black text-white uppercase italic tracking-tighter text-center drop-shadow-lg">
-                   {winner} VICTORIOUS
-                </h2>
-             </div>
-          </div>
+        {gameState === 'result' && winnerId && (
+          <GameResultOverlay 
+            gameId="lion-fight"
+            winningSymbol={winnerIcon} 
+            winAmount={totalWinAmount} 
+          />
         )}
 
-        {/* Dynamic Sovereign Background Sync */}
         <div className="absolute inset-0 z-0">
            {gameData?.backgroundUrl ? (
              <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Stage" fill className="object-cover opacity-40 scale-110 animate-in fade-in duration-1000" unoptimized />
@@ -239,11 +251,11 @@ export default function LionFightPage() {
               <div className={cn(
                 "relative flex flex-col items-center transition-all duration-500",
                 gameState === 'fighting' ? "animate-bounce scale-110" : "scale-100",
-                winner === 'TIGER' && "scale-125 z-50 brightness-125"
+                winnerId === 'TIGER' && "scale-125 z-50 brightness-125"
               )}>
                  <div className="relative h-36 w-36">
                     <div className="absolute inset-0 bg-blue-500/20 blur-3xl animate-pulse rounded-full" />
-                    <Avatar className="h-full w-full border-4 border-blue-400 shadow-[0_0_30px_rgba(0,163,255,0.4)]">
+                    <Avatar className="h-full w-full border-4 border-blue-400 shadow-[0_0_30px_#00a3ff66]">
                        <AvatarImage src={tigerAsset?.imageUrl} className="object-cover" />
                        <AvatarFallback className="text-4xl">🐯</AvatarFallback>
                     </Avatar>
@@ -267,11 +279,11 @@ export default function LionFightPage() {
               <div className={cn(
                 "relative flex flex-col items-center transition-all duration-500",
                 gameState === 'fighting' ? "animate-bounce scale-110" : "scale-100",
-                winner === 'LION' && "scale-125 z-50 brightness-125"
+                winnerId === 'LION' && "scale-125 z-50 brightness-125"
               )}>
                  <div className="relative h-36 w-36">
                     <div className="absolute inset-0 bg-pink-500/20 blur-3xl animate-pulse rounded-full" />
-                    <Avatar className="h-full w-full border-4 border-pink-400 shadow-[0_0_30px_rgba(255,0,102,0.4)]">
+                    <Avatar className="h-full w-full border-4 border-pink-400 shadow-[0_0_30px_#ff006666]">
                        <AvatarImage src={lionAsset?.imageUrl} className="object-cover" />
                        <AvatarFallback className="text-4xl">🦁</AvatarFallback>
                     </Avatar>
@@ -298,7 +310,7 @@ export default function LionFightPage() {
                     "relative flex flex-col items-center rounded-[2.5rem] border-[3px] transition-all overflow-hidden active:scale-95 group",
                     opt.ringColor,
                     gameState !== 'betting' && "opacity-60",
-                    winner === opt.id && "ring-4 ring-yellow-400 z-20 scale-105"
+                    winnerId === opt.id && "ring-4 ring-yellow-400 z-20 scale-105"
                   )}
                 >
                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent z-10" />
@@ -361,7 +373,7 @@ export default function LionFightPage() {
                  </button>
                  
                  <div className="flex-1 text-center">
-                    <span className="text-3xl font-black italic text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                    <span className="text-3xl font-black italic text-white drop-shadow-[0_0_10px_#ffffff4d]">
                        {betAmount}
                     </span>
                  </div>

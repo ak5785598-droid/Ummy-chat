@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 
 export interface GameWinner {
   name: string;
@@ -12,18 +14,39 @@ export interface GameWinner {
 }
 
 interface GameResultOverlayProps {
+  gameId: string;
   winningSymbol?: string | React.ReactNode; 
   winAmount: number;
-  winners: GameWinner[];
+  winners?: GameWinner[]; // Keep for immediate user result
 }
 
 /**
  * High-Fidelity Game Result Overlay.
- * Designed to mirror the official Ummy victory blueprint.
+ * Dynamically queries the globalGameWins ledger for real-time winners.
  */
-export function GameResultOverlay({ winningSymbol, winAmount, winners }: GameResultOverlayProps) {
-  // Sort winners by amount won and take top 3
-  const sortedWinners = [...winners].sort((a, b) => b.win - a.win).slice(0, 3);
+export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: localWinners }: GameResultOverlayProps) {
+  const firestore = useFirestore();
+
+  const winsQuery = useMemoFirebase(() => {
+    if (!firestore || !gameId) return null;
+    return query(
+      collection(firestore, 'globalGameWins'),
+      where('gameId', '==', gameId),
+      orderBy('timestamp', 'desc'),
+      limit(3)
+    );
+  }, [firestore, gameId]);
+
+  const { data: dbWinners } = useCollection(winsQuery);
+
+  const displayWinners = useMemo(() => {
+    if (!dbWinners || dbWinners.length === 0) return localWinners || [];
+    return dbWinners.map(w => ({
+      name: w.username,
+      avatar: w.avatarUrl,
+      win: w.amount
+    }));
+  }, [dbWinners, localWinners]);
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -44,7 +67,6 @@ export function GameResultOverlay({ winningSymbol, winAmount, winners }: GameRes
 
         {/* Reward Bar - Marquee Protocol */}
         <div className="w-full relative mb-4">
-           {/* Light bulbs marquee border */}
            <div className="absolute -top-2 left-0 right-0 flex justify-between px-4 z-20">
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="w-1.5 h-1.5 bg-yellow-200 rounded-full shadow-[0_0_8px_#fff] animate-pulse" style={{ animationDelay: `${i*0.1}s` }} />
@@ -69,7 +91,6 @@ export function GameResultOverlay({ winningSymbol, winAmount, winners }: GameRes
                     </span>
                  </div>
               </div>
-              {/* Glossy Overlay */}
               <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
            </div>
         </div>
@@ -77,10 +98,9 @@ export function GameResultOverlay({ winningSymbol, winAmount, winners }: GameRes
         {/* Winners List - Burgundy Dimension */}
         <div className="w-full bg-[#4a1424] rounded-[2.5rem] border-2 border-[#fbbf24]/20 shadow-2xl overflow-hidden p-2">
            <div className="divide-y divide-white/5">
-              {sortedWinners.map((winner, idx) => (
+              {displayWinners.map((winner, idx) => (
                 <div key={idx} className="flex items-center justify-between py-4 px-6 group">
                    <div className="flex items-center gap-4">
-                      {/* Rank Icon Badge */}
                       <div className="relative flex items-center justify-center w-10 h-10">
                          <span className="text-4xl filter drop-shadow-md">
                             {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
@@ -105,9 +125,9 @@ export function GameResultOverlay({ winningSymbol, winAmount, winners }: GameRes
                    </div>
                 </div>
               ))}
-              {sortedWinners.length === 0 && (
+              {displayWinners.length === 0 && (
                 <div className="py-12 text-center opacity-40">
-                   <p className="text-xs font-black uppercase italic tracking-widest">Awaiting Identity Sync...</p>
+                   <p className="text-xs font-black uppercase italic tracking-widest text-white/60">Awaiting Real Winners...</p>
                 </div>
               )}
            </div>

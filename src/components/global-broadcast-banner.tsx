@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
-import { Sparkles, Gift, ChevronRight, Zap } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Gift, ChevronRight, Zap } from 'lucide-react';
 
 /**
  * High-Fidelity Global Broadcast Portal.
@@ -46,7 +45,7 @@ export function GlobalBroadcastBanner() {
       onClick={() => router.push(`/rooms/${activeBroadcast.roomId}`)}
       className="fixed top-20 left-4 right-4 z-[400] animate-in slide-in-from-top-full duration-500 cursor-pointer group"
     >
-      <div className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 p-0.5 rounded-2xl shadow-[0_0_30px_rgba(234,179,8,0.4)] border-2 border-yellow-400/40">
+      <div className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 p-0.5 rounded-2xl shadow-[0_0_30px_#eab30866] border-2 border-yellow-400/40">
          <div className="bg-black/60 backdrop-blur-xl rounded-[calc(1rem-2px)] px-4 py-3 flex items-center justify-between overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-45deg] animate-shine" style={{ animationDuration: '3s' }} />
             

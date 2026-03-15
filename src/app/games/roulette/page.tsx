@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 
 const NUMBERS = [
@@ -69,8 +70,8 @@ export default function RoulettePage() {
   const [history, setHistory] = useState<number[]>([16, 2, 34, 17, 0, 25, 11]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [winners, setWinners] = useState<any[]>([]);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
+  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'roulette'), [firestore]);
   const { data: gameData } = useDoc(gameDocRef);
@@ -167,15 +168,10 @@ export default function RoulettePage() {
     if (isSingle) winAmount += (myBets['single'] || 0) * 2;
     if (isDouble) winAmount += (myBets['double'] || 0) * 2;
 
-    const sessionWinners = [];
-    if (winAmount > 0 && userProfile) {
-      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-    }
-
-    setWinners(sessionWinners);
+    setTotalWinAmount(winAmount);
     setGameState('result');
 
-    if (winAmount > 0 && currentUser && firestore) {
+    if (winAmount > 0 && currentUser && firestore && userProfile) {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
@@ -183,12 +179,21 @@ export default function RoulettePage() {
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      // Record victory
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'roulette',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
       setLastBets(myBets);
       setMyBets({});
-      setWinners([]);
       setWinningNumber(null);
       setGameState('betting');
       setTimeLeft(15);
@@ -235,12 +240,20 @@ export default function RoulettePage() {
     );
   }
 
+  const winningNumberBadge = winningNumber !== null ? (
+    <div className={cn(
+      "h-16 w-16 rounded-full flex items-center justify-center text-3xl font-black italic border-2 border-white shadow-xl",
+      RED_NUMBERS.includes(winningNumber) ? "bg-red-600" : winningNumber === 0 ? "bg-emerald-600" : "bg-slate-900"
+    )}>
+      {winningNumber}
+    </div>
+  ) : null;
+
   return (
     <AppLayout fullScreen>
       <div className="h-[100dvh] w-full bg-[#311b92] flex flex-col relative overflow-hidden font-headline text-white select-none">
         <CompactRoomView />
 
-        {/* Dynamic Sovereign Background Sync */}
         <div className="absolute inset-0 z-0">
            {gameData?.backgroundUrl ? (
              <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Casino Theme" fill className="object-cover opacity-40 animate-in fade-in duration-1000" unoptimized />
@@ -250,27 +263,12 @@ export default function RoulettePage() {
            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#311b92] z-10" />
         </div>
 
-        {gameState === 'result' && winners.length > 0 && (
-          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 p-6">
-             <div className="relative mb-12 flex flex-col items-center gap-4">
-                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
-                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Tribe Winners</h2>
-             </div>
-             <div className="flex items-end justify-center gap-4 w-full max-w-lg">
-                {winners.map((winner, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-700">
-                     <Avatar className={cn("border-4 shadow-xl h-24 w-24 border-yellow-400")}>
-                        <AvatarImage src={winner.avatar}/><AvatarFallback>W</AvatarFallback>
-                     </Avatar>
-                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-32 rounded-t-3xl flex flex-col items-center justify-center">
-                        <span className="text-3xl">🥇</span>
-                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
-                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+        {gameState === 'result' && winningNumber !== null && (
+          <GameResultOverlay 
+            gameId="roulette"
+            winningSymbol={winningNumberBadge} 
+            winAmount={totalWinAmount} 
+          />
         )}
 
         <header className="relative z-50 flex items-center justify-between p-4 pt-32">
