@@ -106,7 +106,7 @@ export default function RoomsPage() {
         {headerTab === 'recommend' ? (
           <>
             <section className="px-6 grid grid-cols-3 gap-4 mb-8">
-              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-28 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2">
+              <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative h-28 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-2 translate-x-1">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                  <span className="absolute top-2 left-3 text-white font-black uppercase text-[8px] tracking-widest opacity-90">Rich</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
