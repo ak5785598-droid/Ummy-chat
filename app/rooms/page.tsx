@@ -74,12 +74,12 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-full bg-ummy-gradient flex flex-col font-headline animate-in fade-in duration-700 pb-24">
         
-        <header className="flex items-center justify-between px-6 pt-10 pb-6 shrink-0">
-          <div className="flex items-center gap-6">
+        <header className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => setHeaderTab('recommend')}
               className={cn(
-                "text-3xl font-black uppercase italic tracking-tighter transition-all",
+                "text-2xl font-black uppercase italic tracking-tighter transition-all",
                 headerTab === 'recommend' ? "text-slate-900 scale-105" : "text-slate-300"
               )}
             >
@@ -88,7 +88,7 @@ export default function RoomsPage() {
             <button 
               onClick={() => setHeaderTab('me')}
               className={cn(
-                "text-3xl font-black uppercase italic tracking-tighter transition-all",
+                "text-2xl font-black uppercase italic tracking-tighter transition-all",
                 headerTab === 'me' ? "text-slate-900 scale-105" : "text-slate-300"
               )}
             >
