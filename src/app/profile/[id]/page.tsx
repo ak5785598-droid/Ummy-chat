@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -139,9 +139,20 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const { toast } = useToast();
+  
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    toast({ title: 'ID Copied' });
+  };
+
   if (!color) {
     return (
-      <span className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none px-1">
+      <span 
+        onClick={handleCopy}
+        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
+      >
         ID: {id}
       </span>
     );
@@ -149,20 +160,20 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
 
   const theme = color === 'blue' 
     ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : color === 'red'
-    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
-    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
+    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
 
   return (
-    <div className={cn(
-      "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r",
-      theme
-    )}>
-      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
-      <span className={cn(
-        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
-        !color ? "text-slate-500" : "text-white"
-      )}>ID: {id}</span>
+    <div 
+      onClick={handleCopy}
+      className={cn(
+        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
+        theme
+      )}
+    >
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
+      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
+        ID: {id}
+      </span>
     </div>
   );
 };
@@ -263,15 +274,15 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0">
+               {/* Row 1: Name, Flag, Gender */}
                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
                   <span className="text-base leading-none">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
-                  <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
                
-               <div className="flex items-center gap-2 flex-wrap">
+               {/* Row 2: ID, Rich Tag, Charm Tag */}
+               <div className="flex items-center gap-2 flex-wrap mb-1">
                   {profile.specialId ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                   ) : (
@@ -279,6 +290,12 @@ const PublicProfileView = ({
                        ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                     </p>
                   )}
+                  <RichLevelBadge level={profile.level?.rich || 1} />
+                  <CharmLevelBadge level={profile.level?.charm || 1} />
+               </div>
+
+               {/* Row 3: Admin Tags */}
+               <div className="flex items-center gap-2 flex-wrap mt-1">
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
                   {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
@@ -294,6 +311,7 @@ const PublicProfileView = ({
             <StatItem label="Visitors" value="12K" onClick={() => onOpenSocial('visitors')} />
          </div>
 
+         {/* Top 3 Contribution Section */}
          <div className="px-2 pt-2">
             <div className="flex items-center justify-between mb-4 px-1">
                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] italic">Top Contribution</h4>
@@ -405,6 +423,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isSeller = isCertifiedSeller;
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -461,15 +480,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
 
                 <div className="flex-1 min-w-0">
+                   {/* Row 1: Name, Flag, Gender */}
                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h1 className="text-2xl font-black text-gray-800 tracking-tighter truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-lg leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
-                      <RichLevelBadge level={profile.level?.rich || 1} />
-                      <CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
                    
-                   <div className="flex items-center gap-2 flex-wrap">
+                   {/* Row 2: ID, Rich Tag, Charm Tag */}
+                   <div className="flex items-center gap-2 flex-wrap mb-1">
                       {profile.specialId ? (
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
@@ -477,6 +496,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                            ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
+                      <RichLevelBadge level={profile.level?.rich || 1} />
+                      <CharmLevelBadge level={profile.level?.charm || 1} />
+                   </div>
+
+                   {/* Row 3: Admin Tags */}
+                   <div className="flex items-center gap-2 flex-wrap mt-1">
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
                       {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
