@@ -292,7 +292,7 @@ const PublicProfileView = ({
                   )}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
                   {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                </div>
             </div>
@@ -416,7 +416,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
-  const isSeller = isCertifiedSeller;
+  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -491,7 +491,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-2" />}
+                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
                       {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                    </div>
                 </div>
