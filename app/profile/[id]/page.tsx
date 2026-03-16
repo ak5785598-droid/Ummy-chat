@@ -104,7 +104,7 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number | st
     onClick={onClick}
     className="flex flex-col items-center justify-center flex-1 py-0.5 active:scale-95 transition-transform"
   >
-    <span className="text-lg font-black text-gray-900 leading-none">{value}</span>
+    <span className="text-base font-black text-gray-900 leading-none">{value}</span>
     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mt-0.5">{label}</span>
   </button>
 );
@@ -559,7 +559,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <div className="bg-white/20 backdrop-blur-md p-0.5 rounded-md border border-white/30"><GoldCoinIcon className="h-2.5 w-2.5 drop-shadow-md" /></div>
                       <h3 className="text-[8px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.coins}</h3>
                    </div>
-                   <div className="flex items-baseline gap-1"><span className="text-lg font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
+                   <div className="flex items-baseline gap-1"><span className="text-base font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-12 h-12 opacity-20 rotate-12 group-hover:rotate-45 transition-all duration-1000"><GoldCoinIcon className="w-full h-full" /></div>
              </div>
@@ -574,7 +574,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <div className="bg-white/20 backdrop-blur-md p-0.5 rounded-md border border-white/30"><Gem className="h-2.5 w-2.5 text-white fill-current drop-shadow-md" /></div>
                       <h3 className="text-[8px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.diamonds}</h3>
                    </div>
-                   <div className="flex items-baseline gap-1"><span className="text-lg font-black text-white italic tracking-tighter drop-shadow-md">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
+                   <div className="flex items-baseline gap-1"><span className="text-base font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-12 h-12 opacity-20 -rotate-12 group-hover:rotate-[-45deg] transition-all duration-1000"><Gem className="w-full h-full text-white fill-current" /></div>
              </div>
