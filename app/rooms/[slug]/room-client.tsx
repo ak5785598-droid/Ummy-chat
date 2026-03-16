@@ -9,7 +9,6 @@ import {
   Users,
   Volume2,
   VolumeX,
-  LogOut,
   Power,
   Armchair,
   ChevronDown,
@@ -20,15 +19,13 @@ import {
   Mail,
   LayoutGrid,
   X,
-  UserX,
-  UserCheck,
-  Ban,
-  Heart,
   Plus,
   SmilePlus,
   MessageSquare,
   Trophy,
-  Megaphone
+  Megaphone,
+  Home,
+  Heart
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -88,11 +85,6 @@ import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 
-/**
- * High-Fidelity Media Volume Router.
- * Uses AudioContext to force audio output to the "Media" channel.
- * Ensures headsets work correctly and volume is controlled via media slider.
- */
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const contextRef = useRef<AudioContext | null>(null);
@@ -101,41 +93,28 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
 
   useEffect(() => {
     if (!stream) return;
-
-    // 1. Initialize High-Fidelity AudioContext
     if (!contextRef.current) {
       contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     const ctx = contextRef.current;
-
-    // 2. Connect Remote Frequency to Context
     if (sourceRef.current) {
       sourceRef.current.disconnect();
     }
-    
     sourceRef.current = ctx.createMediaStreamSource(stream);
     gainRef.current = ctx.createGain();
-    
     sourceRef.current.connect(gainRef.current);
     gainRef.current.connect(ctx.destination);
-
-    // 3. Sync Mute State
     gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
-
-    // 4. Autoplay Handshake
     if (ctx.state === 'suspended') {
       const resume = () => ctx.resume().catch(() => {});
       window.addEventListener('click', resume, { once: true });
       window.addEventListener('touchstart', resume, { once: true });
     }
-
-    // 5. Standard Tag Fallback (Kept muted to maintain WebRTC lifecycle)
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
       audioRef.current.muted = true;
       audioRef.current.play().catch(() => {});
     }
-
     return () => {
       if (sourceRef.current) sourceRef.current.disconnect();
       if (gainRef.current) gainRef.current.disconnect();
@@ -151,17 +130,19 @@ const Seat = ({
   occupant, 
   isLocked, 
   theme, 
-  onClick 
+  onClick,
+  isOwner
 }: { 
   index: number, 
   label: string, 
   occupant?: RoomParticipant, 
   isLocked?: boolean, 
   theme: any,
-  onClick: (index: number, occupant?: RoomParticipant) => void 
+  onClick: (index: number, occupant?: RoomParticipant) => void,
+  isOwner: boolean
 }) => {
   return (
-    <div className="flex flex-col items-center gap-1 w-[22%]">
+    <div className="flex flex-col items-center gap-1 w-full max-w-[75px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
         {occupant && !occupant.isMuted && (
@@ -192,9 +173,17 @@ const Seat = ({
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
-      <span className="text-[10px] font-bold text-white/60 uppercase truncate w-14 text-center">
-        {occupant ? occupant.name : label}
-      </span>
+      
+      <div className="flex items-center justify-center gap-0.5 w-full mt-0.5">
+        {isOwner && index === 1 && (
+          <div className="bg-yellow-500 rounded-full h-2.5 w-2.5 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
+             <Home className="h-1.5 w-1.5 text-white fill-current" />
+          </div>
+        )}
+        <span className="text-[8px] font-black uppercase text-white truncate max-w-[60px] drop-shadow-sm leading-none">
+          {occupant ? occupant.name : label}
+        </span>
+      </div>
     </div>
   );
 };
@@ -473,10 +462,17 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-4 pt-4">
-        <div className="flex items-center gap-3 ml-12">
-          <div className="relative">
-            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20">
+      <header className="relative z-50 flex items-center justify-between p-4 pt-12 px-4 shrink-0 w-full">
+        <div className="flex items-center gap-2 max-w-[70%] min-w-0">
+          <button 
+            onClick={handleMinimize}
+            className="p-2 bg-white/10 backdrop-blur-md rounded-full active:scale-90 transition-transform mr-1 shrink-0 border border-white/10"
+          >
+             <ChevronDown className="h-5 w-5 text-white" />
+          </button>
+
+          <div className="relative shrink-0">
+            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-xl">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
@@ -487,68 +483,41 @@ export function RoomClient({ room }: { room: Room }) {
                </span>
             </div>
           </div>
-          <div className="flex flex-col">
-             <div className="flex items-center gap-2">
-                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none">{room.title}</h1>
-                <button 
-                  onClick={handleFollowRoom}
-                  className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg shrink-0",
-                    followData ? "bg-red-500" : "bg-[#00E676]"
-                  )}
-                >
-                   {followData ? (
-                     <Heart className="h-3.5 w-3.5 text-white fill-current" />
-                   ) : (
-                     <div className="relative flex items-center justify-center">
-                        <Heart className="h-4 w-4 text-white" strokeWidth={3} />
-                        <Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} />
-                     </div>
-                   )}
+
+          <div className="flex flex-col min-w-0">
+             <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[100px]">{room.title}</h1>
+                <button onClick={handleFollowRoom} className={cn("h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
+                   {followData ? <Heart className="h-3.5 w-3.5 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-4 w-4 text-white" strokeWidth={3} /><Plus className="h-2.5 w-2.5 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
              </div>
-             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5">ID:{room.roomNumber}</p>
+             <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
-          {canManageRoom && (
-            <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Hexagon className="h-5 w-5" /></button>} />
-          )}
-          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Share2 className="h-5 w-5" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform"><Power className="h-5 w-5" /></button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-1.5 shadow-xl"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
+          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />}
+          <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-5 w-5" /></button>
+          <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-5 w-5" /></button>
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-start gap-2 pt-4 pb-40 overflow-y-auto no-scrollbar">
-           <div className="w-full flex justify-center">
-              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
-           </div>
-           <div className="w-full flex justify-center gap-4 px-4">
-              {[2, 3, 4, 5].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
-              ))}
-           </div>
-           <div className="w-full flex justify-center gap-4 px-4">
-              {[6, 7, 8, 9].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
-              ))}
-           </div>
-           <div className="w-full flex justify-center gap-4 px-4">
-              {[10, 11, 12, 13].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
-              ))}
-           </div>
-
-           {/* Repositioned Central Announcement Sync */}
-           <div className="mt-4 flex items-center justify-center gap-2 px-6 w-full animate-in fade-in duration-1000">
-              <Megaphone className="h-3.5 w-3.5 text-yellow-400 fill-current drop-shadow-md shrink-0" />
-              <div className="max-w-[80%]">
-                 <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-center leading-relaxed">
-                    {room.announcement || "Welcome to the frequency!"}
-                 </p>
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
+        <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-40 overflow-y-auto no-scrollbar w-full">
+           <div className="w-full flex justify-center px-6 mb-2">
+              <div className="w-1/4 max-w-[100px]">
+                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} isOwner={isOwner} />
               </div>
+           </div>
+           <div className="w-full grid grid-cols-4 gap-2 px-4">
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(idx => (
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} isOwner={false} />
+              ))}
+           </div>
+           <div className="mt-6 flex items-center justify-start px-6 w-full">
+              <p className="text-[12px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
+                 Announcement: {room.announcement || "Welcome to Umm Chat"}
+              </p>
            </div>
         </div>
 
