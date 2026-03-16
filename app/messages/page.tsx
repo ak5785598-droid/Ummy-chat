@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -105,7 +104,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
           <AvatarFallback className="bg-slate-50 text-slate-400">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isOfficial && (
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
+          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
              <CheckCircle className="h-4 w-4 text-green-500 fill-green-500 text-white" strokeWidth={3} />
           </div>
         )}
@@ -139,6 +138,10 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Sync real-time online status
+  const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
+  const isOnline = liveOtherUser?.isOnline;
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -206,7 +209,12 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
            </Avatar>
            <div className="flex-1 min-w-0">
               <DialogTitle className="text-lg font-black uppercase italic tracking-tighter truncate">{otherUser?.username}</DialogTitle>
-              <p className="text-[9px] font-bold text-green-500 uppercase tracking-widest">Active Frequency</p>
+              <p className={cn(
+                "text-[9px] font-bold uppercase tracking-widest",
+                isOnline ? "text-green-500" : "text-gray-400"
+              )}>
+                {isOnline ? 'online' : 'offline'}
+              </p>
            </div>
            <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
         </DialogHeader>
