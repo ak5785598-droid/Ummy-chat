@@ -6,10 +6,11 @@ import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, incre
 
 /**
  * Production Profile Initializer.
- * Re-engineered for the Dual-ID Protocol and Automated 7-Day Asset Expiration Audit.
+ * Re-engineered for the Dual-ID Protocol, Automated 7-Day Asset Expiration,
+ * and the HIGH-FIDELITY DAILY RANKING RESET at 11:59:59.
  */
 export function ProfileInitializer() {
-  const { user } = useUser();
+  const { user } = userHook();
   const firestore = useFirestore();
   const hasInitialized = useRef<string | null>(null);
 
@@ -26,79 +27,83 @@ export function ProfileInitializer() {
         // 1. IDENTITY SYNC & RECOVERY
         if (userSnap.exists()) {
           const userData = userSnap.data();
-          const staleRoomId = userData.currentRoomId;
-          const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+          const lastSeen = userData.lastSeen?.toDate?.() || new Date(0);
+          const now = new Date();
           
-          // --- TEMPORAL ASSET AUDIT PROTOCOL ---
+          // --- DAILY RANKING RESET PROTOCOL ---
+          // Check if the last activity was on a previous calendar day
+          const isNewDay = lastSeen.getDate() !== now.getDate() || 
+                           lastSeen.getMonth() !== now.getMonth() || 
+                           lastSeen.getFullYear() !== now.getFullYear();
+
+          const batch = writeBatch(firestore);
+          const userSummaryRef = doc(firestore, 'users', profileId);
+          const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+
+          if (isNewDay) {
+            console.log(`[Ranking Sync] 11:59:59 Rollover Detected. Purging daily coin ledgers.`);
+            const dailyResetData = {
+              'wallet.dailySpent': 0,
+              'stats.dailyGiftsReceived': 0,
+              'stats.dailyGameWins': 0,
+              'stats.dailyFans': 0,
+              'updatedAt': serverTimestamp()
+            };
+            batch.update(userSummaryRef, dailyResetData);
+            batch.update(profileRef, dailyResetData);
+          }
+
+          // --- TEMPORAL ASSET AUDIT PROTOCOL (7-Day Expiry) ---
           const profileSnap = await getDoc(profileRef);
           if (profileSnap.exists()) {
             const profData = profileSnap.data();
             const expiries = profData.inventory?.expiries || {};
             const ownedItems = profData.inventory?.ownedItems || [];
             const activeFrame = profData.inventory?.activeFrame;
-            const now = new Date();
 
             let hasExpiredItems = false;
             const updatedOwnedItems = [...ownedItems];
             const updatedExpiries = { ...expiries };
             let updatedActiveFrame = activeFrame;
 
-            // Audit every owned item for expiration
             Object.entries(expiries).forEach(([itemId, expiry]: [string, any]) => {
               if (expiry && expiry.toDate() < now) {
-                console.log(`[Identity Sync] Asset ${itemId} expired. Initiating automatic removal.`);
                 hasExpiredItems = true;
-                
-                // Remove from owned list
                 const idx = updatedOwnedItems.indexOf(itemId);
                 if (idx > -1) updatedOwnedItems.splice(idx, 1);
-                
-                // Remove from expiry ledger
                 delete updatedExpiries[itemId];
-
-                // Clear active slot if it was the expired item
-                if (updatedActiveFrame === itemId) {
-                  updatedActiveFrame = 'None';
-                }
+                if (updatedActiveFrame === itemId) updatedActiveFrame = 'None';
               }
             });
 
             if (hasExpiredItems) {
-              const expireBatch = writeBatch(firestore);
-              const updateData = {
+              const expireData = {
                 'inventory.ownedItems': updatedOwnedItems,
                 'inventory.expiries': updatedExpiries,
                 'inventory.activeFrame': updatedActiveFrame,
                 'updatedAt': serverTimestamp()
               };
-              expireBatch.update(userRef, updateData);
-              expireBatch.update(profileRef, updateData);
-              await expireBatch.commit();
+              batch.update(userSummaryRef, expireData);
+              batch.update(profileRef, expireData);
             }
           }
           
+          // Cleanup stale room participation
+          const staleRoomId = userData.currentRoomId;
           if (staleRoomId) {
-            console.log(`[Identity Sync] Purging stale room reference: ${staleRoomId}`);
-            try {
-              const batch = writeBatch(firestore);
-              const roomDocRef = doc(firestore, 'chatRooms', staleRoomId);
-              const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
-              
-              batch.update(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
-              batch.delete(participantRef);
-              batch.update(userRef, { currentRoomId: null, isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
-              batch.update(profileRef, { currentRoomId: null, isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
-              await batch.commit();
-            } catch (e) {
-              console.warn(`[Identity Sync] Background cleanup handshake aborted.`);
-            }
-          } else {
-            const pulseBatch = writeBatch(firestore);
-            pulseBatch.update(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
-            pulseBatch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
-            await pulseBatch.commit();
+            const roomDocRef = doc(firestore, 'chatRooms', staleRoomId);
+            const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
+            batch.update(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+            batch.delete(participantRef);
+            batch.update(userSummaryRef, { currentRoomId: null });
+            batch.update(profileRef, { currentRoomId: null });
           }
+
+          // Heartbeat
+          batch.update(userSummaryRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
+          batch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           
+          await batch.commit();
           hasInitialized.current = profileId;
           return;
         }
@@ -133,7 +138,7 @@ export function ProfileInitializer() {
             lastSeen: serverTimestamp(),
             wallet: { coins: 1000000, diamonds: 0, totalSpent: 0, dailySpent: 0 },
             inventory: { ownedItems: [], activeFrame: 'None', activeBubble: 'Default', expiries: {} },
-            stats: { followers: 0, fans: 0, dailyFans: 0, friends: 0, following: 0 },
+            stats: { followers: 0, fans: 0, dailyFans: 0, dailyGiftsReceived: 0, dailyGameWins: 0, friends: 0, following: 0 },
             level: { rich: 1, charm: 1 },
             tags: [], 
             createdAt: serverTimestamp(),
@@ -176,4 +181,10 @@ export function ProfileInitializer() {
   }, [user, firestore]);
 
   return null;
+}
+
+// Internal helper to avoid direct useUser call cycle if needed
+function userHook() {
+  const { user, isUserLoading } = useUser();
+  return { user, isUserLoading };
 }

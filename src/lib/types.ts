@@ -22,7 +22,9 @@ export type User = {
     followers?: number;
     fans?: number;
     totalGifts?: number;
-    dailyGameWins?: number;
+    dailyFans?: number; // Count of fans gained today
+    dailyGiftsReceived?: number; // Coins received today (Charm)
+    dailyGameWins?: number; // Coins won in games today
     friends?: number;
     following?: number;
   };
@@ -30,7 +32,7 @@ export type User = {
     coins: number;
     diamonds: number;
     totalSpent: number;
-    dailySpent: number;
+    dailySpent: number; // Coins spent today (Rich)
   };
   inventory?: {
     activeFrame?: string;
@@ -118,7 +120,7 @@ export type Room = {
   isSuperMic?: boolean;
   stats?: {
     totalGifts: number;
-    dailyGifts: number;
+    dailyGifts: number; // Coins received in room today
   };
 };
 
@@ -159,4 +161,4 @@ export type AdminLog = {
   action: string;
   details: any;
   createdAt: any;
-};
+}

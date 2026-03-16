@@ -70,8 +70,9 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   const others = items.slice(3);
 
   const getValue = (item: any) => {
+    // HIGH-FIDELITY DAILY RESET: Use the specific daily ledger fields
     if (type === 'rich') return item.wallet?.dailySpent || 0;
-    if (type === 'charm') return item.stats?.dailyFans || 0;
+    if (type === 'charm') return item.stats?.dailyGiftsReceived || 0;
     if (type === 'rooms') return item.stats?.dailyGifts || 0;
     if (type === 'games') return item.stats?.dailyGameWins || 0;
     return 0;
@@ -254,7 +255,7 @@ function LeaderboardContent() {
   useEffect(() => { if (initialType) setRankingMode(initialType); }, [initialType]);
 
   const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
-  const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyFans', 'desc'), limit(50)), [firestore]);
+  const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50)), [firestore]);
   const roomsQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]);
   const gamesQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50)), [firestore]);
 
@@ -276,7 +277,6 @@ function LeaderboardContent() {
 
   const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'rooms' ? isLoadingRooms : isLoadingGames;
 
-  // Visual Sync: Category-to-Config key mapping
   const currentBG = useMemo(() => {
     if (rankingType === 'rich') return rankingsConfig?.honor;
     if (rankingType === 'charm') return rankingsConfig?.charm;
@@ -285,11 +285,18 @@ function LeaderboardContent() {
     return null;
   }, [rankingType, rankingsConfig]);
 
+  const myValue = useMemo(() => {
+    if (!me) return 0;
+    if (rankingType === 'rich') return me.wallet?.dailySpent || 0;
+    if (rankingType === 'charm') return me.stats?.dailyGiftsReceived || 0;
+    if (rankingType === 'games') return me.stats?.dailyGameWins || 0;
+    return 0;
+  }, [me, rankingType]);
+
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative font-headline overflow-x-hidden flex flex-col">
-        {/* Cinematic Environmental Backdrop */}
         <div className="absolute inset-0 z-0 pointer-events-none">
            {currentBG ? (
              <Image src={currentBG} fill className="object-cover opacity-60 animate-in fade-in duration-1000" alt="BG" unoptimized />
@@ -314,10 +321,11 @@ function LeaderboardContent() {
                     <DialogDescription className="sr-only">Detailed tribal ranking policy.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 font-body italic text-gray-400 leading-relaxed pt-2 text-sm">
-                    <p>1. Honor rankings are based on the total Gold Coins spent during the selected period.</p>
-                    <p>2. Charm rankings reflect the increase in fan count during the period.</p>
-                    <p>3. Room rankings track the total gifts received in specific frequencies.</p>
-                    <p>4. Game rankings track the successful frequencies in the 3D Tribe Arena.</p>
+                    <p>1. Rankings are based on daily Gold Coin activity and reset every night at 11:59:59.</p>
+                    <p>2. Honor (Rich) tracks daily coins dispatched.</p>
+                    <p>3. Charm tracks daily coins received as gifts.</p>
+                    <p>4. Room rankings track total daily gifts received in a frequency.</p>
+                    <p>5. Game rankings track daily Gold Coins won in the 3D Arena.</p>
                   </div>
                 </DialogContent>
              </Dialog>
@@ -373,17 +381,17 @@ function LeaderboardContent() {
 
         <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-[#b88a44] via-[#f5e1a4] to-[#b88a44] p-3 h-16 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
            <div className="max-w-4xl mx-auto flex items-center gap-3 w-full">
-              <span className="w-10 text-center font-black text-black/60 italic text-lg">100+</span>
+              <span className="w-10 text-center font-black text-black/60 italic text-lg">ME</span>
               <Avatar className="h-11 w-11 border-2 border-black/20 shrink-0 shadow-lg">
                 <AvatarImage src={me?.avatarUrl || undefined} />
-                <AvatarFallback className="bg-black text-white text-xs">ME</AvatarFallback>
+                <AvatarFallback className="bg-black text-white text-xs">U</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-black text-base uppercase italic text-black truncate leading-none mb-0.5">{me?.username || 'Tribe Member'}</p>
                 <div className="scale-75 origin-left"><LevelBadge level={me?.level?.rich || 1} /></div>
               </div>
               <div className="text-right flex items-center gap-1 shrink-0">
-                <span className="text-xl font-black text-black italic leading-none">0</span>
+                <span className="text-xl font-black text-black italic leading-none">{myValue.toLocaleString()}</span>
                 <GoldCoinIcon className="h-5 w-5 text-black" />
               </div>
            </div>

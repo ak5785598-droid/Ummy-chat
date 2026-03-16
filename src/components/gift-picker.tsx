@@ -75,7 +75,7 @@ interface GiftPickerProps {
 
 /**
  * High-Fidelity Gift Vault.
- * Re-engineered to sync with the 🔥 Gift Calculator.
+ * Re-engineered to sync with the DAILY RANKING PROTOCOL.
  */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
@@ -130,6 +130,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         }
       }
 
+      // DAILY RICH SYNC: Track today's spent coins
       const senderUpdateData = {
         'wallet.coins': increment(-(totalCost - winAmount)),
         'wallet.totalSpent': increment(totalCost),
@@ -139,6 +140,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
       updateDocumentNonBlocking(userRef, senderUpdateData);
       updateDocumentNonBlocking(profileRef, senderUpdateData);
+      
+      // DAILY ROOM SYNC: Track today's room gifts
       updateDocumentNonBlocking(roomRef, { 
         'stats.totalGifts': increment(totalCost),
         'stats.dailyGifts': increment(totalCost),
@@ -151,8 +154,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);
         const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', recipient.uid);
         
+        // DAILY CHARM SYNC: Track today's received coins
         const recUpdateData = {
           'wallet.diamonds': increment(diamondYield),
+          'stats.dailyGiftsReceived': increment(totalCost),
           updatedAt: serverTimestamp()
         };
 
@@ -242,10 +247,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
                     </PopoverTrigger>
                     <PopoverContent className="bg-slate-900 border-white/10 text-white p-4 rounded-2xl w-60 shadow-2xl">
                        <h4 className="font-black uppercase italic text-xs mb-2 text-yellow-500">Yield Protocol</h4>
-                       <p className="text-[10px] text-white/60 leading-relaxed font-body italic">Recipient yields 40% Diamond frequency from all coins received. Lucky gifts can trigger a jackpot win for the sender.</p>
+                       <p className="text-[10px] text-white/60 leading-relaxed font-body italic">Daily Rankings reset at 11:59:59 PM. Charm is based on daily coins received as gifts.</p>
                     </PopoverContent>
                  </Popover>
-                 <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><Home className="h-3 w-3 text-white/60" /></button>
+                 <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10" onClick={() => onOpenChange(false)}><Home className="h-3 w-3 text-white/60" /></button>
               </div>
            </div>
 
@@ -299,7 +304,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         </div>
 
         <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between gap-3">
-           <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => onOpenChange(false)}>
+           <div className="flex items-center gap-1.5 cursor-pointer">
               <GoldCoinIcon className="h-4 w-4" />
               <span className="text-xs font-black italic text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
               <ChevronRight className="h-3 w-3 text-white/40" />
