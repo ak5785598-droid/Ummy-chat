@@ -75,6 +75,7 @@ interface GiftPickerProps {
 
 /**
  * High-Fidelity Gift Vault.
+ * Re-engineered to sync with the 🔥 Gift Calculator.
  */
 export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
   const { user } = useUser();
@@ -148,6 +149,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         const diamondYield = Math.floor(totalCost * 0.4);
         const recipientRef = doc(firestore, 'users', recipient.uid);
         const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);
+        const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', recipient.uid);
         
         const recUpdateData = {
           'wallet.diamonds': increment(diamondYield),
@@ -156,6 +158,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
         updateDocumentNonBlocking(recipientRef, recUpdateData);
         updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
+        
+        // CALCULATOR SYNC: Update participant session gifts
+        updateDocumentNonBlocking(participantRef, {
+          sessionGifts: increment(totalCost),
+          updatedAt: serverTimestamp()
+        });
 
         const contribRef = doc(firestore, 'users', recipient.uid, 'topContributors', user.uid);
         setDocumentNonBlocking(contribRef, {

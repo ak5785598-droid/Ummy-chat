@@ -9,7 +9,6 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { 
-  Swords, 
   ChevronLeft, 
   Loader, 
   MessageSquare, 
@@ -22,7 +21,9 @@ import {
   Upload, 
   FileAudio, 
   Power,
-  Trash2
+  Trash2,
+  Flame,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,8 +53,7 @@ interface RoomPlayDialogProps {
 
 /**
  * High-Fidelity Room Play Portal.
- * Features both Global Online Music and Local Device Synchronization.
- * Authority restricted for Battle and Music dimensions.
+ * Re-engineered to include the 🔥 Gift Calculator toggle.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -67,7 +67,7 @@ export function RoomPlayDialog({
   onPlayLocalMusic
 }: RoomPlayDialogProps) {
   const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
-  const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'music'>('grid');
+  const [view, setView] = useState<'grid' | 'selection' | 'rules' | 'music'>('grid');
   const [musicTab, setMusicTab] = useState<'online' | 'device'>('online');
   const [isClearingChat, setIsClearingChat] = useState(false);
   
@@ -84,6 +84,7 @@ export function RoomPlayDialog({
   const isMod = room?.moderatorIds?.includes(user?.uid || '');
   const canManage = isOwner || isMod;
   const isChatMuted = room?.isChatMuted || false;
+  const isCalculatorActive = room?.isCalculatorActive || false;
 
   const handleClearChat = async () => {
     if (!firestore || !roomId) return;
@@ -126,6 +127,20 @@ export function RoomPlayDialog({
     onOpenChange(false);
   };
 
+  const handleToggleCalculator = () => {
+    if (!firestore || !roomId) return;
+    const roomRef = doc(firestore, 'chatRooms', roomId);
+    updateDocumentNonBlocking(roomRef, {
+      isCalculatorActive: !isCalculatorActive,
+      updatedAt: serverTimestamp()
+    });
+    toast({ 
+      title: isCalculatorActive ? 'Calculator Offline' : 'Calculator Active',
+      description: isCalculatorActive ? 'Gift tracking disabled.' : '🔥 Gift tracking is now live.'
+    });
+    onOpenChange(false);
+  };
+
   const handleSearchMusic = async () => {
     if (!musicSearch.trim()) return;
     setIsSearchingMusic(true);
@@ -162,7 +177,6 @@ export function RoomPlayDialog({
   };
 
   const handlePlayDeviceTrack = (file: File) => {
-    // START PROTOCOL: Select a track starts music
     setIsMusicEnabled(true);
     if (onPlayLocalMusic) {
       onPlayLocalMusic(file);
@@ -205,14 +219,17 @@ export function RoomPlayDialog({
           </div>
         )
       },
-      { 
-        id: 'battle', 
-        label: 'Battle', 
-        onClick: () => setView('battle'),
+      {
+        id: 'calculator',
+        label: isCalculatorActive ? 'Calculator Off' : 'Calculator',
+        onClick: handleToggleCalculator,
         icon: (
-          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-red-500 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
+          <div className={cn(
+            "relative w-16 h-16 rounded-full p-0.5 border-2 border-white/20 shadow-xl overflow-hidden",
+            isCalculatorActive ? "bg-gradient-to-br from-orange-400 to-red-600" : "bg-gradient-to-br from-slate-600 to-slate-800"
+          )}>
              <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-                <Swords className="h-8 w-8 text-white drop-shadow-md animate-pulse" />
+                <Flame className={cn("h-8 w-8 text-white drop-shadow-md", isCalculatorActive && "animate-reaction-heartbeat")} />
              </div>
           </div>
         )

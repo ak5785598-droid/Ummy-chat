@@ -23,7 +23,8 @@ import {
   SmilePlus,
   MessageSquare,
   Trophy,
-  Megaphone
+  Megaphone,
+  Flame
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -128,6 +129,7 @@ const Seat = ({
   occupant, 
   isLocked, 
   theme, 
+  isCalculatorActive,
   onClick 
 }: { 
   index: number, 
@@ -135,8 +137,15 @@ const Seat = ({
   occupant?: RoomParticipant, 
   isLocked?: boolean, 
   theme: any,
+  isCalculatorActive: boolean,
   onClick: (index: number, occupant?: RoomParticipant) => void 
 }) => {
+  const formatCoins = (val: number = 0) => {
+    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+    return val.toString();
+  };
+
   return (
     <div className="flex flex-col items-center gap-1 w-full">
       <div className="relative">
@@ -169,9 +178,20 @@ const Seat = ({
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
-      <span className="text-[9px] font-black uppercase text-white/60 truncate w-full text-center px-1 drop-shadow-md leading-none">
-        {occupant ? occupant.name : label}
-      </span>
+      
+      <div className="flex flex-col items-center gap-0.5 min-w-0 w-full">
+        <span className="text-[9px] font-black uppercase text-white/60 truncate w-full text-center px-1 drop-shadow-md leading-none">
+          {occupant ? occupant.name : label}
+        </span>
+        {isCalculatorActive && (
+          <div className="flex items-center gap-0.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/5 animate-in zoom-in duration-300">
+             <Flame className="h-2 w-2 text-orange-500 fill-current" />
+             <span className="text-[8px] font-black text-orange-400 italic">
+                {formatCoins(occupant?.sessionGifts || 0)}
+             </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -214,6 +234,7 @@ export function RoomClient({ room }: { room: Room }) {
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
   const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
+  const isCalculatorActive = room.isCalculatorActive || false;
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !room.id) return null;
@@ -290,7 +311,6 @@ export function RoomClient({ room }: { room: Room }) {
   }, [firestoreMessages]);
 
   useEffect(() => {
-    // SYNC MUSIC ENABLE STATE: Hard start/stop felt logic
     if (musicAudioRef.current) {
       if (isMusicEnabled) {
         musicAudioRef.current.play().catch(() => {});
@@ -453,12 +473,12 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-40 overflow-y-auto no-scrollbar w-full">
            <div className="w-full flex justify-center px-6 mb-2">
               <div className="w-1/4 max-w-[100px]">
-                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} />
+                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isCalculatorActive={isCalculatorActive} onClick={handleSeatClick} />
               </div>
            </div>
            <div className="w-full grid grid-cols-4 gap-2 px-4">
               {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} />
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isCalculatorActive={isCalculatorActive} onClick={handleSeatClick} />
               ))}
            </div>
            <div className="mt-6 flex items-center justify-start px-6 w-full">

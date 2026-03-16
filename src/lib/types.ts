@@ -90,6 +90,7 @@ export type RoomParticipant = {
   activeFrame?: string;
   activeWave?: string;
   activeEmoji?: string | null;
+  sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
 };
 
 export type Room = {
@@ -110,6 +111,7 @@ export type Room = {
   createdAt: any;
   participantCount?: number;
   isChatMuted?: boolean;
+  isCalculatorActive?: boolean; // 🔥 CALCULATOR TOGGLE
   currentMusicUrl?: string | null;
   maxActiveMics?: number;
   isSuperMic?: boolean;
