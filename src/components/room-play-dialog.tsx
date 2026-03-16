@@ -21,9 +21,7 @@ import {
   Upload, 
   FileAudio, 
   Power,
-  Trash2,
-  Flame,
-  Zap
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -53,7 +51,7 @@ interface RoomPlayDialogProps {
 
 /**
  * High-Fidelity Room Play Portal.
- * Re-engineered to include the 🔥 Gift Calculator toggle.
+ * Interactive tools for authorities and tribe members.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -84,7 +82,6 @@ export function RoomPlayDialog({
   const isMod = room?.moderatorIds?.includes(user?.uid || '');
   const canManage = isOwner || isMod;
   const isChatMuted = room?.isChatMuted || false;
-  const isCalculatorActive = room?.isCalculatorActive || false;
 
   const handleClearChat = async () => {
     if (!firestore || !roomId) return;
@@ -123,20 +120,6 @@ export function RoomPlayDialog({
     toast({ 
       title: isChatMuted ? 'Messaging Restored' : 'Messaging Restricted', 
       description: isChatMuted ? 'Tribe members can now send messages.' : 'Only authorities can broadcast.' 
-    });
-    onOpenChange(false);
-  };
-
-  const handleToggleCalculator = () => {
-    if (!firestore || !roomId) return;
-    const roomRef = doc(firestore, 'chatRooms', roomId);
-    updateDocumentNonBlocking(roomRef, {
-      isCalculatorActive: !isCalculatorActive,
-      updatedAt: serverTimestamp()
-    });
-    toast({ 
-      title: isCalculatorActive ? 'Calculator Offline' : 'Calculator Active',
-      description: isCalculatorActive ? 'Gift tracking disabled.' : '🔥 Gift tracking is now live.'
     });
     onOpenChange(false);
   };
@@ -215,21 +198,6 @@ export function RoomPlayDialog({
           <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
              <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
                 <Music className="h-8 w-8 text-white drop-shadow-md" />
-             </div>
-          </div>
-        )
-      },
-      {
-        id: 'calculator',
-        label: isCalculatorActive ? 'Calculator Off' : 'Calculator',
-        onClick: handleToggleCalculator,
-        icon: (
-          <div className={cn(
-            "relative w-16 h-16 rounded-full p-0.5 border-2 border-white/20 shadow-xl overflow-hidden",
-            isCalculatorActive ? "bg-gradient-to-br from-orange-400 to-red-600" : "bg-gradient-to-br from-slate-600 to-slate-800"
-          )}>
-             <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-                <Flame className={cn("h-8 w-8 text-white drop-shadow-md", isCalculatorActive && "animate-reaction-heartbeat")} />
              </div>
           </div>
         )
