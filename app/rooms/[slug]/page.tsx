@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -32,10 +31,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
-  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
     if (!isUserLoading && !currentUser) {
       router.replace('/login');
     }
@@ -56,10 +53,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
   const bannedUntil = useMemo(() => {
-    if (!banData || !isHydrated) return null;
+    if (!banData) return null;
     const expires = banData.expiresAt?.toDate();
     return (expires && expires > new Date()) ? expires : null;
-  }, [banData, isHydrated]);
+  }, [banData]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (firestoreRoom) {
@@ -171,18 +168,18 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return (
       <AppLayout fullScreen>
         <div className="fixed inset-0 bg-[#FFCC00] z-[1000] flex flex-col items-center justify-center p-8 font-headline">
-           <div className="mb-12 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
-              <div className="h-24 w-24 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
-                 <Lock className="h-10 w-10 text-black" />
+           <div className="mb-6 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
+              <div className="h-16 w-16 bg-white rounded-[1.25rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
+                 <Lock className="h-6 w-6 text-black" />
               </div>
               <div className="space-y-1">
-                 <h2 className="text-4xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/60">Private Frequency Active</p>
+                 <h2 className="text-2xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
+                 <p className="text-[8px] font-black uppercase tracking-[0.2em] text-black/60">Private Frequency Active</p>
               </div>
            </div>
 
-           <div className="w-full max-w-xs space-y-8 animate-in slide-in-from-bottom-10 duration-700">
-              <div className="space-y-4 text-center">
+           <div className="w-full max-w-xs space-y-6 animate-in slide-in-from-bottom-10 duration-700">
+              <div className="space-y-3 text-center">
                  <Input 
                    type="password"
                    inputMode="numeric"
@@ -190,26 +187,27 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
                    value={passwordInput}
                    onChange={(e) => setPasswordInput(e.target.value.replace(/\D/g, ''))}
                    onKeyDown={(e) => e.key === 'Enter' && passwordInput.length === 4 && handleVerifyPassword()}
-                   className="h-20 bg-white border-none rounded-[1.5rem] shadow-xl text-4xl font-black tracking-[1em] text-center focus:ring-4 focus:ring-black/10 placeholder:text-black/5"
+                   className="h-14 bg-white border-none rounded-xl shadow-xl text-2xl font-black tracking-[1em] text-center focus:ring-4 focus:ring-black/10 placeholder:text-black/5"
                    placeholder="0000"
                    autoFocus
                  />
-                 <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Enter 4-Digit Entry Code</p>
+                 <p className="text-[9px] font-black uppercase tracking-widest text-black/40">Enter 4-Digit Entry Code</p>
               </div>
 
-              <div className="flex gap-4">
-                 <button 
+              <div className="flex gap-3">
+                 <Button 
                    onClick={() => router.push('/rooms')}
-                   className="flex-1 h-14 rounded-2xl bg-white/20 border-2 border-black/10 font-black uppercase italic text-xs hover:bg-white/30 transition-all"
+                   variant="outline" 
+                   className="flex-1 h-10 rounded-xl bg-white/20 border-black/10 font-black uppercase italic text-xs hover:bg-white/30"
                  >
                     Exit
-                 </button>
+                 </Button>
                  <Button 
                    onClick={handleVerifyPassword}
                    disabled={passwordInput.length < 4}
-                   className="flex-[2] h-14 rounded-2xl bg-black text-white font-black uppercase italic text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                   className="flex-[2] h-10 rounded-xl bg-black text-white font-black uppercase italic text-sm shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                  >
-                    Verify Sync <ArrowRight className="ml-2 h-5 w-5" />
+                    Verify Sync <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                  </Button>
               </div>
            </div>
