@@ -177,6 +177,7 @@ const Seat = ({
 };
 
 export function RoomClient({ room }: { room: Room }) {
+  const { isMusicEnabled } = useRoomContext();
   const [messageText, setMessageText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
@@ -288,6 +289,13 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
+  useEffect(() => {
+    // SYNC MUSIC ENABLE STATE
+    if (musicAudioRef.current) {
+      musicAudioRef.current.muted = !isMusicEnabled;
+    }
+  }, [isMusicEnabled]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
@@ -383,6 +391,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
       musicAudioRef.current.src = url;
+      musicAudioRef.current.muted = !isMusicEnabled;
       musicAudioRef.current.play().catch(() => {});
       const stream = (musicAudioRef.current as any).captureStream?.() || (musicAudioRef.current as any).mozCaptureStream?.();
       if (stream) setMusicStream(stream);
@@ -413,7 +422,7 @@ export function RoomClient({ room }: { room: Room }) {
           <div className="flex flex-col min-w-0">
              <div className="flex items-center gap-1.5 min-w-0">
                 <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[100px]">{room.title}</h1>
-                <button onClick={handleFollowRoom} className={cn("h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-500" : "bg-[#00E676]")}>
+                <button onClick={handleFollowRoom} className={cn("h-6 w-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                    {followData ? <Heart className="h-3.5 w-3.5 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-4 w-4 text-white" strokeWidth={3} /><Plus className="h-2.5 w-2.5 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
              </div>
