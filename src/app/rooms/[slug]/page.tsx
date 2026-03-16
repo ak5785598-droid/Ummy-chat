@@ -20,6 +20,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
  * Chat Room Entry Page Gateway.
  * Synchronizes identity and ensures all theme/background metadata is passed to the client.
  * Features a high-fidelity 4-digit password entry guard for private rooms.
+ * DEFERRED SYNC: Hydration mismatch protection for 'bannedUntil'.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -31,8 +32,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (!isUserLoading && !currentUser) {
       router.replace('/login');
     }
@@ -53,10 +56,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
   const bannedUntil = useMemo(() => {
-    if (!banData) return null;
+    if (!banData || !isMounted) return null;
     const expires = banData.expiresAt?.toDate();
     return (expires && expires > new Date()) ? expires : null;
-  }, [banData]);
+  }, [banData, isMounted]);
 
   const activeRoom: Room | null = useMemo(() => {
     if (firestoreRoom) {
@@ -111,11 +114,11 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const requiresPassword = activeRoom?.password && !isOwner && !isUnlocked;
 
   useEffect(() => {
-    if (activeRoom && !bannedUntil && !requiresPassword) {
+    if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
       setActiveRoom(activeRoom);
       setIsMinimized(false);
     }
-  }, [activeRoom, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword]);
+  }, [activeRoom, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
 
   const handleVerifyPassword = () => {
     if (passwordInput === activeRoom?.password) {
@@ -139,7 +142,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading && slug !== 'ummy-help-center')) {
+  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading && slug !== 'ummy-help-center') || !isMounted) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
@@ -169,7 +172,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       <AppLayout fullScreen>
         <div className="fixed inset-0 bg-[#FFCC00] z-[1000] flex flex-col items-center justify-center p-8 font-headline">
            <div className="mb-8 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
-              <div className="h-20 w-20 bg-white rounded-[1.5rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
+              <div className="h-20 w-20 bg-white rounded-[1.25rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
                  <Lock className="h-8 w-8 text-black" />
               </div>
               <div className="space-y-1">
@@ -195,13 +198,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
               </div>
 
               <div className="flex gap-4">
-                 <Button 
+                 <button 
                    onClick={() => router.push('/rooms')}
-                   variant="outline" 
-                   className="flex-1 h-12 rounded-xl bg-white/20 border-black/10 font-black uppercase italic text-xs hover:bg-white/30"
+                   className="flex-1 h-12 rounded-xl bg-white/20 border border-black/10 font-black uppercase italic text-xs hover:bg-white/30 transition-all"
                  >
                     Exit
-                 </Button>
+                 </button>
                  <Button 
                    onClick={handleVerifyPassword}
                    disabled={passwordInput.length < 4}
