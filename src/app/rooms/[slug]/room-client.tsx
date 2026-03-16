@@ -465,13 +465,6 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <button 
-            onClick={handleMinimize}
-            className="p-1.5 bg-white/10 backdrop-blur-md rounded-full active:scale-90 transition-transform mr-1 shrink-0 border border-white/10"
-          >
-             <ChevronDown className="h-4 w-4 text-white" />
-          </button>
-
           <div className="relative shrink-0">
             <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
               <AvatarImage src={room.coverUrl || undefined} />
