@@ -38,7 +38,7 @@ export default function StorePage() {
     if (!userProfile || !user || !firestore) return;
     const balance = userProfile.wallet?.coins || 0;
     if (balance < item.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins' });
       return;
     }
 

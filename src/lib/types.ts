@@ -96,6 +96,7 @@ export type RoomParticipant = {
   activeWave?: string;
   activeEmoji?: string | null;
   sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
+  lastSeen?: any;
 };
 
 export type Room = {

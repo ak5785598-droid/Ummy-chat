@@ -544,7 +544,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         </p>
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                      {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
+                      {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
                       {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
                       {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
                    </div>

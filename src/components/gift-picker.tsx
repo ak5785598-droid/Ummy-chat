@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -13,10 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
-import { Mic, Home, ChevronRight, Send, Loader, User, Info, Sparkles } from 'lucide-react';
+import { Home, ChevronRight, Send, Loader, Info, Sparkles, Check } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { 
@@ -32,6 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { RoomParticipant } from '@/lib/types';
 
 export interface GiftItem {
   id: string;
@@ -70,14 +71,14 @@ interface GiftPickerProps {
   onOpenChange: (open: boolean) => void;
   roomId: string;
   recipient?: { uid: string; name: string; avatarUrl?: string } | null;
-  onGiftSent?: (gift: GiftItem, qty: number, recipient: any) => void;
+  participants?: RoomParticipant[];
 }
 
 /**
  * High-Fidelity Gift Vault.
- * Re-engineered to sync with the DAILY RANKING PROTOCOL.
+ * Re-engineered to support multi-recipient dispatch and 40% Diamond yield.
  */
-export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }: GiftPickerProps) {
+export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: GiftPickerProps) {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -86,121 +87,122 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
   const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [isSending, setIsSending] = useState(false);
+  const [selectedUids, setSelectedUids] = useState<string[]>([]);
 
-  const calculateLuckyWin = (price: number, qty: number) => {
-    const roll = Math.random() * 100;
-    let multiplier = 0;
+  const seatedParticipants = useMemo(() => {
+    return participants.filter(p => p.seatIndex > 0).sort((a, b) => a.seatIndex - b.seatIndex);
+  }, [participants]);
 
-    if (roll < 0.05) multiplier = 1000;
-    else if (roll < 0.2) multiplier = 100;
-    else if (roll < 1.0) multiplier = 50;
-    else if (roll < 5.0) multiplier = 5;
-    else if (roll < 15.0) multiplier = 2;
-    else if (roll < 60.0) multiplier = 1;
-    else multiplier = 0;
+  // Synchronize recipient selection on portal entry
+  useEffect(() => {
+    if (open) {
+      if (initialRecipient) {
+        setSelectedUids([initialRecipient.uid]);
+      } else if (seatedParticipants.length > 0) {
+        // Default to first seated person if no initial recipient
+        setSelectedUids([seatedParticipants[0].uid]);
+      }
+    }
+  }, [open, initialRecipient?.uid, seatedParticipants.length]);
 
-    return { multiplier, winAmount: price * qty * multiplier };
+  const toggleRecipient = (uid: string) => {
+    setSelectedUids(prev => {
+      if (prev.includes(uid)) return prev.filter(id => id !== uid);
+      return [...prev, uid];
+    });
+  };
+
+  const selectAll = () => {
+    const allUids = seatedParticipants.map(p => p.uid);
+    if (selectedUids.length === allUids.length) setSelectedUids([]);
+    else setSelectedUids(allUids);
   };
 
   const handleSend = async () => {
-    if (!user || !firestore || !selectedGift || !userProfile) return;
+    if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
 
     const qtyNum = parseInt(quantity);
-    const totalCost = selectedGift.price * qtyNum;
+    const costPerRecipient = selectedGift.price * qtyNum;
+    const totalCost = costPerRecipient * selectedUids.length;
     
     if ((userProfile.wallet?.coins || 0) < totalCost) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins' });
       return;
     }
 
     setIsSending(true);
     try {
-      const userRef = doc(firestore, 'users', user.uid);
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const batch = writeBatch(firestore);
+      const senderRef = doc(firestore, 'users', user.uid);
+      const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const roomRef = doc(firestore, 'chatRooms', roomId);
 
-      let winAmount = 0;
-      let luckyResult = null;
-
-      if (selectedGift.type === 'lucky') {
-        const { multiplier, winAmount: won } = calculateLuckyWin(selectedGift.price, qtyNum);
-        winAmount = won;
-        if (multiplier > 0) {
-          luckyResult = { multiplier, winAmount };
-        }
-      }
-
-      // DAILY RICH SYNC: Track today's spent coins
-      const senderUpdateData = {
-        'wallet.coins': increment(-(totalCost - winAmount)),
+      // 1. Sender Deduction (DAILY RICH SYNC)
+      const senderUpdate = {
+        'wallet.coins': increment(-totalCost),
         'wallet.totalSpent': increment(totalCost),
         'wallet.dailySpent': increment(totalCost),
         updatedAt: serverTimestamp()
       };
+      batch.update(senderRef, senderUpdate);
+      batch.update(senderProfileRef, senderUpdate);
 
-      updateDocumentNonBlocking(userRef, senderUpdateData);
-      updateDocumentNonBlocking(profileRef, senderUpdateData);
-      
-      // DAILY ROOM SYNC: Track today's room gifts
-      updateDocumentNonBlocking(roomRef, { 
+      // 2. Room Stat Sync
+      batch.update(roomRef, {
         'stats.totalGifts': increment(totalCost),
         'stats.dailyGifts': increment(totalCost),
         updatedAt: serverTimestamp()
       });
 
-      if (recipient && recipient.uid && recipient.uid !== user.uid) {
-        const diamondYield = Math.floor(totalCost * 0.4);
-        const recipientRef = doc(firestore, 'users', recipient.uid);
-        const recipientProfileRef = doc(firestore, 'users', recipient.uid, 'profile', recipient.uid);
-        const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', recipient.uid);
+      // 3. Dispatch to each selected recipient (40% Diamond Yield)
+      selectedUids.forEach(recipientUid => {
+        const diamondYield = Math.floor(costPerRecipient * 0.4);
+        const recipientRef = doc(firestore, 'users', recipientUid);
+        const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
+        const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
         
-        // DAILY CHARM SYNC: Track today's received coins
-        const recUpdateData = {
+        const recUpdate = {
           'wallet.diamonds': increment(diamondYield),
-          'stats.dailyGiftsReceived': increment(totalCost),
+          'stats.dailyGiftsReceived': increment(costPerRecipient),
           updatedAt: serverTimestamp()
         };
+        batch.update(recipientRef, recUpdate);
+        batch.update(recipientProfileRef, recUpdate);
+        batch.update(pRef, { sessionGifts: increment(costPerRecipient) });
 
-        updateDocumentNonBlocking(recipientRef, recUpdateData);
-        updateDocumentNonBlocking(recipientProfileRef, recUpdateData);
-        
-        // CALCULATOR SYNC: Update participant session gifts
-        updateDocumentNonBlocking(participantRef, {
-          sessionGifts: increment(totalCost),
-          updatedAt: serverTimestamp()
-        });
-
-        const contribRef = doc(firestore, 'users', recipient.uid, 'topContributors', user.uid);
-        setDocumentNonBlocking(contribRef, {
+        // Contributor Sync
+        const contribRef = doc(firestore, 'users', recipientUid, 'topContributors', user.uid);
+        batch.set(contribRef, {
           uid: user.uid,
           username: userProfile.username,
           avatarUrl: userProfile.avatarUrl || '',
-          amount: increment(totalCost),
+          amount: increment(costPerRecipient),
           updatedAt: serverTimestamp()
         }, { merge: true });
-      }
+      });
 
-      addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+      // 4. Message Broadcast
+      const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
+      const recNames = selectedUids.length === seatedParticipants.length 
+        ? 'everyone' 
+        : selectedUids.length === 1 
+          ? participants.find(p => p.uid === selectedUids[0])?.name || 'someone'
+          : `${selectedUids.length} members`;
+
+      batch.set(msgRef, {
         type: 'gift',
         senderId: user.uid,
         senderName: userProfile.username,
         senderAvatar: userProfile.avatarUrl || null,
-        recipientName: recipient?.name || 'the Room',
-        giftId: (luckyResult && luckyResult.multiplier >= 50) ? 'lucky-jackpot' : selectedGift.animationId,
+        recipientName: recNames,
+        giftId: selectedGift.animationId,
         text: `sent ${selectedGift.name} x${quantity}`,
-        luckyWin: luckyResult,
         timestamp: serverTimestamp()
       });
 
-      if (onGiftSent) onGiftSent(selectedGift, qtyNum, recipient);
+      await batch.commit();
       
-      if (winAmount > 0) {
-        toast({ 
-          title: 'Luck Synchronized!', 
-          description: `You won ${winAmount.toLocaleString()} coins back! (${luckyResult?.multiplier}x)` 
-        });
-      }
-      
+      toast({ title: 'Gifts Dispatched!' });
       onOpenChange(false);
       setSelectedGift(null);
     } catch (e: any) {
@@ -212,87 +214,73 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[350px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+      <DialogContent className="sm:max-w-[380px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         <DialogHeader className="sr-only">
-          <DialogTitle>Gift Picker</DialogTitle>
-          <DialogDescription>Select a gift to dispatch to the frequency.</DialogDescription>
+          <DialogTitle>Gift Vault</DialogTitle>
+          <DialogDescription>Dispatch tribal assets toseated members.</DialogDescription>
         </DialogHeader>
 
-        <div className="p-4 pb-2 space-y-3">
-           <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                 <div className="relative">
-                    <div className="h-10 w-10 rounded-full border-2 border-green-500 overflow-hidden">
-                       <Avatar className="h-full w-full">
-                          <AvatarImage src={userProfile?.avatarUrl || undefined} />
-                          <AvatarFallback>U</AvatarFallback>
-                       </Avatar>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 text-white h-3.5 w-3.5 rounded-full flex items-center justify-center text-[7px] font-black border border-black">1</div>
-                 </div>
-                 <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1.5">
-                       <Badge variant="outline" className="h-3 border-amber-600 text-amber-500 text-[7px] font-black uppercase bg-amber-950/20 px-1">4</Badge>
-                       <span className="text-[8px] font-black text-yellow-500 italic">+5000Exp</span>
-                    </div>
-                    <Progress value={45} className="h-0.5 w-20 bg-white/5 [&>div]:bg-yellow-500" />
-                 </div>
-              </div>
-              <div className="flex gap-1.5">
-                 <Popover>
-                    <PopoverTrigger asChild>
-                       <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                          <Info className="h-3 w-3 text-yellow-500" />
-                       </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="bg-slate-900 border-white/10 text-white p-4 rounded-2xl w-60 shadow-2xl">
-                       <h4 className="font-black uppercase italic text-xs mb-2 text-yellow-500">Yield Protocol</h4>
-                       <p className="text-[10px] text-white/60 leading-relaxed font-body italic">Daily Rankings reset at 11:59:59 PM. Charm is based on daily coins received as gifts.</p>
-                    </PopoverContent>
-                 </Popover>
-                 <button className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10" onClick={() => onOpenChange(false)}><Home className="h-3 w-3 text-white/60" /></button>
-              </div>
+        <div className="p-4 space-y-4">
+           {/* Recipient Roster */}
+           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              <button 
+                onClick={selectAll}
+                className={cn(
+                  "h-10 px-4 rounded-full font-black uppercase text-[10px] italic transition-all shrink-0 border-2",
+                  selectedUids.length === seatedParticipants.length ? "bg-white text-black border-white" : "bg-white/5 text-white/40 border-white/10"
+                )}
+              >
+                All
+              </button>
+              {seatedParticipants.map((p) => (
+                <button 
+                  key={p.uid}
+                  onClick={() => toggleRecipient(p.uid)}
+                  className="relative shrink-0 active:scale-90 transition-transform"
+                >
+                   <Avatar className={cn(
+                     "h-10 w-10 border-2 transition-all",
+                     selectedUids.includes(p.uid) ? "border-primary scale-110 shadow-lg" : "border-white/10"
+                   )}>
+                      <AvatarImage src={p.avatarUrl} />
+                      <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                   </Avatar>
+                   {selectedUids.includes(p.uid) && (
+                     <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                        <Check className="h-2 w-2 text-black" strokeWidth={4} />
+                     </div>
+                   )}
+                </button>
+              ))}
            </div>
 
            <div className="flex items-center justify-between">
               <Tabs defaultValue="Hot" className="w-full">
-                 <TabsList className="bg-transparent p-0 gap-4 h-8 border-none justify-start overflow-x-auto no-scrollbar">
+                 <TabsList className="bg-transparent p-0 gap-4 h-8 border-none justify-start">
                     {['Hot', 'Lucky', 'Luxury', 'SVIP'].map(tab => (
-                      <TabsTrigger key={tab} value={tab} className="p-0 text-xs font-black uppercase italic tracking-tighter text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100">
+                      <TabsTrigger key={tab} value={tab} className="p-0 text-xs font-black uppercase italic text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100 transition-all">
                         {tab}
                       </TabsTrigger>
                     ))}
                  </TabsList>
 
                  {Object.entries(GIFTS).map(([category, items]) => (
-                   <TabsContent key={category} value={category} className="mt-2 animate-in fade-in duration-500">
-                      <div className="grid grid-cols-4 gap-y-3 gap-x-1">
+                   <TabsContent key={category} value={category} className="mt-4 animate-in fade-in duration-500">
+                      <div className="grid grid-cols-4 gap-y-4 gap-x-2">
                          {items.map(gift => (
                            <button 
                              key={gift.id} 
                              onClick={() => setSelectedGift(gift)}
                              className={cn(
-                               "flex flex-col items-center gap-0.5 group relative py-1.5 rounded-xl transition-all",
-                               selectedGift?.id === gift.id ? "bg-white/10 ring-1 ring-white/20 shadow-xl scale-105" : "hover:bg-white/5"
+                               "flex flex-col items-center gap-1 group relative py-2 rounded-xl transition-all",
+                               selectedGift?.id === gift.id ? "bg-white/10 ring-1 ring-white/20 shadow-xl" : "hover:bg-white/5"
                              )}
                            >
-                              <div className="relative">
-                                 <div className={cn(
-                                   "text-2xl drop-shadow-lg mb-0.5 transition-transform group-hover:scale-110",
-                                   gift.type === 'lucky' && "animate-reaction-pulse"
-                                 )}>
-                                    {gift.icon}
-                                 </div>
-                                 {gift.type === 'lucky' && (
-                                   <div className="absolute -top-1 -right-1">
-                                      <Sparkles className="h-2.5 w-2.5 text-yellow-400 animate-pulse" />
-                                   </div>
-                                 )}
-                              </div>
-                              <span className="text-[7px] font-black text-white uppercase tracking-tighter text-center px-1 leading-tight truncate w-full">{gift.name}</span>
+                              <div className="text-3xl drop-shadow-lg mb-1 group-hover:scale-110 transition-transform">{gift.icon}</div>
+                              <span className="text-[8px] font-black text-white uppercase tracking-tighter text-center leading-none truncate w-full px-1">{gift.name}</span>
                               <div className="flex items-center gap-0.5 text-yellow-500">
                                  <GoldCoinIcon className="h-2 w-2" />
-                                 <span className="text-[8px] font-black italic">{gift.price}</span>
+                                 <span className="text-[9px] font-black italic">{gift.price}</span>
                               </div>
                            </button>
                          ))}
@@ -304,15 +292,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
         </div>
 
         <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between gap-3">
-           <div className="flex items-center gap-1.5 cursor-pointer">
+           <div className="flex items-center gap-1.5">
               <GoldCoinIcon className="h-4 w-4" />
               <span className="text-xs font-black italic text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-              <ChevronRight className="h-3 w-3 text-white/40" />
            </div>
 
            <div className="flex items-center gap-2">
               <Select value={quantity} onValueChange={setQuantity}>
-                 <SelectTrigger className="w-14 h-7 rounded-full bg-white/5 border-white/10 text-white font-black italic text-[9px] px-2">
+                 <SelectTrigger className="w-16 h-8 rounded-full bg-white/5 border-white/10 text-white font-black italic text-[10px] px-2">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="bg-slate-900 border-white/10 text-white">
@@ -324,8 +311,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient, onGiftSent }
 
               <Button 
                 onClick={handleSend}
-                disabled={!selectedGift || isSending}
-                className="bg-gradient-to-r from-[#fcd34d] via-[#f59e0b] to-[#b45309] text-white h-7 px-5 rounded-full font-black uppercase italic text-[9px] shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                disabled={!selectedGift || isSending || selectedUids.length === 0}
+                className="bg-gradient-to-r from-yellow-400 to-orange-600 text-white h-8 px-6 rounded-full font-black uppercase italic text-[10px] shadow-lg active:scale-95 transition-all"
               >
                  {isSending ? <Loader className="h-3 w-3 animate-spin" /> : 'Send'}
               </Button>

@@ -182,7 +182,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
       await handleSend(undefined, url);
     } catch (error) {
       console.error("Image upload failed:", error);
-      toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not send image vibe.' });
+      toast({ variant: 'destructive', title: 'Upload Failed' });
     } finally {
       setIsUploadingImage(false);
       if (imageInputRef.current) imageInputRef.current.value = '';
