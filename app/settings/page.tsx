@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { useTranslation } from '@/hooks/use-translation';
+import { LanguageCode } from '@/lib/translations';
 
 const LANGUAGES = [
   { id: 'en', name: 'English', native: 'English' },
@@ -32,54 +35,6 @@ const LANGUAGES = [
   { id: 'ar', name: 'Arabic', native: 'العربية' },
   { id: 'ur', name: 'Urdu', native: 'اردو' },
 ];
-
-const TRANSLATIONS: Record<string, any> = {
-  en: {
-    title: 'Settings',
-    identity: 'TRIBAL IDENTITY',
-    language: 'LANGUAGE',
-    logout: 'EXIT FREQUENCY (SIGN OUT)',
-    delete: 'DELETE ACCOUNT',
-    footer: 'Ummy Secure Protocol v1.4.2 • India Official',
-    langSelect: 'Select Language'
-  },
-  hi: {
-    title: 'सेटिंग्स',
-    identity: 'जनजातीय पहचान',
-    language: 'भाषा',
-    logout: 'फ्रीक्वेंसी से बाहर निकलें (साइन आउट)',
-    delete: 'खाता हटाएं',
-    footer: 'उम्मी सुरक्षित प्रोटोकॉल v1.4.2 • भारत आधिकारिक',
-    langSelect: 'भाषा चुनें'
-  },
-  bn: {
-    title: 'সেটিংস',
-    identity: 'উপজাতীয় পরিচয়',
-    language: 'ভাষা',
-    logout: 'ফ্রিকোয়েন্সি প্রস্থান করুন (সাইন আউট)',
-    delete: 'অ্যাকাউন্ট মুছুন',
-    footer: 'উম্মি সুরক্ষিত প্রোটোকল v1.4.2 • ভারত অফিসিয়াল',
-    langSelect: 'ভাষা নির্বাচন করুন'
-  },
-  ar: {
-    title: 'الإعدادات',
-    identity: 'الهوية القبلية',
-    language: 'اللغة',
-    logout: 'الخروج من التردد (تسجيل الخروج)',
-    delete: 'حذف الحساب',
-    footer: 'بروتوكول أومي الآمن v1.4.2 • الهند الرسمية',
-    langSelect: 'اختر اللغة'
-  },
-  ur: {
-    title: 'ترتیبات',
-    identity: 'قبائلی شناخت',
-    language: 'زبان',
-    logout: 'فریکوئنسی سے باہر نکلیں (سائن آؤٹ)',
-    delete: 'اکاؤنٹ حذف کریں',
-    footer: 'امی محفوظ پروٹوکول v1.4.2 • انڈیا آفیشل',
-    langSelect: 'زبان منتخب کریں'
-  }
-};
 
 const MenuItem = ({ icon: Icon, label, href, extra, onClick }: any) => {
   return (
@@ -108,20 +63,12 @@ export default function SettingsPage() {
   const { isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
   const { toast } = useToast();
+  const { t, language, setLanguage } = useTranslation();
 
   const [view, setView] = useState<'main' | 'language'>('main');
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  useEffect(() => {
-    const savedLang = localStorage.getItem('ummy_lang');
-    if (savedLang) setSelectedLanguage(savedLang);
-  }, []);
-
-  const t = TRANSLATIONS[selectedLanguage] || TRANSLATIONS.en;
-
-  const handleLanguageSelect = (langId: string) => {
-    setSelectedLanguage(langId);
-    localStorage.setItem('ummy_lang', langId);
+  const handleLanguageSelect = (langId: LanguageCode) => {
+    setLanguage(langId);
     toast({ title: 'Language Updated' });
     setTimeout(() => setView('main'), 300);
   };
@@ -175,7 +122,7 @@ export default function SettingsPage() {
 
   if (isUserLoading || isProfileLoading) {
     return (
-      <AppLayout hideSidebarOnMobile>
+      <AppLayout hideSidebarOnMobile hideBottomNav>
         <div className="flex h-screen items-center justify-center bg-white">
           <Loader className="animate-spin text-primary h-8 w-8" />
         </div>
@@ -195,17 +142,17 @@ export default function SettingsPage() {
                <button onClick={() => router.back()} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all shadow-sm">
                   <ChevronLeft className="h-6 w-6 text-gray-800" />
                </button>
-               <h1 className="mt-4 text-3xl font-black uppercase italic tracking-tighter text-slate-900">{t.title}</h1>
+               <h1 className="mt-4 text-3xl font-black uppercase italic tracking-tighter text-slate-900">{t.settings.title}</h1>
             </header>
 
             <div className="px-6 space-y-10">
                <section className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">{t.identity}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">{t.settings.identity}</p>
                   <Card className="rounded-[2.5rem] border-2 border-gray-50 shadow-sm overflow-hidden bg-white">
                      <MenuItem 
                        icon={Globe} 
-                       label={t.language} 
-                       extra={LANGUAGES.find(l => l.id === selectedLanguage)?.name} 
+                       label={t.settings.language} 
+                       extra={LANGUAGES.find(l => l.id === language)?.name} 
                        onClick={() => setView('language')} 
                      />
                   </Card>
@@ -217,7 +164,7 @@ export default function SettingsPage() {
                     className="w-full h-20 rounded-[2rem] bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100 shadow-none font-black uppercase italic text-xl flex items-center justify-center gap-4 transition-all active:scale-95"
                   >
                     <LogOut className="h-6 w-6" />
-                    {t.logout}
+                    {t.settings.logout}
                   </button>
 
                   <button 
@@ -225,12 +172,12 @@ export default function SettingsPage() {
                     className="flex items-center gap-2 text-red-400 font-black uppercase italic text-xs hover:text-red-500 transition-colors py-4"
                   >
                     <UserX className="h-4 w-4" />
-                    {t.delete}
+                    {t.settings.delete}
                   </button>
                </section>
 
                <p className="text-center text-[8px] font-black uppercase tracking-[0.3em] text-gray-300 mt-4 italic">
-                 {t.footer}
+                 {t.settings.footer}
                </p>
             </div>
           </>
@@ -240,7 +187,7 @@ export default function SettingsPage() {
                <button onClick={() => setView('main')} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all">
                   <ChevronLeft className="h-6 w-6 text-gray-800" />
                </button>
-               <h1 className="text-xl font-black uppercase italic tracking-tighter">{t.langSelect}</h1>
+               <h1 className="text-xl font-black uppercase italic tracking-tighter">{t.settings.langSelect}</h1>
                <div className="w-10" />
             </header>
 
@@ -249,14 +196,14 @@ export default function SettingsPage() {
                   {LANGUAGES.map((lang) => (
                     <button 
                       key={lang.id} 
-                      onClick={() => handleLanguageSelect(lang.id)}
+                      onClick={() => handleLanguageSelect(lang.id as LanguageCode)}
                       className="w-full flex items-center justify-between p-6 hover:bg-gray-50 active:bg-gray-100 transition-all"
                     >
                        <div className="flex flex-col items-start">
                           <span className="font-black text-gray-800 text-lg uppercase italic tracking-tight">{lang.name}</span>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{lang.native}</span>
                        </div>
-                       {selectedLanguage === lang.id && (
+                       {language === lang.id && (
                          <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/20">
                             <Check className="h-5 w-5 text-white" strokeWidth={4} />
                          </div>
