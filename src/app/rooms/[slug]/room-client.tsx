@@ -27,7 +27,7 @@ import {
   Flame,
   Home
 } from 'lucide-react';
-import { GoldCoinIcon, GameControllerIcon } from '@/components/icons';
+import { GoldCoinIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -150,7 +150,7 @@ const Seat = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full">
+    <div className="flex flex-col items-center gap-1 w-full max-w-[75px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
         {occupant && !occupant.isMuted && (
@@ -182,25 +182,23 @@ const Seat = ({
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
       
-      <div className="flex flex-col items-center gap-0.5 min-w-0 w-full px-1">
-        <div className="flex items-center justify-center gap-1 w-full overflow-hidden">
-          {isOwner && index === 1 && (
-            <div className="h-3 w-3 bg-yellow-500 rounded-full flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
-               <Home className="h-2 w-2 text-white fill-current" />
-            </div>
-          )}
-          <span className="text-[9px] font-black uppercase text-white truncate drop-shadow-md leading-none">
-            {occupant ? occupant.name : label}
-          </span>
-          {isCalculatorActive && (
-            <div className="flex items-center gap-0.5 shrink-0 animate-in zoom-in duration-300 ml-0.5">
-               <Flame className="h-2.5 w-2.5 text-orange-500 fill-current animate-reaction-heartbeat" />
-               <span className="text-[10px] font-black text-white italic drop-shadow-md">
-                  {formatCoins(occupant?.sessionGifts || 0)}
-               </span>
-            </div>
-          )}
-        </div>
+      <div className="flex items-center justify-center gap-0.5 w-full mt-0.5">
+        {isOwner && index === 1 && (
+          <div className="bg-yellow-500 rounded-full h-2.5 w-2.5 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
+             <Home className="h-1.5 w-1.5 text-white fill-current" />
+          </div>
+        )}
+        <span className="text-[8px] font-black uppercase text-white truncate max-w-[40px] drop-shadow-sm leading-none">
+          {occupant ? occupant.name : label}
+        </span>
+        {isCalculatorActive && occupant?.sessionGifts !== undefined && (
+          <div className="flex items-center gap-px shrink-0 animate-in zoom-in duration-300">
+             <Flame className="h-2 w-2 text-orange-500 fill-current" />
+             <span className="text-[8px] font-black text-white italic drop-shadow-sm leading-none">
+                {formatCoins(occupant.sessionGifts)}
+             </span>
+          </div>
+        )}
       </div>
     </div>
   );
