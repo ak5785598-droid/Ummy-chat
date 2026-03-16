@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   MessageSquare,
   Search,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
@@ -131,6 +132,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
 
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
   const [text, setText] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -221,7 +223,10 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                           isMe ? "bg-primary text-white rounded-br-none border-primary/20" : "bg-white text-gray-800 rounded-bl-none border-gray-100"
                         )}>
                            {msg.imageUrl && (
-                             <div className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
+                             <div 
+                               onClick={() => setPreviewImage(msg.imageUrl)}
+                               className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner cursor-pointer active:scale-[0.98] transition-transform"
+                             >
                                 <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
                              </div>
                            )}
@@ -272,6 +277,33 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
               </form>
            </div>
         </footer>
+
+        {/* High-Fidelity Full Screen Image Viewer */}
+        <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+          <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Image Preview</DialogTitle>
+              <DialogDescription>Full screen view</DialogDescription>
+            </DialogHeader>
+            <button 
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[310] active:scale-90 transition-transform"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            {previewImage && (
+              <div className="relative w-full h-full flex items-center justify-center p-4">
+                <Image 
+                  src={previewImage} 
+                  alt="Full screen preview" 
+                  fill 
+                  className="object-contain" 
+                  unoptimized 
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
