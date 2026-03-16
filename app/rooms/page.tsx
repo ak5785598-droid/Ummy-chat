@@ -3,14 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2, Users } from 'lucide-react';
+import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
   Carousel,
   CarouselContent,
@@ -32,6 +31,10 @@ const ICON_MAP: Record<string, any> = {
   Heart
 };
 
+/**
+ * High-Fidelity Rooms Hub.
+ * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
+ */
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -72,23 +75,26 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
+  // DYNAMIC BANNER SYNC: Fetching from appConfig/banners
   const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerRef);
-
-  const displayRooms = useMemo(() => {
-    if (!roomsData) return [];
-    return roomsData.filter(room => (room.participantCount || 0) > 0);
-  }, [roomsData]);
 
   const displaySlides = useMemo(() => {
     if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
       return bannerConfig.slides;
     }
+    // High-fidelity fallback frequency
     return [
       { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
       { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
     ];
   }, [bannerConfig]);
+
+  const displayRooms = useMemo(() => {
+    if (!roomsData) return [];
+    if (activeCategory === "All") return roomsData;
+    return roomsData.filter(room => room.category === activeCategory);
+  }, [roomsData, activeCategory]);
 
   const RoomSkeleton = () => (
     <div className="space-y-2">
@@ -138,6 +144,7 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
+            {/* SOVEREIGN TOP-TIER BANNER CAROUSEL (5s Auto-Scroll Sync) */}
             <div className="px-5 mb-4 mt-2">
               <Carousel 
                 className="w-full" 
