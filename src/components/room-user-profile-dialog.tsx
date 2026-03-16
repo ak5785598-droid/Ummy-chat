@@ -208,11 +208,11 @@ export function RoomUserProfileDialog({
                   <LevelBadge level={profile.level?.charm || 1} type="charm" />
                </div>
                
-               <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
-                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
+               <div className="flex flex-wrap justify-center items-center gap-1 mt-1.5">
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-center" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-center ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-center ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-center ml-1" />}
                </div>
             </div>
 

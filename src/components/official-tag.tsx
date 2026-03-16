@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  * - Animated sparkles and shine effects.
  */
 export function OfficialTag({ className, size = 'md' }: { className?: string, size?: 'sm' | 'md' | 'lg' }) {
-  const scale = size === 'sm' ? 0.7 : size === 'lg' ? 1.2 : 1;
+  const scale = size === 'sm' ? 0.6 : size === 'lg' ? 1.2 : 1;
   
   return (
     <div className={cn("relative inline-flex items-center justify-center select-none group", className)} style={{ transform: `scale(${scale})`, transformOrigin: 'left center' }}>

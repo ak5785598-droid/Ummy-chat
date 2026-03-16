@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  * - Animated sparkles and shine effects.
  */
 export function CustomerServiceTag({ className, size = 'md' }: { className?: string, size?: 'sm' | 'md' | 'lg' }) {
-  const scale = size === 'sm' ? 0.7 : size === 'lg' ? 1.2 : 1;
+  const scale = size === 'sm' ? 0.6 : size === 'lg' ? 1.2 : 1;
   
   return (
     <div className={cn("relative inline-flex items-center justify-center select-none group", className)} style={{ transform: `scale(${scale})`, transformOrigin: 'left center' }}>
@@ -31,11 +31,11 @@ export function CustomerServiceTag({ className, size = 'md' }: { className?: str
         <div className="relative shrink-0 w-8 h-8 flex items-center justify-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-30">
            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="bearBodyGradCS" x1="0%" y1="0%" x2="0%" y2="100%">
+                <linearGradient id="bearBodyGradGradCS" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#fff176" />
                   <stop offset="100%" stopColor="#fbc02d" />
                 </linearGradient>
-                <radialGradient id="pinkEarGradCS" cx="50%" cy="50%" r="50%">
+                <radialGradient id="pinkEarGradGradCS" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="#ff80ab" />
                   <stop offset="100%" stopColor="#f06292" />
                 </radialGradient>
@@ -44,10 +44,10 @@ export function CustomerServiceTag({ className, size = 'md' }: { className?: str
               <circle cx="28" cy="32" r="16" fill="#f9a825" stroke="#e65100" strokeWidth="1" />
               <circle cx="72" cy="32" r="16" fill="#f9a825" stroke="#e65100" strokeWidth="1" />
               {/* Inner Pink Ears */}
-              <circle cx="28" cy="32" r="9" fill="url(#pinkEarGradCS)" />
-              <circle cx="72" cy="32" r="9" fill="url(#pinkEarGradCS)" />
+              <circle cx="28" cy="32" r="9" fill="url(#pinkEarGradGradCS)" />
+              <circle cx="72" cy="32" r="9" fill="url(#pinkEarGradGradCS)" />
               {/* Face */}
-              <circle cx="50" cy="55" r="38" fill="url(#bearBodyGradCS)" stroke="#e65100" strokeWidth="1" />
+              <circle cx="50" cy="55" r="38" fill="url(#bearBodyGradGradCS)" stroke="#e65100" strokeWidth="1" />
               {/* Eyes */}
               <circle cx="38" cy="48" r="4.5" fill="#333" />
               <circle cx="62" cy="48" r="4.5" fill="#333" />
