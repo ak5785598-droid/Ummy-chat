@@ -64,6 +64,7 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
 /**
  * Universal Tribe & Room Search Portal.
  * Re-engineered to support both 8-digit Account Numbers and manually assigned Special IDs.
+ * Compact Interface Protocol active.
  */
 export function UserSearchDialog() {
   const [open, setOpen] = useState(false);
@@ -144,24 +145,24 @@ export function UserSearchDialog() {
            <button onClick={() => setOpen(false)} className="p-2 bg-secondary/50 rounded-full"><X className="h-6 w-6 text-gray-400" /></button>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto w-full space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-5xl font-black uppercase italic tracking-tighter text-slate-900">Tribe & Room</h2>
-            <p className="text-muted-foreground font-body text-lg italic">Enter any ID to sync with a member's profile or join a frequency.</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto w-full space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-900">Tribe & Room</h2>
+            <p className="text-muted-foreground font-body text-sm italic">Enter any ID to sync with a member's profile or join a frequency.</p>
           </div>
           
-          <div className="w-full space-y-8">
+          <div className="w-full space-y-6">
             <Input 
               placeholder="ENTER ID" 
-              className="h-24 rounded-[2rem] border-4 border-yellow-100 bg-yellow-50 focus:border-yellow-400 text-5xl font-black tracking-[0.2em] text-center text-yellow-900 placeholder:text-yellow-200 italic"
+              className="h-16 rounded-[1.5rem] border-4 border-yellow-100 bg-yellow-50 focus:border-yellow-400 text-3xl font-black tracking-[0.2em] text-center text-yellow-900 placeholder:text-yellow-200 italic"
               value={searchId}
               autoFocus
               onChange={(e) => setSearchId(e.target.value.replace(/\D/g, ''))}
               onKeyDown={(e) => e.key === 'Enter' && !!searchId && handleSearch()}
             />
             
-            <Button onClick={handleSearch} disabled={isSearching || !searchId} className="w-full h-20 text-2xl font-black uppercase italic rounded-[2rem] bg-[#FFCC00] text-black shadow-2xl border-b-8 border-[#B8860B] active:border-b-0 active:translate-y-2">
-              {isSearching ? <Loader className="animate-spin h-8 w-8" /> : 'Sync Frequency'}
+            <Button onClick={handleSearch} disabled={isSearching || !searchId} className="w-full h-14 text-lg font-black uppercase italic rounded-[1.5rem] bg-[#FFCC00] text-black shadow-xl border-b-4 border-[#B8860B] active:border-b-0 active:translate-y-1">
+              {isSearching ? <Loader className="animate-spin h-6 w-6" /> : 'Sync Frequency'}
             </Button>
           </div>
         </div>
