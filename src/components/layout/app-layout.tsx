@@ -127,20 +127,24 @@ export function AppLayout({
           </main>
           
           {shouldShowBottomNav && (
-            <nav className="md:hidden flex items-center justify-around bg-slate-900 h-16 pb-safe shrink-0 relative z-50 px-2 rounded-t-[2rem] border-t border-white/5 shadow-2xl">
-              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
+            <nav className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 pb-safe shrink-0 relative z-50 px-2 rounded-t-[2.5rem] border-t-2 border-primary/30 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]">
+              <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
+                {pathname === '/rooms' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Home</span>
               </Link>
-              <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
+              <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
+                {pathname === '/discover' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Discover</span>
               </Link>
-              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
+              <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
+                {pathname === '/messages' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Message</span>
               </Link>
-              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
+              <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
+                {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
                 <span className="text-[10px] font-black uppercase tracking-tighter">Me</span>
               </Link>
