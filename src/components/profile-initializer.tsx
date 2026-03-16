@@ -2,13 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, increment, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, increment, writeBatch, Timestamp } from 'firebase/firestore';
 
 /**
  * Production Profile Initializer.
- * Re-engineered for the Dual-ID Protocol:
- * 1. Automatic 8-digit Account Number (e.g. 10046272) using staggered increments.
- * 2. Special 3-digit ID remains NULL until manually assigned by Admin.
+ * Re-engineered for the Dual-ID Protocol and Automated Frame Expiration Audit.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -30,6 +28,22 @@ export function ProfileInitializer() {
           const userData = userSnap.data();
           const staleRoomId = userData.currentRoomId;
           const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+          
+          // Auditing Frame Expiration Logic
+          const profileSnap = await getDoc(profileRef);
+          if (profileSnap.exists()) {
+            const profData = profileSnap.data();
+            const frameExpiry = profData.inventory?.activeFrameExpiresAt;
+            const activeFrame = profData.inventory?.activeFrame;
+
+            if (activeFrame && frameExpiry && frameExpiry.toDate() < new Date()) {
+              console.log('[Identity Sync] Frame frequency expired. Initiating automatic removal protocol.');
+              const expireBatch = writeBatch(firestore);
+              expireBatch.update(userRef, { 'inventory.activeFrame': 'None', 'inventory.activeFrameExpiresAt': null });
+              expireBatch.update(profileRef, { 'inventory.activeFrame': 'None', 'inventory.activeFrameExpiresAt': null });
+              await expireBatch.commit();
+            }
+          }
           
           if (staleRoomId) {
             console.log(`[Identity Sync] Purging stale room reference: ${staleRoomId}`);
@@ -78,7 +92,7 @@ export function ProfileInitializer() {
 
           return {
             id: profileId,
-            specialId: null, // RESTRICTED: Admin only assignment
+            specialId: null, 
             accountNumber: accountNumber,
             username: user.displayName || `Tribe_${accountNumber}`,
             avatarUrl: user.photoURL || '', 
@@ -87,10 +101,10 @@ export function ProfileInitializer() {
             isOnline: true,
             lastSeen: serverTimestamp(),
             wallet: { coins: 1000000, diamonds: 0, totalSpent: 0, dailySpent: 0 },
-            inventory: { ownedItems: [], activeFrame: 'f5', activeBubble: 'Default' },
+            inventory: { ownedItems: [], activeFrame: 'f5', activeFrameExpiresAt: null, activeBubble: 'Default' },
             stats: { followers: 0, fans: 0, dailyFans: 0, friends: 0, following: 0 },
             level: { rich: 1, charm: 1 },
-            tags: [], // START CLEAN: Only admin provided tags will show
+            tags: [], 
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           };

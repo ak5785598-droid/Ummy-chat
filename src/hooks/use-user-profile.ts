@@ -32,6 +32,7 @@ export interface UserProfile {
     };
     inventory?: {
       activeFrame?: string;
+      activeFrameExpiresAt?: any; // 7-day expiration logic
       activeBubble?: string;
       activeWave?: string;
       ownedItems: string[];

@@ -4,17 +4,18 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, arrayUnion, increment, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 const STORE_ITEMS = [
   { id: 'ummy-cs', name: 'Ummy CS Majestic', type: 'Frame', price: 50000, description: 'The flagship emerald and gold Customer Service frame.', icon: Sparkles, color: 'text-green-500' },
@@ -41,21 +42,53 @@ export default function StorePage() {
       toast({ variant: 'destructive', title: 'Insufficient Coins' });
       return;
     }
+
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
-    const updateData = { 'wallet.coins': increment(-item.price), 'inventory.ownedItems': arrayUnion(item.id), 'updatedAt': serverTimestamp() };
+    
+    // 7-DAY EXPIRATION PROTOCOL: Purchase automatically equips and sets expiry
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiryTimestamp = Timestamp.fromDate(expiryDate);
+
+    const updateData: any = { 
+      'wallet.coins': increment(-item.price), 
+      'inventory.ownedItems': arrayUnion(item.id), 
+      'updatedAt': serverTimestamp() 
+    };
+
+    if (item.type === 'Frame') {
+      updateData['inventory.activeFrame'] = item.id;
+      updateData['inventory.activeFrameExpiresAt'] = expiryTimestamp;
+    }
+
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-item.price), 'updatedAt': serverTimestamp() });
+    
+    toast({ title: 'Purchase Successful', description: `${item.name} synchronized for 7 days.` });
   };
 
   const handleEquip = (item: any) => {
     if (!userProfile || !user || !firestore) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
+    
+    // Refresh 7-day window upon manual equip
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiryTimestamp = Timestamp.fromDate(expiryDate);
+
     const field = item.type === 'Frame' ? 'inventory.activeFrame' : item.type === 'Bubble' ? 'inventory.activeBubble' : 'inventory.activeWave';
-    const updateData = { [field]: item.id, updatedAt: serverTimestamp() };
+    const updateData: any = { [field]: item.id, updatedAt: serverTimestamp() };
+    
+    if (item.type === 'Frame') {
+      updateData['inventory.activeFrameExpiresAt'] = expiryTimestamp;
+    }
+
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
+    
+    if (item.type === 'Frame') {
+      toast({ title: 'Frame Equipped', description: 'Expiration synchronized to 7 days from now.' });
+    }
   };
 
   if (isLoading) return <AppLayout><div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div></AppLayout>;
@@ -70,7 +103,7 @@ export default function StorePage() {
                 <h1 className="text-4xl font-bold font-headline uppercase italic tracking-tighter flex items-center gap-3">
                   <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
                 </h1>
-                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity.</p>
+                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity. All items valid for 7 days.</p>
              </div>
           </div>
           <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl cursor-pointer">
@@ -95,6 +128,8 @@ export default function StorePage() {
                 {STORE_ITEMS.filter(i => category === 'All' || i.type === category).map(item => {
                   const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
                   const isActive = userProfile?.inventory?.activeFrame === item.id || userProfile?.inventory?.activeBubble === item.id || userProfile?.inventory?.activeWave === item.id;
+                  const expiry = userProfile?.inventory?.activeFrameExpiresAt?.toDate?.();
+
                   return (
                     <Card key={item.id} className="relative overflow-hidden group border-none shadow-lg rounded-[2.5rem] bg-white">
                       <div className="aspect-square bg-gradient-to-b from-secondary/30 to-transparent flex flex-col items-center justify-center p-10 relative">
@@ -104,6 +139,13 @@ export default function StorePage() {
                           </AvatarFrame>
                         ) : <item.icon className={cn("h-24 w-24 opacity-20", item.color)} />}
                         <Badge className="absolute top-6 right-6 bg-secondary/80 text-foreground border-none font-black uppercase text-[10px] tracking-widest px-3">{item.type}</Badge>
+                        
+                        {isActive && item.type === 'Frame' && expiry && (
+                          <div className="absolute bottom-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[8px] font-black uppercase border border-white/10 shadow-lg">
+                             <Clock className="h-2.5 w-2.5 text-yellow-400" />
+                             {formatDistanceToNow(expiry)} left
+                          </div>
+                        )}
                       </div>
                       <CardHeader className="text-center pb-2">
                         <CardTitle className="font-headline uppercase italic text-xl tracking-tighter">{item.name}</CardTitle>
@@ -115,7 +157,7 @@ export default function StorePage() {
                           <Button onClick={() => handleEquip(item)} className={cn("w-full h-12 rounded-2xl font-black uppercase italic shadow-lg", isActive ? "bg-green-500" : "bg-secondary text-foreground")}>
                             {isActive ? <><Check className="mr-2 h-4 w-4" /> Active</> : 'Equip'}
                           </Button>
-                        ) : <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-black uppercase italic shadow-lg bg-primary text-white">Purchase</Button>}
+                        ) : <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-black uppercase italic shadow-lg bg-primary text-white">Purchase (7d)</Button>}
                       </CardFooter>
                     </Card>
                   );
