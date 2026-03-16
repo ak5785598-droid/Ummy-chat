@@ -25,7 +25,8 @@ import {
   Trophy,
   Megaphone,
   Home,
-  Heart
+  Heart,
+  LogOut
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
