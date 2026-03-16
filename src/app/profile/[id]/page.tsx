@@ -54,7 +54,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
-import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch, where } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -211,7 +211,8 @@ const PublicProfileView = ({
   isProcessingFollow,
   onOpenSocial,
   contributors,
-  isContributorsLoading
+  isContributorsLoading,
+  stats
 }: { 
   profile: any, 
   onBack: () => void, 
@@ -220,7 +221,8 @@ const PublicProfileView = ({
   isProcessingFollow: boolean,
   onOpenSocial: (tab: any) => void,
   contributors: any[] | null,
-  isContributorsLoading: boolean
+  isContributorsLoading: boolean,
+  stats: { fans: number, following: number, friends: number, visitors: number }
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -299,10 +301,10 @@ const PublicProfileView = ({
          </div>
 
          <div className="flex divide-x divide-gray-100 py-1">
-            <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => onOpenSocial('followers')} />
-            <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => onOpenSocial('following')} />
-            <StatItem label="Friends" value={profile.stats?.friends || 0} onClick={() => onOpenSocial('friends')} />
-            <StatItem label="Visitors" value="12K" onClick={() => onOpenSocial('visitors')} />
+            <StatItem label="Fans" value={stats.fans} onClick={() => onOpenSocial('followers')} />
+            <StatItem label="Following" value={stats.following} onClick={() => onOpenSocial('following')} />
+            <StatItem label="Friends" value={stats.friends} onClick={() => onOpenSocial('friends')} />
+            <StatItem label="Visitors" value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
          </div>
 
          <div className="px-1 pt-1">
@@ -377,6 +379,60 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [socialOpen, setSocialOpen] = useState(false);
   const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
 
+  const isOwnProfile = currentUser?.uid === profileId;
+
+  // Real-time Social Queries
+  const fansQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'followers'), where('followingId', '==', profileId));
+  }, [firestore, profileId]);
+
+  const followingQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'followers'), where('followerId', '==', profileId));
+  }, [firestore, profileId]);
+
+  const visitorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'));
+  }, [firestore, profileId]);
+
+  const { data: fansData } = useCollection(fansQuery);
+  const { data: followingData } = useCollection(followingQuery);
+  const { data: visitorsData } = useCollection(visitorsQuery);
+
+  const stats = useMemo(() => {
+    const fans = fansData?.length || 0;
+    const following = followingData?.length || 0;
+    const visitors = visitorsData?.length || 0;
+    
+    // Calculate Friends (Mutual Follows)
+    const fanIds = new Set(fansData?.map(f => f.followerId) || []);
+    const followingIds = followingData?.map(f => f.followingId) || [];
+    const friends = followingIds.filter(id => fanIds.has(id)).length;
+
+    return { fans, following, friends, visitors };
+  }, [fansData, followingData, visitorsData]);
+
+  // Record a visit if it's someone else's profile
+  useEffect(() => {
+    if (!firestore || !currentUser || !profileId || isOwnProfile) return;
+    
+    const recordVisit = async () => {
+      try {
+        const visitRef = doc(firestore, 'users', profileId, 'profileVisitors', currentUser.uid);
+        await setDocumentNonBlocking(visitRef, {
+          visitorId: currentUser.uid,
+          timestamp: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.error("[Social Sync] Visit recording failed:", e);
+      }
+    };
+
+    recordVisit();
+  }, [firestore, currentUser?.uid, profileId, isOwnProfile]);
+
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
@@ -397,8 +453,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   useEffect(() => { 
     if (!isUserLoading && !currentUser) router.replace('/login'); 
   }, [currentUser, isUserLoading, router]);
-
-  const isOwnProfile = currentUser?.uid === profileId;
 
   const handleFollow = async () => {
     if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
@@ -422,14 +476,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const isCSLeader = profile?.tags?.includes('CS Leader');
 
   if (isUserLoading || isProfileLoading) return (
-    <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
+    <AppLayout hideSidebarOnMobile><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
   );
   
   if (!profile) return null;
 
   if (isOwnProfile) {
     return (
-      <AppLayout>
+      <AppLayout hideSidebarOnMobile>
         <div className="min-h-full bg-gradient-to-b from-[#f3e5f5] via-[#f3e5f5] to-[#ffffff] text-gray-900 font-headline relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
           
           <div className="absolute inset-0 pointer-events-none opacity-40">
@@ -499,10 +553,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </header>
 
           <div className="px-6 flex justify-around mb-4 gap-2">
-             <StatItem label="Fans" value={profile.stats?.fans || 0} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-             <StatItem label="Following" value={profile.stats?.following || 0} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-             <StatItem label="Friends" value={profile.stats?.friends || 0} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-             <StatItem label="Visitors" value="12K" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
+             <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+             <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+             <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+             <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
           <div className="px-10 grid grid-cols-2 gap-3 mb-6">
@@ -562,7 +616,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           <div className="px-6 space-y-4 pb-20">
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
-                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered' })} />
+                <ProfileMenuItem 
+                  icon={UserPlus} 
+                  label="Invite friends" 
+                  iconColor="bg-blue-50 text-blue-500" 
+                  onClick={() => {
+                    const shareUrl = window.location.origin;
+                    const text = encodeURIComponent(`Find your vibe, connect with your tribe! Join me on Ummy: ${shareUrl}`);
+                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                  }} 
+                />
                 <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                 {isCertifiedSeller && <SellerTransferDialog />}
@@ -593,6 +656,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
          onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} 
          contributors={contributors}
          isContributorsLoading={isContributorsLoading}
+         stats={stats}
        />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
