@@ -8,8 +8,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
 /**
  * Maintains Firestore presence while a room is active.
- * Re-engineered for high-fidelity cleanup: Owners and Moderators now perform ghost pruning.
- * Hardened with aggressive 15s heartbeat and 45s stale threshold.
+ * Re-engineered for high-fidelity cleanup and IST (GMT+5:30) Daily Reset logic.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -51,7 +50,6 @@ export function RoomPresenceManager() {
 
         const batch = writeBatch(firestore);
         
-        // DISPATCH ENTRANCE SYNC: Every new session entry triggers a comment card
         addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
           content: 'entered the room',
           senderId: uid,
@@ -82,49 +80,46 @@ export function RoomPresenceManager() {
         }, { merge: true });
 
         batch.commit().catch(console.error);
-      } else {
-        setDocumentNonBlocking(participantRef, {
-          name: userMetadata.username || 'Guest',
-          avatarUrl: userMetadata.avatarUrl || null,
-          activeFrame: userMetadata.activeFrame || 'None',
-          activeWave: userMetadata.activeWave || 'Default',
-          lastSeen: serverTimestamp(),
-        }, { merge: true });
       }
 
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
-      // HIGH-FIDELITY HEARTBEAT: 15 seconds pulse for real-time verification
       heartbeatInterval.current = setInterval(() => {
         setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
       }, 15000);
 
-      // GHOST PRUNING PROTOCOL: 30s frequency check
       if (canCleanup && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
-          // STALE THRESHOLD: 45 seconds (3 missed heartbeats)
+          const now = new Date();
+          const getISTDateString = (d: Date) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+          const currentISTDate = getISTDateString(now);
+
+          const roomSnap = await getDoc(roomDocRef);
+          if (roomSnap.exists()) {
+            const roomData = roomSnap.data();
+            const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
+            const lastISTDate = getISTDateString(lastUpdated);
+
+            // IST DAILY RESET FOR ROOMS
+            if (lastISTDate !== currentISTDate) {
+              updateDocumentNonBlocking(roomDocRef, {
+                'stats.dailyGifts': 0,
+                updatedAt: serverTimestamp()
+              });
+            }
+          }
+
           const staleThreshold = new Date(Date.now() - 45000); 
-          const participantsRef = collection(firestore, 'chatRooms', roomId, 'participants');
-          const snap = await getDocs(participantsRef);
+          const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
           
           if (!snap.empty) {
             const purgeBatch = writeBatch(firestore);
             let activeCount = 0;
-            
             snap.docs.forEach(d => {
-              const data = d.data();
-              const lastSeen = data.lastSeen?.toDate?.() || new Date(0);
-              if (lastSeen < staleThreshold && d.id !== uid) {
-                purgeBatch.delete(d.ref);
-              } else {
-                activeCount++;
-              }
+              const lastSeen = d.data().lastSeen?.toDate?.() || new Date(0);
+              if (lastSeen < staleThreshold && d.id !== uid) purgeBatch.delete(d.ref);
+              else activeCount++;
             });
-
-            purgeBatch.update(roomDocRef, { 
-              participantCount: activeCount,
-              updatedAt: serverTimestamp() 
-            });
-
+            purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
             purgeBatch.commit().catch(() => {});
           }
         }, 30000); 
@@ -132,16 +127,12 @@ export function RoomPresenceManager() {
     };
 
     performJoin();
-
-    return () => {};
   }, [firestore, activeRoom?.id, user?.uid, userMetadata, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
 
   useEffect(() => {
     return () => {
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
       if (cleanupInterval.current) clearInterval(cleanupInterval.current);
-      heartbeatInterval.current = null;
-      cleanupInterval.current = null;
     };
   }, []);
 

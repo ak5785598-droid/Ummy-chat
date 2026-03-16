@@ -70,7 +70,6 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   const others = items.slice(3);
 
   const getValue = (item: any) => {
-    // HIGH-FIDELITY DAILY RESET: Use the specific daily ledger fields
     if (type === 'rich') return item.wallet?.dailySpent || 0;
     if (type === 'charm') return item.stats?.dailyGiftsReceived || 0;
     if (type === 'rooms') return item.stats?.dailyGifts || 0;
@@ -321,7 +320,7 @@ function LeaderboardContent() {
                     <DialogDescription className="sr-only">Detailed tribal ranking policy.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 font-body italic text-gray-400 leading-relaxed pt-2 text-sm">
-                    <p>1. Rankings are based on daily Gold Coin activity and reset every night at 11:59:59.</p>
+                    <p>1. Rankings are based on daily Gold Coin activity and reset every night at 11:59:59 PM (GMT +5:30 IST).</p>
                     <p>2. Honor (Rich) tracks daily coins dispatched.</p>
                     <p>3. Charm tracks daily coins received as gifts.</p>
                     <p>4. Room rankings track total daily gifts received in a frequency.</p>
