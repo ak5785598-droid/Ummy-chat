@@ -15,10 +15,12 @@ import {
   Send,
   ChevronLeft,
   MessageSquare,
-  Search
+  Search,
+  Image as ImageIcon
 } from 'lucide-react';
-import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
   Dialog,
@@ -33,6 +35,9 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+import { useTranslation } from '@/hooks/use-translation';
 
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
   <div 
@@ -127,7 +132,11 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
   const [text, setText] = useState('');
   const firestore = useFirestore();
+  const storage = useStorage();
+  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -140,12 +149,13 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text.trim() || !firestore || !currentUser || !chatId) return;
+  const handleSend = async (e?: React.FormEvent, imageUrl?: string) => {
+    if (e) e.preventDefault();
+    if ((!text.trim() && !imageUrl) || !firestore || !currentUser || !chatId) return;
 
     const messageData = {
       text: text.trim(),
+      imageUrl: imageUrl || null,
       senderId: currentUser.uid,
       timestamp: serverTimestamp()
     };
@@ -153,12 +163,32 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), messageData);
 
     setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
-      lastMessage: text.trim(),
+      lastMessage: imageUrl ? 'Sent an image' : text.trim(),
       lastSenderId: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });
 
     setText('');
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage || !currentUser || !chatId) return;
+
+    setIsUploadingImage(true);
+    try {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `chats/${chatId}/${timestamp}_${file.name}`);
+      const result = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(result.ref);
+      await handleSend(undefined, url);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast({ variant: 'destructive', title: 'Upload Failed' });
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
   };
 
   return (
@@ -190,7 +220,12 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                           "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border",
                           isMe ? "bg-primary text-white rounded-br-none border-primary/20" : "bg-white text-gray-800 rounded-bl-none border-gray-100"
                         )}>
-                           <p className="leading-relaxed italic">{msg.text}</p>
+                           {msg.imageUrl && (
+                             <div className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
+                                <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+                             </div>
+                           )}
+                           {msg.text && <p className="leading-relaxed italic">{msg.text}</p>}
                         </div>
                         <span className="text-[8px] font-black text-gray-400 uppercase mt-1 px-1">
                            {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
@@ -204,21 +239,38 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </main>
 
         <footer className="p-4 pb-10 bg-white border-t border-gray-100 shrink-0">
-           <form onSubmit={handleSend} className="flex gap-3">
-              <Input 
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Say something..."
-                className="flex-1 h-14 rounded-2xl border-2 border-yellow-200 bg-yellow-50 focus:border-primary px-6 text-sm italic text-gray-900 placeholder:text-yellow-600/40"
+           <div className="flex gap-3 items-center">
+              <input 
+                type="file" 
+                ref={imageInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleImageUpload} 
               />
               <button 
-                type="submit" 
-                disabled={!text.trim()}
-                className="bg-primary text-white h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50"
+                type="button"
+                disabled={isUploadingImage}
+                onClick={() => imageInputRef.current?.click()}
+                className="bg-yellow-50 text-yellow-600 h-14 w-14 rounded-2xl flex items-center justify-center border-2 border-yellow-100 active:scale-90 transition-transform disabled:opacity-50"
               >
-                 <Send className="h-6 w-6" />
+                 {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
               </button>
-           </form>
+              <form onSubmit={handleSend} className="flex-1 flex gap-3">
+                 <Input 
+                   value={text}
+                   onChange={(e) => setText(e.target.value)}
+                   placeholder="Say something..."
+                   className="flex-1 h-14 rounded-2xl border-2 border-yellow-200 bg-yellow-50 focus:border-primary px-6 text-sm italic text-gray-900 placeholder:text-yellow-600/40"
+                 />
+                 <button 
+                   type="submit" 
+                   disabled={!text.trim() && !isUploadingImage}
+                   className="bg-primary text-white h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50"
+                 >
+                    <Send className="h-6 w-6" />
+                 </button>
+              </form>
+           </div>
         </footer>
       </DialogContent>
     </Dialog>
@@ -228,6 +280,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 export default function MessagesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { t } = useTranslation();
   const [showOfficial, setShowOfficial] = useState(false);
   const [showSystemDialog, setShowSystemDialog] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -270,7 +323,6 @@ export default function MessagesPage() {
     <AppLayout>
       <div className="min-h-full bg-gradient-to-b from-[#f3e5f5] via-[#f3e5f5] to-[#ffffff] flex flex-col relative font-headline animate-in fade-in duration-1000 overflow-x-hidden">
         
-        {/* Ambient Stardust Engine */}
         <div className="absolute inset-0 pointer-events-none opacity-40">
            {Array.from({ length: 15 }).map((_, i) => (
              <div key={i} className="absolute bg-white rounded-full animate-pulse" style={{
@@ -283,11 +335,10 @@ export default function MessagesPage() {
            ))}
         </div>
 
-        {/* Header Protocol: Re-aligned to Profile Signature */}
         <header className="relative shrink-0 pt-12 pb-8 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex flex-col">
-               <h1 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">Message</h1>
+               <h1 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
                <div className="h-1 w-12 bg-primary/40 rounded-full mt-1" />
             </div>
             <button className="text-primary hover:scale-110 transition-all p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
@@ -298,11 +349,10 @@ export default function MessagesPage() {
 
         <div className="flex-1 px-4 relative z-10 space-y-6 pb-32">
           
-          {/* Official Channels Card */}
           <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md">
             <CategoryItem 
               icon={Flag} 
-              label="Ummy Team" 
+              label={t.messages.team} 
               subtext={latestTeam?.content || "No team broadcasts."}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-orange-400 to-red-500"
@@ -313,7 +363,7 @@ export default function MessagesPage() {
             
             <CategoryItem 
               icon={Shield} 
-              label="Ummy System" 
+              label={t.messages.system} 
               subtext={latestSystem?.content || "Welcome to Ummy! Social frequencies online."}
               date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
@@ -323,10 +373,9 @@ export default function MessagesPage() {
             />
           </Card>
 
-          {/* Social Frequencies Card */}
           <div className="space-y-3">
              <div className="flex items-center justify-between px-4">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Conversations</h2>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">{t.messages.conversations}</h2>
                 <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-gray-400" /></button>
              </div>
              
@@ -349,8 +398,8 @@ export default function MessagesPage() {
                   <div className="py-20 text-center space-y-4 opacity-40 italic flex flex-col items-center">
                      <MessageSquare className="h-12 w-12 text-gray-200" />
                      <div className="space-y-1">
-                        <p className="font-black text-sm uppercase italic text-gray-400">Quiet Frequency</p>
-                        <p className="text-[10px] font-bold uppercase text-gray-300">Start a vibe with your tribe.</p>
+                        <p className="font-black text-sm uppercase italic text-gray-400">{t.messages.quiet}</p>
+                        <p className="text-[10px] font-bold uppercase text-gray-300">{t.messages.startVibe}</p>
                      </div>
                   </div>
                 )}
@@ -358,7 +407,6 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Dialog Content Styles Sync */}
         <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
             <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
