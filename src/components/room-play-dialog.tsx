@@ -10,25 +10,19 @@ import {
 } from '@/components/ui/dialog';
 import { 
   Swords, 
-  HelpCircle, 
   ChevronLeft, 
-  Armchair, 
-  Check, 
-  X, 
-  Star,
-  Trash2,
-  Loader,
-  MessageSquare,
-  MessageSquareOff,
-  Volume2,
-  VolumeX,
-  Plus,
-  Music,
-  Search,
-  Play,
-  Upload,
-  FileAudio,
-  Power
+  Loader, 
+  MessageSquare, 
+  MessageSquareOff, 
+  Volume2, 
+  VolumeX, 
+  Music, 
+  Search, 
+  Play, 
+  Upload, 
+  FileAudio, 
+  Power,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -59,6 +53,7 @@ interface RoomPlayDialogProps {
 /**
  * High-Fidelity Room Play Portal.
  * Features both Global Online Music and Local Device Synchronization.
+ * Authority restricted for Battle and Music dimensions.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -167,6 +162,8 @@ export function RoomPlayDialog({
   };
 
   const handlePlayDeviceTrack = (file: File) => {
+    // START PROTOCOL: Select a track starts music
+    setIsMusicEnabled(true);
     if (onPlayLocalMusic) {
       onPlayLocalMusic(file);
       toast({ title: 'Broadcasting Track', description: `Syncing ${file.name} to room.` });
@@ -194,51 +191,50 @@ export function RoomPlayDialog({
     }
   ];
 
-  // MUSIC OPTION: Only for room admin / room owner
   if (canManage) {
-    options.push({ 
-      id: 'music', 
-      label: 'Music', 
-      onClick: () => setView('music'),
-      icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-              <Music className="h-8 w-8 text-white drop-shadow-md" />
-           </div>
-        </div>
-      )
-    });
+    options.push(
+      { 
+        id: 'music', 
+        label: 'Music', 
+        onClick: () => setView('music'),
+        icon: (
+          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
+             <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
+                <Music className="h-8 w-8 text-white drop-shadow-md" />
+             </div>
+          </div>
+        )
+      },
+      { 
+        id: 'battle', 
+        label: 'Battle', 
+        onClick: () => setView('battle'),
+        icon: (
+          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-red-500 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
+             <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
+                <Swords className="h-8 w-8 text-white drop-shadow-md animate-pulse" />
+             </div>
+          </div>
+        )
+      }
+    );
   }
 
-  options.push(
-    { 
-      id: 'battle', 
-      label: 'Battle', 
-      onClick: () => setView('battle'),
-      icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-red-500 p-0.5 border-2 border-white/20 shadow-xl overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-              <Swords className="h-8 w-8 text-white drop-shadow-md animate-pulse" />
-           </div>
-        </div>
-      )
+  options.push({ 
+    id: 'games', 
+    label: 'Games', 
+    onClick: () => {
+      onOpenGames();
+      onOpenChange(false);
     },
-    { 
-      id: 'games', 
-      label: 'Games', 
-      onClick: () => {
-        onOpenGames();
-        onOpenChange(false);
-      },
-      icon: (
-        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-0.5 border-2 border-yellow-200/50 shadow-xl overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
-              <GameControllerIcon className="h-8 w-8 text-white drop-shadow-md" />
-           </div>
-        </div>
-      )
-    }
-  );
+    icon: (
+      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 p-0.5 border-2 border-yellow-200/50 shadow-xl overflow-hidden">
+         <div className="w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-full">
+            <GameControllerIcon className="h-8 w-8 text-white drop-shadow-md" />
+         </div>
+      </div>
+    )
+  });
 
   if (canManage) {
     options.push({
@@ -399,7 +395,7 @@ export function RoomPlayDialog({
               <div className="flex-1 flex flex-col overflow-hidden">
                  <div className="p-6 pt-2 shrink-0">
                     <button 
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => { setIsMusicEnabled(false); fileInputRef.current?.click(); }}
                       className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-black uppercase italic text-sm active:scale-95 transition-all"
                     >
                        <Upload className="h-5 w-5" />
