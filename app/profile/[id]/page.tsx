@@ -562,7 +562,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           <div className="px-6 space-y-4 pb-20">
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
-                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => toast({ title: 'Sync Triggered' })} />
+                <ProfileMenuItem 
+                  icon={UserPlus} 
+                  label="Invite friends" 
+                  iconColor="bg-blue-50 text-blue-500" 
+                  onClick={() => {
+                    const shareUrl = window.location.origin;
+                    const text = encodeURIComponent(`Find your vibe, connect with your tribe! Join me on Ummy: ${shareUrl}`);
+                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                  }} 
+                />
                 <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                 {isCertifiedSeller && <SellerTransferDialog />}
