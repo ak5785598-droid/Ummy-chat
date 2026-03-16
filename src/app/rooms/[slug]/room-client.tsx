@@ -24,9 +24,10 @@ import {
   MessageSquare,
   Trophy,
   Megaphone,
-  Home
+  Home,
+  Heart
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -462,11 +463,27 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-4 pt-12 px-4 shrink-0 w-full">
-        <div className="flex items-center gap-2 max-w-[60%] min-w-0">
-          <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-xl shrink-0">
-            <AvatarImage src={room.coverUrl || undefined} />
-            <AvatarFallback>UM</AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-2 max-w-[70%] min-w-0">
+          <button 
+            onClick={handleMinimize}
+            className="p-2 bg-white/10 backdrop-blur-md rounded-full active:scale-90 transition-transform mr-1 shrink-0 border border-white/10"
+          >
+             <ChevronDown className="h-5 w-5 text-white" />
+          </button>
+
+          <div className="relative shrink-0">
+            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-xl">
+              <AvatarImage src={room.coverUrl || undefined} />
+              <AvatarFallback>UM</AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-2 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
+               <Trophy className="h-2.5 w-2.5 text-yellow-400 fill-current" />
+               <span className="text-[8px] font-black text-yellow-400 leading-none">
+                 {room.stats?.totalGifts?.toLocaleString() || 0}
+               </span>
+            </div>
+          </div>
+
           <div className="flex flex-col min-w-0">
              <div className="flex items-center gap-1.5 min-w-0">
                 <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[100px]">{room.title}</h1>
@@ -486,11 +503,6 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="absolute top-2 left-4 z-30 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl">
-           <Trophy className="h-4 w-4 text-yellow-400 fill-current" />
-           <span className="text-[12px] font-black text-yellow-400 italic">{room.stats?.totalGifts?.toLocaleString() || 0}</span>
-        </div>
-
         <div className="flex-1 flex flex-col items-center justify-start gap-4 pt-4 pb-40 overflow-y-auto no-scrollbar w-full">
            <div className="w-full flex justify-center px-6 mb-2">
               <div className="w-1/4 max-w-[100px]">
