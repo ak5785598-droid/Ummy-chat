@@ -104,8 +104,8 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number | st
     onClick={onClick}
     className="flex flex-col items-center justify-center flex-1 py-1 active:scale-95 transition-transform"
   >
-    <span className="text-xl font-black text-gray-900 leading-none">{value}</span>
-    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight mt-0.5">{label}</span>
+    <span className="text-lg font-black text-gray-900 leading-none">{value}</span>
+    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mt-0.5">{label}</span>
   </button>
 );
 
@@ -114,10 +114,10 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
     onClick={onClick}
     className="flex flex-col items-center gap-1.5 group active:scale-90 transition-all"
   >
-    <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1", colorClass)}>
-      <Icon className="h-5 w-5 text-white" />
+    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1", colorClass)}>
+      <Icon className="h-4 w-4 text-white" />
     </div>
-    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">{label}</span>
+    <span className="text-[9px] font-black text-gray-500 uppercase tracking-tight">{label}</span>
   </button>
 );
 
@@ -209,7 +209,7 @@ const PublicProfileView = ({
   onBack, 
   handleFollow, 
   followData, 
-  isProcessingFollow, 
+  isProcessingFollow,
   onOpenSocial,
   contributors,
   isContributorsLoading,
@@ -279,15 +279,15 @@ const PublicProfileView = ({
             </div>
             
             <div className="w-full text-center space-y-2">
-               <div className="flex items-center justify-center gap-2 mb-0.5 flex-wrap">
-                  <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
+               <div className="flex items-center justify-center gap-1.5 mb-0.5 flex-wrap">
+                  <h1 className="text-base font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
                   <span className="text-sm leading-none">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
                   <RichLevelBadge level={profile.level?.rich || 1} />
                   <CharmLevelBadge level={profile.level?.charm || 1} />
                </div>
                
-               <div className="flex items-center justify-center gap-2 flex-wrap">
+               <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   {profile.specialId ? (
                     <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                   ) : (
@@ -518,7 +518,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="relative shrink-0">
                    <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-2xl relative z-10">
+                      <Avatar className="h-16 w-16 border-4 border-white shadow-2xl relative z-10">
                          <AvatarImage src={profile.avatarUrl || undefined} />
                          <AvatarFallback className="text-2xl font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                       </Avatar>
@@ -532,14 +532,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="w-full text-center space-y-2">
                    <div className="flex items-center justify-center gap-1.5 mb-0.5 flex-wrap">
-                      <h1 className="text-xl font-black text-gray-800 tracking-tighter truncate pr-2 leading-none">{profile.username}</h1>
+                      <h1 className="text-lg font-black text-gray-800 tracking-tighter truncate pr-2 leading-none">{profile.username}</h1>
                       <span className="text-base leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
                       <CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
                    
-                   <div className="flex items-center justify-center gap-2 flex-wrap">
+                   <div className="flex items-center justify-center gap-1.5 flex-wrap">
                       {profile.specialId ? (
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
@@ -548,9 +548,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         </p>
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
-                      {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left" />}
-                      {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left" />}
-                      {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left" />}
+                      {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                      {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                      {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
                    </div>
                 </div>
              </div>
@@ -563,39 +563,39 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          <div className="px-10 grid grid-cols-2 gap-3 mb-6">
+          <div className="px-6 grid grid-cols-2 gap-2 mb-4">
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-28 rounded-[2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-20 rounded-[1.5rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-4 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
-                      <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
-                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.coins}</h3>
+                      <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><GoldCoinIcon className="h-3 w-3 drop-shadow-md" /></div>
+                      <h3 className="text-[9px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.coins}</h3>
                    </div>
-                   <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
+                   <div className="flex items-baseline gap-1"><span className="text-xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
                 </div>
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000"><GoldCoinIcon className="w-full h-full" /></div>
+                <div className="absolute -bottom-2 -right-2 w-16 h-16 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000"><GoldCoinIcon className="w-full h-full" /></div>
              </div>
 
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-28 rounded-[2rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-20 rounded-[1.5rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-4 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
-                      <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
-                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.diamonds}</h3>
+                      <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><Gem className="h-3 w-3 text-white fill-current drop-shadow-md" /></div>
+                      <h3 className="text-[9px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.diamonds}</h3>
                    </div>
-                   <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
+                   <div className="flex items-baseline gap-1"><span className="text-xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
                 </div>
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000"><Gem className="w-full h-full text-white fill-current" /></div>
+                <div className="absolute -bottom-2 -right-2 w-16 h-16 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000"><Gem className="w-full h-full text-white fill-current" /></div>
              </div>
           </div>
 
-          <div className="px-10 flex justify-between items-center mb-8">
+          <div className="px-6 flex justify-between items-center mb-6">
              <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
              <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
              <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
@@ -604,16 +604,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           <div className="px-6 space-y-4 mb-6">
              <div className="relative rounded-[2rem] overflow-hidden group shadow-xl active:scale-[0.98] transition-all cursor-pointer">
-                <div className="h-32 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-6 flex flex-col justify-start relative">
+                <div className="h-24 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-5 flex flex-col justify-start relative">
                    <div className="flex items-center gap-2.5 relative z-10">
-                      <div className="bg-yellow-400 p-2 rounded-lg shadow-lg border border-white/20"><Crown className="h-6 w-6 text-orange-800 fill-current" /></div>
-                      <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">{t.profile.vip}</h2>
+                      <div className="bg-yellow-400 p-1.5 rounded-lg shadow-lg border border-white/20"><Crown className="h-5 w-5 text-orange-800 fill-current" /></div>
+                      <h2 className="text-xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">{t.profile.vip}</h2>
                    </div>
                    <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                 </div>
-                <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md h-12 rounded-xl flex items-center justify-between px-5 shadow-lg border border-white/50">
-                   <span className="font-black text-xs text-gray-800 uppercase italic tracking-tight">{t.profile.secretCard}</span>
-                   <ChevronRight className="h-4 w-4 text-gray-400" />
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md h-10 rounded-xl flex items-center justify-between px-4 shadow-lg border border-white/50">
+                   <span className="font-black text-[10px] text-gray-800 uppercase italic tracking-tight">{t.profile.secretCard}</span>
+                   <ChevronRight className="h-3 w-3 text-gray-400" />
                 </div>
              </div>
           </div>
