@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2 } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -19,6 +19,18 @@ import {
 import { UmmyLogoIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useTranslation } from '@/hooks/use-translation';
+import Autoplay from "embla-carousel-autoplay";
+import Image from 'next/image';
+
+const ICON_MAP: Record<string, any> = {
+  Sparkles,
+  Trophy,
+  Gamepad2,
+  Zap,
+  Star,
+  Users,
+  Heart
+};
 
 export default function RoomsPage() {
   const { user } = useUser();
@@ -60,10 +72,23 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
+  const { data: bannerConfig } = useDoc(bannerRef);
+
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     return roomsData.filter(room => (room.participantCount || 0) > 0);
   }, [roomsData]);
+
+  const displaySlides = useMemo(() => {
+    if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
+      return bannerConfig.slides;
+    }
+    return [
+      { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
+      { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
+    ];
+  }, [bannerConfig]);
 
   const RoomSkeleton = () => (
     <div className="space-y-3">
@@ -186,28 +211,41 @@ export default function RoomsPage() {
                   ))}
 
                   <div className="col-span-2 py-2">
-                    <Carousel className="w-full" opts={{ loop: true }}>
+                    <Carousel 
+                      className="w-full" 
+                      opts={{ loop: true }}
+                      plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+                    >
                       <CarouselContent>
-                        {[
-                          { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', sub: 'Join the frequency', icon: Sparkles },
-                          { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
-                        ].map((b) => (
-                          <CarouselItem key={b.id}>
-                            <div className={cn("h-24 w-full rounded-[2.5rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
-                               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-                               <div className="relative z-10">
-                                  <div className="flex items-center gap-2 mb-1">
-                                     <b.icon className="h-4 w-4 text-white animate-pulse" />
-                                     <h3 className="text-lg font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
+                        {displaySlides.map((slide: any, idx: number) => {
+                          const Icon = ICON_MAP[slide.iconName] || Sparkles;
+                          return (
+                            <CarouselItem key={idx}>
+                              <div className={cn("h-24 w-full rounded-[2.5rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+                                 {slide.imageUrl && (
+                                   <Image 
+                                     src={slide.imageUrl} 
+                                     alt="" 
+                                     fill 
+                                     className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" 
+                                     unoptimized 
+                                   />
+                                 )}
+                                 <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+                                 <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                       <Icon className="h-4 w-4 text-white animate-pulse" />
+                                       <h3 className="text-lg font-black uppercase italic tracking-tighter text-white drop-shadow-md">{slide.title}</h3>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{slide.subtitle || slide.sub}</p>
+                                 </div>
+                                 <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <UmmyLogoIcon className="h-20 w-20 rotate-12" />
                                   </div>
-                                  <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{b.sub}</p>
-                               </div>
-                               <div className="absolute top-0 right-0 p-4 opacity-10">
-                                  <UmmyLogoIcon className="h-20 w-20 rotate-12" />
-                                </div>
-                            </div>
-                          </CarouselItem>
-                        ))}
+                              </div>
+                            </CarouselItem>
+                          );
+                        })}
                       </CarouselContent>
                     </Carousel>
                   </div>
