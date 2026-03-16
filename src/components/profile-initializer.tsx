@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp, runTransaction, collection, incre
 
 /**
  * Production Profile Initializer.
- * Re-engineered for the Dual-ID Protocol and Automated Frame Expiration Audit.
+ * Re-engineered for the Dual-ID Protocol and Automated 7-Day Asset Expiration Audit.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -29,18 +29,50 @@ export function ProfileInitializer() {
           const staleRoomId = userData.currentRoomId;
           const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
           
-          // Auditing Frame Expiration Logic
+          // --- TEMPORAL ASSET AUDIT PROTOCOL ---
           const profileSnap = await getDoc(profileRef);
           if (profileSnap.exists()) {
             const profData = profileSnap.data();
-            const frameExpiry = profData.inventory?.activeFrameExpiresAt;
+            const expiries = profData.inventory?.expiries || {};
+            const ownedItems = profData.inventory?.ownedItems || [];
             const activeFrame = profData.inventory?.activeFrame;
+            const now = new Date();
 
-            if (activeFrame && frameExpiry && frameExpiry.toDate() < new Date()) {
-              console.log('[Identity Sync] Frame frequency expired. Initiating automatic removal protocol.');
+            let hasExpiredItems = false;
+            const updatedOwnedItems = [...ownedItems];
+            const updatedExpiries = { ...expiries };
+            let updatedActiveFrame = activeFrame;
+
+            // Audit every owned item for expiration
+            Object.entries(expiries).forEach(([itemId, expiry]: [string, any]) => {
+              if (expiry && expiry.toDate() < now) {
+                console.log(`[Identity Sync] Asset ${itemId} expired. Initiating automatic removal.`);
+                hasExpiredItems = true;
+                
+                // Remove from owned list
+                const idx = updatedOwnedItems.indexOf(itemId);
+                if (idx > -1) updatedOwnedItems.splice(idx, 1);
+                
+                // Remove from expiry ledger
+                delete updatedExpiries[itemId];
+
+                // Clear active slot if it was the expired item
+                if (updatedActiveFrame === itemId) {
+                  updatedActiveFrame = 'None';
+                }
+              }
+            });
+
+            if (hasExpiredItems) {
               const expireBatch = writeBatch(firestore);
-              expireBatch.update(userRef, { 'inventory.activeFrame': 'None', 'inventory.activeFrameExpiresAt': null });
-              expireBatch.update(profileRef, { 'inventory.activeFrame': 'None', 'inventory.activeFrameExpiresAt': null });
+              const updateData = {
+                'inventory.ownedItems': updatedOwnedItems,
+                'inventory.expiries': updatedExpiries,
+                'inventory.activeFrame': updatedActiveFrame,
+                'updatedAt': serverTimestamp()
+              };
+              expireBatch.update(userRef, updateData);
+              expireBatch.update(profileRef, updateData);
               await expireBatch.commit();
             }
           }
@@ -83,7 +115,6 @@ export function ProfileInitializer() {
             nextAccBase = countersSnap.data().accCounter;
           }
 
-          // Generate a non-sequential but unique 8-digit step
           const randomStep = Math.floor(Math.random() * 9000) + 1000; 
           const newAccCounter = nextAccBase + randomStep;
           const accountNumber = String(newAccCounter);
@@ -101,7 +132,7 @@ export function ProfileInitializer() {
             isOnline: true,
             lastSeen: serverTimestamp(),
             wallet: { coins: 1000000, diamonds: 0, totalSpent: 0, dailySpent: 0 },
-            inventory: { ownedItems: [], activeFrame: 'f5', activeFrameExpiresAt: null, activeBubble: 'Default' },
+            inventory: { ownedItems: [], activeFrame: 'None', activeBubble: 'Default', expiries: {} },
             stats: { followers: 0, fans: 0, dailyFans: 0, friends: 0, following: 0 },
             level: { rich: 1, charm: 1 },
             tags: [], 

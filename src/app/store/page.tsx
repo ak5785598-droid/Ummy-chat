@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock, Trash2 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -39,32 +39,28 @@ export default function StorePage() {
     if (!userProfile || !user || !firestore) return;
     const balance = userProfile.wallet?.coins || 0;
     if (balance < item.price) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Head to the vault to recharge.' });
       return;
     }
 
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    // 7-DAY EXPIRATION PROTOCOL: Purchase automatically equips and sets expiry
+    // 7-DAY EXPIRATION PROTOCOL: Item validity is 7 days from purchase
     const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const expiryTimestamp = Timestamp.fromDate(expiryDate);
 
     const updateData: any = { 
       'wallet.coins': increment(-item.price), 
-      'inventory.ownedItems': arrayUnion(item.id), 
+      'inventory.ownedItems': arrayUnion(item.id),
+      [`inventory.expiries.${item.id}`]: expiryTimestamp,
       'updatedAt': serverTimestamp() 
     };
-
-    if (item.type === 'Frame') {
-      updateData['inventory.activeFrame'] = item.id;
-      updateData['inventory.activeFrameExpiresAt'] = expiryTimestamp;
-    }
 
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-item.price), 'updatedAt': serverTimestamp() });
     
-    toast({ title: 'Purchase Successful', description: `${item.name} synchronized for 7 days.` });
+    toast({ title: 'Item Added to Bag', description: `${item.name} is yours for 7 days.` });
   };
 
   const handleEquip = (item: any) => {
@@ -72,23 +68,27 @@ export default function StorePage() {
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    // Refresh 7-day window upon manual equip
-    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const expiryTimestamp = Timestamp.fromDate(expiryDate);
-
     const field = item.type === 'Frame' ? 'inventory.activeFrame' : item.type === 'Bubble' ? 'inventory.activeBubble' : 'inventory.activeWave';
     const updateData: any = { [field]: item.id, updatedAt: serverTimestamp() };
     
-    if (item.type === 'Frame') {
-      updateData['inventory.activeFrameExpiresAt'] = expiryTimestamp;
-    }
-
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
     
-    if (item.type === 'Frame') {
-      toast({ title: 'Frame Equipped', description: 'Expiration synchronized to 7 days from now.' });
-    }
+    toast({ title: 'Item Equipped', description: `Identity synchronized with ${item.name}.` });
+  };
+
+  const handleRemove = (item: any) => {
+    if (!userProfile || !user || !firestore) return;
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    const userRef = doc(firestore, 'users', user.uid);
+    
+    const field = item.type === 'Frame' ? 'inventory.activeFrame' : item.type === 'Bubble' ? 'inventory.activeBubble' : 'inventory.activeWave';
+    const updateData: any = { [field]: 'None', updatedAt: serverTimestamp() };
+    
+    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, updateData);
+    
+    toast({ title: 'Item Removed' });
   };
 
   if (isLoading) return <AppLayout><div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div></AppLayout>;
@@ -103,7 +103,7 @@ export default function StorePage() {
                 <h1 className="text-4xl font-bold font-headline uppercase italic tracking-tighter flex items-center gap-3">
                   <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
                 </h1>
-                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity. All items valid for 7 days.</p>
+                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity. Rental period: 7 days.</p>
              </div>
           </div>
           <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl cursor-pointer">
@@ -117,18 +117,21 @@ export default function StorePage() {
 
         <Tabs defaultValue="All" className="w-full space-y-8">
           <TabsList className="bg-secondary/50 p-1.5 h-14 rounded-full border border-white/50 w-full md:w-fit overflow-x-auto no-scrollbar">
-            {['All', 'Frame', 'Bubble', 'Wave'].map(cat => (
+            {['All', 'Frame', 'Bubble', 'Wave', 'Bag'].map(cat => (
               <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-black uppercase tracking-widest text-xs data-[state=active]:bg-primary data-[state=active]:text-white">{cat}</TabsTrigger>
             ))}
           </TabsList>
 
-          {['All', 'Frame', 'Bubble', 'Wave'].map(category => (
+          {['All', 'Frame', 'Bubble', 'Wave', 'Bag'].map(category => (
             <TabsContent key={category} value={category} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {STORE_ITEMS.filter(i => category === 'All' || i.type === category).map(item => {
+                {STORE_ITEMS.filter(i => {
+                  if (category === 'Bag') return userProfile?.inventory?.ownedItems?.includes(i.id);
+                  return category === 'All' || i.type === category;
+                }).map(item => {
                   const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
                   const isActive = userProfile?.inventory?.activeFrame === item.id || userProfile?.inventory?.activeBubble === item.id || userProfile?.inventory?.activeWave === item.id;
-                  const expiry = userProfile?.inventory?.activeFrameExpiresAt?.toDate?.();
+                  const expiry = userProfile?.inventory?.expiries?.[item.id]?.toDate?.();
 
                   return (
                     <Card key={item.id} className="relative overflow-hidden group border-none shadow-lg rounded-[2.5rem] bg-white">
@@ -140,7 +143,7 @@ export default function StorePage() {
                         ) : <item.icon className={cn("h-24 w-24 opacity-20", item.color)} />}
                         <Badge className="absolute top-6 right-6 bg-secondary/80 text-foreground border-none font-black uppercase text-[10px] tracking-widest px-3">{item.type}</Badge>
                         
-                        {isActive && item.type === 'Frame' && expiry && (
+                        {isOwned && expiry && (
                           <div className="absolute bottom-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[8px] font-black uppercase border border-white/10 shadow-lg">
                              <Clock className="h-2.5 w-2.5 text-yellow-400" />
                              {formatDistanceToNow(expiry)} left
@@ -152,16 +155,34 @@ export default function StorePage() {
                         <CardDescription className="text-xs font-body italic">{item.description}</CardDescription>
                       </CardHeader>
                       <CardFooter className="flex flex-col gap-4 p-8 pt-4">
-                        <div className="flex items-center gap-1 font-black text-2xl text-primary italic"><GoldCoinIcon className="h-6 w-6" />{item.price.toLocaleString()}</div>
+                        {!isOwned && (
+                          <div className="flex items-center gap-1 font-black text-2xl text-primary italic"><GoldCoinIcon className="h-6 w-6" />{item.price.toLocaleString()}</div>
+                        )}
                         {isOwned ? (
-                          <Button onClick={() => handleEquip(item)} className={cn("w-full h-12 rounded-2xl font-black uppercase italic shadow-lg", isActive ? "bg-green-500" : "bg-secondary text-foreground")}>
-                            {isActive ? <><Check className="mr-2 h-4 w-4" /> Active</> : 'Equip'}
-                          </Button>
-                        ) : <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-black uppercase italic shadow-lg bg-primary text-white">Purchase (7d)</Button>}
+                          <div className="flex gap-2 w-full">
+                            {isActive ? (
+                              <Button onClick={() => handleRemove(item)} variant="outline" className="flex-1 h-12 rounded-2xl font-black uppercase italic shadow-sm border-2 border-red-100 text-red-500">
+                                Remove
+                              </Button>
+                            ) : (
+                              <Button onClick={() => handleEquip(item)} className="flex-1 h-12 rounded-2xl font-black uppercase italic shadow-lg bg-green-500 text-white">
+                                Wear
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-black uppercase italic shadow-lg bg-primary text-white">Purchase</Button>
+                        )}
                       </CardFooter>
                     </Card>
                   );
                 })}
+                {category === 'Bag' && (!userProfile?.inventory?.ownedItems || userProfile.inventory.ownedItems.length === 0) && (
+                  <div className="col-span-full py-20 text-center opacity-20 italic">
+                     <ShoppingBag className="h-16 w-16 mx-auto mb-4" />
+                     <p className="font-black uppercase text-sm tracking-widest">Your Bag is empty.</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           ))}

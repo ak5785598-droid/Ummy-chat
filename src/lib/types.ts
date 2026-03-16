@@ -34,10 +34,10 @@ export type User = {
   };
   inventory?: {
     activeFrame?: string;
-    activeFrameExpiresAt?: any; // Timestamp for 7-day expiration sync
     activeBubble?: string;
     activeWave?: string;
     ownedItems: string[];
+    expiries?: Record<string, any>; // itemId -> Timestamp for individual expiry
   };
   banStatus?: {
     isBanned: boolean;
