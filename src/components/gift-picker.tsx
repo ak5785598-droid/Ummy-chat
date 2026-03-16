@@ -74,10 +74,6 @@ interface GiftPickerProps {
   participants?: RoomParticipant[];
 }
 
-/**
- * High-Fidelity Gift Vault.
- * Re-engineered to support multi-recipient dispatch and 40% Diamond yield.
- */
 export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: GiftPickerProps) {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
@@ -93,13 +89,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     return participants.filter(p => p.seatIndex > 0).sort((a, b) => a.seatIndex - b.seatIndex);
   }, [participants]);
 
-  // Synchronize recipient selection on portal entry
   useEffect(() => {
     if (open) {
       if (initialRecipient) {
         setSelectedUids([initialRecipient.uid]);
       } else if (seatedParticipants.length > 0) {
-        // Default to first seated person if no initial recipient
         setSelectedUids([seatedParticipants[0].uid]);
       }
     }
@@ -137,40 +131,45 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const roomRef = doc(firestore, 'chatRooms', roomId);
 
-      // 1. Sender Deduction (DAILY RICH SYNC)
+      // SENDER SYNC (Daily, Weekly, Monthly Rich Score)
       const senderUpdate = {
         'wallet.coins': increment(-totalCost),
         'wallet.totalSpent': increment(totalCost),
         'wallet.dailySpent': increment(totalCost),
+        'wallet.weeklySpent': increment(totalCost),
+        'wallet.monthlySpent': increment(totalCost),
         updatedAt: serverTimestamp()
       };
       batch.update(senderRef, senderUpdate);
       batch.update(senderProfileRef, senderUpdate);
 
-      // 2. Room Stat Sync
+      // ROOM SYNC (Daily, Weekly, Monthly Stats)
       batch.update(roomRef, {
         'stats.totalGifts': increment(totalCost),
         'stats.dailyGifts': increment(totalCost),
+        'stats.weeklyGifts': increment(totalCost),
+        'stats.monthlyGifts': increment(totalCost),
         updatedAt: serverTimestamp()
       });
 
-      // 3. Dispatch to each selected recipient (40% Diamond Yield)
       selectedUids.forEach(recipientUid => {
         const diamondYield = Math.floor(costPerRecipient * 0.4);
         const recipientRef = doc(firestore, 'users', recipientUid);
         const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
         const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
         
+        // RECIPIENT SYNC (Daily, Weekly, Monthly Charm Score)
         const recUpdate = {
           'wallet.diamonds': increment(diamondYield),
           'stats.dailyGiftsReceived': increment(costPerRecipient),
+          'stats.weeklyGiftsReceived': increment(costPerRecipient),
+          'stats.monthlyGiftsReceived': increment(costPerRecipient),
           updatedAt: serverTimestamp()
         };
         batch.update(recipientRef, recUpdate);
         batch.update(recipientProfileRef, recUpdate);
         batch.update(pRef, { sessionGifts: increment(costPerRecipient) });
 
-        // Contributor Sync
         const contribRef = doc(firestore, 'users', recipientUid, 'topContributors', user.uid);
         batch.set(contribRef, {
           uid: user.uid,
@@ -181,7 +180,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         }, { merge: true });
       });
 
-      // 4. Message Broadcast
       const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
       const recNames = selectedUids.length === seatedParticipants.length 
         ? 'everyone' 
@@ -221,7 +219,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         </DialogHeader>
 
         <div className="p-4 space-y-4">
-           {/* Recipient Roster */}
            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
               <button 
                 onClick={selectAll}

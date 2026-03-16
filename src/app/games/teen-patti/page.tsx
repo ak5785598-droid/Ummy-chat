@@ -99,11 +99,16 @@ export default function TeenPattiGamePage() {
     setTotalWinAmount(winAmount);
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
-      const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
+      const updateData = { 
+        'wallet.coins': increment(Math.floor(winAmount)), 
+        'stats.dailyGameWins': increment(Math.floor(winAmount)), 
+        'stats.weeklyGameWins': increment(Math.floor(winAmount)), 
+        'stats.monthlyGameWins': increment(Math.floor(winAmount)), 
+        updatedAt: serverTimestamp() 
+      };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-      // Record victory
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'teen-patti',
         userId: currentUser.uid,

@@ -175,12 +175,13 @@ export default function RoulettePage() {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
+        'stats.weeklyGameWins': increment(winAmount),
+        'stats.monthlyGameWins': increment(winAmount),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-      // Record victory
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'roulette',
         userId: currentUser.uid,

@@ -135,12 +135,13 @@ export default function ChiragSlotPage() {
       const updateData = { 
         'wallet.coins': increment(win), 
         'stats.dailyGameWins': increment(win),
+        'stats.weeklyGameWins': increment(win),
+        'stats.monthlyGameWins': increment(win),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-      // Record victory
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'chirag-slot',
         userId: currentUser.uid,

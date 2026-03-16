@@ -177,12 +177,13 @@ export default function WildPartyPage() {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
+        'stats.weeklyGameWins': increment(winAmount),
+        'stats.monthlyGameWins': increment(winAmount),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
-      // Record victory in the global winner ledger
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'wild-party',
         userId: currentUser.uid,
