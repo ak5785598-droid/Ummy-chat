@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { useTranslation } from '@/hooks/use-translation';
 
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
   <div 
@@ -278,6 +279,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 export default function MessagesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { t } = useTranslation();
   const [showOfficial, setShowOfficial] = useState(false);
   const [showSystemDialog, setShowSystemDialog] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -335,7 +337,7 @@ export default function MessagesPage() {
         <header className="relative shrink-0 pt-12 pb-8 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex flex-col">
-               <h1 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">Message</h1>
+               <h1 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
                <div className="h-1 w-12 bg-primary/40 rounded-full mt-1" />
             </div>
             <button className="text-primary hover:scale-110 transition-all p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
@@ -349,7 +351,7 @@ export default function MessagesPage() {
           <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md">
             <CategoryItem 
               icon={Flag} 
-              label="Ummy Team" 
+              label={t.messages.team} 
               subtext={latestTeam?.content || "No team broadcasts."}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-orange-400 to-red-500"
@@ -360,7 +362,7 @@ export default function MessagesPage() {
             
             <CategoryItem 
               icon={Shield} 
-              label="Ummy System" 
+              label={t.messages.system} 
               subtext={latestSystem?.content || "Welcome to Ummy! Social frequencies online."}
               date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
@@ -372,7 +374,7 @@ export default function MessagesPage() {
 
           <div className="space-y-3">
              <div className="flex items-center justify-between px-4">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">Conversations</h2>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">{t.messages.conversations}</h2>
                 <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-gray-400" /></button>
              </div>
              
@@ -395,8 +397,8 @@ export default function MessagesPage() {
                   <div className="py-20 text-center space-y-4 opacity-40 italic flex flex-col items-center">
                      <MessageSquare className="h-12 w-12 text-gray-200" />
                      <div className="space-y-1">
-                        <p className="font-black text-sm uppercase italic text-gray-400">Quiet Frequency</p>
-                        <p className="text-[10px] font-bold uppercase text-gray-300">Start a vibe with your tribe.</p>
+                        <p className="font-black text-sm uppercase italic text-gray-400">{t.messages.quiet}</p>
+                        <p className="text-[10px] font-bold uppercase text-gray-300">{t.messages.startVibe}</p>
                      </div>
                   </div>
                 )}

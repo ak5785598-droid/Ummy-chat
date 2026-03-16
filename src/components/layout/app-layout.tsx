@@ -24,6 +24,7 @@ import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/firestore";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function AppLayout({ 
   children, 
@@ -42,6 +43,7 @@ export function AppLayout({
   const { userProfile } = useUserProfile(user?.uid);
   const auth = useAuth();
   const firestore = useFirestore();
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -94,11 +96,11 @@ export function AppLayout({
           </SidebarHeader>
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">Home</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">Messages</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">Boutique</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">Rankings</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">Game Zone</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.home}</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.message}</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.boutique}</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.rankings}</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.games}</span></Link></SidebarMenuButton></SidebarMenuItem>
               {isOfficial && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-primary/10">
@@ -114,7 +116,7 @@ export function AppLayout({
           <SidebarFooter className="bg-transparent p-6">
             <button onClick={handleLogout} className="flex items-center gap-4 px-4 h-14 w-full text-white/60 hover:text-white">
               <Power className="h-5 w-5" />
-              <span className="text-base font-black uppercase italic">Sign Out</span>
+              <span className="text-base font-black uppercase italic">{t.nav.signout}</span>
             </button>
           </SidebarFooter>
         </Sidebar>
@@ -131,22 +133,22 @@ export function AppLayout({
               <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname === '/rooms' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Home</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t.nav.home}</span>
               </Link>
               <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname === '/discover' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Discover</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t.nav.discover}</span>
               </Link>
               <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname === '/messages' && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Message</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t.nav.message}</span>
               </Link>
               <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-90 relative", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-12 h-1 bg-[#00E5FF] rounded-full blur-[2px] animate-pulse" />}
                 <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Me</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t.nav.me}</span>
               </Link>
             </nav>
           )}

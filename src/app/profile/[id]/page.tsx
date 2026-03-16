@@ -67,6 +67,7 @@ import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { Card } from '@/components/ui/card';
 import { signOut } from 'firebase/auth';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
+import { useTranslation } from '@/hooks/use-translation';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -212,7 +213,8 @@ const PublicProfileView = ({
   onOpenSocial,
   contributors,
   isContributorsLoading,
-  stats
+  stats,
+  t
 }: { 
   profile: any, 
   onBack: () => void, 
@@ -222,7 +224,8 @@ const PublicProfileView = ({
   onOpenSocial: (tab: any) => void,
   contributors: any[] | null,
   isContributorsLoading: boolean,
-  stats: { fans: number, following: number, friends: number, visitors: number }
+  stats: { fans: number, following: number, friends: number, visitors: number },
+  t: any
 }) => {
   const { toast } = useToast();
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
@@ -301,10 +304,10 @@ const PublicProfileView = ({
          </div>
 
          <div className="flex divide-x divide-gray-100 py-1">
-            <StatItem label="Fans" value={stats.fans} onClick={() => onOpenSocial('followers')} />
-            <StatItem label="Following" value={stats.following} onClick={() => onOpenSocial('following')} />
-            <StatItem label="Friends" value={stats.friends} onClick={() => onOpenSocial('friends')} />
-            <StatItem label="Visitors" value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
+            <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
+            <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
+            <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
+            <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
          </div>
 
          <div className="px-1 pt-1">
@@ -347,7 +350,7 @@ const PublicProfileView = ({
             {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
               <>
                 <Heart className={cn("h-5 w-5", followData && "fill-current")} />
-                {followData ? 'Following' : 'Follow'}
+                {followData ? t.profile.following : t.profile.follow}
               </>
             )}
          </button>
@@ -357,7 +360,7 @@ const PublicProfileView = ({
            trigger={
              <button className="flex-1 h-12 rounded-full border-2 border-cyan-500 text-cyan-500 bg-white flex items-center justify-center gap-2 font-black uppercase text-base shadow-lg active:scale-95 transition-all">
                 <MessageCircle className="h-5 w-5" />
-                Chat
+                {t.profile.chat}
              </button>
            }
          />
@@ -372,6 +375,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const { toast } = useToast();
   const firestore = useFirestore();
   const auth = useAuth();
+  const { t } = useTranslation();
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
@@ -470,7 +474,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   };
 
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
-  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -540,23 +543,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { navigator.clipboard.writeText(profile.accountNumber); toast({ title: 'ID Copied' }); }}>
-                           ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                           {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
-                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
-                      {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
+                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left ml-1" />}
+                      {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left ml-1" />}
                    </div>
                 </div>
              </div>
           </header>
 
           <div className="px-6 flex justify-around mb-4 gap-2">
-             <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-             <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-             <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-             <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
+             <StatItem label={t.profile.fans} value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+             <StatItem label={t.profile.following} value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+             <StatItem label={t.profile.friends} value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+             <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
           <div className="px-10 grid grid-cols-2 gap-3 mb-6">
@@ -568,7 +571,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
                       <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
-                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">Coins</h3>
+                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.coins}</h3>
                    </div>
                    <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
                 </div>
@@ -583,7 +586,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="relative z-30 flex flex-col h-full justify-between">
                    <div className="flex items-center gap-2">
                       <div className="bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
-                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">Diamonds</h3>
+                      <h3 className="text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-sm">{t.profile.diamonds}</h3>
                    </div>
                    <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-white italic tracking-tighter drop-shadow-lg">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
                 </div>
@@ -592,10 +595,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="px-10 flex justify-between items-center mb-8">
-             <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
-             <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-400" onClick={() => router.push('/store')} />
-             <IconButton icon={History} label="Budget" colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
-             <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
+             <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+             <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
+             <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
+             <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
           <div className="px-6 space-y-4 mb-6">
@@ -603,12 +606,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="h-32 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-6 flex flex-col justify-start relative">
                    <div className="flex items-center gap-2.5 relative z-10">
                       <div className="bg-yellow-400 p-2 rounded-lg shadow-lg border border-white/20"><Crown className="h-6 w-6 text-orange-800 fill-current" /></div>
-                      <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">Vip Premium™</h2>
+                      <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">{t.profile.vip}</h2>
                    </div>
                    <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
                 </div>
                 <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md h-12 rounded-xl flex items-center justify-between px-5 shadow-lg border border-white/50">
-                   <span className="font-black text-xs text-gray-800 uppercase italic tracking-tight">Secret card get rewards</span>
+                   <span className="font-black text-xs text-gray-800 uppercase italic tracking-tight">{t.profile.secretCard}</span>
                    <ChevronRight className="h-4 w-4 text-gray-400" />
                 </div>
              </div>
@@ -618,7 +621,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
                 <ProfileMenuItem 
                   icon={UserPlus} 
-                  label="Invite friends" 
+                  label={t.profile.invite} 
                   iconColor="bg-blue-50 text-blue-500" 
                   onClick={() => {
                     const shareUrl = window.location.origin;
@@ -626,16 +629,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     window.open(`https://wa.me/?text=${text}`, '_blank');
                   }} 
                 />
-                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
-                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                 {isCertifiedSeller && <SellerTransferDialog />}
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
-                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
-                <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
-                <ProfileMenuItem icon={SettingsIcon} label="Setting" iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
+                <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
              </Card>
           </div>
         </div>
@@ -657,6 +660,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
          contributors={contributors}
          isContributorsLoading={isContributorsLoading}
          stats={stats}
+         t={t}
        />
        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>

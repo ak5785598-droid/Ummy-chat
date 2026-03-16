@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,9 @@ import {
   Loader,
   LogOut,
   ChevronRight,
-  Settings as SettingsIcon,
-  Store,
   ChevronLeft,
-  ShieldCheck,
-  Bell,
-  HelpCircle,
   UserX,
+  Check,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
@@ -28,26 +24,32 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { useTranslation } from '@/hooks/use-translation';
+import { LanguageCode } from '@/lib/translations';
 
-const MenuItem = ({ icon: Icon, label, href, extra, iconColor, onClick }: any) => {
-  const router = useRouter();
+const LANGUAGES = [
+  { id: 'en', name: 'English', native: 'English' },
+  { id: 'hi', name: 'Hindi', native: 'हिंदी' },
+  { id: 'bn', name: 'Bengali', native: 'বাংলা' },
+  { id: 'ar', name: 'Arabic', native: 'العربية' },
+  { id: 'ur', name: 'Urdu', native: 'اردو' },
+];
+
+const MenuItem = ({ icon: Icon, label, href, extra, onClick }: any) => {
   return (
     <div 
-      className="flex items-center justify-between py-5 border-b border-gray-50 last:border-0 px-6 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-all" 
-      onClick={() => {
-        if (onClick) onClick();
-        else if (href) router.push(href);
-      }}
+      className="flex items-center justify-between py-5 px-6 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-all" 
+      onClick={onClick}
     >
       <div className="flex items-center gap-4">
-        <div className={cn("p-2.5 rounded-2xl", iconColor?.replace('text-', 'bg-') || "bg-primary/10")}>
-          <Icon className={cn("h-5 w-5", iconColor || "text-primary")} />
+        <div className="p-2.5 rounded-full bg-purple-50 text-purple-600">
+          <Icon className="h-5 w-5" />
         </div>
         <span className="font-black text-gray-800 text-sm uppercase italic tracking-tight">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         {extra && <span className="text-[10px] font-black text-muted-foreground italic uppercase">{extra}</span>}
-        <ChevronRight className="h-4 w-4 text-gray-300" />
+        <ChevronRight className="h-4 w-4 text-gray-200" />
       </div>
     </div>
   );
@@ -60,12 +62,19 @@ export default function SettingsPage() {
   const { isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
   const { toast } = useToast();
+  const { t, language, setLanguage } = useTranslation();
+
+  const [view, setView] = useState<'main' | 'language'>('main');
+
+  const handleLanguageSelect = (langId: LanguageCode) => {
+    setLanguage(langId);
+    toast({ title: 'Language Updated' });
+    setTimeout(() => setView('main'), 300);
+  };
 
   const handleLogout = async () => {
     if (!auth || !user || !firestore) return;
     try {
-      console.log("[Identity Sync] Commencing absolute logout cleanup...");
-      
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
@@ -96,26 +105,24 @@ export default function SettingsPage() {
       }
 
       await batch.commit();
-      
       await signOut(auth);
       window.location.href = '/login';
     } catch (e: any) {
-      console.error("[Identity Sync] Logout Cleanup Error:", e);
       await signOut(auth);
       window.location.href = '/login';
     }
   };
 
   const handleDeleteAccount = () => {
-    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone and all your tribal assets will be lost.")) {
-      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review. Contact support.' });
+    if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone.")) {
+      toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review.' });
     }
   };
 
   if (isUserLoading || isProfileLoading) {
     return (
-      <AppLayout>
-        <div className="flex h-dvh items-center justify-center">
+      <AppLayout hideSidebarOnMobile hideBottomNav>
+        <div className="flex h-screen items-center justify-center bg-white">
           <Loader className="animate-spin text-primary h-8 w-8" />
         </div>
       </AppLayout>
@@ -125,58 +132,87 @@ export default function SettingsPage() {
   if (!user) return null;
 
   return (
-    <AppLayout>
-      <div className="min-h-full bg-white font-headline pb-32 animate-in fade-in duration-700">
-        <header className="px-6 pt-10 pb-6 flex items-center gap-4 border-b border-gray-50 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-           <button onClick={() => router.back()} className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-all">
-              <ChevronLeft className="h-6 w-6 text-gray-800" />
-           </button>
-           <h1 className="text-3xl font-black uppercase italic tracking-tighter">Settings</h1>
-        </header>
+    <AppLayout hideSidebarOnMobile hideBottomNav>
+      <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
+        
+        {view === 'main' ? (
+          <>
+            <header className="px-6 pt-10 pb-10">
+               <button onClick={() => router.back()} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all shadow-sm">
+                  <ChevronLeft className="h-6 w-6 text-gray-800" />
+               </button>
+               <h1 className="mt-4 text-3xl font-black uppercase italic tracking-tighter text-slate-900">{t.settings.title}</h1>
+            </header>
 
-        <div className="p-4 space-y-6">
-           <section className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-4">Tribal Identity</p>
-              <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden bg-white">
-                 <MenuItem icon={SettingsIcon} label="Modify Persona" href={`/profile/${user.uid}`} />
-                 <MenuItem icon={ShieldCheck} label="Account Security" extra="Verified" iconColor="text-green-500" />
-                 <MenuItem icon={Bell} label="Notifications" extra="Active" iconColor="text-blue-500" />
-              </Card>
-           </section>
+            <div className="px-6 space-y-10">
+               <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">{t.settings.identity}</p>
+                  <Card className="rounded-[2.5rem] border-2 border-gray-50 shadow-sm overflow-hidden bg-white">
+                     <MenuItem 
+                       icon={Globe} 
+                       label={t.settings.language} 
+                       extra={LANGUAGES.find(l => l.id === language)?.name} 
+                       onClick={() => setView('language')} 
+                     />
+                  </Card>
+               </section>
 
-           <section className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-4">Resources</p>
-              <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden bg-white">
-                 <MenuItem icon={Store} label="Ummy Boutique" href="/store" iconColor="text-pink-500" />
-                 <MenuItem icon={HelpCircle} label="Help Center" href="/help-center" iconColor="text-orange-500" />
-                 <MenuItem icon={Globe} label="Language" extra="English" />
-              </Card>
-           </section>
+               <section className="space-y-6 flex flex-col items-center">
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full h-20 rounded-[2rem] bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100 shadow-none font-black uppercase italic text-xl flex items-center justify-center gap-4 transition-all active:scale-95"
+                  >
+                    <LogOut className="h-6 w-6" />
+                    {t.settings.logout}
+                  </button>
 
-           <section className="pt-4 px-2 space-y-4">
-              <Button 
-                onClick={handleLogout}
-                variant="destructive"
-                className="w-full h-16 rounded-[1.5rem] bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100 shadow-none font-black uppercase italic text-lg"
-              >
-                <LogOut className="h-6 w-6 mr-2" />
-                Exit Frequency (Sign Out)
-              </Button>
+                  <button 
+                    onClick={handleDeleteAccount}
+                    className="flex items-center gap-2 text-red-400 font-black uppercase italic text-xs hover:text-red-500 transition-colors py-4"
+                  >
+                    <UserX className="h-4 w-4" />
+                    {t.settings.delete}
+                  </button>
+               </section>
 
-              <Button 
-                onClick={handleDeleteAccount}
-                variant="ghost"
-                className="w-full h-12 text-red-400 font-black uppercase italic text-xs hover:text-red-500 transition-colors"
-              >
-                <UserX className="h-4 w-4 mr-2" />
-                Delete Account
-              </Button>
+               <p className="text-center text-[8px] font-black uppercase tracking-[0.3em] text-gray-300 mt-4 italic">
+                 {t.settings.footer}
+               </p>
+            </div>
+          </>
+        ) : (
+          <div className="animate-in slide-in-from-right duration-300 flex flex-col h-full">
+            <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-white z-50">
+               <button onClick={() => setView('main')} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all">
+                  <ChevronLeft className="h-6 w-6 text-gray-800" />
+               </button>
+               <h1 className="text-xl font-black uppercase italic tracking-tighter">{t.settings.langSelect}</h1>
+               <div className="w-10" />
+            </header>
 
-              <p className="text-center text-[8px] font-black uppercase tracking-[0.3em] text-gray-300 mt-4 italic">
-                Ummy Secure Protocol v1.4.2 • India Official
-              </p>
-           </section>
-        </div>
+            <div className="p-6">
+               <Card className="rounded-[2.5rem] border-2 border-gray-50 shadow-sm overflow-hidden bg-white divide-y divide-gray-50">
+                  {LANGUAGES.map((lang) => (
+                    <button 
+                      key={lang.id} 
+                      onClick={() => handleLanguageSelect(lang.id as LanguageCode)}
+                      className="w-full flex items-center justify-between p-6 hover:bg-gray-50 active:bg-gray-100 transition-all"
+                    >
+                       <div className="flex flex-col items-start">
+                          <span className="font-black text-gray-800 text-lg uppercase italic tracking-tight">{lang.name}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{lang.native}</span>
+                       </div>
+                       {language === lang.id && (
+                         <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/20">
+                            <Check className="h-5 w-5 text-white" strokeWidth={4} />
+                         </div>
+                       )}
+                    </button>
+                  ))}
+               </Card>
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
