@@ -59,7 +59,6 @@ interface RoomPlayDialogProps {
 /**
  * High-Fidelity Room Play Portal.
  * Features both Global Online Music and Local Device Synchronization.
- * Playlist is persistent across session via RoomContext.
  */
 export function RoomPlayDialog({ 
   open, 
@@ -75,17 +74,12 @@ export function RoomPlayDialog({
   const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
   const [view, setView] = useState<'grid' | 'battle' | 'selection' | 'rules' | 'music'>('grid');
   const [musicTab, setMusicTab] = useState<'online' | 'device'>('online');
-  const [battleMode, setBattleMode] = useState<'Votes' | 'Coins'>('Votes');
-  const [selectionSide, setSelectionSide] = useState<'BLUE' | 'RED'>('BLUE');
   const [isClearingChat, setIsClearingChat] = useState(false);
   
   const [musicSearch, setMusicSearch] = useState('');
   const [isSearchingMusic, setIsSearchingMusic] = useState(false);
   const [musicResults, setMusicResults] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [blueTeam, setBlueTeam] = useState<string[]>([]);
-  const [redTeam, setRedTeam] = useState<string[]>([]);
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -167,7 +161,6 @@ export function RoomPlayDialog({
         toast({ variant: 'destructive', title: 'Invalid File', description: 'Please select a valid audio frequency.' });
         return;
       }
-      // PERSISTENT UPDATE: Add to context playlist
       setRoomPlaylist(prev => [file, ...prev]);
       toast({ title: 'Track Added', description: `${file.name} synced to session.` });
     }
@@ -198,8 +191,12 @@ export function RoomPlayDialog({
            </div>
         </div>
       )
-    },
-    { 
+    }
+  ];
+
+  // MUSIC OPTION: Only for room admin / room owner
+  if (canManage) {
+    options.push({ 
       id: 'music', 
       label: 'Music', 
       onClick: () => setView('music'),
@@ -210,7 +207,10 @@ export function RoomPlayDialog({
            </div>
         </div>
       )
-    },
+    });
+  }
+
+  options.push(
     { 
       id: 'battle', 
       label: 'Battle', 
@@ -238,7 +238,7 @@ export function RoomPlayDialog({
         </div>
       )
     }
-  ];
+  );
 
   if (canManage) {
     options.push({
@@ -277,8 +277,6 @@ export function RoomPlayDialog({
     }
     onOpenChange(openVal);
   };
-
-  const seatedParticipants = (participants || []).filter(p => p.seatIndex > 0);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -320,7 +318,6 @@ export function RoomPlayDialog({
             </header>
             
             <div className="p-4 px-6 shrink-0 space-y-4">
-               {/* MUSIC ON/OFF CONTROL */}
                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10 shadow-inner">
                   <div className="flex items-center gap-3">
                      <div className={cn("p-2 rounded-xl transition-colors", isMusicEnabled ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/40")}>
@@ -449,26 +446,5 @@ export function RoomPlayDialog({
         <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function SelectionPortal({ side, team, onClick, participants }: any) {
-  return (
-    <button onClick={onClick} className="absolute inset-0 flex items-center justify-center active:scale-95 transition-transform group">
-      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-      {team.length > 0 ? (
-        <div className="flex -space-x-3">
-          {team.slice(0, 3).map((uid: string) => {
-            const p = participants.find((part: any) => part.uid === uid);
-            return <Avatar key={uid} className="h-12 w-12 border-2 border-white/40 shadow-xl"><AvatarImage src={p?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>;
-          })}
-          {team.length > 3 && (
-            <div className="h-12 w-12 rounded-full bg-black/60 border-2 border-white/40 flex items-center justify-center text-[10px] font-black text-white">+{team.length - 3}</div>
-          )}
-        </div>
-      ) : (
-        <div className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border-2 border-white/20"><Plus className="h-6 w-6 text-white" /></div>
-      )}
-    </button>
   );
 }

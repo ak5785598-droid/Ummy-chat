@@ -290,9 +290,13 @@ export function RoomClient({ room }: { room: Room }) {
   }, [firestoreMessages]);
 
   useEffect(() => {
-    // SYNC MUSIC ENABLE STATE
+    // SYNC MUSIC ENABLE STATE: Hard start/stop felt logic
     if (musicAudioRef.current) {
-      musicAudioRef.current.muted = !isMusicEnabled;
+      if (isMusicEnabled) {
+        musicAudioRef.current.play().catch(() => {});
+      } else {
+        musicAudioRef.current.pause();
+      }
     }
   }, [isMusicEnabled]);
 
@@ -391,8 +395,11 @@ export function RoomClient({ room }: { room: Room }) {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
       musicAudioRef.current.src = url;
-      musicAudioRef.current.muted = !isMusicEnabled;
-      musicAudioRef.current.play().catch(() => {});
+      if (isMusicEnabled) {
+        musicAudioRef.current.play().catch(() => {});
+      } else {
+        musicAudioRef.current.pause();
+      }
       const stream = (musicAudioRef.current as any).captureStream?.() || (musicAudioRef.current as any).mozCaptureStream?.();
       if (stream) setMusicStream(stream);
     }
@@ -431,7 +438,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-1.5 shadow-xl"><Users className="h-4 w-4 text-white/60" /><span className="text-[12px] font-black">{onlineCount}</span></button>
-          {canManageRoom && <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />}
+          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-5 w-5" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-5 w-5" /></button>
           <button onClick={() => setIsExitPortalOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-5 w-5" /></button>
         </div>
@@ -479,7 +486,7 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       <footer className="relative z-50 px-6 pb-10 flex items-center justify-between pt-4 shrink-0 bg-gradient-to-t from-black/80 to-transparent w-full">
-        <div className="flex items-center"><button onClick={handleInputClick} className={cn("backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-2xl", isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white border border-white/10")}><MessageSquare className="h-6 w-6" /></button></div>
+        <div className="flex items-center"><button onClick={handleInputClick} className={cn("backdrop-blur-xl rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-2xl", isChatMuted && !canManageRoom ? "bg-red-50/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white border border-white/10")}><MessageSquare className="h-6 w-6" /></button></div>
         <div className="absolute left-1/2 -translate-x-1/2"><button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_#a855f780] active:scale-90 transition-transform border-2 border-white/30"><GiftIcon className="h-7 w-7 text-white fill-white" /></button></div>
         <div className="flex items-center gap-2">
            <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-xl border", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-[0_0_15px_#22c55e66] border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}</button>
