@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2 } from 'lucide-react';
+import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -18,15 +18,35 @@ import {
 } from "@/components/ui/carousel";
 import { UmmyLogoIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
+import { useTranslation } from '@/hooks/use-translation';
+import Autoplay from "embla-carousel-autoplay";
+import Image from 'next/image';
 
-const CATEGORIES = ["All", "Chat", "Games", "Newcomers", "Party"];
+const ICON_MAP: Record<string, any> = {
+  Sparkles,
+  Trophy,
+  Gamepad2,
+  Zap,
+  Star,
+  Users,
+  Heart
+};
 
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+
+  const CATEGORIES = [
+    { id: "All", label: t.home.categories.all },
+    { id: "Chat", label: t.home.categories.chat },
+    { id: "Games", label: t.home.categories.games },
+    { id: "Newcomers", label: t.home.categories.newcomers },
+    { id: "Party", label: t.home.categories.party }
+  ];
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -52,10 +72,23 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
+  const { data: bannerConfig } = useDoc(bannerRef);
+
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     return roomsData.filter(room => (room.participantCount || 0) > 0);
   }, [roomsData]);
+
+  const displaySlides = useMemo(() => {
+    if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
+      return bannerConfig.slides;
+    }
+    return [
+      { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
+      { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
+    ];
+  }, [bannerConfig]);
 
   const RoomSkeleton = () => (
     <div className="space-y-2">
@@ -72,7 +105,7 @@ export default function RoomsPage() {
       <div className="min-h-full bg-ummy-gradient flex flex-col font-headline animate-in fade-in duration-700 pb-20">
         
         <header className="flex items-center justify-between px-5 pt-3 pb-1 shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setHeaderTab('recommend')}
               className={cn(
@@ -80,7 +113,7 @@ export default function RoomsPage() {
                 headerTab === 'recommend' ? "text-slate-900 scale-105" : "text-slate-300"
               )}
             >
-              Recommend
+              {t.home.recommend}
             </button>
             <button 
               onClick={() => setHeaderTab('me')}
@@ -89,7 +122,7 @@ export default function RoomsPage() {
                 headerTab === 'me' ? "text-slate-900 scale-105" : "text-slate-300"
               )}
             >
-              Me
+              {t.home.mine}
             </button>
           </div>
           <div className="flex items-center gap-1.5">
@@ -105,24 +138,64 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
+            <div className="px-5 mb-4 mt-2">
+              <Carousel 
+                className="w-full" 
+                opts={{ loop: true }}
+                plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+              >
+                <CarouselContent>
+                  {displaySlides.map((slide: any, idx: number) => {
+                    const Icon = ICON_MAP[slide.iconName] || Sparkles;
+                    return (
+                      <CarouselItem key={idx}>
+                        <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+                           {slide.imageUrl && (
+                             <Image 
+                               src={slide.imageUrl} 
+                               alt="" 
+                               fill 
+                               className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" 
+                               unoptimized 
+                             />
+                           )}
+                           <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+                           <div className="relative z-10">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                 <Icon className="h-3 w-3 text-white animate-pulse" />
+                                 <h3 className="text-sm font-black uppercase italic tracking-tighter text-white drop-shadow-md">{slide.title}</h3>
+                              </div>
+                              <p className="text-[8px] font-bold text-white/70 uppercase tracking-widest leading-none">{slide.subtitle || slide.sub}</p>
+                           </div>
+                           <div className="absolute top-0 right-0 p-2 opacity-10">
+                              <UmmyLogoIcon className="h-12 w-12 rotate-12" />
+                            </div>
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+              </Carousel>
+            </div>
+
             <section className="px-5 grid grid-cols-3 gap-2 mb-3">
               <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">Rich</span>
+                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">{t.profile.level}</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
                     <Crown className="h-7 w-7 text-white fill-yellow-200 drop-shadow-[0_0_8px_#ffffffcc]" />
                  </div>
               </button>
               <button onClick={() => router.push('/leaderboard?type=games')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
-                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">Game</span>
+                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">{t.nav.games}</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
                     <Gamepad2 className="h-7 w-7 text-white fill-indigo-200 drop-shadow-[0_0_8px_#ffffffcc]" />
                  </div>
               </button>
               <button onClick={() => router.push('/cp-challenge')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
-                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">Cp</span>
+                 <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">{t.profile.cp}</span>
                  <div className="relative z-10 group-hover:scale-110 transition-transform">
                     <Heart className="h-7 w-7 text-white fill-pink-200 drop-shadow-[0_0_8px_#ffffffcc]" />
                  </div>
@@ -134,7 +207,7 @@ export default function RoomsPage() {
                 <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                 <div className="flex items-center gap-1.5 relative z-10">
                    <Star className="h-3 w-3 text-yellow-400 fill-current animate-pulse" />
-                   <span className="text-white font-black uppercase italic text-[9px] tracking-widest drop-shadow-md">Top Rooms Grid</span>
+                   <span className="text-white font-black uppercase italic text-[9px] tracking-widest drop-shadow-md">{t.home.topRooms}</span>
                 </div>
                 <div className="flex -space-x-1 relative z-10">
                   {[1, 2, 3, 4].map((i) => (
@@ -151,16 +224,16 @@ export default function RoomsPage() {
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 {CATEGORIES.map((cat) => (
                   <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
                     className={cn(
                       "px-3 py-0.5 rounded-lg text-[10px] font-black uppercase italic tracking-tighter transition-all whitespace-nowrap border-2 border-transparent",
-                      activeCategory === cat 
+                      activeCategory === cat.id 
                         ? "bg-white/80 backdrop-blur-md text-purple-600 shadow-sm border-white/40" 
                         : "text-purple-400/70 hover:text-purple-500 hover:bg-white/10"
                     )}
                   >
-                    {cat}
+                    {cat.label}
                   </button>
                 ))}
               </div>
@@ -173,45 +246,14 @@ export default function RoomsPage() {
                 </div>
               ) : displayRooms.length > 0 ? (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
-                  {displayRooms.slice(0, 4).map((room: any) => (
-                    <ChatRoomCard key={room.id} room={room} variant="modern" />
-                  ))}
-
-                  <div className="col-span-2 py-0.5">
-                    <Carousel className="w-full" opts={{ loop: true }}>
-                      <CarouselContent>
-                        {[
-                          { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', sub: 'Join the frequency', icon: Sparkles },
-                          { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', sub: 'Claim your throne', icon: Trophy }
-                        ].map((b) => (
-                          <CarouselItem key={b.id}>
-                            <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", b.color)}>
-                               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-                               <div className="relative z-10">
-                                  <div className="flex items-center gap-1.5 mb-0.5">
-                                     <b.icon className="h-3 w-3 text-white animate-pulse" />
-                                     <h3 className="text-sm font-black uppercase italic tracking-tighter text-white drop-shadow-md">{b.title}</h3>
-                                  </div>
-                                  <p className="text-[8px] font-bold text-white/70 uppercase tracking-widest leading-none">{b.sub}</p>
-                               </div>
-                               <div className="absolute top-0 right-0 p-2 opacity-10">
-                                  <UmmyLogoIcon className="h-12 w-12 rotate-12" />
-                                </div>
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                    </Carousel>
-                  </div>
-
-                  {displayRooms.slice(4).map((room: any) => (
+                  {displayRooms.map((room: any) => (
                     <ChatRoomCard key={room.id} room={room} variant="modern" />
                   ))}
                 </div>
               ) : (
                 <div className="py-12 text-center space-y-3 opacity-40">
                    <Ghost className="h-8 w-8 mx-auto text-slate-300" />
-                   <p className="font-black uppercase italic text-[9px] tracking-widest">No Active Frequencies</p>
+                   <p className="font-black uppercase italic text-[9px] tracking-widest">{t.home.noActive}</p>
                 </div>
               )}
             </main>
@@ -220,7 +262,7 @@ export default function RoomsPage() {
           <main className="px-5 flex-1 animate-in slide-in-from-right-4 duration-500">
              <section className="mb-6">
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
-                   <Zap className="h-3.5 w-3.5 text-primary fill-current" /> My Room
+                   <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.profile.id} {t.home.mine}
                 </h3>
                 {myRoom ? (
                   <div className="max-w-[160px]">
@@ -234,14 +276,14 @@ export default function RoomsPage() {
                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <Plus className="h-4 w-4" />
                      </div>
-                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Launch Frequency</span>
+                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.home.launch}</span>
                   </button>
                 )}
              </section>
 
              <section>
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
-                   <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> Following
+                   <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> {t.profile.follow}
                 </h3>
                 {isFollowedLoading ? (
                   <div className="grid grid-cols-2 gap-x-2 gap-y-6">
