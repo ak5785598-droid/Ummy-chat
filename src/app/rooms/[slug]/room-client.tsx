@@ -631,7 +631,7 @@ export function RoomClient({ room }: { room: Room }) {
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
-      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
+      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
       
       <RoomSeatMenuDialog 
         open={isSeatMenuOpen} 

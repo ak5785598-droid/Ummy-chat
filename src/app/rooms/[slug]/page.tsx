@@ -168,13 +168,13 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     return (
       <AppLayout fullScreen>
         <div className="fixed inset-0 bg-[#FFCC00] z-[1000] flex flex-col items-center justify-center p-8 font-headline">
-           <div className="mb-12 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
-              <div className="h-24 w-24 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
-                 <Lock className="h-10 w-10 text-black" />
+           <div className="mb-8 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
+              <div className="h-20 w-20 bg-white rounded-[1.5rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
+                 <Lock className="h-8 w-8 text-black" />
               </div>
               <div className="space-y-1">
-                 <h2 className="text-4xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/60">Private Frequency Active</p>
+                 <h2 className="text-3xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
+                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-black/60">Private Frequency Active</p>
               </div>
            </div>
 
@@ -187,7 +187,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
                    value={passwordInput}
                    onChange={(e) => setPasswordInput(e.target.value.replace(/\D/g, ''))}
                    onKeyDown={(e) => e.key === 'Enter' && passwordInput.length === 4 && handleVerifyPassword()}
-                   className="h-20 bg-white border-none rounded-[1.5rem] shadow-xl text-4xl font-black tracking-[1em] text-center focus:ring-4 focus:ring-black/10 placeholder:text-black/5"
+                   className="h-16 bg-white border-none rounded-[1.25rem] shadow-xl text-3xl font-black tracking-[1em] text-center focus:ring-4 focus:ring-black/10 placeholder:text-black/5"
                    placeholder="0000"
                    autoFocus
                  />
@@ -198,16 +198,16 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
                  <Button 
                    onClick={() => router.push('/rooms')}
                    variant="outline" 
-                   className="flex-1 h-14 rounded-2xl bg-white/20 border-black/10 font-black uppercase italic text-xs hover:bg-white/30"
+                   className="flex-1 h-12 rounded-xl bg-white/20 border-black/10 font-black uppercase italic text-xs hover:bg-white/30"
                  >
                     Exit
                  </Button>
                  <Button 
                    onClick={handleVerifyPassword}
                    disabled={passwordInput.length < 4}
-                   className="flex-[2] h-14 rounded-2xl bg-black text-white font-black uppercase italic text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                   className="flex-[2] h-12 rounded-xl bg-black text-white font-black uppercase italic text-base shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                  >
-                    Verify Sync <ArrowRight className="ml-2 h-5 w-5" />
+                    Verify Sync <ArrowRight className="ml-2 h-4 w-4" />
                  </Button>
               </div>
            </div>
