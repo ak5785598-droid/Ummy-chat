@@ -1,11 +1,10 @@
-
 'use client';
 
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock, PlayCircle } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock, PlayCircle, ChevronRight } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -15,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const STORE_ITEMS = [
   { id: 'honor-2026', name: 'Honor 2026', type: 'Frame', price: 249999, stars: 2, description: 'Sovereign golden wings for the elite.', color: 'text-yellow-400' },
@@ -34,10 +33,6 @@ export default function StorePage() {
   const { userProfile, isLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
-
-  const [activeCategory, setActiveCategory] = (['Frame', 'Theme', 'Vehicle'] as const).reduce((acc, curr) => {
-    return acc;
-  }, 'Frame' as 'Frame' | 'Theme' | 'Vehicle' | 'Mine');
 
   const handlePurchase = (item: any) => {
     if (!userProfile || !user || !firestore) return;
@@ -86,17 +81,16 @@ export default function StorePage() {
     <AppLayout fullScreen>
       <div className="min-h-screen bg-[#0a1622] text-white font-headline flex flex-col relative pb-safe">
         
-        {/* Header - High Fidelity Sync */}
         <header className="flex items-center justify-between p-6 pt-12 shrink-0">
            <button onClick={() => router.back()} className="p-1 hover:scale-110 transition-transform">
               <ChevronLeft className="h-7 w-7 text-white" />
            </button>
            <h1 className="text-xl font-black uppercase italic tracking-tighter absolute left-1/2 -translate-x-1/2">Store</h1>
            <button 
-             onClick={() => router.push('/store?view=mine')} 
-             className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity"
+             onClick={() => router.push('/profile')} 
+             className="text-sm font-bold text-[#facc15] hover:opacity-80 transition-opacity"
            >
-             Mine
+             Bag
            </button>
         </header>
 
@@ -126,7 +120,6 @@ export default function StorePage() {
 
                     return (
                       <div key={item.id} className="bg-[#12232f] rounded-2xl overflow-hidden shadow-2xl flex flex-col group relative">
-                        {/* Preview Section */}
                         <div className="relative aspect-square flex items-center justify-center p-6">
                            <div className="absolute top-2 right-2 z-20">
                               <PlayCircle className="h-6 w-6 text-white/40 hover:text-white transition-colors cursor-pointer" />
@@ -140,7 +133,6 @@ export default function StorePage() {
                            </AvatarFrame>
                         </div>
 
-                        {/* Metadata Section */}
                         <div className="flex flex-col items-center gap-1 pb-3 px-2">
                            <div className="flex items-center gap-0.5">
                               {[...Array(item.stars)].map((_, i) => (
@@ -152,7 +144,6 @@ export default function StorePage() {
                            </h3>
                         </div>
 
-                        {/* Integrated Price/Period Bar */}
                         <div className="mt-auto">
                            <button 
                              onClick={() => isOwned ? handleEquip(item) : handlePurchase(item)}
@@ -162,9 +153,9 @@ export default function StorePage() {
                              )}
                            >
                               {isActive ? (
-                                <span className="text-[10px] font-black uppercase">Equipped</span>
+                                <span className="text-[10px] font-black uppercase text-white">Equipped</span>
                               ) : isOwned ? (
-                                <span className="text-[10px] font-black uppercase">Wear</span>
+                                <span className="text-[10px] font-black uppercase text-white">Wear</span>
                               ) : (
                                 <>
                                   <GoldCoinIcon className="h-4 w-4" />
@@ -183,7 +174,6 @@ export default function StorePage() {
           </ScrollArea>
         </Tabs>
 
-        {/* Global Wallet Sync Info */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1622]/90 backdrop-blur-md border-t border-white/5 flex items-center justify-between z-50">
            <div className="flex items-center gap-2">
               <GoldCoinIcon className="h-5 w-5" />

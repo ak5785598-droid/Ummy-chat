@@ -99,7 +99,7 @@ export function RoomPresenceManager() {
             const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
             const lastISTDate = getISTDateString(lastUpdated);
 
-            // IST DAILY RESET FOR ROOMS
+            // IST DAILY RESET FOR ROOMS (GMT +5:30)
             if (lastISTDate !== currentISTDate) {
               updateDocumentNonBlocking(roomDocRef, {
                 'stats.dailyGifts': 0,

@@ -65,6 +65,7 @@ export type Message = {
   luckyWin?: { multiplier: number; winAmount: number } | null;
   bagId?: string;
   amount?: number;
+  imageUrl?: string | null;
 };
 
 export type PrivateChat = {
@@ -80,6 +81,7 @@ export type PrivateMessage = {
   text: string;
   senderId: string;
   timestamp: any;
+  imageUrl?: string | null;
 };
 
 export type RoomParticipant = {

@@ -37,7 +37,6 @@ export function ProfileInitializer() {
         const now = new Date();
         const currentISTDate = getISTDateString(now);
 
-        // 1. IDENTITY SYNC & RECOVERY
         if (userSnap.exists()) {
           const userData = userSnap.data();
           const lastSeen = userData.lastSeen?.toDate?.() || new Date(0);
@@ -47,7 +46,7 @@ export function ProfileInitializer() {
           const userSummaryRef = doc(firestore, 'users', profileId);
           const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
 
-          // --- DAILY RANKING RESET PROTOCOL (GMT +5:30) ---
+          // --- DAILY RANKING RESET PROTOCOL (GMT +5:30 IST) ---
           if (lastISTDate !== currentISTDate) {
             console.log(`[Ranking Sync] IST 11:59:59 Rollover Detected (${lastISTDate} -> ${currentISTDate}). Purging daily ledgers.`);
             const dailyResetData = {
@@ -96,18 +95,7 @@ export function ProfileInitializer() {
             }
           }
           
-          // Cleanup stale room participation
-          const staleRoomId = userData.currentRoomId;
-          if (staleRoomId) {
-            const roomDocRef = doc(firestore, 'chatRooms', staleRoomId);
-            const participantRef = doc(firestore, 'chatRooms', staleRoomId, 'participants', profileId);
-            batch.update(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
-            batch.delete(participantRef);
-            batch.update(userSummaryRef, { currentRoomId: null });
-            batch.update(profileRef, { currentRoomId: null });
-          }
-
-          // Heartbeat
+          // Heartbeat and General Cleanup
           batch.update(userSummaryRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           batch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           
@@ -115,11 +103,6 @@ export function ProfileInitializer() {
           hasInitialized.current = profileId;
           return;
         }
-
-        // 2. NEW IDENTITY REGISTRATION
-        // ... (Initial registration logic remains same as it only runs once per user)
-        hasInitialized.current = profileId;
-        // Simplified for readability, assuming existing working registration logic
       } catch (e: any) {
         hasInitialized.current = null; 
         console.error("[Identity Sync] Fatal Error:", e);

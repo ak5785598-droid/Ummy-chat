@@ -293,9 +293,9 @@ const PublicProfileView = ({
                     </p>
                   )}
                   {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left -ml-4" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left -ml-2" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left ml-1" />}
                </div>
             </div>
          </div>
