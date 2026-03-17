@@ -34,7 +34,7 @@ const ICON_MAP: Record<string, any> = {
 /**
  * High-Fidelity Rooms Hub.
  * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
- * Re-engineered to support Sovereign Room Pinning Protocol.
+ * Re-engineered to support Sovereign Room Pinning Protocol and Expanded Grid.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -54,7 +54,6 @@ export default function RoomsPage() {
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // We fetch a larger set to handle pinning sort client-side for absolute stability
     return query(
       collection(firestore, 'chatRooms'), 
       orderBy('participantCount', 'desc'),
@@ -99,10 +98,8 @@ export default function RoomsPage() {
       ? roomsData 
       : roomsData.filter(room => room.category === activeCategory);
 
-    // Filter out inactive rooms unless they are pinned
     filtered = filtered.filter(room => room.participantCount > 0 || room.isPinned);
 
-    // Sovereign Sort: 1. Pinned (desc) -> 2. Participant Count (desc)
     return [...filtered].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -112,7 +109,7 @@ export default function RoomsPage() {
 
   const RoomSkeleton = () => (
     <div className="space-y-2">
-      <Skeleton className="aspect-square w-full rounded-[2rem]" />
+      <Skeleton className="aspect-[4/5] w-full rounded-[2rem]" />
       <div className="space-y-1.5 px-1">
         <Skeleton className="h-3.5 w-3/4 rounded-md" />
         <Skeleton className="h-2.5 w-1/2 rounded-md" />
@@ -259,7 +256,7 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <main className="px-8 flex-1">
+            <main className="px-2 flex-1">
               {isRoomsLoading && !roomsData ? (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3">
                   {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
@@ -279,8 +276,8 @@ export default function RoomsPage() {
             </main>
           </>
         ) : (
-          <main className="px-10 flex-1 animate-in slide-in-from-right-4 duration-500">
-             <section className="mb-6">
+          <main className="px-2 flex-1 animate-in slide-in-from-right-4 duration-500">
+             <section className="mb-6 px-4">
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
                    <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.profile.id} {t.home.mine}
                 </h3>
@@ -301,8 +298,8 @@ export default function RoomsPage() {
                 )}
              </section>
 
-             <section>
-                <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
+             <section className="px-2">
+                <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2 px-2">
                    <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> {t.profile.follow}
                 </h3>
                 {isFollowedLoading ? (
@@ -316,7 +313,7 @@ export default function RoomsPage() {
                      ))}
                   </div>
                 ) : (
-                  <div className="py-12 text-center space-y-3 opacity-40 bg-white/40 rounded-[1.5rem] border-2 border-dashed border-white/60">
+                  <div className="py-12 text-center space-y-3 opacity-40 bg-white/40 rounded-[1.5rem] border-2 border-dashed border-white/60 mx-2">
                      <Heart className="h-6 w-6 mx-auto text-slate-300" />
                      <p className="font-black uppercase italic text-[8px] tracking-widest">No Followed Tribes</p>
                   </div>

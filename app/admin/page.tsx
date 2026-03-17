@@ -1193,6 +1193,7 @@ export default function AdminPage() {
                              <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
                                 {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
                              </Button>
+                          </div>
                        </div>
                      )}
                   </CardContent>
