@@ -388,8 +388,8 @@ export function RoomClient({ room }: { room: Room }) {
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
       
-      const uRef = doc(firestore, 'users', user.uid);
-      const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const uRef = doc(firestore, 'users', currentUser.uid);
+      const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
@@ -581,7 +581,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* Compact Chat Dimension with Strictly Calibrated h-32 and Auto-Scroll Sync */}
+        {/* Expanded Compact Chat Dimension with Strictly Calibrated h-32 and Auto-Scroll Sync */}
         <div className="absolute bottom-0 left-0 w-full h-32 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
@@ -715,7 +715,7 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <button 
             onClick={() => setPreviewImage(null)}
-            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[310] active:scale-90 transition-transform"
+            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
           >
             <X className="h-6 w-6" />
           </button>
