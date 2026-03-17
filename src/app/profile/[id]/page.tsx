@@ -280,7 +280,7 @@ const PublicProfileView = ({
             
             <div className="flex-1 min-w-0">
                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                  <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
+                  <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h1>
                   <span className="text-sm leading-none">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
                   <RichLevelBadge level={profile.level?.rich || 1} />
@@ -295,10 +295,10 @@ const PublicProfileView = ({
                        ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                     </p>
                   )}
-                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-75 origin-left ml-1" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left ml-1" />}
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
                </div>
             </div>
          </div>
@@ -636,7 +636,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
                 <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
-                <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/about')} />
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
                 <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
