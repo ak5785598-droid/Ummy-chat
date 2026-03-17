@@ -84,29 +84,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       } as any;
     }
 
-    if (slug === 'ummy-help-center') {
-      return {
-        id: 'ummy-help-center',
-        roomNumber: '0000',
-        slug: 'ummy-help-center',
-        title: 'Ummy Official Help',
-        topic: 'Ask any app related question quick and fast.',
-        category: 'Chat',
-        coverUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000',
-        ownerId: CREATOR_ID,
-        moderatorIds: [],
-        lockedSeats: [],
-        announcement: 'Welcome to official support! How can we help you today?',
-        createdAt: new Date(),
-        participantCount: 0,
-        stats: { totalGifts: 0, dailyGifts: 0 },
-        maxActiveMics: 9,
-        roomThemeId: 'royal'
-      } as any;
-    }
-
     return null;
-  }, [firestoreRoom, slug]);
+  }, [firestoreRoom]);
 
   const isOwner = currentUser?.uid === activeRoom?.ownerId;
   const requiresPassword = activeRoom?.password && !isOwner && !isUnlocked;
@@ -140,7 +119,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     );
   }
 
-  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading && slug !== 'ummy-help-center') || !isMounted) {
+  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading) || !isMounted) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
