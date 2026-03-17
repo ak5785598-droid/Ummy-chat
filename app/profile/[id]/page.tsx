@@ -551,7 +551,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <div className="px-6 grid grid-cols-2 gap-2 mb-3">
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-16 rounded-[1.25rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-3 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-28 rounded-[1.25rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-3 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
@@ -566,7 +566,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-16 rounded-[1.25rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-3 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-28 rounded-[1.25rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-3 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
