@@ -497,8 +497,8 @@ export default function AdminPage() {
         return;
       }
 
-      const uRef = doc(firestore, 'users', user.uid);
-      const pRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const uRef = doc(firestore, 'users', targetUserForId.id);
+      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
@@ -683,17 +683,28 @@ export default function AdminPage() {
   };
 
   const handleThemeUpload = async (file: File) => {
-    if (!storage || !firestore || !newThemeName.trim()) return;
+    if (!storage || !firestore) return;
+    
+    if (!newThemeName.trim()) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Missing Identifier', 
+        description: 'Please enter a Theme Name before uploading visual assets.' 
+      });
+      return;
+    }
+
     setIsUploadingTheme(true);
     try {
       const timestamp = Date.now();
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
+      
       const themeRef = doc(collection(firestore, 'roomThemes'));
       await setDoc(themeRef, { 
         id: themeRef.id, 
-        name: newThemeName, 
+        name: newThemeName.trim(), 
         url: url, 
         category: newThemeCategory, 
         price: parseInt(newThemePrice) || 0,
@@ -702,10 +713,18 @@ export default function AdminPage() {
         accentColor: '#FFCC00', 
         seatColor: 'rgba(255, 255, 255, 0.1)' 
       });
-      toast({ title: 'Theme Synchronized' });
+      
+      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
       setNewThemeName('');
       setNewThemePrice('0');
       setNewThemeDuration('7');
+    } catch (error: any) {
+      console.error('[Theme Hub] Upload Error:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Upload Failed', 
+        description: error.message || 'Check connection and authority protocol.' 
+      });
     } finally {
       setIsUploadingTheme(false);
     }
@@ -902,7 +921,7 @@ export default function AdminPage() {
                        <div className="flex items-center justify-between border-b pb-6">
                           <div className="flex items-center gap-4">
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl rounded-xl">
-                                <AvatarImage src={targetRoomForPin.coverUrl || undefined}/>
+                                <AvatarImage src={targetRoomForPin.coverUrl || undefined} />
                                 <AvatarFallback>RM</AvatarFallback>
                              </Avatar>
                              <div>
@@ -1473,7 +1492,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><MessageSquareText className="h-6 w-6 text-indigo-500" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4">
-                     <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
+                     <SearchToggle mode={dmSearchMode} setMode={setDeSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
