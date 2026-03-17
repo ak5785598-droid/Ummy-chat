@@ -37,7 +37,7 @@ const ICON_MAP: Record<string, any> = {
  * Re-engineered to support Sovereign Room Pinning Protocol.
  */
 export default function RoomsPage() {
-  const { user } = userUser();
+  const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { t } = useTranslation();
@@ -54,7 +54,6 @@ export default function RoomsPage() {
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // We fetch a larger set to handle pinning sort client-side for absolute stability
     return query(
       collection(firestore, 'chatRooms'), 
       orderBy('participantCount', 'desc'),
@@ -99,10 +98,8 @@ export default function RoomsPage() {
       ? roomsData 
       : roomsData.filter(room => room.category === activeCategory);
 
-    // Filter out inactive rooms unless they are pinned
     filtered = filtered.filter(room => room.participantCount > 0 || room.isPinned);
 
-    // Sovereign Sort: 1. Pinned (desc) -> 2. Participant Count (desc)
     return [...filtered].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -329,8 +326,4 @@ export default function RoomsPage() {
       <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </AppLayout>
   );
-}
-
-function userUser() {
-  return useUser();
 }
