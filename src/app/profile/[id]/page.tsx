@@ -398,7 +398,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const visitorsQuery = useMemoFirebase(() => {
     if (!firestore || !profileId) return null;
-    return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'));
+    return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
   }, [firestore, profileId]);
 
   const { data: fansData } = useCollection(fansQuery);
@@ -477,6 +477,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const isOfficial = profile?.tags?.includes('Official');
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
+  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout hideSidebarOnMobile><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -546,10 +547,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                            {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
-                      {isOfficial && <OfficialTag size="sm" className="scale-75 origin-left" />}
-                      {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-left ml-1" />}
-                      {isSeller && <SellerTag size="sm" className="scale-75 origin-left ml-1" />}
-                      {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-left ml-1" />}
+                      {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
+                      {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                      {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                      {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
                    </div>
                 </div>
              </div>
