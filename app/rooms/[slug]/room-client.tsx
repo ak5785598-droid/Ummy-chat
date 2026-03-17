@@ -68,7 +68,8 @@ import {
   increment,
   arrayUnion,
   arrayRemove,
-  Timestamp
+  Timestamp,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
@@ -210,6 +211,9 @@ export function RoomClient({ room }: { room: Room }) {
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   
+  // LIVE CHAT SYNC: Capture the exact moment this component mounted to filter messages.
+  const [sessionJoinTime] = useState(() => new Date());
+
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
@@ -301,10 +305,16 @@ export function RoomClient({ room }: { room: Room }) {
   
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
+  // LIVE CHAT QUERY: Fetch only messages sent after joining
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
-    return query(collection(firestore, 'chatRooms', room.id, 'messages'), orderBy('timestamp', 'asc'), limitToLast(50));
-  }, [firestore, room.id]);
+    return query(
+      collection(firestore, 'chatRooms', room.id, 'messages'), 
+      where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
+      orderBy('timestamp', 'asc'), 
+      limitToLast(50)
+    );
+  }, [firestore, room.id, sessionJoinTime]);
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
