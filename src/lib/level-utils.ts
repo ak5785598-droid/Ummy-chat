@@ -1,6 +1,7 @@
 /**
  * @fileOverview High-Fidelity Level Calculation Engine.
  * Implements the Rich Level thresholds from the official Ummy blueprint.
+ * Hardened against division by zero and NaN results.
  */
 
 export interface LevelProgress {
@@ -31,11 +32,14 @@ const THRESHOLDS = [
  * Calculates the current level and progress metrics based on total coins spent.
  */
 export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
+  // Input sanitation
+  const spent = isNaN(totalSpent) ? 0 : Math.max(0, totalSpent);
+  
   let currentLevel = 0;
   let nextLevelThreshold = THRESHOLDS[1].spent;
 
   for (let i = 0; i < THRESHOLDS.length; i++) {
-    if (totalSpent >= THRESHOLDS[i].spent) {
+    if (spent >= THRESHOLDS[i].spent) {
       currentLevel = THRESHOLDS[i].level;
       if (i < THRESHOLDS.length - 1) {
         const startLevel = THRESHOLDS[i].level;
@@ -46,14 +50,14 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
         const levelsInRange = endLevel - startLevel;
         const spentPerLevel = (endSpent - startSpent) / (levelsInRange || 1);
         
-        const extraSpent = totalSpent - startSpent;
+        const extraSpent = spent - startSpent;
         const extraLevels = Math.floor(extraSpent / (spentPerLevel || 1));
         
         currentLevel = startLevel + extraLevels;
         nextLevelThreshold = startSpent + (extraLevels + 1) * spentPerLevel;
       } else {
         currentLevel = 100;
-        nextLevelThreshold = totalSpent;
+        nextLevelThreshold = spent;
       }
     } else {
       break;
@@ -61,18 +65,19 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
   }
 
   currentLevel = Math.min(currentLevel, 100);
-  const remaining = Math.max(0, nextLevelThreshold - totalSpent);
+  const remaining = Math.max(0, nextLevelThreshold - spent);
   
-  // Division by zero guard: ensure denominator is at least 1
-  const rangeSpent = Math.max(1, nextLevelThreshold - (totalSpent - (totalSpent % 10000) || 0));
+  // High-fidelity progress sync
+  const currentLevelBaseSpent = THRESHOLDS.find(t => t.level <= currentLevel && t.level + 10 > currentLevel)?.spent || 0;
+  const rangeSpent = Math.max(1, nextLevelThreshold - currentLevelBaseSpent);
   const progressPercent = currentLevel >= 100 ? 100 : (1 - (remaining / rangeSpent)) * 100;
 
   return {
     currentLevel,
     nextLevel: Math.min(currentLevel + 1, 100),
-    currentSpent: totalSpent,
+    currentSpent: spent,
     nextLevelThreshold,
-    progressPercent: Math.min(100, Math.max(0, progressPercent)),
+    progressPercent: isNaN(progressPercent) ? 0 : Math.min(100, Math.max(0, progressPercent)),
     remainingToLevelUp: remaining,
   };
 }

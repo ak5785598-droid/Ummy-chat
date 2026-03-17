@@ -550,7 +550,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <span className="text-base leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
-                      CharmLevelBadge level={profile.level?.charm || 1} />
+                      <CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
                    
                    <div className="flex items-center gap-2 flex-wrap">

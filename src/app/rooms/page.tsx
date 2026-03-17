@@ -34,6 +34,7 @@ const ICON_MAP: Record<string, any> = {
 /**
  * High-Fidelity Rooms Hub.
  * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
+ * Re-engineered to support Sovereign Room Pinning Protocol.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -53,11 +54,11 @@ export default function RoomsPage() {
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // We fetch a larger set to handle pinning sort client-side for absolute stability
     return query(
       collection(firestore, 'chatRooms'), 
-      where('participantCount', '>', 0), 
       orderBy('participantCount', 'desc'),
-      limit(50)
+      limit(100)
     );
   }, [firestore]);
 
@@ -75,7 +76,6 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
-  // DYNAMIC BANNER SYNC: Fetching from appConfig/banners
   const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerRef);
 
@@ -83,17 +83,31 @@ export default function RoomsPage() {
     if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
       return bannerConfig.slides;
     }
-    // High-fidelity fallback frequency
     return [
       { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
       { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
     ];
   }, [bannerConfig]);
 
+  /**
+   * SOVEREIGN SORT ENGINE: Prioritizes Pinned Rooms permanently at the top.
+   */
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
-    if (activeCategory === "All") return roomsData;
-    return roomsData.filter(room => room.category === activeCategory);
+    
+    let filtered = activeCategory === "All" 
+      ? roomsData 
+      : roomsData.filter(room => room.category === activeCategory);
+
+    // Filter out inactive rooms unless they are pinned
+    filtered = filtered.filter(room => room.participantCount > 0 || room.isPinned);
+
+    // Sovereign Sort: 1. Pinned (desc) -> 2. Participant Count (desc)
+    return [...filtered].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return (b.participantCount || 0) - (a.participantCount || 0);
+    });
   }, [roomsData, activeCategory]);
 
   const RoomSkeleton = () => (
@@ -144,7 +158,6 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
-            {/* SOVEREIGN TOP-TIER BANNER CAROUSEL (5s Auto-Scroll Sync) */}
             <div className="px-5 mb-4 mt-2">
               <Carousel 
                 className="w-full" 
@@ -246,7 +259,6 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            {/* ROOM GRID: Scaling Decree - Increased Padding to Decrease Card Size */}
             <main className="px-8 flex-1">
               {isRoomsLoading && !roomsData ? (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3">
