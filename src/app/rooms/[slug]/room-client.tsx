@@ -492,6 +492,11 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  const extraSeats = useMemo(() => {
+    const count = (room.maxActiveMics || 9) - 1;
+    return Array.from({ length: count }, (_, i) => i + 2);
+  }, [room.maxActiveMics]);
+
   return (
     <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
@@ -562,7 +567,7 @@ export function RoomClient({ room }: { room: Room }) {
               </div>
            </div>
            <div className="w-full grid grid-cols-4 gap-1.5 px-4">
-              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(idx => (
+              {extraSeats.map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} isOwner={false} />
               ))}
            </div>

@@ -37,6 +37,13 @@ import { ImageCropDialog } from '@/components/image-crop-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ROOM_THEMES, RoomTheme } from '@/lib/themes';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Image from 'next/image';
 
 interface RoomSettingsDialogProps {
@@ -242,7 +249,31 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
 
                 <SettingItem label="Room Name" value={room.title || room.name} onClick={() => setIsEditingName(true)} />
                 <SettingItem label="Announcement" value={room.announcement} onClick={() => setIsEditingAnnouncement(true)} />
-                <SettingItem label="Number of Mic" extra={`${room.maxActiveMics || 9} people`} onClick={() => handleUpdate('maxActiveMics', room.maxActiveMics === 9 ? 13 : 9)} />
+                
+                {/* Re-engineered Mic Selection Portal */}
+                <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">
+                  <span className="font-black text-[14px] text-gray-800 uppercase tracking-tight">Number of Mic</span>
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={String(room.maxActiveMics || 9)} 
+                      onValueChange={(val) => {
+                        handleUpdate('maxActiveMics', parseInt(val));
+                        toast({ title: 'Capacity Synchronized', description: `Room now supports ${val} active frequencies.` });
+                      }}
+                    >
+                      <SelectTrigger className="w-24 h-9 rounded-full bg-slate-50 border-gray-200 text-[10px] font-black uppercase italic shadow-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 rounded-xl">
+                        <SelectItem value="5" className="font-bold">5 Seats</SelectItem>
+                        <SelectItem value="9" className="font-bold">9 Seats</SelectItem>
+                        <SelectItem value="13" className="font-bold">13 Seats</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <ChevronRight className="h-4 w-4 text-gray-300" />
+                  </div>
+                </div>
+
                 <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
                 <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
                 <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
