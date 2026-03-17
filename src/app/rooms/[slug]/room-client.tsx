@@ -28,7 +28,7 @@ import {
   Heart,
   LogOut,
   Zap,
-  Image as ImageIcon,
+  ImageIcon,
   Loader
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
