@@ -555,7 +555,7 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="flex-1 flex flex-col items-center justify-start gap-3 pt-2 pb-32 overflow-y-auto no-scrollbar w-full">
+        <div className="flex-1 flex flex-col items-center justify-start gap-3 pt-2 pb-48 overflow-y-auto no-scrollbar w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} isOwner={isOwner} />
@@ -581,8 +581,8 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* Expanded Compact Chat Dimension with Strictly Calibrated h-32 and Auto-Scroll Sync */}
-        <div className="absolute bottom-0 left-0 w-full h-32 z-20 pointer-events-none p-3 pb-0">
+        {/* Expanded Compact Chat Dimension with Strictly Calibrated h-48 and Auto-Scroll Sync */}
+        <div className="absolute bottom-0 left-0 w-full h-48 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
@@ -618,7 +618,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
+      <footer className="relative z-50 px-6 pb-8 flex items-center justify-between pt-4">
         <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
