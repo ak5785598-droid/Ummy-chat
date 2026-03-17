@@ -13,16 +13,21 @@ import {
   Loader, 
   CheckCircle,
   Send,
-  MessageSquare
+  MessageSquare,
+  ImageIcon,
+  X
 } from 'lucide-react';
-import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   const participantIds = chat?.participantIds || [];
@@ -87,8 +92,13 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
 
 function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
   const [text, setText] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const firestore = useFirestore();
+  const storage = useStorage();
+  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -101,12 +111,13 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text.trim() || !firestore || !currentUser || !chatId) return;
+  const handleSend = async (e?: React.FormEvent, imageUrl?: string) => {
+    if (e) e.preventDefault();
+    if ((!text.trim() && !imageUrl) || !firestore || !currentUser || !chatId) return;
 
     const messageData = {
       text: text.trim(),
+      imageUrl: imageUrl || null,
       senderId: currentUser.uid,
       timestamp: serverTimestamp()
     };
@@ -114,7 +125,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
     addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), messageData);
 
     setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
-      lastMessage: text.trim(),
+      lastMessage: imageUrl ? 'Sent an image' : text.trim(),
       lastSenderId: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });
@@ -122,9 +133,29 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
     setText('');
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage || !currentUser || !chatId) return;
+
+    setIsUploadingImage(true);
+    try {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `chats/${chatId}/${timestamp}_${file.name}`);
+      const result = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(result.ref);
+      await handleSend(undefined, url);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast({ variant: 'destructive', title: 'Upload Failed' });
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full animate-in slide-in-from-right duration-300">
-      <header className="p-4 border-b border-white/10 flex items-center gap-3 bg-black/40">
+      <header className="p-4 border-b border-white/10 flex items-center gap-3 bg-black/40 shrink-0">
          <button onClick={onBack} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <ChevronLeft className="h-5 w-5 text-white" />
          </button>
@@ -145,10 +176,18 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
               return (
                 <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
                    <div className={cn(
-                     "px-3 py-2 rounded-2xl text-xs font-body shadow-sm",
-                     isMe ? "bg-primary text-black rounded-br-none" : "bg-white/10 text-white rounded-bl-none"
+                     "px-3 py-2 rounded-2xl text-xs font-body shadow-sm border",
+                     isMe ? "bg-primary text-black rounded-br-none border-primary/20" : "bg-white/10 text-white rounded-bl-none border-white/5"
                    )}>
-                      <p className="leading-relaxed">{msg.text}</p>
+                      {msg.imageUrl && (
+                        <div 
+                          onClick={() => setPreviewImage(msg.imageUrl)}
+                          className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
+                        >
+                           <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+                        </div>
+                      )}
+                      {msg.text && <p className="leading-relaxed italic">{msg.text}</p>}
                    </div>
                    <span className="text-[7px] font-bold text-white/20 uppercase mt-1 px-1">
                       {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
@@ -160,23 +199,67 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
          </div>
       </ScrollArea>
 
-      <footer className="p-3 bg-black/60 border-t border-white/10">
-         <form onSubmit={handleSend} className="flex gap-2">
-            <Input 
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Vibe text..."
-              className="flex-1 h-10 rounded-full bg-white/5 border-white/10 focus:border-primary px-4 text-xs italic"
+      <footer className="p-3 bg-black/60 border-t border-white/10 shrink-0">
+         <div className="flex gap-2">
+            <input 
+              type="file" 
+              ref={imageInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleImageUpload} 
             />
             <button 
-              type="submit" 
-              disabled={!text.trim()}
-              className="bg-primary text-black h-10 w-10 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              type="button"
+              disabled={isUploadingImage}
+              onClick={() => imageInputRef.current?.click()}
+              className="bg-white/5 text-white/60 h-10 w-10 rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform disabled:opacity-50"
             >
-               <Send className="h-4 w-4" />
+               {isUploadingImage ? <Loader className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
             </button>
-         </form>
+            <form onSubmit={handleSend} className="flex-1 flex gap-2">
+               <Input 
+                 value={text}
+                 onChange={(e) => setText(e.target.value)}
+                 placeholder="Vibe text..."
+                 className="flex-1 h-10 rounded-full bg-white/5 border-white/10 focus:border-primary px-4 text-xs italic placeholder:text-white/20"
+               />
+               <button 
+                 type="submit" 
+                 disabled={!text.trim() && !isUploadingImage}
+                 className="bg-primary text-black h-10 w-10 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 shadow-lg"
+               >
+                  <Send className="h-4 w-4" />
+               </button>
+            </form>
+         </div>
       </footer>
+
+      {/* Full Screen Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[400]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Image Preview</DialogTitle>
+            <DialogDescription>Full screen view</DialogDescription>
+          </DialogHeader>
+          <button 
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          {previewImage && (
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <Image 
+                src={previewImage} 
+                alt="Full screen preview" 
+                fill 
+                className="object-contain" 
+                unoptimized 
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -214,8 +297,8 @@ export function RoomMessagesDialog({ open, onOpenChange }: { open: boolean; onOp
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md h-[60vh] bg-[#121212]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
-        <DialogHeader className="p-6 pb-2 border-b border-white/5">
+      <DialogContent className="sm:max-w-md h-[65vh] bg-[#121212]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+        <DialogHeader className="p-6 pb-2 border-b border-white/5 shrink-0">
            <DialogTitle className="text-xl font-black uppercase italic tracking-tighter text-white/90 flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-primary" /> Messages
            </DialogTitle>
