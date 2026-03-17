@@ -26,7 +26,8 @@ import {
   Megaphone,
   Home,
   Heart,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -216,6 +217,7 @@ export function RoomClient({ room }: { room: Room }) {
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -233,6 +235,12 @@ export function RoomClient({ room }: { room: Room }) {
     return doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
   }, [firestore, currentUser, room.id]);
   const { data: followData } = useDoc(followRef);
+
+  const configRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'appConfig', 'global');
+  }, [firestore]);
+  const { data: globalConfig } = useDoc(configRef);
 
   const handleFollowRoom = () => {
     if (!firestore || !currentUser || !room.id) return;
@@ -291,8 +299,11 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
+  // High-Fidelity Scroll Sync Protocol
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
     if (firestoreMessages && firestoreMessages.length > 0) {
       const lastMsg = firestoreMessages[firestoreMessages.length - 1];
       if (lastMsg.type === 'gift') {
@@ -508,14 +519,23 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} isOwner={false} />
               ))}
            </div>
-           <div className="mt-4 flex items-center justify-start px-6 w-full">
-              <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
+           <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
+              {globalConfig?.globalAnnouncement && (
+                <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
+                   <Zap className="h-2 w-2 text-red-400 fill-current" />
+                   <p className="text-[10px] font-black text-red-200 uppercase italic tracking-tight leading-relaxed">
+                      Official: {globalConfig.globalAnnouncement}
+                   </p>
+                </div>
+              )}
+              <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-56 z-20 pointer-events-none p-3 pb-0">
+        {/* 3-Row Compact Chat Dimension with Auto-Scroll Sync */}
+        <div className="absolute bottom-0 left-0 w-full h-28 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
@@ -534,6 +554,7 @@ export function RoomClient({ room }: { room: Room }) {
                       </div>
                    </div>
                  ))}
+                 <div ref={messagesEndRef} />
               </div>
            </ScrollArea>
         </div>
@@ -552,7 +573,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
