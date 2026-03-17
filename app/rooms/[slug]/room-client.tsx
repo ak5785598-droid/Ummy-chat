@@ -509,13 +509,13 @@ export function RoomClient({ room }: { room: Room }) {
               ))}
            </div>
            <div className="mt-4 flex items-center justify-start px-6 w-full">
-              <p className="text-[11px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
+              <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-3 pb-0">
+        <div className="absolute bottom-0 left-0 w-full h-56 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
@@ -530,7 +530,7 @@ export function RoomClient({ room }: { room: Room }) {
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-[10px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
+                        <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
                       </div>
                    </div>
                  ))}
@@ -552,7 +552,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
