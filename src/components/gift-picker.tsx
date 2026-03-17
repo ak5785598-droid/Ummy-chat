@@ -131,7 +131,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const roomRef = doc(firestore, 'chatRooms', roomId);
 
-      // SENDER SYNC: Triple-Period Rich Score Update
       const senderUpdate = {
         'wallet.coins': increment(-totalCost),
         'wallet.totalSpent': increment(totalCost),
@@ -143,7 +142,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       batch.update(senderRef, senderUpdate);
       batch.update(senderProfileRef, senderUpdate);
 
-      // ROOM SYNC: Triple-Period Activity Update
       batch.update(roomRef, {
         'stats.totalGifts': increment(totalCost),
         'stats.dailyGifts': increment(totalCost),
@@ -158,7 +156,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
         const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
         
-        // RECIPIENT SYNC: Triple-Period Charm Score Update
         const recUpdate = {
           'wallet.diamonds': increment(diamondYield),
           'stats.dailyGiftsReceived': increment(costPerRecipient),
@@ -221,6 +218,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         <div className="p-4 space-y-4">
            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
               <button 
+                key="all-selection-btn"
                 onClick={selectAll}
                 className={cn(
                   "h-10 px-4 rounded-full font-black uppercase text-[10px] italic transition-all shrink-0 border-2",
@@ -229,9 +227,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
               >
                 All
               </button>
-              {seatedParticipants.map((p) => (
+              {seatedParticipants.map((p, idx) => (
                 <button 
-                  key={p.uid}
+                  key={p.uid || `participant-${idx}`}
                   onClick={() => toggleRecipient(p.uid)}
                   className="relative shrink-0 active:scale-90 transition-transform"
                 >
@@ -255,18 +253,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
               <Tabs defaultValue="Hot" className="w-full">
                  <TabsList className="bg-transparent p-0 gap-4 h-8 border-none justify-start">
                     {['Hot', 'Lucky', 'Luxury', 'SVIP'].map(tab => (
-                      <TabsTrigger key={tab} value={tab} className="p-0 text-xs font-black uppercase italic text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100 transition-all">
+                      <TabsTrigger key={`tab-trigger-${tab}`} value={tab} className="p-0 text-xs font-black uppercase italic text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100 transition-all">
                         {tab}
                       </TabsTrigger>
                     ))}
                  </TabsList>
 
                  {Object.entries(GIFTS).map(([category, items]) => (
-                   <TabsContent key={category} value={category} className="mt-4 animate-in fade-in duration-500">
+                   <TabsContent key={`tab-content-${category}`} value={category} className="mt-4 animate-in fade-in duration-500">
                       <div className="grid grid-cols-4 gap-y-4 gap-x-2">
                          {items.map(gift => (
                            <button 
-                             key={gift.id} 
+                             key={`gift-item-${gift.id}`} 
                              onClick={() => setSelectedGift(gift)}
                              className={cn(
                                "flex flex-col items-center gap-1 group relative py-2 rounded-xl transition-all",
@@ -301,7 +299,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
                  </SelectTrigger>
                  <SelectContent className="bg-slate-900 border-white/10 text-white">
                     {['1', '10', '99', '520', '999'].map(q => (
-                      <SelectItem key={q} value={q} className="font-black italic text-xs">{q}</SelectItem>
+                      <SelectItem key={`qty-${q}`} value={q} className="font-black italic text-xs">{q}</SelectItem>
                     ))}
                  </SelectContent>
               </Select>
