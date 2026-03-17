@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -132,6 +133,7 @@ export default function ChiragSlotPage() {
     
     if (win > 0 && currentUser && firestore) {
       setWinAmount(win);
+      // ARENA SYNC: Triple-Period Game Wins Update
       const updateData = { 
         'wallet.coins': increment(win), 
         'stats.dailyGameWins': increment(win),
@@ -142,6 +144,7 @@ export default function ChiragSlotPage() {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
+      // Record victory in global ledger for ranking sync
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
         gameId: 'chirag-slot',
         userId: currentUser.uid,

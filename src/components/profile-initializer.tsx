@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -52,7 +53,7 @@ export function ProfileInitializer() {
           const resetData: any = { updatedAt: serverTimestamp() };
           let needsReset = false;
 
-          // --- DAILY RESET ---
+          // --- DAILY RESET (00:00:00 IST) ---
           if (nowIST.fullDate !== lastIST.fullDate) {
             needsReset = true;
             resetData['wallet.dailySpent'] = 0;
@@ -70,7 +71,7 @@ export function ProfileInitializer() {
             resetData['stats.weeklyGameWins'] = 0;
           }
 
-          // --- MONTHLY RESET ---
+          // --- MONTHLY RESET (1st of Month) ---
           if (nowIST.month !== lastIST.month || nowIST.year !== lastIST.year) {
             needsReset = true;
             resetData['wallet.monthlySpent'] = 0;

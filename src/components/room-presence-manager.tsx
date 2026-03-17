@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
 /**
  * Maintains Firestore presence while a room is active.
- * Re-engineered for high-fidelity cleanup and IST (GMT+5:30) Daily Reset logic.
+ * Re-engineered for high-fidelity cleanup and IST (GMT+5:30) Periodic Reset logic.
  */
 export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -95,6 +96,8 @@ export function RoomPresenceManager() {
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const istNow = new Date(utc + (3600000 * 5.5));
           const istDateString = istNow.toDateString();
+          const istMonth = istNow.getMonth();
+          const istDay = istNow.getDay();
 
           const roomSnap = await getDoc(roomDocRef);
           if (roomSnap.exists()) {
@@ -104,13 +107,31 @@ export function RoomPresenceManager() {
             const lastUtc = lastUpdated.getTime() + (lastUpdated.getTimezoneOffset() * 60000);
             const istLast = new Date(lastUtc + (3600000 * 5.5));
             const lastISTDateString = istLast.toDateString();
+            const lastISTMonth = istLast.getMonth();
 
-            // IST DAILY RESET FOR ROOMS (GMT +5:30)
+            const resetData: any = { updatedAt: serverTimestamp() };
+            let needsReset = false;
+
+            // IST DAILY RESET
             if (lastISTDateString !== istDateString) {
-              updateDocumentNonBlocking(roomDocRef, {
-                'stats.dailyGifts': 0,
-                updatedAt: serverTimestamp()
-              });
+              needsReset = true;
+              resetData['stats.dailyGifts'] = 0;
+            }
+
+            // IST WEEKLY RESET (Monday)
+            if (lastISTDateString !== istDateString && istDay === 1) {
+              needsReset = true;
+              resetData['stats.weeklyGifts'] = 0;
+            }
+
+            // IST MONTHLY RESET
+            if (lastISTMonth !== istMonth) {
+              needsReset = true;
+              resetData['stats.monthlyGifts'] = 0;
+            }
+
+            if (needsReset) {
+              updateDocumentNonBlocking(roomDocRef, resetData);
             }
           }
 

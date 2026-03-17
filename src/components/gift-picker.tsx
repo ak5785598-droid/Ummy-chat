@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -131,7 +132,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const roomRef = doc(firestore, 'chatRooms', roomId);
 
-      // SENDER SYNC (Daily, Weekly, Monthly Rich Score)
+      // SENDER SYNC: Triple-Period Rich Score Update
       const senderUpdate = {
         'wallet.coins': increment(-totalCost),
         'wallet.totalSpent': increment(totalCost),
@@ -143,7 +144,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       batch.update(senderRef, senderUpdate);
       batch.update(senderProfileRef, senderUpdate);
 
-      // ROOM SYNC (Daily, Weekly, Monthly Stats)
+      // ROOM SYNC: Triple-Period Activity Update
       batch.update(roomRef, {
         'stats.totalGifts': increment(totalCost),
         'stats.dailyGifts': increment(totalCost),
@@ -158,7 +159,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
         const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
         
-        // RECIPIENT SYNC (Daily, Weekly, Monthly Charm Score)
+        // RECIPIENT SYNC: Triple-Period Charm Score Update
         const recUpdate = {
           'wallet.diamonds': increment(diamondYield),
           'stats.dailyGiftsReceived': increment(costPerRecipient),
@@ -215,7 +216,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       <DialogContent className="sm:max-w-[380px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         <DialogHeader className="sr-only">
           <DialogTitle>Gift Vault</DialogTitle>
-          <DialogDescription>Dispatch tribal assets toseated members.</DialogDescription>
+          <DialogDescription>Dispatch tribal assets to seated members.</DialogDescription>
         </DialogHeader>
 
         <div className="p-4 space-y-4">
