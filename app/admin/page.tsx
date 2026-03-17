@@ -201,6 +201,8 @@ export default function AdminPage() {
   const [isBanning, setIsBanning] = useState(false);
 
   const [newThemeName, setNewThemeName] = useState('');
+  const [newThemePrice, setNewThemePrice] = useState('0');
+  const [newThemeDuration, setNewThemeDuration] = useState('7');
   const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
   const [isUploadingTheme, setIsUploadingTheme] = useState(false);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
@@ -689,9 +691,21 @@ export default function AdminPage() {
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, { id: themeRef.id, name: newThemeName, url: url, category: newThemeCategory, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' });
+      await setDoc(themeRef, { 
+        id: themeRef.id, 
+        name: newThemeName, 
+        url: url, 
+        category: newThemeCategory, 
+        price: parseInt(newThemePrice) || 0,
+        durationDays: parseInt(newThemeDuration) || 7,
+        createdAt: serverTimestamp(), 
+        accentColor: '#FFCC00', 
+        seatColor: 'rgba(255, 255, 255, 0.1)' 
+      });
       toast({ title: 'Theme Synchronized' });
       setNewThemeName('');
+      setNewThemePrice('0');
+      setNewThemeDuration('7');
     } finally {
       setIsUploadingTheme(false);
     }
@@ -1313,6 +1327,16 @@ export default function AdminPage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                         <div className="space-y-4">
                            <Input placeholder="Theme Name..." value={newThemeName} onChange={(e) => setNewThemeName(e.target.value)} className="h-14 rounded-2xl border-2 bg-white text-lg font-black italic shadow-sm" />
+                           <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Price (Coins)</Label>
+                                <Input type="number" value={newThemePrice} onChange={(e) => setNewThemePrice(e.target.value)} className="h-12 rounded-xl border-2" />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Duration (Days)</Label>
+                                <Input type="number" value={newThemeDuration} onChange={(e) => setNewThemeDuration(e.target.value)} className="h-12 rounded-xl border-2" />
+                              </div>
+                           </div>
                            <Select value={newThemeCategory} onValueChange={(val: any) => setNewThemeCategory(val)}>
                               <SelectTrigger className="h-14 rounded-2xl border-2 bg-white font-black italic"><SelectValue placeholder="Category" /></SelectTrigger>
                               <SelectContent className="bg-white rounded-2xl font-black italic">
@@ -1335,7 +1359,14 @@ export default function AdminPage() {
                                 <Image src={theme.url} alt={theme.name} fill className="object-cover" unoptimized />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Button variant="destructive" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'roomThemes', theme.id))}><Trash2 className="h-4 w-4" /></Button></div>
                              </div>
-                             <div className="p-3 text-center border-t"><p className="text-[10px] font-black uppercase truncate">{theme.name}</p><Badge className="mt-1 text-[6px] h-3 px-1 font-black uppercase bg-slate-100 text-slate-500 border-none">{theme.category}</Badge></div>
+                             <div className="p-3 text-center border-t">
+                               <p className="text-[10px] font-black uppercase truncate">{theme.name}</p>
+                               <div className="flex items-center justify-center gap-1 mt-1">
+                                  <GoldCoinIcon className="h-2 w-2" />
+                                  <span className="text-[8px] font-bold">{theme.price || 0}</span>
+                                  <span className="text-[8px] text-slate-400">/ {theme.durationDays || 7}d</span>
+                               </div>
+                             </div>
                           </Card>
                         ))}
                      </div>

@@ -1,0 +1,388 @@
+'use client';
+
+import { useState, useRef, useMemo } from 'react';
+import { 
+  ChevronRight, 
+  ChevronLeft, 
+  Loader, 
+  Camera,
+  Check,
+  UserCheck,
+  UserX,
+  Trash2,
+  Lock,
+  Palette,
+  ShieldCheck
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { ImageCropDialog } from '@/components/image-crop-dialog';
+import { Badge } from '@/components/ui/badge';
+import { ROOM_THEMES, RoomTheme } from '@/lib/themes';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Image from 'next/image';
+
+interface RoomSettingsDialogProps {
+  room: any;
+  trigger: React.ReactNode;
+}
+
+const SettingItem = ({ label, value, extra, onClick, showChevron = true, children, className }: any) => (
+  <div 
+    onClick={onClick}
+    className={cn(
+      "flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer border-b border-gray-50 last:border-0",
+      className
+    )}
+  >
+    <div className="flex items-center gap-4">
+      <span className="font-black text-[14px] text-gray-800 uppercase tracking-tight">{label}</span>
+    </div>
+    <div className="flex items-center gap-3">
+      {children ? children : (
+        <>
+          {value && <span className="text-xs font-bold text-gray-400 truncate max-w-[120px]">{value}</span>}
+          {extra && <span className="text-xs font-bold text-gray-400">{extra}</span>}
+          {showChevron && <ChevronRight className="h-4 w-4 text-gray-300" />}
+        </>
+      )}
+    </div>
+  </div>
+);
+
+/**
+ * Room Settings Portal - Sovereign Control Dimension.
+ */
+export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
+  const [isEditingTheme, setIsEditingTheme] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [isManagingAdmins, setIsManagingAdmins] = useState(false);
+  
+  const [newName, setNewName] = useState(room.title || room.name);
+  const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
+  const [newPassword, setNewPassword] = useState(room.password || '');
+  
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+
+  const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const { isUploading: isUploadingProfile, uploadRoomImage } = useRoomImageUpload(room.id);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isOwner = user?.uid === room.ownerId;
+  const isOfficialHelpRoom = room.id === 'ummy-help-center';
+  const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
+  const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
+
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+  }, [firestore, room.id]);
+
+  const { data: participants } = useCollection(participantsQuery);
+
+  const customThemesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: customThemes } = useCollection(customThemesQuery);
+
+  const filteredThemes = useMemo(() => {
+    const ownedItems = userProfile?.inventory?.ownedItems || [];
+
+    // Filter baseline built-in themes
+    const baseline = ROOM_THEMES.filter(theme => {
+      if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
+      if (userIsOfficial || isOwner) return theme.category !== 'help';
+      return theme.category === 'general';
+    });
+
+    // Filter dynamic store themes: only show if price is 0 (Admin default) OR user owns it
+    const dynamic = (customThemes || []).filter(theme => {
+      const price = theme.price || 0;
+      if (price > 0 && !ownedItems.includes(theme.id)) return false;
+      
+      if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
+      if (userIsOfficial || isOwner) return theme.category !== 'help';
+      return theme.category === 'general';
+    });
+
+    return [...baseline, ...dynamic];
+  }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes, userProfile?.inventory?.ownedItems]);
+
+  const handleUpdate = (field: string, value: any) => {
+    if (!firestore) return;
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      [field]: value,
+      updatedAt: serverTimestamp()
+    });
+  };
+
+  const handleToggleMod = (uid: string) => {
+    if (!firestore || !room.id) return;
+    const isCurrentlyMod = room.moderatorIds?.includes(uid);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid),
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: isCurrentlyMod ? 'Admin Revoked' : 'Admin Granted' });
+  };
+
+  const handleSaveName = () => {
+    handleUpdate('name', newName);
+    setIsEditingName(false);
+  };
+
+  const handleSaveAnnouncement = () => {
+    handleUpdate('announcement', newAnnouncement);
+    setIsEditingAnnouncement(false);
+  };
+
+  const handleSavePassword = () => {
+    if (newPassword && newPassword.length !== 4) {
+      toast({ variant: 'destructive', title: 'Invalid Sync', description: 'Password must be exactly 4 digits.' });
+      return;
+    }
+    handleUpdate('password', newPassword || null);
+    setIsEditingPassword(false);
+    toast({ title: 'Privacy Sync Complete' });
+  };
+
+  const handleSelectTheme = (theme: RoomTheme) => {
+    if (theme.isOfficial && !canUseOfficialThemes) {
+      toast({ variant: 'destructive', title: 'Access Denied' });
+      return;
+    }
+    if (firestore) {
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        roomThemeId: theme.id,
+        backgroundUrl: null,
+        updatedAt: serverTimestamp()
+      });
+    }
+    setIsEditingTheme(false);
+    toast({ title: 'Theme Synchronized' });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropImage(reader.result as string);
+        setIsCropOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    await uploadRoomImage(croppedFile);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const currentTheme = filteredThemes.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[450px] h-[90vh] md:h-auto overflow-hidden bg-white p-0 rounded-t-[3rem] md:rounded-[2.5rem] border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-headline text-black">
+          <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between space-y-0 shrink-0">
+             <button onClick={() => setOpen(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                <ChevronLeft className="h-6 w-6 text-gray-600" />
+             </button>
+             <DialogTitle className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Settings</DialogTitle>
+             <div className="w-10" />
+             <DialogDescription className="sr-only">Manage room identity.</DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
+             <div className="pb-10">
+                <SettingItem label="Profile" onClick={() => !isUploadingProfile && fileInputRef.current?.click()} className="py-8">
+                   <div className="relative">
+                      <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
+                         <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} className="object-cover" />
+                         <AvatarFallback className="bg-slate-200">{(room.title || 'R').charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {isUploadingProfile && (
+                        <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center backdrop-blur-sm z-50">
+                           <Loader className="h-5 w-5 animate-spin text-white" />
+                        </div>
+                      )}
+                      {!isUploadingProfile && (
+                        <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-lg border border-gray-100">
+                           <Camera className="h-3 w-3 text-gray-400" />
+                        </div>
+                      )}
+                   </div>
+                   <ChevronRight className="h-4 w-4 text-gray-300 ml-2" />
+                </SettingItem>
+
+                <SettingItem label="Room Name" value={room.title || room.name} onClick={() => setIsEditingName(true)} />
+                <SettingItem label="Announcement" value={room.announcement} onClick={() => setIsEditingAnnouncement(true)} />
+                
+                <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">
+                  <span className="font-black text-[14px] text-gray-800 uppercase tracking-tight">Number of Mic</span>
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={String(room.maxActiveMics || 9)} 
+                      onValueChange={(val) => {
+                        handleUpdate('maxActiveMics', parseInt(val));
+                        toast({ title: 'Capacity Synchronized', description: `Room now supports ${val} active frequencies.` });
+                      }}
+                    >
+                      <SelectTrigger className="w-24 h-9 rounded-full bg-slate-50 border-gray-200 text-[10px] font-black uppercase italic shadow-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-2 rounded-xl">
+                        <SelectItem value="5" className="font-bold">5 Seats</SelectItem>
+                        <SelectItem value="9" className="font-bold">9 Seats</SelectItem>
+                        <SelectItem value="13" className="font-bold">13 Seats</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <ChevronRight className="h-4 w-4 text-gray-300" />
+                  </div>
+                </div>
+
+                <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
+                <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
+                <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
+             </div>
+          </ScrollArea>
+
+          {isEditingPassword && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsEditingPassword(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Privacy Code</h3>
+                  <button onClick={handleSavePassword} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
+               </header>
+               <div className="p-8">
+                  <Input type="password" inputMode="numeric" maxLength={4} placeholder="0000" value={newPassword} onChange={(e) => setNewPassword(e.target.value.replace(/\D/g, ''))} className="h-20 rounded-[1.5rem] border-2 text-4xl font-black tracking-[1em] text-center focus:border-primary transition-all" autoFocus />
+               </div>
+            </div>
+          )}
+
+          {isEditingTheme && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsEditingTheme(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Themes</h3>
+                  <div className="w-10" />
+               </header>
+               <ScrollArea className="flex-1">
+                  <div className="grid grid-cols-2 gap-4 p-6 pb-20">
+                     {filteredThemes.map((theme) => (
+                       <button key={theme.id} onClick={() => handleSelectTheme(theme)} className={cn("relative flex flex-col items-center gap-2 group", theme.isOfficial && !canUseOfficialThemes && "opacity-60 grayscale")}>
+                          <div className={cn("relative aspect-square w-full rounded-2xl overflow-hidden border-4", room.roomThemeId === theme.id ? "border-primary scale-105 shadow-lg" : "border-transparent")}>
+                             <Image src={theme.url} alt={theme.name} fill className="object-cover" sizes="200px" unoptimized />
+                             {room.roomThemeId === theme.id && <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md"><Check className="h-3 w-3 text-white" /></div>}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-tight text-gray-500">{theme.name}</span>
+                       </button>
+                     ))}
+                  </div>
+               </ScrollArea>
+            </div>
+          )}
+
+          {isEditingName && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsEditingName(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Room Name</h3>
+                  <button onClick={handleSaveName} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
+               </header>
+               <div className="p-8">
+                  <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="h-16 rounded-2xl border-2 text-xl font-black italic focus:border-primary transition-all text-slate-900" autoFocus />
+               </div>
+            </div>
+          )}
+
+          {isEditingAnnouncement && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsEditingAnnouncement(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Announcement</h3>
+                  <button onClick={handleSaveAnnouncement} className="text-primary font-black uppercase text-sm tracking-widest px-2">Save</button>
+               </header>
+               <div className="p-8">
+                  <Textarea value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)} className="h-40 rounded-2xl border-2 text-lg font-body italic focus:border-primary transition-all p-6 text-slate-900" autoFocus />
+               </div>
+            </div>
+          )}
+
+          {isManagingAdmins && (
+            <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+               <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+                  <button onClick={() => setIsManagingAdmins(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+                     <ChevronLeft className="h-6 w-6 text-gray-800" />
+                  </button>
+                  <h3 className="font-black uppercase italic text-lg tracking-tighter">Administrators</h3>
+                  <div className="w-10" />
+               </header>
+               <ScrollArea className="flex-1 p-4">
+                  {participants?.map((p: any) => (
+                    <div key={p.uid} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0">
+                       <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm"><AvatarImage src={p.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          <div><p className="font-black text-sm uppercase tracking-tight text-slate-900">{p.name}</p></div>
+                       </div>
+                       {p.uid !== room.ownerId && <Switch checked={room.moderatorIds?.includes(p.uid)} onCheckedChange={() => handleToggleMod(p.uid)} />}
+                    </div>
+                  ))}
+               </ScrollArea>
+            </div>
+          )}
+
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+        </DialogContent>
+      </Dialog>
+
+      <ImageCropDialog image={cropImage} open={isCropOpen} onOpenChange={setIsCropOpen} onCropComplete={handleCropComplete} aspect={4/5} />
+    </>
+  );
+}

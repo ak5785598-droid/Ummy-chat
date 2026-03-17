@@ -42,6 +42,7 @@ export type User = {
   };
   inventory?: {
     activeFrame?: string;
+    activeTheme?: string;
     activeBubble?: string;
     activeWave?: string;
     ownedItems: string[];

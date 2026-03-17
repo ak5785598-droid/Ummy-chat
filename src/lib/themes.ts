@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Centralized Room Theme Ledger.
  * Defines the high-fidelity visual frequencies available for chat rooms.
@@ -12,6 +11,8 @@ export interface RoomTheme {
   seatColor?: string;
   accentColor?: string;
   category?: 'help' | 'entertainment' | 'general';
+  price?: number;
+  durationDays?: number;
 }
 
 export const ROOM_THEMES: RoomTheme[] = [
