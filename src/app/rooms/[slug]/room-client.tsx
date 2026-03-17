@@ -308,7 +308,6 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
-  // High-Fidelity Scroll Sync Protocol (Optimized for strictly 3 rows)
   useEffect(() => {
     if (messagesEndRef.current) {
       const timer = setTimeout(() => {
@@ -483,7 +482,6 @@ export function RoomClient({ room }: { room: Room }) {
         toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
       });
       
-      // Capture stream from audio element for WebRTC broadcasting
       // @ts-ignore
       const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
       if (stream) {
@@ -510,7 +508,6 @@ export function RoomClient({ room }: { room: Room }) {
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
       
-      {/* Hidden high-fidelity audio engine for local music sync */}
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
       <div className="absolute inset-0 z-0">
@@ -586,7 +583,6 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* Expanded Compact Chat Dimension with Strictly Calibrated h-48 and Auto-Scroll Sync */}
         <div className="absolute bottom-0 left-0 w-full h-48 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
@@ -693,25 +689,6 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
-        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Exit Frequency</DialogTitle>
-            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
-          </DialogHeader>
-          <div className="p-12 flex items-center justify-around gap-8">
-            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
-              <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
-            </button>
-            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
-              <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
           <DialogHeader className="sr-only">
@@ -735,6 +712,25 @@ export function RoomClient({ room }: { room: Room }) {
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
+        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exit Frequency</DialogTitle>
+            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
+          </DialogHeader>
+          <div className="p-12 flex items-center justify-around gap-8">
+            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
+            </button>
+            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
