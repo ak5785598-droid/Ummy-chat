@@ -515,7 +515,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-40 z-20 pointer-events-none p-3 pb-0">
+        <div className="absolute bottom-0 left-0 w-full h-56 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
