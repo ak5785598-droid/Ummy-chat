@@ -17,7 +17,7 @@ interface ChatRoomCardProps {
  * High-Fidelity Room Card.
  * Re-engineered for Taller Card Identity (4:5 Ratio).
  * Features Identity Color Sync for the room name.
- * Hardened with optional chaining to prevent crashes during initial data sync.
+ * Hardened with real-time participant counting logic.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room?.ownerId);
@@ -27,6 +27,8 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const roomTitle = room.name || room.title || 'Frequency';
   const roomTopic = room.description || room.topic || 'Synchronizing...';
   const ownerName = owner?.username || 'Tribe Member';
+  
+  // Real-time occupant frequency reporting
   const liveCount = Number(room.participantCount || 0);
 
   /**
@@ -81,7 +83,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
             {/* Top-Right Live Indicator Protocol */}
             <div className="absolute top-3 right-3 z-20">
                <div className="bg-black/40 backdrop-blur-md text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-xl border border-white/20 italic flex items-center gap-1">
-                  <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                  <div className={cn("h-1 w-1 rounded-full animate-pulse", liveCount > 0 ? "bg-green-500" : "bg-slate-500")} />
                   LIVE {liveCount}
                </div>
             </div>

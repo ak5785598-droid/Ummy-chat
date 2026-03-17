@@ -34,7 +34,7 @@ const ICON_MAP: Record<string, any> = {
 /**
  * High-Fidelity Rooms Hub.
  * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
- * Re-engineered to support Sovereign Room Pinning Protocol and Expanded Grid.
+ * Re-engineered to support Sovereign Room Pinning Protocol and Real-Time Visibility.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -89,20 +89,40 @@ export default function RoomsPage() {
   }, [bannerConfig]);
 
   /**
-   * SOVEREIGN SORT ENGINE: Prioritizes Pinned Rooms permanently at the top.
+   * SOVEREIGN LISTING ENGINE: 
+   * 1. Help Room always visible at the top.
+   * 2. Other rooms only visible if participantCount > 0 OR pinned.
    */
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     
-    let filtered = activeCategory === "All" 
-      ? roomsData 
-      : roomsData.filter(room => (room.category || 'Chat') === activeCategory);
+    // Filtering logic
+    let filtered = roomsData.filter(room => {
+      const cat = room.category || 'Chat';
+      const matchesCategory = activeCategory === "All" || cat === activeCategory;
+      
+      const isHelpRoom = room.id === 'ummy-help-center';
+      const hasUsers = (room.participantCount || 0) > 0;
+      const isPinned = room.isPinned === true;
 
-    filtered = filtered.filter(room => (room.participantCount || 0) > 0 || room.isPinned);
+      // Always include help room in "All" view, follow category rule elsewhere
+      if (isHelpRoom) return activeCategory === "All" || matchesCategory;
+      
+      // Other rooms must match category AND (have users OR be pinned)
+      return matchesCategory && (hasUsers || isPinned);
+    });
 
+    // Sort protocol
     return [...filtered].sort((a, b) => {
+      // 1. Help Room Priority
+      if (a.id === 'ummy-help-center') return -1;
+      if (b.id === 'ummy-help-center') return 1;
+
+      // 2. Pinned Rooms next
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
+
+      // 3. Member activity
       return (b.participantCount || 0) - (a.participantCount || 0);
     });
   }, [roomsData, activeCategory]);
