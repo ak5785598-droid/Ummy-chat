@@ -62,7 +62,10 @@ export function calculateLevelProgress(totalSpent: number = 0): LevelProgress {
 
   currentLevel = Math.min(currentLevel, 100);
   const remaining = Math.max(0, nextLevelThreshold - totalSpent);
-  const progressPercent = currentLevel >= 100 ? 100 : (1 - (remaining / (nextLevelThreshold - (totalSpent - (totalSpent % 10000) || 10000)))) * 100;
+  
+  // Division by zero guard: ensure denominator is at least 1
+  const rangeSpent = Math.max(1, nextLevelThreshold - (totalSpent - (totalSpent % 10000) || 0));
+  const progressPercent = currentLevel >= 100 ? 100 : (1 - (remaining / rangeSpent)) * 100;
 
   return {
     currentLevel,

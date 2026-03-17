@@ -144,15 +144,22 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      }).catch(() => {
+        toast({ variant: 'destructive', title: 'Copy Failed' });
+      });
+    } else {
+      toast({ variant: 'destructive', title: 'Clipboard Unavailable' });
+    }
   };
 
   if (!color) {
     return (
       <span 
         onClick={handleCopy}
-        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
+        className="text-[9px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
       >
         ID: {id}
       </span>
@@ -232,8 +239,15 @@ const PublicProfileView = ({
 
   const handleCopyId = () => {
     const idToCopy = profile.specialId || profile.accountNumber || profile.id;
-    navigator.clipboard.writeText(idToCopy);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(idToCopy).then(() => {
+        toast({ title: 'ID Copied' });
+      }).catch(() => {
+        toast({ variant: 'destructive', title: 'Copy Failed' });
+      });
+    } else {
+      toast({ variant: 'destructive', title: 'Clipboard Unavailable' });
+    }
   };
 
   const isOfficial = profile.tags?.includes('Official');
@@ -536,14 +550,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <span className="text-base leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
-                      <CharmLevelBadge level={profile.level?.charm || 1} />
+                      CharmLevelBadge level={profile.level?.charm || 1} />
                    </div>
                    
                    <div className="flex items-center gap-2 flex-wrap">
                       {profile.specialId ? (
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { navigator.clipboard.writeText(profile.accountNumber); toast({ title: 'ID Copied' }); }}>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText(profile.accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
                            {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
@@ -625,9 +639,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   label={t.profile.invite} 
                   iconColor="bg-blue-50 text-blue-500" 
                   onClick={() => {
-                    const shareUrl = window.location.origin;
-                    const text = encodeURIComponent(`Find your vibe, connect with your tribe! Join me on Ummy: ${shareUrl}`);
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                    if (typeof window !== 'undefined') {
+                      const shareUrl = window.location.origin;
+                      const text = encodeURIComponent(`Find your vibe, connect with your tribe! Join me on Ummy: ${shareUrl}`);
+                      window.open(`https://wa.me/?text=${text}`, '_blank');
+                    }
                   }} 
                 />
                 <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />

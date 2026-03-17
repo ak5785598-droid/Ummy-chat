@@ -6,8 +6,8 @@ import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 /**
  * Production Profile Initializer.
- * Re-engineered for the Dual-ID Protocol, Automated 7-Day Asset Expiration,
- * and the HIGH-FIDELITY PERIODIC RANKING RESET at 11:59:59 (GMT +5:30 IST).
+ * Re-engineered for the Dual-ID Protocol and Automated Periodic Resets.
+ * Hardened for mobile compatibility by using UTC-offset based IST calculations.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -19,36 +19,31 @@ export function ProfileInitializer() {
 
     const initProfile = async () => {
       const profileId = user.uid;
-      const userRef = doc(firestore, 'users', profileId);
       
       try {
-        const userSnap = await getDoc(userRef);
-        
-        // --- IST HELPER PROTOCOL ---
-        const getISTDateParts = (date: Date) => {
-          const istStr = date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-          const istDate = new Date(istStr);
+        // --- MOBILE-SAFE IST HELPER PROTOCOL ---
+        // IST is UTC + 5:30 (330 minutes)
+        const getISTParts = (date: Date) => {
+          const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+          const ist = new Date(utc + (3600000 * 5.5));
           return {
-            fullDate: istDate.toDateString(),
-            month: istDate.getMonth(),
-            year: istDate.getFullYear(),
-            day: istDate.getDay() // 0=Sun, 1=Mon
+            fullDate: ist.toDateString(),
+            month: ist.getMonth(),
+            year: ist.getFullYear(),
+            day: ist.getDay() // 0=Sun, 1=Mon
           };
         };
 
-        // Determine if it's a new week (Monday rollover)
-        const isStartOfWeek = (d: Date) => {
-          const parts = getISTDateParts(d);
-          return parts.day === 1; // Monday
-        };
-
         const now = new Date();
-        const nowIST = getISTDateParts(now);
+        const nowIST = getISTParts(now);
+
+        const userRef = doc(firestore, 'users', profileId);
+        const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
           const userData = userSnap.data();
           const lastSeen = userData.lastSeen?.toDate?.() || new Date(0);
-          const lastIST = getISTDateParts(lastSeen);
+          const lastIST = getISTParts(lastSeen);
           
           const batch = writeBatch(firestore);
           const userSummaryRef = doc(firestore, 'users', profileId);
@@ -66,8 +61,7 @@ export function ProfileInitializer() {
             resetData['stats.dailyFans'] = 0;
           }
 
-          // --- WEEKLY RESET (Monday 00:00:00 IST) ---
-          // If the day changed and it's Monday, or if we skipped a whole week
+          // --- WEEKLY RESET (Monday rollover) ---
           const dayDiff = (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60 * 24);
           if ((nowIST.fullDate !== lastIST.fullDate && nowIST.day === 1) || dayDiff >= 7) {
             needsReset = true;
@@ -85,12 +79,11 @@ export function ProfileInitializer() {
           }
 
           if (needsReset) {
-            console.log(`[Ranking Sync] Rollover Detected. Purging stale periods.`);
             batch.update(userSummaryRef, resetData);
             batch.update(profileRef, resetData);
           }
 
-          // --- TEMPORAL ASSET AUDIT PROTOCOL (7-Day Expiry) ---
+          // --- TEMPORAL ASSET AUDIT (7-Day Expiry) ---
           const profileSnap = await getDoc(profileRef);
           if (profileSnap.exists()) {
             const profData = profileSnap.data();
@@ -130,11 +123,9 @@ export function ProfileInitializer() {
           
           await batch.commit();
           hasInitialized.current = profileId;
-          return;
         }
       } catch (e: any) {
-        hasInitialized.current = null; 
-        console.error("[Identity Sync] Fatal Error:", e);
+        console.error("[Identity Sync] Initialization Error:", e);
       }
     };
 

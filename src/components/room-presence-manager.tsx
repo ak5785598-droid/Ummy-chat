@@ -90,17 +90,23 @@ export function RoomPresenceManager() {
       if (canCleanup && !cleanupInterval.current) {
         cleanupInterval.current = setInterval(async () => {
           const now = new Date();
-          const getISTDateString = (d: Date) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-          const currentISTDate = getISTDateString(now);
+          
+          // MOBILE-SAFE IST CALCULATION
+          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+          const istNow = new Date(utc + (3600000 * 5.5));
+          const istDateString = istNow.toDateString();
 
           const roomSnap = await getDoc(roomDocRef);
           if (roomSnap.exists()) {
             const roomData = roomSnap.data();
             const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
-            const lastISTDate = getISTDateString(lastUpdated);
+            
+            const lastUtc = lastUpdated.getTime() + (lastUpdated.getTimezoneOffset() * 60000);
+            const istLast = new Date(lastUtc + (3600000 * 5.5));
+            const lastISTDateString = istLast.toDateString();
 
             // IST DAILY RESET FOR ROOMS (GMT +5:30)
-            if (lastISTDate !== currentISTDate) {
+            if (lastISTDateString !== istDateString) {
               updateDocumentNonBlocking(roomDocRef, {
                 'stats.dailyGifts': 0,
                 updatedAt: serverTimestamp()

@@ -49,26 +49,31 @@ const LevelBadge = ({ level }: { level: number }) => (
   </div>
 );
 
+/**
+ * Mobile-Safe IST Countdown.
+ */
 const RankingCountdown = ({ period }: { period: 'daily' | 'weekly' | 'monthly' }) => {
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
-      const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-      const istDate = new Date(istTimeStr);
       
-      let target = new Date(istTimeStr);
+      // Calculate IST (UTC+5:30) manually for mobile compatibility
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istDate = new Date(utc + (3600000 * 5.5));
+      
+      let target = new Date(istDate.getTime());
 
       if (period === 'daily') {
         target.setHours(23, 59, 59, 999);
       } else if (period === 'weekly') {
-        const day = target.getDay(); 
+        const day = istDate.getDay(); 
         const diffToMonday = (day === 0 ? 1 : 8 - day);
-        target.setDate(target.getDate() + diffToMonday);
+        target.setDate(istDate.getDate() + diffToMonday);
         target.setHours(0, 0, 0, 0);
       } else if (period === 'monthly') {
-        target.setMonth(target.getMonth() + 1, 1); 
+        target.setMonth(istDate.getMonth() + 1, 1); 
         target.setHours(0, 0, 0, 0);
       }
       

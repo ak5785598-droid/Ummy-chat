@@ -23,8 +23,15 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      }).catch(() => {
+        toast({ variant: 'destructive', title: 'Copy Failed' });
+      });
+    } else {
+      toast({ variant: 'destructive', title: 'Clipboard Unavailable' });
+    }
   };
 
   if (!color) {
