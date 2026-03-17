@@ -532,7 +532,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="flex-1 min-w-0">
                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <h1 className="text-xl font-black text-gray-800 tracking-tighter truncate pr-2 leading-none">{profile.username}</h1>
+                      <h1 className="text-xl font-black text-gray-800 tracking-tighter pr-2 leading-none truncate">{profile.username}</h1>
                       <span className="text-base leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                       <RichLevelBadge level={profile.level?.rich || 1} />
@@ -566,7 +566,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <div className="px-10 grid grid-cols-2 gap-3 mb-6">
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-28 rounded-[2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-24 rounded-[2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
@@ -581,7 +581,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
              <div 
                onClick={() => router.push('/wallet')} 
-               className="h-28 rounded-[2rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
+               className="h-24 rounded-[2rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-5 relative overflow-hidden shadow-lg active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
              >
                 <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
                 <div className="relative z-30 flex flex-col h-full justify-between">
