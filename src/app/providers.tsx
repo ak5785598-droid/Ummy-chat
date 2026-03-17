@@ -12,21 +12,9 @@ import type { ReactNode } from 'react';
 
 /**
  * The main providers component for the application.
+ * Consolidated into src/app for absolute synchronization.
  */
 export function Providers({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(
-        (registration) => {
-          console.log('[PWA Sync] ServiceWorker registration successful with scope: ', registration.scope);
-        },
-        (err) => {
-          console.log('[PWA Sync] ServiceWorker registration failed: ', err);
-        }
-      );
-    }
-  }, []);
-
   return (
     <FirebaseClientProvider>
       <LanguageProvider>
