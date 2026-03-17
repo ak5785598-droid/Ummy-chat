@@ -27,7 +27,9 @@ import {
   Home,
   Heart,
   LogOut,
-  Zap
+  Zap,
+  Image as ImageIcon,
+  Loader
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -52,7 +54,8 @@ import {
   addDocumentNonBlocking, 
   updateDocumentNonBlocking, 
   setDocumentNonBlocking,
-  deleteDocumentNonBlocking
+  deleteDocumentNonBlocking,
+  useStorage
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
@@ -67,6 +70,7 @@ import {
   arrayRemove,
   Timestamp
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
@@ -211,6 +215,10 @@ export function RoomClient({ room }: { room: Room }) {
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
+  
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Music Streaming State
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
@@ -222,6 +230,7 @@ export function RoomClient({ room }: { room: Room }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
+  const storage = useStorage();
   const { setActiveRoom, setIsMinimized } = useRoomContext();
 
   const isOwner = currentUser?.uid === room.ownerId;
@@ -301,7 +310,6 @@ export function RoomClient({ room }: { room: Room }) {
   // High-Fidelity Scroll Sync Protocol (Optimized for strictly 3 rows)
   useEffect(() => {
     if (messagesEndRef.current) {
-      // Use setTimeout to ensure the DOM has painted the new message row
       const timer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }, 50);
@@ -317,9 +325,9 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim() || !currentUser || !firestore || !userProfile) return;
+  const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
+    if (e) e.preventDefault();
+    if ((!messageText.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
     
     if (isChatMuted && !canManageRoom) {
       toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
@@ -327,9 +335,38 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, senderId: currentUser.uid, senderName: userProfile.username || 'User', senderAvatar: userProfile.avatarUrl || null, chatRoomId: room.id, timestamp: serverTimestamp(), type: 'text'
+      content: messageText, 
+      imageUrl: imageUrl || null,
+      senderId: currentUser.uid, 
+      senderName: userProfile.username || 'User', 
+      senderAvatar: userProfile.avatarUrl || null, 
+      chatRoomId: room.id, 
+      timestamp: serverTimestamp(), 
+      type: 'text'
     });
     setMessageText('');
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage || !currentUser || !room.id) return;
+
+    setIsUploadingImage(true);
+    try {
+      const timestamp = Date.now();
+      const storagePath = `rooms/${room.id}/chat/${timestamp}_${file.name}`;
+      const storageRef = ref(storage, storagePath);
+      const result = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(result.ref);
+      await handleSendMessage(undefined, url);
+      setShowInput(false);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast({ variant: 'destructive', title: 'Upload Failed' });
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
   };
 
   const handleMicToggle = () => { 
@@ -537,8 +574,8 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* 3-Row Compact Chat Dimension with Strictly Calibrated h-20 and Auto-Scroll Sync */}
-        <div className="absolute bottom-0 left-0 w-full h-20 z-20 pointer-events-none p-3 pb-0">
+        {/* Compact Chat Dimension with Strictly Calibrated h-32 and Auto-Scroll Sync */}
+        <div className="absolute bottom-0 left-0 w-full h-32 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
@@ -553,7 +590,18 @@ export function RoomClient({ room }: { room: Room }) {
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
-                        <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content || msg.text}</p>
+                        {msg.imageUrl && (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(msg.imageUrl);
+                            }}
+                            className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
+                          >
+                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                          </div>
+                        )}
+                        {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
                       </div>
                    </div>
                  ))}
@@ -608,7 +656,27 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline">
            <div className="bg-slate-900 rounded-[2rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10">
               <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[9px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-4 w-4" /></button></div>
-              <form className="flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}><Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." /><button className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button></form>
+              <div className="flex gap-2">
+                 <input 
+                   type="file" 
+                   ref={imageInputRef} 
+                   className="hidden" 
+                   accept="image/*" 
+                   onChange={handleImageUpload} 
+                 />
+                 <button 
+                   type="button"
+                   disabled={isUploadingImage}
+                   onClick={() => imageInputRef.current?.click()}
+                   className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                 >
+                    {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                 </button>
+                 <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
+                    <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
+                    <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button>
+                 </form>
+              </div>
            </div>
         </div>
       )}
@@ -629,6 +697,32 @@ export function RoomClient({ room }: { room: Room }) {
               <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
             </button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Image Preview</DialogTitle>
+            <DialogDescription>Full screen view</DialogDescription>
+          </DialogHeader>
+          <button 
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[310] active:scale-90 transition-transform"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          {previewImage && (
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <Image 
+                src={previewImage} 
+                alt="Full screen preview" 
+                fill 
+                className="object-contain" 
+                unoptimized 
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
