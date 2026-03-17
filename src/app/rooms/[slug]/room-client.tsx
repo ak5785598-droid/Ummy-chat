@@ -496,7 +496,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room.maxActiveMics]);
 
   return (
-    <div className="relative flex flex-col h-full bg-black overflow-hidden text-white font-headline">
+    <div className="relative flex flex-col h-[100dvh] w-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
       <GiftAnimationOverlay 
         giftId={activeGiftSync?.id || null} 

@@ -217,7 +217,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   }
 
   return (
-    <AppLayout hideSidebarOnMobile>
+    <AppLayout hideSidebarOnMobile fullScreen>
        <RoomClient room={activeRoom} />
     </AppLayout>
   );
