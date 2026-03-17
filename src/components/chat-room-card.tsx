@@ -31,7 +31,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
    */
   const getSyncGradient = () => {
     const themeId = room.roomThemeId;
-    const category = room.category?.toLowerCase();
+    const category = room.category?.toLowerCase?.() || 'chat';
 
     if (themeId === 'official_ummy') return 'from-yellow-500 via-amber-500 to-orange-600';
     if (themeId === 'gaming_arcade' || category === 'games') return 'from-blue-500 via-cyan-500 to-indigo-500';

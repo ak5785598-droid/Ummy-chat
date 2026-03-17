@@ -33,7 +33,8 @@ const ICON_MAP: Record<string, any> = {
 
 /**
  * High-Fidelity Rooms Hub.
- * Optimized Grid Protocol: px-2 padding allows room covers to span maximum width.
+ * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
+ * Re-engineered to support Sovereign Room Pinning Protocol and Expanded Grid.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -87,6 +88,9 @@ export default function RoomsPage() {
     ];
   }, [bannerConfig]);
 
+  /**
+   * SOVEREIGN SORT ENGINE: Prioritizes Pinned Rooms permanently at the top.
+   */
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     

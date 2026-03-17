@@ -95,8 +95,11 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      });
+    }
   };
 
   if (!color) {
@@ -1254,7 +1257,7 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-4">
                      <SearchToggle mode={banSearchMode} setMode={setBanSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder={banSearchId === 'id' ? "Enter Target ID (Special or Account)..." : "Enter Target Username..."} value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
+                        <Input placeholder={banSearchMode === 'id' ? "Enter Target ID (Special or Account)..." : "Enter Target Username..."} value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate Identity</Button>
                      </div>
                   </div>
@@ -1494,8 +1497,8 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-4">
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
-                        <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSendingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSendingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
