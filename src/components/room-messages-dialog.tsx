@@ -264,11 +264,22 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
   );
 }
 
-export function RoomMessagesDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (val: boolean) => void }) {
+export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { open: boolean; onOpenChange: (val: boolean) => void; initialRecipient?: any }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+
+  // Identity Chat Sync: Automatically initialize chat when provided with a direct recipient
+  useEffect(() => {
+    if (open && initialRecipient && user) {
+      const recipientId = initialRecipient.id || initialRecipient.uid;
+      const participantIds = [user.uid, recipientId].sort();
+      const chatId = participantIds.join('_');
+      setActiveChatId(chatId);
+      setSelectedRecipient(initialRecipient);
+    }
+  }, [open, initialRecipient, user]);
 
   const chatsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;

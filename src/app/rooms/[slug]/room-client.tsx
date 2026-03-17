@@ -213,6 +213,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
+  const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
   
@@ -387,8 +388,8 @@ export function RoomClient({ room }: { room: Room }) {
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
       
-      const uRef = doc(firestore, 'users', currentUser.uid);
-      const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      const uRef = doc(firestore, 'users', user.uid);
+      const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
@@ -459,6 +460,12 @@ export function RoomClient({ room }: { room: Room }) {
     setGiftRecipient(recipient);
     setIsGiftPickerOpen(true);
     setIsSeatMenuOpen(false);
+  };
+
+  const handleOpenChatFromProfile = (recipient: any) => {
+    setInitialChatRecipient(recipient);
+    setIsUserProfileCardOpen(false);
+    setIsMessagesOpen(true);
   };
 
   const handleMention = (username: string) => {
@@ -740,7 +747,14 @@ export function RoomClient({ room }: { room: Room }) {
         onPlayLocalMusic={handlePlayLocalMusic}
       />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
-      <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
+      <RoomMessagesDialog 
+        open={isMessagesOpen} 
+        onOpenChange={(val) => {
+          setIsMessagesOpen(val);
+          if (!val) setInitialChatRecipient(null);
+        }} 
+        initialRecipient={initialChatRecipient}
+      />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
       
@@ -773,6 +787,7 @@ export function RoomClient({ room }: { room: Room }) {
         onLeaveSeat={handleLeaveSeat}
         onToggleMod={handleToggleMod}
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
+        onOpenChat={handleOpenChatFromProfile}
         onMention={handleMention}
         isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
         isMe={selectedParticipantUid === currentUser?.uid}

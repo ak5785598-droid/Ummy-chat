@@ -61,6 +61,7 @@ interface RoomUserProfileDialogProps {
   onLeaveSeat: (uid: string) => void;
   onToggleMod: (uid: string) => void;
   onOpenGiftPicker: (recipient: any) => void;
+  onOpenChat?: (recipient: any) => void;
   onMention: (username: string) => void;
   isSilenced: boolean;
   isMe: boolean;
@@ -141,6 +142,7 @@ export function RoomUserProfileDialog({
   onLeaveSeat,
   onToggleMod,
   onOpenGiftPicker,
+  onOpenChat,
   onMention,
   isSilenced,
   isMe
@@ -191,7 +193,7 @@ export function RoomUserProfileDialog({
             </div>
 
             <div className="mt-2 mb-4">
-               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+               <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
                   <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
                      <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
@@ -209,10 +211,10 @@ export function RoomUserProfileDialog({
                </div>
                
                <div className="flex flex-wrap justify-center items-center gap-1 mt-1.5">
-                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-center" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-center ml-1" />}
-                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-center ml-1" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-center ml-1" />}
+                  {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
                </div>
             </div>
 
@@ -242,7 +244,10 @@ export function RoomUserProfileDialog({
                   <span className="font-black text-[10px] uppercase text-pink-500">Follow</span>
                </button>
 
-               <button className="flex items-center gap-2 group active:scale-95 transition-transform">
+               <button 
+                 onClick={() => onOpenChat?.(profile)}
+                 className="flex items-center gap-2 group active:scale-95 transition-transform"
+               >
                   <MessageSquare className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
                   <span className="font-black text-[10px] uppercase text-gray-800">Chat</span>
                </button>
