@@ -216,7 +216,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -299,10 +298,14 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
-  // High-Fidelity Scroll Sync Protocol
+  // High-Fidelity Scroll Sync Protocol (Optimized for strictly 3 rows)
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      // Use setTimeout to ensure the DOM has painted the new message row
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+      return () => clearTimeout(timer);
     }
     if (firestoreMessages && firestoreMessages.length > 0) {
       const lastMsg = firestoreMessages[firestoreMessages.length - 1];
@@ -534,9 +537,9 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        {/* 3-Row Compact Chat Dimension with Auto-Scroll Sync */}
-        <div className="absolute bottom-0 left-0 w-full h-28 z-20 pointer-events-none p-3 pb-0">
-           <ScrollArea className="h-full pr-3 pointer-events-auto" ref={scrollRef}>
+        {/* 3-Row Compact Chat Dimension with Strictly Calibrated h-20 and Auto-Scroll Sync */}
+        <div className="absolute bottom-0 left-0 w-full h-20 z-20 pointer-events-none p-3 pb-0">
+           <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
                    <div 
@@ -554,7 +557,7 @@ export function RoomClient({ room }: { room: Room }) {
                       </div>
                    </div>
                  ))}
-                 <div ref={messagesEndRef} />
+                 <div ref={messagesEndRef} className="h-0 w-0" />
               </div>
            </ScrollArea>
         </div>
@@ -645,7 +648,7 @@ export function RoomClient({ room }: { room: Room }) {
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
       <RoomMessagesDialog open={isMessagesOpen} onOpenChange={setIsMessagesOpen} />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
-      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} />
+      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
       
       <RoomSeatMenuDialog 
         open={isSeatMenuOpen} 
