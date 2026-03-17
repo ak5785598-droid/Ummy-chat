@@ -482,7 +482,6 @@ export function RoomClient({ room }: { room: Room }) {
         toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
       });
       
-      // Capture stream from audio element for WebRTC broadcasting
       // @ts-ignore
       const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
       if (stream) {
@@ -558,7 +557,7 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="flex-1 flex flex-col items-center justify-start gap-3 pt-2 pb-48 overflow-y-auto no-scrollbar w-full">
+        <div className="flex-1 flex flex-col items-center justify-start gap-3 pt-2 pb-64 overflow-y-auto no-scrollbar w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} isOwner={isOwner} />
@@ -584,7 +583,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-48 z-20 pointer-events-none p-3 pb-0">
+        <div className="absolute bottom-0 left-0 w-full h-64 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
@@ -620,7 +619,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-6 pb-8 flex items-center justify-between pt-4">
+      <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
         <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
