@@ -33,8 +33,7 @@ const ICON_MAP: Record<string, any> = {
 
 /**
  * High-Fidelity Rooms Hub.
- * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
- * Re-engineered to support Sovereign Room Pinning Protocol and Real-Time Visibility.
+ * Re-engineered to support Sovereign Decommissioning Protocol.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -91,11 +90,11 @@ export default function RoomsPage() {
   /**
    * SOVEREIGN LISTING ENGINE: 
    * Rooms only visible if participantCount > 0 OR pinned.
+   * EXCLUSION PROTOCOL: Explicitly hiding decommissioned "Synchronizing" rooms.
    */
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     
-    // Filtering logic
     let filtered = roomsData.filter(room => {
       const cat = room.category || 'Chat';
       const matchesCategory = activeCategory === "All" || cat === activeCategory;
@@ -103,17 +102,16 @@ export default function RoomsPage() {
       const hasUsers = (room.participantCount || 0) > 0;
       const isPinned = room.isPinned === true;
 
-      // Only show rooms that match category AND (have users OR be pinned)
-      return matchesCategory && (hasUsers || isPinned);
+      // DECOMMISSIONING SYNC: Exclude synchronizing or decommissioned IDs
+      const isDecommissioned = room.id === 'ummy-help-center' || 
+                               (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
+
+      return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
     });
 
-    // Sort protocol
     return [...filtered].sort((a, b) => {
-      // 1. Pinned Rooms next
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-
-      // 2. Member activity
       return (b.participantCount || 0) - (a.participantCount || 0);
     });
   }, [roomsData, activeCategory]);
@@ -292,7 +290,7 @@ export default function RoomsPage() {
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
                    <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.profile.id} {t.home.mine}
                 </h3>
-                {myRoom ? (
+                {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
                   <div className="max-w-[160px]">
                      <ChatRoomCard room={myRoom} variant="modern" />
                   </div>
