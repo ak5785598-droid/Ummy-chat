@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -241,7 +240,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
                      selectedUids.includes(p.uid) ? "border-primary scale-110 shadow-lg" : "border-white/10"
                    )}>
                       <AvatarImage src={p.avatarUrl} />
-                      <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{(p.name || 'U').charAt(0)}</AvatarFallback>
                    </Avatar>
                    {selectedUids.includes(p.uid) && (
                      <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
