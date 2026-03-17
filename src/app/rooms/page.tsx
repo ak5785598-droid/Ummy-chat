@@ -3,14 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Bell, User, Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Loader, Crown, Home, Gamepad2, Users } from 'lucide-react';
+import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
   Carousel,
   CarouselContent,
@@ -32,6 +31,10 @@ const ICON_MAP: Record<string, any> = {
   Heart
 };
 
+/**
+ * High-Fidelity Rooms Hub.
+ * Features Dynamic Banner Sync with 5s Autoplay and Compact Interface Protocol.
+ */
 export default function RoomsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -72,23 +75,26 @@ export default function RoomsPage() {
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
+  // DYNAMIC BANNER SYNC: Fetching from appConfig/banners
   const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerRef);
-
-  const displayRooms = useMemo(() => {
-    if (!roomsData) return [];
-    return roomsData.filter(room => (room.participantCount || 0) > 0);
-  }, [roomsData]);
 
   const displaySlides = useMemo(() => {
     if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
       return bannerConfig.slides;
     }
+    // High-fidelity fallback frequency
     return [
       { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
       { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
     ];
   }, [bannerConfig]);
+
+  const displayRooms = useMemo(() => {
+    if (!roomsData) return [];
+    if (activeCategory === "All") return roomsData;
+    return roomsData.filter(room => room.category === activeCategory);
+  }, [roomsData, activeCategory]);
 
   const RoomSkeleton = () => (
     <div className="space-y-2">
@@ -138,6 +144,47 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
+            {/* SOVEREIGN TOP-TIER BANNER CAROUSEL (5s Auto-Scroll Sync) */}
+            <div className="px-5 mb-4 mt-2">
+              <Carousel 
+                className="w-full" 
+                opts={{ loop: true }}
+                plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+              >
+                <CarouselContent>
+                  {displaySlides.map((slide: any, idx: number) => {
+                    const Icon = ICON_MAP[slide.iconName] || Sparkles;
+                    return (
+                      <CarouselItem key={idx}>
+                        <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+                           {slide.imageUrl && (
+                             <Image 
+                               src={slide.imageUrl} 
+                               alt="" 
+                               fill 
+                               className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" 
+                               unoptimized 
+                             />
+                           )}
+                           <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+                           <div className="relative z-10">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                 <Icon className="h-3 w-3 text-white animate-pulse" />
+                                 <h3 className="text-sm font-black uppercase italic tracking-tighter text-white drop-shadow-md">{slide.title}</h3>
+                              </div>
+                              <p className="text-[8px] font-bold text-white/70 uppercase tracking-widest leading-none">{slide.subtitle || slide.sub}</p>
+                           </div>
+                           <div className="absolute top-0 right-0 p-2 opacity-10">
+                              <UmmyLogoIcon className="h-12 w-12 rotate-12" />
+                            </div>
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+              </Carousel>
+            </div>
+
             <section className="px-5 grid grid-cols-3 gap-2 mb-3">
               <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
@@ -199,58 +246,15 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <main className="px-3.5 flex-1">
+            {/* ROOM GRID: Scaling Decree - Increased Padding to Decrease Card Size */}
+            <main className="px-8 flex-1">
               {isRoomsLoading && !roomsData ? (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3">
                   {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
                 </div>
               ) : displayRooms.length > 0 ? (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
-                  {displayRooms.slice(0, 4).map((room: any) => (
-                    <ChatRoomCard key={room.id} room={room} variant="modern" />
-                  ))}
-
-                  <div className="col-span-2 py-0.5">
-                    <Carousel 
-                      className="w-full" 
-                      opts={{ loop: true }}
-                      plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
-                    >
-                      <CarouselContent>
-                        {displaySlides.map((slide: any, idx: number) => {
-                          const Icon = ICON_MAP[slide.iconName] || Sparkles;
-                          return (
-                            <CarouselItem key={idx}>
-                              <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
-                                 {slide.imageUrl && (
-                                   <Image 
-                                     src={slide.imageUrl} 
-                                     alt="" 
-                                     fill 
-                                     className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" 
-                                     unoptimized 
-                                   />
-                                 )}
-                                 <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-                                 <div className="relative z-10">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                       <Icon className="h-3 w-3 text-white animate-pulse" />
-                                       <h3 className="text-sm font-black uppercase italic tracking-tighter text-white drop-shadow-md">{slide.title}</h3>
-                                    </div>
-                                    <p className="text-[8px] font-bold text-white/70 uppercase tracking-widest leading-none">{slide.subtitle || slide.sub}</p>
-                                 </div>
-                                 <div className="absolute top-0 right-0 p-2 opacity-10">
-                                    <UmmyLogoIcon className="h-12 w-12 rotate-12" />
-                                  </div>
-                              </div>
-                            </CarouselItem>
-                          );
-                        })}
-                      </CarouselContent>
-                    </Carousel>
-                  </div>
-
-                  {displayRooms.slice(4).map((room: any) => (
+                  {displayRooms.map((room: any) => (
                     <ChatRoomCard key={room.id} room={room} variant="modern" />
                   ))}
                 </div>
@@ -263,7 +267,7 @@ export default function RoomsPage() {
             </main>
           </>
         ) : (
-          <main className="px-5 flex-1 animate-in slide-in-from-right-4 duration-500">
+          <main className="px-10 flex-1 animate-in slide-in-from-right-4 duration-500">
              <section className="mb-6">
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
                    <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.profile.id} {t.home.mine}
