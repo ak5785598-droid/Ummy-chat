@@ -26,7 +26,8 @@ import {
   Megaphone,
   Home,
   Heart,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -103,7 +104,7 @@ function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean })
     }
     sourceRef.current = ctx.createMediaStreamSource(stream);
     gainRef.current = ctx.createGain();
-    sourceRef.current.connect(gainRef.current);
+    sourceRef.current.connect(gainNode);
     gainRef.current.connect(ctx.destination);
     gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
     if (ctx.state === 'suspended') {
@@ -233,6 +234,12 @@ export function RoomClient({ room }: { room: Room }) {
     return doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
   }, [firestore, currentUser, room.id]);
   const { data: followData } = useDoc(followRef);
+
+  const configRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'appConfig', 'global');
+  }, [firestore]);
+  const { data: globalConfig } = useDoc(configRef);
 
   const handleFollowRoom = () => {
     if (!firestore || !currentUser || !room.id) return;
@@ -508,14 +515,22 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} isOwner={false} />
               ))}
            </div>
-           <div className="mt-4 flex items-center justify-start px-6 w-full">
+           <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
+              {globalConfig?.globalAnnouncement && (
+                <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
+                   <Zap className="h-2 w-2 text-red-400 fill-current" />
+                   <p className="text-[10px] font-black text-red-200 uppercase italic tracking-tight leading-relaxed">
+                      Official: {globalConfig.globalAnnouncement}
+                   </p>
+                </div>
+              )}
               <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-28 z-20 pointer-events-none p-3 pb-0">
+        <div className="absolute bottom-0 left-0 w-full h-36 z-20 pointer-events-none p-3 pb-0">
            <ScrollArea className="h-full pr-3 pointer-events-auto" ref={scrollRef}>
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (

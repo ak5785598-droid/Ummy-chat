@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -180,6 +180,9 @@ export default function AdminPage() {
   const [broadcastContent, setBroadcastContent] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
+  const [globalAnnouncementInput, setGlobalAnnouncementInput] = useState('');
+  const [isUpdatingGlobalNotice, setIsUpdatingGlobalNotice] = useState(false);
+
   const [dmSearchId, setDmSearchId] = useState('');
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
   const [dmTitle, setDmTitle] = useState('Official System Notice');
@@ -262,6 +265,17 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'rankings');
   }, [firestore, isCreator]);
   const { data: rankingConfig } = useDoc(rankingConfigRef);
+
+  const handleUpdateGlobalNotice = async () => {
+    if (!firestore || !isCreator || !configRef) return;
+    setIsUpdatingGlobalNotice(true);
+    try {
+      await updateDoc(configRef, { globalAnnouncement: globalAnnouncementInput, updatedAt: serverTimestamp() });
+      toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' });
+    } finally {
+      setIsUpdatingGlobalNotice(false);
+    }
+  };
 
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
@@ -687,14 +701,14 @@ export default function AdminPage() {
     }
   };
 
-  if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
-
   const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
     <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
        <button onClick={() => setMode('id')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'id' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By ID</button>
        <button onClick={() => setMode('name')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By Name</button>
     </div>
   );
+
+  if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
 
   return (
     <AppLayout>
@@ -815,14 +829,42 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle>
-                     <CardDescription>Dispatch global visual assets across the entire Ummy network.</CardDescription>
+                     <CardDescription>Dispatch global assets and room notices across the Ummy network.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 space-y-8">
                      <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
+                              <Megaphone className="h-5 w-5 text-orange-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span>
+                           </div>
+                           <Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                           <Input 
+                             placeholder="Write global room announcement..." 
+                             value={globalAnnouncementInput}
+                             onChange={(e) => setGlobalAnnouncementInput(e.target.value)}
+                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
+                           />
+                           <Button 
+                             onClick={handleUpdateGlobalNotice} 
+                             disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()}
+                             className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20"
+                           >
+                              {isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                           </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-bold italic px-1">
+                           This text will appear as the first announcement row in every chat room.
+                        </p>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
                               <ImageIcon className="h-5 w-5 text-pink-600" />
-                              <span className="font-black uppercase italic text-sm">Login Page Background</span>
+                              <span className="font-black uppercase italic text-sm text-slate-900">Login Page Background</span>
                            </div>
                            {config?.loginBackgroundUrl && (
                              <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { loginBackgroundUrl: null })}>Reset to Default</Button>
@@ -1344,7 +1386,7 @@ export default function AdminPage() {
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={(e) => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
