@@ -598,16 +598,18 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
                    <div 
-                    key={msg.id} 
+                    key={msg.id || Math.random().toString()} 
                     onClick={() => {
-                      setSelectedParticipantUid(msg.senderId);
-                      setIsUserProfileCardOpen(true);
+                      if (msg.senderId) {
+                        setSelectedParticipantUid(msg.senderId);
+                        setIsUserProfileCardOpen(true);
+                      }
                     }}
                     className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
                    >
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
-                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
+                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
                         {msg.imageUrl && (
                           <div 
                             onClick={(e) => {

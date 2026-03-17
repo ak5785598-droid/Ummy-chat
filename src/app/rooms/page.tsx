@@ -96,9 +96,9 @@ export default function RoomsPage() {
     
     let filtered = activeCategory === "All" 
       ? roomsData 
-      : roomsData.filter(room => room.category === activeCategory);
+      : roomsData.filter(room => (room.category || 'Chat') === activeCategory);
 
-    filtered = filtered.filter(room => room.participantCount > 0 || room.isPinned);
+    filtered = filtered.filter(room => (room.participantCount || 0) > 0 || room.isPinned);
 
     return [...filtered].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;

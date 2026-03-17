@@ -141,7 +141,7 @@ export function UserSearchDialog() {
           <Search className="h-6 w-6 text-gray-800" />
         </button>
       </DialogTrigger>
-      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-headline">
+      <DialogContent className="w-screen h-screen max-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-headline">
         <DialogHeader className="p-6 flex flex-row items-center justify-between border-b border-gray-50 space-y-0 shrink-0">
            <div className="flex items-center gap-2">
               <div className="h-10 w-10 bg-yellow-400/20 rounded-xl flex items-center justify-center">

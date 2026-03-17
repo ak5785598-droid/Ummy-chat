@@ -1,38 +1,56 @@
 'use client';
 
+import { useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Clock, PlayCircle, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, arrayUnion, increment, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import Image from 'next/image';
 
-const STORE_ITEMS = [
-  { id: 'honor-2026', name: 'Honor 2026', type: 'Frame', price: 249999, stars: 2, description: 'Sovereign golden wings for the elite.', color: 'text-yellow-400' },
-  { id: '2026-vibe', name: '2026', type: 'Frame', price: 249999, stars: 2, description: 'Celebrate the new frequency.', color: 'text-purple-400' },
-  { id: 'snowman-gift', name: 'Snowman Gift', type: 'Frame', price: 249999, stars: 1, description: 'Holiday spirit synchronization.', color: 'text-blue-200' },
-  { id: 'snowman-classic', name: 'Snowman', type: 'Frame', price: 249999, stars: 1, description: 'Winter wonderland signature.', color: 'text-cyan-100' },
-  { id: 'little-devil', name: 'Little Devil', type: 'Frame', price: 499999, stars: 2, description: 'Mischievous neon frequency.', color: 'text-red-500' },
-  { id: 'i-love-india', name: 'I love India', type: 'Frame', price: 249999, stars: 2, description: 'National pride identity.', color: 'text-green-500' },
-  { id: 'ummy-cs', name: 'Ummy CS Majestic', type: 'Frame', price: 50000, stars: 2, description: 'Official service frame.', color: 'text-emerald-400' },
-  { id: 'f7', name: 'Celestial Wings', type: 'Frame', price: 15000, stars: 1, description: 'Tiered lavender wings.', color: 'text-indigo-400' },
+const STATIC_STORE_ITEMS = [
+  { id: 'f7', name: 'Celestial Wings', type: 'Frame', price: 15000, description: 'Tiered lavender wings with sovereign golden peaks.', icon: Sparkles, color: 'text-indigo-400' },
+  { id: 'f6', name: 'Bronze Sky', type: 'Frame', price: 10000, description: 'Exquisite bronze laurel wreath with radiant gemstones.', icon: Sparkles, color: 'text-orange-400' },
+  { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, description: 'Ultra-detailed 3D luxury angelic frame.', icon: Sparkles, color: 'text-yellow-400' },
+  { id: 'f4', name: 'Imperial Bloom', type: 'Frame', price: 20000, description: 'Exquisite purple roses and a majestic golden crown.', icon: Crown, color: 'text-purple-600' },
+  { id: 'f1', name: 'Golden Official', type: 'Frame', price: 15000, description: 'The mark of ultimate authority.', icon: Star, color: 'text-yellow-500' },
+  { id: 'b1', name: 'Kawaii Pink', type: 'Bubble', price: 2000, description: 'Soft pink chat bubbles.', icon: MessageSquare, color: 'text-pink-400' },
+  { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
 ];
 
 export default function StorePage() {
   const router = useRouter();
   const { user } = useUser();
-  const { userProfile, isLoading } = useUserProfile(user?.uid);
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const themesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: dbThemes, isLoading: isThemesLoading } = useCollection(themesQuery);
+
+  const dynamicThemes = useMemo(() => {
+    return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
+      ...t,
+      type: 'Theme',
+      description: t.description || `High-fidelity ${t.name} frequency.`
+    }));
+  }, [dbThemes]);
+
+  const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes];
 
   const handlePurchase = (item: any) => {
     if (!userProfile || !user || !firestore) return;
@@ -42,13 +60,15 @@ export default function StorePage() {
       return;
     }
 
+    const durationDays = item.durationDays || 7;
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + durationDays);
+    const expiryTimestamp = Timestamp.fromDate(expiryDate);
+
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const expiryTimestamp = Timestamp.fromDate(expiryDate);
-
-    const updateData: any = { 
+    const updateData = { 
       'wallet.coins': increment(-item.price), 
       'inventory.ownedItems': arrayUnion(item.id),
       [`inventory.expiries.${item.id}`]: expiryTimestamp,
@@ -57,8 +77,7 @@ export default function StorePage() {
 
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-item.price), 'updatedAt': serverTimestamp() });
-    
-    toast({ title: 'Item Added to Bag', description: `${item.name} is yours for 7 days.` });
+    toast({ title: 'Purchase Successful', description: `${item.name} added to your bag for ${durationDays} days.` });
   };
 
   const handleEquip = (item: any) => {
@@ -66,126 +85,98 @@ export default function StorePage() {
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     
-    const field = item.type === 'Frame' ? 'inventory.activeFrame' : item.type === 'Theme' ? 'inventory.activeTheme' : 'inventory.activeVehicle';
-    const updateData: any = { [field]: item.id, updatedAt: serverTimestamp() };
-    
+    let field = '';
+    if (item.type === 'Frame') field = 'inventory.activeFrame';
+    else if (item.type === 'Theme') field = 'inventory.activeTheme';
+    else if (item.type === 'Bubble') field = 'inventory.activeBubble';
+    else if (item.type === 'Wave') field = 'inventory.activeWave';
+
+    const updateData = { [field]: item.id, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-    
     toast({ title: 'Item Equipped' });
   };
 
-  if (isLoading) return <div className="h-screen w-full bg-[#0a1622] flex items-center justify-center"><Loader className="animate-spin text-primary h-10 w-10" /></div>;
+  if (isProfileLoading) return <AppLayout><div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div></AppLayout>;
 
   return (
-    <AppLayout fullScreen>
-      <div className="min-h-screen bg-[#0a1622] text-white font-headline flex flex-col relative pb-safe">
-        
-        <header className="flex items-center justify-between p-6 pt-12 shrink-0">
-           <button onClick={() => router.back()} className="p-1 hover:scale-110 transition-transform">
-              <ChevronLeft className="h-7 w-7 text-white" />
-           </button>
-           <h1 className="text-xl font-black uppercase italic tracking-tighter absolute left-1/2 -translate-x-1/2">Store</h1>
-           <button 
-             onClick={() => router.push('/profile')} 
-             className="text-sm font-bold text-[#facc15] hover:opacity-80 transition-opacity"
-           >
-             Bag
-           </button>
+    <AppLayout>
+      <div className="space-y-8 max-w-6xl mx-auto pb-24 animate-in fade-in duration-700">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
+          <div className="flex items-center gap-4">
+             <button onClick={() => router.back()} className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-colors"><ChevronLeft className="h-6 w-6 text-gray-800" /></button>
+             <div>
+                <h1 className="text-4xl font-bold font-headline uppercase italic tracking-tighter flex items-center gap-3 text-slate-900">
+                  <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
+                </h1>
+                <p className="text-muted-foreground font-body text-lg">Customize your frequency identity.</p>
+             </div>
+          </div>
+          <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-[2rem] border-2 border-primary/20 flex items-center gap-4 shadow-xl cursor-pointer">
+            <GoldCoinIcon className="h-10 w-10" />
+            <div className="flex flex-col">
+              <span className="text-3xl font-black text-primary italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+              <span className="text-[10px] uppercase font-black tracking-widest text-primary/60">Tap to Recharge</span>
+            </div>
+          </div>
         </header>
 
-        <Tabs defaultValue="Frame" className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-6 mb-6">
-            <TabsList className="bg-transparent h-10 p-0 gap-8 justify-start border-none">
-              {['Frame', 'Theme', 'Vehicle'].map((cat) => (
-                <TabsTrigger 
-                  key={cat} 
-                  value={cat} 
-                  className="p-0 bg-transparent text-xl font-black uppercase italic tracking-tight text-white/40 data-[state=active]:text-[#facc15] data-[state=active]:bg-transparent relative transition-all"
-                >
-                  {cat}
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-1 bg-[#facc15] rounded-full opacity-0 data-[state=active]:opacity-100 transition-opacity" />
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          <ScrollArea className="flex-1 px-4">
-            {['Frame', 'Theme', 'Vehicle'].map((category) => (
-              <TabsContent key={category} value={category} className="m-0 focus-visible:ring-0">
-                <div className="grid grid-cols-2 gap-3 pb-24">
-                  {STORE_ITEMS.filter(i => i.type === category).map((item) => {
-                    const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
-                    const isActive = userProfile?.inventory?.activeFrame === item.id;
-
-                    return (
-                      <div key={item.id} className="bg-[#12232f] rounded-2xl overflow-hidden shadow-2xl flex flex-col group relative">
-                        <div className="relative aspect-square flex items-center justify-center p-6">
-                           <div className="absolute top-2 right-2 z-20">
-                              <PlayCircle className="h-6 w-6 text-white/40 hover:text-white transition-colors cursor-pointer" />
-                           </div>
-                           
-                           <AvatarFrame frameId={item.id} size="lg" className="w-24 h-24">
-                              <Avatar className="w-full h-full border-none shadow-none">
-                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} unoptimized />
-                                 <AvatarFallback className="bg-transparent">U</AvatarFallback>
-                              </Avatar>
-                           </AvatarFrame>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-1 pb-3 px-2">
-                           <div className="flex items-center gap-0.5">
-                              {[...Array(item.stars)].map((_, i) => (
-                                <Star key={i} className="h-3 w-3 text-[#facc15] fill-current" />
-                              ))}
-                           </div>
-                           <h3 className="text-[13px] font-black uppercase text-white/90 truncate w-full text-center tracking-tight">
-                              {item.name}
-                           </h3>
-                        </div>
-
-                        <div className="mt-auto">
-                           <button 
-                             onClick={() => isOwned ? handleEquip(item) : handlePurchase(item)}
-                             className={cn(
-                               "w-full h-10 flex items-center justify-center gap-1.5 transition-all active:scale-95",
-                               isActive ? "bg-green-600" : "bg-[#0a1a2a] hover:bg-[#0d2235]"
-                             )}
-                           >
-                              {isActive ? (
-                                <span className="text-[10px] font-black uppercase text-white">Equipped</span>
-                              ) : isOwned ? (
-                                <span className="text-[10px] font-black uppercase text-white">Wear</span>
-                              ) : (
-                                <>
-                                  <GoldCoinIcon className="h-4 w-4" />
-                                  <span className="text-[12px] font-black text-[#facc15] italic">{item.price.toLocaleString()}</span>
-                                  <span className="text-[10px] font-bold text-white/40">/7 Days</span>
-                                </>
-                              )}
-                           </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
+        <Tabs defaultValue="All" className="w-full space-y-8">
+          <TabsList className="bg-secondary/50 p-1.5 h-14 rounded-full border border-white/50 w-full md:w-fit overflow-x-auto no-scrollbar">
+            {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
+              <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-black uppercase tracking-widest text-xs data-[state=active]:bg-primary data-[state=active]:text-white">{cat}</TabsTrigger>
             ))}
-          </ScrollArea>
+          </TabsList>
+
+          {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(category => (
+            <TabsContent key={category} value={category} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {allItems.filter(i => category === 'All' || i.type === category).map(item => {
+                  const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
+                  const isActive = userProfile?.inventory?.activeFrame === item.id || userProfile?.inventory?.activeTheme === item.id || userProfile?.inventory?.activeBubble === item.id || userProfile?.inventory?.activeWave === item.id;
+                  
+                  return (
+                    <Card key={item.id} className="relative overflow-hidden group border-none shadow-lg rounded-[2.5rem] bg-white">
+                      <div className="aspect-square bg-gradient-to-b from-secondary/30 to-transparent flex flex-col items-center justify-center p-10 relative">
+                        {item.type === 'Frame' ? (
+                          <AvatarFrame frameId={item.id} className="w-32 h-32">
+                             <Avatar className="w-full h-full border-4 border-white shadow-xl"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          </AvatarFrame>
+                        ) : item.type === 'Theme' ? (
+                          <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+                             <Image src={item.url} alt={item.name} fill className="object-cover" unoptimized />
+                          </div>
+                        ) : <item.icon className={cn("h-24 w-24 opacity-20", item.color)} />}
+                        <Badge className="absolute top-6 right-6 bg-white/80 backdrop-blur-md text-foreground border-none font-black uppercase text-[10px] tracking-widest px-3 shadow-sm">{item.type}</Badge>
+                      </div>
+                      <CardHeader className="text-center pb-2">
+                        <CardTitle className="font-headline uppercase italic text-xl tracking-tighter text-slate-900">{item.name}</CardTitle>
+                        <CardDescription className="text-xs font-body italic">{item.description}</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex flex-col gap-4 p-8 pt-4">
+                        <div className="flex items-center gap-1 font-black text-2xl text-primary italic">
+                           <GoldCoinIcon className="h-6 w-6" />
+                           {item.price.toLocaleString()}
+                           {item.durationDays && <span className="text-[10px] font-bold text-slate-400 ml-1">/ {item.durationDays}d</span>}
+                        </div>
+                        {isOwned ? (
+                          <Button onClick={() => handleEquip(item)} className={cn("w-full h-12 rounded-2xl font-black uppercase italic shadow-lg", isActive ? "bg-green-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
+                            {isActive ? <><Check className="mr-2 h-4 w-4" /> Active</> : 'Equip'}
+                          </Button>
+                        ) : (
+                          <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-black uppercase italic shadow-xl bg-primary text-white hover:bg-primary/90 transition-all active:scale-95">
+                             Purchase Now
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          ))}
         </Tabs>
-
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1622]/90 backdrop-blur-md border-t border-white/5 flex items-center justify-between z-50">
-           <div className="flex items-center gap-2">
-              <GoldCoinIcon className="h-5 w-5" />
-              <span className="text-sm font-black text-[#facc15]">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-           </div>
-           <button onClick={() => router.push('/wallet')} className="flex items-center gap-1 text-[10px] font-black uppercase text-white/40 hover:text-white transition-colors">
-              Recharge <ChevronRight className="h-3 w-3" />
-           </button>
-        </div>
-
       </div>
-      <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </AppLayout>
   );
 }

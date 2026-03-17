@@ -17,9 +17,12 @@ interface ChatRoomCardProps {
  * High-Fidelity Room Card.
  * Re-engineered for Taller Card Identity (4:5 Ratio).
  * Features Identity Color Sync for the room name.
+ * Hardened with optional chaining to prevent crashes during initial data sync.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
-  const { userProfile: owner } = useUserProfile(room.ownerId);
+  const { userProfile: owner } = useUserProfile(room?.ownerId);
+
+  if (!room) return null;
 
   const roomTitle = room.name || room.title || 'Frequency';
   const roomTopic = room.description || room.topic || 'Synchronizing...';

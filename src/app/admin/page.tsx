@@ -686,48 +686,17 @@ export default function AdminPage() {
   };
 
   const handleThemeUpload = async (file: File) => {
-    if (!storage || !firestore) return;
-    
-    if (!newThemeName.trim()) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Missing Identifier', 
-        description: 'Please enter a Theme Name before uploading visual assets.' 
-      });
-      return;
-    }
-
+    if (!storage || !firestore || !newThemeName.trim()) return;
     setIsUploadingTheme(true);
     try {
       const timestamp = Date.now();
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, { 
-        id: themeRef.id, 
-        name: newThemeName.trim(), 
-        url: url, 
-        category: newThemeCategory, 
-        price: parseInt(newThemePrice) || 0,
-        durationDays: parseInt(newThemeDuration) || 7,
-        createdAt: serverTimestamp(), 
-        accentColor: '#FFCC00', 
-        seatColor: 'rgba(255, 255, 255, 0.1)' 
-      });
-      
-      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
+      await setDoc(themeRef, { id: themeRef.id, name: newThemeName, url: url, category: newThemeCategory, price: parseInt(newThemePrice) || 0, durationDays: parseInt(newThemeDuration) || 7, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' });
+      toast({ title: 'Theme Synchronized' });
       setNewThemeName('');
-      setNewThemePrice('0');
-      setNewThemeDuration('7');
-    } catch (error: any) {
-      console.error('[Theme Hub] Upload Error:', error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Upload Failed', 
-        description: error.message || 'Check connection and authority protocol.' 
-      });
     } finally {
       setIsUploadingTheme(false);
     }
