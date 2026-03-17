@@ -748,9 +748,6 @@ export default function AdminPage() {
               <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
               </TabsTrigger>
-              <TabsTrigger value="game-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Monitor className="h-4 w-4 text-indigo-500" /> Game Themes
-              </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
               </TabsTrigger>
@@ -937,45 +934,6 @@ export default function AdminPage() {
                   </CardContent>
                </Card>
                <input type="file" ref={rankingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadingRankingKey && handleRankingBGUpload(uploadingRankingKey, e.target.files[0])} />
-            </TabsContent>
-
-            <TabsContent value="game-themes" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600">
-                        <Monitor className="h-6 w-6" /> Sovereign Game Themes
-                     </CardTitle>
-                     <CardDescription>Dispatch high-resolution environmental assets to the 3D Tribe Arena.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                     {gamesList.map((game) => (
-                       <div key={game.slug} className="flex flex-col gap-3 group">
-                          <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl border-2 border-white/10">
-                             {game.backgroundUrl ? (
-                               <Image src={game.backgroundUrl} fill className="object-cover" alt="BG" unoptimized />
-                             ) : (
-                               <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
-                                  <Monitor className="h-10 w-10" />
-                                  <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
-                               </div>
-                             )}
-                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button 
-                                  onClick={() => handleGameBGUploadClick(game)}
-                                  className="h-14 w-14 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl active:scale-90 transition-transform"
-                                >
-                                   {isUploadingGameBG && selectedGameForSync?.slug === game.slug ? <Loader className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6" />}
-                                </button>
-                             </div>
-                          </div>
-                          <div className="flex items-center justify-between px-2">
-                             <p className="font-black uppercase italic text-sm text-slate-900">{game.title}</p>
-                             {game.backgroundUrl && <Badge className="bg-green-100 text-green-600 border-none font-black text-[8px] uppercase">Custom Synced</Badge>}
-                          </div>
-                       </div>
-                     ))}
-                  </CardContent>
-               </Card>
             </TabsContent>
 
             <TabsContent value="authority" className="m-0 space-y-6">
