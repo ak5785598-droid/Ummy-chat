@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Info } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Info, Pin, PinOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -229,6 +229,12 @@ export default function AdminPage() {
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
 
+  // Room Pin State
+  const [roomPinSearchId, setRoomPinSearchId] = useState('');
+  const [targetRoomForPin, setTargetRoomForPin] = useState<any>(null);
+  const [isSearchingRoomPin, setIsSearchingRoomPin] = useState(false);
+  const [isPinningRoom, setIsPinningRoom] = useState(false);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, 'games'));
@@ -365,6 +371,36 @@ export default function AdminPage() {
     }
   };
 
+  const handleRoomPinSearch = async () => {
+    if (!firestore || !roomPinSearchId) return;
+    setIsSearchingRoomPin(true);
+    try {
+      const q = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', roomPinSearchId.trim()), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setTargetRoomForPin({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      } else {
+        toast({ variant: 'destructive', title: 'Frequency Not Found' });
+      }
+    } finally {
+      setIsSearchingRoomPin(false);
+    }
+  };
+
+  const handleToggleRoomPin = async () => {
+    if (!firestore || !targetRoomForPin || !isCreator) return;
+    setIsPinningRoom(true);
+    try {
+      const roomRef = doc(firestore, 'chatRooms', targetRoomForPin.id);
+      const newPinStatus = !targetRoomForPin.isPinned;
+      await updateDoc(roomRef, { isPinned: newPinStatus, pinnedAt: newPinStatus ? serverTimestamp() : null });
+      setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus }));
+      toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' });
+    } finally {
+      setIsPinningRoom(false);
+    }
+  };
+
   const handleResetWallet = async () => {
     if (!firestore || !targetUserForRecord || !isCreator) return;
     if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet?")) return;
@@ -459,8 +495,8 @@ export default function AdminPage() {
         return;
       }
 
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+      const uRef = doc(firestore, 'users', user.uid);
+      const pRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(uRef, updateData);
       updateDocumentNonBlocking(pRef, updateData);
@@ -730,6 +766,9 @@ export default function AdminPage() {
               <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-pink-500" /> App Branding
               </TabsTrigger>
+              <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Pin className="h-4 w-4 text-emerald-500" /> Pin Control
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -819,6 +858,68 @@ export default function AdminPage() {
                         </div>
                      </div>
                   </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="pin-control" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600">
+                        <Pin className="h-6 w-6" /> Sovereign Frequency Pin
+                     </CardTitle>
+                     <CardDescription>Target a chat room to pin it to the absolute top of the global grid permanently.</CardDescription>
+                  </CardHeader>
+                  
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input 
+                          placeholder="Enter Room Number (e.g. 1000021)" 
+                          value={roomPinSearchId} 
+                          onChange={(e) => setRoomPinSearchId(e.target.value)} 
+                          onKeyDown={(e) => e.key === 'Enter' && handleRoomPinSearch()} 
+                          className="h-14 rounded-2xl border-2" 
+                        />
+                        <Button onClick={handleRoomPinSearch} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRoomPin}>Find Frequency</Button>
+                     </div>
+                  </div>
+
+                  {targetRoomForPin && (
+                    <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
+                       <div className="flex items-center justify-between border-b pb-6">
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl rounded-xl">
+                                <AvatarImage src={targetRoomForPin.coverUrl || undefined}/>
+                                <AvatarFallback>RM</AvatarFallback>
+                             </Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetRoomForPin.name || targetRoomForPin.title}</p>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Room ID: {targetRoomForPin.roomNumber}</span>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[10px] font-black uppercase text-gray-400 mb-1">Pin Frequency</p>
+                             {targetRoomForPin.isPinned ? (
+                               <Badge className="bg-emerald-500 text-white font-black uppercase text-[10px] py-1 px-3">PINNED ACTIVE</Badge>
+                             ) : (
+                               <Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">NOT PINNED</Badge>
+                             )}
+                          </div>
+                       </div>
+
+                       <Button 
+                         onClick={handleToggleRoomPin} 
+                         disabled={isPinningRoom} 
+                         className={cn(
+                           "w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all",
+                           targetRoomForPin.isPinned 
+                             ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100" 
+                             : "bg-emerald-600 text-white hover:bg-emerald-700"
+                         )}
+                       >
+                          {isPinningRoom ? <Loader className="animate-spin mr-2 h-6 w-6" /> : targetRoomForPin.isPinned ? <><PinOff className="mr-2 h-6 w-6" /> Unpin Frequency</> : <><Pin className="mr-2 h-6 w-6" /> Pin to Top</>}
+                       </Button>
+                    </div>
+                  )}
                </Card>
             </TabsContent>
 
@@ -1468,7 +1569,7 @@ export default function AdminPage() {
                              <button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500 border-4 transition-all flex items-center justify-center", selectedColor === 'blue' ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === 'blue' && <Check className="h-4 w-4 text-white" />}</button>
                              <button onClick={() => setSelectedColor(null)} className={cn("h-10 w-10 rounded-full bg-slate-200 border-4 transition-all flex items-center justify-center", selectedColor === null ? "border-slate-900 scale-110" : "border-transparent opacity-60")}>{selectedColor === null && <X className="h-4 w-4 text-slate-600" />}</button>
                           </div>
-                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={handleRemoveId} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
+                          <div className="flex gap-2"><Input placeholder="Enter New Numeric ID" value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl border-2 text-xl font-black text-center flex-1" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10 bg-primary text-white font-black uppercase italic rounded-2xl shadow-xl">{isSavingId ? <Loader className="animate-spin" /> : 'Synchronize'}</Button><Button onClick={() => handleRemoveId()} disabled={isSavingId || !targetUserForId.specialId} variant="outline" className="h-14 px-6 border-2 border-red-100 text-red-500 font-black uppercase rounded-2xl"><Trash2 className="h-5 w-5" /></Button></div>
                        </div>
                     </div>
                   )}
