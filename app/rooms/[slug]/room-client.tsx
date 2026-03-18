@@ -139,7 +139,8 @@ const Seat = ({
   isLocked, 
   theme, 
   onClick,
-  isOwner
+  roomOwnerId,
+  roomModeratorIds
 }: { 
   index: number, 
   label: string, 
@@ -147,8 +148,12 @@ const Seat = ({
   isLocked?: boolean, 
   theme: any,
   onClick: (index: number, occupant?: RoomParticipant) => void,
-  isOwner: boolean
+  roomOwnerId: string,
+  roomModeratorIds: string[]
 }) => {
+  const isOccupantOwner = occupant?.uid === roomOwnerId;
+  const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
+
   return (
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
       <div className="relative">
@@ -189,8 +194,13 @@ const Seat = ({
       </div>
       
       <div className="flex items-center justify-center gap-0.5 w-full mt-0.5">
-        {isOwner && index === 1 && (
+        {occupant && isOccupantOwner && (
           <div className="bg-yellow-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
+             <Home className="h-1 w-1 text-white fill-current" />
+          </div>
+        )}
+        {occupant && !isOccupantOwner && isOccupantAdmin && (
+          <div className="bg-green-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
              <Home className="h-1 w-1 text-white fill-current" />
           </div>
         )}
@@ -603,12 +613,12 @@ export function RoomClient({ room }: { room: Room }) {
         <div className={cn("flex-1 flex flex-col items-center justify-start gap-3 pt-2 overflow-y-auto no-scrollbar w-full", chatConfig.padding)}>
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
-                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} isOwner={isOwner} />
+                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               </div>
            </div>
            <div className="w-full grid grid-cols-4 gap-1.5 px-4">
               {extraSeats.map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} isOwner={false} />
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
            </div>
            <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
@@ -682,7 +692,6 @@ export function RoomClient({ room }: { room: Room }) {
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
            >
-              {/* Glossy glare engine */}
               <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
               
