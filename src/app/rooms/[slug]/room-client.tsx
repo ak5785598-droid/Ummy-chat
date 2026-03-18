@@ -674,9 +674,14 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-90 transition-transform border-2 border-white/20"
+             className="h-12 w-12 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_20px_rgba(0,176,255,0.5)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group"
            >
-              <GiftIcon className="h-6 w-6 text-white fill-white" />
+              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
+              <img 
+                src="https://img.icons8.com/color/96/gift--v1.png" 
+                className="h-10 w-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float" 
+                alt="Gift"
+              />
            </button>
         </div>
 

@@ -674,12 +674,12 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-12 w-12 rounded-full bg-gradient-to-br from-[#FF4081] via-[#E91E63] to-[#C2185B] flex items-center justify-center shadow-[0_8px_20px_rgba(233,30,99,0.4)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group"
+             className="h-12 w-12 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_20px_rgba(0,176,255,0.5)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group"
            >
-              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
+              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
               <img 
                 src="https://img.icons8.com/color/96/gift--v1.png" 
-                className="h-10 w-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] filter brightness-110 saturate-125 animate-reaction-float" 
+                className="h-10 w-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float" 
                 alt="Gift"
               />
            </button>
