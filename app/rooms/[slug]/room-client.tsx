@@ -211,7 +211,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   
-  // LIVE CHAT SYNC: Capture the exact moment this component mounted to filter messages.
   const [sessionJoinTime] = useState(() => new Date());
 
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -225,7 +224,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Music Streaming State
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -305,7 +303,6 @@ export function RoomClient({ room }: { room: Room }) {
   
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
-  // LIVE CHAT QUERY: Fetch only messages sent after joining
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(
@@ -334,6 +331,38 @@ export function RoomClient({ room }: { room: Room }) {
       }
     }
   }, [firestoreMessages]);
+
+  /**
+   * DYNAMIC THEME SYNC ENGINE
+   * Resolves roomThemeId from database if not found in static lib.
+   */
+  const themesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'));
+  }, [firestore]);
+  const { data: dbThemes } = useCollection<any>(themesQuery);
+
+  const currentTheme = useMemo(() => {
+    if (room.backgroundUrl) {
+      return { 
+        id: 'custom', 
+        url: room.backgroundUrl, 
+        accentColor: '#FFCC00', 
+        seatColor: 'rgba(255, 255, 255, 0.1)', 
+        name: 'Custom' 
+      };
+    }
+
+    const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
+    if (staticTheme) return staticTheme;
+
+    const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
+    if (dbTheme) return dbTheme;
+
+    return ROOM_THEMES[0];
+  }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
+
+  const bgUrl = currentTheme.url;
 
   const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
     if (e) e.preventDefault();
@@ -405,12 +434,6 @@ export function RoomClient({ room }: { room: Room }) {
     setActiveRoom(null); 
     router.push('/rooms'); 
   };
-
-  const currentTheme = useMemo(() => {
-    return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
-  }, [room.roomThemeId]);
-
-  const bgUrl = currentTheme.url;
 
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
@@ -598,16 +621,18 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
                    <div 
-                    key={msg.id} 
+                    key={msg.id || Math.random().toString()} 
                     onClick={() => {
-                      setSelectedParticipantUid(msg.senderId);
-                      setIsUserProfileCardOpen(true);
+                      if (msg.senderId) {
+                        setSelectedParticipantUid(msg.senderId);
+                        setIsUserProfileCardOpen(true);
+                      }
                     }}
                     className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
                    >
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
-                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName}</span>
+                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
                         {msg.imageUrl && (
                           <div 
                             onClick={(e) => {

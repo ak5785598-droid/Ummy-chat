@@ -211,7 +211,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   
-  // LIVE CHAT SYNC: Capture the exact moment this component mounted to filter messages.
   const [sessionJoinTime] = useState(() => new Date());
 
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -225,7 +224,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Music Streaming State
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -305,7 +303,6 @@ export function RoomClient({ room }: { room: Room }) {
   
   const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
-  // LIVE CHAT QUERY: Fetch only messages sent after joining
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(
@@ -334,6 +331,42 @@ export function RoomClient({ room }: { room: Room }) {
       }
     }
   }, [firestoreMessages]);
+
+  /**
+   * DYNAMIC THEME SYNC ENGINE
+   * Resolves roomThemeId from database if not found in static lib.
+   */
+  const themesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'));
+  }, [firestore]);
+  const { data: dbThemes } = useCollection<any>(themesQuery);
+
+  const currentTheme = useMemo(() => {
+    // Priority 1: User-uploaded custom backgroundUrl
+    if (room.backgroundUrl) {
+      return { 
+        id: 'custom', 
+        url: room.backgroundUrl, 
+        accentColor: '#FFCC00', 
+        seatColor: 'rgba(255, 255, 255, 0.1)', 
+        name: 'Custom' 
+      };
+    }
+
+    // Priority 2: Built-in Static Theme
+    const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
+    if (staticTheme) return staticTheme;
+
+    // Priority 3: Dynamic Store Theme from Database
+    const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
+    if (dbTheme) return dbTheme;
+
+    // Fallback: Default Theme
+    return ROOM_THEMES[0];
+  }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
+
+  const bgUrl = currentTheme.url;
 
   const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
     if (e) e.preventDefault();
@@ -405,12 +438,6 @@ export function RoomClient({ room }: { room: Room }) {
     setActiveRoom(null); 
     router.push('/rooms'); 
   };
-
-  const currentTheme = useMemo(() => {
-    return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
-  }, [room.roomThemeId]);
-
-  const bgUrl = currentTheme.url;
 
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
