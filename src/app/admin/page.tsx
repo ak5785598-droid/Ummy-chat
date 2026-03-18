@@ -686,17 +686,48 @@ export default function AdminPage() {
   };
 
   const handleThemeUpload = async (file: File) => {
-    if (!storage || !firestore || !newThemeName.trim()) return;
+    if (!storage || !firestore) return;
+    
+    if (!newThemeName.trim()) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Missing Identifier', 
+        description: 'Please enter a Theme Name before uploading visual assets.' 
+      });
+      return;
+    }
+
     setIsUploadingTheme(true);
     try {
       const timestamp = Date.now();
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
+      
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, { id: themeRef.id, name: newThemeName, url: url, category: newThemeCategory, price: parseInt(newThemePrice) || 0, durationDays: parseInt(newThemeDuration) || 7, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' });
-      toast({ title: 'Theme Synchronized' });
+      await setDoc(themeRef, { 
+        id: themeRef.id, 
+        name: newThemeName.trim(), 
+        url: url, 
+        category: newThemeCategory, 
+        price: parseInt(newThemePrice) || 0,
+        durationDays: parseInt(newThemeDuration) || 7,
+        createdAt: serverTimestamp(), 
+        accentColor: '#FFCC00', 
+        seatColor: 'rgba(255, 255, 255, 0.1)' 
+      });
+      
+      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
       setNewThemeName('');
+      setNewThemePrice('0');
+      setNewThemeDuration('7');
+    } catch (error: any) {
+      console.error('[Theme Hub] Upload Error:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Upload Failed', 
+        description: error.message || 'Check connection and authority protocol.' 
+      });
     } finally {
       setIsUploadingTheme(false);
     }
@@ -1160,7 +1191,7 @@ export default function AdminPage() {
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
                              <div className="text-center space-y-2">
                                 <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
-                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
+                                <p className="textxs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
                              </div>
                              <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
                                 {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
@@ -1238,7 +1269,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p>
-                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForBan.accountNumber}</span>}
+                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForBan.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">

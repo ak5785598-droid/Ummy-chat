@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -1139,7 +1139,7 @@ export default function AdminPage() {
                                    <GoldCoinIcon className="h-4 w-4" />
                                    {member.wallet?.coins.toLocaleString() || 0}
                                 </div>
-                               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {member.isOnline ? 'ONLINE' : 'STARDUST'}</p>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {member.isOnline ? 'ONLINE' : 'STARDUST'}</p>
                              </div>
                           </div>
                         ))}
@@ -1269,7 +1269,7 @@ export default function AdminPage() {
                              <Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar>
                              <div>
                                 <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p>
-                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">Account: {targetUserForBan.accountNumber}</span>}
+                                {targetUserForBan.specialId ? <SpecialIdBadge id={targetUserForBan.specialId} color={targetUserForBan.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForBan.accountNumber}</span>}
                              </div>
                           </div>
                           <div className="text-right">
