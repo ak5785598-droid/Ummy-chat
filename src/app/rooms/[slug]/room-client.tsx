@@ -168,7 +168,7 @@ const Seat = ({
                 "shadow-[0_4px_0_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]",
                 isLocked ? "border-red-500/40" : "border-white/10"
               )}
-              style={{ backgroundColor: theme.seatColor || 'rgba(255,255,255,0.1)' }}
+              style={{ backgroundColor: theme.seatColor || 'rgba(255, 255, 255, 0.1)' }}
             >
               {occupant ? (
                 <Avatar className="h-full w-full p-0.5">
@@ -623,12 +623,6 @@ export function RoomClient({ room }: { room: Room }) {
               <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
-              <div className="flex items-center gap-1.5 bg-white/5 backdrop-blur-sm border border-white/10 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700 delay-200">
-                 <ShieldCheck className="h-2 w-2 text-primary" />
-                 <p className="text-[10px] font-black text-white/80 uppercase italic tracking-tight leading-relaxed">
-                    Seat Mode: {room.maxActiveMics || 9} Active Frequencies Synchronized
-                 </p>
-              </div>
            </div>
         </div>
 
