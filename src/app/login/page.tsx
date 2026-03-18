@@ -92,7 +92,21 @@ export default function LoginPage() {
           email: email || '',
           bio: 'Find your vibe, connect with your tribe.',
           inventory: { ownedItems: [], activeFrame: 'None' },
-          tags: []
+          tags: [],
+          stats: {
+            followers: 0,
+            fans: 0,
+            totalGifts: 0,
+            dailyFans: 0,
+            dailyGiftsReceived: 0,
+            weeklyGiftsReceived: 0,
+            monthlyGiftsReceived: 0,
+            dailyGameWins: 0,
+            weeklyGameWins: 0,
+            monthlyGameWins: 0,
+            friends: 0,
+            following: 0
+          }
         });
         
         console.log(`[Identity Sync] Established new frequency for: ${uid}`);
@@ -202,7 +216,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="relative z-20 w-full max-w-sm flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
+      <main className="relative z-20 w-full max-sm flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
         {!showPhoneInput ? (
           <>
             <Button
@@ -277,7 +291,7 @@ export default function LoginPage() {
       </main>
 
       <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
-        <div className="text-[10px] text-white/80 leading-relaxed max-w-[240px] font-medium drop-shadow-md">
+        <div className="text-[10px] text-white/80 leading-relaxed max-w-[240px] font-medium drop-shadow-lg">
           By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
         </div>
       </footer>

@@ -16,13 +16,15 @@ service cloud.firestore {
 
     function isNotBanned() {
       if (isCreator()) return true;
+      if (!isSignedIn()) return false;
+      
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       
       // If user doc doesn't exist, they can't be banned
       if (!exists(userPath)) return true;
       
       let userData = get(userPath).data;
-      let banStatus = userData.get('banStatus', {});
+      let banStatus = userData.get('banStatus', {'isBanned': false});
       let isBanned = banStatus.get('isBanned', false);
       let bannedUntil = banStatus.get('bannedUntil', null);
       
@@ -36,13 +38,14 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      if (!isSignedIn()) return false;
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       let adminTags = [
         'Admin', 'Official', 'Super Admin', 'Admin Management', 
         'App Manager', 'Seller', 'Seller center', 'Coin Seller', 
         'Customer Service', 'Assistant', 'Official center'
       ];
-      return isSignedIn() && isNotBanned() && (
+      return isNotBanned() && (
         isCreator() || 
         (exists(userPath) && get(userPath).data.get('tags', []).hasAny(adminTags))
       );
@@ -58,6 +61,7 @@ service cloud.firestore {
 
       match /profile/{profileId} {
         allow get: if true;
+        allow list: if isSignedIn();
         allow write: if (isOwner(userId) && isNotBanned()) || isAdmin() || isCreator();
       }
       
@@ -66,8 +70,22 @@ service cloud.firestore {
       }
 
       match /profileVisitors/{visitorId} {
-        allow read: if isOwner(userId);
+        // TRIBAL SYNC: Allow all signed in users to read visitor lists for public counts
+        allow read: if isSignedIn();
         allow write: if isSignedIn() && isNotBanned();
+      }
+
+      match /topContributors/{contribId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
+      }
+      
+      match /completedTasks/{taskId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /collectedTasks/{taskId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
@@ -86,6 +104,25 @@ service cloud.firestore {
       match /participants/{participantId} {
         allow get, list: if true;
         allow write: if isSignedIn() && isNotBanned();
+        
+        match /signaling/{signalId} {
+          allow read, write: if isSignedIn() && isNotBanned();
+        }
+      }
+      
+      match /messages/{messageId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
+      }
+
+      match /followers/{followerId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
+      }
+      
+      match /bans/{banId} {
+        allow read: if true;
+        allow write: if isAdmin() || isCreator();
       }
     }
 
@@ -96,6 +133,31 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, write: if isSignedIn() && isNotBanned();
       }
+    }
+
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /appConfig/{configId} {
+      allow read: if true;
+      allow write: if isCreator();
+    }
+
+    match /roomThemes/{themeId} {
+      allow read: if true;
+      allow write: if isCreator();
+    }
+    
+    match /globalGameWins/{winId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    match /gameOracle/{gameId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
   }
 }
