@@ -15,7 +15,7 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Re-engineered for Taller Card Identity (4:5 Ratio).
+ * Re-engineered for Square Identity (1:1 Ratio).
  * Features Identity Color Sync for the room name.
  * Hardened with real-time participant counting logic.
  */
@@ -52,12 +52,12 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   if (variant === 'modern') {
     return (
       <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-headline active:scale-95 transition-transform">
-        <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col relative">
+        <div className="bg-white rounded-[2rem] overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col relative">
           {/* Glass Glossy Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30" />
           
-          {/* Taller Cover Image Dimension (4:5) */}
-          <div className="relative aspect-[4/5] w-full bg-slate-50">
+          {/* Square Cover Image Dimension (1:1) */}
+          <div className="relative aspect-square w-full bg-slate-50">
             {room.coverUrl ? (
               <Image
                 key={room.coverUrl}
@@ -106,12 +106,12 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           {/* Connected Content Section */}
           <div className="p-3 bg-white space-y-0.5 relative z-20">
             <h3 className={cn(
-              "font-black text-sm truncate uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r",
+              "font-black text-xs truncate uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r",
               getSyncGradient()
             )}>
               {roomTitle}
             </h3>
-            <p className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-widest leading-none">{roomTopic}</p>
+            <p className="text-[8px] font-bold text-slate-400 truncate uppercase tracking-widest leading-none">{roomTopic}</p>
           </div>
         </div>
       </Link>
@@ -121,7 +121,7 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   return (
     <Link href={`/rooms/${room.id}`} className="group block active:scale-95 transition-transform">
       <div className="overflow-hidden bg-white border-none rounded-2xl shadow-md flex flex-col">
-        <div className="relative aspect-[4/5] w-full bg-slate-100">
+        <div className="relative aspect-square w-full bg-slate-100">
           {room.coverUrl && (
             <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill unoptimized className="object-cover" />
           )}

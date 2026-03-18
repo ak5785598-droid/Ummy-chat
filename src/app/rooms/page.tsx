@@ -34,6 +34,7 @@ const ICON_MAP: Record<string, any> = {
 /**
  * High-Fidelity Rooms Hub.
  * Re-engineered to support Sovereign Decommissioning Protocol.
+ * Updated with Square Design and Tightened Spacing.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -89,7 +90,6 @@ export default function RoomsPage() {
 
   /**
    * SOVEREIGN LISTING ENGINE: 
-   * Rooms only visible if participantCount > 0 OR pinned.
    * EXCLUSION PROTOCOL: Explicitly hiding decommissioned "Synchronizing" rooms.
    */
   const displayRooms = useMemo(() => {
@@ -118,7 +118,7 @@ export default function RoomsPage() {
 
   const RoomSkeleton = () => (
     <div className="space-y-2">
-      <Skeleton className="aspect-[4/5] w-full rounded-[2rem]" />
+      <Skeleton className="aspect-square w-full rounded-[2rem]" />
       <div className="space-y-1.5 px-1">
         <Skeleton className="h-3.5 w-3/4 rounded-md" />
         <Skeleton className="h-2.5 w-1/2 rounded-md" />
@@ -164,7 +164,7 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
-            <div className="px-5 mb-4 mt-2">
+            <div className="px-5 mb-1.5 mt-1">
               <Carousel 
                 className="w-full" 
                 opts={{ loop: true }}
@@ -204,7 +204,7 @@ export default function RoomsPage() {
               </Carousel>
             </div>
 
-            <section className="px-5 grid grid-cols-3 gap-2 mb-3">
+            <section className="px-5 grid grid-cols-3 gap-2 mb-1.5">
               <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                  <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">{t.profile.level}</span>
@@ -228,7 +228,7 @@ export default function RoomsPage() {
               </button>
             </section>
 
-            <div className="px-5 mb-3">
+            <div className="px-5 mb-1.5">
               <div className="bg-gradient-to-r from-[#9C27B0] via-[#E91E63] to-[#9C27B0] h-8 rounded-full shadow-lg border-2 border-white/40 flex items-center justify-between px-4 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
                 <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                 <div className="flex items-center gap-1.5 relative z-10">
@@ -246,7 +246,7 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <div className="px-5 mb-2">
+            <div className="px-5 mb-1.5">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 {CATEGORIES.map((cat) => (
                   <button
