@@ -488,24 +488,6 @@ export function RoomClient({ room }: { room: Room }) {
     setShowInput(true);
   };
 
-  const handleOpenGiftPickerFromMenu = (recipient: any) => {
-    setGiftRecipient(recipient);
-    setIsGiftPickerOpen(true);
-    setIsSeatMenuOpen(false);
-  };
-
-  const handleOpenChatFromProfile = (recipient: any) => {
-    setInitialChatRecipient(recipient);
-    setIsUserProfileCardOpen(false);
-    setIsMessagesOpen(true);
-  };
-
-  const handleMention = (username: string) => {
-    setIsUserProfileCardOpen(false);
-    setMessageText(`@${username} `);
-    setShowInput(true);
-  };
-
   const handlePlayLocalMusic = (file: File) => {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
@@ -526,6 +508,17 @@ export function RoomClient({ room }: { room: Room }) {
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
+  }, [room.maxActiveMics]);
+
+  /**
+   * DYNAMIC MESSAGE DIMENSION SYNC
+   * Adjusts chat portal height based on active mic mode.
+   */
+  const chatConfig = useMemo(() => {
+    const mics = room.maxActiveMics || 9;
+    if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
+    if (mics === 13) return { height: 'h-48', padding: 'pb-48' };
+    return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
   }, [room.maxActiveMics]);
 
   return (
@@ -590,7 +583,7 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="flex-1 flex flex-col items-center justify-start gap-3 pt-2 pb-64 overflow-y-auto no-scrollbar w-full">
+        <div className={cn("flex-1 flex flex-col items-center justify-start gap-3 pt-2 overflow-y-auto no-scrollbar w-full", chatConfig.padding)}>
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} isOwner={isOwner} />
@@ -616,7 +609,7 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-64 z-20 pointer-events-none p-3 pb-0">
+        <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
