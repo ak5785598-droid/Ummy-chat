@@ -82,13 +82,10 @@ const DEFAULT_SLIDES = [
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
-  { id: 'fishing-master', title: 'Fishing Master', slug: 'fishing-master', imageHint: 'underwater fishing arcade' },
-  { id: 'chirag-slot', title: 'Chirag Slot', slug: 'chirag-slot', imageHint: 'aladdin magic lamp' },
   { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
-  { id: 'lion-fight', title: 'Lion Fight', slug: 'lion-fight', imageHint: '3d lion fighting' },
 ];
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {

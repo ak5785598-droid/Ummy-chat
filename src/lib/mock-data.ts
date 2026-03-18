@@ -10,14 +10,6 @@ const rooms: Room[] = [];
 
 const games: Game[] = [
   { 
-    id: 'g7', 
-    title: 'Lion Fight', 
-    slug: 'lion-fight', 
-    coverUrl: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000', 
-    cost: 0, 
-    imageHint: '3d lion fighting' 
-  },
-  { 
     id: 'g1', 
     title: 'Ludo Masters', 
     slug: 'ludo', 
@@ -48,14 +40,6 @@ const games: Game[] = [
     coverUrl: '', 
     cost: 0, 
     imageHint: 'lucky 777 slot' 
-  },
-  { 
-    id: 'g5', 
-    title: 'Pyramid Battle', 
-    slug: 'pyramid-battle', 
-    coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', 
-    cost: 0, 
-    imageHint: 'egyptian pyramid' 
   },
   { 
     id: 'g6', 
