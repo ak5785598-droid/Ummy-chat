@@ -17,11 +17,17 @@ service cloud.firestore {
     function isNotBanned() {
       if (isCreator()) return true;
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return !exists(userPath) || (
-        get(userPath).data.get(['banStatus', 'isBanned'], false) == false ||
-        (get(userPath).data.get(['banStatus', 'bannedUntil'], null) != null && 
-         get(userPath).data.get(['banStatus', 'bannedUntil'], null) < request.time)
-      );
+      
+      // If user doc doesn't exist, they can't be banned
+      if (!exists(userPath)) return true;
+      
+      let userData = get(userPath).data;
+      let banStatus = userData.get('banStatus', {});
+      let isBanned = banStatus.get('isBanned', false);
+      let bannedUntil = banStatus.get('bannedUntil', null);
+      
+      // If not banned, or ban has expired
+      return isBanned == false || (bannedUntil != null && bannedUntil < request.time);
     }
 
     // Supreme Creator Protocol - Universal Sovereignty

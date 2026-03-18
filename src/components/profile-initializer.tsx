@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, writeBatch, setDoc } from 'firebase/firestore';
+
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Production Profile Initializer.
  * Re-engineered for the Dual-ID Protocol and Automated Periodic Resets.
- * Hardened for mobile compatibility by using UTC-offset based IST calculations.
  * SECURITY SYNC: Handles banStatus gracefully to prevent security rule violations.
  */
 export function ProfileInitializer() {
@@ -16,7 +17,7 @@ export function ProfileInitializer() {
   const hasInitialized = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user || !firestore || hasInitialized.current === user.uid) return;
+    if (!user || !firestore || hasInitialized.current === user.uid || user.uid === CREATOR_ID) return;
 
     const initProfile = async () => {
       const profileId = user.uid;
@@ -37,6 +38,8 @@ export function ProfileInitializer() {
         const nowIST = getISTParts(now);
 
         const userRef = doc(firestore, 'users', profileId);
+        const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
+        
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
@@ -58,9 +61,6 @@ export function ProfileInitializer() {
           const lastIST = getISTParts(lastSeen);
           
           const batch = writeBatch(firestore);
-          const userSummaryRef = doc(firestore, 'users', profileId);
-          const profileRef = doc(firestore, 'users', profileId, 'profile', profileId);
-
           const resetData: any = { updatedAt: serverTimestamp() };
           let needsReset = false;
 
@@ -73,6 +73,7 @@ export function ProfileInitializer() {
             resetData['stats.dailyFans'] = 0;
           }
 
+          // Weekly Reset (Monday)
           if ((nowIST.fullDate !== lastIST.fullDate && nowIST.day === 1) || (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60 * 24) >= 7) {
             needsReset = true;
             resetData['wallet.weeklySpent'] = 0;
@@ -80,6 +81,7 @@ export function ProfileInitializer() {
             resetData['stats.weeklyGameWins'] = 0;
           }
 
+          // Monthly Reset
           if (nowIST.month !== lastIST.month || nowIST.year !== lastIST.year) {
             needsReset = true;
             resetData['wallet.monthlySpent'] = 0;
@@ -88,55 +90,19 @@ export function ProfileInitializer() {
           }
 
           if (needsReset) {
-            batch.update(userSummaryRef, resetData);
+            batch.update(userRef, resetData);
             batch.update(profileRef, resetData);
           }
 
-          // --- ASSET EXPIRATION AUDIT ---
-          const profileSnap = await getDoc(profileRef);
-          if (profileSnap.exists()) {
-            const profData = profileSnap.data();
-            const expiries = profData.inventory?.expiries || {};
-            const ownedItems = profData.inventory?.ownedItems || [];
-            const activeFrame = profData.inventory?.activeFrame;
-            const activeTheme = profData.inventory?.activeTheme;
-
-            let hasExpiredItems = false;
-            const updatedOwnedItems = [...ownedItems];
-            const updatedExpiries = { ...expiries };
-            let updatedActiveFrame = activeFrame;
-            let updatedActiveTheme = activeTheme;
-
-            Object.entries(expiries).forEach(([itemId, expiry]: [string, any]) => {
-              if (expiry && expiry.toDate() < now) {
-                hasExpiredItems = true;
-                const idx = updatedOwnedItems.indexOf(itemId);
-                if (idx > -1) updatedOwnedItems.splice(idx, 1);
-                delete updatedExpiries[itemId];
-                
-                if (updatedActiveFrame === itemId) updatedActiveFrame = 'None';
-                if (updatedActiveTheme === itemId) updatedActiveTheme = 'Default';
-              }
-            });
-
-            if (hasExpiredItems) {
-              const expireUpdate = {
-                'inventory.ownedItems': updatedOwnedItems,
-                'inventory.expiries': updatedExpiries,
-                'inventory.activeFrame': updatedActiveFrame,
-                'inventory.activeTheme': updatedActiveTheme,
-                'updatedAt': serverTimestamp()
-              };
-              batch.update(userSummaryRef, expireUpdate);
-              batch.update(profileRef, expireUpdate);
-            }
-          }
-          
-          batch.update(userSummaryRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
+          // Presence Handshake
+          batch.update(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           batch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           
           await batch.commit();
           hasInitialized.current = profileId;
+        } else {
+          // New User Handshake fallback (in case login handshake failed)
+          console.warn("[Identity Sync] Missing user doc in initializer. Redirecting to Handshake.");
         }
       } catch (e: any) {
         console.error("[Identity Sync] Initialization Error:", e);

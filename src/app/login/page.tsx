@@ -17,12 +17,13 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Identity Portal.
  * Features dynamic background sync managed via the Admin Portal.
+ * Re-engineered with robust Identity Handshake to prevent permission errors.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -51,13 +52,65 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  /**
+   * SOVEREIGN IDENTITY HANDSHAKE
+   * Ensures new users have their Firestore documents created immediately upon authentication.
+   */
+  const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
+    if (!firestore) return;
+    
+    const userRef = doc(firestore, 'users', uid);
+    const profileRef = doc(firestore, 'users', uid, 'profile', uid);
+    
+    try {
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        const accountNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
+        const baseData = {
+          id: uid,
+          username: displayName || `Tribe_${accountNumber.slice(-4)}`,
+          accountNumber,
+          avatarUrl: '',
+          wallet: {
+            coins: 0,
+            diamonds: 0,
+            totalSpent: 0,
+            dailySpent: 0,
+            weeklySpent: 0,
+            monthlySpent: 0
+          },
+          level: { rich: 1, charm: 1 },
+          isOnline: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(userRef, baseData);
+        await setDoc(profileRef, {
+          ...baseData,
+          email: email || '',
+          bio: 'Find your vibe, connect with your tribe.',
+          inventory: { ownedItems: [], activeFrame: 'None' },
+          tags: []
+        });
+        
+        console.log(`[Identity Sync] Established new frequency for: ${uid}`);
+      }
+    } catch (err) {
+      console.error("[Identity Sync] Handshake Error:", err);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+      }
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({
@@ -100,7 +153,10 @@ export default function LoginPage() {
     if (!confirmationResult) return;
     setIsSigningIn(true);
     try {
-      await confirmationResult.confirm(verificationCode);
+      const result = await confirmationResult.confirm(verificationCode);
+      if (result.user) {
+        await syncUserIdentity(result.user.uid, null, null);
+      }
       toast({ title: 'Identity Verified', description: 'Synchronizing with tribal graph...' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Invalid Code', description: 'Incorrect verification code.' });
