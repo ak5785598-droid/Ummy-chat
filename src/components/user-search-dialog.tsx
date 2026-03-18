@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, collectionGroup } from 'firebase/firestore';
 import { Search, Loader, User, X, ArrowRight, Copy } from 'lucide-react';
 import {
   Dialog,
@@ -70,8 +70,7 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
 
 /**
  * Universal Tribe & Room Search Portal.
- * Re-engineered to support both 8-digit Account Numbers and manually assigned Special IDs.
- * Compact Interface Protocol active.
+ * Re-engineered to support discovery via Public Profile sub-collection (Collection Group Query).
  */
 export function UserSearchDialog() {
   const [open, setOpen] = useState(false);
@@ -88,8 +87,9 @@ export function UserSearchDialog() {
     try {
       const inputId = searchId.trim();
       
-      const userQ1 = query(collection(firestore, 'users'), where('specialId', '==', inputId), limit(1));
-      const userQ2 = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+      // SEARCH SYNC: Query the public 'profile' dimension instead of root 'users'
+      const userQ1 = query(collectionGroup(firestore, 'profile'), where('specialId', '==', inputId), limit(1));
+      const userQ2 = query(collectionGroup(firestore, 'profile'), where('accountNumber', '==', inputId), limit(1));
       const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
       
       const [uSnap1, uSnap2, rSnap] = await Promise.all([
@@ -125,9 +125,11 @@ export function UserSearchDialog() {
         description: `No tribe member or room exists with ID ${searchId}.`,
       });
     } catch (e: any) {
+      console.error("[Search Sync] Error:", e);
       toast({
         variant: 'destructive',
         title: 'Search Failed',
+        description: 'Verify your ID and connection frequency.'
       });
     } finally {
       setIsSearching(false);

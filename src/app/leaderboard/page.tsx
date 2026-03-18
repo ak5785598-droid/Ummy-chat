@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, where, collectionGroup } from 'firebase/firestore';
 import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -323,19 +322,19 @@ function LeaderboardContent() {
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (initialType) setRankingMode(initialType); }, [initialType]);
 
-  // Dynamic Query Protocol based on Period
+  // RANKING SYNC: Target the public 'profile' dimension via collectionGroup for cross-tribe rankings
   const periodKey = timePeriod === 'daily' ? 'daily' : timePeriod === 'weekly' ? 'weekly' : 'monthly';
 
   const richQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const field = `wallet.${periodKey}Spent`;
-    return query(collection(firestore, 'users'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
+    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
   }, [firestore, periodKey]);
 
   const charmQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const field = `stats.${periodKey}GiftsReceived`;
-    return query(collection(firestore, 'users'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
+    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
   }, [firestore, periodKey]);
 
   const roomsQuery = useMemoFirebase(() => {
@@ -347,7 +346,7 @@ function LeaderboardContent() {
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const field = `stats.${periodKey}GameWins`;
-    return query(collection(firestore, 'users'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
+    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
   }, [firestore, periodKey]);
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);

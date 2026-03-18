@@ -2,28 +2,121 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Allow read/write access to all documents for authenticated users to ensure stability
-    // and resolve permission errors during identity handshake and social graph sync.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Specifically allow read access to public configurations for all users
-    match /appConfig/{configId} {
-      allow read: if true;
-    }
-    match /roomThemes/{themeId} {
-      allow read: if true;
+    // Global Authorization Helpers
+    function isSignedIn() {
+      return request.auth != null;
     }
     
-    // Explicitly handle the users collection and its subcollections
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isCreator() {
+      return isSignedIn() && request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    }
+
+    // "Main Profile" - Root users collection
+    // Strictly private to owner or creator
     match /users/{userId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isOwner(userId) || isCreator();
       
-      // Support for the social graph handshake
-      match /{allSub=**} {
-        allow read, write: if request.auth != null;
+      // "Public Profile" - Subcollection
+      // Open for tribal discovery, but only owner can broadcast changes
+      match /profile/{profileId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId) || isCreator();
       }
+      
+      // Social Dimension subcollections
+      match /profileVisitors/{visitorId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
+      
+      match /notifications/{notifId} {
+        allow read: if isOwner(userId) || isCreator();
+        allow write: if isSignedIn();
+      }
+
+      match /topContributors/{contribId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
+      
+      match /diamondExchanges/{id} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /followedRooms/{roomId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
+      
+      // Fallback for other potential identity sub-collections
+      match /{allSub=**} {
+        allow read, write: if isOwner(userId) || isCreator();
+      }
+    }
+
+    // Required for search/ranking across the tribal graph
+    match /{path=**}/profile/{profileId} {
+      allow read: if isSignedIn();
+    }
+
+    // Social Graph: Follower Hierarchy
+    match /followers/{followId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (request.auth.uid == request.resource.data.followerId || isCreator());
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.followerId || isCreator());
+    }
+
+    // Global Grid collections
+    match /chatRooms/{roomId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+      
+      match /{allSub=**} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    match /games/{gameId} {
+      allow read: if isSignedIn();
+      allow write: if isCreator();
+    }
+
+    match /appConfig/{configId} {
+      allow read: if true;
+      allow write: if isCreator();
+    }
+
+    match /roomThemes/{themeId} {
+      allow read: if true;
+      allow write: if isCreator();
+    }
+
+    match /globalBroadcasts/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /globalGameWins/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /moments/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    match /globalTasks/{id} {
+      allow read: if isSignedIn();
+      allow write: if isCreator();
+    }
+    
+    match /transactions/{id} {
+      allow read, write: if isCreator();
     }
   }
 }
