@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -30,7 +29,8 @@ import {
   LogOut,
   Zap,
   ImageIcon,
-  Loader
+  Loader,
+  ShieldCheck
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -157,27 +157,33 @@ const Seat = ({
           <div className="absolute -inset-1 rounded-full border-2 animate-voice-wave" style={{ color: theme.accentColor }} />
         )}
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
-          <button 
-            onClick={() => onClick(index, occupant)} 
-            className={cn(
-              "h-12 w-12 rounded-full flex items-center justify-center border-2 backdrop-blur-sm active:scale-90 transition-transform relative z-10",
-              isLocked ? "border-red-500/40" : "border-white/10"
-            )}
-            style={{ backgroundColor: theme.seatColor || 'rgba(255,255,255,0.1)' }}
-          >
-            {occupant ? (
-              <Avatar className="h-full w-full p-0.5">
-                <AvatarImage src={occupant.avatarUrl || undefined} />
-                <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
-              </Avatar>
-            ) : isLocked ? (
-              <Lock className="h-3.5 w-3.5 text-red-500/40" />
-            ) : (
-              <div className="bg-white/10 rounded-full h-7 w-7 flex items-center justify-center">
-                <Armchair className="text-white/40 h-3.5 w-3.5" />
-              </div>
-            )}
-          </button>
+          <div className={cn(
+            "relative p-1 rounded-full",
+            "after:absolute after:inset-0 after:rounded-full after:border-b-4 after:border-black/30 after:pointer-events-none"
+          )}>
+            <button 
+              onClick={() => onClick(index, occupant)} 
+              className={cn(
+                "h-12 w-12 rounded-full flex items-center justify-center border-2 backdrop-blur-sm active:scale-90 transition-all relative z-10",
+                "shadow-[0_4px_0_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]",
+                isLocked ? "border-red-500/40" : "border-white/10"
+              )}
+              style={{ backgroundColor: theme.seatColor || 'rgba(255,255,255,0.1)' }}
+            >
+              {occupant ? (
+                <Avatar className="h-full w-full p-0.5">
+                  <AvatarImage src={occupant.avatarUrl || undefined} />
+                  <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
+                </Avatar>
+              ) : isLocked ? (
+                <Lock className="h-3.5 w-3.5 text-red-500/40" />
+              ) : (
+                <div className="bg-white/10 rounded-full h-7 w-7 flex items-center justify-center shadow-inner">
+                  <Armchair className="text-white/40 h-3.5 w-3.5" />
+                </div>
+              )}
+            </button>
+          </div>
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
@@ -617,6 +623,12 @@ export function RoomClient({ room }: { room: Room }) {
               <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
+              <div className="flex items-center gap-1.5 bg-white/5 backdrop-blur-sm border border-white/10 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700 delay-200">
+                 <ShieldCheck className="h-2 w-2 text-primary" />
+                 <p className="text-[10px] font-black text-white/80 uppercase italic tracking-tight leading-relaxed">
+                    Seat Mode: {room.maxActiveMics || 9} Active Frequencies Synchronized
+                 </p>
+              </div>
            </div>
         </div>
 
@@ -674,12 +686,15 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-12 w-12 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_20px_rgba(0,176,255,0.5)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group"
+             className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
            >
-              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" />
+              {/* Glossy glare engine */}
+              <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
+              
               <img 
                 src="https://img.icons8.com/color/96/gift--v1.png" 
-                className="h-10 w-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float" 
+                className="h-11 w-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
                 alt="Gift"
               />
            </button>
@@ -722,7 +737,7 @@ export function RoomClient({ room }: { room: Room }) {
                    onClick={() => imageInputRef.current?.click()}
                    className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
                  >
-                    {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                    {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
                  </button>
                  <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
                     <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
