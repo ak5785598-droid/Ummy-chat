@@ -95,8 +95,11 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      });
+    }
   };
 
   if (!color) {
@@ -1188,7 +1191,7 @@ export default function AdminPage() {
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
                              <div className="text-center space-y-2">
                                 <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
-                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
+                                <p className="textxs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
                              </div>
                              <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
                                 {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
