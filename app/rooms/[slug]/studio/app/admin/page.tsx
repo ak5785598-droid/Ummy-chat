@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -95,8 +95,11 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      });
+    }
   };
 
   if (!color) {
@@ -180,6 +183,9 @@ export default function AdminPage() {
   const [broadcastContent, setBroadcastContent] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
+  const [globalAnnouncementInput, setGlobalAnnouncementInput] = useState('');
+  const [isUpdatingGlobalNotice, setIsUpdatingGlobalNotice] = useState(false);
+
   const [dmSearchId, setDmSearchId] = useState('');
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
   const [dmTitle, setDmTitle] = useState('Official System Notice');
@@ -198,6 +204,8 @@ export default function AdminPage() {
   const [isBanning, setIsBanning] = useState(false);
 
   const [newThemeName, setNewThemeName] = useState('');
+  const [newThemePrice, setNewThemePrice] = useState('0');
+  const [newThemeDuration, setNewThemeDuration] = useState('7');
   const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
   const [isUploadingTheme, setIsUploadingTheme] = useState(false);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
@@ -225,6 +233,12 @@ export default function AdminPage() {
 
   const [tribalMembers, setTribalMembers] = useState<any[]>([]);
   const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
+
+  // Room Pin State
+  const [roomPinSearchId, setRoomPinSearchId] = useState('');
+  const [targetRoomForPin, setTargetRoomForPin] = useState<any>(null);
+  const [isSearchingRoomPin, setIsSearchingRoomPin] = useState(false);
+  const [isPinningRoom, setIsPinningRoom] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -262,6 +276,17 @@ export default function AdminPage() {
     return doc(firestore, 'appConfig', 'rankings');
   }, [firestore, isCreator]);
   const { data: rankingConfig } = useDoc(rankingConfigRef);
+
+  const handleUpdateGlobalNotice = async () => {
+    if (!firestore || !isCreator || !configRef) return;
+    setIsUpdatingGlobalNotice(true);
+    try {
+      await updateDoc(configRef, { globalAnnouncement: globalAnnouncementInput, updatedAt: serverTimestamp() });
+      toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' });
+    } finally {
+      setIsUpdatingGlobalNotice(false);
+    }
+  };
 
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
@@ -348,6 +373,36 @@ export default function AdminPage() {
       }
     } finally {
       loadingSetter(false);
+    }
+  };
+
+  const handleRoomPinSearch = async () => {
+    if (!firestore || !roomPinSearchId) return;
+    setIsSearchingRoomPin(true);
+    try {
+      const q = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', roomPinSearchId.trim()), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setTargetRoomForPin({ ...snap.docs[0].data(), id: snap.docs[0].id });
+      } else {
+        toast({ variant: 'destructive', title: 'Frequency Not Found' });
+      }
+    } finally {
+      setIsSearchingRoomPin(false);
+    }
+  };
+
+  const handleToggleRoomPin = async () => {
+    if (!firestore || !targetRoomForPin || !isCreator) return;
+    setIsPinningRoom(true);
+    try {
+      const roomRef = doc(firestore, 'chatRooms', targetRoomForPin.id);
+      const newPinStatus = !targetRoomForPin.isPinned;
+      await updateDoc(roomRef, { isPinned: newPinStatus, pinnedAt: newPinStatus ? serverTimestamp() : null });
+      setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus }));
+      toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' });
+    } finally {
+      setIsPinningRoom(false);
     }
   };
 
@@ -631,17 +686,48 @@ export default function AdminPage() {
   };
 
   const handleThemeUpload = async (file: File) => {
-    if (!storage || !firestore || !newThemeName.trim()) return;
+    if (!storage || !firestore) return;
+    
+    if (!newThemeName.trim()) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Missing Identifier', 
+        description: 'Please enter a Theme Name before uploading visual assets.' 
+      });
+      return;
+    }
+
     setIsUploadingTheme(true);
     try {
       const timestamp = Date.now();
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
+      
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, { id: themeRef.id, name: newThemeName, url: url, category: newThemeCategory, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' });
-      toast({ title: 'Theme Synchronized' });
+      await setDoc(themeRef, { 
+        id: themeRef.id, 
+        name: newThemeName.trim(), 
+        url: url, 
+        category: newThemeCategory, 
+        price: parseInt(newThemePrice) || 0,
+        durationDays: parseInt(newThemeDuration) || 7,
+        createdAt: serverTimestamp(), 
+        accentColor: '#FFCC00', 
+        seatColor: 'rgba(255, 255, 255, 0.1)' 
+      });
+      
+      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
       setNewThemeName('');
+      setNewThemePrice('0');
+      setNewThemeDuration('7');
+    } catch (error: any) {
+      console.error('[Theme Hub] Upload Error:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Upload Failed', 
+        description: error.message || 'Check connection and authority protocol.' 
+      });
     } finally {
       setIsUploadingTheme(false);
     }
@@ -716,6 +802,9 @@ export default function AdminPage() {
               <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-pink-500" /> App Branding
               </TabsTrigger>
+              <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Pin className="h-4 w-4 text-emerald-500" /> Pin Control
+              </TabsTrigger>
               <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
               </TabsTrigger>
@@ -733,9 +822,6 @@ export default function AdminPage() {
               </TabsTrigger>
               <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
-              </TabsTrigger>
-              <TabsTrigger value="game-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Monitor className="h-4 w-4 text-indigo-500" /> Game Themes
               </TabsTrigger>
               <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
@@ -811,18 +897,108 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
+            <TabsContent value="pin-control" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600">
+                        <Pin className="h-6 w-6" /> Sovereign Frequency Pin
+                     </CardTitle>
+                     <CardDescription>Target a chat room to pin it to the absolute top of the global grid permanently.</CardDescription>
+                  </CardHeader>
+                  
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4">
+                        <Input 
+                          placeholder="Enter Room Number (e.g. 1000021)" 
+                          value={roomPinSearchId} 
+                          onChange={(e) => setRoomPinSearchId(e.target.value)} 
+                          onKeyDown={(e) => e.key === 'Enter' && handleRoomPinSearch()} 
+                          className="h-14 rounded-2xl border-2" 
+                        />
+                        <Button onClick={handleRoomPinSearch} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRoomPin}>Find Frequency</Button>
+                     </div>
+                  </div>
+
+                  {targetRoomForPin && (
+                    <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
+                       <div className="flex items-center justify-between border-b pb-6">
+                          <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white shadow-xl rounded-xl">
+                                <AvatarImage src={targetRoomForPin.coverUrl || undefined} />
+                                <AvatarFallback>RM</AvatarFallback>
+                             </Avatar>
+                             <div>
+                                <p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetRoomForPin.name || targetRoomForPin.title}</p>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Room ID: {targetRoomForPin.roomNumber}</span>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[10px] font-black uppercase text-gray-400 mb-1">Pin Frequency</p>
+                             {targetRoomForPin.isPinned ? (
+                               <Badge className="bg-emerald-500 text-white font-black uppercase text-[10px] py-1 px-3">PINNED ACTIVE</Badge>
+                             ) : (
+                               <Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">NOT PINNED</Badge>
+                             )}
+                          </div>
+                       </div>
+
+                       <Button 
+                         onClick={handleToggleRoomPin} 
+                         disabled={isPinningRoom} 
+                         className={cn(
+                           "w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all",
+                           targetRoomForPin.isPinned 
+                             ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100" 
+                             : "bg-emerald-600 text-white hover:bg-emerald-700"
+                         )}
+                       >
+                          {isPinningRoom ? <Loader className="animate-spin mr-2 h-6 w-6" /> : targetRoomForPin.isPinned ? <><PinOff className="mr-2 h-6 w-6" /> Unpin Frequency</> : <><Pin className="mr-2 h-6 w-6" /> Pin to Top</>}
+                       </Button>
+                    </div>
+                  )}
+               </Card>
+            </TabsContent>
+
             <TabsContent value="app-branding" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle>
-                     <CardDescription>Dispatch global visual assets across the entire Ummy network.</CardDescription>
+                     <CardDescription>Dispatch global assets and room notices across the Ummy network.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 space-y-8">
                      <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
+                              <Megaphone className="h-5 w-5 text-orange-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span>
+                           </div>
+                           <Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                           <Input 
+                             placeholder="Write global room announcement..." 
+                             value={globalAnnouncementInput}
+                             onChange={(e) => setGlobalAnnouncementInput(e.target.value)}
+                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
+                           />
+                           <Button 
+                             onClick={handleUpdateGlobalNotice} 
+                             disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()}
+                             className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20"
+                           >
+                              {isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                           </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-bold italic px-1">
+                           This text will appear as the first announcement row in every chat room.
+                        </p>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
                               <ImageIcon className="h-5 w-5 text-pink-600" />
-                              <span className="font-black uppercase italic text-sm">Login Page Background</span>
+                              <span className="font-black uppercase italic text-sm text-slate-900">Login Page Background</span>
                            </div>
                            {config?.loginBackgroundUrl && (
                              <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { loginBackgroundUrl: null })}>Reset to Default</Button>
@@ -895,45 +1071,6 @@ export default function AdminPage() {
                   </CardContent>
                </Card>
                <input type="file" ref={rankingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadingRankingKey && handleRankingBGUpload(uploadingRankingKey, e.target.files[0])} />
-            </TabsContent>
-
-            <TabsContent value="game-themes" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600">
-                        <Monitor className="h-6 w-6" /> Sovereign Game Themes
-                     </CardTitle>
-                     <CardDescription>Dispatch high-resolution environmental assets to the 3D Tribe Arena.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                     {gamesList.map((game) => (
-                       <div key={game.slug} className="flex flex-col gap-3 group">
-                          <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl border-2 border-white/10">
-                             {game.backgroundUrl ? (
-                               <Image src={game.backgroundUrl} fill className="object-cover" alt="BG" unoptimized />
-                             ) : (
-                               <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
-                                  <Monitor className="h-10 w-10" />
-                                  <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
-                               </div>
-                             )}
-                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button 
-                                  onClick={() => handleGameBGUploadClick(game)}
-                                  className="h-14 w-14 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl active:scale-90 transition-transform"
-                                >
-                                   {isUploadingGameBG && selectedGameForSync?.slug === game.slug ? <Loader className="animate-spin h-6 w-6" /> : <Upload className="h-6 w-6" />}
-                                </button>
-                             </div>
-                          </div>
-                          <div className="flex items-center justify-between px-2">
-                             <p className="font-black uppercase italic text-sm text-slate-900">{game.title}</p>
-                             {game.backgroundUrl && <Badge className="bg-green-100 text-green-600 border-none font-black text-[8px] uppercase">Custom Synced</Badge>}
-                          </div>
-                       </div>
-                     ))}
-                  </CardContent>
-               </Card>
             </TabsContent>
 
             <TabsContent value="authority" className="m-0 space-y-6">
@@ -1054,7 +1191,7 @@ export default function AdminPage() {
                           <div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6">
                              <div className="text-center space-y-2">
                                 <h4 className="text-xl font-black uppercase italic text-red-600">Supreme Wallet Purge</h4>
-                                <p className="text-xs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
+                                <p className="textxs font-body italic text-red-800/60 max-w-sm">DANGER: This protocol will PERMANENTLY reset this member's Coins, Diamonds, and Spend history to zero. Use only for catastrophic protocol violations.</p>
                              </div>
                              <Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">
                                 {isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Execute Global Reset
@@ -1361,7 +1498,7 @@ export default function AdminPage() {
                      <SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={dmSearchMode === 'id' ? "Enter Recipient ID (Special or Account)..." : "Enter Recipient Username..."} value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(mode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
+                        <Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingDm}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForDm && (
@@ -1499,7 +1636,7 @@ export default function AdminPage() {
                      <SearchToggle mode={rewardSearchMode} setMode={setRewardSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={rewardSearchMode === 'id' ? "Recipient ID (Special or Account)..." : "Recipient Username..."} value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find Identity</Button>
+                        <Button onClick={handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForRewards && (

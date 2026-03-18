@@ -1636,7 +1636,7 @@ export default function AdminPage() {
                      <SearchToggle mode={rewardSearchMode} setMode={setRewardSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={rewardSearchMode === 'id' ? "Recipient ID (Special or Account)..." : "Recipient Username..."} value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl border-2" />
-                        <Button onClick={() => handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find Identity</Button>
+                        <Button onClick={handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRewards}>Find Identity</Button>
                      </div>
                   </div>
                   {targetUserForRewards && (
