@@ -17,7 +17,7 @@ interface ChatRoomCardProps {
  * High-Fidelity Room Card.
  * Re-engineered for Square Identity (1:1 Ratio).
  * Features Identity Color Sync for the room name.
- * Hardened with real-time participant counting logic.
+ * Hardened with Room ID (Account Number) visibility.
  */
 export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
   const { userProfile: owner } = useUserProfile(room?.ownerId);
@@ -73,15 +73,18 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
               </div>
             )}
             
-            {/* Top-Left Overlays */}
-            <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
+            {/* Top-Left Overlays: Flag and Room ID */}
+            <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-20">
                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/10 w-fit">
                   <span className="text-[10px]">🇮🇳</span>
+               </div>
+               <div className="bg-black/30 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10 w-fit">
+                  <span className="text-[7px] font-black text-white/90 uppercase tracking-tighter">ID:{room.roomNumber || '0000'}</span>
                </div>
             </div>
 
             {/* Top-Right Live Indicator Protocol */}
-            <div className="absolute top-3 right-3 z-20">
+            <div className="absolute top-2.5 right-2.5 z-20">
                <div className="bg-black/40 backdrop-blur-md text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-xl border border-white/20 italic flex items-center gap-1">
                   <div className={cn("h-1 w-1 rounded-full animate-pulse", liveCount > 0 ? "bg-green-500" : "bg-slate-500")} />
                   LIVE {liveCount}
@@ -125,6 +128,9 @@ export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
           {room.coverUrl && (
             <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill unoptimized className="object-cover" />
           )}
+          <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10">
+             <span className="text-[7px] font-black text-white uppercase">ID:{room.roomNumber}</span>
+          </div>
         </div>
         <div className="p-3">
           <h3 className={cn(

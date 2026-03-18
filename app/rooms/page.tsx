@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader } from 'lucide-react';
+import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -18,6 +18,7 @@ import {
 import { UmmyLogoIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useTranslation } from '@/hooks/use-translation';
+import { Button } from '@/components/ui/button';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 
@@ -33,8 +34,7 @@ const ICON_MAP: Record<string, any> = {
 
 /**
  * High-Fidelity Rooms Hub.
- * Re-engineered to support Sovereign Decommissioning Protocol.
- * Updated with Square Design and Tightened Spacing.
+ * Re-engineered to support Sovereign Room Info Sync.
  */
 export default function RoomsPage() {
   const { user } = useUser();
@@ -88,10 +88,6 @@ export default function RoomsPage() {
     ];
   }, [bannerConfig]);
 
-  /**
-   * SOVEREIGN LISTING ENGINE: 
-   * EXCLUSION PROTOCOL: Explicitly hiding decommissioned "Synchronizing" rooms.
-   */
   const displayRooms = useMemo(() => {
     if (!roomsData) return [];
     
@@ -102,7 +98,6 @@ export default function RoomsPage() {
       const hasUsers = (room.participantCount || 0) > 0;
       const isPinned = room.isPinned === true;
 
-      // DECOMMISSIONING SYNC: Exclude synchronizing or decommissioned IDs
       const isDecommissioned = room.id === 'ummy-help-center' || 
                                (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
 
@@ -288,11 +283,22 @@ export default function RoomsPage() {
           <main className="px-2 flex-1 animate-in slide-in-from-right-4 duration-500">
              <section className="mb-6 px-4">
                 <h3 className="text-base font-black uppercase italic tracking-tighter text-slate-900 mb-3 flex items-center gap-2">
-                   <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.profile.id} {t.home.mine}
+                   <Zap className="h-3.5 w-3.5 text-primary fill-current" /> {t.home.mine} Frequency
                 </h3>
                 {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
-                  <div className="max-w-[160px]">
-                     <ChatRoomCard room={myRoom} variant="modern" />
+                  <div className="flex flex-col gap-3">
+                    <div className="max-w-[160px]">
+                       <ChatRoomCard room={myRoom} variant="modern" />
+                    </div>
+                    <div className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white shadow-sm flex items-center justify-between">
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-slate-400">Tribal ID Sync</span>
+                          <span className="text-lg font-black text-slate-900 italic tracking-tighter">#{myRoom.roomNumber}</span>
+                       </div>
+                       <Button size="sm" className="rounded-xl px-6 h-10 font-black uppercase italic text-xs shadow-lg" onClick={() => router.push(`/rooms/${myRoom.id}`)}>
+                          Enter Room <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                       </Button>
+                    </div>
                   </div>
                 ) : (
                   <button 
