@@ -24,7 +24,6 @@ export interface UserProfile {
       followers: number;
       fans: number;
       dailyFans: number;
-      dailyGameWins?: number;
     };
     level?: {
       rich: number;
@@ -32,9 +31,6 @@ export interface UserProfile {
     };
     inventory?: {
       activeFrame?: string;
-      activeFrameExpiresAt?: any; // 7-day expiration logic
-      activeBubble?: string;
-      activeWave?: string;
       ownedItems: string[];
     };
     banStatus?: {
@@ -47,7 +43,6 @@ export interface UserProfile {
     updatedAt?: any;
     lastSignInAt?: any;
     lastMoneyTreeClaimAt?: any;
-    isNewUser?: boolean;
 }
 
 /**

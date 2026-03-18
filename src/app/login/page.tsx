@@ -55,6 +55,7 @@ export default function LoginPage() {
   /**
    * SOVEREIGN IDENTITY HANDSHAKE
    * Ensures new users have their Firestore documents created immediately upon authentication.
+   * This fixes "handshake" and "missing profile" errors across the application.
    */
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore) return;
