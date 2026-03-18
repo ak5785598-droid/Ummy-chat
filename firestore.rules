@@ -15,6 +15,7 @@ service cloud.firestore {
     }
 
     function isNotBanned() {
+      if (isCreator()) return true;
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return !exists(userPath) || (
         get(userPath).data.get(['banStatus', 'isBanned'], false) == false ||
@@ -190,12 +191,12 @@ service cloud.firestore {
     }
 
     match /globalGameWins/{winId} {
-      allow read: if true;
+      allow get, list: if true;
       allow create: if isSignedIn() && isNotBanned();
     }
     
     match /globalBroadcasts/{broadcastId} {
-      allow read: if true;
+      allow get, list: if true;
       allow write: if isAdmin();
     }
   }

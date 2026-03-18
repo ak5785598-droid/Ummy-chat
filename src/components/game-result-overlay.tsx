@@ -17,23 +17,24 @@ interface GameResultOverlayProps {
   gameId: string;
   winningSymbol?: string | React.ReactNode; 
   winAmount: number;
-  winners?: GameWinner[]; // Optional prop for immediate feedback
+  winners?: GameWinner[];
 }
 
 /**
  * High-Fidelity Game Result Overlay.
- * Dynamically queries the globalGameWins ledger for real-time winners or uses provided props.
+ * Re-engineered Query: Bypasses composite index requirements by using a single orderBy
+ * and filtering game-specific wins in-memory.
  */
 export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: propWinners }: GameResultOverlayProps) {
   const firestore = useFirestore();
 
   const winsQuery = useMemoFirebase(() => {
     if (!firestore || !gameId) return null;
+    // PROTOCOL OPTIMIZATION: Single-field query prevents "Missing Index" permission errors
     return query(
       collection(firestore, 'globalGameWins'),
-      where('gameId', '==', gameId),
       orderBy('timestamp', 'desc'),
-      limit(3)
+      limit(20) // Fetch a pool to filter from
     );
   }, [firestore, gameId]);
 
@@ -42,12 +43,17 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
   const displayWinners = useMemo(() => {
     if (propWinners && propWinners.length > 0) return propWinners;
     if (!dbWinners || dbWinners.length === 0) return [];
-    return dbWinners.map(w => ({
-      name: w.username,
-      avatar: w.avatarUrl,
-      win: w.amount
-    }));
-  }, [dbWinners, propWinners]);
+    
+    // In-memory filter ensures high performance without complex index management
+    return dbWinners
+      .filter(w => w.gameId === gameId)
+      .slice(0, 3)
+      .map(w => ({
+        name: w.username,
+        avatar: w.avatarUrl,
+        win: w.amount
+      }));
+  }, [dbWinners, propWinners, gameId]);
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -59,14 +65,12 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
     <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500 font-headline p-4 select-none pointer-events-auto">
       <div className="w-full max-w-sm flex flex-col items-center">
         
-        {/* YOU WIN Header - 3D Typography Sync */}
         <div className="mb-4 relative">
            <h2 className="text-7xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-[0_6px_0_#8b4513] text-center animate-bounce">
              YOU WIN
            </h2>
         </div>
 
-        {/* Reward Bar - Marquee Protocol */}
         <div className="w-full relative mb-4">
            <div className="absolute -top-2 left-0 right-0 flex justify-between px-4 z-20">
               {[...Array(12)].map((_, i) => (
@@ -96,7 +100,6 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
            </div>
         </div>
 
-        {/* Winners List - Burgundy Dimension */}
         <div className="w-full bg-[#4a1424] rounded-[2.5rem] border-2 border-[#fbbf24]/20 shadow-2xl overflow-hidden p-2">
            <div className="divide-y divide-white/5">
               {displayWinners.map((winner, idx) => (
