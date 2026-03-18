@@ -8,7 +8,7 @@ import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
  * Production Profile Initializer.
  * Re-engineered for the Dual-ID Protocol and Automated Periodic Resets.
  * Hardened for mobile compatibility by using UTC-offset based IST calculations.
- * ASSET AUDIT: Handles expiration of frames, themes, and vehicles.
+ * SECURITY SYNC: Handles banStatus gracefully to prevent security rule violations.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -41,6 +41,19 @@ export function ProfileInitializer() {
 
         if (userSnap.exists()) {
           const userData = userSnap.data();
+          
+          // --- BAN FREQUENCY CHECK ---
+          // Prevent initialization writes for restricted accounts to avoid permission errors
+          const banStatus = userData.banStatus;
+          if (banStatus?.isBanned) {
+            const bannedUntil = banStatus.bannedUntil?.toDate?.() || null;
+            if (!bannedUntil || bannedUntil > now) {
+              console.log("[Identity Sync] Restricted frequency detected. Synchronization deferred.");
+              hasInitialized.current = profileId;
+              return;
+            }
+          }
+
           const lastSeen = userData.lastSeen?.toDate?.() || new Date(0);
           const lastIST = getISTParts(lastSeen);
           

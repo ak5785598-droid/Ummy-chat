@@ -19,7 +19,8 @@ service cloud.firestore {
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return !exists(userPath) || (
         get(userPath).data.get(['banStatus', 'isBanned'], false) == false ||
-        (get(userPath).data.banStatus.get('bannedUntil', null) != null && get(userPath).data.banStatus.bannedUntil < request.time)
+        (get(userPath).data.get(['banStatus', 'bannedUntil'], null) != null && 
+         get(userPath).data.get(['banStatus', 'bannedUntil'], null) < request.time)
       );
     }
 
