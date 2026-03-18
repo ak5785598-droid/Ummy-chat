@@ -130,7 +130,7 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-full bg-ummy-gradient flex flex-col font-headline animate-in fade-in duration-700 pb-20">
         
-        <header className="flex items-center justify-between px-5 pt-3 pb-1 shrink-0">
+        <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setHeaderTab('recommend')}
@@ -164,7 +164,7 @@ export default function RoomsPage() {
 
         {headerTab === 'recommend' ? (
           <>
-            <div className="px-5 mb-1.5 mt-1">
+            <div className="px-2 mb-1.5 mt-1">
               <Carousel 
                 className="w-full" 
                 opts={{ loop: true }}
@@ -204,7 +204,7 @@ export default function RoomsPage() {
               </Carousel>
             </div>
 
-            <section className="px-5 grid grid-cols-3 gap-2 mb-1.5">
+            <section className="px-2 grid grid-cols-3 gap-2 mb-1.5">
               <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
                  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                  <span className="absolute top-1 left-1.5 text-white font-black uppercase text-[6px] tracking-widest opacity-90">{t.profile.level}</span>
@@ -228,7 +228,7 @@ export default function RoomsPage() {
               </button>
             </section>
 
-            <div className="px-5 mb-1.5">
+            <div className="px-2 mb-1.5">
               <div className="bg-gradient-to-r from-[#9C27B0] via-[#E91E63] to-[#9C27B0] h-8 rounded-full shadow-lg border-2 border-white/40 flex items-center justify-between px-4 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
                 <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
                 <div className="flex items-center gap-1.5 relative z-10">
@@ -246,7 +246,7 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <div className="px-5 mb-1.5">
+            <div className="px-2 mb-1.5">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 {CATEGORIES.map((cat) => (
                   <button
