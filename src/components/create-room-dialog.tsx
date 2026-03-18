@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +28,7 @@ interface CreateRoomDialogProps {
 
 /**
  * Production Room Creation Portal.
+ * Re-engineered to handle custom triggers and async availability checks.
  */
 export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialogProps) {
   const [open, setOpen] = useState(false);
@@ -46,25 +46,26 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
   const handleDirectEntryCheck = async (e: React.MouseEvent) => {
     if (!user || !firestore) return;
 
-    if (iconOnly || !open) {
-      e.preventDefault();
-      setIsSubmitting(true);
+    // Intercept frequency sync to check for existing room
+    e.preventDefault();
+    e.stopPropagation();
+    setIsSubmitting(true);
+    
+    try {
+      const roomRef = doc(firestore, 'chatRooms', user.uid);
+      const roomSnap = await getDoc(roomRef);
       
-      try {
-        const roomRef = doc(firestore, 'chatRooms', user.uid);
-        const roomSnap = await getDoc(roomRef);
-        
-        if (roomSnap.exists()) {
-          router.push(`/rooms/${user.uid}`);
-          return;
-        }
-        
-        setOpen(true);
-      } catch (error: any) {
-        setOpen(true);
-      } finally {
-        setIsSubmitting(false);
+      if (roomSnap.exists()) {
+        console.log('[Identity Sync] Room detected. Redirecting to active frequency.');
+        router.push(`/rooms/${user.uid}`);
+        return;
       }
+      
+      setOpen(true);
+    } catch (error: any) {
+      setOpen(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -76,19 +77,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
 
     try {
       const roomRef = doc(firestore, 'chatRooms', user.uid);
-      const roomSnap = await getDoc(roomRef);
       
-      if (roomSnap.exists()) {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Limit Reached', 
-          description: 'One user can create only one room.' 
-        });
-        router.push(`/rooms/${user.uid}`);
-        setOpen(false);
-        return;
-      }
-
       // IDENTITY SYNC PROTOCOL: 
       // Room Number matches Special ID if assigned, else fallback to automatic Account Number.
       const roomNumber = userProfile.specialId || userProfile.accountNumber || '0000';
@@ -106,7 +95,8 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
         lockedSeats: [], 
         participantCount: 0, 
         announcement: 'Welcome to the frequency!',
-        roomThemeId: 'misty' 
+        roomThemeId: 'misty',
+        isPinned: false
       });
       
       setOpen(false);
@@ -120,25 +110,26 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ? (
-          <div onClick={handleDirectEntryCheck}>{trigger}</div>
-        ) : (
-          iconOnly ? (
+      {trigger ? (
+        <div onClick={handleDirectEntryCheck} className="cursor-pointer">
+          {trigger}
+        </div>
+      ) : (
+        <DialogTrigger asChild>
+          {iconOnly ? (
             <button 
-              onClick={handleDirectEntryCheck}
               disabled={isSubmitting}
               className="bg-primary text-black p-1.5 rounded-xl border-2 border-white shadow-lg flex items-center justify-center text-sm leading-none transition-transform active:scale-90"
             >
               {isSubmitting ? <Loader className="h-4 w-4 animate-spin" /> : '🏠'}
             </button>
           ) : (
-            <Button className="rounded-full font-black uppercase italic tracking-widest text-[10px] px-6 h-10" onClick={() => setOpen(true)}>
+            <Button className="rounded-full font-black uppercase italic tracking-widest text-[10px] px-6 h-10">
               <Plus className="h-4 w-4 mr-2" />Create
             </Button>
-          )
-        )}
-      </DialogTrigger>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px] rounded-t-[2.5rem] bg-white text-black p-0 overflow-hidden border-none shadow-2xl font-headline">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="p-8 pb-0 text-center">
@@ -159,7 +150,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
           </div>
           <DialogFooter className="p-8 pt-0">
             <Button type="submit" className="w-full h-16 text-xl font-black uppercase italic rounded-3xl shadow-xl shadow-primary/20" disabled={isSubmitting || !userProfile}>
-              {isSubmitting ? <Loader className="animate-spin" /> : 'Start Frequency'}
+              {isSubmitting ? <Loader className="animate-spin mr-2 h-6 w-6" /> : 'Start Frequency'}
             </Button>
           </DialogFooter>
         </form>

@@ -19,6 +19,7 @@ import { UmmyLogoIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
+import { CreateRoomDialog } from '@/components/create-room-dialog';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 
@@ -301,15 +302,18 @@ export default function RoomsPage() {
                     </div>
                   </div>
                 ) : (
-                  <button 
-                    onClick={() => router.push('/profile')}
-                    className="w-full h-28 rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center gap-2 active:scale-95 transition-all"
-                  >
-                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Plus className="h-4 w-4" />
-                     </div>
-                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.home.launch}</span>
-                  </button>
+                  <CreateRoomDialog 
+                    trigger={
+                      <button 
+                        className="w-full h-28 rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center gap-2 active:scale-95 transition-all"
+                      >
+                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <Plus className="h-4 w-4" />
+                         </div>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.home.launch}</span>
+                      </button>
+                    }
+                  />
                 )}
              </section>
 
