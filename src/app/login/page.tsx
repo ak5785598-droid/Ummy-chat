@@ -58,7 +58,7 @@ export default function LoginPage() {
    * This fixes "handshake" and "missing profile" errors across the application.
    */
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
-    if (!firestore) return;
+    if (!firestore || !uid) return;
     
     const userRef = doc(firestore, 'users', uid);
     const profileRef = doc(firestore, 'users', uid, 'profile', uid);
