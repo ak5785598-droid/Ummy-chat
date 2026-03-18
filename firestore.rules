@@ -130,6 +130,11 @@ service cloud.firestore {
         }
       }
 
+      match /followers/{userId} {
+        allow read: if true;
+        allow write: if isSignedIn() && request.auth.uid == userId;
+      }
+
       match /messages/{messageId} {
         allow get, list: if isSignedIn();
         allow create: if isSignedIn() && isNotBanned();
