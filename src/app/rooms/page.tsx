@@ -64,17 +64,26 @@ export default function RoomsPage() {
 
   const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
-  const myRoomRef = useMemoFirebase(() => {
+  // SOVEREIGN SYNC: Query by ownerId to find the user's room instead of doc ID
+  const myRoomQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'chatRooms', user.uid);
+    return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
   }, [firestore, user]);
-  const { data: myRoom } = useDoc(myRoomRef);
+  const { data: myRoomsData } = useCollection(myRoomQuery);
+  const myRoom = myRoomsData?.[0];
 
   const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), limit(20));
   }, [firestore, user]);
   const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
+
+  // Filter out owned rooms from the followed list
+  const filteredFollowedRooms = useMemo(() => {
+    if (!followedRooms) return [];
+    if (!user) return followedRooms;
+    return followedRooms.filter(r => r.ownerId !== user.uid && r.id !== user.uid);
+  }, [followedRooms, user]);
 
   const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerRef);
@@ -325,9 +334,9 @@ export default function RoomsPage() {
                   <div className="grid grid-cols-2 gap-x-2 gap-y-6">
                      {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
                   </div>
-                ) : followedRooms && followedRooms.length > 0 ? (
+                ) : filteredFollowedRooms.length > 0 ? (
                   <div className="grid grid-cols-2 gap-x-2 gap-y-6 pb-8">
-                     {followedRooms.map((room: any) => (
+                     {filteredFollowedRooms.map((room: any) => (
                        <ChatRoomCard key={room.id} room={room} variant="modern" />
                      ))}
                   </div>
