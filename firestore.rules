@@ -15,32 +15,40 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1';
     }
 
-    // "Main Profile" - Root users collection
-    // Strictly private to owner or creator
+    function isNotBanned() {
+      if (isCreator()) { return true; }
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      if (!exists(userPath)) { return true; }
+      let userData = get(userPath).data;
+      return !('banStatus' in userData) || 
+             userData.banStatus.isBanned == false || 
+             (userData.banStatus.bannedUntil != null && userData.banStatus.bannedUntil < request.time);
+    }
+
+    // Root Users Collection: Strictly private to owner or creator
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isCreator();
       
-      // "Public Profile" - Subcollection
-      // Open for tribal discovery, but only owner can broadcast changes
+      // Public Profile Subcollection: Open for tribal discovery
       match /profile/{profileId} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() && isNotBanned();
         allow write: if isOwner(userId) || isCreator();
       }
       
-      // Social Dimension subcollections
+      // Social Dimension subcollections: Open for viewing by the tribe
       match /profileVisitors/{visitorId} {
-        allow read: if isSignedIn();
-        allow write: if isSignedIn();
+        allow read: if isSignedIn() && isNotBanned();
+        allow write: if isSignedIn() && isNotBanned();
       }
-      
+
       match /notifications/{notifId} {
         allow read: if isOwner(userId) || isCreator();
-        allow write: if isSignedIn();
+        allow write: if isSignedIn() && isNotBanned();
       }
 
       match /topContributors/{contribId} {
-        allow read: if isSignedIn();
-        allow write: if isSignedIn();
+        allow read: if isSignedIn() && isNotBanned();
+        allow write: if isSignedIn() && isNotBanned();
       }
       
       match /diamondExchanges/{id} {
@@ -48,40 +56,43 @@ service cloud.firestore {
       }
       
       match /followedRooms/{roomId} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() && isNotBanned();
         allow write: if isOwner(userId);
       }
       
-      // Fallback for other potential identity sub-collections
-      match /{allSub=**} {
+      match /completedTasks/{id} {
+        allow read, write: if isOwner(userId) || isCreator();
+      }
+
+      match /collectedTasks/{id} {
         allow read, write: if isOwner(userId) || isCreator();
       }
     }
 
-    // Required for search/ranking across the tribal graph
+    // Required for collectionGroup queries (Leaderboard, Search) across the tribal graph
     match /{path=**}/profile/{profileId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
     }
 
     // Social Graph: Follower Hierarchy
     match /followers/{followId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && (request.auth.uid == request.resource.data.followerId || isCreator());
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
       allow delete: if isSignedIn() && (request.auth.uid == resource.data.followerId || isCreator());
     }
 
     // Global Grid collections
     match /chatRooms/{roomId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned();
       
       match /{allSub=**} {
-        allow read, write: if isSignedIn();
+        allow read, write: if isSignedIn() && isNotBanned();
       }
     }
 
     match /games/{gameId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
       allow write: if isCreator();
     }
 
@@ -96,22 +107,22 @@ service cloud.firestore {
     }
 
     match /globalBroadcasts/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned();
     }
 
     match /globalGameWins/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned();
     }
 
     match /moments/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
     }
     
     match /globalTasks/{id} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && isNotBanned();
       allow write: if isCreator();
     }
     

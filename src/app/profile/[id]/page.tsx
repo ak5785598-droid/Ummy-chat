@@ -406,7 +406,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   }, [firestore, profileId]);
 
   const followingQuery = useMemoFirebase(() => {
-    if (!firestore || !profileId) return null;
+    if (!firestore || !userId) return null;
     return query(collection(firestore, 'followers'), where('followerId', '==', profileId));
   }, [firestore, profileId]);
 
