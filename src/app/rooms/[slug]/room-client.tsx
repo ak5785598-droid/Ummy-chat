@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -332,10 +333,6 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
-  /**
-   * DYNAMIC THEME SYNC ENGINE
-   * Resolves roomThemeId from database if not found in static lib.
-   */
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'roomThemes'));
@@ -528,10 +525,6 @@ export function RoomClient({ room }: { room: Room }) {
     return Array.from({ length: count }, (_, i) => i + 2);
   }, [room.maxActiveMics]);
 
-  /**
-   * DYNAMIC MESSAGE DIMENSION SYNC
-   * Adjusts chat portal height based on active mic mode.
-   */
   const chatConfig = useMemo(() => {
     const mics = room.maxActiveMics || 9;
     if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
