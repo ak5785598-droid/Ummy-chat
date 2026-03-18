@@ -27,7 +27,8 @@ interface RoomGamesDialogProps {
 }
 
 const FALLBACK_GAMES = [
-  { id: 'chirag-slot', title: 'Chirag Slot', iconId: 'game-aladdin', isNew: true, slug: 'chirag-slot' },
+  { id: 'fishing-master', title: 'Fishing Master', iconId: 'underwater fishing arcade', isNew: true, slug: 'fishing-master' },
+  { id: 'chirag-slot', title: 'Chirag Slot', iconId: 'game-aladdin', isNew: false, slug: 'chirag-slot' },
   { id: 'lion-fight', title: 'Lion Fight', iconId: 'game-lion-fight', isNew: false, slug: 'lion-fight' },
   { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: false, slug: 'roulette' },
   { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
@@ -37,7 +38,7 @@ const FALLBACK_GAMES = [
 
 /**
  * High-Fidelity Room Games Portal.
- * Features the new Chirag Slot flagship frequency.
+ * Features the new Fishing Master flagship frequency.
  */
 export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   const router = useRouter();
