@@ -92,6 +92,7 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
+import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -225,6 +226,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   
@@ -272,17 +274,25 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleFollowRoom = () => {
     if (!firestore || !currentUser || !room.id) return;
-    const ref = doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
+    const userFollowRef = doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
+    const roomFollowRef = doc(firestore, 'chatRooms', room.id, 'followers', currentUser.uid);
+
     if (followData) {
-      deleteDocumentNonBlocking(ref);
+      deleteDocumentNonBlocking(userFollowRef);
+      deleteDocumentNonBlocking(roomFollowRef);
       toast({ title: 'Unfollowed Frequency' });
     } else {
-      setDocumentNonBlocking(ref, {
+      const followObj = {
         id: room.id,
         title: room.title || room.name || 'Frequency',
         coverUrl: room.coverUrl || '',
         roomNumber: room.roomNumber || '0000',
         ownerId: room.ownerId || '',
+        followedAt: serverTimestamp()
+      };
+      setDocumentNonBlocking(userFollowRef, followObj, { merge: true });
+      setDocumentNonBlocking(roomFollowRef, {
+        uid: currentUser.uid,
         followedAt: serverTimestamp()
       }, { merge: true });
       toast({ title: 'Frequency Followed' });
@@ -578,7 +588,10 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <div className="relative shrink-0">
+          <div 
+            onClick={() => setIsFollowersOpen(true)}
+            className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+          >
             <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
@@ -797,6 +810,7 @@ export function RoomClient({ room }: { room: Room }) {
       </Dialog>
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
+      <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
       <RoomPlayDialog 
         open={isRoomPlayOpen} 
