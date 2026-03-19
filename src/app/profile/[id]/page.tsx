@@ -406,13 +406,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   }, [firestore, profileId]);
 
   const followingQuery = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
+    if (!firestore || !profileId) return null;
     return query(collection(firestore, 'followers'), where('followerId', '==', profileId));
   }, [firestore, profileId]);
 
   const visitorsQuery = useMemoFirebase(() => {
     if (!firestore || !profileId) return null;
-    // TRIBAL SYNC: The rules now allow signed-in users to list profile visitors for accurate public counts.
     return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
   }, [firestore, profileId]);
 

@@ -74,13 +74,13 @@ service cloud.firestore {
       allow read: if isSignedIn() && isNotBanned();
     }
 
-    // Social Graph: Follower Hierarchy (Explicitly split for permission hardening)
+    // Social Graph: Follower Hierarchy
     match /followers/{followId} {
       allow read: if isSignedIn() && isNotBanned();
       allow create: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
       allow update: if isSignedIn() && isNotBanned() && (request.auth.uid == resource.data.followerId || isCreator());
-      // delete check uses resource.data (existing doc) and followId prefix for robustness
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.followerId || followId.startsWith(request.auth.uid + "_") || isCreator());
+      // Unified deletion protocol: Check ID prefix for absolute synchronization
+      allow delete: if isSignedIn() && (followId.startsWith(request.auth.uid + "_") || isCreator());
     }
 
     // Global Grid collections

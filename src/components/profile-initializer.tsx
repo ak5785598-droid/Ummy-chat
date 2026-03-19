@@ -8,8 +8,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Production Profile Initializer.
- * Re-engineered for the Dual-ID Protocol and Automated Periodic Resets.
- * SECURITY SYNC: Handles banStatus gracefully to prevent security rule violations.
+ * Re-engineered for mobile-safe IST (GMT+5:30) synchronization.
  */
 export function ProfileInitializer() {
   const { user } = useUser();
@@ -24,6 +23,7 @@ export function ProfileInitializer() {
       
       try {
         const getISTParts = (date: Date) => {
+          // Manual IST offset for mobile browsers that fail on timeZone option
           const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
           const ist = new Date(utc + (3600000 * 5.5));
           return {
@@ -45,13 +45,12 @@ export function ProfileInitializer() {
         if (userSnap.exists()) {
           const userData = userSnap.data();
           
-          // --- BAN FREQUENCY CHECK ---
-          // Prevent initialization writes for restricted accounts to avoid permission errors
+          // BAN FREQUENCY CHECK: Prevent permission errors for restricted accounts
           const banStatus = userData.banStatus;
           if (banStatus?.isBanned) {
             const bannedUntil = banStatus.bannedUntil?.toDate?.() || null;
             if (!bannedUntil || bannedUntil > now) {
-              console.log("[Identity Sync] Restricted frequency detected. Synchronization deferred.");
+              console.log("[Identity Sync] Restricted frequency detected.");
               hasInitialized.current = profileId;
               return;
             }
@@ -64,7 +63,7 @@ export function ProfileInitializer() {
           const resetData: any = { updatedAt: serverTimestamp() };
           let needsReset = false;
 
-          // --- PERIODIC LEDGER RESETS (IST) ---
+          // IST PERIODIC RESET SYNC
           if (nowIST.fullDate !== lastIST.fullDate) {
             needsReset = true;
             resetData['wallet.dailySpent'] = 0;
@@ -74,7 +73,7 @@ export function ProfileInitializer() {
           }
 
           // Weekly Reset (Monday)
-          if ((nowIST.fullDate !== lastIST.fullDate && nowIST.day === 1) || (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60 * 24) >= 7) {
+          if ((nowIST.fullDate !== lastIST.fullDate && nowIST.day === 1)) {
             needsReset = true;
             resetData['wallet.weeklySpent'] = 0;
             resetData['stats.weeklyGiftsReceived'] = 0;
@@ -94,15 +93,12 @@ export function ProfileInitializer() {
             batch.update(profileRef, resetData);
           }
 
-          // Presence Handshake
+          // Heartbeat Handshake
           batch.update(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           batch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
           
           await batch.commit();
           hasInitialized.current = profileId;
-        } else {
-          // New User Handshake fallback (in case login handshake failed)
-          console.warn("[Identity Sync] Missing user doc in initializer. Redirecting to Handshake.");
         }
       } catch (e: any) {
         console.error("[Identity Sync] Initialization Error:", e);
