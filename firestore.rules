@@ -35,7 +35,7 @@ service cloud.firestore {
         allow write: if isOwner(userId) || isCreator();
       }
       
-      // Social Dimension subcollections: Open for viewing by the tribe
+      // Social Dimension subcollections
       match /profileVisitors/{visitorId} {
         allow read: if isSignedIn() && isNotBanned();
         allow write: if isSignedIn() && isNotBanned();
@@ -69,7 +69,7 @@ service cloud.firestore {
       }
     }
 
-    // Required for collectionGroup queries (Leaderboard, Search) across the tribal graph
+    // Required for collectionGroup queries
     match /{path=**}/profile/{profileId} {
       allow read: if isSignedIn() && isNotBanned();
     }
@@ -88,7 +88,6 @@ service cloud.firestore {
       allow read: if isSignedIn() && isNotBanned();
       allow create: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
       allow update: if isSignedIn() && isNotBanned() && (request.auth.uid == resource.data.followerId || isCreator());
-      // Unified deletion protocol: Check ID prefix for absolute synchronization
       allow delete: if isSignedIn() && (followId.startsWith(request.auth.uid + "_") || isCreator());
     }
 
@@ -130,8 +129,8 @@ service cloud.firestore {
     match /moments/{id} {
       allow read: if isSignedIn() && isNotBanned();
       allow create: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
-      allow update: if isSignedIn() && isNotBanned() && request.auth.uid == resource.data.userId;
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || isCreator());
+      allow update: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && (request.auth.uid == request.resource.data.userId || isCreator());
     }
     
     match /globalTasks/{id} {

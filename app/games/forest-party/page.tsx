@@ -185,7 +185,7 @@ export default function WildPartyPage() {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-        gameId: 'wild-party',
+        gameId: 'forest-party',
         userId: currentUser.uid,
         username: userProfile?.username || 'Guest',
         avatarUrl: userProfile?.avatarUrl || null,
@@ -262,7 +262,7 @@ export default function WildPartyPage() {
 
         {gameState === 'result' && (
           <GameResultOverlay 
-            gameId="wild-party"
+            gameId="forest-party"
             winningSymbol={winningSymbol} 
             winAmount={totalWinAmount} 
           />
