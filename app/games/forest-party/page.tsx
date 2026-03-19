@@ -234,11 +234,18 @@ export default function WildPartyPage() {
   };
 
   if (isLaunching) {
+    const loadingBg = (gameData as any)?.loadingBackgroundUrl;
     return (
-      <div className="h-screen w-full bg-[#0a2e0a] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce">🦁</div>
-        <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Wild Party</h1>
-        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Entering the Jungle...</p>
+      <div 
+        className="h-screen w-full bg-[#0a2e0a] flex flex-col items-center justify-center space-y-6 font-headline relative overflow-hidden"
+        style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+           <div className="text-8xl animate-bounce">🦁</div>
+           <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Wild Party</h1>
+           <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Entering the Jungle...</p>
+        </div>
       </div>
     );
   }
@@ -268,7 +275,7 @@ export default function WildPartyPage() {
           />
         )}
 
-        <div className="relative z-50 flex items-center justify-between p-4 pt-10">
+        <div className="relative z-50 flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2">
               <button onClick={() => router.back()} className="bg-yellow-50 p-2 rounded-full text-black shadow-lg active:scale-90 transition-transform"><ChevronLeft className="h-5 w-5" /></button>
               <button onClick={() => setIsMuted(!isMuted)} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg">

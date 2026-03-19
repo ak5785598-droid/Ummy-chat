@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   X,
   Volume2,
@@ -24,6 +24,7 @@ import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { GameResultOverlay } from '@/components/game-result-overlay';
+import Image from 'next/image';
 
 const ITEMS = [
   { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times', pos: 'top' },
@@ -63,6 +64,9 @@ export default function FruitPartyPage() {
   const [winners, setWinners] = useState<any[]>([]);
   const [winningSymbol, setWinningSymbol] = useState<string>('');
   const [totalWinAmount, setTotalWinAmount] = useState(0);
+
+  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'fruit-party'), [firestore]);
+  const { data: gameData } = useDoc(gameDocRef);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -183,10 +187,21 @@ export default function FruitPartyPage() {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
+        'stats.weeklyGameWins': increment(winAmount),
+        'stats.monthlyGameWins': increment(winAmount),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'fruit-party',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
@@ -230,11 +245,18 @@ export default function FruitPartyPage() {
   };
 
   if (isLaunching) {
+    const loadingBg = (gameData as any)?.loadingBackgroundUrl;
     return (
-      <div className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
-        <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
-        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
+      <div 
+        className="h-screen w-full bg-[#311b92] flex flex-col items-center justify-center space-y-6 font-headline relative overflow-hidden"
+        style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+           <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
+           <h1 className="text-6xl font-black text-yellow-400 uppercase italic tracking-tighter drop-shadow-2xl">Fruit Party</h1>
+           <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Syncing Wheel...</p>
+        </div>
       </div>
     );
   }
@@ -248,6 +270,7 @@ export default function FruitPartyPage() {
 
         {gameState === 'result' && winners.length > 0 && (
           <GameResultOverlay 
+            gameId="fruit-party"
             winningSymbol={winningSymbol} 
             winAmount={totalWinAmount} 
             winners={winners} 

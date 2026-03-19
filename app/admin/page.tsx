@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -203,7 +202,9 @@ export default function AdminPage() {
 
   const gameFileInputRef = useRef<HTMLInputElement>(null);
   const gameBGFileInputRef = useRef<HTMLInputElement>(null);
+  const gameLoadingBGFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameForSync, setSelectedGameForSync] = useState<any>(null);
+  const [isUploadingGameLoadingBG, setIsUploadingGameLoadingBG] = useState(false);
 
   const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
   const [isSyncingAppData, setIsSyncingAppData] = useState(false);
@@ -402,7 +403,7 @@ export default function AdminPage() {
     addDoc(notifRef, msgData)
       .then(() => { toast({ title: 'Message Dispatched' }); setDmContent(''); })
       .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData })); })
-      .finally(() => setIsSendingDm(false));
+      .finally(() => setOpen(false));
   };
 
   const handleDispatchCoins = () => {
@@ -635,6 +636,22 @@ export default function AdminPage() {
     } finally { setIsUploadingLoadingBG(false); }
   };
 
+  const handleGameLoadingBGUpload = async (f: File) => {
+    if (!storage || !firestore || !selectedGameForSync) return;
+    setIsUploadingGameLoadingBG(true);
+    try {
+      const sRef = ref(storage, `games/${selectedGameForSync.slug}/loading_bg_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      const gameRef = doc(firestore, 'games', selectedGameForSync.slug);
+      updateDoc(gameRef, { loadingBackgroundUrl: url, updatedAt: serverTimestamp() })
+        .then(() => toast({ title: `${selectedGameForSync.title} Loading Sync Complete` }));
+    } finally {
+      setIsUploadingGameLoadingBG(false);
+      setSelectedGameForSync(null);
+    }
+  };
+
   const handleSplashBGUpload = async (f: File) => {
     if (!storage || !firestore || !configRef) return;
     setIsUploadingSplashBG(true);
@@ -700,6 +717,7 @@ export default function AdminPage() {
                 <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Monitor className="h-4 w-4" /> Splash Screen</TabsTrigger>
                 <TabsTrigger value="boutique-hub" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShoppingBag className="h-4 w-4" /> Boutique Hub</TabsTrigger>
                 <TabsTrigger value="loading-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Loader className="h-4 w-4" /> Loading Screen Sync</TabsTrigger>
+                <TabsTrigger value="game-loading" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gamepad2 className="h-4 w-4" /> Game Loading Sync</TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -723,6 +741,39 @@ export default function AdminPage() {
                      </div>
                   </CardContent>
                </Card>
+            </TabsContent>
+
+            <TabsContent value="game-loading" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-purple-600"><Gamepad2 className="h-6 w-6" /> Game Loading Sync</CardTitle>
+                     <CardDescription>Upload custom backgrounds for specific game loading screens.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {gamesList.map((game) => (
+                          <Card key={game.slug} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-4">
+                             <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-slate-900 border-2 border-white shadow-md flex items-center justify-center">
+                                {(game as any).loadingBackgroundUrl ? (
+                                  <Image src={(game as any).loadingBackgroundUrl} fill className="object-cover" alt="Loading BG" unoptimized />
+                                ) : (
+                                  <div className="text-center opacity-20"><ImageIcon className="h-8 w-8 mx-auto mb-1" /><span className="text-[8px] font-black uppercase">Standard Sync</span></div>
+                                )}
+                                {isUploadingGameLoadingBG && selectedGameForSync?.slug === game.slug && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                                <button 
+                                  onClick={() => { setSelectedGameForSync(game); gameLoadingBGFileInputRef.current?.click(); }}
+                                  className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-purple-600 active:scale-90 transition-transform"
+                                >
+                                   <Camera className="h-4 w-4" />
+                                </button>
+                             </div>
+                             <p className="font-black text-center uppercase text-sm">{(game as any).title}</p>
+                          </Card>
+                        ))}
+                     </div>
+                  </CardContent>
+               </Card>
+               <input type="file" ref={gameLoadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleGameLoadingBGUpload(e.target.files[0])} />
             </TabsContent>
 
             <TabsContent value="loading-screen" className="m-0 space-y-6">

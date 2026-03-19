@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -123,7 +123,6 @@ export default function RoulettePage() {
   const startSpin = async () => {
     setGameState('spinning');
     
-    // ORACLE SYNC CHECK
     let targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
     if (firestore) {
       try {
@@ -182,14 +181,25 @@ export default function RoulettePage() {
     setWinners(sessionWinners);
     setGameState('result');
 
-    if (winAmount > 0 && currentUser && firestore) {
+    if (winAmount > 0 && currentUser && firestore && userProfile) {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
+        'stats.weeklyGameWins': increment(winAmount),
+        'stats.monthlyGameWins': increment(winAmount),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'roulette',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
@@ -233,11 +243,18 @@ export default function RoulettePage() {
   };
 
   if (isLaunching) {
+    const loadingBg = (gameData as any)?.loadingBackgroundUrl;
     return (
-      <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-headline text-white">
-        <div className="text-8xl animate-bounce">🎡</div>
-        <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Roulette</h1>
-        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Synchronizing Wheel...</p>
+      <div 
+        className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-headline text-white relative overflow-hidden"
+        style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+           <div className="text-8xl animate-bounce">🎡</div>
+           <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Roulette</h1>
+           <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Synchronizing Wheel...</p>
+        </div>
       </div>
     );
   }
@@ -267,6 +284,7 @@ export default function RoulettePage() {
 
         {gameState === 'result' && winningNumber !== null && (
           <GameResultOverlay 
+            gameId="roulette"
             winningSymbol={winningNumberBadge} 
             winAmount={totalWinAmount} 
             winners={winners} 
