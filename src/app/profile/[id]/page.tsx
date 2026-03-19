@@ -652,7 +652,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
                 <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
-                <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/about')} />
              </Card>
              <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-3">
                 <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
