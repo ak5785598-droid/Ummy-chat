@@ -583,13 +583,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </div>
           </div>
 
-          <div className="px-6 flex justify-between items-center mb-4">
-             <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
-             <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
-             <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
-             <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
-          </div>
-
           <div className="px-3 space-y-4 mb-4">
              <div className="relative rounded-[1.5rem] overflow-hidden group shadow-lg active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-20 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-4 flex flex-col justify-start relative">
@@ -606,7 +599,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              </div>
           </div>
 
-          <div className="px-6 space-y-3 pb-20">
+          <div className="px-6 flex justify-between items-center mb-4">
+             <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+             <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
+             <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
+             <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
+          </div>
+
+          <div className="px-3 space-y-3 pb-20">
              <Card className="rounded-[1.25rem] border-none shadow-sm overflow-hidden bg-white px-2">
                 <ProfileMenuItem 
                   icon={UserPlus} 
