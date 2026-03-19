@@ -74,11 +74,13 @@ service cloud.firestore {
       allow read: if isSignedIn() && isNotBanned();
     }
 
-    // Social Graph: Follower Hierarchy
+    // Social Graph: Follower Hierarchy (Explicitly split for permission hardening)
     match /followers/{followId} {
       allow read: if isSignedIn() && isNotBanned();
-      allow write: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.followerId || isCreator());
+      allow create: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
+      allow update: if isSignedIn() && isNotBanned() && (request.auth.uid == resource.data.followerId || isCreator());
+      // delete check uses resource.data (existing doc) and followId prefix for robustness
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.followerId || followId.startsWith(request.auth.uid + "_") || isCreator());
     }
 
     // Global Grid collections
@@ -118,7 +120,9 @@ service cloud.firestore {
 
     match /moments/{id} {
       allow read: if isSignedIn() && isNotBanned();
-      allow write: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
+      allow create: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && isNotBanned() && request.auth.uid == resource.data.userId;
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || isCreator());
     }
     
     match /globalTasks/{id} {

@@ -81,6 +81,11 @@ export default function LoginPage() {
             monthlySpent: 0
           },
           level: { rich: 1, charm: 1 },
+          banStatus: {
+            isBanned: false,
+            bannedUntil: null,
+            reason: ''
+          },
           isOnline: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
