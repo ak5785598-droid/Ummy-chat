@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   Volume2, 
@@ -62,7 +62,6 @@ export default function WildPartyPage() {
   const [history, setHistory] = useState<string[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
-  const [winners, setWinners] = useState<any[]>([]);
   const [winningSymbol, setWinningSymbol] = useState<string>('');
   const [totalWinAmount, setTotalWinAmount] = useState(0);
 
@@ -172,32 +171,32 @@ export default function WildPartyPage() {
 
     setWinningSymbol(winItem?.emoji || '🏆');
     setTotalWinAmount(winAmount);
-
-    const sessionWinners = [];
-    if (winAmount > 0 && userProfile) {
-      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-    }
-    // Mock other winners for fidelity
-    if (Math.random() > 0.5) sessionWinners.push({ name: 'TribeLeader', win: 150000000, avatar: 'https://picsum.photos/seed/1/100', isMe: false });
-    if (Math.random() > 0.3) sessionWinners.push({ name: 'VibeKing', win: 30000000, avatar: 'https://picsum.photos/seed/2/100', isMe: false });
-
-    setWinners(sessionWinners);
     setGameState('result');
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
       const updateData = { 
         'wallet.coins': increment(winAmount), 
         'stats.dailyGameWins': increment(winAmount),
+        'stats.weeklyGameWins': increment(winAmount),
+        'stats.monthlyGameWins': increment(winAmount),
         updatedAt: serverTimestamp() 
       };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'wild-party',
+        userId: currentUser.uid,
+        username: userProfile?.username || 'Guest',
+        avatarUrl: userProfile?.avatarUrl || null,
+        amount: winAmount,
+        timestamp: serverTimestamp()
+      });
     }
 
     setTimeout(() => {
       setLastBets(myBets);
       setMyBets({});
-      setWinners([]);
       setHighlightIdx(null);
       setGameState('betting');
       setTimeLeft(15);
@@ -261,11 +260,11 @@ export default function WildPartyPage() {
            <div className="absolute inset-0 bg-gradient-to-t from-[#051a05] via-transparent to-transparent opacity-80" />
         </div>
 
-        {gameState === 'result' && winners.length > 0 && (
+        {gameState === 'result' && (
           <GameResultOverlay 
+            gameId="wild-party"
             winningSymbol={winningSymbol} 
             winAmount={totalWinAmount} 
-            winners={winners} 
           />
         )}
 
@@ -297,9 +296,9 @@ export default function WildPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
               
-              <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a05] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
+              <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a2e] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
                  <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
                     {gameState === 'betting' ? 'BETTING' : 'SPINNING'}
                  </p>
@@ -323,13 +322,13 @@ export default function WildPartyPage() {
                     className={cn(
                       "absolute transition-all duration-300 flex flex-col items-center group pointer-events-auto",
                       animal.pos === 'top' && "top-0",
-                      animal.pos === 'top-right' && "top-[12%] right-[12%]",
+                      animal.pos === 'top-right' && "top-[8%] right-[8%]",
                       animal.pos === 'right' && "right-0",
-                      animal.pos === 'bottom-right' && "bottom-[12%] right-[12%]",
+                      animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
                       animal.pos === 'bottom' && "bottom-0",
-                      animal.pos === 'bottom-left' && "bottom-[12%] left-[12%]",
+                      animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
                       animal.pos === 'left' && "left-0",
-                      animal.pos === 'top-left' && "top-[12%] left-[12%]",
+                      animal.pos === 'top-left' && "top-[8%] left-[8%]",
                       isActive && "z-30 brightness-125 scale-110"
                     )}
                   >
@@ -360,7 +359,7 @@ export default function WildPartyPage() {
                         )}
 
                         {isActive && gameState === 'result' && (
-                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.2rem] animate-ping" />
+                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.5rem] animate-ping" />
                         )}
                      </div>
                   </button>
