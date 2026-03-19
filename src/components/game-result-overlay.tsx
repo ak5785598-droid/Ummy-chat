@@ -83,15 +83,15 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
               ))}
            </div>
 
-           <div className="bg-[#5d1a2a] rounded-2xl border-4 border-[#fbbf24]/40 shadow-2xl flex items-center h-24 px-8 overflow-hidden relative">
-              <div className="flex items-center gap-6 flex-1">
-                 <div className="text-6xl drop-shadow-2xl flex items-center justify-center">
+           <div className="bg-[#5d1a2a] rounded-2xl border-4 border-[#fbbf24]/40 shadow-2xl flex items-center h-20 px-6 overflow-hidden relative">
+              <div className="flex items-center gap-4 flex-1">
+                 <div className="text-5xl drop-shadow-2xl flex items-center justify-center">
                     {winningSymbol || '🏆'}
                  </div>
-                 <div className="h-12 w-[3px] bg-white/20 rounded-full" />
-                 <div className="flex items-center gap-3">
-                    <GoldCoinIcon className="h-10 w-10 text-yellow-400 drop-shadow-md" />
-                    <span className="text-5xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-lg">
+                 <div className="h-10 w-[2px] bg-white/20 rounded-full" />
+                 <div className="flex items-center gap-2">
+                    <GoldCoinIcon className="h-7 w-7 text-yellow-400 drop-shadow-md" />
+                    <span className="text-3xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-lg">
                        {winAmount.toLocaleString()}
                     </span>
                  </div>
@@ -121,9 +121,9 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
                          {winner.name}
                       </span>
                    </div>
-                   <div className="flex items-center gap-2">
-                      <GoldCoinIcon className="h-5 w-5 text-yellow-400" />
-                      <span className="text-lg font-black text-yellow-500 italic">
+                   <div className="flex items-center gap-1.5">
+                      <GoldCoinIcon className="h-4 w-4 text-yellow-400" />
+                      <span className="text-sm font-black text-yellow-500 italic">
                          {formatValue(winner.win)}
                       </span>
                    </div>
