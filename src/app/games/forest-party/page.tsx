@@ -296,14 +296,14 @@ export default function WildPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[260px] aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
               
-              <div className="relative z-20 w-24 h-24 bg-gradient-to-b from-[#2d1a12] to-[#1a0a05] rounded-full shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
-                 <p className="text-[7px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
+              <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a2e] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
+                 <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
                     {gameState === 'betting' ? 'BETTING' : 'SPINNING'}
                  </p>
                  <span className={cn(
-                   "text-4xl font-black italic tracking-tighter transition-all duration-500",
+                   "text-5xl font-black italic tracking-tighter transition-all duration-500",
                    gameState === 'betting' ? "text-white" : "text-yellow-400 animate-reaction-heartbeat"
                  )}>
                     {gameState === 'betting' ? timeLeft : '🎲'}
@@ -322,44 +322,44 @@ export default function WildPartyPage() {
                     className={cn(
                       "absolute transition-all duration-300 flex flex-col items-center group pointer-events-auto",
                       animal.pos === 'top' && "top-0",
-                      animal.pos === 'top-right' && "top-[10%] right-[10%]",
+                      animal.pos === 'top-right' && "top-[12%] right-[12%]",
                       animal.pos === 'right' && "right-0",
-                      animal.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
+                      animal.pos === 'bottom-right' && "bottom-[12%] right-[12%]",
                       animal.pos === 'bottom' && "bottom-0",
-                      animal.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
+                      animal.pos === 'bottom-left' && "bottom-[12%] left-[12%]",
                       animal.pos === 'left' && "left-0",
-                      animal.pos === 'top-left' && "top-[10%] left-[10%]",
-                      isActive && "z-30 brightness-125"
+                      animal.pos === 'top-left' && "top-[12%] left-[12%]",
+                      isActive && "z-30 brightness-125 scale-110"
                     )}
                   >
                      <div className="relative">
                         <div className={cn(
-                          "h-16 w-16 rounded-[1.2rem] flex flex-col items-center justify-center transition-all border-[2px] relative overflow-hidden shadow-xl",
+                          "h-24 w-24 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-3xl drop-shadow-lg relative z-10">
+                           <span className="text-5xl drop-shadow-lg relative z-10">
                               {animal.id === 'lion' ? '🦁' : animal.emoji}
                            </span>
-                           <span className="text-[7px] font-black text-white/80 uppercase mt-0.5 leading-none tracking-widest relative z-10">
+                           <span className="text-[10px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
                            <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
                         </div>
                         
                         {betOnThis > 0 && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-40 animate-in zoom-in duration-300">
-                             <div className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] px-3 py-0.5 rounded-full border border-white/40 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-[8px] font-black text-white uppercase italic leading-none">Bet</span>
+                          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-40 animate-in zoom-in duration-300">
+                             <div className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] px-4 py-1 rounded-full border border-white/40 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="text-[9px] font-black text-white uppercase italic leading-none">Bet</span>
                                 <div className="flex items-center gap-0.5">
-                                   <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
-                                   <span className="text-[9px] font-black text-white italic leading-none">{betOnThis.toLocaleString()}</span>
+                                   <GoldCoinIcon className="h-3 w-3 text-yellow-400" />
+                                   <span className="text-[10px] font-black text-white italic leading-none">{betOnThis.toLocaleString()}</span>
                                 </div>
                              </div>
                           </div>
                         )}
 
                         {isActive && gameState === 'result' && (
-                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.2rem] animate-ping" />
+                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.5rem] animate-ping" />
                         )}
                      </div>
                   </button>
