@@ -18,7 +18,7 @@ import {
 
 /**
  * High-Fidelity Official About Dimension.
- * Corrected to root App directory with integrated User Agreement.
+ * Features synchronized User Agreement and Privacy Policy portals.
  */
 export default function AboutPage() {
   const router = useRouter();
@@ -56,11 +56,12 @@ export default function AboutPage() {
                  </div>
               </div>
 
-              <div className="w-full">
+              <div className="w-full divide-y divide-gray-50">
+                 {/* User Agreement Portal */}
                  <Dialog>
                     <DialogTrigger asChild>
                        <button 
-                         className="w-full flex items-center justify-between p-10 py-12 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group border-t border-gray-50"
+                         className="w-full flex items-center justify-between p-8 py-10 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group"
                        >
                           <span className="text-[17px] font-black text-gray-700 italic tracking-tight">User Agreement</span>
                           <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
@@ -169,6 +170,100 @@ export default function AboutPage() {
                             className="w-full h-16 bg-black text-white rounded-2xl font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all"
                           >
                              Understand & Agree
+                          </button>
+                       </div>
+                    </DialogContent>
+                 </Dialog>
+
+                 {/* Privacy Policy Portal */}
+                 <Dialog>
+                    <DialogTrigger asChild>
+                       <button 
+                         className="w-full flex items-center justify-between p-8 py-10 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group"
+                       >
+                          <span className="text-[17px] font-black text-gray-700 italic tracking-tight">Privacy Policy</span>
+                          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
+                       </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
+                       <DialogHeader className="p-8 pb-4 border-b">
+                          <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900">Privacy Policy</DialogTitle>
+                          <DialogDescription className="sr-only">Ummy Chat official privacy policy.</DialogDescription>
+                       </DialogHeader>
+                       <ScrollArea className="h-[60vh] p-8 pt-4">
+                          <div className="space-y-6 text-gray-600 font-body text-base leading-relaxed">
+                             <div className="space-y-1">
+                                <h3 className="text-xl font-black text-slate-900 uppercase italic">Ummy Chat App Privacy Policy</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Last updated: January 2026</p>
+                             </div>
+
+                             <p className="font-black text-slate-800 italic bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                                We care about your privacy 😊. Here's how we handle your info:
+                             </p>
+                             
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*1. Info We Collect*</h4>
+                                <ul className="list-disc pl-5 space-y-1.5">
+                                   <li>Account info (name, email, etc.)</li>
+                                   <li>Usage data (activity, interactions)</li>
+                                   <li>Device info (IP, OS, etc.)</li>
+                                </ul>
+                             </section>
+
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*2. How We Use Info*</h4>
+                                <ul className="list-disc pl-5 space-y-1.5">
+                                   <li>To provide and improve services</li>
+                                   <li>To personalize experience</li>
+                                   <li>For security and analytics</li>
+                                </ul>
+                             </section>
+
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*3. Sharing Info*</h4>
+                                <ul className="list-disc pl-5 space-y-1.5">
+                                   <li>With service providers (for app functioning)</li>
+                                   <li>For legal compliance</li>
+                                   <li>With your consent</li>
+                                </ul>
+                             </section>
+
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*4. Security*</h4>
+                                <ul className="list-disc pl-5 space-y-1.5">
+                                   <li>We protect your data with security measures.</li>
+                                   <li>But, no system is 100% secure.</li>
+                                </ul>
+                             </section>
+
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*5. Your Choices*</h4>
+                                <ul className="list-disc pl-5 space-y-1.5">
+                                   <li>Manage settings to control some data sharing.</li>
+                                   <li>Request data access or deletion.</li>
+                                </ul>
+                             </section>
+
+                             <section className="space-y-2">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*6. Changes*</h4>
+                                <p>We update this policy as needed. Changes are effective immediately.</p>
+                             </section>
+
+                             <section className="space-y-2 pb-10">
+                                <h4 className="font-black text-slate-900 uppercase text-sm italic tracking-tight">*7. Contact*</h4>
+                                <p>For questions, contact us via the official support channels in the Help Center.</p>
+                             </section>
+
+                             <p className="font-black text-slate-900 italic text-center py-4 border-t">
+                                By using Ummy, you agree to this policy. 😊
+                             </p>
+                          </div>
+                       </ScrollArea>
+                       <div className="p-8 pt-0 border-t bg-slate-50/50">
+                          <button 
+                            className="w-full h-16 bg-black text-white rounded-2xl font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all"
+                          >
+                             Acknowledge & Sync
                           </button>
                        </div>
                     </DialogContent>
