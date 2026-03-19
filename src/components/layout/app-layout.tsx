@@ -162,8 +162,8 @@ export function AppLayout({
               style={{ 
                 position: 'fixed', 
                 bottom: 'calc(env(safe-area-inset-bottom) + 12px)', 
-                left: '12px', 
-                right: '12px', 
+                left: '5%', 
+                right: '5%', 
                 zIndex: 999 
               }}
               className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 shrink-0 px-2 rounded-[2rem] border-2 border-primary/20 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
