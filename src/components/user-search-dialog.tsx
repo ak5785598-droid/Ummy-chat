@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * High-Fidelity Universal Search Dimension.
@@ -75,11 +77,17 @@ export function UserSearchDialog() {
         description: `No ${activeTab === 'user' ? 'tribe member' : 'room'} exists with ID ${searchId}.`,
       });
     } catch (e: any) {
-      console.error("[Search Sync] Error:", e);
+      // Create and emit the specialized error for rule debugging
+      const permissionError = new FirestorePermissionError({
+        path: activeTab === 'user' ? 'profile' : 'chatRooms',
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+
       toast({
         variant: 'destructive',
         title: 'Search Failed',
-        description: 'Check your connection frequency.'
+        description: 'Identity synchronization failed.'
       });
     } finally {
       setIsSearching(false);

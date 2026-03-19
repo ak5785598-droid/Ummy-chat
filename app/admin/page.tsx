@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -45,33 +45,6 @@ const ELITE_TAGS = [
   { id: 'Seller', label: 'Seller', color: 'bg-purple-500', icon: Heart },
   { id: 'Official center', label: 'Official center', color: 'bg-indigo-500', icon: ShieldCheck },
   { id: 'Seller center', label: 'Seller center', color: 'bg-orange-500', icon: Store },
-];
-
-const DISPATCH_ASSETS = {
-  frames: [
-    { id: 'ummy-cs', name: 'Ummy CS Majestic' },
-    { id: 'f-official-hq', name: 'Sovereign Official HQ' },
-    { id: 'f1', name: 'Golden Official' },
-    { id: 'f5', name: 'Golden wings' },
-    { id: 'f7', name: 'Celestial Wings' },
-    { id: 'f2', name: 'Cyberpunk Red' },
-    { id: 'f3', name: 'Royal Purple' },
-    { id: 'f4', name: 'Imperial Bloom' },
-    { id: 'f6', name: 'Bronze Sky' },
-  ]
-};
-
-const DEFAULT_SLIDES = [
-  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-1')?.imageUrl },
-  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-2')?.imageUrl },
-  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: PlaceHolderImages.find(img => img.id === 'admin-banner-3')?.imageUrl }
-];
-
-const ACTIVE_GAME_FREQUENCIES = [
-  { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
-  { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
-  { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
-  { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
 ];
 
 const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
@@ -267,15 +240,21 @@ export default function AdminPage() {
   }, [firestore, isCreator]);
   const { data: rankingConfig } = useDoc(rankingConfigRef);
 
-  const handleUpdateGlobalNotice = async () => {
+  const handleUpdateGlobalNotice = () => {
     if (!firestore || !isCreator || !configRef) return;
     setIsUpdatingGlobalNotice(true);
-    try {
-      await updateDoc(configRef, { globalAnnouncement: globalAnnouncementInput, updatedAt: serverTimestamp() });
-      toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' });
-    } finally {
-      setIsUpdatingGlobalNotice(false);
-    }
+    updateDoc(configRef, { globalAnnouncement: globalAnnouncementInput, updatedAt: serverTimestamp() })
+      .then(() => {
+        toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: configRef.path,
+          operation: 'update',
+          requestResourceData: { globalAnnouncement: globalAnnouncementInput }
+        }));
+      })
+      .finally(() => setIsUpdatingGlobalNotice(false));
   };
 
   const handleSyncAppData = async () => {
@@ -292,6 +271,8 @@ export default function AdminPage() {
       });
       setAppStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
       toast({ title: 'Economic Ledger Synchronized' });
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       setIsSyncingAppData(false);
     }
@@ -304,6 +285,8 @@ export default function AdminPage() {
       const snap = await getDocs(query(collection(firestore, 'users'), limit(50)));
       setTribalMembers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
       toast({ title: 'Member Directory Synchronized' });
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       setIsSyncingDirectory(false);
     }
@@ -316,6 +299,8 @@ export default function AdminPage() {
       const q = query(collection(firestore, 'users'), where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'), limit(10));
       const snap = await getDocs(q);
       setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       setIsSearching(false);
     }
@@ -361,6 +346,8 @@ export default function AdminPage() {
       } else {
         toast({ variant: 'destructive', title: 'Identity Not Found' });
       }
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       loadingSetter(false);
     }
@@ -377,23 +364,27 @@ export default function AdminPage() {
       } else {
         toast({ variant: 'destructive', title: 'Frequency Not Found' });
       }
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'chatRooms', operation: 'list' }));
     } finally {
       setIsSearchingRoomPin(false);
     }
   };
 
-  const handleToggleRoomPin = async () => {
+  const handleToggleRoomPin = () => {
     if (!firestore || !targetRoomForPin || !isCreator) return;
     setIsPinningRoom(true);
-    try {
-      const roomRef = doc(firestore, 'chatRooms', targetRoomForPin.id);
-      const newPinStatus = !targetRoomForPin.isPinned;
-      await updateDoc(roomRef, { isPinned: newPinStatus, pinnedAt: newPinStatus ? serverTimestamp() : null });
-      setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus }));
-      toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' });
-    } finally {
-      setIsPinningRoom(false);
-    }
+    const roomRef = doc(firestore, 'chatRooms', targetRoomForPin.id);
+    const newPinStatus = !targetRoomForPin.isPinned;
+    updateDoc(roomRef, { isPinned: newPinStatus, pinnedAt: newPinStatus ? serverTimestamp() : null })
+      .then(() => {
+        setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus }));
+        toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update' }));
+      })
+      .finally(() => setIsPinningRoom(false));
   };
 
   const handleResetWallet = async () => {
@@ -401,12 +392,13 @@ export default function AdminPage() {
     if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet?")) return;
     
     setIsResettingWallet(true);
+    const uRef = doc(firestore, 'users', targetUserForRecord.id);
+    const pRef = doc(firestore, 'users', targetUserForRecord.id, 'profile', targetUserForRecord.id);
+    const resetData = { 'wallet.coins': 0, 'wallet.diamonds': 0, 'wallet.totalSpent': 0, 'wallet.dailySpent': 0, updatedAt: serverTimestamp() };
+    
     try {
-      const uRef = doc(firestore, 'users', targetUserForRecord.id);
-      const pRef = doc(firestore, 'users', targetUserForRecord.id, 'profile', targetUserForRecord.id);
-      const resetData = { 'wallet.coins': 0, 'wallet.diamonds': 0, 'wallet.totalSpent': 0, 'wallet.dailySpent': 0, updatedAt: serverTimestamp() };
-      await updateDocumentNonBlocking(uRef, resetData);
-      await updateDocumentNonBlocking(pRef, resetData);
+      updateDocumentNonBlocking(uRef, resetData);
+      updateDocumentNonBlocking(pRef, resetData);
       setTargetUserForRecord((prev: any) => ({ ...prev, wallet: { coins: 0, diamonds: 0, totalSpent: 0, dailySpent: 0 } }));
       toast({ title: 'Wallet Purged' });
     } finally {
@@ -432,50 +424,48 @@ export default function AdminPage() {
       await Promise.all(batches);
       toast({ title: 'Broadcast Synchronized' });
       setBroadcastContent('');
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users/notifications', operation: 'write' }));
     } finally {
       setIsBroadcasting(false);
     }
   };
 
-  const handleDirectMessage = async () => {
+  const handleDirectMessage = () => {
     if (!firestore || !targetUserForDm || !dmContent.trim() || !isCreator) return;
     setIsSendingDm(true);
-    try {
-      const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
-      await addDoc(notifRef, { title: dmTitle, content: dmContent, type: 'direct_system', timestamp: serverTimestamp(), isRead: false });
-      toast({ title: 'Message Dispatched' });
-      setDmContent('');
-    } finally {
-      setIsSendingDm(false);
-    }
+    const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
+    const msgData = { title: dmTitle, content: dmContent, type: 'direct_system', timestamp: serverTimestamp(), isRead: false };
+    
+    addDoc(notifRef, msgData)
+      .then(() => {
+        toast({ title: 'Message Dispatched' });
+        setDmContent('');
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData }));
+      })
+      .finally(() => setIsSendingDm(false));
   };
 
-  const handleDispatchCoins = async () => {
+  const handleDispatchCoins = () => {
     if (!firestore || !targetUserForRewards || !coinDispatchAmount) return;
     setIsDispatching(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForRewards.id);
-      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
-      const amt = parseInt(coinDispatchAmount);
-      updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(amt) });
-      updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(amt) });
-      toast({ title: 'Coins Dispatched' });
-      setCoinDispatchAmount('');
-    } finally {
-      setIsDispatching(false);
-    }
+    const uRef = doc(firestore, 'users', targetUserForRewards.id);
+    const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
+    const amt = parseInt(coinDispatchAmount);
+    updateDocumentNonBlocking(uRef, { 'wallet.coins': increment(amt) });
+    updateDocumentNonBlocking(pRef, { 'wallet.coins': increment(amt) });
+    toast({ title: 'Coins Dispatched' });
+    setCoinDispatchAmount('');
+    setIsDispatching(false);
   };
 
-  const handleDispatchItem = async (itemId: string, type: 'ownedItems' | 'purchasedThemes') => {
+  const handleDispatchItem = (itemId: string, type: 'ownedItems' | 'purchasedThemes') => {
     if (!firestore || !targetUserForRewards) return;
-    setIsDispatching(true);
-    try {
-      const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
-      updateDocumentNonBlocking(pRef, { [`inventory.${type}`]: arrayUnion(itemId) });
-      toast({ title: 'Asset Dispatched' });
-    } finally {
-      setIsDispatching(false);
-    }
+    const pRef = doc(firestore, 'users', targetUserForRewards.id, 'profile', targetUserForRewards.id);
+    updateDocumentNonBlocking(pRef, { [`inventory.${type}`]: arrayUnion(itemId) });
+    toast({ title: 'Asset Dispatched' });
   };
 
   const handleUpdateId = async () => {
@@ -498,63 +488,69 @@ export default function AdminPage() {
       setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
       toast({ title: 'ID Synchronized' });
       setNewIdInput('');
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       setIsSavingId(false);
     }
   };
 
-  const handleRemoveId = async () => {
+  const handleRemoveId = () => {
     if (!firestore || !targetUserForId) return;
     setIsSavingId(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-      const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
-      await updateDocumentNonBlocking(uRef, updateData);
-      await updateDocumentNonBlocking(pRef, updateData);
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
-      toast({ title: 'ID Signature Purged' });
-    } finally {
-      setIsSavingId(false);
-    }
+    const uRef = doc(firestore, 'users', targetUserForId.id);
+    const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
+    const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
+    
+    updateDocumentNonBlocking(uRef, updateData);
+    updateDocumentNonBlocking(pRef, updateData);
+    setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
+    toast({ title: 'ID Signature Purged' });
+    setIsSavingId(false);
   };
 
-  const handleBanUser = async () => {
+  const handleBanUser = () => {
     if (!firestore || !targetUserForBan || !isCreator) return;
     setIsBanning(true);
-    try {
-      const days = parseInt(banDays) || 0;
-      const hours = parseInt(banHours) || 0;
-      const mins = parseInt(banMinutes) || 0;
-      const secs = parseInt(banSeconds) || 0;
-      const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
-      const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      const banData = { banStatus: { isBanned: true, bannedAt: serverTimestamp(), bannedUntil: bannedUntil, reason: 'Administrative Exclusion' } };
-      await setDoc(uRef, banData, { merge: true });
-      await setDoc(pRef, banData, { merge: true });
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
-      toast({ title: 'ID Banned' });
-    } finally {
-      setIsBanning(false);
-    }
+    const days = parseInt(banDays) || 0;
+    const hours = parseInt(banHours) || 0;
+    const mins = parseInt(banMinutes) || 0;
+    const secs = parseInt(banSeconds) || 0;
+    const totalMs = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (mins * 60 * 1000) + (secs * 1000);
+    const bannedUntil = isPermanentBan ? null : Timestamp.fromDate(new Date(Date.now() + totalMs));
+    const uRef = doc(firestore, 'users', targetUserForBan.id);
+    const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+    const banData = { banStatus: { isBanned: true, bannedAt: serverTimestamp(), bannedUntil: bannedUntil, reason: 'Administrative Exclusion' } };
+    
+    setDoc(uRef, banData, { merge: true })
+      .then(() => setDoc(pRef, banData, { merge: true }))
+      .then(() => {
+        setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
+        toast({ title: 'ID Banned' });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: banData }));
+      })
+      .finally(() => setIsBanning(false));
   };
 
-  const handleUnbanUser = async () => {
+  const handleUnbanUser = () => {
     if (!firestore || !targetUserForBan || !isCreator) return;
     setIsBanning(true);
-    try {
-      const uRef = doc(firestore, 'users', targetUserForBan.id);
-      const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
-      const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
-      await setDoc(uRef, unbanData, { merge: true });
-      await setDoc(pRef, unbanData, { merge: true });
-      setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
-      toast({ title: 'ID Unbanned' });
-    } finally {
-      setIsBanning(false);
-    }
+    const uRef = doc(firestore, 'users', targetUserForBan.id);
+    const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
+    const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
+    
+    setDoc(uRef, unbanData, { merge: true })
+      .then(() => setDoc(pRef, unbanData, { merge: true }))
+      .then(() => {
+        setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
+        toast({ title: 'ID Unbanned' });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: unbanData }));
+      })
+      .finally(() => setIsBanning(false));
   };
 
   const adjustBalance = (targetUserId: string, type: 'coins' | 'diamonds', amount: number) => {
@@ -567,7 +563,7 @@ export default function AdminPage() {
     toast({ title: 'Balance Adjusted' });
   };
 
-  const toggleUserRole = async (targetUid: string, roleId: string, currentTags: string[] = []) => {
+  const toggleUserRole = (targetUid: string, roleId: string, currentTags: string[] = []) => {
     if (!firestore) return;
     const hasRole = (currentTags || []).includes(roleId);
     const userRef = doc(firestore, 'users', targetUid);
@@ -582,7 +578,7 @@ export default function AdminPage() {
     toast({ title: 'Authority Updated' });
   };
 
-  const handleToggleSellerCenter = async () => {
+  const handleToggleSellerCenter = () => {
     if (!firestore || !targetUserForCenter) return;
     const tags = targetUserForCenter.tags || [];
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
@@ -601,7 +597,7 @@ export default function AdminPage() {
     toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
   };
 
-  const handleRemoveAllTags = async (targetUid: string) => {
+  const handleRemoveAllTags = (targetUid: string) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', targetUid);
     const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
@@ -624,8 +620,11 @@ export default function AdminPage() {
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];
       newSlides[index] = { ...newSlides[index], imageUrl: url };
-      await setDoc(bannerConfigRef, { slides: newSlides }, { merge: true });
-      toast({ title: 'Banner Updated' });
+      setDoc(bannerConfigRef, { slides: newSlides }, { merge: true })
+        .then(() => toast({ title: 'Banner Updated' }))
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef.path, operation: 'write' }));
+        });
     } finally {
       setIsUploadingBanner(null);
     }
@@ -638,14 +637,17 @@ export default function AdminPage() {
       const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      await setDoc(rankingConfigRef, { [key]: url }, { merge: true });
-      toast({ title: `${key.toUpperCase()} Background Updated` });
+      setDoc(rankingConfigRef, { [key]: url }, { merge: true })
+        .then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: rankingConfigRef.path, operation: 'write' }));
+        });
     } finally {
       setUploadingRankingKey(null);
     }
   };
 
-  const handleAddBanner = async () => {
+  const handleAddBanner = () => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
     const newSlide = {
@@ -656,34 +658,37 @@ export default function AdminPage() {
       imageUrl: ""
     };
     const newSlides = [...currentSlides, newSlide];
-    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
-    toast({ title: 'New Banner Slot Added' });
+    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
+      });
   };
 
-  const handleRemoveBanner = async (index: number) => {
+  const handleRemoveBanner = (index: number) => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
     const newSlides = currentSlides.filter((_, i) => i !== index);
-    await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
-    toast({ title: 'Banner Removed' });
+    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
+      });
   };
 
-  const handleUpdateBannerMeta = async (index: number, field: string, value: string) => {
+  const handleUpdateBannerMeta = (index: number, field: string, value: string) => {
     if (!firestore || !isCreator) return;
     const currentSlides = [...(bannerConfig?.slides || DEFAULT_SLIDES)];
     currentSlides[index] = { ...currentSlides[index], [field]: value };
-    await setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true });
+    setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
+      });
   };
 
   const handleThemeUpload = async (file: File) => {
     if (!storage || !firestore) return;
     
     if (!newThemeName.trim()) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Missing Identifier', 
-        description: 'Please enter a Theme Name before uploading visual assets.' 
-      });
+      toast({ variant: 'destructive', title: 'Missing Identifier', description: 'Please enter a Theme Name before uploading visual assets.' });
       return;
     }
 
@@ -695,7 +700,7 @@ export default function AdminPage() {
       const url = await getDownloadURL(result.ref);
       
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      await setDoc(themeRef, { 
+      const themeData = { 
         id: themeRef.id, 
         name: newThemeName.trim(), 
         url: url, 
@@ -705,19 +710,18 @@ export default function AdminPage() {
         createdAt: serverTimestamp(), 
         accentColor: '#FFCC00', 
         seatColor: 'rgba(255, 255, 255, 0.1)' 
-      });
-      
-      toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
-      setNewThemeName('');
-      setNewThemePrice('0');
-      setNewThemeDuration('7');
-    } catch (error: any) {
-      console.error('[Theme Hub] Upload Error:', error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Upload Failed', 
-        description: error.message || 'Check connection and authority protocol.' 
-      });
+      };
+
+      setDoc(themeRef, themeData)
+        .then(() => {
+          toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
+          setNewThemeName('');
+          setNewThemePrice('0');
+          setNewThemeDuration('7');
+        })
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: themeRef.path, operation: 'create', requestResourceData: themeData }));
+        });
     } finally {
       setIsUploadingTheme(false);
     }
@@ -730,8 +734,11 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      await setDoc(configRef, { loginBackgroundUrl: url }, { merge: true });
-      toast({ title: 'Login Background Synchronized' });
+      setDoc(configRef, { loginBackgroundUrl: url }, { merge: true })
+        .then(() => toast({ title: 'Login Background Synchronized' }))
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
+        });
     } finally {
       setIsUploadingLoginBG(false);
     }
@@ -744,8 +751,11 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      await setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true });
-      toast({ title: 'App Loading Background Synchronized' });
+      setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true })
+        .then(() => toast({ title: 'App Loading Background Synchronized' }))
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
+        });
     } finally {
       setIsUploadingLoadingBG(false);
     }
@@ -758,8 +768,11 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      await setDoc(configRef, { splashScreenUrl: url }, { merge: true });
-      toast({ title: 'Splash Screen Synchronized' });
+      setDoc(configRef, { splashScreenUrl: url }, { merge: true })
+        .then(() => toast({ title: 'Splash Screen Synchronized' }))
+        .catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
+        });
     } finally {
       setIsUploadingSplashBG(false);
     }
@@ -1004,7 +1017,6 @@ export default function AdminPage() {
                   </CardContent>
                </Card>
             </TabsContent>
-            {/* ... rest of the tabs ... */}
           </div>
         </Tabs>
       </div>

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   useAuth, 
   useUser, 
-  useFirestore
+  useFirestore,
+  errorEmitter,
+  FirestorePermissionError
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { signOut } from 'firebase/auth';
@@ -109,6 +110,13 @@ export default function SettingsPage() {
       await signOut(auth);
       window.location.href = '/login';
     } catch (e: any) {
+      // Emit contextual error if logout cleanup fails
+      const permissionError = new FirestorePermissionError({
+        path: `users/${user.uid}`,
+        operation: 'update',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      
       await signOut(auth);
       window.location.href = '/login';
     }

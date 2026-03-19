@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * High-Fidelity Identity Portal.
@@ -105,8 +107,13 @@ export default function LoginPage() {
           }
         });
       }
-    } catch (err) {
-      console.error("[Identity Sync] Handshake Error:", err);
+    } catch (err: any) {
+      // Emit contextual error for identity sync failure
+      const permissionError = new FirestorePermissionError({
+        path: userRef.path,
+        operation: 'write',
+      });
+      errorEmitter.emit('permission-error', permissionError);
     }
   };
 
