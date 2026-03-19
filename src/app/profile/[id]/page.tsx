@@ -616,7 +616,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
-          <div className="px-6 space-y-4 mb-6">
+          <div className="px-3 space-y-4 mb-6">
              <div className="relative rounded-[2rem] overflow-hidden group shadow-xl active:scale-[0.98] transition-all cursor-pointer">
                 <div className="h-32 bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 p-6 flex flex-col justify-start relative">
                    <div className="flex items-center gap-2.5 relative z-10">
