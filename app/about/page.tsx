@@ -15,7 +15,6 @@ import Image from 'next/image';
  */
 export default function AboutPage() {
   const router = useRouter();
-  const mascotAsset = PlaceHolderImages.find(img => img.id === 'ummy-mascot');
 
   return (
     <AppLayout hideSidebarOnMobile hideBottomNav fullScreen>
@@ -39,19 +38,8 @@ export default function AboutPage() {
               <div className="pt-14 pb-16 flex flex-col items-center gap-4 text-center">
                  <div className="relative">
                     <div className="absolute inset-0 bg-pink-400/5 blur-2xl rounded-full scale-150" />
-                    <div className="h-32 w-32 relative rounded-full overflow-hidden border-[6px] border-white shadow-2xl bg-slate-50">
-                       {mascotAsset ? (
-                         <Image 
-                           src={mascotAsset.imageUrl} 
-                           alt="Ummy Mascot" 
-                           fill 
-                           className="object-cover" 
-                           data-ai-hint="cute characters"
-                           unoptimized
-                         />
-                       ) : (
-                         <UmmyLogoIcon className="h-full w-full" />
-                       )}
+                    <div className="h-32 w-32 relative rounded-full overflow-hidden border-[6px] border-white shadow-2xl bg-white flex items-center justify-center">
+                       <UmmyLogoIcon className="h-24 w-24" />
                     </div>
                  </div>
 
