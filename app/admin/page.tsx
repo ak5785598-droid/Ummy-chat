@@ -503,7 +503,7 @@ export default function AdminPage() {
   const toggleUserRole = (targetUid: string, roleId: string, currentTags: string[] = []) => {
     if (!firestore) return;
     const hasRole = (currentTags || []).includes(roleId);
-    const userRef = doc(firestore, 'users', targetUid);
+    const userRef = doc(firestore, 'targetUserId', targetUid);
     const profileRef = doc(firestore, 'users', targetUid, 'profile', targetUid);
     const updateData = { tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
@@ -623,6 +623,30 @@ export default function AdminPage() {
     } finally { setIsUploadingLoginBG(false); }
   };
 
+  const handleLoadingBGUpload = async (f: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingLoadingBG(true);
+    try {
+      const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true }).then(() => toast({ title: 'App Loading Sync Complete' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingLoadingBG(false); }
+  };
+
+  const handleSplashBGUpload = async (f: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingSplashBG(true);
+    try {
+      const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      setDoc(configRef, { splashScreenUrl: url }, { merge: true }).then(() => toast({ title: 'Splash Background Synchronized' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingSplashBG(false); }
+  };
+
   const handleLogoUpload = async (f: File) => {
     if (!storage || !firestore || !configRef) return;
     setIsUploadingLogo(true);
@@ -675,6 +699,7 @@ export default function AdminPage() {
                 <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gift className="h-4 w-4" /> Rewards</TabsTrigger>
                 <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Monitor className="h-4 w-4" /> Splash Screen</TabsTrigger>
                 <TabsTrigger value="boutique-hub" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShoppingBag className="h-4 w-4" /> Boutique Hub</TabsTrigger>
+                <TabsTrigger value="loading-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Loader className="h-4 w-4" /> Loading Screen Sync</TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -695,6 +720,47 @@ export default function AdminPage() {
                         <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Total Diamonds Accumulated</p><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Sparkles className="h-6 w-6" />{appStats.totalDiamonds.toLocaleString()}</div></div>
                         <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Total Economic Output (Spent)</p><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{appStats.totalSpent.toLocaleString()}</div></div>
                         <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Synchronized Users</p><div className="flex items-center gap-2 text-2xl font-black text-slate-900 italic"><Users className="h-6 w-6" />{appStats.totalUsers.toLocaleString()}</div></div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="loading-screen" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600"><Loader className="h-6 w-6" /> App Loading Sync</CardTitle>
+                     <CardDescription>Manage the background image shown during app initialization and dimension transitions.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-10">
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ImageIcon className="h-5 w-5 text-indigo-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Loading Background</span>
+                           </div>
+                           {config?.appLoadingBackgroundUrl && (
+                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { appLoadingBackgroundUrl: null })}>Reset to Default</Button>
+                           )}
+                        </div>
+                        
+                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-xl flex items-center justify-center">
+                           {config?.appLoadingBackgroundUrl ? (
+                             <Image src={config.appLoadingBackgroundUrl} fill className="object-cover" alt="Loading BG" unoptimized />
+                           ) : (
+                             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
+                                <Loader className="h-10 w-10 animate-spin" />
+                                <span className="uppercase font-black text-[10px] tracking-widest">Default Syncing</span>
+                             </div>
+                           )}
+                           {isUploadingLoadingBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                           <button 
+                             onClick={() => loadingBGFileInputRef.current?.click()}
+                             className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-indigo-600 active:scale-90 transition-transform"
+                           >
+                              <Camera className="h-6 w-6" />
+                           </button>
+                        </div>
+                        <input type="file" ref={loadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoadingBGUpload(e.target.files[0])} />
                      </div>
                   </CardContent>
                </Card>
