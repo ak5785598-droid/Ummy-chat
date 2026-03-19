@@ -247,6 +247,8 @@ export function RoomClient({ room }: { room: Room }) {
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastProcessedId = useRef<string | null>(null);
+
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -342,6 +344,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
+  // AUTO-SCROLL SYNC
   useEffect(() => {
     if (messagesEndRef.current) {
       const timer = setTimeout(() => {
@@ -349,13 +352,30 @@ export function RoomClient({ room }: { room: Room }) {
       }, 50);
       return () => clearTimeout(timer);
     }
-    if (firestoreMessages && firestoreMessages.length > 0) {
-      const lastMsg = firestoreMessages[firestoreMessages.length - 1];
-      if (lastMsg.type === 'gift') {
-        setActiveGiftSync({ id: lastMsg.giftId, senderName: lastMsg.senderName });
-      } else if (lastMsg.type === 'lucky-rain') {
+  }, [firestoreMessages]);
+
+  // GIFT & EVENT SYNC ENGINE
+  useEffect(() => {
+    if (!firestoreMessages || firestoreMessages.length === 0) return;
+
+    // Identify the starting point for the new delta
+    const startIndex = lastProcessedId.current 
+      ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
+      : 0;
+
+    const newBatch = firestoreMessages.slice(startIndex);
+    
+    newBatch.forEach(msg => {
+      if (msg.type === 'gift' && msg.giftId) {
+        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
+        setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
+      } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
+    });
+
+    if (newBatch.length > 0) {
+      lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
   }, [firestoreMessages]);
 

@@ -247,6 +247,8 @@ export function RoomClient({ room }: { room: Room }) {
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastProcessedId = useRef<string | null>(null);
+  
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser } = useUser();
@@ -342,6 +344,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
+  // AUTO-SCROLL SYNC
   useEffect(() => {
     if (messagesEndRef.current) {
       const timer = setTimeout(() => {
@@ -349,13 +352,30 @@ export function RoomClient({ room }: { room: Room }) {
       }, 50);
       return () => clearTimeout(timer);
     }
-    if (firestoreMessages && firestoreMessages.length > 0) {
-      const lastMsg = firestoreMessages[firestoreMessages.length - 1];
-      if (lastMsg.type === 'gift') {
-        setActiveGiftSync({ id: lastMsg.giftId, senderName: lastMsg.senderName });
-      } else if (lastMsg.type === 'lucky-rain') {
+  }, [firestoreMessages]);
+
+  // GIFT & EVENT SYNC ENGINE
+  useEffect(() => {
+    if (!firestoreMessages || firestoreMessages.length === 0) return;
+
+    // Identify the starting point for the new delta
+    const startIndex = lastProcessedId.current 
+      ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
+      : 0;
+
+    const newBatch = firestoreMessages.slice(startIndex);
+    
+    newBatch.forEach(msg => {
+      if (msg.type === 'gift' && msg.giftId) {
+        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
+        setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
+      } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
+    });
+
+    if (newBatch.length > 0) {
+      lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
   }, [firestoreMessages]);
 
@@ -402,7 +422,6 @@ export function RoomClient({ room }: { room: Room }) {
       senderId: currentUser.uid, 
       senderName: userProfile.username || 'User', 
       senderAvatar: userProfile.avatarUrl || null, 
-      senderBubble: userProfile.inventory?.activeBubble || 'None',
       chatRoomId: room.id, 
       timestamp: serverTimestamp(), 
       type: 'text'
@@ -647,87 +666,41 @@ export function RoomClient({ room }: { room: Room }) {
               <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
-              {globalConfig?.globalAnnouncement2 && (
-                <div className="flex items-center gap-1.5 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700 mt-0.5">
-                   <ShieldCheck className="h-2 w-2 text-blue-400" />
-                   <p className="text-[9px] font-black text-blue-200 uppercase italic tracking-tight leading-relaxed">
-                      Notice: {globalConfig.globalAnnouncement2}
-                   </p>
-                </div>
-              )}
            </div>
         </div>
 
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
-                 {firestoreMessages?.map((msg: any) => {
-                   const isLoveBubble = msg.senderBubble === 'love-bubble';
-                   
-                   return (
-                     <div 
-                      key={msg.id || Math.random().toString()} 
-                      onClick={() => {
-                        if (msg.senderId) {
-                          setSelectedParticipantUid(msg.senderId);
-                          setIsUserProfileCardOpen(true);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-start gap-1.5 p-1 rounded-lg w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 mb-0.5 relative group cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto",
-                        isLoveBubble ? "bg-transparent" : "bg-black/40 backdrop-blur-md border border-white/5 shadow-xl"
-                      )}
-                     >
-                        <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
-                        <div className="flex flex-col">
-                          <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
-                          
-                          {isLoveBubble ? (
-                            <div className="relative mt-0.5">
-                               {/* Hearts Sync */}
-                               <div className="absolute -right-3 -top-3 pointer-events-none z-30">
-                                  <div className="relative">
-                                     <Heart className="h-2.5 w-2.5 text-pink-400 fill-current absolute -top-1 -right-1 animate-reaction-float" style={{ animationDelay: '0.2s' }} />
-                                     <Heart className="h-1.5 w-1.5 text-pink-300 fill-current absolute -top-2 right-1.5 animate-reaction-float" style={{ animationDelay: '0.5s' }} />
-                                     <Heart className="h-3.5 w-3.5 text-pink-500 fill-current animate-reaction-heartbeat" />
-                                  </div>
-                               </div>
-                               
-                               <div className="bg-gradient-to-r from-[#e91e63] to-[#c2185b] border-2 border-pink-300 px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(233,30,99,0.4)]">
-                                  {msg.imageUrl && (
-                                    <div 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImage(msg.imageUrl);
-                                      }}
-                                      className="mb-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/20"
-                                    >
-                                      <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
-                                    </div>
-                                  )}
-                                  {msg.content && <p className="text-[9px] font-black text-white italic leading-tight break-all drop-shadow-sm">{msg.content}</p>}
-                               </div>
-                            </div>
-                          ) : (
-                            <>
-                              {msg.imageUrl && (
-                                <div 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPreviewImage(msg.imageUrl);
-                                  }}
-                                  className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
-                                >
-                                  <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
-                                </div>
-                              )}
-                              {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
-                            </>
-                          )}
-                        </div>
-                     </div>
-                   );
-                 })}
+                 {firestoreMessages?.map((msg: any) => (
+                   <div 
+                    key={msg.id || Math.random().toString()} 
+                    onClick={() => {
+                      if (msg.senderId) {
+                        setSelectedParticipantUid(msg.senderId);
+                        setIsUserProfileCardOpen(true);
+                      }
+                    }}
+                    className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+                   >
+                      <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
+                      <div className="flex flex-col">
+                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
+                        {msg.imageUrl && (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(msg.imageUrl);
+                            }}
+                            className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
+                          >
+                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                          </div>
+                        )}
+                        {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
+                      </div>
+                   </div>
+                 ))}
                  <div ref={messagesEndRef} className="h-0 w-0" />
               </div>
            </ScrollArea>
