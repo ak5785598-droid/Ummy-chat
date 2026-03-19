@@ -104,7 +104,7 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number | st
     onClick={onClick}
     className="flex flex-col items-center justify-center flex-1 py-0.5 active:scale-95 transition-transform"
   >
-    <span className="text-base font-black text-gray-900 leading-none">{value}</span>
+    <span className="text-xl font-black text-gray-900 leading-none">{value}</span>
     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mt-0.5">{label}</span>
   </button>
 );
@@ -144,8 +144,11 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    toast({ title: 'ID Copied' });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        toast({ title: 'ID Copied' });
+      });
+    }
   };
 
   if (!color) {
@@ -271,7 +274,7 @@ const PublicProfileView = ({
          <div className="flex flex-col items-center">
             <div className="shrink-0 -mt-12 relative mb-3">
                <AvatarFrame frameId={profile.inventory?.activeFrame} size="lg">
-                  <Avatar className="h-16 w-16 border-4 border-white shadow-xl bg-slate-50">
+                  <Avatar className="h-20 w-20 border-4 border-white shadow-xl bg-slate-50">
                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
                      <AvatarFallback className="text-xl bg-slate-100 text-slate-400">{firstLetter}</AvatarFallback>
                   </Avatar>
@@ -503,7 +506,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <div className="relative shrink-0">
                    <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                      <Avatar className="h-16 w-16 border-4 border-white shadow-2xl relative z-10">
+                      <Avatar className="h-24 w-24 border-4 border-white shadow-2xl relative z-10">
                          <AvatarImage src={profile.avatarUrl || undefined} />
                          <AvatarFallback className="text-2xl font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                       </Avatar>
