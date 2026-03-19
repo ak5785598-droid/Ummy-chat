@@ -43,7 +43,7 @@ export default function AboutPage() {
                     <div className="h-32 w-32 relative rounded-full overflow-hidden border-[6px] border-white shadow-2xl bg-slate-50">
                        {mascotAsset ? (
                          <Image 
-                           src={mascutAsset?.imageUrl || 'https://picsum.photos/seed/mascot/400/400'} 
+                           src={mascotAsset.imageUrl || 'https://picsum.photos/seed/mascot/400/400'} 
                            alt="Ummy Mascot" 
                            fill 
                            className="object-cover" 
@@ -65,7 +65,7 @@ export default function AboutPage() {
               {/* Protocol Menu Item */}
               <div className="w-full">
                  <button 
-                   onClick={() => router.push('/help-center')}
+                   onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')}
                    className="w-full flex items-center justify-between p-10 py-12 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group border-t border-gray-50"
                  >
                     <span className="text-[17px] font-black text-gray-700 italic tracking-tight">User Agreement</span>
