@@ -38,6 +38,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
+import { UmmyLogoIcon } from '@/components/icons';
 
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
   <div 
@@ -395,9 +396,12 @@ export default function MessagesPage() {
 
         <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex flex-col">
-               <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
-               <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
+            <div className="flex items-center gap-3">
+               <UmmyLogoIcon className="h-10 w-10" />
+               <div className="flex flex-col">
+                  <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
+                  <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
+               </div>
             </div>
             <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
                <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
@@ -414,7 +418,7 @@ export default function MessagesPage() {
               subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-              customIcon={<img src="https://img.icons8.com/color/96/lion.png" className="h-8 w-8" alt="Team" />}
+              customIcon={<UmmyLogoIcon className="h-8 w-8" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />
