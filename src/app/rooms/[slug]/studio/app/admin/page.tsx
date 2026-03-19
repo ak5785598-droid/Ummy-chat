@@ -826,7 +826,7 @@ export default function AdminPage() {
                   <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
                 </TabsTrigger>
                 <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
+                  <Gavel className="h-4 w-4" /> ID Ban Control
                 </TabsTrigger>
                 <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                   <ImageIcon className="h-4 w-4" /> Banners
@@ -838,13 +838,13 @@ export default function AdminPage() {
                   <Megaphone className="h-4 w-4" /> Broadcaster
                 </TabsTrigger>
                 <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <MessageSquareText className="h-4 w-4 text-indigo-500" /> Direct Messenger
+                  <MessageSquareText className="h-4 w-4" /> Direct Messenger
                 </TabsTrigger>
                 <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Type className="h-4 w-4 text-red-500" /> Special ID
+                  <Type className="h-4 w-4" /> Special ID
                 </TabsTrigger>
                 <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Gift className="h-4 w-4 text-pink-500" /> Rewards
+                  <Gift className="h-4 w-4" /> Rewards
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -1255,7 +1255,7 @@ export default function AdminPage() {
                   </CardHeader>
                   
                   <div className="flex flex-col gap-4">
-                     <SearchToggle mode={banSearchMode} setMode={setBanSearchMode} />
+                     <SearchToggle mode={banSearchMode} setMode={setCenterSearchMode} />
                      <div className="flex gap-4">
                         <Input placeholder={banSearchMode === 'id' ? "Enter Target ID (Special or Account)..." : "Enter Target Username..."} value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" />
                         <Button onClick={() => handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate Identity</Button>
