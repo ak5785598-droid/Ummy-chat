@@ -22,8 +22,6 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Identity Portal.
- * Features dynamic background sync managed via the Admin Portal.
- * Re-engineered with robust Identity Handshake to prevent permission errors.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -42,9 +40,11 @@ export default function LoginPage() {
   // Global Branding Sync
   const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
   const { data: config } = useDoc(configRef);
-  const customBg = config?.loginBackgroundUrl;
+  const splashBg = config?.splashScreenUrl;
+  const loginBg = config?.loginBackgroundUrl;
   const fallbackBg = PlaceHolderImages.find(img => img.id === 'login-bg')?.imageUrl;
-  const activeBg = customBg || fallbackBg;
+  
+  const activeBg = loginBg || splashBg || fallbackBg;
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -52,11 +52,6 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  /**
-   * SOVEREIGN IDENTITY HANDSHAKE
-   * Ensures new users have their Firestore documents created immediately upon authentication.
-   * This fixes "handshake" and "missing profile" errors across the application.
-   */
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore || !uid) return;
     
@@ -81,11 +76,7 @@ export default function LoginPage() {
             monthlySpent: 0
           },
           level: { rich: 1, charm: 1 },
-          banStatus: {
-            isBanned: false,
-            bannedUntil: null,
-            reason: ''
-          },
+          banStatus: { isBanned: false, bannedUntil: null, reason: '' },
           isOnline: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -113,8 +104,6 @@ export default function LoginPage() {
             following: 0
           }
         });
-        
-        console.log(`[Identity Sync] Established new frequency for: ${uid}`);
       }
     } catch (err) {
       console.error("[Identity Sync] Handshake Error:", err);
@@ -212,12 +201,8 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight">
-            Ummy
-          </h1>
-          <p className="text-white text-sm font-medium opacity-90">
-            Find your vibe. Connect with your Tribe
-          </p>
+          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight uppercase italic">Ummy</h1>
+          <p className="text-white text-sm font-medium opacity-90 italic">Find your vibe. Connect with your Tribe</p>
         </div>
       </header>
 
