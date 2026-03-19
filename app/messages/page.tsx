@@ -46,11 +46,12 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
     className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
   >
     <div className="relative shrink-0">
-      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
+      {/* High-Fidelity Avatar Style Container */}
+      <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white overflow-hidden", colorClass)}>
         {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
       </div>
       {isVerified && (
-        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
+        <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5 shadow-md z-10">
            <CheckCircle className="h-3 w-3 text-green-500 fill-green-500 text-white" strokeWidth={3} />
         </div>
       )}
@@ -92,7 +93,8 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
     return format(date, 'M/d/yy');
   };
 
-  const isOfficial = otherUser.tags?.includes('Official') || otherUser.tags?.includes('Admin');
+  // STRICT OFFICIAL PROTOCOL: Only show verified tick for users with the "Official" tag.
+  const isOfficial = otherUser.tags?.includes('Official');
   const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
 
   return (
@@ -109,7 +111,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
           <AvatarFallback className="bg-slate-50 text-slate-400">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isOfficial && (
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm z-10">
              <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500 text-white" strokeWidth={3} />
           </div>
         )}
@@ -418,7 +420,7 @@ export default function MessagesPage() {
               subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-white"
-              customIcon={<UmmyLogoIcon className="h-10 w-10" />}
+              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />
