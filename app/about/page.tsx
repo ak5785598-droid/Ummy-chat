@@ -56,12 +56,13 @@ export default function AboutPage() {
                  </div>
               </div>
 
-              <div className="w-full divide-y divide-gray-50">
+              {/* Legal Portal Roster with Visual Gaps */}
+              <div className="w-full flex flex-col gap-3 px-6 pb-10">
                  {/* User Agreement Portal */}
                  <Dialog>
                     <DialogTrigger asChild>
                        <button 
-                         className="w-full flex items-center justify-between p-8 py-10 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group"
+                         className="w-full flex items-center justify-between p-8 py-10 bg-slate-50/50 rounded-[2rem] border border-slate-100/50 hover:bg-slate-100/50 active:bg-gray-100 transition-all text-left group"
                        >
                           <span className="text-[17px] font-black text-gray-700 italic tracking-tight">User Agreement</span>
                           <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
@@ -179,7 +180,7 @@ export default function AboutPage() {
                  <Dialog>
                     <DialogTrigger asChild>
                        <button 
-                         className="w-full flex items-center justify-between p-8 py-10 hover:bg-gray-50 active:bg-gray-100 transition-all text-left group"
+                         className="w-full flex items-center justify-between p-8 py-10 bg-slate-50/50 rounded-[2rem] border border-slate-100/50 hover:bg-slate-100/50 active:bg-gray-100 transition-all text-left group"
                        >
                           <span className="text-[17px] font-black text-gray-700 italic tracking-tight">Privacy Policy</span>
                           <ChevronRight className="h-5 w-5 text-gray-300 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
