@@ -65,6 +65,7 @@ export type Message = {
   senderId: string;
   senderName: string;
   senderAvatar: string;
+  senderBubble?: string | null;
   timestamp: any;
   type?: 'text' | 'gift' | 'entrance' | 'leave' | 'emoji' | 'lucky-rain' | 'lucky-bag';
   giftId?: string;
@@ -73,6 +74,7 @@ export type Message = {
   bagId?: string;
   amount?: number;
   imageUrl?: string | null;
+  content?: string; // Standardizing field names
 };
 
 export type PrivateChat = {
@@ -101,6 +103,7 @@ export type RoomParticipant = {
   joinedAt: any;
   activeFrame?: string;
   activeWave?: string;
+  activeBubble?: string;
   activeEmoji?: string | null;
   sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
   lastSeen?: any;

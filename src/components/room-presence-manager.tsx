@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useMemo } from 'react';
@@ -25,8 +24,9 @@ export function RoomPresenceManager() {
     username: userProfile?.username,
     avatarUrl: userProfile?.avatarUrl,
     activeFrame: userProfile?.inventory?.activeFrame,
-    activeWave: userProfile?.inventory?.activeWave
-  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave]);
+    activeWave: userProfile?.inventory?.activeWave,
+    activeBubble: userProfile?.inventory?.activeBubble
+  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble]);
 
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user) return;
@@ -74,6 +74,7 @@ export function RoomPresenceManager() {
           avatarUrl: userMetadata.avatarUrl || null,
           activeFrame: userMetadata.activeFrame || 'None',
           activeWave: userMetadata.activeWave || 'Default',
+          activeBubble: userMetadata.activeBubble || 'None',
           joinedAt: serverTimestamp(),
           lastSeen: serverTimestamp(),
           isMuted: true,
