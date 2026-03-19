@@ -9,11 +9,12 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
  */
 export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   const logo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
+  const src = logo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
   
   return (
-    <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>
+    <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
       <Image 
-        src={logo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png"} 
+        src={src} 
         alt="Ummy Logo" 
         fill 
         className="object-contain drop-shadow-md"
