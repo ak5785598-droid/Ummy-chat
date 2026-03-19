@@ -211,6 +211,9 @@ export default function AdminPage() {
   const [isUploadingLoginBG, setIsUploadingLoginBG] = useState(false);
   const loginBGFileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isUploadingLoadingBG, setIsUploadingLoadingBG] = useState(false);
+  const loadingBGFileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
   const [isSearchingRewards, setIsSearchingRewards] = useState(false);
@@ -745,6 +748,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleLoadingBGUpload = async (file: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingLoadingBG(true);
+    try {
+      const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, file);
+      const url = await getDownloadURL(result.ref);
+      await setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true });
+      toast({ title: 'App Loading Background Synchronized' });
+    } finally {
+      setIsUploadingLoadingBG(false);
+    }
+  };
+
   const handleGameDPUploadClick = (game: any) => {
     setSelectedGameForSync(game);
     gameFileInputRef.current?.click();
@@ -845,6 +862,9 @@ export default function AdminPage() {
                 </TabsTrigger>
                 <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
                   <Gift className="h-4 w-4" /> Rewards
+                </TabsTrigger>
+                <TabsTrigger value="loading-page" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Loader className="h-4 w-4" /> App Loading Page
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -1654,6 +1674,47 @@ export default function AdminPage() {
                        </div>
                     </div>
                   )}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="loading-page" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600"><Loader className="h-6 w-6" /> App Loading Background</CardTitle>
+                     <CardDescription>Dispatch a global background for all app loading frequencies.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ImageIcon className="h-5 w-5 text-indigo-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Loading Screen</span>
+                           </div>
+                           {config?.appLoadingBackgroundUrl && (
+                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { appLoadingBackgroundUrl: null })}>Reset to Default</Button>
+                           )}
+                        </div>
+                        
+                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-inner flex items-center justify-center">
+                           {config?.appLoadingBackgroundUrl ? (
+                             <Image src={config.appLoadingBackgroundUrl} fill className="object-cover" alt="Loading BG" unoptimized />
+                           ) : (
+                             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
+                                <Loader className="h-10 w-10 animate-spin" />
+                                <span className="uppercase font-black text-[10px] tracking-widest">Default Gradient Active</span>
+                             </div>
+                           )}
+                           {isUploadingLoadingBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}
+                           <button 
+                             onClick={() => loadingBGFileInputRef.current?.click()}
+                             className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-indigo-600 active:scale-90 transition-transform"
+                           >
+                              <Camera className="h-6 w-6" />
+                           </button>
+                        </div>
+                        <input type="file" ref={loadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoadingBGUpload(e.target.files[0])} />
+                     </div>
+                  </CardContent>
                </Card>
             </TabsContent>
           </div>

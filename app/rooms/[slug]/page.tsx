@@ -19,6 +19,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 /**
  * Chat Room Entry Page Gateway.
  * DEFERRED SYNC: Hydration mismatch protection for 'bannedUntil'.
+ * Synchronized with Global App Loading Background.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -31,6 +32,10 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  const loadingBg = config?.appLoadingBackgroundUrl;
 
   useEffect(() => {
     setIsMounted(true);
@@ -121,10 +126,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading) || !isMounted) {
     return (
-      <AppLayout>
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] text-muted-foreground animate-pulse font-black uppercase tracking-widest">
+      <AppLayout fullScreen>
+        <div 
+          className="flex h-[100dvh] w-full flex-col items-center justify-center space-y-4 bg-black relative"
+          style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <Loader className="h-10 w-10 animate-spin text-primary relative z-10" />
+          <p className="text-[10px] text-white/60 animate-pulse font-black uppercase tracking-widest relative z-10">
             Tuning Frequency...
           </p>
         </div>

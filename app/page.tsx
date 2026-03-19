@@ -2,19 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { UmmyLogoIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
+import { doc } from 'firebase/firestore';
 
 /**
  * Root Application Gateway / Splash Screen.
  * Re-engineered for the Deep-Purple Ummy identity.
+ * Synchronized with Global App Loading Background.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const [showFailSafe, setShowFailSafe] = useState(false);
   const router = useRouter();
+  
+  const firestore = useFirestore();
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  const loadingBg = config?.appLoadingBackgroundUrl;
 
   useEffect(() => {
     const timer = setTimeout(() => setShowFailSafe(true), 2000);
@@ -40,8 +47,12 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient overflow-hidden relative font-headline select-none touch-none">
-      <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />
+    <div 
+      className="flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient overflow-hidden relative font-headline select-none touch-none"
+      style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+    >
+      {!loadingBg && <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />}
+      <div className="absolute inset-0 bg-black/20" />
       
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center">
@@ -59,7 +70,7 @@ export default function Home() {
         </div>
       </div>
       
-      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12">
+      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
          {showFailSafe ? (
            <Button 
              onClick={handleManualEntry}
