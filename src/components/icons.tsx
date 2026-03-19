@@ -4,14 +4,15 @@ import { cn } from "@/lib/utils";
 /**
  * Official Ummy Brand Signature.
  * Synchronized with the high-fidelity PNG asset.
+ * Re-engineered container to ensure absolute visual integrity across different scales.
  */
 export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("relative overflow-hidden shrink-0", className)} {...props}>
+  <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
     <Image 
       src="/images/ummy-logo.png" 
       alt="Ummy Logo" 
       fill 
-      className="object-contain"
+      className="object-contain drop-shadow-md"
       priority
       unoptimized
     />

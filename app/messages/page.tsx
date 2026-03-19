@@ -46,11 +46,11 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
     className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
   >
     <div className="relative shrink-0">
-      <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white overflow-hidden", colorClass)}>
+      <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
         {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
       </div>
       {isVerified && (
-        <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5 shadow-md z-10">
+        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
            <CheckCircle className="h-3 w-3 text-green-500 fill-green-500 text-white" strokeWidth={3} />
         </div>
       )}
@@ -92,7 +92,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
     return format(date, 'M/d/yy');
   };
 
-  const isOfficial = otherUser.tags?.includes('Official');
+  const isOfficial = otherUser.tags?.includes('Official') || otherUser.tags?.includes('Admin');
   const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
 
   return (
@@ -109,7 +109,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
           <AvatarFallback className="bg-slate-50 text-slate-400">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isOfficial && (
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm z-10">
+          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
              <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500 text-white" strokeWidth={3} />
           </div>
         )}
@@ -307,7 +307,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
         {/* High-Fidelity Full Screen Image Viewer */}
         <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-          <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
+          <DialogContent className="w-screen h-screen max-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
             <DialogHeader className="sr-only">
               <DialogTitle>Image Preview</DialogTitle>
               <DialogDescription>Full screen view</DialogDescription>
@@ -397,13 +397,13 @@ export default function MessagesPage() {
         <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <UmmyLogoIcon className="h-10 w-10" />
+               <UmmyLogoIcon className="h-14 w-14" />
                <div className="flex flex-col">
                   <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
-                  <div className="h-1 w-10 bg-green-500/40 rounded-full mt-1" />
+                  <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
                </div>
             </div>
-            <button className="text-green-600 hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
+            <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
                <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
             </button>
           </div>
@@ -417,8 +417,8 @@ export default function MessagesPage() {
               label={t.messages.team} 
               subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
-              colorClass="bg-gradient-to-br from-green-400 to-green-600"
-              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1 grayscale brightness-200" />}
+              colorClass="bg-gradient-to-br from-orange-400 to-red-500"
+              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />
@@ -428,7 +428,7 @@ export default function MessagesPage() {
               label={t.messages.system} 
               subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
               date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
-              colorClass="bg-gradient-to-br from-green-500 to-green-700"
+              colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
               customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
               isVerified
               onClick={() => setShowSystemDialog(true)}
@@ -444,7 +444,7 @@ export default function MessagesPage() {
              <Card className="rounded-[1.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md min-h-[300px]">
                 {isChatsLoading ? (
                   <div className="py-20 flex flex-col items-center gap-4">
-                    <Loader className="animate-spin text-green-600 h-8 w-8" />
+                    <Loader className="animate-spin text-primary h-8 w-8" />
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Syncing Identity...</p>
                   </div>
                 ) : chats && chats.length > 0 ? (
@@ -469,15 +469,15 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <Dialog open={showOfficial} onOpenChange={showOfficial => setShowOfficial(showOfficial)}>
+        <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
-            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-green-50/30">
-              <div className="h-12 w-12 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
+              <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
                  <Flag className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
                 <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Official Activities</DialogTitle>
-                <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-green-600/60 mt-1">Global team broadcasts.</DialogDescription>
+                <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60 mt-1">Global team broadcasts.</DialogDescription>
               </div>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] p-6">
@@ -486,9 +486,9 @@ export default function MessagesPage() {
                     <div className="py-10 text-center opacity-20 italic font-body">No official broadcasts in the grid.</div>
                   ) : (
                     teamMsgs.map((msg: any) => (
-                      <div key={msg.id} className="p-5 bg-green-50/30 rounded-3xl border-2 border-green-100/50 shadow-sm">
+                      <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-black uppercase italic text-sm text-green-800">{msg.title || 'Official'}</h4>
+                            <h4 className="font-black uppercase italic text-sm text-gray-800">{msg.title || 'Official'}</h4>
                             <span className="text-[10px] text-gray-400 font-black italic uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
                          </div>
                          <p className="text-sm font-body italic text-gray-600 leading-relaxed">{msg.content}</p>
@@ -498,20 +498,20 @@ export default function MessagesPage() {
                </div>
             </ScrollArea>
             <div className="p-8 pt-0">
-              <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-green-600 text-white rounded-[1.5rem] font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+              <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-black text-white rounded-[1.5rem] font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
             </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showSystemDialog} onOpenChange={showSystemDialog => setShowSystemDialog(showSystemDialog)}>
+        <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
-            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-green-50/30">
-              <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-blue-50/30">
+              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
                  <Shield className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
                 <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">System Notices</DialogTitle>
-                <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-green-600/60 mt-1">Personal security frequency.</DialogDescription>
+                <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-blue-600/60 mt-1">Personal security frequency.</DialogDescription>
               </div>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] p-6">
@@ -520,9 +520,9 @@ export default function MessagesPage() {
                     <div className="py-10 text-center opacity-20 italic font-body">No system notices found.</div>
                   ) : (
                     systemMsgs.map((msg: any) => (
-                      <div key={msg.id} className="p-5 bg-green-50/30 rounded-3xl border-2 border-green-100/50 shadow-sm">
+                      <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-black uppercase italic text-sm text-green-800">{msg.title || 'System'}</h4>
+                            <h4 className="font-black uppercase italic text-sm text-gray-800">{msg.title || 'System'}</h4>
                             <span className="text-[10px] text-gray-400 font-black italic uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
                          </div>
                          <p className="text-sm font-body italic text-gray-600 leading-relaxed">{msg.content}</p>
@@ -532,7 +532,7 @@ export default function MessagesPage() {
                </div>
             </ScrollArea>
             <div className="p-8 pt-0">
-              <button onClick={() => setShowSystemDialog(false)} className="w-full h-16 bg-green-600 text-white rounded-[1.5rem] font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+              <button onClick={() => setShowSystemDialog(false)} className="w-full h-16 bg-black text-white rounded-[1.5rem] font-black uppercase italic text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
             </div>
           </DialogContent>
         </Dialog>
