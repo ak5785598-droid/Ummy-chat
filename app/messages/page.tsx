@@ -42,15 +42,15 @@ import { useTranslation } from '@/hooks/use-translation';
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
   <div 
     onClick={onClick}
-    className="px-6 py-5 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
+    className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
   >
     <div className="relative shrink-0">
-      <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
-        {customIcon ? customIcon : <Icon className="h-7 w-7 text-white" fill="white" />}
+      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
+        {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
       </div>
       {isVerified && (
         <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
-           <CheckCircle className="h-4 w-4 text-green-500 fill-green-500 text-white" strokeWidth={3} />
+           <CheckCircle className="h-3 w-3 text-green-500 fill-green-500 text-white" strokeWidth={3} />
         </div>
       )}
     </div>
@@ -59,7 +59,7 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
         <h3 className="font-black text-sm text-gray-800 uppercase tracking-tight italic">{label}</h3>
         {date && <span className="text-[10px] font-black text-gray-400 italic uppercase">{date}</span>}
       </div>
-      {subtext && <p className="text-xs font-body text-gray-400 truncate italic">{subtext}</p>}
+      {subtext && <p className="text-[11px] font-body text-gray-400 truncate italic leading-tight">{subtext}</p>}
     </div>
     <ChevronRight className="h-4 w-4 text-gray-200 group-hover:translate-x-1 transition-transform" />
   </div>
@@ -71,11 +71,11 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
 
   if (isLoading) return (
-    <div className="px-6 py-5 flex gap-4 animate-pulse border-b border-gray-50 last:border-0">
-      <div className="h-14 w-14 bg-gray-50 rounded-2xl" />
+    <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-gray-50 last:border-0">
+      <div className="h-12 w-12 bg-gray-50 rounded-2xl" />
       <div className="flex-1 space-y-3 pt-2">
-        <div className="h-4 bg-gray-50 rounded w-1/3" />
-        <div className="h-3 bg-gray-50 rounded w-1/2" />
+        <div className="h-3 bg-gray-50 rounded w-1/3" />
+        <div className="h-2 bg-gray-50 rounded w-1/2" />
       </div>
     </div>
   );
@@ -96,16 +96,16 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   return (
     <div 
       onClick={() => onSelect(chat.id, otherUser)}
-      className="px-6 py-5 flex gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
+      className="px-6 py-4 flex gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
     >
       <div className="relative shrink-0">
-        <Avatar className="h-14 w-14 rounded-2xl border-2 border-white shadow-md">
+        <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-md">
           <AvatarImage src={otherUser.avatarUrl || undefined} />
           <AvatarFallback className="bg-slate-50 text-slate-400">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isOfficial && (
           <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-             <CheckCircle className="h-4 w-4 text-green-500 fill-green-500 text-white" strokeWidth={3} />
+             <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500 text-white" strokeWidth={3} />
           </div>
         )}
       </div>
@@ -118,7 +118,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
             {getDisplayTime(chat.updatedAt)}
           </span>
         </div>
-        <p className="text-xs font-body text-gray-400 truncate italic">
+        <p className="text-[11px] font-body text-gray-400 truncate italic">
           {chat.lastMessage || 'Sent a vibe'}
         </p>
       </div>
@@ -375,28 +375,28 @@ export default function MessagesPage() {
            ))}
         </div>
 
-        <header className="relative shrink-0 pt-12 pb-8 px-6 bg-transparent">
+        <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex flex-col">
-               <h1 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
-               <div className="h-1 w-12 bg-primary/40 rounded-full mt-1" />
+               <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
+               <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
             </div>
-            <button className="text-primary hover:scale-110 transition-all p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
-               <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
+            <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
+               <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
             </button>
           </div>
         </header>
 
-        <div className="flex-1 px-4 relative z-10 space-y-6 pb-32">
+        <div className="flex-1 px-4 relative z-10 space-y-4 pb-32">
           
-          <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md">
+          <Card className="rounded-[1.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md">
             <CategoryItem 
               icon={Flag} 
               label={t.messages.team} 
-              subtext={latestTeam?.content || "No team broadcasts."}
+              subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-              customIcon={<img src="https://img.icons8.com/color/96/lion.png" className="h-9 w-9" alt="Team" />}
+              customIcon={<img src="https://img.icons8.com/color/96/lion.png" className="h-8 w-8" alt="Team" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />
@@ -404,22 +404,22 @@ export default function MessagesPage() {
             <CategoryItem 
               icon={Shield} 
               label={t.messages.system} 
-              subtext={latestSystem?.content || "Welcome to Ummy! Social frequencies online."}
+              subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
               date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-              customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-8 w-8" alt="System" />}
+              customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
               isVerified
               onClick={() => setShowSystemDialog(true)}
             />
           </Card>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
              <div className="flex items-center justify-between px-4">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic">{t.messages.conversations}</h2>
+                <h2 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 italic">{t.messages.conversations}</h2>
                 <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-gray-400" /></button>
              </div>
              
-             <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md min-h-[300px]">
+             <Card className="rounded-[1.5rem] border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md min-h-[300px]">
                 {isChatsLoading ? (
                   <div className="py-20 flex flex-col items-center gap-4">
                     <Loader className="animate-spin text-primary h-8 w-8" />
@@ -436,10 +436,10 @@ export default function MessagesPage() {
                   ))
                 ) : (
                   <div className="py-20 text-center space-y-4 opacity-40 italic flex flex-col items-center">
-                     <MessageSquare className="h-12 w-12 text-gray-200" />
+                     <MessageSquare className="h-10 w-10 text-gray-200" />
                      <div className="space-y-1">
-                        <p className="font-black text-sm uppercase italic text-gray-400">{t.messages.quiet}</p>
-                        <p className="text-[10px] font-bold uppercase text-gray-300">{t.messages.startVibe}</p>
+                        <p className="font-black text-xs uppercase italic text-gray-400">{t.messages.quiet}</p>
+                        <p className="text-[9px] font-bold uppercase text-gray-300">{t.messages.startVibe}</p>
                      </div>
                   </div>
                 )}
@@ -450,8 +450,8 @@ export default function MessagesPage() {
         <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
             <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
-              <div className="h-14 w-14 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
-                 <Flag className="h-8 w-8" />
+              <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+                 <Flag className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
                 <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Official Activities</DialogTitle>
@@ -484,8 +484,8 @@ export default function MessagesPage() {
         <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
           <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-headline">
             <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-blue-50/30">
-              <div className="h-14 w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
-                 <Shield className="h-8 w-8" />
+              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+                 <Shield className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
                 <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">System Notices</DialogTitle>
