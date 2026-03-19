@@ -417,8 +417,8 @@ export default function MessagesPage() {
               label={t.messages.team} 
               subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
-              colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-              customIcon={<UmmyLogoIcon className="h-8 w-8" />}
+              colorClass="bg-white"
+              customIcon={<UmmyLogoIcon className="h-10 w-10" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />
