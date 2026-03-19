@@ -548,7 +548,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          <div className="px-6 grid grid-cols-2 gap-2 mb-3">
+          <div className="px-3 grid grid-cols-2 gap-2 mb-3">
              <div 
                onClick={() => router.push('/wallet')} 
                className="h-24 rounded-[1.25rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-3 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border-2 border-white/20"
