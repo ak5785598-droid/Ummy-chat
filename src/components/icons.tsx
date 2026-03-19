@@ -1,15 +1,24 @@
+
+'use client';
+
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * Official Ummy Brand Signature.
  * Synchronized with the high-fidelity mascot visual.
- * Re-engineered container to ensure absolute visual integrity across different scales.
+ * Upgraded to a Reactive Observer: Swaps the brand signature in real-time when the Admin dispatches a new logo.
  */
 export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
-  const logo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
-  const src = logo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
+  const firestore = useFirestore();
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+
+  const fallbackLogo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
+  const src = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
   
   return (
     <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
@@ -20,7 +29,7 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
         className="object-contain drop-shadow-md"
         priority
         unoptimized
-        data-ai-hint="cute mascot"
+        data-ai-hint="brand mascot"
       />
     </div>
   );

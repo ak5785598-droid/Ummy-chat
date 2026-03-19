@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -185,6 +186,9 @@ export default function AdminPage() {
 
   const [isUploadingSplashBG, setIsUploadingSplashBG] = useState(false);
   const splashBGFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchingTag, setIsSearchingTag] = useState(false);
@@ -619,6 +623,18 @@ export default function AdminPage() {
     } finally { setIsUploadingLoginBG(false); }
   };
 
+  const handleLogoUpload = async (f: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingLogo(true);
+    try {
+      const sRef = ref(storage, `branding/logo_${Date.now()}.png`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      setDoc(configRef, { customLogoUrl: url }, { merge: true }).then(() => toast({ title: 'Logo Synchronized', description: 'The new visual signature is live across the tribe.' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingLogo(false); }
+  };
+
   const handleGameDPUploadClick = (g: any) => { setSelectedGameForSync(g); gameFileInputRef.current?.click(); };
   const handleGameBGUploadClick = (g: any) => { setSelectedGameForSync(g); gameBGFileInputRef.current?.click(); };
   const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameLogo(selectedGameForSync, file); setSelectedGameForSync(null); } };
@@ -821,7 +837,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500"><MessageSquareText className="h-6 w-6" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4"><SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} /><div className="flex gap-4"><Input placeholder="Recipient..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl" disabled={isSearchingDm}>Find</Button></div></div>
-                  {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-black uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={() => handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem]">Send Sync</Button></div>)}
+                  {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-black uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem]">Send Sync</Button></div>)}
                </Card>
             </TabsContent>
 
@@ -851,8 +867,62 @@ export default function AdminPage() {
 
             <TabsContent value="splash-screen" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Monitor className="h-6 w-6" /> Splash Screen</CardTitle></CardHeader>
-                  <CardContent className="px-0"><div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">{config?.splashScreenUrl ? (<Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash" unoptimized />) : (<div className="text-white/20">Stars Active</div>)}{isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => splashBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary"><Camera className="h-6 w-6" /></button></div><input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} /></CardContent>
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Monitor className="h-6 w-6" /> Splash Screen & Global Logo</CardTitle>
+                     <CardDescription>Manage the app's first visual frequency and global brand signature.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-10">
+                     {/* Global Logo Sync Section */}
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <Star className="h-5 w-5 text-primary" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Brand Signature (Logo)</span>
+                           </div>
+                           {config?.customLogoUrl && (
+                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { customLogoUrl: null })}>Reset to Default</Button>
+                           )}
+                        </div>
+                        
+                        <div className="flex flex-col md:flex-row items-center gap-8">
+                           <div className="relative h-32 w-32 rounded-3xl bg-white shadow-xl border-4 border-white flex items-center justify-center overflow-hidden">
+                              <Image 
+                                 src={config?.customLogoUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png"} 
+                                 alt="Current Logo" 
+                                 fill 
+                                 className="object-contain p-2" 
+                                 unoptimized 
+                              />
+                              {isUploadingLogo && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+                           </div>
+                           
+                           <div className="flex-1 space-y-4 text-center md:text-left">
+                              <p className="text-xs font-body italic text-slate-500">
+                                 Upload a high-fidelity PNG or JPG to synchronize the brand identity across all application dimensions in real-time.
+                              </p>
+                              <Button 
+                                 onClick={() => logoFileInputRef.current?.click()} 
+                                 disabled={isUploadingLogo}
+                                 className="h-12 rounded-xl bg-primary text-black font-black uppercase italic shadow-lg shadow-primary/20"
+                              >
+                                 {isUploadingLogo ? <Loader className="animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                                 Upload Global Logo
+                              </Button>
+                              <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center gap-2">
+                           <ImageIcon className="h-5 w-5 text-primary" />
+                           <span className="font-black uppercase italic text-sm text-slate-900">Splash Background Sync</span>
+                        </div>
+                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">
+                           {config?.splashScreenUrl ? (<Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash" unoptimized />) : (<div className="text-white/20">Stars Active</div>)}{isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => splashBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary"><Camera className="h-6 w-6" /></button></div>
+                        <input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} />
+                     </div>
+                  </CardContent>
                </Card>
             </TabsContent>
           </div>
