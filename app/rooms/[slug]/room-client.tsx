@@ -646,6 +646,14 @@ export function RoomClient({ room }: { room: Room }) {
               <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
                  Announcement: {room.announcement || "Welcome to Umm Chat"}
               </p>
+              {globalConfig?.globalAnnouncement2 && (
+                <div className="flex items-center gap-1.5 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700 mt-0.5">
+                   <ShieldCheck className="h-2 w-2 text-blue-400" />
+                   <p className="text-[9px] font-black text-blue-200 uppercase italic tracking-tight leading-relaxed">
+                      Notice: {globalConfig.globalAnnouncement2}
+                   </p>
+                </div>
+              )}
            </div>
         </div>
 

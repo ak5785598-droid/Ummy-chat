@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,48 +47,18 @@ const ELITE_TAGS = [
   { id: 'Seller center', label: 'Seller center', color: 'bg-orange-500', icon: Store },
 ];
 
-const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
-  const { toast } = useToast();
-  
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(id).then(() => {
-        toast({ title: 'ID Copied' });
-      });
-    }
-  };
+const DEFAULT_SLIDES = [
+  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: "" },
+  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: "" },
+  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: "" }
+];
 
-  if (!color) {
-    return (
-      <span 
-        onClick={handleCopy}
-        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
-      >
-        ID: {id}
-      </span>
-    );
-  }
-
-  const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
-
-  return (
-    <div 
-      onClick={handleCopy}
-      className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
-        theme
-      )}
-    >
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
-        ID: {id}
-      </span>
-    </div>
-  );
-};
+const ACTIVE_GAME_FREQUENCIES = [
+  { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
+  { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
+  { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
+  { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -141,7 +111,9 @@ export default function AdminPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const [globalAnnouncementInput, setGlobalAnnouncementInput] = useState('');
+  const [globalAnnouncement2Input, setGlobalAnnouncement2Input] = useState('');
   const [isUpdatingGlobalNotice, setIsUpdatingGlobalNotice] = useState(false);
+  const [isUpdatingGlobalNotice2, setIsUpdatingGlobalNotice2] = useState(false);
 
   const [dmSearchId, setDmSearchId] = useState('');
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
@@ -257,6 +229,23 @@ export default function AdminPage() {
       .finally(() => setIsUpdatingGlobalNotice(false));
   };
 
+  const handleUpdateGlobalNotice2 = () => {
+    if (!firestore || !isCreator || !configRef) return;
+    setIsUpdatingGlobalNotice2(true);
+    updateDoc(configRef, { globalAnnouncement2: globalAnnouncement2Input, updatedAt: serverTimestamp() })
+      .then(() => {
+        toast({ title: 'Global Sync Row 2 Complete', description: 'Room Notice Row 2 updated across the tribe.' });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: configRef.path,
+          operation: 'update',
+          requestResourceData: { globalAnnouncement2: globalAnnouncement2Input }
+        }));
+      })
+      .finally(() => setIsUpdatingGlobalNotice2(false));
+  };
+
   const handleSyncAppData = async () => {
     if (!firestore || !isCreator) return;
     setIsSyncingAppData(true);
@@ -299,8 +288,6 @@ export default function AdminPage() {
       const q = query(collection(firestore, 'users'), where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'), limit(10));
       const snap = await getDocs(q);
       setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       setIsSearching(false);
     }
@@ -346,8 +333,6 @@ export default function AdminPage() {
       } else {
         toast({ variant: 'destructive', title: 'Identity Not Found' });
       }
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
     } finally {
       loadingSetter(false);
     }
@@ -364,8 +349,6 @@ export default function AdminPage() {
       } else {
         toast({ variant: 'destructive', title: 'Frequency Not Found' });
       }
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'chatRooms', operation: 'list' }));
     } finally {
       setIsSearchingRoomPin(false);
     }
@@ -930,6 +913,66 @@ export default function AdminPage() {
                               <Users className="h-6 w-6" />
                               {appStats.totalUsers.toLocaleString()}
                            </div>
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="app-branding" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle>
+                     <CardDescription>Dispatch global assets and room notices across the Ummy network.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <Megaphone className="h-5 w-5 text-orange-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span>
+                           </div>
+                           <Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                           <Input 
+                             placeholder="Write global room announcement row 1..." 
+                             value={globalAnnouncementInput}
+                             onChange={(e) => setGlobalAnnouncementInput(e.target.value)}
+                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
+                           />
+                           <Button 
+                             onClick={handleUpdateGlobalNotice} 
+                             disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()}
+                             className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20"
+                           >
+                              {isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                           </Button>
+                        </div>
+                     </div>
+
+                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-5 w-5 text-blue-600" />
+                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 2)</span>
+                           </div>
+                           <Badge className="bg-blue-100 text-blue-600 border-none font-black text-[8px] uppercase">Supplemental Sync</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                           <Input 
+                             placeholder="Write global room announcement row 2..." 
+                             value={globalAnnouncement2Input}
+                             onChange={(e) => setGlobalAnnouncement2Input(e.target.value)}
+                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
+                           />
+                           <Button 
+                             onClick={handleUpdateGlobalNotice2} 
+                             disabled={isUpdatingGlobalNotice2 || !globalAnnouncement2Input.trim()}
+                             className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-900/20"
+                           >
+                              {isUpdatingGlobalNotice2 ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
+                           </Button>
                         </div>
                      </div>
                   </CardContent>
