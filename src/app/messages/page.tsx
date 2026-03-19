@@ -18,8 +18,8 @@ import {
   Image as ImageIcon,
   X
 } from 'lucide-react';
-import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
+import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
@@ -92,11 +92,15 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   };
 
   const isOfficial = otherUser.tags?.includes('Official') || otherUser.tags?.includes('Admin');
+  const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
 
   return (
     <div 
       onClick={() => onSelect(chat.id, otherUser)}
-      className="px-6 py-4 flex gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
+      className={cn(
+        "px-6 py-4 flex gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0",
+        isUnread && "bg-primary/5"
+      )}
     >
       <div className="relative shrink-0">
         <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-md">
@@ -108,17 +112,20 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
              <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500 text-white" strokeWidth={3} />
           </div>
         )}
+        {isUnread && (
+          <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
+        )}
       </div>
       <div className="flex-1 min-w-0 pt-1">
         <div className="flex items-center justify-between mb-0.5">
-          <h3 className="font-black text-sm text-gray-800 truncate uppercase tracking-tight italic">
+          <h3 className={cn("font-black text-sm uppercase tracking-tight italic", isUnread ? "text-primary" : "text-gray-800")}>
             {otherUser.username}
           </h3>
           <span className="text-[10px] font-black text-gray-400 italic uppercase">
             {getDisplayTime(chat.updatedAt)}
           </span>
         </div>
-        <p className="text-[11px] font-body text-gray-400 truncate italic">
+        <p className={cn("text-[11px] font-body truncate italic", isUnread ? "font-black text-gray-900" : "text-gray-400")}>
           {chat.lastMessage || 'Sent a vibe'}
         </p>
       </div>
@@ -150,6 +157,16 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
   const { data: messages } = useCollection(messagesQuery);
 
+  // MARK AS READ PROTOCOL
+  useEffect(() => {
+    if (open && chatId && currentUser?.uid && firestore && messages?.length > 0) {
+      const chatRef = doc(firestore, 'privateChats', chatId);
+      updateDocumentNonBlocking(chatRef, {
+        lastMessageReadBy: arrayUnion(currentUser.uid)
+      });
+    }
+  }, [open, chatId, messages, currentUser?.uid, firestore]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -170,6 +187,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
       lastMessage: imageUrl ? 'Sent an image' : text.trim(),
       lastSenderId: currentUser.uid,
+      lastMessageReadBy: [currentUser.uid], // Reset read status to only sender
       updatedAt: serverTimestamp()
     }, { merge: true });
 

@@ -5,7 +5,7 @@ import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castl
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import {
   Sidebar,
@@ -18,12 +18,12 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useUser, useAuth, useFirestore } from "@/firebase";
+import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
-import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/firestore";
+import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 
 export function AppLayout({ 
@@ -47,6 +47,22 @@ export function AppLayout({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // UNREAD SYNC LOGIC
+  const unreadChatsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'privateChats'), where('participantIds', 'array-contains', user.uid));
+  }, [firestore, user]);
+  
+  const { data: chatsForUnread } = useCollection(unreadChatsQuery);
+  
+  const hasUnread = useMemo(() => {
+    if (!chatsForUnread || !user) return false;
+    return chatsForUnread.some(chat => {
+      const readBy = chat.lastMessageReadBy || [];
+      return chat.lastSenderId !== user.uid && !readBy.includes(user.uid);
+    });
+  }, [chatsForUnread, user]);
 
   const handleLogout = async () => {
     if (!auth || !user || !firestore) return;
@@ -97,7 +113,19 @@ export function AppLayout({
           <SidebarContent className="bg-transparent px-2">
             <SidebarMenu>
               <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/rooms'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/rooms" className="flex items-center gap-4"><Castle className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.home}</span></Link></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/messages" className="flex items-center gap-4"><Mail className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.message}</span></Link></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/messages'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary">
+                  <Link href="/messages" className="flex items-center gap-4 relative">
+                    <div className="relative">
+                      <Mail className="h-6 w-6" />
+                      {hasUnread && (
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#140028] animate-pulse" />
+                      )}
+                    </div>
+                    <span className="text-base font-black uppercase italic">{t.nav.message}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.boutique}</span></Link></SidebarMenuButton></SidebarMenuItem>
               <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.rankings}</span></Link></SidebarMenuButton></SidebarMenuItem>
               <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-black uppercase italic">{t.nav.games}</span></Link></SidebarMenuButton></SidebarMenuItem>
@@ -142,7 +170,12 @@ export function AppLayout({
               </Link>
               <Link href="/messages" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname === '/messages' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-                <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
+                <div className="relative">
+                  <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
+                  {hasUnread && (
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#1a0b2e] animate-pulse shadow-sm" />
+                  )}
+                </div>
                 <span className="text-[9px] font-black uppercase tracking-tighter">{t.nav.message}</span>
               </Link>
               <Link href="/profile" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
