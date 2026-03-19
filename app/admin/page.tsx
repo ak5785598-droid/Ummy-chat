@@ -47,6 +47,18 @@ const ELITE_TAGS = [
   { id: 'Seller center', label: 'Seller center', color: 'bg-orange-500', icon: Store },
 ];
 
+const DISPATCH_ASSETS = {
+  frames: [
+    { id: 'honor-2026', name: 'Honor 2026' },
+    { id: 'ummy-cs', name: 'Ummy CS Majestic' },
+    { id: 'f1', name: 'Golden Official' },
+    { id: 'f5', name: 'Golden wings' },
+    { id: 'f7', name: 'Celestial Wings' },
+    { id: 'little-devil', name: 'Little Devil' },
+    { id: 'i-love-india', name: 'I Love India' },
+  ]
+};
+
 const DEFAULT_SLIDES = [
   { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: "" },
   { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: "" },
@@ -59,6 +71,24 @@ const ACTIVE_GAME_FREQUENCIES = [
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
 ];
+
+const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+  const { toast } = useToast();
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => { toast({ title: 'ID Copied' }); });
+    }
+  };
+  if (!color) return <span onClick={handleCopy} className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1">ID: {id}</span>;
+  const theme = color === 'blue' ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30" : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
+  return (
+    <div onClick={handleCopy} className={cn("relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer", theme)}>
+      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
+      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">ID: {id}</span>
+    </div>
+  );
+};
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -216,16 +246,8 @@ export default function AdminPage() {
     if (!firestore || !isCreator || !configRef) return;
     setIsUpdatingGlobalNotice(true);
     updateDoc(configRef, { globalAnnouncement: globalAnnouncementInput, updatedAt: serverTimestamp() })
-      .then(() => {
-        toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' });
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: configRef.path,
-          operation: 'update',
-          requestResourceData: { globalAnnouncement: globalAnnouncementInput }
-        }));
-      })
+      .then(() => { toast({ title: 'Global Sync Complete', description: 'Room Notice Row 1 updated across the tribe.' }); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'update', requestResourceData: { globalAnnouncement: globalAnnouncementInput } })); })
       .finally(() => setIsUpdatingGlobalNotice(false));
   };
 
@@ -233,16 +255,8 @@ export default function AdminPage() {
     if (!firestore || !isCreator || !configRef) return;
     setIsUpdatingGlobalNotice2(true);
     updateDoc(configRef, { globalAnnouncement2: globalAnnouncement2Input, updatedAt: serverTimestamp() })
-      .then(() => {
-        toast({ title: 'Global Sync Row 2 Complete', description: 'Room Notice Row 2 updated across the tribe.' });
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: configRef.path,
-          operation: 'update',
-          requestResourceData: { globalAnnouncement2: globalAnnouncement2Input }
-        }));
-      })
+      .then(() => { toast({ title: 'Global Sync Row 2 Complete', description: 'Room Notice Row 2 updated across the tribe.' }); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'update', requestResourceData: { globalAnnouncement2: globalAnnouncement2Input } })); })
       .finally(() => setIsUpdatingGlobalNotice2(false));
   };
 
@@ -260,11 +274,8 @@ export default function AdminPage() {
       });
       setAppStats({ totalCoins: tc, totalDiamonds: td, totalSpent: ts, totalUsers: usersSnap.docs.length });
       toast({ title: 'Economic Ledger Synchronized' });
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
-    } finally {
-      setIsSyncingAppData(false);
-    }
+    } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); } 
+    finally { setIsSyncingAppData(false); }
   };
 
   const handleSyncDirectory = async () => {
@@ -274,11 +285,8 @@ export default function AdminPage() {
       const snap = await getDocs(query(collection(firestore, 'users'), limit(50)));
       setTribalMembers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
       toast({ title: 'Member Directory Synchronized' });
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
-    } finally {
-      setIsSyncingDirectory(false);
-    }
+    } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); } 
+    finally { setIsSyncingDirectory(false); }
   };
 
   const handleSearchUsers = async () => {
@@ -288,9 +296,7 @@ export default function AdminPage() {
       const q = query(collection(firestore, 'users'), where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'), limit(10));
       const snap = await getDocs(q);
       setFoundUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    } finally {
-      setIsSearching(false);
-    }
+    } finally { setIsSearching(false); }
   };
 
   const handleGenericSearch = async (mode: 'id' | 'name', value: string, setter: (u: any) => void, loadingSetter: (l: boolean) => void) => {
@@ -299,43 +305,23 @@ export default function AdminPage() {
     try {
       const inputVal = value.trim();
       let foundUser = null;
-
       if (mode === 'id') {
         const qAcc = query(collection(firestore, 'users'), where('accountNumber', '==', inputVal), limit(1));
         const snapAcc = await getDocs(qAcc);
-        if (!snapAcc.empty) {
-          foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id };
-        }
-
+        if (!snapAcc.empty) { foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id }; }
         if (!foundUser) {
           const paddedId = inputVal.padStart(3, '0');
           const qSpec = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
           const snapSpec = await getDocs(qSpec);
-          if (!snapSpec.empty) {
-            foundUser = { ...snapSpec.docs[0].data(), id: snapSpec.docs[0].id };
-          }
+          if (!snapSpec.empty) { foundUser = { ...snapSpec.docs[0].data(), id: snapSpec.docs[0].id }; }
         }
       } else {
-        const qName = query(
-          collection(firestore, 'users'), 
-          where('username', '>=', inputVal), 
-          where('username', '<=', inputVal + '\uf8ff'), 
-          limit(1)
-        );
+        const qName = query(collection(firestore, 'users'), where('username', '>=', inputVal), where('username', '<=', inputVal + '\uf8ff'), limit(1));
         const snapName = await getDocs(qName);
-        if (!snapName.empty) {
-          foundUser = { ...snapName.docs[0].data(), id: snapName.docs[0].id };
-        }
+        if (!snapName.empty) { foundUser = { ...snapName.docs[0].data(), id: snapName.docs[0].id }; }
       }
-      
-      if (foundUser) {
-        setter(foundUser);
-      } else {
-        toast({ variant: 'destructive', title: 'Identity Not Found' });
-      }
-    } finally {
-      loadingSetter(false);
-    }
+      if (foundUser) { setter(foundUser); } else { toast({ variant: 'destructive', title: 'Identity Not Found' }); }
+    } finally { loadingSetter(false); }
   };
 
   const handleRoomPinSearch = async () => {
@@ -344,14 +330,8 @@ export default function AdminPage() {
     try {
       const q = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', roomPinSearchId.trim()), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty) {
-        setTargetRoomForPin({ ...snap.docs[0].data(), id: snap.docs[0].id });
-      } else {
-        toast({ variant: 'destructive', title: 'Frequency Not Found' });
-      }
-    } finally {
-      setIsSearchingRoomPin(false);
-    }
+      if (!snap.empty) { setTargetRoomForPin({ ...snap.docs[0].data(), id: snap.docs[0].id }); } else { toast({ variant: 'destructive', title: 'Frequency Not Found' }); }
+    } finally { setIsSearchingRoomPin(false); }
   };
 
   const handleToggleRoomPin = () => {
@@ -360,33 +340,24 @@ export default function AdminPage() {
     const roomRef = doc(firestore, 'chatRooms', targetRoomForPin.id);
     const newPinStatus = !targetRoomForPin.isPinned;
     updateDoc(roomRef, { isPinned: newPinStatus, pinnedAt: newPinStatus ? serverTimestamp() : null })
-      .then(() => {
-        setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus }));
-        toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' });
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update' }));
-      })
+      .then(() => { setTargetRoomForPin((prev: any) => ({ ...prev, isPinned: newPinStatus })); toast({ title: newPinStatus ? 'Frequency Pinned' : 'Frequency Unpinned' }); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update' })); })
       .finally(() => setIsPinningRoom(false));
   };
 
   const handleResetWallet = async () => {
     if (!firestore || !targetUserForRecord || !isCreator) return;
     if (!confirm("Are you sure you want to PERMANENTLY RESET this user's wallet?")) return;
-    
     setIsResettingWallet(true);
     const uRef = doc(firestore, 'users', targetUserForRecord.id);
     const pRef = doc(firestore, 'users', targetUserForRecord.id, 'profile', targetUserForRecord.id);
     const resetData = { 'wallet.coins': 0, 'wallet.diamonds': 0, 'wallet.totalSpent': 0, 'wallet.dailySpent': 0, updatedAt: serverTimestamp() };
-    
     try {
       updateDocumentNonBlocking(uRef, resetData);
       updateDocumentNonBlocking(pRef, resetData);
       setTargetUserForRecord((prev: any) => ({ ...prev, wallet: { coins: 0, diamonds: 0, totalSpent: 0, dailySpent: 0 } }));
       toast({ title: 'Wallet Purged' });
-    } finally {
-      setIsResettingWallet(false);
-    }
+    } finally { setIsResettingWallet(false); }
   };
 
   const handleSystemBroadcast = async () => {
@@ -407,11 +378,8 @@ export default function AdminPage() {
       await Promise.all(batches);
       toast({ title: 'Broadcast Synchronized' });
       setBroadcastContent('');
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users/notifications', operation: 'write' }));
-    } finally {
-      setIsBroadcasting(false);
-    }
+    } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users/notifications', operation: 'write' })); } 
+    finally { setIsBroadcasting(false); }
   };
 
   const handleDirectMessage = () => {
@@ -419,15 +387,9 @@ export default function AdminPage() {
     setIsSendingDm(true);
     const notifRef = collection(firestore, 'users', targetUserForDm.id, 'notifications');
     const msgData = { title: dmTitle, content: dmContent, type: 'direct_system', timestamp: serverTimestamp(), isRead: false };
-    
     addDoc(notifRef, msgData)
-      .then(() => {
-        toast({ title: 'Message Dispatched' });
-        setDmContent('');
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData }));
-      })
+      .then(() => { toast({ title: 'Message Dispatched' }); setDmContent(''); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData })); })
       .finally(() => setIsSendingDm(false));
   };
 
@@ -458,11 +420,7 @@ export default function AdminPage() {
       const paddedNewId = newIdInput.padStart(3, '0');
       const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
       const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) {
-        toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned.' });
-        return;
-      }
-
+      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) { toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned.' }); return; }
       const uRef = doc(firestore, 'users', targetUserForId.id);
       const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
       const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
@@ -471,11 +429,8 @@ export default function AdminPage() {
       setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
       toast({ title: 'ID Synchronized' });
       setNewIdInput('');
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' }));
-    } finally {
-      setIsSavingId(false);
-    }
+    } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); } 
+    finally { setIsSavingId(false); }
   };
 
   const handleRemoveId = () => {
@@ -484,7 +439,6 @@ export default function AdminPage() {
     const uRef = doc(firestore, 'users', targetUserForId.id);
     const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
     const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
-    
     updateDocumentNonBlocking(uRef, updateData);
     updateDocumentNonBlocking(pRef, updateData);
     setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
@@ -504,16 +458,10 @@ export default function AdminPage() {
     const uRef = doc(firestore, 'users', targetUserForBan.id);
     const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
     const banData = { banStatus: { isBanned: true, bannedAt: serverTimestamp(), bannedUntil: bannedUntil, reason: 'Administrative Exclusion' } };
-    
     setDoc(uRef, banData, { merge: true })
       .then(() => setDoc(pRef, banData, { merge: true }))
-      .then(() => {
-        setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus }));
-        toast({ title: 'ID Banned' });
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: banData }));
-      })
+      .then(() => { setTargetUserForBan((prev: any) => ({ ...prev, banStatus: banData.banStatus })); toast({ title: 'ID Banned' }); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: banData })); })
       .finally(() => setIsBanning(false));
   };
 
@@ -523,16 +471,10 @@ export default function AdminPage() {
     const uRef = doc(firestore, 'users', targetUserForBan.id);
     const pRef = doc(firestore, 'users', targetUserForBan.id, 'profile', targetUserForBan.id);
     const unbanData = { banStatus: { isBanned: false, bannedAt: null, bannedUntil: null, reason: null } };
-    
     setDoc(uRef, unbanData, { merge: true })
       .then(() => setDoc(pRef, unbanData, { merge: true }))
-      .then(() => {
-        setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus }));
-        toast({ title: 'ID Unbanned' });
-      })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: unbanData }));
-      })
+      .then(() => { setTargetUserForBan((prev: any) => ({ ...prev, banStatus: unbanData.banStatus })); toast({ title: 'ID Unbanned' }); })
+      .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: uRef.path, operation: 'write', requestResourceData: unbanData })); })
       .finally(() => setIsBanning(false));
   };
 
@@ -603,14 +545,9 @@ export default function AdminPage() {
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];
       newSlides[index] = { ...newSlides[index], imageUrl: url };
-      setDoc(bannerConfigRef, { slides: newSlides }, { merge: true })
-        .then(() => toast({ title: 'Banner Updated' }))
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef.path, operation: 'write' }));
-        });
-    } finally {
-      setIsUploadingBanner(null);
-    }
+      setDoc(bannerConfigRef, { slides: newSlides }, { merge: true }).then(() => toast({ title: 'Banner Updated' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef.path, operation: 'write' })); });
+    } finally { setIsUploadingBanner(null); }
   };
 
   const handleRankingBGUpload = async (key: string, file: File) => {
@@ -620,94 +557,47 @@ export default function AdminPage() {
       const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      setDoc(rankingConfigRef, { [key]: url }, { merge: true })
-        .then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: rankingConfigRef.path, operation: 'write' }));
-        });
-    } finally {
-      setUploadingRankingKey(null);
-    }
+      setDoc(rankingConfigRef, { [key]: url }, { merge: true }).then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: rankingConfigRef.path, operation: 'write' })); });
+    } finally { setUploadingRankingKey(null); }
   };
 
   const handleAddBanner = () => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
-    const newSlide = {
-      title: "New Tribe Event",
-      subtitle: "Join the Frequency",
-      iconName: "Sparkles",
-      color: "from-blue-500/40",
-      imageUrl: ""
-    };
+    const newSlide = { title: "New Tribe Event", subtitle: "Join the Frequency", iconName: "Sparkles", color: "from-blue-500/40", imageUrl: "" };
     const newSlides = [...currentSlides, newSlide];
-    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
-      });
+    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
 
   const handleRemoveBanner = (index: number) => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
     const newSlides = currentSlides.filter((_, i) => i !== index);
-    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
-      });
+    setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
 
   const handleUpdateBannerMeta = (index: number, field: string, value: string) => {
     if (!firestore || !isCreator) return;
     const currentSlides = [...(bannerConfig?.slides || DEFAULT_SLIDES)];
     currentSlides[index] = { ...currentSlides[index], [field]: value };
-    setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true })
-      .catch(err => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' }));
-      });
+    setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
 
   const handleThemeUpload = async (file: File) => {
     if (!storage || !firestore) return;
-    
-    if (!newThemeName.trim()) {
-      toast({ variant: 'destructive', title: 'Missing Identifier', description: 'Please enter a Theme Name before uploading visual assets.' });
-      return;
-    }
-
+    if (!newThemeName.trim()) { toast({ variant: 'destructive', title: 'Missing Identifier', description: 'Please enter a Theme Name before uploading visual assets.' }); return; }
     setIsUploadingTheme(true);
     try {
       const timestamp = Date.now();
       const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      
       const themeRef = doc(collection(firestore, 'roomThemes'));
-      const themeData = { 
-        id: themeRef.id, 
-        name: newThemeName.trim(), 
-        url: url, 
-        category: newThemeCategory, 
-        price: parseInt(newThemePrice) || 0,
-        durationDays: parseInt(newThemeDuration) || 7,
-        createdAt: serverTimestamp(), 
-        accentColor: '#FFCC00', 
-        seatColor: 'rgba(255, 255, 255, 0.1)' 
-      };
-
-      setDoc(themeRef, themeData)
-        .then(() => {
-          toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` });
-          setNewThemeName('');
-          setNewThemePrice('0');
-          setNewThemeDuration('7');
-        })
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: themeRef.path, operation: 'create', requestResourceData: themeData }));
-        });
-    } finally {
-      setIsUploadingTheme(false);
-    }
+      const themeData = { id: themeRef.id, name: newThemeName.trim(), url: url, category: newThemeCategory, price: parseInt(newThemePrice) || 0, durationDays: parseInt(newThemeDuration) || 7, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' };
+      setDoc(themeRef, themeData).then(() => { toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` }); setNewThemeName(''); setNewThemePrice('0'); setNewThemeDuration('7'); })
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: themeRef.path, operation: 'create', requestResourceData: themeData })); });
+    } finally { setIsUploadingTheme(false); }
   };
 
   const handleLoginBGUpload = async (file: File) => {
@@ -717,14 +607,9 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      setDoc(configRef, { loginBackgroundUrl: url }, { merge: true })
-        .then(() => toast({ title: 'Login Background Synchronized' }))
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
-        });
-    } finally {
-      setIsUploadingLoginBG(false);
-    }
+      setDoc(configRef, { loginBackgroundUrl: url }, { merge: true }).then(() => toast({ title: 'Login Background Synchronized' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingLoginBG(false); }
   };
 
   const handleLoadingBGUpload = async (file: File) => {
@@ -734,14 +619,9 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true })
-        .then(() => toast({ title: 'App Loading Background Synchronized' }))
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
-        });
-    } finally {
-      setIsUploadingLoadingBG(false);
-    }
+      setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true }).then(() => toast({ title: 'App Loading Background Synchronized' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingLoadingBG(false); }
   };
 
   const handleSplashBGUpload = async (file: File) => {
@@ -751,41 +631,15 @@ export default function AdminPage() {
       const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
       const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
-      setDoc(configRef, { splashScreenUrl: url }, { merge: true })
-        .then(() => toast({ title: 'Splash Screen Synchronized' }))
-        .catch(err => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' }));
-        });
-    } finally {
-      setIsUploadingSplashBG(false);
-    }
+      setDoc(configRef, { splashScreenUrl: url }, { merge: true }).then(() => toast({ title: 'Splash Screen Synchronized' }))
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
+    } finally { setIsUploadingSplashBG(false); }
   };
 
-  const handleGameDPUploadClick = (game: any) => {
-    setSelectedGameForSync(game);
-    gameFileInputRef.current?.click();
-  };
-
-  const handleGameBGUploadClick = (game: any) => {
-    setSelectedGameForSync(game);
-    gameBGFileInputRef.current?.click();
-  };
-
-  const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && selectedGameForSync) {
-      await uploadGameLogo(selectedGameForSync, file);
-      setSelectedGameForSync(null);
-    }
-  };
-
-  const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && selectedGameForSync) {
-      await uploadGameBackground(selectedGameForSync, file);
-      setSelectedGameForSync(null);
-    }
-  };
+  const handleGameDPUploadClick = (game: any) => { setSelectedGameForSync(game); gameFileInputRef.current?.click(); };
+  const handleGameBGUploadClick = (game: any) => { setSelectedGameForSync(game); gameBGFileInputRef.current?.click(); };
+  const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameLogo(selectedGameForSync, file); setSelectedGameForSync(null); } };
+  const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameBackground(selectedGameForSync, file); setSelectedGameForSync(null); } };
 
   const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
     <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
@@ -811,63 +665,25 @@ export default function AdminPage() {
           <div className="w-full md:w-72 shrink-0 md:sticky md:top-24 h-fit">
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
-                <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Database className="h-4 w-4" /> App Ledger
-                </TabsTrigger>
-                <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Palette className="h-4 w-4" /> Theme Hub
-                </TabsTrigger>
-                <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <BadgeCheck className="h-4 w-4" /> Assign Tags
-                </TabsTrigger>
-                <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <ShieldCheck className="h-4 w-4" /> Assign Center
-                </TabsTrigger>
-                <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Zap className="h-4 w-4" /> Authority Hub
-                </TabsTrigger>
-                <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Palette className="h-4 w-4" /> App Branding
-                </TabsTrigger>
-                <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Pin className="h-4 w-4" /> Pin Control
-                </TabsTrigger>
-                <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Users className="h-4 w-4" /> Member Directory
-                </TabsTrigger>
-                <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Trophy className="h-4 w-4" /> Ranking Themes
-                </TabsTrigger>
-                <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <UserSearch className="h-4 w-4" /> User Ledger
-                </TabsTrigger>
-                <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Gavel className="h-4 w-4" /> ID Ban Control
-                </TabsTrigger>
-                <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <ImageIcon className="h-4 w-4" /> Banners
-                </TabsTrigger>
-                <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Gamepad2 className="h-4 w-4" /> Game Sync
-                </TabsTrigger>
-                <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Megaphone className="h-4 w-4" /> Broadcaster
-                </TabsTrigger>
-                <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <MessageSquareText className="h-4 w-4" /> Direct Messenger
-                </TabsTrigger>
-                <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Type className="h-4 w-4" /> Special ID
-                </TabsTrigger>
-                <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Gift className="h-4 w-4" /> Rewards
-                </TabsTrigger>
-                <TabsTrigger value="loading-page" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Loader className="h-4 w-4" /> App Loading Page
-                </TabsTrigger>
-                <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                  <Monitor className="h-4 w-4" /> Splash Screen
-                </TabsTrigger>
+                <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Database className="h-4 w-4" /> App Ledger</TabsTrigger>
+                <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Palette className="h-4 w-4" /> App Branding</TabsTrigger>
+                <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Pin className="h-4 w-4" /> Pin Control</TabsTrigger>
+                <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Zap className="h-4 w-4" /> Authority Hub</TabsTrigger>
+                <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Users className="h-4 w-4" /> Member Directory</TabsTrigger>
+                <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Trophy className="h-4 w-4" /> Ranking Themes</TabsTrigger>
+                <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><UserSearch className="h-4 w-4" /> User Ledger</TabsTrigger>
+                <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShieldCheck className="h-4 w-4" /> Assign Center</TabsTrigger>
+                <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gavel className="h-4 w-4" /> ID Ban Control</TabsTrigger>
+                <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Palette className="h-4 w-4" /> Theme Hub</TabsTrigger>
+                <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ImageIcon className="h-4 w-4" /> Banners</TabsTrigger>
+                <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gamepad2 className="h-4 w-4" /> Game Sync</TabsTrigger>
+                <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Megaphone className="h-4 w-4" /> Broadcaster</TabsTrigger>
+                <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><MessageSquareText className="h-4 w-4" /> Direct Messenger</TabsTrigger>
+                <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><BadgeCheck className="h-4 w-4" /> Assign Tags</TabsTrigger>
+                <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Type className="h-4 w-4" /> Special ID</TabsTrigger>
+                <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gift className="h-4 w-4" /> Rewards</TabsTrigger>
+                <TabsTrigger value="loading-page" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Loader className="h-4 w-4" /> App Loading Page</TabsTrigger>
+                <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Monitor className="h-4 w-4" /> Splash Screen</TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -880,40 +696,14 @@ export default function AdminPage() {
                         <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><BarChart3 className="h-6 w-6" /> App Economic Ledger</CardTitle>
                         <CardDescription>Global coin circulation and economic sync metrics.</CardDescription>
                      </div>
-                     <Button onClick={handleSyncAppData} disabled={isSyncingAppData} className="bg-blue-600 h-12 rounded-xl">
-                        {isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Ledger
-                     </Button>
+                     <Button onClick={handleSyncAppData} disabled={isSyncingAppData} className="bg-blue-600 h-12 rounded-xl">{isSyncingAppData ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Ledger</Button>
                   </CardHeader>
                   <CardContent className="px-0 space-y-10">
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 flex flex-col gap-1">
-                           <p className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Total Coins in Tribe</p>
-                           <div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic">
-                              <GoldCoinIcon className="h-6 w-6" />
-                              {appStats.totalCoins.toLocaleString()}
-                           </div>
-                        </div>
-                        <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 flex flex-col gap-1">
-                           <p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Total Diamonds Accumulated</p>
-                           <div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic">
-                              <Sparkles className="h-6 w-6" />
-                              {appStats.totalDiamonds.toLocaleString()}
-                           </div>
-                        </div>
-                        <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 flex flex-col gap-1">
-                           <p className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Total Economic Output (Spent)</p>
-                           <div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic">
-                              <BarChart3 className="h-6 w-6" />
-                              {appStats.totalSpent.toLocaleString()}
-                           </div>
-                        </div>
-                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-1">
-                           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Synchronized Users</p>
-                           <div className="flex items-center gap-2 text-2xl font-black text-slate-900 italic">
-                              <Users className="h-6 w-6" />
-                              {appStats.totalUsers.toLocaleString()}
-                           </div>
-                        </div>
+                        <div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Total Coins in Tribe</p><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{appStats.totalCoins.toLocaleString()}</div></div>
+                        <div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-cyan-400 tracking-widest">Total Diamonds Accumulated</p><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Sparkles className="h-6 w-6" />{appStats.totalDiamonds.toLocaleString()}</div></div>
+                        <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest">Total Economic Output (Spent)</p><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{appStats.totalSpent.toLocaleString()}</div></div>
+                        <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-1"><p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Synchronized Users</p><div className="flex items-center gap-2 text-2xl font-black text-slate-900 italic"><Users className="h-6 w-6" />{appStats.totalUsers.toLocaleString()}</div></div>
                      </div>
                   </CardContent>
                </Card>
@@ -921,143 +711,174 @@ export default function AdminPage() {
 
             <TabsContent value="app-branding" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle>
-                     <CardDescription>Dispatch global assets and room notices across the Ummy network.</CardDescription>
-                  </CardHeader>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle></CardHeader>
                   <CardContent className="px-0 space-y-8">
                      <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <Megaphone className="h-5 w-5 text-orange-600" />
-                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span>
-                           </div>
-                           <Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge>
-                        </div>
-                        <div className="flex gap-2">
-                           <Input 
-                             placeholder="Write global room announcement row 1..." 
-                             value={globalAnnouncementInput}
-                             onChange={(e) => setGlobalAnnouncementInput(e.target.value)}
-                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
-                           />
-                           <Button 
-                             onClick={handleUpdateGlobalNotice} 
-                             disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()}
-                             className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20"
-                           >
-                              {isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
-                           </Button>
-                        </div>
+                        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-orange-600" /><span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span></div><Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge></div>
+                        <div className="flex gap-2"><Input placeholder="Write global room announcement..." value={globalAnnouncementInput} onChange={(e) => setGlobalAnnouncementInput(e.target.value)} className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm" /><Button onClick={handleUpdateGlobalNotice} disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()} className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20">{isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}</Button></div>
                      </div>
-
                      <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <ShieldCheck className="h-5 w-5 text-blue-600" />
-                              <span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 2)</span>
-                           </div>
-                           <Badge className="bg-blue-100 text-blue-600 border-none font-black text-[8px] uppercase">Supplemental Sync</Badge>
-                        </div>
-                        <div className="flex gap-2">
-                           <Input 
-                             placeholder="Write global room announcement row 2..." 
-                             value={globalAnnouncement2Input}
-                             onChange={(e) => setGlobalAnnouncement2Input(e.target.value)}
-                             className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm"
-                           />
-                           <Button 
-                             onClick={handleUpdateGlobalNotice2} 
-                             disabled={isUpdatingGlobalNotice2 || !globalAnnouncement2Input.trim()}
-                             className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-900/20"
-                           >
-                              {isUpdatingGlobalNotice2 ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}
-                           </Button>
-                        </div>
+                        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-blue-600" /><span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 2)</span></div><Badge className="bg-blue-100 text-blue-600 border-none font-black text-[8px] uppercase">Supplemental Sync</Badge></div>
+                        <div className="flex gap-2"><Input placeholder="Write global room announcement row 2..." value={globalAnnouncement2Input} onChange={(e) => setGlobalAnnouncement2Input(e.target.value)} className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm" /><Button onClick={handleUpdateGlobalNotice2} disabled={isUpdatingGlobalNotice2 || !globalAnnouncement2Input.trim()} className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-900/20">{isUpdatingGlobalNotice2 ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}</Button></div>
                      </div>
                   </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="pin-control" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600"><Pin className="h-6 w-6" /> Sovereign Frequency Pin</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4">
+                     <div className="flex gap-4"><Input placeholder="Enter Room Number (e.g. 1000021)" value={roomPinSearchId} onChange={(e) => setRoomPinSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRoomPinSearch()} className="h-14 rounded-2xl border-2" /><Button onClick={handleRoomPinSearch} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRoomPin}>Find Frequency</Button></div>
+                  </div>
+                  {targetRoomForPin && (
+                    <div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
+                       <div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl rounded-xl"><AvatarImage src={targetRoomForPin.coverUrl || undefined} /></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetRoomForPin.name || targetRoomForPin.title}</p><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Room ID: {targetRoomForPin.roomNumber}</span></div></div><div><p className="text-[10px] font-black uppercase text-gray-400 mb-1">Pin Frequency</p>{targetRoomForPin.isPinned ? (<Badge className="bg-emerald-500 text-white font-black uppercase text-[10px] py-1 px-3">PINNED ACTIVE</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">NOT PINNED</Badge>)}</div></div>
+                       <Button onClick={handleToggleRoomPin} disabled={isPinningRoom} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetRoomForPin.isPinned ? "bg-red-50 text-red-600 border-2 border-red-100 hover:bg-red-100" : "bg-emerald-600 text-white hover:bg-emerald-700")}>{isPinningRoom ? <Loader className="animate-spin mr-2 h-6 w-6" /> : targetRoomForPin.isPinned ? <><PinOff className="mr-2 h-6 w-6" /> Unpin Frequency</> : <><Pin className="mr-2 h-6 w-6" /> Pin to Top</>}</Button>
+                    </div>
+                  )}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="authority" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Zap className="h-6 w-6" /> Authority Hub</CardTitle></CardHeader>
+                  <CardContent className="px-0 space-y-6">
+                     <div className="flex flex-col gap-4">
+                        <SearchToggle mode={tagSearchMode} setMode={setTagSearchMode} />
+                        <div className="flex gap-4"><Input placeholder="Enter member signature..." className="h-14 rounded-2xl border-2" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()} /><Button onClick={handleSearchUsers} className="h-14 px-8 rounded-2xl bg-black text-white" disabled={isSearching}>{isSearching ? <Loader className="animate-spin" /> : 'Find'}</Button></div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {foundUsers.map((u) => (
+                          <div key={u.id} className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-4 shadow-sm">
+                             <div className="flex items-center gap-4"><Avatar className="h-14 w-14 border-2 border-white shadow-sm"><AvatarImage src={u.avatarUrl || undefined} /></Avatar><div className="flex-1 min-w-0"><p className="font-black text-sm uppercase text-slate-900 truncate">{u.username}</p>{u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground uppercase font-bold">ID: {u.accountNumber}</p>}</div></div>
+                             <div className="grid grid-cols-2 gap-2">
+                                {AUTHORITY_ROLES.map(role => (<Button key={role.id} variant={u.tags?.includes(role.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(u.id, role.id, u.tags)} className="h-10 text-[8px] font-black uppercase rounded-xl">{role.label}</Button>))}
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="member-directory" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between"><div><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Users className="h-6 w-6" /> Tribal Member Archive</CardTitle></div><Button onClick={handleSyncDirectory} disabled={isSyncingDirectory} className="bg-black h-12 rounded-xl">{isSyncingDirectory ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Directory</Button></CardHeader>
+                  <CardContent className="px-0"><div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">{tribalMembers.length === 0 ? (<div className="py-40 text-center opacity-20 italic">Awaiting Synchronized Directory...</div>) : tribalMembers.map(member => (<div key={member.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors"><div className="flex items-center gap-4"><Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={member.avatarUrl || undefined} /></Avatar><div><p className="font-black text-sm uppercase text-slate-900">{member.username}</p><div className="flex items-center gap-2 mt-0.5">{member.specialId ? <SpecialIdBadge id={member.specialId} color={member.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span>}</div></div></div><div className="text-right"><div className="flex items-center gap-1.5 justify-end text-blue-600 font-black italic"><GoldCoinIcon className="h-4 w-4" />{member.wallet?.coins.toLocaleString() || 0}</div></div></div>))}</div></CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="ranking-themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-yellow-600"><Trophy className="h-6 w-6" /> Ranking Themes</CardTitle></CardHeader>
+                  <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-8">{[{ key: 'honor', label: 'Honor (Rich)', icon: Crown }, { key: 'charm', label: 'Charm', icon: Sparkles }, { key: 'room', label: 'Room Rankings', icon: Home }, { key: 'cp', label: 'Couple Challenge', icon: Heart }].map((item) => (<div key={item.key} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><item.icon className="h-5 w-5 text-yellow-600" /><span className="font-black uppercase italic text-sm">{item.label}</span></div>{rankingConfig?.[item.key] && (<Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(rankingConfigRef!, { [item.key]: null })}>Reset</Button>)}</div><div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-200 border-2 border-white shadow-inner flex items-center justify-center">{rankingConfig?.[item.key] ? (<Image src={rankingConfig[item.key]} fill className="object-cover" alt="BG" unoptimized />) : (<div className="text-center opacity-20"><ImageIcon className="h-8 w-8 mx-auto mb-1" /><span className="text-[8px] font-black uppercase">Default Active</span></div>)}{uploadingRankingKey === item.key && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => { setUploadingRankingKey(item.key); rankingBGFileInputRef.current?.click(); }} className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-yellow-600 active:scale-90 transition-transform"><Camera className="h-4 w-4" /></button></div></div>))}</CardContent>
+               </Card>
+               <input type="file" ref={rankingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadingRankingKey && handleRankingBGUpload(uploadingRankingKey, e.target.files[0])} />
+            </TabsContent>
+
+            <TabsContent value="user-records" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-600"><UserSearch className="h-6 w-6" /> User Ledger</CardTitle></CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="flex flex-col gap-4"><SearchToggle mode={recordSearchMode} setMode={setRecordSearchMode} /><div className="flex gap-4"><Input placeholder={recordSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit</Button></div></div>
+                     {targetUserForRecord && (<div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8"><div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between"><div className="flex items-center gap-4"><Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar><div><h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3><div className="flex flex-col gap-1 mt-1">{targetUserForRecord.specialId && <SpecialIdBadge id={targetUserForRecord.specialId} color={targetUserForRecord.specialIdColor} />}<span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRecord.accountNumber}</span></div></div></div></div><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div><div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div><div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Spend</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div></div><div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6"><h4 className="text-xl font-black uppercase italic text-red-600">Wallet Purge</h4><Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">{isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Global Reset</Button></div></div>)}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="assign-center" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Assign Center</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} /><div className="flex gap-4"><Input placeholder={centerSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find</Button></div></div>
+                  {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>{targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}</div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="id-ban" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-red-600"><Gavel className="h-6 w-6" /> ID Ban Protocol</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={banSearchMode} setMode={setBanSearchMode} /><div className="flex gap-4"><Input placeholder="Enter Target..." value={banSearchId} onChange={(e) => setBanSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(banSearchMode, banSearchId, setTargetUserForBan, setIsSearchingBan)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingBan}>Locate</Button></div></div>
+                  {targetUserForBan && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForBan.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForBan.username}</p></div></div><div>{targetUserForBan.banStatus?.isBanned ? (<Badge className="bg-red-600 text-white">BANNED</Badge>) : (<Badge className="bg-green-500 text-white">OK</Badge>)}</div></div>{!targetUserForBan.banStatus?.isBanned ? (<div className="space-y-6"><div className="grid grid-cols-4 gap-4">{[{ l: 'Days', v: banDays, s: setBanDays }, { l: 'Hrs', v: banHours, s: setBanHours }, { l: 'Min', v: banMinutes, s: setBanMinutes }, { l: 'Sec', v: banSeconds, s: setBanSeconds }].map(i => (<div key={i.l} className="space-y-1"><p className="text-[8px] font-black uppercase text-gray-400 text-center">{i.l}</p><Input value={i.v} onChange={(e) => i.s(e.target.value.replace(/\D/g, ''))} className="h-12 rounded-xl text-center" /></div>))}</div><Button onClick={handleBanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-red-600 text-white font-black uppercase italic text-xl shadow-xl">Execute Ban</Button></div>) : (<Button onClick={handleUnbanUser} disabled={isBanning} className="w-full h-16 rounded-[1.5rem] bg-green-600 text-white font-black uppercase italic text-xl shadow-xl">Unban</Button>)}</div>)}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="themes" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-500"><Palette className="h-6 w-6" /> Theme Hub</CardTitle></CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100"><div className="space-y-4"><Input placeholder="Theme Name..." value={newThemeName} onChange={(e) => setNewThemeName(e.target.value)} className="h-14 rounded-2xl border-2" /><div className="grid grid-cols-2 gap-2"><Input type="number" value={newThemePrice} onChange={(e) => setNewThemePrice(e.target.value)} className="h-12 rounded-xl" /><Input type="number" value={newThemeDuration} onChange={(e) => setNewThemeDuration(e.target.value)} className="h-12 rounded-xl" /></div><Select value={newThemeCategory} onValueChange={(val: any) => setNewThemeCategory(val)}><SelectTrigger className="h-14 rounded-2xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="general">General</SelectItem><SelectItem value="entertainment">Entertainment</SelectItem></SelectContent></Select></div><div className="flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6"><button onClick={() => themeFileInputRef.current?.click()} className="flex flex-col items-center gap-3"><Upload className="h-8 w-8 text-rose-500" /><span className="text-[10px] font-black">Upload Visual</span></button><input type="file" ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} /></div></div>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{customThemes?.map((theme) => (<Card key={theme.id} className="rounded-2xl overflow-hidden group relative"><div className="relative aspect-square"><Image src={theme.url} alt={theme.name} fill className="object-cover" unoptimized /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Button variant="destructive" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'roomThemes', theme.id))}><Trash2 className="h-4 w-4" /></Button></div></div><div className="p-2 text-center text-[10px] font-black">{theme.name}</div></Card>))}</div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="banners" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0 flex flex-row items-center justify-between"><div><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Banners</CardTitle></div><Button onClick={handleAddBanner} className="bg-primary text-black h-12 rounded-xl">+ Add Slot</Button></CardHeader>
+                  <CardContent className="px-0 space-y-8"><div className="grid grid-cols-1 gap-8">{(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (<div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8"><div className="w-72 h-40 relative rounded-2xl overflow-hidden bg-slate-200">{slide.imageUrl && (<Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />)}<button onClick={() => bannerFileInputRefs.current[idx]?.click()} className="absolute bottom-3 right-3 bg-white p-2 rounded-full"><Camera className="h-4 w-4" /></button><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /></div><div className="flex-1 space-y-4"><Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl" /><Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl" /><Button variant="destructive" onClick={() => handleRemoveBanner(idx)} className="w-full">Purge</Button></div></div>))}</div></CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="games" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Gamepad2 className="h-6 w-6" /> Game Sync</CardTitle></CardHeader>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">{gamesList.map((game) => (<Card key={game.slug} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-4"><div className="relative aspect-square rounded-2xl overflow-hidden">{game.coverUrl && (<Image src={game.coverUrl} alt={game.title} fill className="object-cover" unoptimized />)}<button onClick={() => handleGameDPUploadClick(game)} className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"><Camera className="h-8 w-8 text-white" /></button></div><p className="font-black text-center uppercase text-sm">{game.title}</p><Button onClick={() => handleGameBGUploadClick(game)} size="sm" className="rounded-xl">Sync BG</Button></Card>))}</CardContent>
+               </Card>
+               <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
+               <input type="file" ref={gameBGFileInputRef} className="hidden" accept="image/*" onChange={handleGameBGFileChange} />
+            </TabsContent>
+
+            <TabsContent value="broadcaster" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Megaphone className="h-6 w-6" /> Broadcaster</CardTitle></CardHeader>
+                  <CardContent className="px-0 space-y-6"><div className="space-y-4"><Input value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Type broadcast..." value={broadcastContent} onChange={(e) => setBroadcastContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleSystemBroadcast} disabled={isBroadcasting || !broadcastContent.trim()} className="w-full h-16 rounded-[1.5rem]">Synchronize Broadcast</Button></CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="direct-messenger" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500"><MessageSquareText className="h-6 w-6" /> Direct Messenger</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} /><div className="flex gap-4"><Input placeholder="Recipient..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl" disabled={isSearchingDm}>Find</Button></div></div>
+                  {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-black uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={() => handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem]">Send Sync</Button></div>)}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="tags" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><BadgeCheck className="h-6 w-6" /> Assign Tags</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={tagSearchMode} setMode={setTagSearchMode} /><div className="flex gap-4"><Input placeholder="Target..." value={tagSearchId} onChange={(e) => setTagSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(tagSearchMode, tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(tagSearchMode, tagSearchId, setTargetUserForTags, setIsSearchingTag)} className="h-14 px-8 rounded-2xl" disabled={isSearchingTag}>Locate</Button></div></div>
+                  {targetUserForTags && (<div className="mt-10 p-6 border-2 rounded-[2rem] flex flex-col gap-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForTags.avatarUrl || undefined}/></Avatar><p className="font-black text-xl">{targetUserForTags.username}</p></div><div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{ELITE_TAGS.map(tag => (<Button key={tag.id} variant={targetUserForTags.tags?.includes(tag.id) ? 'default' : 'outline'} className="h-12 rounded-xl" onClick={() => toggleUserRole(targetUserForTags.id, tag.id, targetUserForTags.tags)}>{tag.label}</Button>))}</div><Button variant="ghost" onClick={() => handleRemoveAllTags(targetUserForTags.id)} className="text-red-500 text-[10px]">Purge All Tags</Button></div>)}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="special-id" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6" /> Special ID</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={specialIdSearchMode} setMode={setSpecialIdSearchMode} /><div className="flex gap-4"><Input placeholder="Enter Identity..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl">Find</Button></div></div>
+                  {targetUserForId && (<div className="mt-10 p-6 border-2 rounded-[2rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar><p className="font-black text-xl">{targetUserForId.username}</p></div><div className="space-y-6"><div className="flex gap-4"><button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500", selectedColor === 'red' && "ring-4 ring-black")}></button><button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500", selectedColor === 'blue' && "ring-4 ring-black")}></button></div><div className="flex gap-2"><Input placeholder="New ID..." value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10">Sync</Button><Button onClick={() => handleRemoveId()} variant="outline" className="h-14"><Trash2 /></Button></div></div></div>)}
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="rewards" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Gift className="h-6 w-6" /> Rewards</CardTitle></CardHeader>
+                  <div className="flex flex-col gap-4"><SearchToggle mode={rewardSearchMode} setMode={setRewardSearchMode} /><div className="flex gap-4"><Input placeholder="Recipient..." value={rewardSearchId} onChange={(e) => setRewardSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(rewardSearchMode, rewardSearchId, setTargetUserForRewards, setIsSearchingRewards)} className="h-14 px-8 rounded-2xl">Find</Button></div></div>
+                  {targetUserForRewards && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-10"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForRewards.avatarUrl || undefined}/></Avatar><p className="font-black text-xl">{targetUserForRewards.username}</p></div><div className="grid grid-cols-1 md:grid-cols-2 gap-10"><div className="space-y-4"><h4>Coin Dispatch</h4><div className="flex gap-2"><Input value={coinDispatchAmount} onChange={(e) => setCoinDispatchAmount(e.target.value.replace(/\D/g, ''))} className="h-14" /><Button onClick={handleDispatchCoins} className="h-14"><Send /></Button></div></div><div className="space-y-4"><h4>Elite Assets</h4><div className="flex flex-wrap gap-2">{DISPATCH_ASSETS.frames.map(frame => (<Button key={frame.id} variant="outline" size="sm" onClick={() => handleDispatchItem(frame.id, 'ownedItems')} className="text-[8px]">{frame.name}</Button>))}</div></div></div></div>)}
                </Card>
             </TabsContent>
 
             <TabsContent value="splash-screen" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Monitor className="h-6 w-6" /> App Splash Screen</CardTitle>
-                     <CardDescription>Dispatch a visual theme for the primary entry portal.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-8">
-                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <ImageIcon className="h-5 w-5 text-primary" />
-                              <span className="font-black uppercase italic text-sm text-slate-900">Splash Background</span>
-                           </div>
-                           {config?.splashScreenUrl && (
-                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { splashScreenUrl: null })}>Reset to Default</Button>
-                           )}
-                        </div>
-                        
-                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-inner flex items-center justify-center">
-                           {config?.splashScreenUrl ? (
-                             <Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash BG" unoptimized />
-                           ) : (
-                             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
-                                <Monitor className="h-10 w-10" />
-                                <span className="uppercase font-black text-[10px] tracking-widest">Stars Active</span>
-                             </div>
-                           )}
-                           {isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}
-                           <button 
-                             onClick={() => splashBGFileInputRef.current?.click()}
-                             className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary active:scale-90 transition-transform"
-                           >
-                              <Camera className="h-6 w-6" />
-                           </button>
-                        </div>
-                        <input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} />
-                     </div>
-                  </CardContent>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Monitor className="h-6 w-6" /> Splash Screen</CardTitle></CardHeader>
+                  <CardContent className="px-0"><div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">{config?.splashScreenUrl ? (<Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash" unoptimized />) : (<div className="text-white/20">Stars Active</div>)}{isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => splashBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary"><Camera className="h-6 w-6" /></button></div><input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} /></CardContent>
                </Card>
             </TabsContent>
 
             <TabsContent value="loading-page" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0">
-                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600"><Loader className="h-6 w-6" /> App Loading Background</CardTitle>
-                     <CardDescription>Dispatch a global background for all transition frequencies.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0 space-y-8">
-                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                              <ImageIcon className="h-5 w-5 text-indigo-600" />
-                              <span className="font-black uppercase italic text-sm text-slate-900">Global Loading Screen</span>
-                           </div>
-                           {config?.appLoadingBackgroundUrl && (
-                             <Button variant="ghost" size="sm" className="text-[8px] font-black uppercase text-red-500" onClick={() => updateDoc(configRef!, { appLoadingBackgroundUrl: null })}>Reset to Default</Button>
-                           )}
-                        </div>
-                        
-                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-inner flex items-center justify-center">
-                           {config?.appLoadingBackgroundUrl ? (
-                             <Image src={config.appLoadingBackgroundUrl} fill className="object-cover" alt="Loading BG" unoptimized />
-                           ) : (
-                             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
-                                <Loader className="h-10 w-10 animate-spin" />
-                                <span className="uppercase font-black text-[10px] tracking-widest">Default Active</span>
-                             </div>
-                           )}
-                           {isUploadingLoadingBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}
-                           <button 
-                             onClick={() => loadingBGFileInputRef.current?.click()}
-                             className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-indigo-600 active:scale-90 transition-transform"
-                           >
-                              <Camera className="h-6 w-6" />
-                           </button>
-                        </div>
-                        <input type="file" ref={loadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoadingBGUpload(e.target.files[0])} />
-                     </div>
-                  </CardContent>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600"><Loader className="h-6 w-6" /> Loading Page</CardTitle></CardHeader>
+                  <CardContent className="px-0"><div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">{config?.appLoadingBackgroundUrl ? (<Image src={config.appLoadingBackgroundUrl} fill className="object-cover" alt="Loading" unoptimized />) : (<div className="text-white/20">Default Active</div>)}{isUploadingLoadingBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => loadingBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-indigo-600"><Camera className="h-6 w-6" /></button></div><input type="file" ref={loadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoadingBGUpload(e.target.files[0])} /></CardContent>
                </Card>
             </TabsContent>
           </div>
