@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -12,7 +11,7 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
   const logo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
   
   return (
-    <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
+    <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>
       <Image 
         src={logo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png"} 
         alt="Ummy Logo" 
@@ -20,6 +19,7 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
         className="object-contain drop-shadow-md"
         priority
         unoptimized
+        data-ai-hint="cute mascot"
       />
     </div>
   );

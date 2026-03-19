@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -13,6 +12,7 @@ export function Logo() {
         width={140}
         height={140}
         unoptimized
+        data-ai-hint="cute mascot"
       />
     </div>
   );
