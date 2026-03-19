@@ -296,7 +296,7 @@ export default function WildPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center">
               
               <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a2e] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
                  <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
@@ -334,13 +334,13 @@ export default function WildPartyPage() {
                   >
                      <div className="relative">
                         <div className={cn(
-                          "h-24 w-24 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
+                          "h-20 w-20 rounded-[1.25rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-5xl drop-shadow-lg relative z-10">
+                           <span className="text-4xl drop-shadow-lg relative z-10">
                               {animal.id === 'lion' ? '🦁' : animal.emoji}
                            </span>
-                           <span className="text-[10px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
+                           <span className="text-[8px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
                            <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
