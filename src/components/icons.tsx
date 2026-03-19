@@ -1,23 +1,29 @@
+
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * Official Ummy Brand Signature.
- * Synchronized with the high-fidelity PNG asset.
+ * Synchronized with the high-fidelity mascot visual.
  * Re-engineered container to ensure absolute visual integrity across different scales.
  */
-export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
-    <Image 
-      src="/images/ummy-logo.png" 
-      alt="Ummy Logo" 
-      fill 
-      className="object-contain drop-shadow-md"
-      priority
-      unoptimized
-    />
-  </div>
-);
+export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  const logo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
+  
+  return (
+    <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
+      <Image 
+        src={logo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png"} 
+        alt="Ummy Logo" 
+        fill 
+        className="object-contain drop-shadow-md"
+        priority
+        unoptimized
+      />
+    </div>
+  );
+};
 
 export const GoldCoinIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg 
