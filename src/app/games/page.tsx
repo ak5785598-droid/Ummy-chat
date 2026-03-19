@@ -18,6 +18,7 @@ import type { Game } from '@/lib/types';
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 const FALLBACK_GAMES: Game[] = [
+  { id: 'g-carrom', title: 'Carrom Masters', slug: 'carrom', coverUrl: 'https://images.unsplash.com/photo-1632064824547-e77c36851495?q=80&w=1000', cost: 0, imageHint: 'carrom board game' },
   { id: 'g7', title: 'Lion Fight', slug: 'lion-fight', coverUrl: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000', cost: 0, imageHint: '3d lion fighting' },
   { id: 'fallback-roulette', title: 'Roulette', slug: 'roulette', coverUrl: '', cost: 0, imageHint: 'roulette wheel' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
@@ -27,9 +28,6 @@ const FALLBACK_GAMES: Game[] = [
 
 /**
  * 3D Tribe Arena - Global Game Frequencies.
- * Re-engineered for absolute visual synchronization via slug-based identity.
- * Features Sovereign-only DP Sync tools visible directly on the game grid.
- * Restricted strictly to the Supreme Creator.
  */
 export default function GamesPage() {
   const { user } = useUser();
@@ -48,7 +46,6 @@ export default function GamesPage() {
     setLiveCounts(counts);
   }, []);
 
-  // SOVEREIGN ACCESS PROTOCOL: Restricted strictly to the Creator ID
   const isSovereign = user?.uid === CREATOR_ID;
 
   const gamesQuery = useMemoFirebase(() => {
@@ -129,7 +126,6 @@ export default function GamesPage() {
                   {activeGames.map((game) => (
                     <div key={game.slug} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
                       <div className="block relative">
-                        {/* 3D Depth Layer */}
                         <div className="absolute inset-0 bg-purple-600/20 rounded-[2.5rem] translate-z-[-20px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         
                         <Link href={`/games/${game.slug}`} className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-purple-500/50 group-hover:shadow-[0_40px_80px_rgba(168,85,247,0.3)] group-hover:-translate-y-4 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
@@ -150,11 +146,9 @@ export default function GamesPage() {
                              </div>
                            )}
                            
-                           {/* High-fidelity glass overlay */}
                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            
-                           {/* Sovereign-Only DP Change Portal - Integrated Directly on Game */}
                            {isSovereign && (
                              <button 
                                onClick={(e) => handleLogoChangeClick(e, game.slug)}

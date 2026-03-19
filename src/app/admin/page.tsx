@@ -82,6 +82,7 @@ const DEFAULT_SLIDES = [
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
+  { id: 'carrom', title: 'Carrom Masters', slug: 'carrom', imageHint: 'carrom board game' },
   { id: 'roulette', title: 'Roulette', slug: 'roulette', imageHint: 'roulette wheel' },
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
@@ -792,60 +793,62 @@ export default function AdminPage() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-10 items-start">
-          <div className="w-full md:w-72 shrink-0 sticky top-24">
-            <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
-              <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Database className="h-4 w-4 text-blue-500" /> App Ledger
-              </TabsTrigger>
-              <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Palette className="h-4 w-4 text-pink-500" /> App Branding
-              </TabsTrigger>
-              <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Pin className="h-4 w-4 text-emerald-500" /> Pin Control
-              </TabsTrigger>
-              <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
-              </TabsTrigger>
-              <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Users className="h-4 w-4 text-blue-500" /> Member Directory
-              </TabsTrigger>
-              <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Trophy className="h-4 w-4 text-yellow-500" /> Ranking Themes
-              </TabsTrigger>
-              <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
-              </TabsTrigger>
-              <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <ShieldCheck className="h-4 w-4 text-indigo-500" /> Assign Center
-              </TabsTrigger>
-              <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
-              </TabsTrigger>
-              <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
-              </TabsTrigger>
-              <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
-              </TabsTrigger>
-              <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Gamepad2 className="h-4 w-4 text-purple-500" /> Game Sync
-              </TabsTrigger>
-              <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Megaphone className="h-4 w-4 text-cyan-500" /> Broadcaster
-              </TabsTrigger>
-              <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <MessageSquareText className="h-4 w-4 text-indigo-500" /> Direct Messenger
-              </TabsTrigger>
-              <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
-              </TabsTrigger>
-              <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Type className="h-4 w-4 text-red-500" /> Special ID
-              </TabsTrigger>
-              <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Gift className="h-4 w-4 text-pink-500" /> Rewards
-              </TabsTrigger>
-            </TabsList>
+          <div className="w-full md:w-72 shrink-0 md:sticky md:top-24 h-fit">
+            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+              <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
+                <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Database className="h-4 w-4 text-blue-500" /> App Ledger
+                </TabsTrigger>
+                <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Palette className="h-4 w-4 text-rose-500" /> Theme Hub
+                </TabsTrigger>
+                <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <BadgeCheck className="h-4 w-4 text-green-500" /> Assign Tags
+                </TabsTrigger>
+                <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <ShieldCheck className="h-4 w-4 text-indigo-500" /> Assign Center
+                </TabsTrigger>
+                <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Zap className="h-4 w-4 text-orange-500" /> Authority Hub
+                </TabsTrigger>
+                <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Palette className="h-4 w-4 text-pink-500" /> App Branding
+                </TabsTrigger>
+                <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Pin className="h-4 w-4 text-emerald-500" /> Pin Control
+                </TabsTrigger>
+                <TabsTrigger value="member-directory" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Users className="h-4 w-4 text-blue-500" /> Member Directory
+                </TabsTrigger>
+                <TabsTrigger value="ranking-themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Trophy className="h-4 w-4 text-yellow-500" /> Ranking Themes
+                </TabsTrigger>
+                <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <UserSearch className="h-4 w-4 text-rose-500" /> User Ledger
+                </TabsTrigger>
+                <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Gavel className="h-4 w-4 text-red-600" /> ID Ban Control
+                </TabsTrigger>
+                <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <ImageIcon className="h-4 w-4 text-blue-500" /> Banners
+                </TabsTrigger>
+                <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Gamepad2 className="h-4 w-4 text-purple-500" /> Game Sync
+                </TabsTrigger>
+                <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Megaphone className="h-4 w-4 text-cyan-500" /> Broadcaster
+                </TabsTrigger>
+                <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <MessageSquareText className="h-4 w-4 text-indigo-500" /> Direct Messenger
+                </TabsTrigger>
+                <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Type className="h-4 w-4 text-red-500" /> Special ID
+                </TabsTrigger>
+                <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Gift className="h-4 w-4 text-pink-500" /> Rewards
+                </TabsTrigger>
+              </TabsList>
+            </ScrollArea>
           </div>
 
           <div className="flex-1 w-full min-w-0">
