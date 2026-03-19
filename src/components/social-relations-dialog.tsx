@@ -95,7 +95,8 @@ interface SocialRelationsDialogProps {
 }
 
 /**
- * Social Relations Portal - High-Fidelity Social Graph.
+ * Social Relations Portal - Full-Screen Social Graph.
+ * Re-engineered for immersive social discovery.
  */
 export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab = 'followers', username }: SocialRelationsDialogProps) {
   const firestore = useFirestore();
@@ -133,8 +134,8 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px] h-[85vh] md:h-[600px] p-0 border-none bg-white text-black rounded-t-[3rem] md:rounded-[2.5rem] flex flex-col font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500 overflow-hidden">
-        <DialogHeader className="p-6 pt-10 border-b border-gray-50 flex flex-row items-center gap-4 shrink-0">
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-headline animate-in slide-in-from-right duration-500 overflow-hidden">
+        <DialogHeader className="p-6 pt-12 border-b border-gray-50 flex flex-row items-center gap-4 shrink-0 bg-white sticky top-0 z-50">
            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
               <ChevronLeft className="h-6 w-6 text-gray-800" />
            </button>
@@ -172,7 +173,7 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden bg-white">
             <TabsContent value="followers" className="h-full m-0">
               <ScrollArea className="h-full">
                 {isFollowersLoading ? (
