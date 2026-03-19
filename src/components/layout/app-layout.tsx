@@ -34,7 +34,7 @@ export function AppLayout({
 }: { 
   children: React.ReactNode; 
   hideSidebarOnMobile?: boolean; 
-  hideBottomNav?: boolean;
+  hideBottomNav?: boolean; 
   fullScreen?: boolean;
 }) {
   const pathname = usePathname();
