@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +90,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
   );
 };
 
+const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
+  <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+     <button onClick={() => setMode('id')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'id' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By ID</button>
+     <button onClick={() => setMode('name')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By Name</button>
+  </div>
+);
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -162,12 +169,13 @@ export default function AdminPage() {
   const [isPermanentBan, setIsPermanentBan] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
 
-  const [newThemeName, setNewThemeName] = useState('');
-  const [newThemePrice, setNewThemePrice] = useState('0');
-  const [newThemeDuration, setNewThemeDuration] = useState('7');
-  const [newThemeCategory, setNewThemeCategory] = useState<'general' | 'entertainment' | 'help'>('general');
-  const [isUploadingTheme, setIsUploadingTheme] = useState(false);
-  const themeFileInputRef = useRef<HTMLInputElement>(null);
+  // Universal Store Engine State
+  const [storeName, setStoreName] = useState('');
+  const [storePrice, setStorePrice] = useState('0');
+  const [storeDuration, setStoreDuration] = useState('7');
+  const [storeCategory, setStoreCategory] = useState<'Frame' | 'Bubble' | 'Theme' | 'Wave'>('Frame');
+  const [isUploadingStore, setIsUploadingStore] = useState(false);
+  const storeFileInputRef = useRef<HTMLInputElement>(null);
 
   const [isUploadingLoginBG, setIsUploadingLoginBG] = useState(false);
   const loginBGFileInputRef = useRef<HTMLInputElement>(null);
@@ -535,12 +543,12 @@ export default function AdminPage() {
     toast({ title: 'Authority Purged' });
   };
 
-  const handleBannerImageUpload = async (index: number, file: File) => {
+  const handleBannerImageUpload = async (index: number, f: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);
     try {
       const sRef = ref(storage, `banners/slide_${index}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
+      const result = await uploadBytes(sRef, f);
       const url = await getDownloadURL(result.ref);
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];
@@ -550,12 +558,12 @@ export default function AdminPage() {
     } finally { setIsUploadingBanner(null); }
   };
 
-  const handleRankingBGUpload = async (key: string, file: File) => {
+  const handleRankingBGUpload = async (key: string, f: File) => {
     if (!storage || !rankingConfigRef) return;
     setUploadingRankingKey(key);
     try {
       const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
+      const result = await uploadBytes(sRef, f);
       const url = await getDownloadURL(result.ref);
       setDoc(rankingConfigRef, { [key]: url }, { merge: true }).then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
         .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: rankingConfigRef.path, operation: 'write' })); });
@@ -577,76 +585,44 @@ export default function AdminPage() {
     setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
 
-  const handleUpdateBannerMeta = (index: number, field: string, value: string) => {
+  const handleUpdateBannerMeta = (index: number, f: string, value: string) => {
     if (!firestore || !isCreator) return;
     const currentSlides = [...(bannerConfig?.slides || DEFAULT_SLIDES)];
-    currentSlides[index] = { ...currentSlides[index], [field]: value };
+    currentSlides[index] = { ...currentSlides[index], [f]: value };
     setDoc(bannerConfigRef!, { slides: currentSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
 
-  const handleThemeUpload = async (file: File) => {
+  const handleStoreItemUpload = async (f: File) => {
     if (!storage || !firestore) return;
-    if (!newThemeName.trim()) { toast({ variant: 'destructive', title: 'Missing Identifier', description: 'Please enter a Theme Name before uploading visual assets.' }); return; }
-    setIsUploadingTheme(true);
+    if (!storeName.trim()) { toast({ variant: 'destructive', title: 'Missing Name' }); return; }
+    setIsUploadingStore(true);
     try {
-      const timestamp = Date.now();
-      const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
-      const result = await uploadBytes(sRef, file);
+      const sRef = ref(storage, `store/item_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
       const url = await getDownloadURL(result.ref);
-      const themeRef = doc(collection(firestore, 'roomThemes'));
-      const themeData = { id: themeRef.id, name: newThemeName.trim(), url: url, category: newThemeCategory, price: parseInt(newThemePrice) || 0, durationDays: parseInt(newThemeDuration) || 7, createdAt: serverTimestamp(), accentColor: '#FFCC00', seatColor: 'rgba(255, 255, 255, 0.1)' };
-      setDoc(themeRef, themeData).then(() => { toast({ title: 'Theme Synchronized', description: `${newThemeName} is now live in the Boutique.` }); setNewThemeName(''); setNewThemePrice('0'); setNewThemeDuration('7'); })
-        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: themeRef.path, operation: 'create', requestResourceData: themeData })); });
-    } finally { setIsUploadingTheme(false); }
+      const itemRef = doc(collection(firestore, 'storeItems'));
+      const itemData = { id: itemRef.id, name: storeName.trim(), url, category: storeCategory, price: parseInt(storePrice) || 0, durationDays: parseInt(storeDuration) || 7, createdAt: serverTimestamp() };
+      setDoc(itemRef, itemData).then(() => { toast({ title: 'Item Synchronized' }); setStoreName(''); })
+        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'create' })); });
+    } finally { setIsUploadingStore(false); }
   };
 
-  const handleLoginBGUpload = async (file: File) => {
+  const handleLoginBGUpload = async (f: File) => {
     if (!storage || !firestore || !configRef) return;
     setIsUploadingLoginBG(true);
     try {
       const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
+      const result = await uploadBytes(sRef, f);
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { loginBackgroundUrl: url }, { merge: true }).then(() => toast({ title: 'Login Background Synchronized' }))
         .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
     } finally { setIsUploadingLoginBG(false); }
   };
 
-  const handleLoadingBGUpload = async (file: File) => {
-    if (!storage || !firestore || !configRef) return;
-    setIsUploadingLoadingBG(true);
-    try {
-      const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
-      const url = await getDownloadURL(result.ref);
-      setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true }).then(() => toast({ title: 'App Loading Background Synchronized' }))
-        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
-    } finally { setIsUploadingLoadingBG(false); }
-  };
-
-  const handleSplashBGUpload = async (file: File) => {
-    if (!storage || !firestore || !configRef) return;
-    setIsUploadingSplashBG(true);
-    try {
-      const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, file);
-      const url = await getDownloadURL(result.ref);
-      setDoc(configRef, { splashScreenUrl: url }, { merge: true }).then(() => toast({ title: 'Splash Screen Synchronized' }))
-        .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configRef.path, operation: 'write' })); });
-    } finally { setIsUploadingSplashBG(false); }
-  };
-
-  const handleGameDPUploadClick = (game: any) => { setSelectedGameForSync(game); gameFileInputRef.current?.click(); };
-  const handleGameBGUploadClick = (game: any) => { setSelectedGameForSync(game); gameBGFileInputRef.current?.click(); };
+  const handleGameDPUploadClick = (g: any) => { setSelectedGameForSync(g); gameFileInputRef.current?.click(); };
+  const handleGameBGUploadClick = (g: any) => { setSelectedGameForSync(g); gameBGFileInputRef.current?.click(); };
   const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameLogo(selectedGameForSync, file); setSelectedGameForSync(null); } };
   const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameBackground(selectedGameForSync, file); setSelectedGameForSync(null); } };
-
-  const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
-    <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
-       <button onClick={() => setMode('id')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'id' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By ID</button>
-       <button onClick={() => setMode('name')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase italic transition-all", mode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>By Name</button>
-    </div>
-  );
 
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
 
@@ -674,7 +650,6 @@ export default function AdminPage() {
                 <TabsTrigger value="user-records" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><UserSearch className="h-4 w-4" /> User Ledger</TabsTrigger>
                 <TabsTrigger value="assign-center" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShieldCheck className="h-4 w-4" /> Assign Center</TabsTrigger>
                 <TabsTrigger value="id-ban" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gavel className="h-4 w-4" /> ID Ban Control</TabsTrigger>
-                <TabsTrigger value="themes" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Palette className="h-4 w-4" /> Theme Hub</TabsTrigger>
                 <TabsTrigger value="banners" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ImageIcon className="h-4 w-4" /> Banners</TabsTrigger>
                 <TabsTrigger value="games" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gamepad2 className="h-4 w-4" /> Game Sync</TabsTrigger>
                 <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Megaphone className="h-4 w-4" /> Broadcaster</TabsTrigger>
@@ -682,8 +657,8 @@ export default function AdminPage() {
                 <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><BadgeCheck className="h-4 w-4" /> Assign Tags</TabsTrigger>
                 <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Type className="h-4 w-4" /> Special ID</TabsTrigger>
                 <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gift className="h-4 w-4" /> Rewards</TabsTrigger>
-                <TabsTrigger value="loading-page" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Loader className="h-4 w-4" /> App Loading Page</TabsTrigger>
                 <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Monitor className="h-4 w-4" /> Splash Screen</TabsTrigger>
+                <TabsTrigger value="boutique-hub" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShoppingBag className="h-4 w-4" /> Boutique Hub</TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -709,17 +684,29 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
-            <TabsContent value="app-branding" className="m-0 space-y-6">
+            <TabsContent value="boutique-hub" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-pink-600"><Palette className="h-6 w-6" /> App Visual Branding</CardTitle></CardHeader>
+                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><ShoppingBag className="h-6 w-6" /> Boutique Sync</CardTitle></CardHeader>
                   <CardContent className="px-0 space-y-8">
-                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-orange-600" /><span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 1)</span></div><Badge className="bg-orange-100 text-orange-600 border-none font-black text-[8px] uppercase">All Rooms Sync</Badge></div>
-                        <div className="flex gap-2"><Input placeholder="Write global room announcement..." value={globalAnnouncementInput} onChange={(e) => setGlobalAnnouncementInput(e.target.value)} className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm" /><Button onClick={handleUpdateGlobalNotice} disabled={isUpdatingGlobalNotice || !globalAnnouncementInput.trim()} className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-900/20">{isUpdatingGlobalNotice ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}</Button></div>
-                     </div>
-                     <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-blue-600" /><span className="font-black uppercase italic text-sm text-slate-900">Global Room Notice (Row 2)</span></div><Badge className="bg-blue-100 text-blue-600 border-none font-black text-[8px] uppercase">Supplemental Sync</Badge></div>
-                        <div className="flex gap-2"><Input placeholder="Write global room announcement row 2..." value={globalAnnouncement2Input} onChange={(e) => setGlobalAnnouncement2Input(e.target.value)} className="h-14 rounded-2xl border-2 bg-white font-black italic shadow-sm" /><Button onClick={handleUpdateGlobalNotice2} disabled={isUpdatingGlobalNotice2 || !globalAnnouncement2Input.trim()} className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-900/20">{isUpdatingGlobalNotice2 ? <Loader className="animate-spin" /> : <Send className="h-5 w-5" />}</Button></div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                        <div className="space-y-4">
+                           <Input placeholder="Asset Name..." value={storeName} onChange={(e) => setStoreName(e.target.value)} className="h-14 rounded-2xl border-2" />
+                           <div className="grid grid-cols-2 gap-2">
+                              <Input type="number" placeholder="Price" value={storePrice} onChange={(e) => setStorePrice(e.target.value)} className="h-12 rounded-xl" />
+                              <Input type="number" placeholder="Days" value={storeDuration} onChange={(e) => setStoreDuration(e.target.value)} className="h-12 rounded-xl" />
+                           </div>
+                           <Select value={storeCategory} onValueChange={(v: any) => setStoreCategory(v)}>
+                              <SelectTrigger className="h-14 rounded-2xl"><SelectValue /></SelectTrigger>
+                              <SelectContent><SelectItem value="Frame">Avatar Frame</SelectItem><SelectItem value="Bubble">Chat Bubble</SelectItem><SelectItem value="Theme">Room Theme</SelectItem><SelectItem value="Wave">Voice Wave</SelectItem></SelectContent>
+                           </Select>
+                        </div>
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6 group">
+                           <button onClick={() => storeFileInputRef.current?.click()} className="flex flex-col items-center gap-3">
+                              {isUploadingStore ? <Loader className="animate-spin text-primary" /> : <Upload className="h-8 w-8 text-slate-400" />}
+                              <span className="text-[10px] font-black uppercase">Upload Visual</span>
+                           </button>
+                           <input type="file" ref={storeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleStoreItemUpload(e.target.files[0])} />
+                        </div>
                      </div>
                   </CardContent>
                </Card>
@@ -791,7 +778,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Assign Center</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4"><SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} /><div className="flex gap-4"><Input placeholder={centerSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find</Button></div></div>
-                  {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>{targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}</div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
+                  {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>{targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}</div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
                </Card>
             </TabsContent>
 
@@ -803,27 +790,21 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
-            <TabsContent value="themes" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-500"><Palette className="h-6 w-6" /> Theme Hub</CardTitle></CardHeader>
-                  <CardContent className="px-0 space-y-8">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100"><div className="space-y-4"><Input placeholder="Theme Name..." value={newThemeName} onChange={(e) => setNewThemeName(e.target.value)} className="h-14 rounded-2xl border-2" /><div className="grid grid-cols-2 gap-2"><Input type="number" value={newThemePrice} onChange={(e) => setNewThemePrice(e.target.value)} className="h-12 rounded-xl" /><Input type="number" value={newThemeDuration} onChange={(e) => setNewThemeDuration(e.target.value)} className="h-12 rounded-xl" /></div><Select value={newThemeCategory} onValueChange={(val: any) => setNewThemeCategory(val)}><SelectTrigger className="h-14 rounded-2xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="general">General</SelectItem><SelectItem value="entertainment">Entertainment</SelectItem></SelectContent></Select></div><div className="flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6"><button onClick={() => themeFileInputRef.current?.click()} className="flex flex-col items-center gap-3"><Upload className="h-8 w-8 text-rose-500" /><span className="text-[10px] font-black">Upload Visual</span></button><input type="file" ref={themeFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleThemeUpload(e.target.files[0])} /></div></div>
-                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{customThemes?.map((theme) => (<Card key={theme.id} className="rounded-2xl overflow-hidden group relative"><div className="relative aspect-square"><Image src={theme.url} alt={theme.name} fill className="object-cover" unoptimized /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Button variant="destructive" size="icon" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'roomThemes', theme.id))}><Trash2 className="h-4 w-4" /></Button></div></div><div className="p-2 text-center text-[10px] font-black">{theme.name}</div></Card>))}</div>
-                  </CardContent>
-               </Card>
-            </TabsContent>
-
             <TabsContent value="banners" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0 flex flex-row items-center justify-between"><div><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Banners</CardTitle></div><Button onClick={handleAddBanner} className="bg-primary text-black h-12 rounded-xl">+ Add Slot</Button></CardHeader>
-                  <CardContent className="px-0 space-y-8"><div className="grid grid-cols-1 gap-8">{(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (<div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8"><div className="w-72 h-40 relative rounded-2xl overflow-hidden bg-slate-200">{slide.imageUrl && (<Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />)}<button onClick={() => bannerFileInputRefs.current[idx]?.click()} className="absolute bottom-3 right-3 bg-white p-2 rounded-full"><Camera className="h-4 w-4" /></button><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /></div><div className="flex-1 space-y-4"><Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl" /><Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl" /><Button variant="destructive" onClick={() => handleRemoveBanner(idx)} className="w-full">Purge</Button></div></div>))}</div></CardContent>
+                  <CardContent className="px-0 space-y-8"><div className="grid grid-cols-1 gap-8">{(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
+                    <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8"><div className="w-72 h-40 relative rounded-2xl overflow-hidden bg-slate-200">{slide.imageUrl && (<Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />)}<button onClick={() => bannerFileInputRefs.current[idx]?.click()} className="absolute bottom-3 right-3 bg-white p-2 rounded-full"><Camera className="h-4 w-4" /></button><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /></div><div className="flex-1 space-y-4"><Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl" /><Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl" /><Button variant="destructive" onClick={() => handleRemoveBanner(idx)} className="w-full">Purge</Button></div></div>
+                  ))}</div></CardContent>
                </Card>
             </TabsContent>
 
             <TabsContent value="games" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Gamepad2 className="h-6 w-6" /> Game Sync</CardTitle></CardHeader>
-                  <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">{gamesList.map((game) => (<Card key={game.slug} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-4"><div className="relative aspect-square rounded-2xl overflow-hidden">{game.coverUrl && (<Image src={game.coverUrl} alt={game.title} fill className="object-cover" unoptimized />)}<button onClick={() => handleGameDPUploadClick(game)} className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"><Camera className="h-8 w-8 text-white" /></button></div><p className="font-black text-center uppercase text-sm">{game.title}</p><Button onClick={() => handleGameBGUploadClick(game)} size="sm" className="rounded-xl">Sync BG</Button></Card>))}</CardContent>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">{gamesList.map((game) => (
+                    <Card key={game.slug} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-4"><div className="relative aspect-square rounded-2xl overflow-hidden">{game.coverUrl && (<Image src={game.coverUrl} alt={game.title} fill className="object-cover" unoptimized />)}<button onClick={() => handleGameDPUploadClick(game)} className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"><Camera className="h-8 w-8 text-white" /></button></div><p className="font-black text-center uppercase text-sm">{game.title}</p><Button onClick={() => handleGameBGUploadClick(game)} size="sm" className="rounded-xl">Sync BG</Button></Card>
+                  ))}</CardContent>
                </Card>
                <input type="file" ref={gameFileInputRef} className="hidden" accept="image/*" onChange={handleGameDPFileChange} />
                <input type="file" ref={gameBGFileInputRef} className="hidden" accept="image/*" onChange={handleGameBGFileChange} />
@@ -872,13 +853,6 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-primary"><Monitor className="h-6 w-6" /> Splash Screen</CardTitle></CardHeader>
                   <CardContent className="px-0"><div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">{config?.splashScreenUrl ? (<Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash" unoptimized />) : (<div className="text-white/20">Stars Active</div>)}{isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => splashBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary"><Camera className="h-6 w-6" /></button></div><input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} /></CardContent>
-               </Card>
-            </TabsContent>
-
-            <TabsContent value="loading-page" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-600"><Loader className="h-6 w-6" /> Loading Page</CardTitle></CardHeader>
-                  <CardContent className="px-0"><div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">{config?.appLoadingBackgroundUrl ? (<Image src={config.appLoadingBackgroundUrl} fill className="object-cover" alt="Loading" unoptimized />) : (<div className="text-white/20">Default Active</div>)}{isUploadingLoadingBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => loadingBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-indigo-600"><Camera className="h-6 w-6" /></button></div><input type="file" ref={loadingBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLoadingBGUpload(e.target.files[0])} /></CardContent>
                </Card>
             </TabsContent>
           </div>

@@ -656,10 +656,18 @@ export function RoomClient({ room }: { room: Room }) {
            </div>
            <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
               {globalConfig?.globalAnnouncement && (
-                <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
-                   <Zap className="h-2 w-2 text-red-400 fill-current" />
-                   <p className="text-[10px] font-black text-red-200 uppercase italic tracking-tight leading-relaxed">
+                <div className="flex items-center gap-1.5 bg-green-500/20 backdrop-blur-sm border border-green-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
+                   <Zap className="h-2 w-2 text-green-400 fill-current" />
+                   <p className="text-[10px] font-black text-green-200 uppercase italic tracking-tight leading-relaxed">
                       Official: {globalConfig.globalAnnouncement}
+                   </p>
+                </div>
+              )}
+              {globalConfig?.globalAnnouncement2 && (
+                <div className="flex items-center gap-1.5 bg-green-500/20 backdrop-blur-sm border border-green-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
+                   <ShieldCheck className="h-2 w-2 text-green-400 fill-current" />
+                   <p className="text-[10px] font-black text-green-200 uppercase italic tracking-tight leading-relaxed">
+                      Notice: {globalConfig.globalAnnouncement2}
                    </p>
                 </div>
               )}

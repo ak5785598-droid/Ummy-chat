@@ -25,17 +25,15 @@ service cloud.firestore {
              (userData.banStatus.bannedUntil != null && userData.banStatus.bannedUntil < request.time);
     }
 
-    // Root Users Collection: Strictly private to owner or creator
+    // Root Users Collection
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isCreator();
       
-      // Public Profile Subcollection: Open for tribal discovery
       match /profile/{profileId} {
         allow read: if isSignedIn() && isNotBanned();
         allow write: if isOwner(userId) || isCreator();
       }
       
-      // Social Dimension subcollections
       match /profileVisitors/{visitorId} {
         allow read: if isSignedIn() && isNotBanned();
         allow write: if isSignedIn() && isNotBanned();
@@ -69,12 +67,10 @@ service cloud.firestore {
       }
     }
 
-    // Required for collectionGroup queries
     match /{path=**}/profile/{profileId} {
       allow read: if isSignedIn() && isNotBanned();
     }
 
-    // Private Message Frequencies
     match /privateChats/{chatId} {
       allow read, write: if isSignedIn() && (request.auth.uid in resource.data.participantIds || request.auth.uid in request.resource.data.participantIds);
       
@@ -83,7 +79,6 @@ service cloud.firestore {
       }
     }
 
-    // Social Graph: Follower Hierarchy
     match /followers/{followId} {
       allow read: if isSignedIn() && isNotBanned();
       allow create: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isCreator());
@@ -91,7 +86,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (followId.startsWith(request.auth.uid + "_") || isCreator());
     }
 
-    // Global Grid collections
     match /chatRooms/{roomId} {
       allow read: if isSignedIn() && isNotBanned();
       allow write: if isSignedIn() && isNotBanned();
@@ -122,8 +116,9 @@ service cloud.firestore {
     }
 
     match /globalGameWins/{id} {
-      allow read: if isSignedIn() && isNotBanned();
-      allow write: if isSignedIn() && isNotBanned();
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update, delete: if isCreator();
     }
 
     match /moments/{id} {
