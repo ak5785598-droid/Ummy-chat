@@ -1,20 +1,30 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { UmmyLogoIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
+import { doc } from 'firebase/firestore';
+import Image from 'next/image';
 
 /**
  * Root Application Gateway / Splash Screen.
- * Re-engineered for the Deep-Purple Ummy identity with high-fidelity glassmorphism.
+ * Synchronized with Global App Branding Sync.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const [showFailSafe, setShowFailSafe] = useState(false);
   const router = useRouter();
+  
+  const firestore = useFirestore();
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  
+  // High-Fidelity Background Priority Sync
+  const activeBg = config?.appLoadingBackgroundUrl || config?.splashScreenUrl || config?.loginBackgroundUrl;
 
   useEffect(() => {
     const timer = setTimeout(() => setShowFailSafe(true), 2000);
@@ -40,13 +50,29 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-ummy-gradient overflow-hidden relative font-headline select-none touch-none">
-      <div className="absolute inset-0 bg-white/5 animate-pulse duration-[3000ms]" />
+    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#140028] overflow-hidden relative font-headline select-none touch-none">
+      
+      {/* High-Fidelity Background Dimension */}
+      <div className="absolute inset-0 z-0">
+         {activeBg ? (
+           <Image 
+             src={activeBg} 
+             fill 
+             className="object-cover animate-in fade-in duration-1000" 
+             alt="Splash Background" 
+             priority 
+             unoptimized 
+           />
+         ) : (
+           <div className="absolute inset-0 bg-ummy-gradient animate-pulse duration-[3000ms]" />
+         )}
+         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+      </div>
       
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative h-48 w-48 flex items-center justify-center">
-           <div className="absolute inset-0 bg-accent/20 rounded-[3rem] blur-3xl animate-pulse" />
-           <UmmyLogoIcon className="h-full w-full logo-glow relative z-10" />
+           <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl animate-pulse" />
+           <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10" />
         </div>
         
         <div className="flex flex-col items-center gap-2 mt-4 text-center px-6">
@@ -59,18 +85,18 @@ export default function Home() {
         </div>
       </div>
       
-      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12">
+      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
          {showFailSafe ? (
            <Button 
              onClick={handleManualEntry}
-             className="bg-primary text-black rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
+             className="bg-primary text-white rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
            >
              Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
            </Button>
          ) : (
            <div className="flex flex-col items-center gap-4">
               <div className="h-[4px] w-56 bg-white/10 rounded-full overflow-hidden shadow-inner">
-                  <div className="h-full bg-accent shadow-[0_0_15px_rgba(255,79,163,0.8)] animate-loading-bar" style={{ width: '45%' }} />
+                  <div className="h-full bg-primary shadow-[0_0_15px_rgba(255,154,0,0.8)] animate-loading-bar" style={{ width: '45%' }} />
               </div>
               <div className="flex items-center gap-2">
                  <Loader2 className="h-3 w-3 text-white/40 animate-spin" />

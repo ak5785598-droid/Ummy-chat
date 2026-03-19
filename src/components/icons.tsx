@@ -21,7 +21,7 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
   const src = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
   
   return (
-    <div className={cn("relative shrink-0 flex items-center justify-center", className)} {...props}>
+    <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>
       <Image 
         src={src} 
         alt="Ummy Logo" 

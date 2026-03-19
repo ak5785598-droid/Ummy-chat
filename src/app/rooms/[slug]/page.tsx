@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useMemo, useEffect, useState } from 'react';
@@ -13,14 +14,13 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Chat Room Entry Page Gateway.
- * Synchronizes identity and ensures all theme/background metadata is passed to the client.
- * Features a high-fidelity 4-digit password entry guard for private rooms.
- * DEFERRED SYNC: Hydration mismatch protection for 'bannedUntil'.
+ * Features absolute visual sync for loading backgrounds.
  */
 export default function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -33,6 +33,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+
+  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
+  const { data: config } = useDoc(configRef);
+  
+  // High-Fidelity Loading Sync
+  const activeBg = config?.appLoadingBackgroundUrl || config?.splashScreenUrl || config?.loginBackgroundUrl;
 
   useEffect(() => {
     setIsMounted(true);
@@ -123,10 +129,20 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
   if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading) || !isMounted) {
     return (
-      <AppLayout>
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] text-muted-foreground animate-pulse font-black uppercase tracking-widest">
+      <AppLayout fullScreen>
+        <div className="flex h-[100dvh] w-full flex-col items-center justify-center space-y-4 bg-black relative">
+          
+          <div className="absolute inset-0 z-0">
+             {activeBg ? (
+               <Image src={activeBg} fill className="object-cover opacity-60 animate-in fade-in duration-1000" alt="Loading" priority unoptimized />
+             ) : (
+               <div className="absolute inset-0 bg-ummy-gradient opacity-20" />
+             )}
+             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          </div>
+
+          <Loader className="h-10 w-10 animate-spin text-primary relative z-10" />
+          <p className="text-[10px] text-white/60 animate-pulse font-black uppercase tracking-widest relative z-10">
             Tuning Frequency...
           </p>
         </div>
@@ -152,7 +168,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
         <div className="fixed inset-0 bg-[#FFCC00] z-[1000] flex flex-col items-center justify-center p-8 font-headline">
            <div className="mb-8 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-700">
               <div className="h-20 w-20 bg-white rounded-[1.25rem] flex items-center justify-center shadow-2xl border-4 border-black/5">
-                 <div className="bg-slate-900 rounded-full h-12 w-12 flex items-center justify-center"><Lock className="h-6 w-6 text-white" /></div>
+                 <Lock className="h-8 w-8 text-black" />
               </div>
               <div className="space-y-1">
                  <h2 className="text-3xl font-black uppercase italic tracking-tighter text-black">{activeRoom.title}</h2>
