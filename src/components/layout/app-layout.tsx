@@ -96,7 +96,6 @@ export function AppLayout({
   if (!mounted) return null;
   if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
-  // Determine if bottom nav should be visible (Visible all the time unless explicitly hidden via prop)
   const shouldShowBottomNav = !hideBottomNav;
 
   return (
@@ -151,7 +150,7 @@ export function AppLayout({
         <SidebarInset className="bg-background flex-1 overflow-x-hidden flex flex-col p-0 w-full max-w-full h-full">
           <main className={cn(
             "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar",
-            shouldShowBottomNav && "pb-20"
+            shouldShowBottomNav && "pb-24"
           )}>
             <div className="min-h-full w-full">
               {children}
@@ -159,7 +158,17 @@ export function AppLayout({
           </main>
           
           {shouldShowBottomNav && (
-            <nav className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 pb-safe shrink-0 fixed bottom-0 left-0 right-0 z-[100] px-2 rounded-t-[2rem] border-t-2 border-primary/30 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]">
+            <nav 
+              style={{ 
+                position: 'fixed', 
+                bottom: 'env(safe-area-inset-bottom)', 
+                left: 0, 
+                right: 0, 
+                paddingBottom: 'env(safe-area-inset-bottom)', 
+                zIndex: 999 
+              }}
+              className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 shrink-0 px-2 rounded-t-[2rem] border-t-2 border-primary/30 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]"
+            >
               <Link href="/rooms" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
                 {pathname === '/rooms' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
                 <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
