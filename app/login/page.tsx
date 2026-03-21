@@ -22,6 +22,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * High-Fidelity Identity Portal.
+ * Re-engineered with refined typography lockup.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -195,14 +196,14 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/40" />
 
       <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="relative mb-4">
+        <div className="relative mb-1">
           <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
             <UmmyLogoIcon className="h-full w-full" />
           </div>
         </div>
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight uppercase italic">Ummy</h1>
-          <p className="text-white text-sm font-medium opacity-90 italic">Find your vibe. Connect with your Tribe</p>
+        <div className="flex flex-col items-center">
+          <h1 className="font-body text-[25px] font-black text-white drop-shadow-lg tracking-tight uppercase italic leading-none">Ummy</h1>
+          <p className="text-white text-[10px] font-medium opacity-90 italic mt-1 pr-1">Find your vibe. Connect with your Tribe</p>
         </div>
       </header>
 
