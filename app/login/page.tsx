@@ -222,9 +222,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-          </Link>
-        </p>
-      </footer>
-    </div>
   );
 }
