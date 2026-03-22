@@ -175,7 +175,7 @@ export default function LoginPage() {
       setPhoneLoginStep('code');
       toast({ title: 'Code Sent', description: 'Verification dispatched via SMS.' });
     } catch (error: any) {
-      (window as any).recaptchaVerifier = null;
+      console.error("Phone Auth Error", error);
       toast({ variant: 'destructive', title: 'Failed', description: error.message });
     } finally {
       setIsSigningIn(false);

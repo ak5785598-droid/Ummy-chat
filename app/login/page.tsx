@@ -189,7 +189,6 @@ export default function LoginPage() {
       toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
     } catch (error: any) {
       console.error("Phone Auth Error", error);
-      (window as any).recaptchaVerifier = null;
       toast({ variant: 'destructive', title: 'Failed to Send Code', description: error.message });
     } finally {
       setIsSigningIn(false);
