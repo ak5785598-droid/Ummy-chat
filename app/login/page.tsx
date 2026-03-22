@@ -162,102 +162,66 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-6 overflow-hidden"
+      className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: `url('/images/login_bg.png')`,
+        backgroundImage: `url('${activeBg || '/images/login_bg.png'}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
-      {/* Animated starry background overlay */}
-      <div className="absolute inset-0 bg-black/20" />
-      
-      {/* Animated particles/sparkles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white/20 animate-pulse"
-            style={{
-              width: Math.random() * 3 + 1 + 'px',
-              height: Math.random() * 3 + 1 + 'px',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-              animationDelay: Math.random() * 2 + 's'
-            }}
-          />
-        ))}
+      <div className="absolute inset-0 bg-black/40" />
+      <div id="recaptcha-container" />
+
+      <div className="relative z-20 w-full max-w-md p-5">
+        <div className="w-full rounded-3xl bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl p-6 space-y-6 text-center">
+          <div className="mx-auto h-20 w-20 rounded-2xl overflow-hidden bg-white/20 flex items-center justify-center">
+            <img src="/images/ummy-logon.png" alt="Ummy logo" className="h-16 w-16 object-contain" />
+          </div>
+
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-white">Ummy</h1>
+            <p className="text-sm text-white/80">Find your vibe. Connect with your Tribe</p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={handleFacebookSignIn}
+              disabled={isSigningIn}
+              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+              Continue with Facebook
+            </button>
+
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={isSigningIn}
+              className="w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
+              Sign in with Google
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="h-px flex-1 bg-white/30" />
+            <span className="text-xs text-white/70 uppercase">OR</span>
+            <span className="h-px flex-1 bg-white/30" />
+          </div>
+
+          <button
+            onClick={() => router.push('/phone-login')}
+            className="w-20 h-12 rounded-xl bg-white/20 text-white border border-white/30 font-bold hover:bg-white/30 transition-all active:scale-95 mx-auto"
+          >
+            Phone
+          </button>
+
+          <p className="text-[11px] text-white/70 leading-snug">
+            By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
+          </p>
+        </div>
       </div>
-
-      {/* Header - Logo and Title */}
-      <header className="relative z-20 flex flex-col items-center text-center mt-8 sm:mt-16">
-        <div className="h-32 w-32 sm:h-40 sm:w-40 relative mb-6 animate-bounce" style={{ animationDuration: '3s' }}>
-          <UmmyLogoIcon className="h-full w-full drop-shadow-2xl" />
-        </div>
-        
-        <h1 className="text-5xl sm:text-6xl font-black text-white drop-shadow-2xl mb-3 tracking-wider">
-          Ummy
-        </h1>
-        <p className="text-white/90 text-base sm:text-lg font-medium drop-shadow-lg max-w-xs">
-          Find your vibe. Connect with your Tribe
-        </p>
-      </header>
-
-      {/* Main Authentication Section */}
-      <main className="relative z-20 w-full max-w-sm px-4 mb-20 flex flex-col items-center gap-6">
-        
-        {/* Facebook Button */}
-        <button
-          onClick={handleFacebookSignIn}
-          disabled={isSigningIn}
-          className="w-full h-14 sm:h-16 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg sm:text-xl rounded-full shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
-        >
-          <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="white" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          Continue with Facebook
-        </button>
-
-        {/* OR Divider */}
-        <div className="flex items-center gap-4 w-full">
-          <div className="flex-1 h-px bg-white/30" />
-          <span className="text-white/70 font-bold text-sm">OR</span>
-          <div className="flex-1 h-px bg-white/30" />
-        </div>
-
-        {/* Google Button */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={isSigningIn}
-          className="w-full h-14 sm:h-16 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-lg sm:text-xl rounded-full shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
-        >
-          {isSigningIn ? (
-            <Loader className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" />
-          ) : (
-            <FcGoogle className="w-6 h-6 sm:w-7 sm:h-7" />
-          )}
-          Sign in with Google
-        </button>
-
-        {/* Phone Button */}
-        <button
-          disabled={isSigningIn}
-          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-xl transition-all active:scale-95 flex items-center justify-center mx-auto"
-        >
-          <Phone className="w-7 h-7 sm:w-8 sm:h-8" />
-        </button>
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-20 text-center px-4 pb-6 sm:pb-8">
-        <p className="text-white/80 text-xs sm:text-sm font-medium">
-          By continuing you agree to the{' '}
-          <Link href="/terms" className="text-white hover:text-white/90 underline">
-            User Agreement
-          </Link>
-          {' & '}
-          <Link href="/privacy" className="text-white hover:text-white/90 underline">
-            Privacy Policy
+    </div>
           </Link>
         </p>
       </footer>
