@@ -1,27 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
-import { Loader, Phone, Smartphone, X } from 'lucide-react';
+import { Loader, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  type ConfirmationResult,
+  FacebookAuthProvider,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
- * High-Fidelity Identity Portal.
+ * Beautiful Ummy Login Portal - Purple Gradient Design
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -31,11 +27,6 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [showPhoneInput, setShowPhoneInput] = useState(false);
-  const [phoneLoginStep, setPhoneLoginStep] = useState<'number' | 'code'>('number');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   // Global Branding Sync
   const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
@@ -106,7 +97,7 @@ export default function LoginPage() {
         });
       }
     } catch (err) {
-      console.error("[Identity Sync] Handshake Error:", err);
+      console.error("[Identity Sync] Error:", err);
     }
   };
 
@@ -118,172 +109,158 @@ export default function LoginPage() {
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
+        console.log("✅ User logged in with Google:", result.user);
         await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+        router.push('/rooms');
       }
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("❌ Google Login Error:", error.code, error.message);
         toast({
           variant: 'destructive',
           title: 'Sign In Failed',
-          description: error.message || 'Could not sign in with Google.',
+          description: 'Could not sign in with Google. Please try again.',
         });
       }
     } finally {
       setIsSigningIn(false);
     }
   };
-  
-  const handlePhoneSignIn = async () => {
+
+  const handleFacebookSignIn = async () => {
     if (!auth) return;
-    if (phoneNumber.replace(/\D/g, '').length < 10) {
-      toast({ variant: 'destructive', title: 'Invalid Number', description: 'Enter full number with country code.' });
-      return;
-    }
     setIsSigningIn(true);
     try {
-      if (!(window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+      const provider = new FacebookAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        console.log("✅ User logged in with Facebook:", result.user);
+        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+        router.push('/rooms');
       }
-      const verifier = (window as any).recaptchaVerifier;
-      const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
-      const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
-      setConfirmationResult(result);
-      setPhoneLoginStep('code');
-      toast({ title: 'Code Sent', description: 'Verification dispatched via SMS.' });
     } catch (error: any) {
-      (window as any).recaptchaVerifier = null;
-      toast({ variant: 'destructive', title: 'Failed', description: error.message });
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("❌ Facebook Login Error:", error.code, error.message);
+        toast({
+          variant: 'destructive',
+          title: 'Sign In Failed',
+          description: 'Could not sign in with Facebook. Please try again.',
+        });
+      }
     } finally {
       setIsSigningIn(false);
-    }
-  };
-  
-  const handleVerifyCode = async () => {
-    if (!confirmationResult) return;
-    setIsSigningIn(true);
-    try {
-      const result = await confirmationResult.confirm(verificationCode);
-      if (result.user) {
-        await syncUserIdentity(result.user.uid, null, null);
-      }
-      toast({ title: 'Identity Verified', description: 'Synchronizing with tribal graph...' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Invalid Code', description: 'Incorrect verification code.' });
-    } finally {
-        setIsSigningIn(false);
     }
   };
 
   if (isUserLoading || user) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#140028]">
-        <UmmyLogoIcon className="h-24 w-24 animate-pulse logo-glow" />
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600">
+        <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
       </div>
     );
   }
 
   return (
     <div 
-      className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline"
+      className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-6 overflow-hidden"
       style={{
         backgroundImage: `url('${activeBg}')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        background: activeBg ? undefined : 'linear-gradient(135deg, #2d0a4e 0%, #6b21a8 25%, #9d174d 50%, #7c2d52 75%, #4a0e4e 100%)'
       }}
     >
-      <div id="recaptcha-container"></div>
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Animated starry background overlay */}
+      <div className="absolute inset-0 bg-black/30" />
+      
+      {/* Animated particles/sparkles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 50 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white/20 animate-pulse"
+            style={{
+              width: Math.random() * 3 + 1 + 'px',
+              height: Math.random() * 3 + 1 + 'px',
+              left: Math.random() * 100 + '%',
+              top: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 2 + 's'
+            }}
+          />
+        ))}
+      </div>
 
-      <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="relative mb-4">
-          <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
-            <UmmyLogoIcon className="h-full w-full" />
-          </div>
+      {/* Header - Logo and Title */}
+      <header className="relative z-20 flex flex-col items-center text-center mt-8 sm:mt-16">
+        <div className="h-32 w-32 sm:h-40 sm:w-40 relative mb-6 animate-bounce" style={{ animationDuration: '3s' }}>
+          <UmmyLogoIcon className="h-full w-full drop-shadow-2xl" />
         </div>
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight uppercase italic">Ummy</h1>
-          <p className="text-white text-sm font-medium opacity-90 italic">Find your vibe. Connect with your Tribe</p>
-        </div>
+        
+        <h1 className="text-5xl sm:text-6xl font-black text-white drop-shadow-2xl mb-3 tracking-wider">
+          Ummy
+        </h1>
+        <p className="text-white/90 text-base sm:text-lg font-medium drop-shadow-lg max-w-xs">
+          Find your vibe. Connect with your Tribe
+        </p>
       </header>
 
-      <main className="relative z-20 w-full max-sm flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
-        {!showPhoneInput ? (
-          <>
-            <Button
-              onClick={() => setShowPhoneInput(true)}
-              className="w-full h-14 bg-white text-black hover:bg-slate-50 rounded-full font-black text-lg shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              <Smartphone className="h-6 w-6" />
-              Phone Login
-            </Button>
+      {/* Main Authentication Section */}
+      <main className="relative z-20 w-full max-w-sm px-4 mb-20 flex flex-col items-center gap-6">
+        
+        {/* Facebook Button */}
+        <button
+          onClick={handleFacebookSignIn}
+          disabled={isSigningIn}
+          className="w-full h-14 sm:h-16 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg sm:text-xl rounded-full shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
+        >
+          <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="white" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+          </svg>
+          Continue with Facebook
+        </button>
 
-            <Button
-              onClick={handleGoogleSignIn}
-              disabled={isSigningIn}
-              className="w-full h-14 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 rounded-full font-black text-lg shadow-lg transition-all active:scale-95 border border-white/20 flex items-center justify-center gap-3"
-            >
-              {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : <FcGoogle className="h-6 w-6" />}
-              Sign in with Google
-            </Button>
-          </>
-        ) : (
-          <div className="space-y-6 animate-in zoom-in duration-300 w-full bg-black/20 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-2">
-               <div className="flex items-center gap-2 text-white/80">
-                  <Phone className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Phone Entry</span>
-               </div>
-               <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
-            </div>
+        {/* OR Divider */}
+        <div className="flex items-center gap-4 w-full">
+          <div className="flex-1 h-px bg-white/30" />
+          <span className="text-white/70 font-bold text-sm">OR</span>
+          <div className="flex-1 h-px bg-white/30" />
+        </div>
 
-            {phoneLoginStep === 'number' ? (
-              <div className="space-y-4">
-                <Input
-                  type="tel"
-                  placeholder="+91 00000 00000"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={isSigningIn}
-                  className="h-14 bg-white/5 border-white/10 text-white rounded-xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20 font-bold italic"
-                />
-                <Button 
-                  onClick={handlePhoneSignIn} 
-                  disabled={isSigningIn || !phoneNumber} 
-                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
-                >
-                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Get OTP'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-[10px] text-white/60 text-center uppercase font-bold">Code for {phoneNumber}</p>
-                <Input
-                  type="text"
-                  placeholder="000000"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  disabled={isSigningIn}
-                  className="h-16 bg-white/5 border-white/10 text-white rounded-xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
-                  maxLength={6}
-                />
-                <Button 
-                  onClick={handleVerifyCode} 
-                  disabled={isSigningIn || !verificationCode} 
-                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
-                >
-                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Verify Sync'}
-                </Button>
-                <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Change Number</button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Google Button */}
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={isSigningIn}
+          className="w-full h-14 sm:h-16 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-lg sm:text-xl rounded-full shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
+        >
+          {isSigningIn ? (
+            <Loader className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" />
+          ) : (
+            <FcGoogle className="w-6 h-6 sm:w-7 sm:h-7" />
+          )}
+          Sign in with Google
+        </button>
+
+        {/* Phone Button */}
+        <button
+          disabled={isSigningIn}
+          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-xl transition-all active:scale-95 flex items-center justify-center mx-auto"
+        >
+          <Phone className="w-7 h-7 sm:w-8 sm:h-8" />
+        </button>
       </main>
 
-      <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
-        <div className="text-[10px] text-white/80 leading-relaxed max-w-[240px] font-medium drop-shadow-lg">
-          By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
-        </div>
+      {/* Footer */}
+      <footer className="relative z-20 text-center px-4 pb-6 sm:pb-8">
+        <p className="text-white/80 text-xs sm:text-sm font-medium">
+          By continuing you agree to the{' '}
+          <Link href="/terms" className="text-white hover:text-white/90 underline">
+            User Agreement
+          </Link>
+          {' & '}
+          <Link href="/privacy" className="text-white hover:text-white/90 underline">
+            Privacy Policy
+          </Link>
+        </p>
       </footer>
     </div>
   );
