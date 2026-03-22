@@ -3,6 +3,12 @@
   "appName": "Ummy",
   "webDir": "out",
   "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true
+    }
+  },
   "server": {
     "url": "https://studio-7826224327-e0efc.web.app",
     "allowNavigation": ["*"]
