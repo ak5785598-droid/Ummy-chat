@@ -4,8 +4,8 @@
   "description": "Connect Your Tribe",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFCC00",
-  "theme_color": "#FFCC00",
+  "background_color": "#140028",
+  "theme_color": "#140028",
   "orientation": "portrait",
   "icons": [
     {
