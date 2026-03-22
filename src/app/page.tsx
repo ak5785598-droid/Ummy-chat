@@ -69,20 +69,10 @@ export default function Home() {
          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
       </div>
       
-      <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 relative z-10">
-        <div className="relative h-48 w-48 flex items-center justify-center">
-           <div className="absolute inset-0 bg-primary/20 rounded-[3rem] blur-3xl animate-pulse" />
-           <UmmyLogoIcon className="h-full w-full drop-shadow-2xl relative z-10" />
-        </div>
-        
-        <div className="flex flex-col items-center gap-2 mt-4 text-center px-6">
-           <h1 className="text-6xl font-black text-white tracking-tighter uppercase drop-shadow-lg">
-             Ummy
-           </h1>
-           <p className="text-primary font-black uppercase tracking-[0.5em] text-[10px] opacity-80">
-             Connecting Your Tribe
-           </p>
-        </div>
+      <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700 relative z-10 h-full">
+        <p className="text-3xl sm:text-4xl text-white font-semibold tracking-wide text-center">
+          Connect Your Tribe
+        </p>
       </div>
       
       <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
