@@ -19,6 +19,7 @@ import {
 /**
  * High-Fidelity Official About Dimension.
  * Features synchronized User Agreement and Privacy Policy portals.
+ * Width decreased for focused visual frequency.
  */
 export default function AboutPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function AboutPage() {
            <h1 className="text-xl font-black text-gray-800 absolute left-1/2 -translate-x-1/2">About</h1>
         </header>
 
-        <main className="relative z-50 flex-1 px-6 mt-4">
+        <main className="relative z-50 flex-1 px-6 mt-4 max-w-sm mx-auto w-full">
            <Card className="rounded-[2.5rem] bg-white border-none shadow-[0_20px_50px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col items-center">
               <div className="pt-14 pb-16 flex flex-col items-center gap-4 text-center">
                  <div className="relative">
