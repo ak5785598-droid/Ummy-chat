@@ -593,13 +593,13 @@ export default function AdminPage() {
 
   const handleToggleSellerCenter = async () => {
     if (!firestore || !targetUserForCenter) return;
-    const tags = targetUserForCenter.tags || [];
+    const tags = (targetUserForCenter.tags || []) as string[];
     const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
-    const isCurrentlyActive = tags.some(t => sellerTags.includes(t));
+    const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
     const userRef = doc(firestore, 'users', targetUserForCenter.id);
     const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
     let newTags;
-    if (isCurrentlyActive) { newTags = tags.filter(t => !sellerTags.includes(t)); }
+    if (isCurrentlyActive) { newTags = tags.filter((t: string) => !sellerTags.includes(t)); }
     else { newTags = [...tags, 'Seller']; }
     const updateData = { tags: newTags, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(userRef, updateData);
@@ -671,8 +671,8 @@ export default function AdminPage() {
 
   const handleRemoveBanner = async (index: number) => {
     if (!firestore || !isCreator) return;
-    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
-    const newSlides = currentSlides.filter((_, i) => i !== index);
+    const currentSlides = (bannerConfig?.slides || DEFAULT_SLIDES) as any[];
+    const newSlides = currentSlides.filter((_: any, i: number) => i !== index);
     await setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true });
     toast({ title: 'Banner Removed' });
   };
