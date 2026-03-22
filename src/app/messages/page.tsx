@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { Trash } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { 
   Flag, 
@@ -19,7 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
@@ -145,6 +146,19 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Delete message handler
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!firestore || !chatId || !msgId) return;
+    try {
+      await deleteDoc(doc(firestore, 'privateChats', chatId, 'messages', msgId));
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Delete Failed' });
+    }
+  };
 
   // Sync real-time online status
   const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
@@ -243,9 +257,9 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                  {messages?.map((msg: any) => {
                    const isMe = msg.senderId === currentUser?.uid;
                    return (
-                     <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}>
+                     <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}> 
                         <div className={cn(
-                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border",
+                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border relative",
                           isMe ? "bg-primary text-white rounded-br-none border-primary/20" : "bg-white text-gray-800 rounded-bl-none border-gray-100"
                         )}>
                            {msg.imageUrl && (
@@ -257,6 +271,15 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                              </div>
                            )}
                            {msg.text && <p className="leading-relaxed italic">{msg.text}</p>}
+                           {isMe && (
+                             <button
+                               className="absolute top-1 right-1 p-1 rounded-full hover:bg-red-100"
+                               title="Delete message"
+                               onClick={() => { setDeleteTarget(msg.id); setShowDeleteConfirm(true); }}
+                             >
+                               <Trash className="h-4 w-4 text-red-500" />
+                             </button>
+                           )}
                         </div>
                         <span className="text-[8px] font-black text-gray-400 uppercase mt-1 px-1">
                            {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
@@ -264,6 +287,18 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                      </div>
                    );
                  })}
+                 {/* Delete confirmation dialog */}
+                 {showDeleteConfirm && (
+                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                     <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center gap-4">
+                       <p className="text-sm font-bold">Delete this message?</p>
+                       <div className="flex gap-3">
+                         <button className="px-4 py-2 rounded bg-red-500 text-white font-bold" onClick={() => handleDeleteMessage(deleteTarget)}>Delete</button>
+                         <button className="px-4 py-2 rounded bg-gray-200 text-gray-800 font-bold" onClick={() => { setShowDeleteConfirm(false); setDeleteTarget(null); }}>Cancel</button>
+                       </div>
+                     </div>
+                   </div>
+                 )}
                  <div ref={messagesEndRef} />
               </div>
            </ScrollArea>
