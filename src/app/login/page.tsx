@@ -184,107 +184,116 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-8 overflow-hidden font-headline"
+      className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
       style={{
         backgroundImage: `url('${activeBg}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
-      <div id="recaptcha-container"></div>
       <div className="absolute inset-0 bg-black/40" />
+      <div id="recaptcha-container" />
 
-      <header className="relative z-20 flex flex-col items-center text-center mt-16 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="relative mb-4">
-          <div className="h-28 w-28 relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10">
-            <UmmyLogoIcon className="h-full w-full" />
+      <div className="relative z-20 flex w-full max-w-md p-4">
+        <div className="w-full rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl p-6 text-center space-y-6">
+          <div className="mx-auto h-24 w-24 rounded-2xl overflow-hidden bg-white/20 flex items-center justify-center">
+            <UmmyLogoIcon className="h-16 w-16 text-white" />
           </div>
-        </div>
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-tight uppercase italic">Ummy</h1>
-          <p className="text-white text-sm font-medium opacity-90 italic">Find your vibe. Connect with your Tribe</p>
-        </div>
-      </header>
 
-      <main className="relative z-20 w-full max-sm flex flex-col items-center gap-4 mb-16 animate-in fade-in zoom-in duration-700">
-        {!showPhoneInput ? (
-          <>
-            <Button
-              onClick={() => setShowPhoneInput(true)}
-              className="w-full h-14 bg-white text-black hover:bg-slate-50 rounded-full font-black text-lg shadow-xl border-none transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              <Smartphone className="h-6 w-6" />
-              Phone Login
-            </Button>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-white tracking-tight">Ummy</h1>
+            <p className="text-sm font-light text-white/80">Find your vibe. Connect with your Tribe</p>
+          </div>
 
-            <Button
-              onClick={handleGoogleSignIn}
-              disabled={isSigningIn}
-              className="w-full h-14 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 rounded-full font-black text-lg shadow-lg transition-all active:scale-95 border border-white/20 flex items-center justify-center gap-3"
-            >
-              {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : <FcGoogle className="h-6 w-6" />}
-              Sign in with Google
-            </Button>
-          </>
-        ) : (
-          <div className="space-y-6 animate-in zoom-in duration-300 w-full bg-black/20 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-2">
-               <div className="flex items-center gap-2 text-white/80">
-                  <Phone className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Phone Entry</span>
-               </div>
-               <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
+          {showPhoneInput ? (
+            <div className="space-y-4">
+              <div className="bg-black/20 backdrop-blur-lg rounded-2xl border border-white/15 p-4 text-left">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs uppercase font-semibold tracking-wider text-white/70">Phone Login</span>
+                  <button onClick={() => { setShowPhoneInput(false); setPhoneLoginStep('number'); }} className="text-white/60 hover:text-white"><X className="h-4 w-4" /></button>
+                </div>
+                {phoneLoginStep === 'number' ? (
+                  <>
+                    <Input
+                      type="tel"
+                      placeholder="+91 00000 00000"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      disabled={isSigningIn}
+                      className="h-14 w-full bg-white/10 border-white/20 text-white rounded-xl text-center text-lg focus:ring-primary/30 placeholder:text-white/30 font-semibold"
+                    />
+                    <Button
+                      onClick={handlePhoneSignIn}
+                      disabled={isSigningIn || !phoneNumber}
+                      className="w-full h-12 rounded-xl bg-white text-black font-bold shadow-lg border-none active:scale-95 transition-all"
+                    >
+                      {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Get OTP'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-white/70 text-center">Code for {phoneNumber}</p>
+                    <Input
+                      type="text"
+                      placeholder="000000"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      disabled={isSigningIn}
+                      className="h-14 w-full bg-white/10 border-white/20 text-white rounded-xl text-center text-lg font-bold tracking-[0.25em]"
+                      maxLength={6}
+                    />
+                    <Button
+                      onClick={handleVerifyCode}
+                      disabled={isSigningIn || !verificationCode}
+                      className="w-full h-12 rounded-xl bg-white text-black font-bold shadow-lg border-none active:scale-95 transition-all"
+                    >
+                      {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : 'Verify OTP'}
+                    </Button>
+                    <button onClick={() => setPhoneLoginStep('number')} className="w-full text-xs font-semibold text-white/70 hover:text-white">Change Number</button>
+                  </>
+                )}
+              </div>
             </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={isSigningIn}
+                className="w-11/12 max-w-[260px] h-12 rounded-xl bg-blue-600 text-white font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <FcGoogle className="h-5 w-5" />
+                Continue with Facebook
+              </Button>
 
-            {phoneLoginStep === 'number' ? (
-              <div className="space-y-4">
-                <Input
-                  type="tel"
-                  placeholder="+91 00000 00000"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={isSigningIn}
-                  className="h-14 bg-white/5 border-white/10 text-white rounded-xl text-center text-lg focus:ring-primary/20 placeholder:text-white/20 font-bold italic"
-                />
-                <Button 
-                  onClick={handlePhoneSignIn} 
-                  disabled={isSigningIn || !phoneNumber} 
-                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
-                >
-                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Get OTP'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-[10px] text-white/60 text-center uppercase font-bold">Code for {phoneNumber}</p>
-                <Input
-                  type="text"
-                  placeholder="000000"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  disabled={isSigningIn}
-                  className="h-16 bg-white/5 border-white/10 text-white rounded-xl text-center text-3xl font-black tracking-[0.5em] focus:ring-primary/20 italic"
-                  maxLength={6}
-                />
-                <Button 
-                  onClick={handleVerifyCode} 
-                  disabled={isSigningIn || !verificationCode} 
-                  className="w-full h-14 bg-primary text-black font-black uppercase italic rounded-full shadow-xl border-none active:scale-95 transition-all"
-                >
-                  {isSigningIn ? <Loader className="animate-spin h-6 w-6" /> : 'Verify Sync'}
-                </Button>
-                <button onClick={() => setPhoneLoginStep('number')} className="w-full text-white/40 text-[10px] font-black uppercase tracking-widest hover:text-white">Change Number</button>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={isSigningIn}
+                className="w-11/12 max-w-[260px] h-12 rounded-xl bg-white/20 text-white border border-white/20 hover:bg-white/30 font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
+                Sign in with Google
+              </Button>
 
-      <footer className="relative z-20 flex flex-col items-center space-y-4 text-center mb-10 animate-in fade-in duration-1000">
-        <div className="text-[10px] text-white/80 leading-relaxed max-w-[240px] font-medium drop-shadow-lg">
-          By continuing you agree to the <Link href="/help-center" className="underline font-bold">User Agreement</Link> & <Link href="/help-center" className="underline font-bold">Privacy Policy</Link>
+              <div className="flex items-center gap-2 w-11/12 max-w-[260px]">
+                <span className="h-px flex-1 bg-white/30" />
+                <span className="text-xs uppercase tracking-wider text-white/70">OR</span>
+                <span className="h-px flex-1 bg-white/30" />
+              </div>
+
+              <Button
+                onClick={() => setShowPhoneInput(true)}
+                className="w-11/12 max-w-[260px] h-12 rounded-xl bg-white/20 text-white border border-white/20 hover:bg-white/30 font-bold shadow-lg active:scale-95 transition-all"
+              >
+                Phone Login
+              </Button>
+            </div>
+          )}
+
+          <p className="text-[11px] text-white/70 leading-snug">
+            By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
+          </p>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

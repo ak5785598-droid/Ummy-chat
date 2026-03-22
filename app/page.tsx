@@ -26,33 +26,36 @@ export default function SplashScreen() {
     <div 
       className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('/images/splash_bg.jpg')`,
+        backgroundImage: `url('/images/splash_bg.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
       }}
     >
+      {/* Dark overlay for better visibility */}
+      <div className="absolute inset-0 bg-black/20" />
+
       {/* Content with fade-in animation */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-12 animate-fade-in">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in">
         
-        {/* Logo - Centered */}
+        {/* Logo Image */}
         <img
           src="/images/ummy-logon.png"
           alt="Ummy Logo"
-          className="h-48 w-48 sm:h-56 sm:w-56 drop-shadow-2xl object-contain"
+          className="h-56 w-56 drop-shadow-2xl object-contain mb-32"
         />
 
       </div>
 
       {/* Bottom Text */}
-      <div className="absolute bottom-12 left-0 right-0 text-center z-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-black drop-shadow-lg">
+      <div className="absolute bottom-20 left-0 right-0 text-center z-10">
+        <h1 className="text-4xl sm:text-5xl font-bold text-black drop-shadow-lg">
           Ummy - Connect Your Tribe
         </h1>
       </div>
 
       {/* Loading indicator */}
-      <div className="absolute bottom-20 flex items-center gap-2">
+      <div className="absolute bottom-8 flex items-center gap-2">
         <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" />
         <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
         <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
@@ -75,7 +78,5 @@ export default function SplashScreen() {
         }
       `}</style>
     </div>
-  );
-}
   );
 }
