@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
-import { Loader, Phone } from 'lucide-react';
+import { Loader, Phone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
   FacebookAuthProvider,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -27,6 +30,13 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
+  
+  // Phone Login State
+  const [showPhonePopup, setShowPhonePopup] = useState(false);
+  const [phoneLoginStep, setPhoneLoginStep] = useState<'number' | 'code'>('number');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   // Global Branding Sync
   const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
@@ -152,6 +162,57 @@ export default function LoginPage() {
     }
   };
 
+  const initRecaptcha = () => {
+    if (!auth) return;
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 
+        size: 'invisible'
+      });
+    }
+    return (window as any).recaptchaVerifier;
+  };
+
+  const handlePhoneSignIn = async () => {
+    if (!auth) return;
+    const cleanNumber = phoneNumber.replace(/\D/g, '');
+    if (cleanNumber.length < 10) {
+      toast({ variant: 'destructive', title: 'Invalid Number', description: 'Enter a valid phone number with country code.' });
+      return;
+    }
+    setIsSigningIn(true);
+    try {
+      const verifier = initRecaptcha();
+      const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${cleanNumber}`;
+      const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
+      setConfirmationResult(result);
+      setPhoneLoginStep('code');
+      toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
+    } catch (error: any) {
+      console.error("Phone Auth Error", error);
+      (window as any).recaptchaVerifier = null;
+      toast({ variant: 'destructive', title: 'Failed to Send Code', description: error.message });
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+  
+  const handleVerifyCode = async () => {
+    if (!confirmationResult) return;
+    setIsSigningIn(true);
+    try {
+      const result = await confirmationResult.confirm(verificationCode);
+      if (result.user) {
+        await syncUserIdentity(result.user.uid, result.user.phoneNumber, null);
+        setShowPhonePopup(false);
+        router.push('/rooms');
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Invalid Code', description: 'Incorrect or expired verification code.' });
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
   if (isUserLoading || user) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600">
@@ -210,8 +271,8 @@ export default function LoginPage() {
           </div>
 
           <button
-            onClick={() => router.push('/phone-login')}
-            className="w-20 h-12 rounded-xl bg-white/20 text-white border border-white/30 font-bold hover:bg-white/30 transition-all active:scale-95 mx-auto"
+            onClick={() => setShowPhonePopup(true)}
+            className="w-20 h-12 rounded-xl bg-white/20 text-white border border-white/30 font-bold hover:bg-white/30 transition-all active:scale-95 mx-auto flex items-center justify-center"
           >
             Phone
           </button>
@@ -221,6 +282,83 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* Phone Login Popup Modal */}
+      {showPhonePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-sm rounded-[32px] bg-gradient-to-b from-[#2a004a] to-[#140028] border border-white/10 shadow-2xl p-6 md:p-8 flex flex-col items-center">
+            
+            <button 
+              onClick={() => { setShowPhonePopup(false); setPhoneLoginStep('number'); }}
+              className="absolute top-4 right-4 p-2 bg-white/5 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <X className="w-5 h-5 text-white/70" />
+            </button>
+            
+            <div className="h-16 w-16 bg-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20">
+              <Phone className="w-7 h-7 text-[#FFCC00]" />
+            </div>
+
+            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">
+              {phoneLoginStep === 'number' ? 'Enter Phone Number' : 'Enter OTP Code'}
+            </h2>
+            <p className="text-sm font-medium text-white/60 text-center mb-8 px-2">
+              {phoneLoginStep === 'number' 
+                ? 'We will send you a verification code to authenticate your account securely.' 
+                : `A 6-digit code was sent to ${phoneNumber}`
+              }
+            </p>
+
+            <div className="w-full space-y-4">
+              {phoneLoginStep === 'number' ? (
+                <>
+                  <input
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    disabled={isSigningIn}
+                    className="w-full h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-lg font-bold text-center focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
+                  />
+                  <button
+                    onClick={handlePhoneSignIn}
+                    disabled={isSigningIn || !phoneNumber}
+                    className="w-full h-14 rounded-2xl bg-[#FFCC00] text-black font-black text-[17px] shadow-[0_0_20px_rgba(255,204,0,0.3)] hover:bg-[#FFD633] disabled:opacity-50 disabled:shadow-none hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSigningIn ? <Loader className="animate-spin w-5 h-5" /> : 'Send Code'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    disabled={isSigningIn}
+                    className="w-full h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-2xl tracking-[0.4em] font-black text-center focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
+                  />
+                  <button
+                    onClick={handleVerifyCode}
+                    disabled={isSigningIn || verificationCode.length < 6}
+                    className="w-full h-14 rounded-2xl bg-white text-[#140028] font-black text-[17px] shadow-lg hover:bg-gray-100 disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSigningIn ? <Loader className="animate-spin w-5 h-5" /> : 'Verify & Login'}
+                  </button>
+                  <button 
+                    onClick={() => setPhoneLoginStep('number')}
+                    className="w-full mt-4 text-[13px] font-semibold text-white/50 hover:text-white transition-colors"
+                  >
+                    Change Phone Number
+                  </button>
+                </>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
