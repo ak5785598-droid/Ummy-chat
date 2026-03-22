@@ -43,7 +43,8 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (userProfile) {
-      const lastSignIn = userProfile.lastSignInAt?.toDate();
+      const lastSignInAt = userProfile.lastSignInAt;
+      const lastSignIn = lastSignInAt?.toDate ? lastSignInAt.toDate() : (lastSignInAt?.seconds ? new Date(lastSignInAt.seconds * 1000) : null);
       const today = new Date();
       const alreadySignedIn = lastSignIn && 
         lastSignIn.getDate() === today.getDate() && 
@@ -135,7 +136,7 @@ export default function TasksPage() {
 
       toast({
         title: 'Reward Synchronized!',
-        description: `${task.coinReward.toLocaleString()} Coins added to vault.`,
+        description: `${(Number(task.coinReward) || 0).toLocaleString()} Coins added to vault.`,
       });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Collection Failed' });
@@ -275,7 +276,7 @@ export default function TasksPage() {
                          task.isCollected ? "text-slate-300" : "text-cyan-600 text-xl"
                        )}>
                          <GoldCoinIcon className={cn("h-5 w-5", task.isCollected ? "grayscale opacity-30" : "")} />
-                         <span>+{task.coinReward?.toLocaleString()}</span>
+                         <span>+{(Number(task.coinReward) || 0).toLocaleString()}</span>
                        </div>
                        
                        {task.isCollected ? (

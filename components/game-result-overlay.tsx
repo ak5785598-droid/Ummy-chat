@@ -55,10 +55,11 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
       }));
   }, [dbWinners, propWinners, gameId]);
 
-  const formatValue = (val: number) => {
-    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
-    return val.toLocaleString();
+  const formatValue = (val: any) => {
+    const num = Number(val) || 0;
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toLocaleString();
   };
 
   return (
@@ -92,7 +93,7 @@ export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: p
                  <div className="flex items-center gap-2">
                     <GoldCoinIcon className="h-7 w-7 text-yellow-400 drop-shadow-md" />
                     <span className="text-3xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-lg">
-                       {winAmount.toLocaleString()}
+                       {(Number(winAmount) || 0).toLocaleString()}
                     </span>
                  </div>
               </div>
