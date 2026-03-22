@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
+import { FaFacebook } from 'react-icons/fa';
 import { Loader, Phone, Smartphone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import {
   GoogleAuthProvider,
+  FacebookAuthProvider,
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -126,6 +128,28 @@ export default function LoginPage() {
           variant: 'destructive',
           title: 'Sign In Failed',
           description: error.message || 'Could not sign in with Google.',
+        });
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    if (!auth) return;
+    setIsSigningIn(true);
+    try {
+      const provider = new FacebookAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+      }
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({
+          variant: 'destructive',
+          title: 'Sign In Failed',
+          description: error.message || 'Could not sign in with Facebook.',
         });
       }
     } finally {
@@ -257,11 +281,11 @@ export default function LoginPage() {
           ) : (
             <div className="flex flex-col items-center gap-3">
               <Button
-                onClick={handleGoogleSignIn}
+                onClick={handleFacebookSignIn}
                 disabled={isSigningIn}
                 className="w-11/12 max-w-[260px] h-12 rounded-xl bg-blue-600 text-white font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                <FcGoogle className="h-5 w-5" />
+                {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FaFacebook className="h-5 w-5" />}
                 Continue with Facebook
               </Button>
 
