@@ -46,7 +46,7 @@ export default function AboutPage() {
                  <div className="relative">
                     <div className="absolute inset-0 bg-pink-400/5 blur-2xl rounded-full scale-150" />
                     <div className="h-32 w-32 relative rounded-full overflow-hidden border-[6px] border-white shadow-2xl bg-white flex items-center justify-center">
-                       <UmmyLogoIcon className="h-24 w-24" />
+                       <UmmyLogoIcon className="h-20 w-20" />
                     </div>
                  </div>
 
