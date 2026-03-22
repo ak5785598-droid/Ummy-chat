@@ -69,11 +69,7 @@ export default function Home() {
          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
       </div>
       
-      <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700 relative z-10 h-full">
-        <p className="text-3xl sm:text-4xl text-white font-semibold tracking-wide text-center">
-          Connect Your Tribe
-        </p>
-      </div>
+      {/* Tagline removed from splash screen */}
       
       <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
          {showFailSafe ? (
