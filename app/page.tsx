@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { UmmyLogoIcon } from '@/components/icons';
 
 /**
  * Splash Screen - Initial Landing Page
@@ -25,41 +24,38 @@ export default function SplashScreen() {
 
   return (
     <div 
-      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600"
+      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('/images/splash_bg.jpg')`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('/images/splash_bg.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* Dark overlay for better text visibility */}
-      <div className="absolute inset-0 bg-black/40" />
-
       {/* Content with fade-in animation */}
-      <div className="relative z-10 flex flex-col items-center gap-6 animate-fade-in">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-12 animate-fade-in">
         
-        {/* Logo */}
-        <div className="h-32 w-32 sm:h-40 sm:w-40 flex items-center justify-center drop-shadow-2xl">
-          <UmmyLogoIcon className="h-full w-full" />
-        </div>
+        {/* Logo - Centered */}
+        <img
+          src="/images/ummy-logon.png"
+          alt="Ummy Logo"
+          className="h-48 w-48 sm:h-56 sm:w-56 drop-shadow-2xl object-contain"
+        />
 
-        {/* Main Title */}
-        <h1 className="text-5xl sm:text-7xl font-black text-white drop-shadow-lg tracking-wider">
-          UMMY
+      </div>
+
+      {/* Bottom Text */}
+      <div className="absolute bottom-12 left-0 right-0 text-center z-10">
+        <h1 className="text-3xl sm:text-4xl font-bold text-black drop-shadow-lg">
+          Ummy - Connect Your Tribe
         </h1>
+      </div>
 
-        {/* Tagline */}
-        <p className="text-white/90 text-lg sm:text-2xl font-semibold drop-shadow-md">
-          Connect your tribe
-        </p>
-
-        {/* Loading indicator */}
-        <div className="mt-8 flex items-center gap-2">
-          <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" />
-          <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-          <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-        </div>
+      {/* Loading indicator */}
+      <div className="absolute bottom-20 flex items-center gap-2">
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" />
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
       </div>
 
       <style jsx>{`
@@ -79,5 +75,7 @@ export default function SplashScreen() {
         }
       `}</style>
     </div>
+  );
+}
   );
 }
