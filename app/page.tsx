@@ -27,7 +27,7 @@ export default function SplashScreen() {
     <div 
       className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: `url('/bg.jpg')`,
+        backgroundImage: `url('/images/splash_bg.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
