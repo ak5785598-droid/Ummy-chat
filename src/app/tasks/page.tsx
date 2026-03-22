@@ -44,7 +44,8 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (userProfile) {
-      const lastSignIn = userProfile.lastSignInAt?.toDate();
+      const lastSignInAt = userProfile.lastSignInAt;
+      const lastSignIn = lastSignInAt?.toDate ? lastSignInAt.toDate() : (lastSignInAt?.seconds ? new Date(lastSignInAt.seconds * 1000) : null);
       const today = new Date();
       const alreadySignedIn = lastSignIn && 
         lastSignIn.getDate() === today.getDate() && 
@@ -181,7 +182,7 @@ export default function TasksPage() {
                 <CardContent className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-primary font-black italic">
                     <GoldCoinIcon className="h-4 w-4" />
-                    <span>+{task.coinReward.toLocaleString()}</span>
+                    <span>+{(Number(task.coinReward) || 0).toLocaleString()}</span>
                   </div>
                   {task.isCompleted ? (
                     <div className="flex items-center gap-1 text-green-500 text-[10px] font-black uppercase italic">
@@ -216,7 +217,7 @@ export default function TasksPage() {
                 <CardContent className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-primary font-black italic">
                     <GoldCoinIcon className="h-5 w-5" />
-                    <span className="text-lg">+{task.coinReward.toLocaleString()}</span>
+                    <span className="text-lg">+{(Number(task.coinReward) || 0).toLocaleString()}</span>
                   </div>
                   {task.isCompleted ? (
                     <div className="flex items-center gap-1 text-green-500 text-[10px] font-black uppercase italic">
