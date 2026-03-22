@@ -16,14 +16,16 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#FFCC00',
     icons: [
       {
-        src: 'https://picsum.photos/seed/ummy-icon/192/192',
+        src: '/images/ummy-logon.png',
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'any',
       },
       {
-        src: 'https://picsum.photos/seed/ummy-icon/512/512',
+        src: '/images/ummy-logon.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any',
       },
     ],
   };
