@@ -164,14 +164,13 @@ export default function LoginPage() {
     <div 
       className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-6 overflow-hidden"
       style={{
-        backgroundImage: `url('${activeBg}')`,
+        backgroundImage: `url('/login-bg.jpg')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        background: activeBg ? undefined : 'linear-gradient(135deg, #2d0a4e 0%, #6b21a8 25%, #9d174d 50%, #7c2d52 75%, #4a0e4e 100%)'
+        backgroundPosition: 'center'
       }}
     >
       {/* Animated starry background overlay */}
-      <div className="absolute inset-0 bg-black/30" />
+      <div className="absolute inset-0 bg-black/20" />
       
       {/* Animated particles/sparkles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
