@@ -36,8 +36,8 @@ export default function SplashScreen() {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Splash content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in pt-32 gap-4">
-        <p className="text-xl sm:text-2xl text-white/90 font-medium tracking-wide">
+      <div className="absolute w-full bottom-20 flex justify-center z-10 animate-fade-in">
+        <p className="text-lg sm:text-xl text-white/90 font-medium tracking-wide drop-shadow-md">
           Connect Your Tribe
         </p>
       </div>
