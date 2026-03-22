@@ -35,10 +35,20 @@ export default function SplashScreen() {
       {/* Dark overlay for better visibility */}
       <div className="absolute inset-0 bg-black/20" />
 
-      {/* Content with fade-in animation */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in gap-3">
-        {/* Tagline only */}
-        <p className="text-2xl sm:text-3xl text-white font-medium tracking-wide">
+      {/* Splash content */}
+      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in gap-4">
+        <div className="relative h-44 w-44 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-white/10 transform scale-110" />
+          <img
+            src="/images/ummy-logon.png"
+            alt="Ummy Logo"
+            className="h-36 w-36 rounded-full object-cover"
+          />
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+          Ummy
+        </h1>
+        <p className="text-xl sm:text-2xl text-white/90 font-medium">
           Connect Your Tribe
         </p>
       </div>
