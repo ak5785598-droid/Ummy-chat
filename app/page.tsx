@@ -36,21 +36,9 @@ export default function SplashScreen() {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Content with fade-in animation */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in gap-4">
-        {/* Logo Image (single, centered) */}
-        <img
-          src="/images/ummy-logon.png"
-          alt="Ummy Logo"
-          className="h-56 w-56 object-contain"
-        />
-
-        {/* App Name */}
-        <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-wide">
-          Ummy
-        </h1>
-
-        {/* Tagline */}
-        <p className="text-lg sm:text-xl text-white/90 font-medium">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in gap-3">
+        {/* Tagline only */}
+        <p className="text-2xl sm:text-3xl text-white font-medium tracking-wide">
           Connect Your Tribe
         </p>
       </div>
