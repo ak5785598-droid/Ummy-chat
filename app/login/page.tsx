@@ -164,7 +164,7 @@ export default function LoginPage() {
     <div 
       className="relative flex h-[100dvh] w-full flex-col items-center justify-between p-6 overflow-hidden"
       style={{
-        backgroundImage: `url('/login-bg.jpg')`,
+        backgroundImage: `url('/images/login_bg.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
