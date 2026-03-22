@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { UmmyLogoIcon } from '@/components/icons';
+
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -51,13 +51,12 @@ export default function Home() {
 
   return (
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#140028] overflow-hidden relative font-headline select-none touch-none">
-      
       {/* High-Fidelity Background Dimension */}
       <div className="absolute inset-0 z-0">
          {activeBg ? (
            <Image 
              src={activeBg} 
-             fill 
+             fill
              className="object-cover animate-in fade-in duration-1000" 
              alt="Splash Background" 
              priority 
@@ -68,8 +67,7 @@ export default function Home() {
          )}
          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
       </div>
-      
-      {/* Tagline removed from splash screen */}
+      {/* Logo removed from splash screen */}
       
       <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
          {showFailSafe ? (
