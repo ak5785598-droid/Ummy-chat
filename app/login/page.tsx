@@ -164,7 +164,7 @@ export default function LoginPage() {
     <div 
       className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: `url('${activeBg || '/images/login_bg.png'}')`,
+        backgroundImage: `url('/images/start-bg.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
