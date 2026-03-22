@@ -25,11 +25,12 @@ export default function SplashScreen() {
 
   return (
     <div 
-      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
+      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600"
       style={{
-        backgroundImage: `url('/images/splash_bg.jpg')`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('/images/splash_bg.jpg')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
       }}
     >
       {/* Dark overlay for better text visibility */}
