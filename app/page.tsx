@@ -36,10 +36,10 @@ export default function SplashScreen() {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Splash content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in gap-4">
-        <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-          Ummy
-        </h1>
+      <div className="relative z-10 flex flex-col items-center justify-center h-full animate-fade-in pt-32 gap-4">
+        <p className="text-xl sm:text-2xl text-white/90 font-medium tracking-wide">
+          Connect Your Tribe
+        </p>
       </div>
 
       {/* Remove any extra text or duplicate logos in the bottom area */}
