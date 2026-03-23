@@ -55,12 +55,13 @@ const GIFTS: Record<string, GiftItem[]> = {
     { id: 'lucky_crown', name: 'Lucky Crown', price: 500, icon: '👑', animationId: 'lucky-crown', type: 'lucky' },
     { id: 'lucky_maple', name: 'Lucky Maple', price: 1000, icon: '🍁', animationId: 'lucky-maple', type: 'lucky' },
     { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', animationId: 'lucky-star', type: 'lucky' },
+    { id: 'lucky_apple', name: 'lucky apple', price:250, icon: '🍎', animationId: 'lucky-apple', type: 'lucky' }, 
   ],
   'Luxury': [
     { id: 'cake', name: 'Cake', price: 500000, icon: '🎂', animationId: 'cake' },
     { id: 'l1', name: 'Rolex Sync', price: 205000, icon: '⌚', animationId: 'rolex' },
     { id: 'l2', name: 'Elite Jet', price: 502000, icon: '🛩️', animationId: 'jet' },
-    { id: '13', name: 'Dragon', price: 9999999, icon: '🐲', animation: 'dragon' }, 
+    { id: 'l3', name: 'Dragon', price: 9999999, icon: '🐉', animation: 'dragon' }, 
   ]
 };
 
