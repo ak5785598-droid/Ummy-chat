@@ -31,7 +31,7 @@ export async function createRazorpayOrderAction(amountINR: number) {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: amountINR * 100, // Amount in paise
+        amount: Math.round(amountINR * 100), // Amount in paise, ensure integer
         currency: 'INR',
         receipt: `receipt_${Date.now()}`
       })
@@ -39,13 +39,21 @@ export async function createRazorpayOrderAction(amountINR: number) {
 
     const data = await response.json();
     
-    if (data.id) {
+    if (response.ok && data.id) {
       return { success: true, orderId: data.id, amount: data.amount, keyId };
     } else {
-      return { success: false, error: data.error?.description || 'Order creation failed' };
+      console.error('[Razorpay Action] API Failure:', {
+        status: response.status,
+        statusText: response.statusText,
+        data
+      });
+      return { 
+        success: false, 
+        error: data.error?.description || `Razorpay API Error (${response.status}): ${response.statusText}`
+      };
     }
   } catch (err: any) {
-    console.error('[Razorpay Action] Error:', err);
-    return { success: false, error: 'Network error during order initiation' };
+    console.error('[Razorpay Action] Critical Network/Execution Error:', err);
+    return { success: false, error: `Critical Payment Error: ${err.message || 'Check terminal logs'}` };
   }
 }
