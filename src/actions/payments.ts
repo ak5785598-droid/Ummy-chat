@@ -8,7 +8,7 @@ import crypto from 'crypto';
  * Handles secure order creation and signature verification via Razorpay.
  */
 
-const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 const razorpay = (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) ? new Razorpay({
@@ -17,7 +17,7 @@ const razorpay = (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) ? new Razorpay({
 }) : null;
 
 export async function createOrderAction(amount: number) {
-  if (!razorpay) {
+  if (!razorpay || !RAZORPAY_KEY_ID) {
     return { success: false, error: 'Razorpay configuration missing.' };
   }
 
@@ -29,7 +29,7 @@ export async function createOrderAction(amount: number) {
 
   try {
     const order = await razorpay.orders.create(options);
-    return { success: true, orderId: order.id };
+    return { success: true, orderId: order.id, amount: order.amount, keyId: RAZORPAY_KEY_ID };
   } catch (error: any) {
     console.error('[Payment Sync] Order Creation Error:', error);
     return { success: false, error: 'Failed to initialize payment frequency.' };

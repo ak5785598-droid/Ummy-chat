@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { createRazorpayOrderAction } from '@/actions/razorpay';
+import { createOrderAction, verifyPaymentAction } from '@/actions/payments';
 import Script from 'next/script';
 
 declare global {
@@ -74,7 +74,7 @@ export default function WalletPage() {
     setIsProcessing(true);
 
     try {
-      const order = await createRazorpayOrderAction(priceINR);
+      const order = await createOrderAction(priceINR);
       
       if (!order.success) {
         toast({ variant: 'destructive', title: 'Order Failed', description: order.error });
@@ -90,8 +90,20 @@ export default function WalletPage() {
         description: `Recharge ${pkg.amount} Coins`,
         order_id: order.orderId,
         handler: async (response: any) => {
-          // SECURE FULFILLMENT: Ideally this should happen via Webhook
-          // For now, we simulate success verification to move forward
+          const verification = await verifyPaymentAction(
+            response.razorpay_order_id,
+            response.razorpay_payment_id,
+            response.razorpay_signature
+          );
+
+          if (!verification.success) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error || 'Payment verification failed.' });
+            setIsProcessing(false);
+            return;
+          }
+
+          // SECURE FULFILLMENT: Ideally this should happen via Server Webhook 
+          // We proceed with client-side update after successful server signature verification
           const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
           const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
           const totalGain = amountValue + bonusValue;
@@ -101,6 +113,22 @@ export default function WalletPage() {
           
           await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
           await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+          
+          // Log transaction to history
+          try {
+            const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+            await addDoc(historyRef, {
+              type: 'purchase',
+              coinAmount: totalGain,
+              packageId: pkg.id,
+              amountPaid: pkg.price,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              timestamp: serverTimestamp()
+            });
+          } catch (e) {
+            console.error('Failed to log history', e);
+          }
           
           toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
           setIsProcessing(false);
