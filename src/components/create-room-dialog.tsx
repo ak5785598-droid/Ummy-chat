@@ -80,7 +80,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
       
       // IDENTITY SYNC PROTOCOL: 
       // Room Number matches Special ID if assigned, else fallback to automatic Account Number.
-      const roomNumber = userProfile.specialId || userProfile.accountNumber || '0000';
+      const roomNumber = userProfile.accountNumber || '0000';
 
       await setDoc(roomRef, {
         id: user.uid,

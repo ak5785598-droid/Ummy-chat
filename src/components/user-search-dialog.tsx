@@ -41,16 +41,10 @@ export function UserSearchDialog() {
       const inputId = searchId.trim();
       
       if (activeTab === 'user') {
-        // IDENTITY SYNC: Look for Special ID or Account Number in public profile dimension
-        const userQ1 = query(collectionGroup(firestore, 'profile'), where('specialId', '==', inputId), limit(1));
-        const userQ2 = query(collectionGroup(firestore, 'profile'), where('accountNumber', '==', inputId), limit(1));
-        
-        const [uSnap1, uSnap2] = await Promise.all([
-          getDocs(userQ1), 
-          getDocs(userQ2)
-        ]);
-        
-        const foundDoc = uSnap1.docs[0] || uSnap2.docs[0];
+        // IDENTITY SYNC: Look for Account Number in public profile dimension
+        const userQ = query(collectionGroup(firestore, 'profile'), where('accountNumber', '==', inputId), limit(1));
+        const uSnap = await getDocs(userQ);
+        const foundDoc = uSnap.docs[0];
         
         if (foundDoc) {
           router.push(`/profile/${foundDoc.id}`);

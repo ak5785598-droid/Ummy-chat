@@ -72,23 +72,7 @@ const ACTIVE_GAME_FREQUENCIES = [
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
 ];
 
-const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
-  const { toast } = useToast();
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(id).then(() => { toast({ title: 'ID Copied' }); });
-    }
-  };
-  if (!color) return <span onClick={handleCopy} className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1">ID: {id}</span>;
-  const theme = color === 'blue' ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30" : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
-  return (
-    <div onClick={handleCopy} className={cn("relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer", theme)}>
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
-      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">ID: {id}</span>
-    </div>
-  );
-};
+
 
 const SearchToggle = ({ mode, setMode }: { mode: 'id' | 'name', setMode: (m: 'id' | 'name') => void }) => (
   <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
@@ -118,7 +102,7 @@ export default function AdminPage() {
   const [banSearchMode, setBanSearchMode] = useState<'id' | 'name'>('id');
   const [dmSearchMode, setDmSearchMode] = useState<'id' | 'name'>('id');
   const [tagSearchMode, setTagSearchMode] = useState<'id' | 'name'>('id');
-  const [specialIdSearchMode, setSpecialIdSearchMode] = useState<'id' | 'name'>('id');
+
   const [rewardSearchMode, setRewardSearchMode] = useState<'id' | 'name'>('id');
 
   const [centerSearchId, setCenterSearchId] = useState('');
@@ -322,12 +306,6 @@ export default function AdminPage() {
         const qAcc = query(collection(firestore, 'users'), where('accountNumber', '==', inputVal), limit(1));
         const snapAcc = await getDocs(qAcc);
         if (!snapAcc.empty) { foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id }; }
-        if (!foundUser) {
-          const paddedId = inputVal.padStart(3, '0');
-          const qSpec = query(collection(firestore, 'users'), where('specialId', '==', paddedId), limit(1));
-          const snapSpec = await getDocs(qSpec);
-          if (!snapSpec.empty) { foundUser = { ...snapSpec.docs[0].data(), id: snapSpec.docs[0].id }; }
-        }
       } else {
         const qName = query(collection(firestore, 'users'), where('username', '>=', inputVal), where('username', '<=', inputVal + '\uf8ff'), limit(1));
         const snapName = await getDocs(qName);
@@ -426,38 +404,7 @@ export default function AdminPage() {
     toast({ title: 'Asset Dispatched' });
   };
 
-  const handleUpdateId = async () => {
-    if (!firestore || !targetUserForId || !newIdInput) return;
-    setIsSavingId(true);
-    try {
-      const paddedNewId = newIdInput.padStart(3, '0');
-      const q = query(collection(firestore, 'users'), where('specialId', '==', paddedNewId), limit(1));
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== targetUserForId.id) { toast({ variant: 'destructive', title: 'Conflict', description: 'ID already assigned.' }); return; }
-      const uRef = doc(firestore, 'users', targetUserForId.id);
-      const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-      const updateData = { specialId: paddedNewId, specialIdColor: selectedColor, updatedAt: serverTimestamp() };
-      updateDocumentNonBlocking(uRef, updateData);
-      updateDocumentNonBlocking(pRef, updateData);
-      setTargetUserForId((prev: any) => ({ ...prev, specialId: paddedNewId, specialIdColor: selectedColor }));
-      toast({ title: 'ID Synchronized' });
-      setNewIdInput('');
-    } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); } 
-    finally { setIsSavingId(false); }
-  };
 
-  const handleRemoveId = () => {
-    if (!firestore || !targetUserForId) return;
-    setIsSavingId(true);
-    const uRef = doc(firestore, 'users', targetUserForId.id);
-    const pRef = doc(firestore, 'users', targetUserForId.id, 'profile', targetUserForId.id);
-    const updateData = { specialId: null, specialIdColor: null, updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(uRef, updateData);
-    updateDocumentNonBlocking(pRef, updateData);
-    setTargetUserForId((prev: any) => ({ ...prev, specialId: null, specialIdColor: null }));
-    toast({ title: 'ID Signature Purged' });
-    setIsSavingId(false);
-  };
 
   const handleBanUser = () => {
     if (!firestore || !targetUserForBan || !isCreator) return;
@@ -712,7 +659,7 @@ export default function AdminPage() {
                 <TabsTrigger value="broadcaster" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Megaphone className="h-4 w-4" /> Broadcaster</TabsTrigger>
                 <TabsTrigger value="direct-messenger" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><MessageSquareText className="h-4 w-4" /> Direct Messenger</TabsTrigger>
                 <TabsTrigger value="tags" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><BadgeCheck className="h-4 w-4" /> Assign Tags</TabsTrigger>
-                <TabsTrigger value="special-id" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Type className="h-4 w-4" /> Special ID</TabsTrigger>
+
                 <TabsTrigger value="rewards" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gift className="h-4 w-4" /> Rewards</TabsTrigger>
                 <TabsTrigger value="splash-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Monitor className="h-4 w-4" /> Splash Screen</TabsTrigger>
                 <TabsTrigger value="boutique-hub" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShoppingBag className="h-4 w-4" /> Boutique Hub</TabsTrigger>
@@ -871,7 +818,7 @@ export default function AdminPage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {foundUsers.map((u) => (
                           <div key={u.id} className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col gap-4 shadow-sm">
-                             <div className="flex items-center gap-4"><Avatar className="h-14 w-14 border-2 border-white shadow-sm"><AvatarImage src={u.avatarUrl || undefined} /></Avatar><div className="flex-1 min-w-0"><p className="font-black text-sm uppercase text-slate-900 truncate">{u.username}</p>{u.specialId ? <SpecialIdBadge id={u.specialId} color={u.specialIdColor} /> : <p className="text-[10px] text-muted-foreground uppercase font-bold">ID: {u.accountNumber}</p>}</div></div>
+                             <div className="flex items-center gap-4"><Avatar className="h-14 w-14 border-2 border-white shadow-sm"><AvatarImage src={u.avatarUrl || undefined} /></Avatar><div className="flex-1 min-w-0"><p className="font-black text-sm uppercase text-slate-900 truncate">{u.username}</p><p className="text-[10px] text-muted-foreground uppercase font-bold">ID: {u.accountNumber}</p></div></div>
                              <div className="grid grid-cols-2 gap-2">
                                 {AUTHORITY_ROLES.map(role => (<Button key={role.id} variant={u.tags?.includes(role.id) ? 'default' : 'outline'} size="sm" onClick={() => toggleUserRole(u.id, role.id, u.tags)} className="h-10 text-[8px] font-black uppercase rounded-xl">{role.label}</Button>))}
                              </div>
@@ -885,7 +832,7 @@ export default function AdminPage() {
             <TabsContent value="member-directory" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0 flex flex-row items-center justify-between"><div><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Users className="h-6 w-6" /> Tribal Member Archive</CardTitle></div><Button onClick={handleSyncDirectory} disabled={isSyncingDirectory} className="bg-black h-12 rounded-xl">{isSyncingDirectory ? <Loader className="animate-spin" /> : <RefreshCcw className="h-4 w-4" />} Sync Directory</Button></CardHeader>
-                  <CardContent className="px-0"><div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">{tribalMembers.length === 0 ? (<div className="py-40 text-center opacity-20 italic">Awaiting Synchronized Directory...</div>) : tribalMembers.map(member => (<div key={member.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors"><div className="flex items-center gap-4"><Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={member.avatarUrl || undefined} /></Avatar><div><p className="font-black text-sm uppercase text-slate-900">{member.username}</p><div className="flex items-center gap-2 mt-0.5">{member.specialId ? <SpecialIdBadge id={member.specialId} color={member.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span>}</div></div></div><div className="text-right"><div className="flex items-center gap-1.5 justify-end text-blue-600 font-black italic"><GoldCoinIcon className="h-4 w-4" />{member.wallet?.coins.toLocaleString() || 0}</div></div></div>))}</div></CardContent>
+                  <CardContent className="px-0"><div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">{tribalMembers.length === 0 ? (<div className="py-40 text-center opacity-20 italic">Awaiting Synchronized Directory...</div>) : tribalMembers.map(member => (<div key={member.id} className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors"><div className="flex items-center gap-4"><Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={member.avatarUrl || undefined} /></Avatar><div><p className="font-black text-sm uppercase text-slate-900">{member.username}</p><div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] font-bold text-slate-400">ID: {member.accountNumber}</span></div></div></div><div className="text-right"><div className="flex items-center gap-1.5 justify-end text-blue-600 font-black italic"><GoldCoinIcon className="h-4 w-4" />{member.wallet?.coins.toLocaleString() || 0}</div></div></div>))}</div></CardContent>
                </Card>
             </TabsContent>
 
@@ -902,7 +849,7 @@ export default function AdminPage() {
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-rose-600"><UserSearch className="h-6 w-6" /> User Ledger</CardTitle></CardHeader>
                   <CardContent className="px-0 space-y-8">
                      <div className="flex flex-col gap-4"><SearchToggle mode={recordSearchMode} setMode={setRecordSearchMode} /><div className="flex gap-4"><Input placeholder={recordSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={recordSearchId} onChange={(e) => setRecordSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(recordSearchMode, recordSearchId, setTargetUserForRecord, setIsSearchingRecord)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingRecord}>Audit</Button></div></div>
-                     {targetUserForRecord && (<div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8"><div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between"><div className="flex items-center gap-4"><Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar><div><h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3><div className="flex flex-col gap-1 mt-1">{targetUserForRecord.specialId && <SpecialIdBadge id={targetUserForRecord.specialId} color={targetUserForRecord.specialIdColor} />}<span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRecord.accountNumber}</span></div></div></div></div><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div><div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div><div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Spend</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div></div><div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6"><h4 className="text-xl font-black uppercase italic text-red-600">Wallet Purge</h4><Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">{isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Global Reset</Button></div></div>)}
+                     {targetUserForRecord && (<div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8"><div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between"><div className="flex items-center gap-4"><Avatar className="h-20 w-20 border-4 border-white shadow-xl"><AvatarImage src={targetUserForRecord.avatarUrl || undefined} /></Avatar><div><h3 className="text-2xl font-black uppercase italic text-slate-900">{targetUserForRecord.username}</h3><div className="flex flex-col gap-1 mt-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForRecord.accountNumber}</span></div></div></div></div><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div className="p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 space-y-2"><div className="flex items-center gap-2 text-blue-600 mb-2"><Wallet className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Wallet</span></div><div className="flex items-center gap-2 text-2xl font-black text-blue-900 italic"><GoldCoinIcon className="h-6 w-6" />{targetUserForRecord.wallet?.coins.toLocaleString() || 0}</div></div><div className="p-6 bg-cyan-50 rounded-3xl border-2 border-cyan-100 space-y-2"><div className="flex items-center gap-2 text-cyan-600 mb-2"><Sparkles className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Diamonds</span></div><div className="flex items-center gap-2 text-2xl font-black text-cyan-900 italic"><Activity className="h-6 w-6" />{targetUserForRecord.wallet?.diamonds.toLocaleString() || 0}</div></div><div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-2"><div className="flex items-center gap-2 text-purple-600 mb-2"><History className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Spend</span></div><div className="flex items-center gap-2 text-2xl font-black text-purple-900 italic"><BarChart3 className="h-6 w-6" />{targetUserForRecord.wallet?.totalSpent.toLocaleString() || 0}</div></div></div><div className="p-8 bg-red-50 rounded-[2.5rem] border-2 border-red-100 flex flex-col items-center gap-6"><h4 className="text-xl font-black uppercase italic text-red-600">Wallet Purge</h4><Button onClick={handleResetWallet} disabled={isResettingWallet} variant="destructive" className="h-16 px-12 rounded-2xl font-black uppercase italic text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all">{isResettingWallet ? <Loader className="animate-spin mr-2" /> : <Trash2 className="h-6 w-6 mr-2" />} Global Reset</Button></div></div>)}
                   </CardContent>
                </Card>
             </TabsContent>
@@ -911,7 +858,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Assign Center</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4"><SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} /><div className="flex gap-4"><Input placeholder={centerSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-black uppercase italic" disabled={isSearchingCenter}>Find</Button></div></div>
-                  {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p>{targetUserForCenter.specialId ? <SpecialIdBadge id={targetUserForCenter.specialId} color={targetUserForCenter.specialIdColor} /> : <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>}</div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
+                  {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-black uppercase italic text-xl tracking-tighter text-slate-900">{targetUserForCenter.username}</p><span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span></div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-black uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-black uppercase text-[10px] py-1 px-3 shadow-none">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-[1.5rem] font-black uppercase italic text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
                </Card>
             </TabsContent>
 
@@ -966,13 +913,7 @@ export default function AdminPage() {
                </Card>
             </TabsContent>
 
-            <TabsContent value="special-id" className="m-0 space-y-6">
-               <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
-                  <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-slate-900"><Type className="h-6 w-6" /> Special ID</CardTitle></CardHeader>
-                  <div className="flex flex-col gap-4"><SearchToggle mode={specialIdSearchMode} setMode={setSpecialIdSearchMode} /><div className="flex gap-4"><Input placeholder="Enter Identity..." value={idSearchInput} onChange={(e) => setIdSearchInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(specialIdSearchMode, idSearchInput, setTargetUserForId, setIsSearching)} className="h-14 px-8 rounded-2xl">Find</Button></div></div>
-                  {targetUserForId && (<div className="mt-10 p-6 border-2 rounded-[2rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForId.avatarUrl || undefined}/></Avatar><p className="font-black text-xl">{targetUserForId.username}</p></div><div className="space-y-6"><div className="flex gap-4"><button onClick={() => setSelectedColor('red')} className={cn("h-10 w-10 rounded-full bg-rose-500", selectedColor === 'red' && "ring-4 ring-black")}></button><button onClick={() => setSelectedColor('blue')} className={cn("h-10 w-10 rounded-full bg-blue-500", selectedColor === 'blue' && "ring-4 ring-black")}></button></div><div className="flex gap-2"><Input placeholder="New ID..." value={newIdInput} onChange={(e) => setNewIdInput(e.target.value.replace(/\D/g, ''))} className="h-14 rounded-2xl" /><Button onClick={handleUpdateId} disabled={!newIdInput || isSavingId} className="h-14 px-10">Sync</Button><Button onClick={() => handleRemoveId()} variant="outline" className="h-14"><Trash2 /></Button></div></div></div>)}
-               </Card>
-            </TabsContent>
+
 
             <TabsContent value="rewards" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">

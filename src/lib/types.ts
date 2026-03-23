@@ -1,8 +1,6 @@
 export type User = {
   id: string;
-  specialId: string | null; // Sequential numeric ID manually assigned by Admin
-  accountNumber: string; // Automatic 8-digit unique signature
-  specialIdColor?: string; // red or blue
+  accountNumber: string; // Sequential numeric ID
   name: string;
   username?: string;
   avatarUrl: string;

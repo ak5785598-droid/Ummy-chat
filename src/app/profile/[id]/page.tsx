@@ -139,52 +139,8 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
-const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
-  const { toast } = useToast();
-  
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(id).then(() => {
-        toast({ title: 'ID Copied' });
-      }).catch(() => {
-        toast({ variant: 'destructive', title: 'Copy Failed' });
-      });
-    } else {
-      toast({ variant: 'destructive', title: 'Clipboard Unavailable' });
-    }
-  };
 
-  if (!color) {
-    return (
-      <span 
-        onClick={handleCopy}
-        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
-      >
-        ID: {id}
-      </span>
-    );
-  }
 
-  const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
-
-  return (
-    <div 
-      onClick={handleCopy}
-      className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
-        theme
-      )}
-    >
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
-        ID: {id}
-      </span>
-    </div>
-  );
-};
 
 const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: number }) => {
   const colors = [
@@ -238,7 +194,7 @@ const PublicProfileView = ({
   const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
   const handleCopyId = () => {
-    const idToCopy = profile.specialId || profile.accountNumber || profile.id;
+    const idToCopy = profile.accountNumber || profile.id;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(idToCopy).then(() => {
         toast({ title: 'ID Copied' });
@@ -302,13 +258,9 @@ const PublicProfileView = ({
                </div>
                
                <div className="flex items-center gap-2 flex-wrap">
-                  {profile.specialId ? (
-                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
-                  ) : (
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
-                       ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-                    </p>
-                  )}
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
+                     ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                  </p>
                   {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
                   {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
@@ -554,13 +506,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    </div>
                    
                    <div className="flex items-center gap-2 flex-wrap">
-                      {profile.specialId ? (
-                        <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
-                      ) : (
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
-                           {t.profile.id}:{(profile as any).accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-                        </p>
-                      )}
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
+                         {t.profile.id}:{(profile as any).accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                      </p>
                       {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
                       {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
                       {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}

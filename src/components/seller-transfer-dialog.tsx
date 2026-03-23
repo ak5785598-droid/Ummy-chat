@@ -67,10 +67,9 @@ export function SellerTransferDialog() {
 
       setIsSearching(true);
       try {
-        const paddedId = recipientId.padStart(3, '0');
         const q = query(
           collection(firestore, 'users'), 
-          where('specialId', '==', paddedId), 
+          where('accountNumber', '==', recipientId.trim()), 
           limit(1)
         );
         const snap = await getDocs(q);

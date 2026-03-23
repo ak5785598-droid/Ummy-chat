@@ -5,8 +5,6 @@ import { doc } from 'firebase/firestore';
 
 export interface UserProfile {
     id: string;
-    specialId: string;
-    specialIdColor?: string;
     accountNumber: string;
     isInternalId?: boolean;
     username: string;
