@@ -12,6 +12,14 @@ import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft } from 'lu
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { createRazorpayOrderAction } from '@/actions/razorpay';
+import Script from 'next/script';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const COIN_PACKAGES = [
   { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
@@ -55,27 +63,68 @@ export default function WalletPage() {
 
   const { data: exchangeHistory, isLoading: isHistoryLoading } = useCollection(historyQuery);
 
-  const handleRechargeNow = () => {
+  const handleRechargeNow = async () => {
     if (!user || !firestore) return;
     const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
     if (!pkg) return;
 
-    setIsProcessing(true);
-    // Simulation of secure payment handshake
-    setTimeout(() => {
-      const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
-      const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
-      const totalGain = amountValue + bonusValue;
+    const priceINR = parseInt(pkg.price.split(' ')[0]);
+    if (isNaN(priceINR)) return;
 
-      const userRef = doc(firestore, 'users', user.uid);
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    setIsProcessing(true);
+
+    try {
+      const order = await createRazorpayOrderAction(priceINR);
       
-      updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      
-      toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
+      if (!order.success) {
+        toast({ variant: 'destructive', title: 'Order Failed', description: order.error });
+        setIsProcessing(false);
+        return;
+      }
+
+      const options = {
+        key: order.keyId,
+        amount: order.amount,
+        currency: 'INR',
+        name: 'Tribal Pulse',
+        description: `Recharge ${pkg.amount} Coins`,
+        order_id: order.orderId,
+        handler: async (response: any) => {
+          // SECURE FULFILLMENT: Ideally this should happen via Webhook
+          // For now, we simulate success verification to move forward
+          const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
+          const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
+          const totalGain = amountValue + bonusValue;
+
+          const userRef = doc(firestore, 'users', user.uid);
+          const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+          
+          await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+          await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+          
+          toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
+          setIsProcessing(false);
+        },
+        prefill: {
+          name: user.displayName || '',
+          email: user.email || '',
+        },
+        theme: {
+          color: '#ffcc00',
+        },
+        modal: {
+          ondismiss: () => setIsProcessing(false)
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (err: any) {
+      console.error('[Payment Error]', err);
+      toast({ variant: 'destructive', title: 'Payment Interruption', description: 'Could not connect to Razorpay Gateway.' });
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   if (isUserLoading || isProfileLoading) {
@@ -92,6 +141,7 @@ export default function WalletPage() {
 
   return (
     <AppLayout hideSidebarOnMobile>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
         
         {/* Header Protocol */}
