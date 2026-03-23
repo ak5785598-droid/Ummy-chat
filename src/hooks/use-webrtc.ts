@@ -28,6 +28,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const senders = useRef<Map<string, Map<string, RTCRtpSender>>>(new Map()); 
   const makingOffer = useRef<Map<string, boolean>>(new Map());
   const ignoreOffer = useRef<Map<string, boolean>>(new Map());
+  const iceCandidatesQueue = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const iceConfig: RTCConfiguration = {
@@ -66,18 +67,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         if (!audioContextRef.current) {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
-        const ctx = audioContextRef.current;
-        if (ctx.state === 'suspended') await ctx.resume();
-
-        const source = ctx.createMediaStreamSource(rawStream);
-        const gainNode = ctx.createGain();
-        gainNode.gain.value = 2.0; 
-        
-        const destination = ctx.createMediaStreamDestination();
-        source.connect(gainNode);
-        gainNode.connect(destination);
-        
-        setLocalStream(destination.stream);
+        // REMOVED GAIN ON SENDER SIDE TO PREVENT CLIPPING AND LATENCY
+        setLocalStream(rawStream);
       } catch (err: any) {
         // GRACEFUL SYNC ERROR HANDLING: Prevents Next.js runtime overlay for permission issues
         console.warn('[WebRTC] Hardware Sync Denied:', err.message);
@@ -211,15 +202,30 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
+          
+          // PROCESS QUEUED CANDIDATES
+          const queue = iceCandidatesQueue.current.get(peerId) || [];
+          for (const cand of queue) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+          }
+          iceCandidatesQueue.current.set(peerId, []);
         } else if (signal.type === 'answer') {
           if (pc.signalingState === 'have-local-offer') {
             await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+            // PROCESS QUEUED CANDIDATES
+            const queue = iceCandidatesQueue.current.get(peerId) || [];
+            for (const cand of queue) {
+              try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+            }
+            iceCandidatesQueue.current.set(peerId, []);
           }
         } else if (signal.type === 'candidate') {
-          try {
-            if (pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-          } catch (err) {
-            if (!ignoreOffer.current.get(peerId)) throw err;
+          if (pc.remoteDescription) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(signal.candidate)); } catch (err) {}
+          } else {
+            const queue = iceCandidatesQueue.current.get(peerId) || [];
+            queue.push(signal.candidate);
+            iceCandidatesQueue.current.set(peerId, queue);
           }
         }
       } catch (err) {

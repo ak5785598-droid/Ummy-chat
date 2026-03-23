@@ -94,41 +94,36 @@ import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 
-function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
+function RemoteAudio({ stream, muted, audioContext }: { stream: MediaStream, muted: boolean, audioContext: AudioContext | null }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const contextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
-    if (!stream) return;
-    if (!contextRef.current) {
-      contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    const ctx = contextRef.current;
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-    }
+    if (!stream || !audioContext) return;
+    
+    const ctx = audioContext;
+    if (sourceRef.current) sourceRef.current.disconnect();
+    
     sourceRef.current = ctx.createMediaStreamSource(stream);
     gainRef.current = ctx.createGain();
     sourceRef.current.connect(gainRef.current);
     gainRef.current.connect(ctx.destination);
-    gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
-    if (ctx.state === 'suspended') {
-      const resume = () => ctx.resume().catch(() => {});
-      window.addEventListener('click', resume, { once: true });
-      window.addEventListener('touchstart', resume, { once: true });
-    }
+    
+    // Gain at 1.5 for extra clarity without clipping
+    gainRef.current.gain.setValueAtTime(muted ? 0 : 1.5, ctx.currentTime);
+
     if (audioRef.current) {
       audioRef.current.srcObject = stream;
       audioRef.current.muted = true;
       audioRef.current.play().catch(() => {});
     }
+
     return () => {
       if (sourceRef.current) sourceRef.current.disconnect();
       if (gainRef.current) gainRef.current.disconnect();
     };
-  }, [stream, muted]);
+  }, [stream, muted, audioContext]);
 
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
@@ -238,6 +233,24 @@ export function RoomClient({ room }: { room: Room }) {
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    const handleInteraction = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume().catch(() => {});
+      }
+    };
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
+    return () => {
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+    };
+  }, []);
   
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -588,7 +601,7 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-        <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
+        <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} audioContext={audioContextRef.current} />
       ))}
       
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
