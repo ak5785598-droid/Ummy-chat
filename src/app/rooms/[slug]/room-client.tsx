@@ -95,11 +95,12 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { useVoiceActivity } from '@/hooks/use-voice-activity';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 
-function RemoteAudio({ stream, muted, audioContext, onSpeakingChange }: { 
+function RemoteAudio({ stream, muted, audioContext, peerId, onSpeakingChange }: { 
   stream: MediaStream, 
   muted: boolean, 
   audioContext: AudioContext | null,
-  onSpeakingChange: (isSpeaking: boolean) => void
+  peerId: string,
+  onSpeakingChange: (peerId: string, isSpeaking: boolean) => void
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -107,8 +108,8 @@ function RemoteAudio({ stream, muted, audioContext, onSpeakingChange }: {
   const isSpeaking = useVoiceActivity(stream, audioContext);
 
   useEffect(() => {
-    onSpeakingChange(isSpeaking);
-  }, [isSpeaking, onSpeakingChange]);
+    onSpeakingChange(peerId, isSpeaking);
+  }, [isSpeaking, peerId, onSpeakingChange]);
 
   useEffect(() => {
     if (!stream || !audioContext) return;
@@ -591,6 +592,20 @@ export function RoomClient({ room }: { room: Room }) {
     return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
   }, [room.maxActiveMics]);
 
+  const handleSpeakingChange = useCallback((peerId: string, isSpeaking: boolean) => {
+    setActiveSpeakers(prev => {
+      if (prev.has(peerId) === isSpeaking) return prev;
+      const next = new Set(prev);
+      if (isSpeaking) next.add(peerId);
+      else next.delete(peerId);
+      return next;
+    });
+  }, []);
+
+  const handleLocalSpeakingChange = useCallback((isSpeaking: boolean) => {
+    if (currentUser?.uid) handleSpeakingChange(currentUser.uid, isSpeaking);
+  }, [currentUser?.uid, handleSpeakingChange]);
+
   return (
     <div className="relative flex flex-col h-[100dvh] w-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
@@ -607,29 +622,15 @@ export function RoomClient({ room }: { room: Room }) {
           stream={stream} 
           muted={isMutedLocal} 
           audioContext={audioContextRef.current}
-          onSpeakingChange={(isSpeaking) => {
-            setActiveSpeakers(prev => {
-              const next = new Set(prev);
-              if (isSpeaking) next.add(peerId);
-              else next.delete(peerId);
-              return next;
-            });
-          }}
+          peerId={peerId}
+          onSpeakingChange={handleSpeakingChange}
         />
       ))}
 
       <VADMonitor 
         stream={localStream} 
         audioContext={audioContextRef.current} 
-        onSpeakingChange={(isSpeaking) => {
-          if (!currentUser?.uid) return;
-          setActiveSpeakers(prev => {
-            const next = new Set(prev);
-            if (isSpeaking) next.add(currentUser.uid);
-            else next.delete(currentUser.uid);
-            return next;
-          });
-        }} 
+        onSpeakingChange={handleLocalSpeakingChange} 
       />
       
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
