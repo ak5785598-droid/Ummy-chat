@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const EXCHANGE_PACKAGES = [
+  { coins: 33, diamonds: 100 }, 
   { coins: 330, diamonds: 1000 },
   { coins: 3300, diamonds: 10000 },
   { coins: 33000, diamonds: 100000 },
@@ -118,7 +119,7 @@ export default function DiamondExchangePage() {
            <div className="bg-[#fffef0] rounded-2xl p-6 flex items-center justify-between border border-orange-50 shadow-sm">
               <span className="text-gray-400 font-bold text-lg uppercase tracking-tight">Current Diamonds</span>
               <div className="flex items-center gap-2">
-                 <Gem className="h-6 w-6 text-[#00E5FF] fill-current" />
+                 <Gem className="h-4 w-4 text-[#00E5FF] fill-current" />
                  <span className="text-2xl font-black text-[#0ea5e9]">
                     {(userProfile?.wallet?.diamonds || 0).toLocaleString()}
                  </span>
@@ -148,9 +149,9 @@ export default function DiamondExchangePage() {
                         )}
                       >
                          {isProcessing === idx ? (
-                           <Loader className="h-4 w-4 animate-spin text-blue-500" />
+                           <Loader className="h-3 w-3 animate-spin text-blue-500" />
                          ) : (
-                           <Gem className="h-4 w-4 text-[#00E5FF] fill-current" />
+                           <Gem className="h-3 w-3 text-[#00E5FF] fill-current" />
                          )}
                          <span className="font-black text-blue-500 text-sm">
                             {pkg.diamonds.toLocaleString()}
