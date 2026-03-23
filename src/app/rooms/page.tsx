@@ -136,7 +136,7 @@ export default function RoomsPage() {
       <div className="min-h-full flex flex-col font-headline animate-in fade-in duration-700">
         
         <header className="flex items-center justify-between px-2 pt-safe pb-1 shrink-0">
-          <div className="pt-2 flex items-center justify-between w-full">
+          <div className="pt-5 flex items-center justify-between w-full">
             <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setHeaderTab('recommend')}

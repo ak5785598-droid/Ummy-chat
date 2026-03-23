@@ -607,7 +607,7 @@ export function RoomClient({ room }: { room: Room }) {
       </div>
 
       <header className="relative z-50 flex items-center justify-between p-3 pt-safe px-4 shrink-0 w-full">
-        <div className="pt-2 flex items-center justify-between w-full">
+        <div className="pt-5 flex items-center justify-between w-full">
           <div className="flex items-center gap-2 max-w-[70%] min-w-0">
           <div 
             onClick={() => setIsFollowersOpen(true)}

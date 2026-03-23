@@ -218,22 +218,24 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-headline">
-        <DialogHeader className="p-6 pt-12 border-b border-gray-100 bg-white flex flex-row items-center gap-4 shrink-0 shadow-sm relative z-50">
-           <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
-              <ChevronLeft className="h-6 w-6 text-gray-800" />
-           </button>
-           <Avatar className="h-10 w-10 border shadow-sm rounded-xl">
-              <AvatarImage src={otherUser?.avatarUrl || undefined} />
-              <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
-           </Avatar>
-           <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-black uppercase italic tracking-tighter truncate">{otherUser?.username}</DialogTitle>
-              <p className={cn(
-                "text-[9px] font-bold uppercase tracking-widest",
-                isOnline ? "text-green-500" : "text-gray-400"
-              )}>
-                {isOnline ? 'online' : 'offline'}
-              </p>
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+           <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+               <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <Avatar className="h-10 w-10 border shadow-sm rounded-xl">
+               <AvatarImage src={otherUser?.avatarUrl || undefined} />
+               <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+               <DialogTitle className="text-lg font-black uppercase italic tracking-tighter truncate">{otherUser?.username}</DialogTitle>
+               <p className={cn(
+                 "text-[9px] font-bold uppercase tracking-widest",
+                 isOnline ? "text-green-500" : "text-gray-400"
+               )}>
+                 {isOnline ? 'online' : 'offline'}
+               </p>
+            </div>
            </div>
            <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
         </DialogHeader>
