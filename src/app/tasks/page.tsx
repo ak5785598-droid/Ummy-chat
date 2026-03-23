@@ -207,7 +207,7 @@ export default function TasksPage() {
               <AttendanceCard day={4} amount="10000" />
               <AttendanceCard day={5} label="x1 Day" icon={Bike} />
               <AttendanceCard day={6} label="x3 Days" icon={ImageIcon} />
-              <AttendanceCard day={7} isBig label="Elite" icon={Rocket} />
+              <AttendanceCard day={7} amount="10000" isBig label="Elite" icon={Rocket} />
             </div>
             
             <Button 
