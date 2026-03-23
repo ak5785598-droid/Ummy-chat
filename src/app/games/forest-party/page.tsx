@@ -128,42 +128,36 @@ export default function WildPartyPage() {
   }, [gameState, timeLeft, isLaunching]);
 
   const startSpin = async () => {
-    setGameState('spinning');
-    
-    let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
-    
-    if (firestore) {
-      try {
-        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'wild-party'));
-        if (oracleSnap.exists() && oracleSnap.data().isActive) {
-          const forced = oracleSnap.data().forcedResult;
-          if (ANIMALS.some(a => a.id === forced)) winningId = forced;
-          updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'wild-party'), { isActive: false });
-        }
-      } catch (e) {}
+  setGameState('spinning');
+
+  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+
+  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
+
+  let currentStep = 0;
+  const totalSteps = (ANIMALS.length * 4) + targetIdx;
+  let speed = 50;
+
+  const runChase = () => {
+    setHighlightIdx(currentStep % ANIMALS.length);
+    playTickSound();
+
+    currentStep++;
+
+    if (currentStep <= totalSteps) {
+      const remaining = totalSteps - currentStep;
+
+      if (remaining < 12) speed += 20;
+      if (remaining < 6) speed += 40;
+
+      setTimeout(runChase, speed);
+    } else {
+      setTimeout(() => showResult(winningId), 800);
     }
-
-    const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
-    let currentStep = 0;
-    const totalSteps = (ANIMALS.length * 4) + targetIdx;
-    let speed = 50;
-
-    const runChase = () => {
-      setHighlightIdx(currentStep % ANIMALS.length);
-      playTickSound();
-      playmusicSound();
-      currentStep++;
-      if (currentStep <= totalSteps) {
-        const remaining = totalSteps - currentStep;
-        if (remaining < 12) speed += 20;
-        if (remaining < 6) speed += 40;
-        setTimeout(runChase, speed);
-      } else {
-        setTimeout(() => showResult(winningId), 800);
-      }
-    };
-    runChase();
   };
+
+  runChase();
+};
 
   const showResult = (id: string) => {
     setHistory(prev => [id, ...prev].slice(0, 15));
@@ -200,7 +194,7 @@ export default function WildPartyPage() {
       setMyBets({});
       setHighlightIdx(null);
       setGameState('betting');
-      setTimeLeft(15);
+      setTimeLeft(20);
     }, 5000);
   };
 
