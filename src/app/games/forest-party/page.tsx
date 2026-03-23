@@ -24,9 +24,9 @@ import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 
 const ANIMALS = [
-  { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
+  { id: 'turtle', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
-  { id: 'sheep', emoji: '🐑', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white' },
+  { id: 'sheep', emoji: '🐮', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white' },
   { id: 'fox', emoji: '🐶', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
   { id: 'rhino', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
   { id: 'elephant', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
@@ -43,7 +43,7 @@ const CHIPS = [
   { value: 300000, label: '300K', color: 'bg-pink-500' },
   { value: 1000000, label: '1M', color: 'bg-purple-500' },
   { value: 10000000, label: '10M', color: 'bg-indigo-500' },
-  { value: 100000000, label: '100M', color: 'bg-cyan-500' },
+  { value: 100000000, label: '100M', color: 'bg-violate-500' },
 ];
 
 export default function WildPartyPage() {
