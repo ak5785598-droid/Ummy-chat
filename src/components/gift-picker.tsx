@@ -51,11 +51,11 @@ const GIFTS: Record<string, GiftItem[]> = {
     { id: 'car', name: 'Elite Car', price: 50000, icon: '🏎️', animationId: 'car' },
   ],
   'Lucky': [
-    { id: 'lucky_clover', name: 'Lucky Clover', price: 100, icon: '🍀', animationId: 'lucky-clover', type: 'lucky' },
-    { id: 'lucky_crown', name: 'Lucky Crown', price: 500, icon: '👑', animationId: 'lucky-crown', type: 'lucky' },
-    { id: 'lucky_maple', name: 'Lucky Maple', price: 1000, icon: '🍁', animationId: 'lucky-maple', type: 'lucky' },
-    { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', animationId: 'lucky-star', type: 'lucky' },
-    { id: 'lucky_apple', name: 'lucky apple', price:250, icon: '🍎', animationId: 'lucky-apple', type: 'lucky' }, 
+    { id: 'lucky_clover', name: 'Lucky Clover', price: 100, icon: '🍀', SVGAanimationId: 'lucky-clover', type: 'lucky' },
+    { id: 'lucky_crown', name: 'Lucky Crown', price: 500, icon: '👑', SVGAanimationId: 'lucky-crown', type: 'lucky' },
+    { id: 'lucky_maple', name: 'Lucky Maple', price: 1000, icon: '🍁', SVGAanimationId: 'lucky-maple', type: 'lucky' },
+    { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', SVGAanimationId: 'lucky-star', type: 'lucky' },
+    { id: 'lucky_apple', name: 'lucky apple', price:250, icon: '🍎', SVGAanimationId: 'lucky-apple', type: 'lucky' }, 
   ],
   'Luxury': [
     { id: 'cake', name: 'Cake', price: 500000, icon: '🎂', animationId: 'cake' },
