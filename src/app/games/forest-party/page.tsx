@@ -112,20 +112,24 @@ export default function WildPartyPage() {
   }, [isMuted, initAudioContext]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+  if (isLaunching) return;
 
-  useEffect(() => {
-    if (isLaunching) return;
-    const interval = setInterval(() => {
-      if (gameState === 'betting') {
-        if (timeLeft > 0) setTimeLeft(prev => prev - 1);
-        else startSpin();
+  const interval = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (gameState !== 'betting') return prev;
+
+      if (prev <= 1) {
+        clearInterval(interval);
+        startSpin();
+        return 0;
       }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [gameState, timeLeft, isLaunching]);
+
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [gameState, isLaunching]);
 
   const startSpin = async () => {
   setGameState('spinning');
