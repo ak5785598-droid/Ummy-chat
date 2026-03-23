@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AppLayout } from '@/components/layout/app-layout';
@@ -7,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 /**
- * Watch Party Page - Prototype Removed.
- * Redirecting to Rooms Hub for production stability.
+ * Watch Party Page - Root Migration.
  */
 export default function WatchPage() {
   const router = useRouter();

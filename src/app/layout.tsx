@@ -1,13 +1,9 @@
-'use client';
-
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Alegreya, Belleza } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from './providers';
-import Script from 'next/script';
-import { InstallButton } from '@/components/install-button';
 
 const fontHeadline = Belleza({
   subsets: ['latin'],
@@ -21,6 +17,34 @@ const fontBody = Alegreya({
   variable: '--font-body',
   display: 'swap',
 });
+
+export const metadata: Metadata = {
+  title: 'Ummy - Connect Your Tribe',
+  description: 'Elite real-time social voice chat frequency.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Ummy',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-touch-fullscreen': 'yes',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#140028',
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+};
 
 export default function RootLayout({
   children,
@@ -36,12 +60,8 @@ export default function RootLayout({
           fontBody.variable
         )}
       >
-        <Providers>
-          {children}
-          <InstallButton />
-        </Providers>
+        <Providers>{children}</Providers>
         <Toaster />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AppLayout } from '@/components/layout/app-layout';
@@ -5,7 +6,6 @@ import { Compass, Loader } from 'lucide-react';
 
 /**
  * Tribal Discovery Dimension.
- * Placeholder for the "Discover" tab navigation sync.
  */
 export default function DiscoverPage() {
   return (

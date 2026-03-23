@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
   History,
   X,
@@ -24,7 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { GameResultOverlay } from '@/components/game-result-overlay';
 
 const SYMBOLS = [
   { id: 'lips', emoji: '💋', value: 10 },
@@ -52,6 +51,7 @@ export default function LuckySlot777Page() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winAmount, setWinAmount] = useState<number | null>(null);
+  const [winners, setWinners] = useState<any[]>([]);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -143,22 +143,14 @@ export default function LuckySlot777Page() {
         };
         updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
         updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-
-        // Record victory
-        addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-          gameId: 'lucky-slot-777',
-          userId: currentUser.uid,
-          username: userProfile?.username || 'Guest',
-          avatarUrl: userProfile?.avatarUrl || null,
-          amount: totalWin,
-          timestamp: serverTimestamp()
-        });
       }
+      setWinners([{ name: userProfile?.username, win: totalWin, avatar: userProfile?.avatarUrl }]);
     }
 
     setGameState('result');
     setTimeout(() => {
       setGameState('betting');
+      setWinners([]);
     }, 3000);
   };
 
@@ -199,7 +191,7 @@ export default function LuckySlot777Page() {
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 relative z-10 pb-40">
            <div className="w-full max-w-sm mb-4 relative h-24 flex items-end justify-center">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-16 bg-gradient-to-b from-blue-600 to-indigo-900 border-4 border-blue-400 rounded-2xl shadow-[0_0_30px_#2563eb99] flex items-center justify-center z-20">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-16 bg-gradient-to-b from-blue-600 to-indigo-900 border-4 border-blue-400 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] flex items-center justify-center z-20">
                  <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter animate-pulse">Jackpot</h2>
               </div>
               <div className="absolute -left-4 bottom-0 w-32 h-40 z-10 opacity-90">
@@ -241,7 +233,7 @@ export default function LuckySlot777Page() {
            <div className="mt-8 flex items-center gap-4 bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
               <button onClick={() => adjustBet(-10)} className="h-10 w-10 bg-green-500 rounded-xl flex items-center justify-center text-black font-black text-xl shadow-lg active:scale-90 transition-all"><Minus /></button>
               <div className="min-w-[80px] text-center">
-                 <span className="text-3xl font-black text-green-400 italic tracking-tighter drop-shadow-[0_0_10px_#4ade8080]">{betAmount}</span>
+                 <span className="text-3xl font-black text-green-400 italic tracking-tighter drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]">{betAmount}</span>
               </div>
               <button onClick={() => adjustBet(10)} className="h-10 w-10 bg-green-500 rounded-xl flex items-center justify-center text-black font-black text-xl shadow-lg active:scale-90 transition-all"><Plus /></button>
            </div>
@@ -276,12 +268,26 @@ export default function LuckySlot777Page() {
            </div>
         </footer>
 
-        {gameState === 'result' && winAmount && winAmount > 0 && (
-          <GameResultOverlay 
-            gameId="lucky-slot-777"
-            winningSymbol="🎰" 
-            winAmount={winAmount} 
-          />
+        {gameState === 'result' && winners.length > 0 && (
+          <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-500">
+             <div className="relative mb-12 flex flex-col items-center gap-4">
+                <Trophy className="h-20 w-20 text-yellow-400 animate-bounce" />
+                <h2 className="text-5xl font-black text-white uppercase italic tracking-tighter text-center">Jackpot Sync</h2>
+             </div>
+             <div className="flex items-center justify-center gap-4 px-6 w-full max-w-lg">
+                {winners.map((winner, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-2 animate-in slide-in-from-bottom-20 duration-1000">
+                     <Avatar className="h-24 w-24 border-4 border-yellow-400 shadow-2xl">
+                        <AvatarImage src={winner.avatar || undefined}/><AvatarFallback>W</AvatarFallback>
+                     </Avatar>
+                     <div className="bg-yellow-500/20 border-x-2 border-t-2 border-yellow-400 w-32 h-20 rounded-t-3xl flex flex-col items-center justify-center">
+                        <p className="text-[10px] font-black text-white uppercase truncate px-2">{winner.name}</p>
+                        <p className="text-lg font-black text-yellow-500">+{winner.win.toLocaleString()}</p>
+                     </div>
+                  </div>
+                ))}
+             </div>
+          </div>
         )}
 
         <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>

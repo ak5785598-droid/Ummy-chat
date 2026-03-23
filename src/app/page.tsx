@@ -1,105 +1,71 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { doc } from 'firebase/firestore';
-import Image from 'next/image';
+import { useUser } from '@/firebase';
 
 /**
- * Root Application Gateway / Splash Screen.
- * Synchronized with Global App Branding Sync.
+ * Splash Screen - Initial Landing Page
+ * Shows for 2.5 seconds before redirecting to /login or /rooms
  */
-export default function Home() {
-  const { user, isUserLoading } = useUser();
-  const [showFailSafe, setShowFailSafe] = useState(false);
+export default function SplashScreen() {
   const router = useRouter();
-  
-  const firestore = useFirestore();
-  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
-  const { data: config } = useDoc(configRef);
-  
-  // High-Fidelity Background Priority Sync
-  const activeBg = config?.appLoadingBackgroundUrl || config?.splashScreenUrl || config?.loginBackgroundUrl;
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowFailSafe(true), 2000);
-
-    if (!isUserLoading) {
+    const timer = setTimeout(() => {
       const destination = user ? '/rooms' : '/login';
       router.push(destination);
-
-      const hardTimer = setTimeout(() => {
-        if (window.location.pathname === '/') {
-          window.location.href = destination;
-        }
-      }, 1000);
-
-      return () => clearTimeout(hardTimer);
-    }
+    }, 2500); // 2.5 seconds
 
     return () => clearTimeout(timer);
-  }, [isUserLoading, user, router]);
-
-  const handleManualEntry = () => {
-    window.location.href = user ? '/rooms' : '/login';
-  };
+  }, [user, isUserLoading, router]);
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-[#140028] overflow-hidden relative font-headline select-none touch-none">
-      {/* High-Fidelity Background Dimension */}
-      <div className="absolute inset-0 z-0">
-         {activeBg ? (
-           <Image 
-             src={activeBg} 
-             fill
-             className="object-cover animate-in fade-in duration-1000" 
-             alt="Splash Background" 
-             priority 
-             unoptimized 
-           />
-         ) : (
-           <div className="absolute inset-0 bg-ummy-gradient animate-pulse duration-[3000ms]" />
-         )}
-         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+    <div 
+      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: `url('/images/splash_bg.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Dark overlay for better visibility */}
+      <div className="absolute inset-0 bg-black/20" />
+
+      {/* Splash content */}
+      <div className="absolute w-full bottom-20 flex justify-center z-10 animate-fade-in">
+        <p className="text-[20px] text-[#222222] font-normal font-sans tracking-normal pt-4">
+          Ummy - Connect Your Tribe
+        </p>
       </div>
-      {/* Logo removed from splash screen */}
-      
-      <div className="absolute bottom-24 flex flex-col items-center gap-6 w-full px-12 z-10">
-         {showFailSafe ? (
-           <Button 
-             onClick={handleManualEntry}
-             className="bg-primary text-white rounded-full px-10 h-14 font-black uppercase shadow-2xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-transform"
-           >
-             Enter Frequency <ArrowRight className="ml-2 h-5 w-5" />
-           </Button>
-         ) : (
-           <div className="flex flex-col items-center gap-4">
-              <div className="h-[4px] w-56 bg-white/10 rounded-full overflow-hidden shadow-inner">
-                  <div className="h-full bg-primary shadow-[0_0_15px_rgba(255,154,0,0.8)] animate-loading-bar" style={{ width: '45%' }} />
-              </div>
-              <div className="flex items-center gap-2">
-                 <Loader2 className="h-3 w-3 text-white/40 animate-spin" />
-                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                     Syncing Social Graph...
-                 </p>
-              </div>
-           </div>
-         )}
+
+      {/* Remove any extra text or duplicate logos in the bottom area */}
+      <div className="hidden" />
+
+      {/* Loading indicator */}
+      <div className="absolute bottom-8 flex items-center gap-2">
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" />
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+        <div className="h-2 w-2 bg-white/70 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
       </div>
 
       <style jsx>{`
-        @keyframes loading-bar {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(50%); }
-          100% { transform: translateX(250%); }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
-        .animate-loading-bar {
-          animation: loading-bar 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out;
         }
       `}</style>
     </div>

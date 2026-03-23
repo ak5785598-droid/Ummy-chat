@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AppLayout } from '@/components/layout/app-layout';
@@ -7,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 /**
- * AI Vibe Match Page - Prototype Removed.
- * Redirecting to Rooms Hub for production stability.
+ * AI Vibe Match Page - Root Migration.
  */
 export default function MatchPage() {
   const router = useRouter();

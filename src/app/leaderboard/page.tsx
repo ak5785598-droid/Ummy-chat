@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, orderBy, limit, doc, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, ChevronRight, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -49,32 +50,31 @@ const LevelBadge = ({ level }: { level: number }) => (
   </div>
 );
 
-/**
- * Mobile-Safe IST Countdown.
- */
 const RankingCountdown = ({ period }: { period: 'daily' | 'weekly' | 'monthly' }) => {
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
+      // Get current time in IST (GMT +5:30)
+      const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istTimeStr);
       
-      // Calculate IST (UTC+5:30) manually for mobile compatibility
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const istDate = new Date(utc + (3600000 * 5.5));
-      
-      let target = new Date(istDate.getTime());
+      let target = new Date(istTimeStr);
 
       if (period === 'daily') {
+        // Daily reset: 23:59:59 today
         target.setHours(23, 59, 59, 999);
       } else if (period === 'weekly') {
-        const day = istDate.getDay(); 
-        const diffToMonday = (day === 0 ? 1 : 8 - day);
-        target.setDate(istDate.getDate() + diffToMonday);
-        target.setHours(0, 0, 0, 0);
+        // Weekly reset: End of Sunday
+        const day = target.getDay(); // 0 is Sunday, 1 is Monday...
+        const diffToSunday = 7 - (day === 0 ? 7 : day);
+        target.setDate(target.getDate() + diffToSunday);
+        target.setHours(23, 59, 59, 999);
       } else if (period === 'monthly') {
-        target.setMonth(istDate.getMonth() + 1, 1); 
-        target.setHours(0, 0, 0, 0);
+        // Monthly reset: Last day of month
+        target.setMonth(target.getMonth() + 1, 0); // Last day of current month
+        target.setHours(23, 59, 59, 999);
       }
       
       const diff = target.getTime() - istDate.getTime();
@@ -92,6 +92,7 @@ const RankingCountdown = ({ period }: { period: 'daily' | 'weekly' | 'monthly' }
       if (period === 'daily') {
         setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
       } else {
+        // Days/Hours/Mins/Sec format for Weekly and Monthly
         setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
       }
     };
@@ -135,12 +136,10 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
   const others = items.slice(3);
 
   const getValue = (item: any) => {
-    const pKey = period === 'daily' ? 'daily' : period === 'weekly' ? 'weekly' : 'monthly';
-    
-    if (type === 'rich') return item.wallet?.[`${pKey}Spent`] || 0;
-    if (type === 'charm') return item.stats?.[`${pKey}GiftsReceived`] || 0;
-    if (type === 'rooms') return item.stats?.[`${pKey}Gifts`] || 0;
-    if (type === 'games') return item.stats?.[`${pKey}GameWins`] || 0;
+    if (type === 'rich') return item.wallet?.dailySpent || 0;
+    if (type === 'charm') return item.stats?.dailyGiftsReceived || 0;
+    if (type === 'rooms') return item.stats?.dailyGifts || 0;
+    if (type === 'games') return item.stats?.dailyGameWins || 0;
     return 0;
   };
 
@@ -322,32 +321,10 @@ function LeaderboardContent() {
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (initialType) setRankingMode(initialType); }, [initialType]);
 
-  // RANKING SYNC: Target the public 'profile' dimension via collectionGroup for cross-tribe rankings
-  const periodKey = timePeriod === 'daily' ? 'daily' : timePeriod === 'weekly' ? 'weekly' : 'monthly';
-
-  const richQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const field = `wallet.${periodKey}Spent`;
-    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
-  }, [firestore, periodKey]);
-
-  const charmQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const field = `stats.${periodKey}GiftsReceived`;
-    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
-  }, [firestore, periodKey]);
-
-  const roomsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const field = `stats.${periodKey}Gifts`;
-    return query(collection(firestore, 'chatRooms'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
-  }, [firestore, periodKey]);
-
-  const gamesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const field = `stats.${periodKey}GameWins`;
-    return query(collectionGroup(firestore, 'profile'), where(field, '>', 0), orderBy(field, 'desc'), limit(50));
-  }, [firestore, periodKey]);
+  const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
+  const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50)), [firestore]);
+  const roomsQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]);
+  const gamesQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50)), [firestore]);
 
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
@@ -377,11 +354,11 @@ function LeaderboardContent() {
 
   const myValue = useMemo(() => {
     if (!me) return 0;
-    if (rankingType === 'rich') return me.wallet?.[`${periodKey}Spent`] || 0;
-    if (rankingType === 'charm') return me.stats?.[`${periodKey}GiftsReceived`] || 0;
-    if (rankingType === 'games') return me.stats?.[`${periodKey}GameWins`] || 0;
+    if (rankingType === 'rich') return me.wallet?.dailySpent || 0;
+    if (rankingType === 'charm') return me.stats?.dailyGiftsReceived || 0;
+    if (rankingType === 'games') return me.stats?.dailyGameWins || 0;
     return 0;
-  }, [me, rankingType, periodKey]);
+  }, [me, rankingType]);
 
   if (!mounted) return null;
 
@@ -411,11 +388,11 @@ function LeaderboardContent() {
                     <DialogDescription className="sr-only">Detailed tribal ranking policy.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 font-body italic text-gray-400 leading-relaxed pt-2 text-sm">
-                    <p>1. Rankings are based on Gold Coin activity and reset every night at 11:59:59 PM (GMT +5:30 IST).</p>
-                    <p>2. Honor (Rich) tracks coins dispatched via gifts.</p>
-                    <p>3. Charm tracks coins received as gifts.</p>
-                    <p>4. Room rankings track total gifts received in a frequency.</p>
-                    <p>5. Game rankings track Gold Coins won in the 3D Arena.</p>
+                    <p>1. Rankings are based on daily Gold Coin activity and reset every night at 11:59:59 PM (GMT +5:30 IST).</p>
+                    <p>2. Honor (Rich) tracks daily coins dispatched.</p>
+                    <p>3. Charm tracks daily coins received as gifts.</p>
+                    <p>4. Room rankings track total daily gifts received in a frequency.</p>
+                    <p>5. Game rankings track daily Gold Coins won in the 3D Arena.</p>
                   </div>
                 </DialogContent>
              </Dialog>

@@ -113,7 +113,6 @@ export default function UserLevelPage() {
                <div className="w-1 h-5 bg-[#FFCC00] rounded-full" />
                <h2 className="text-lg font-black uppercase tracking-tight">Level Icon</h2>
             </div>
-            
             <div className="overflow-hidden border border-yellow-100 rounded-xl shadow-sm">
                <table className="w-full text-center border-collapse">
                   <thead className="bg-[#fff9e6]">

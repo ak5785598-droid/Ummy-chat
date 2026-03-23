@@ -133,7 +133,7 @@ export default function RoomsPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-ummy-gradient flex flex-col font-headline animate-in fade-in duration-700 pb-20">
+      <div className="min-h-full flex flex-col font-headline animate-in fade-in duration-700">
         
         <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
           <div className="flex items-center gap-2.5">

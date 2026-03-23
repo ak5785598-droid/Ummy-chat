@@ -9,6 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, ShieldCheck, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
+import { cn } from '@/lib/utils';
 
 const faqs = [
   {
@@ -39,13 +40,14 @@ const faqs = [
 ];
 
 /**
- * Help Center - High-Fidelity Light Green Edition (Source Sync).
+ * Official Help Center - High-Fidelity Light Green Edition.
  */
 export default function HelpCenterPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-[#f1f8e9] font-headline flex flex-col animate-in fade-in duration-700 overflow-hidden relative">
         
+        {/* Ambient Top Gradient Sync */}
         <div className="absolute top-0 left-0 right-0 h-[35vh] bg-gradient-to-b from-[#e8f5e9] via-[#f1f8e9] to-transparent opacity-80" />
 
         <div className="relative z-10 space-y-8 p-6 max-w-4xl mx-auto pb-32">
@@ -99,7 +101,7 @@ export default function HelpCenterPage() {
                </h2>
             </div>
             
-            <Card className="border-none shadow-sm rounded-[2.5rem] bg-white/80 backdrop-blur-md overflow-hidden border border-white/40">
+            <Card className="border-none shadow-sm rounded-[2.5rem] bg-white/80 backdrop-blur-md overflow-hidden border border-white/50">
               <CardContent className="p-4">
                 <Accordion type="single" collapsible className="w-full">
                   {faqs.map((faq, index) => (

@@ -57,13 +57,11 @@
     @apply h-[100dvh] w-full overflow-hidden bg-[#f3e5f5];
     height: 100dvh;
     min-height: 100dvh;
-    min-height: -webkit-fill-available;
     position: fixed;
     touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
     overscroll-behavior: none;
-    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -85,11 +83,6 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-  
-  /* 3D Transform Frequencies */
-  .rotate-y-180 { transform: rotateY(180deg); }
-  .preserve-3d { transform-style: preserve-3d; }
-  .backface-hidden { backface-visibility: hidden; }
 }
 
 @keyframes voice-wave {

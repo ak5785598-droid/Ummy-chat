@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Trash } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { 
   Flag, 
@@ -20,7 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
@@ -39,6 +38,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
+import { UmmyLogoIcon } from '@/components/icons';
 
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
   <div 
@@ -46,7 +46,7 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
     className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
   >
     <div className="relative shrink-0">
-      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
+      <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
         {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
       </div>
       {isVerified && (
@@ -146,19 +146,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  // Delete message handler
-  const handleDeleteMessage = async (msgId: string) => {
-    if (!firestore || !chatId || !msgId) return;
-    try {
-      await deleteDoc(doc(firestore, 'privateChats', chatId, 'messages', msgId));
-      setShowDeleteConfirm(false);
-      setDeleteTarget(null);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Delete Failed' });
-    }
-  };
 
   // Sync real-time online status
   const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
@@ -257,9 +244,9 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                  {messages?.map((msg: any) => {
                    const isMe = msg.senderId === currentUser?.uid;
                    return (
-                     <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}> 
+                     <div key={msg.id} className={cn("flex flex-col max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}>
                         <div className={cn(
-                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border relative",
+                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border",
                           isMe ? "bg-primary text-white rounded-br-none border-primary/20" : "bg-white text-gray-800 rounded-bl-none border-gray-100"
                         )}>
                            {msg.imageUrl && (
@@ -271,15 +258,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                              </div>
                            )}
                            {msg.text && <p className="leading-relaxed italic">{msg.text}</p>}
-                           {isMe && (
-                             <button
-                               className="absolute top-1 right-1 p-1 rounded-full hover:bg-red-100"
-                               title="Delete message"
-                               onClick={() => { setDeleteTarget(msg.id); setShowDeleteConfirm(true); }}
-                             >
-                               <Trash className="h-4 w-4 text-red-500" />
-                             </button>
-                           )}
                         </div>
                         <span className="text-[8px] font-black text-gray-400 uppercase mt-1 px-1">
                            {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
@@ -287,18 +265,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                      </div>
                    );
                  })}
-                 {/* Delete confirmation dialog */}
-                 {showDeleteConfirm && (
-                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                     <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center gap-4">
-                       <p className="text-sm font-bold">Delete this message?</p>
-                       <div className="flex gap-3">
-                         <button className="px-4 py-2 rounded bg-red-500 text-white font-bold" onClick={() => handleDeleteMessage(deleteTarget)}>Delete</button>
-                         <button className="px-4 py-2 rounded bg-gray-200 text-gray-800 font-bold" onClick={() => { setShowDeleteConfirm(false); setDeleteTarget(null); }}>Cancel</button>
-                       </div>
-                     </div>
-                   </div>
-                 )}
                  <div ref={messagesEndRef} />
               </div>
            </ScrollArea>
@@ -341,7 +307,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
         {/* High-Fidelity Full Screen Image Viewer */}
         <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-          <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
+          <DialogContent className="w-screen h-screen max-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
             <DialogHeader className="sr-only">
               <DialogTitle>Image Preview</DialogTitle>
               <DialogDescription>Full screen view</DialogDescription>
@@ -430,9 +396,12 @@ export default function MessagesPage() {
 
         <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex flex-col">
-               <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
-               <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
+            <div className="flex items-center gap-3">
+               <UmmyLogoIcon className="h-14 w-14" />
+               <div className="flex flex-col">
+                  <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
+                  <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
+               </div>
             </div>
             <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
                <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
@@ -449,7 +418,7 @@ export default function MessagesPage() {
               subtext={latestTeam?.content || "Welcome to ummy Chat"}
               date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
               colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-              customIcon={<img src="https://img.icons8.com/color/96/lion.png" className="h-8 w-8" alt="Team" />}
+              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
               isVerified
               onClick={() => setShowOfficial(true)}
             />

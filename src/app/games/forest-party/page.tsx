@@ -185,7 +185,7 @@ export default function WildPartyPage() {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
       addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-        gameId: 'wild-party',
+        gameId: 'forest-party',
         userId: currentUser.uid,
         username: userProfile?.username || 'Guest',
         avatarUrl: userProfile?.avatarUrl || null,
@@ -234,11 +234,18 @@ export default function WildPartyPage() {
   };
 
   if (isLaunching) {
+    const loadingBg = (gameData as any)?.loadingBackgroundUrl;
     return (
-      <div className="h-screen w-full bg-[#0a2e0a] flex flex-col items-center justify-center space-y-6 font-headline">
-        <div className="text-8xl animate-bounce">🦁</div>
-        <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Wild Party</h1>
-        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Entering the Jungle...</p>
+      <div 
+        className="h-screen w-full bg-[#0a2e0a] flex flex-col items-center justify-center space-y-6 font-headline relative overflow-hidden"
+        style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+           <div className="text-8xl animate-bounce">🦁</div>
+           <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Wild Party</h1>
+           <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Entering the Jungle...</p>
+        </div>
       </div>
     );
   }
@@ -262,7 +269,7 @@ export default function WildPartyPage() {
 
         {gameState === 'result' && (
           <GameResultOverlay 
-            gameId="wild-party"
+            gameId="forest-party"
             winningSymbol={winningSymbol} 
             winAmount={totalWinAmount} 
           />
@@ -296,7 +303,7 @@ export default function WildPartyPage() {
         </div>
 
         <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+           <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center">
               
               <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a2e] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
                  <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
@@ -322,25 +329,25 @@ export default function WildPartyPage() {
                     className={cn(
                       "absolute transition-all duration-300 flex flex-col items-center group pointer-events-auto",
                       animal.pos === 'top' && "top-0",
-                      animal.pos === 'top-right' && "top-[12%] right-[12%]",
+                      animal.pos === 'top-right' && "top-[8%] right-[8%]",
                       animal.pos === 'right' && "right-0",
-                      animal.pos === 'bottom-right' && "bottom-[12%] right-[12%]",
+                      animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
                       animal.pos === 'bottom' && "bottom-0",
-                      animal.pos === 'bottom-left' && "bottom-[12%] left-[12%]",
+                      animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
                       animal.pos === 'left' && "left-0",
-                      animal.pos === 'top-left' && "top-[12%] left-[12%]",
+                      animal.pos === 'top-left' && "top-[8%] left-[8%]",
                       isActive && "z-30 brightness-125 scale-110"
                     )}
                   >
                      <div className="relative">
                         <div className={cn(
-                          "h-24 w-24 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
+                          "h-20 w-20 rounded-[1.25rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
                           isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
                         )}>
-                           <span className="text-5xl drop-shadow-lg relative z-10">
+                           <span className="text-4xl drop-shadow-lg relative z-10">
                               {animal.id === 'lion' ? '🦁' : animal.emoji}
                            </span>
-                           <span className="text-[10px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
+                           <span className="text-[8px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
                               {animal.label}
                            </span>
                            <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />

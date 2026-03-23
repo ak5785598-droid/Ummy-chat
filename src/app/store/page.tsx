@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 const STATIC_STORE_ITEMS = [
+  { id: 'love-bubble', name: 'Love bubble', type: 'Bubble', price: 20000, durationDays: 7, description: 'Elegant red capsule bubble with floating heart sync.', icon: Heart, color: 'text-red-500' },
   { id: 'f7', name: 'Celestial Wings', type: 'Frame', price: 15000, description: 'Tiered lavender wings with sovereign golden peaks.', icon: Sparkles, color: 'text-indigo-400' },
   { id: 'f6', name: 'Bronze Sky', type: 'Frame', price: 10000, description: 'Exquisite bronze laurel wreath with radiant gemstones.', icon: Sparkles, color: 'text-orange-400' },
   { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, description: 'Ultra-detailed 3D luxury angelic frame.', icon: Sparkles, color: 'text-yellow-400' },

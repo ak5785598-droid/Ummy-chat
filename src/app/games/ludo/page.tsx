@@ -55,7 +55,6 @@ export default function LudoGamePage() {
         const osc = ctx.createOscillator();
         const noteGain = ctx.createGain();
         
-        // Playful Ludo pentatonic C-Major arpeggio
         const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
         const freq = melody[step % melody.length];
         
@@ -149,7 +148,7 @@ export default function LudoGamePage() {
            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-[110]">
               <div className="bg-black/60 backdrop-blur-2xl p-3 rounded-full border border-white/10 flex items-center justify-between shadow-2xl">
                  <div className="flex items-center gap-2 pl-2">
-                    <Avatar className="h-8 w-8 border-2 border-[#00E5FF]"><AvatarImage src={userProfile?.avatarUrl} /><AvatarFallback>U</AvatarFallback></Avatar>
+                    <Avatar className="h-8 w-8 border-2 border-[#00E5FF]"><AvatarImage src={userProfile?.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
                     <span className="text-[10px] font-black text-white uppercase italic">{userProfile?.username || 'Tribe'}</span>
                  </div>
                  <button className="h-10 w-10 rounded-full bg-[#00E5FF] flex items-center justify-center" onClick={handleInteraction}><Plus className="h-4 w-4 text-black" /></button>

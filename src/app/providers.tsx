@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ProfileInitializer } from '@/components/profile-initializer';
 import { RoomProvider } from '@/components/room-provider';
@@ -13,7 +12,7 @@ import type { ReactNode } from 'react';
 
 /**
  * The main providers component for the application.
- * Consolidated into src/app for absolute synchronization.
+ * Synchronized with the Global Linguistic Protocol.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (

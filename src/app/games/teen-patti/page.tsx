@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { 
   ChevronLeft, 
   ChevronRight,
@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GameResultOverlay } from '@/components/game-result-overlay';
+import { GameResultOverlay, GameWinner } from '@/components/game-result-overlay';
 
 const CHIPS = [
   { value: 10000, label: '10k', color: 'bg-[#00E5FF] border-[#00E5FF]/50 shadow-[#00E5FF]/40' },
@@ -57,6 +57,7 @@ export default function TeenPattiGamePage() {
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
+  const [winners, setWinners] = useState<GameWinner[]>([]);
   const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
@@ -98,25 +99,20 @@ export default function TeenPattiGamePage() {
     const winAmount = (myBets[winId] || 0) * 1.95;
     setTotalWinAmount(winAmount);
 
-    if (winAmount > 0 && currentUser && firestore && userProfile) {
-      const updateData = { 
-        'wallet.coins': increment(Math.floor(winAmount)), 
-        'stats.dailyGameWins': increment(Math.floor(winAmount)), 
-        'stats.weeklyGameWins': increment(Math.floor(winAmount)), 
-        'stats.monthlyGameWins': increment(Math.floor(winAmount)), 
-        updatedAt: serverTimestamp() 
-      };
+    const sessionWinners: GameWinner[] = [];
+    if (winAmount > 0 && userProfile) {
+      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl });
+    }
+    // High-fidelity mocks
+    sessionWinners.push({ name: 'ZAYN_KING', win: 150000000, avatar: 'https://picsum.photos/seed/z/100' });
+    sessionWinners.push({ name: 'T_ANU_OP', win: 20000000, avatar: 'https://picsum.photos/seed/a/100' });
+
+    setWinners(sessionWinners);
+
+    if (winAmount > 0 && currentUser && firestore) {
+      const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-
-      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-        gameId: 'teen-patti',
-        userId: currentUser.uid,
-        username: userProfile?.username || 'Guest',
-        avatarUrl: userProfile?.avatarUrl || null,
-        amount: Math.floor(winAmount),
-        timestamp: serverTimestamp()
-      });
     }
     setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
   };
@@ -142,16 +138,16 @@ export default function TeenPattiGamePage() {
         
         {gameState === 'result' && winnerId && (
           <GameResultOverlay 
-            gameId="teen-patti"
             winningSymbol={<img src={winnerBanner || ''} className="h-16 w-16 object-contain" alt="Winner" />} 
             winAmount={totalWinAmount} 
+            winners={winners} 
           />
         )}
 
         <header className="relative z-[110] flex items-center justify-between p-4 pt-32">
            <div className="flex gap-2"><button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button></div>
            <div className="flex flex-col items-center">
-              <h1 className="text-5xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-[0_4px_12px_#000000cc]">TEEN PATTI</h1>
+              <h1 className="text-5xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">TEEN PATTI</h1>
               <div className="mt-2 bg-gradient-to-r from-[#4c1d95] via-[#7c3aed] to-[#4c1d95] border-2 border-white/20 px-6 py-1 rounded-xl shadow-2xl"><span className="text-[11px] font-black uppercase italic tracking-widest text-white">Countdown {timeLeft}s</span></div>
            </div>
            <div className="flex gap-2"><button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button></div>
@@ -161,12 +157,12 @@ export default function TeenPattiGamePage() {
            <div className="grid grid-cols-3 gap-2 px-4 h-44">
               {FACTIONS.map((f) => (
                 <div key={f.id} className="flex flex-col items-center gap-2">
-                   <div className={cn("w-full h-28 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/30 backdrop-blur-sm shadow-inner", winnerId === f.id ? "border-[#ffd700] bg-[#ffd7001a] shadow-2xl" : "border-white/5")}>
+                   <div className={cn("w-full h-28 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/30 backdrop-blur-sm shadow-inner", winnerId === f.id ? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5")}>
                       <div className="flex gap-0.5 mb-1 scale-110">
                          {[0, 1, 2].map((i) => (
                            <div key={i} className={cn("w-8 h-12 rounded border transition-all duration-1000 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", gameState !== 'betting' ? "rotate-y-180" : "")}>
                               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded"><span className="text-[10px] font-black text-black leading-none">{cardReveal[f.id]?.[i] || '?'}</span></div>
-                              <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#3730a3] to-[#1e1b4b] rounded border border-[#ffd7004d] flex items-center justify-center"><UmmyLogoIcon className="h-4 w-4 opacity-40 grayscale brightness-200" /></div>
+                              <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#3730a3] to-[#1e1b4b] rounded border border-[#ffd700]/30 flex items-center justify-center"><UmmyLogoIcon className="h-4 w-4 opacity-40 grayscale brightness-200" /></div>
                            </div>
                          ))}
                       </div>

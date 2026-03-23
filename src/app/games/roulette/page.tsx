@@ -70,6 +70,7 @@ export default function RoulettePage() {
   const [history, setHistory] = useState<number[]>([16, 2, 34, 17, 0, 25, 11]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
+  const [winners, setWinners] = useState<any[]>([]);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
   const [totalWinAmount, setTotalWinAmount] = useState(0);
 
@@ -122,7 +123,6 @@ export default function RoulettePage() {
   const startSpin = async () => {
     setGameState('spinning');
     
-    // ORACLE SYNC CHECK
     let targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
     if (firestore) {
       try {
@@ -169,6 +169,16 @@ export default function RoulettePage() {
     if (isDouble) winAmount += (myBets['double'] || 0) * 2;
 
     setTotalWinAmount(winAmount);
+
+    const sessionWinners = [];
+    if (winAmount > 0 && userProfile) {
+      sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
+    }
+    // High-fidelity mock winners
+    if (Math.random() > 0.5) sessionWinners.push({ name: 'ZAYN_OP', win: 200000000, avatar: 'https://picsum.photos/seed/z/100', isMe: false });
+    if (Math.random() > 0.3) sessionWinners.push({ name: 'LUCKY_GIRL', win: 50000000, avatar: 'https://picsum.photos/seed/girl/100', isMe: false });
+
+    setWinners(sessionWinners);
     setGameState('result');
 
     if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -195,6 +205,7 @@ export default function RoulettePage() {
     setTimeout(() => {
       setLastBets(myBets);
       setMyBets({});
+      setWinners([]);
       setWinningNumber(null);
       setGameState('betting');
       setTimeLeft(15);
@@ -232,11 +243,18 @@ export default function RoulettePage() {
   };
 
   if (isLaunching) {
+    const loadingBg = (gameData as any)?.loadingBackgroundUrl;
     return (
-      <div className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-headline text-white">
-        <div className="text-8xl animate-bounce">🎡</div>
-        <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Roulette</h1>
-        <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Synchronizing Wheel...</p>
+      <div 
+        className="h-screen w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-headline text-white relative overflow-hidden"
+        style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+           <div className="text-8xl animate-bounce">🎡</div>
+           <h1 className="text-6xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-2xl">Roulette</h1>
+           <p className="text-white/40 uppercase tracking-widest text-[10px] animate-pulse">Synchronizing Wheel...</p>
+        </div>
       </div>
     );
   }
@@ -269,6 +287,7 @@ export default function RoulettePage() {
             gameId="roulette"
             winningSymbol={winningNumberBadge} 
             winAmount={totalWinAmount} 
+            winners={winners} 
           />
         )}
 
