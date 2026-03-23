@@ -22,7 +22,7 @@ declare global {
 }
 
 const COIN_PACKAGES = [
-  { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
+  { id: 'p1', amount: '100,000', price: '10 INR', bonus: null },
   { id: 'p2', amount: '500,000', price: '100 INR', bonus: null },
   { id: 'p3', amount: '2,500,000', price: '500 INR', bonus: '+250000' },
   { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
