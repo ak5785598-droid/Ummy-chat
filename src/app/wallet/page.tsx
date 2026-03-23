@@ -140,7 +140,7 @@ export default function WalletPage() {
   if (!user) return null;
 
   return (
-    <AppLayout hideSidebarOnMobile>
+    <AppLayout hideSidebarOnMobile hideBottomNav>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
         

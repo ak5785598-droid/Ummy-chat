@@ -9,7 +9,11 @@ export async function createRazorpayOrderAction(amountINR: number) {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) {
-    return { success: false, error: 'Razorpay credentials not found.' };
+    console.error('[Razorpay Action] Critical: RAZORPAY_KEY_ID or SECRET is missing from process.env.');
+    return { 
+      success: false, 
+      error: 'Razorpay configuration not detected on server. Please ensure .env keys are set and RESTART your dev server.' 
+    };
   }
 
   try {
