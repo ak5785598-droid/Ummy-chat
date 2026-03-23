@@ -85,7 +85,7 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
   </div>
 );
 
-const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+const SpecialIdBadge = ({ id }: { id: string }) => {
   const { toast } = useToast();
   
   const handleCopy = (e: React.MouseEvent) => {
@@ -94,37 +94,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
     toast({ title: 'ID Copied' });
   };
 
-  if (!color) {
-    return (
-      <span 
-        onClick={handleCopy}
-        className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
-      >
-        ID: {id}
-      </span>
-    );
-  }
-
-  const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : color === 'red'
-    ? "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30"
-    : "from-slate-100 to-slate-200 border-slate-300 shadow-none";
-
   return (
-    <div 
+    <span 
       onClick={handleCopy}
-      className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
-        theme
-      )}
+      className="text-[10px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
     >
-      {color && <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />}
-      <span className={cn(
-        "relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm leading-none",
-        !color ? "text-slate-500" : "text-white"
-      )}>ID: {id}</span>
-    </div>
+      ID: {id}
+    </span>
   );
 };
 
@@ -219,7 +195,7 @@ export function RoomUserProfileDialog({
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
                <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
                   {profile.specialId ? (
-                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
+                    <SpecialIdBadge id={profile.specialId} />
                   ) : (
                     <span>ID:{profile.accountNumber}</span>
                   )}

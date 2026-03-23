@@ -139,7 +139,7 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
-const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) => {
+const SpecialIdBadge = ({ id }: { id: string }) => {
   const { toast } = useToast();
   
   const handleCopy = (e: React.MouseEvent) => {
@@ -151,34 +151,13 @@ const SpecialIdBadge = ({ id, color }: { id: string, color?: string | null }) =>
     }
   };
 
-  if (!color) {
-    return (
-      <span 
-        onClick={handleCopy}
-        className="text-[9px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
-      >
-        ID: {id}
-      </span>
-    );
-  }
-
-  const theme = color === 'blue' 
-    ? "from-blue-300 via-blue-500 to-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)] border-white/30"
-    : "from-rose-300 via-rose-500 to-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] border-white/30";
-
   return (
-    <div 
+    <span 
       onClick={handleCopy}
-      className={cn(
-        "relative overflow-hidden px-3 py-0.5 rounded-full border group animate-in fade-in duration-500 w-fit bg-gradient-to-r cursor-pointer",
-        theme
-      )}
+      className="text-[9px] font-black uppercase italic tracking-widest text-slate-500 leading-none cursor-pointer hover:text-slate-700 transition-colors px-1"
     >
-      <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-      <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest drop-shadow-sm text-white leading-none">
-        ID: {id}
-      </span>
-    </div>
+      ID: {id}
+    </span>
   );
 };
 
@@ -292,7 +271,7 @@ const PublicProfileView = ({
                
                <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   {profile.specialId ? (
-                    <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
+                    <SpecialIdBadge id={profile.specialId} />
                   ) : (
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
                        ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
@@ -529,7 +508,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                    
                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
                       {profile.specialId ? (
-                        <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
+                        <SpecialIdBadge id={profile.specialId} />
                       ) : (
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { navigator.clipboard.writeText(profile.accountNumber); toast({ title: 'ID Copied' }); }}>
                            {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
@@ -602,7 +581,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <div className="px-6 flex justify-between items-center mb-4">
              <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
              <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
-             <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
              <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
 
