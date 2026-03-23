@@ -45,8 +45,8 @@ export interface GiftItem {
 
 const GIFTS: Record<string, GiftItem[]> = {
   'Hot': [
-    { id: 'rose', name: 'Rose', price: 10, icon: '🌹', animationId: 'rose' },
-    { id: 'heart', name: 'Heart', price: 50, icon: '💖', animationId: 'heart' },
+    { id: 'rose', name: 'Rose', price: 100, icon: '🌹', animationId: 'rose' },
+    { id: 'heart', name: 'Heart', price: 499, icon: '💖', animationId: 'heart' },
     { id: 'ring', name: 'Propose Ring', price: 100000, icon: '💍', animationId: 'propose-ring' },
     { id: 'car', name: 'Elite Car', price: 50000, icon: '🏎️', animationId: 'car' },
   ],
@@ -58,11 +58,9 @@ const GIFTS: Record<string, GiftItem[]> = {
   ],
   'Luxury': [
     { id: 'cake', name: 'Cake', price: 500000, icon: '🎂', animationId: 'cake' },
-    { id: 'l1', name: 'Rolex Sync', price: 200000, icon: '⌚', animationId: 'rolex' },
-    { id: 'l2', name: 'Elite Jet', price: 500000, icon: '🛩️', animationId: 'jet' },
-  ],
-  'SVIP': [
-    { id: 's1', name: 'Dragon Vibe', price: 1000000, icon: '🐉', animationId: 'dragon' },
+    { id: 'l1', name: 'Rolex Sync', price: 205000, icon: '⌚', animationId: 'rolex' },
+    { id: 'l2', name: 'Elite Jet', price: 502000, icon: '🛩️', animationId: 'jet' },
+    { id: '13', name: 'Dragon', price: 9999999, icon: '🐲', animation: 'dragon' }, 
   ]
 };
 
