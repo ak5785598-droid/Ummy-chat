@@ -135,7 +135,7 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-full flex flex-col font-headline animate-in fade-in duration-700">
         
-        <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
+        <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0 pt-safe">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setHeaderTab('recommend')}

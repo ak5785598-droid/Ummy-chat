@@ -254,7 +254,7 @@ export default function SettingsPage() {
         
         {view === 'main' ? (
           <>
-            <header className="px-6 pt-10 pb-10">
+            <header className="px-6 pt-10 pb-10 pt-safe">
                <button onClick={() => router.back()} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all shadow-sm">
                   <ChevronLeft className="h-6 w-6 text-gray-800" />
                </button>
@@ -305,7 +305,7 @@ export default function SettingsPage() {
           </>
         ) : view === 'account' ? (
           <div className="animate-in slide-in-from-right duration-300 flex flex-col h-[100dvh]">
-             <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-white z-50">
+             <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-white z-50 pt-safe">
                 <button onClick={() => setView('main')} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all">
                    <ChevronLeft className="h-6 w-6 text-gray-800" />
                 </button>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="animate-in slide-in-from-right duration-300 flex flex-col h-full">
-            <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-white z-50">
+            <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-white z-50 pt-safe">
                <button onClick={() => setView('main')} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all">
                   <ChevronLeft className="h-6 w-6 text-gray-800" />
                </button>

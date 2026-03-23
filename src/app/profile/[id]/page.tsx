@@ -265,7 +265,7 @@ const PublicProfileView = ({
 
       <div className="relative h-[35vh] w-full shrink-0">
         <Image src={profile.coverUrl || profile.avatarUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} alt="Cover" fill className="object-cover" unoptimized />
-        <div className="absolute top-10 left-6 right-6 flex justify-between z-10">
+        <div className="absolute top-0 left-6 right-6 flex justify-between z-10 pt-safe mt-8">
            <button onClick={onBack} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform"><ChevronLeft className="h-5 w-5" /></button>
            <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -352,7 +352,7 @@ const PublicProfileView = ({
          </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 pt-1 bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pt-1 pb-safe bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-3">
          <button 
            onClick={handleFollow}
            disabled={isProcessingFollow}
@@ -516,7 +516,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              ))}
           </div>
 
-          <header className="relative w-full px-6 pt-8 pb-4 flex flex-col items-center">
+          <header className="relative w-full px-6 pt-8 pb-4 flex flex-col items-center pt-safe">
              <div className="absolute top-8 right-6 flex items-center gap-2">
                 <EditProfileDialog 
                   profile={profile} 
@@ -557,8 +557,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       {profile.specialId ? (
                         <SpecialIdBadge id={profile.specialId} color={profile.specialIdColor} />
                       ) : (
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText(profile.accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
-                           {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
+                           {t.profile.id}:{(profile as any).accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
                         </p>
                       )}
                       {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}

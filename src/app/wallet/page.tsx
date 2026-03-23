@@ -95,7 +95,7 @@ export default function WalletPage() {
       <div className="min-h-full bg-white font-headline flex flex-col animate-in fade-in duration-700">
         
         {/* Header Protocol */}
-        <header className="px-6 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 border-b border-gray-50">
+        <header className="px-6 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 border-b border-gray-50 pt-safe">
            <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
               <ChevronLeft className="h-6 w-6 text-gray-800" />
            </button>
@@ -303,7 +303,7 @@ export default function WalletPage() {
 
             {/* Bottom Sovereign Portal */}
             {!showRecords && (
-              <footer className="p-6 bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
+              <footer className="p-6 pb-safe bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
                  <Button 
                    onClick={handleRechargeNow}
                    disabled={isProcessing !== false}
