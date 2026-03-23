@@ -1,5 +1,8 @@
 'use server';
 
+// Explicitly load env if Next.js fails to (common on some Windows setups)
+import 'dotenv/config';
+
 /**
  * Razorpay Order Initiation Protocol.
  * Securely creates orders on the backend to prevent tampering.
@@ -9,10 +12,11 @@ export async function createRazorpayOrderAction(amountINR: number) {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) {
-    console.error('[Razorpay Action] Critical: RAZORPAY_KEY_ID or SECRET is missing from process.env.');
+    const envKeys = Object.keys(process.env).filter(k => k.includes('RAZORPAY'));
+    console.error('[Razorpay Action] Critical: RAZORPAY_KEY_ID or SECRET is missing. Found keys:', envKeys);
     return { 
       success: false, 
-      error: 'Razorpay configuration not detected on server. Please ensure .env keys are set and RESTART your dev server.' 
+      error: `Razorpay configuration not detected (Found keys: ${envKeys.join(', ') || 'None'}). Please ensure .env keys are set and RESTART your dev server.` 
     };
   }
 
