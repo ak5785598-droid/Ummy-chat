@@ -54,14 +54,15 @@
   }
   
   html, body {
-    @apply h-[100dvh] w-full overflow-hidden bg-[#f3e5f5];
-    height: 100dvh;
+    @apply min-h-screen w-full bg-[#f3e5f5];
     min-height: 100dvh;
-    position: fixed;
-    touch-action: manipulation;
+    min-height: -webkit-fill-available;
+    touch-action: pan-x pan-y;
     -webkit-user-select: none;
     user-select: none;
-    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    /* Prevent side-scrolling but allow vertical scrolling */
+    overflow-x: hidden;
   }
 
   body {

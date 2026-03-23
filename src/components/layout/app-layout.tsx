@@ -147,11 +147,14 @@ export function AppLayout({
           </SidebarFooter>
         </Sidebar>
 
-        <SidebarInset className="bg-background flex-1 overflow-x-hidden flex flex-col p-0 w-full max-w-full h-full">
+        <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-full overflow-hidden">
           <main className={cn(
-            "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar",
-            shouldShowBottomNav && "pb-28"
-          )}>
+            "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
+            "touch-auto", // Ensure touch events are handled correctly
+            shouldShowBottomNav && "pb-32"
+          )}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="min-h-full w-full">
               {children}
             </div>

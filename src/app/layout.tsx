@@ -30,17 +30,13 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-touch-fullscreen': 'yes',
-  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: '#140028',
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
@@ -55,7 +51,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="bg-[#140028] h-full w-full">
       <body
         className={cn(
-          'min-h-[100dvh] bg-[#140028] text-white antialiased touch-manipulation overscroll-none overflow-hidden select-none',
+          'min-h-screen bg-[#140028] text-white antialiased touch-manipulation',
           fontHeadline.variable,
           fontBody.variable
         )}
