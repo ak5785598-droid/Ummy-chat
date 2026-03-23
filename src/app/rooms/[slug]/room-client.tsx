@@ -828,9 +828,13 @@ export function RoomClient({ room }: { room: Room }) {
       </footer>
 
       {showInput && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline">
-           <div className="bg-slate-900 rounded-[2rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10">
-              <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[9px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-4 w-4" /></button></div>
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 font-headline pointer-events-none">
+           <div className="absolute inset-0 bg-black/10 pointer-events-auto" onClick={() => setShowInput(false)} />
+           <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-20 pointer-events-auto shadow-2xl border border-white/10 ring-1 ring-white/5 mx-auto w-full max-w-lg mb-4">
+              <div className="flex justify-between items-center px-4">
+                 <h3 className="font-black uppercase tracking-widest text-[9px] text-white/40">Broadcasting to Tribe</h3>
+                 <button onClick={() => setShowInput(false)} className="text-white/40 hover:text-white transition-colors"><X className="h-4 w-4" /></button>
+              </div>
               <div className="flex gap-2">
                  <input 
                    type="file" 
@@ -843,13 +847,21 @@ export function RoomClient({ room }: { room: Room }) {
                    type="button"
                    disabled={isUploadingImage}
                    onClick={() => imageInputRef.current?.click()}
-                   className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                   className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 hover:bg-white/20"
                  >
                     {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
                  </button>
                  <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
-                    <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
-                    <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button>
+                    <Input 
+                      autoFocus 
+                      value={messageText} 
+                      onChange={(e) => setMessageText(e.target.value)} 
+                      className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm focus-visible:ring-primary/30" 
+                      placeholder="Type a message..." 
+                    />
+                    <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-lg shadow-primary/20 hover:brightness-110">
+                       <Mail className="h-5 w-5" />
+                    </button>
                  </form>
               </div>
            </div>

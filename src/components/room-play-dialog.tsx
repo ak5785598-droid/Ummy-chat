@@ -261,7 +261,7 @@ export function RoomPlayDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+      <DialogContent className="sm:max-w-md bg-[#0a0a0a]/80 backdrop-blur-md border-t border-white/10 p-0 rounded-t-[3rem] overflow-hidden text-white font-headline shadow-2xl animate-in slide-in-from-bottom-full duration-500">
         <DialogHeader className="sr-only">
           <DialogTitle>Room Play Portal</DialogTitle>
           <DialogDescription>Interactive room tools and games frequency selection.</DialogDescription>
