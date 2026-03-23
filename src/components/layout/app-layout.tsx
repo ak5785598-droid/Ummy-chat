@@ -131,7 +131,7 @@ export function AppLayout({
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="flex h-[100dvh] w-full bg-[#140028] font-headline overflow-hidden relative">
+      <div className="flex h-[100dvh] w-full bg-[#f3e5f5] font-headline overflow-hidden relative">
         <Sidebar className="bg-[#140028] border-none text-white">
           <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
             <div className="flex items-center gap-3">
