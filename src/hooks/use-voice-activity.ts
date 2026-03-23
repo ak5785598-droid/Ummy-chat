@@ -46,7 +46,7 @@ export function useVoiceActivity(stream: MediaStream | null, audioContext: Audio
         const average = sum / dataArray.length;
         
         // Tuned threshold: 12-15 is usually good for voice vs background
-        const threshold = 18; 
+        const threshold = 12; // Lowered from 18 for better sensitivity
         const isCurrentlySpeaking = average > threshold;
 
         if (isCurrentlySpeaking) {

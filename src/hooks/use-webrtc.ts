@@ -31,6 +31,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const iceCandidatesQueue = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  const joinTime = useRef(Date.now());
+
   const iceConfig: RTCConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -198,7 +200,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           const polite = user.uid > peerId;
           const offerCollision = (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          if (ignoreOffer.current.get(peerId)) return;
+          // Add 5-second clock drift allowance to prevent missing signals
+          if (signal.timestamp && signal.timestamp.toMillis() < (joinTime.current - 5000)) return;
+          
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
