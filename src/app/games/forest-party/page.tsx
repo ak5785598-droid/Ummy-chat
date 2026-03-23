@@ -255,172 +255,232 @@ export default function WildPartyPage() {
         <CompactRoomView />
 
         <div className="absolute inset-0 z-0">
-           {gameData?.backgroundUrl ? (
-             <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Jungle Theme" fill className="object-cover opacity-60 animate-in fade-in duration-1000" unoptimized />
-           ) : (
-             <>
-               <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e0a] via-[#051a05] to-[#000000]" />
-               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
-             </>
-           )}
-           <div className="absolute inset-0 bg-gradient-to-t from-[#051a05] via-transparent to-transparent opacity-80" />
+import React, { useState, useEffect, useCallback } from 'react';
+import { Users, Coins, Trophy } from 'lucide-react';
+
+// --- Utilities ---
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+// --- Constants ---
+const ANIMALS = [
+  { id: 'lion', label: 'Lion', emoji: '🦁', pos: 'top', color: 'from-orange-400 to-red-600', border: 'border-orange-200' },
+  { id: 'tiger', label: 'Tiger', emoji: '🐯', pos: 'top-right', color: 'from-yellow-400 to-orange-500', border: 'border-yellow-200' },
+  { id: 'panda', label: 'Panda', emoji: '🐼', pos: 'right', color: 'from-gray-100 to-gray-400', border: 'border-gray-200' },
+  { id: 'dragon', label: 'Dragon', emoji: '🐲', pos: 'bottom-right', color: 'from-green-400 to-emerald-700', border: 'border-green-200' },
+  { id: 'rabbit', label: 'Rabbit', emoji: '🐰', pos: 'bottom', color: 'from-pink-300 to-rose-500', border: 'border-pink-100' },
+  { id: 'monkey', label: 'Monkey', emoji: '🐵', pos: 'bottom-left', color: 'from-amber-600 to-yellow-800', border: 'border-amber-200' },
+  { id: 'snake', label: 'Snake', emoji: '🐍', pos: 'left', color: 'from-green-500 to-green-900', border: 'border-green-300' },
+  { id: 'eagle', label: 'Eagle', emoji: '🦅', pos: 'top-left', color: 'from-blue-400 to-indigo-700', border: 'border-blue-200' },
+];
+
+const CHIPS = [
+  { value: 10, label: '10', color: 'bg-blue-500' },
+  { value: 50, label: '50', color: 'bg-purple-500' },
+  { value: 100, label: '100', color: 'bg-red-500' },
+  { value: 500, label: '500', color: 'bg-yellow-600' },
+];
+
+// --- Mock Icons ---
+const GoldCoinIcon = ({ className }) => <Coins className={className} />;
+
+export default function AnimalBettingGame() {
+  // Game States: 'betting', 'spinning', 'result'
+  const [gameState, setGameState] = useState('betting');
+  const [timer, setTimer] = useState(10);
+  const [selectedChip, setSelectedChip] = useState(10);
+  const [bets, setBets] = useState({}); // { lion: 100, panda: 50 }
+  const [winningAnimal, setWinningAnimal] = useState(null);
+  const [wallet, setWallet] = useState(10000);
+  const [lastBets, setLastBets] = useState({});
+
+  // 1. Timer Logic
+  useEffect(() => {
+    let interval;
+    if (gameState === 'betting' && timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    } else if (timer === 0 && gameState === 'betting') {
+      startSpin();
+    }
+    return () => clearInterval(interval);
+  }, [timer, gameState]);
+
+  // 2. Start Spin Logic
+  const startSpin = () => {
+    setGameState('spinning');
+    // Simulate a 3-second spin
+    setTimeout(() => {
+      const winner = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+      setWinningAnimal(winner.id);
+      setGameState('result');
+      
+      // Calculate Winnings (Simple 8x multiplier for demo)
+      const userBet = bets[winner.id] || 0;
+      if (userBet > 0) {
+        setWallet(prev => prev + (userBet * 8));
+      }
+
+      // Reset game after showing result
+      setTimeout(() => {
+        setLastBets(bets);
+        setBets({});
+        setWinningAnimal(null);
+        setTimer(10);
+        setGameState('betting');
+      }, 4000);
+    }, 3000);
+  };
+
+  const handleBet = (animalId) => {
+    if (gameState !== 'betting') return;
+    if (wallet < selectedChip) return alert("Not enough coins!");
+
+    setWallet(prev => prev - selectedChip);
+    setBets(prev => ({
+      ...prev,
+      [animalId]: (prev[animalId] || 0) + selectedChip
+    }));
+  };
+
+  const handleRepeat = () => {
+    if (gameState !== 'betting' || Object.keys(lastBets).length === 0) return;
+    const totalNeeded = Object.values(lastBets).reduce((a, b) => a + b, 0);
+    if (wallet < totalNeeded) return alert("Not enough coins to repeat!");
+    
+    setWallet(prev => prev - totalNeeded);
+    setBets(lastBets);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#1a0f0a] text-white font-sans overflow-hidden flex flex-col">
+      {/* Header */}
+      <header className="p-4 flex justify-between items-center z-50">
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-orange-400 uppercase tracking-tighter">Status</span>
+          <span className="text-xl font-black italic uppercase text-white drop-shadow-md">
+            {gameState === 'betting' ? `Place Bets: ${timer}s` : gameState === 'spinning' ? 'Spinning...' : 'Winner!'}
+          </span>
         </div>
-
-        {gameState === 'result' && (
-          <GameResultOverlay 
-            gameId="forest-party"
-            winningSymbol={winningSymbol} 
-            winAmount={totalWinAmount} 
-          />
-        )}
-
-        <div className="relative z-50 flex items-center justify-between p-4 pt-32">
-           <div className="flex gap-2">
-              <button onClick={() => router.back()} className="bg-yellow-50 p-2 rounded-full text-black shadow-lg active:scale-90 transition-transform"><ChevronLeft className="h-5 w-5" /></button>
-              <button onClick={() => setIsMuted(!isMuted)} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg">
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </button>
-           </div>
-           <h1 className="text-2xl font-black text-yellow-500 uppercase italic tracking-tighter drop-shadow-md">Wild Party</h1>
-           <div className="flex gap-2">
-              <button className="bg-yellow-500 p-2 rounded-full text-black shadow-lg"><HelpCircle className="h-5 w-5" /></button>
-              <button onClick={() => router.back()} className="bg-yellow-500 p-2 rounded-full text-black shadow-lg"><X className="h-5 w-5" /></button>
-           </div>
+        <div className="bg-black/40 px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+          <Trophy className="text-yellow-400 h-5 w-5" />
+          <span className="font-black text-white italic tracking-widest">RANK 12</span>
         </div>
+      </header>
 
-        <div className="relative z-50 px-4 py-2">
-           <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 p-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
-              {history.map((id, i) => (
-                <div key={i} className="relative shrink-0">
-                   <div className="h-8 w-8 bg-white/10 rounded-full flex items-center justify-center text-xl shadow-inner">
-                      {id === 'lion' ? '🦁' : ANIMALS.find(a => a.id === id)?.emoji}
-                   </div>
-                   {i === 0 && <div className="absolute -top-1 -right-1 bg-red-500 text-[6px] font-black px-1 rounded-full animate-pulse">NEW</div>}
-                </div>
-              ))}
-           </div>
-        </div>
+      {/* Main Game Board */}
+      <main className="flex-1 relative flex items-center justify-center p-4">
+        <div className="relative w-full max-w-[340px] aspect-square">
+          
+          {/* Central Spin Area */}
+          <div className="absolute inset-0 m-auto w-32 h-32 z-20 flex items-center justify-center">
+            <div className={cn(
+              "absolute inset-0 rounded-full border-8 border-dashed border-yellow-500/30",
+              gameState === 'spinning' && "animate-spin"
+            )} />
+            <div className="bg-gradient-to-b from-[#4e342e] to-[#2d1a12] w-24 h-24 rounded-full border-4 border-[#8d6e63] shadow-2xl flex items-center justify-center">
+               {gameState === 'spinning' ? (
+                 <div className="text-4xl animate-bounce">🎰</div>
+               ) : winningAnimal ? (
+                 <span className="text-5xl animate-in zoom-in">{ANIMALS.find(a => a.id === winningAnimal)?.emoji}</span>
+               ) : (
+                 <span className="text-2xl font-black text-yellow-500 italic">GO!</span>
+               )}
+            </div>
+          </div>
 
-        <main className="flex-1 relative z-10 flex flex-col items-center justify-center py-6 px-4">
-           <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center">
-              
-              <div className="relative z-20 w-32 h-32 bg-gradient-to-b from-[#2d1a12] to-[#1a0a2e] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-[#b88a44] p-2 text-center overflow-hidden">
-                 <p className="text-[8px] font-black uppercase text-yellow-500/60 leading-tight tracking-[0.2em] mb-1">
-                    {gameState === 'betting' ? 'BETTING' : 'SPINNING'}
-                 </p>
-                 <span className={cn(
-                   "text-5xl font-black italic tracking-tighter transition-all duration-500",
-                   gameState === 'betting' ? "text-white" : "text-yellow-400 animate-reaction-heartbeat"
-                 )}>
-                    {gameState === 'betting' ? timeLeft : '🎲'}
-                 </span>
-              </div>
+          {/* Animal Buttons */}
+          <div className="absolute inset-0">
+            {ANIMALS.map((animal) => {
+              const isActive = winningAnimal === animal.id;
+              const betOnThis = bets[animal.id] || 0;
 
-              {ANIMALS.map((animal, idx) => {
-                const isActive = highlightIdx === idx;
-                const betOnThis = myBets[animal.id] || 0;
-
-                return (
-                  <button 
-                    key={animal.id}
-                    onClick={() => handlePlaceBet(animal.id)}
-                    disabled={gameState !== 'betting'}
-                    className={cn(
-                      "absolute transition-all duration-300 flex flex-col items-center group pointer-events-auto",
-                      animal.pos === 'top' && "top-0",
-                      animal.pos === 'top-right' && "top-[8%] right-[8%]",
-                      animal.pos === 'right' && "right-0",
-                      animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
-                      animal.pos === 'bottom' && "bottom-0",
-                      animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
-                      animal.pos === 'left' && "left-0",
-                      animal.pos === 'top-left' && "top-[8%] left-[8%]",
-                      isActive && "z-30 brightness-125 scale-110"
-                    )}
-                  >
-                     <div className="relative">
-                        <div className={cn(
-                          "h-20 w-20 rounded-[1.25rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
-                          isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
-                        )}>
-                           <span className="text-4xl drop-shadow-lg relative z-10">
-                              {animal.id === 'lion' ? '🦁' : animal.emoji}
-                           </span>
-                           <span className="text-[8px] font-black text-white/80 uppercase mt-1 leading-none tracking-widest relative z-10">
-                              {animal.label}
-                           </span>
-                           <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
+              return (
+                <button
+                  key={animal.id}
+                  onClick={() => handleBet(animal.id)}
+                  disabled={gameState !== 'betting'}
+                  className={cn(
+                    "absolute transition-all duration-300 transform",
+                    animal.pos === 'top' && "top-0 left-1/2 -translate-x-1/2",
+                    animal.pos === 'top-right' && "top-[8%] right-[8%]",
+                    animal.pos === 'right' && "right-0 top-1/2 -translate-y-1/2",
+                    animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
+                    animal.pos === 'bottom' && "bottom-0 left-1/2 -translate-x-1/2",
+                    animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
+                    animal.pos === 'left' && "left-0 top-1/2 -translate-y-1/2",
+                    animal.pos === 'top-left' && "top-[8%] left-[8%]",
+                    isActive && "z-30 brightness-125 scale-125"
+                  )}
+                >
+                  <div className="relative">
+                    <div className={cn(
+                      "h-16 w-16 md:h-20 md:w-20 rounded-[1.25rem] flex flex-col items-center justify-center transition-all border-[3px] relative overflow-hidden shadow-xl",
+                      isActive ? "border-white bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_30px_#facc15]" : `bg-gradient-to-br ${animal.color} ${animal.border}`
+                    )}>
+                      <span className="text-3xl md:text-4xl drop-shadow-lg relative z-10">{animal.emoji}</span>
+                      <span className="text-[8px] font-black text-white/80 uppercase mt-1 leading-none z-10">{animal.label}</span>
+                      <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
+                    </div>
+                    
+                    {betOnThis > 0 && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-40 animate-in zoom-in">
+                        <div className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] px-3 py-0.5 rounded-full border border-white/40 shadow-xl flex items-center gap-1">
+                          <GoldCoinIcon className="h-2 w-2 text-yellow-400" />
+                          <span className="text-[9px] font-black text-white">{betOnThis}</span>
                         </div>
-                        
-                        {betOnThis > 0 && (
-                          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-40 animate-in zoom-in duration-300">
-                             <div className="bg-gradient-to-r from-[#d946ef] to-[#9333ea] px-4 py-1 rounded-full border border-white/40 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-[9px] font-black text-white uppercase italic leading-none">Bet</span>
-                                <div className="flex items-center gap-0.5">
-                                   <GoldCoinIcon className="h-3 w-3 text-yellow-400" />
-                                   <span className="text-[10px] font-black text-white italic leading-none">{betOnThis.toLocaleString()}</span>
-                                </div>
-                             </div>
-                          </div>
-                        )}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </main>
 
-                        {isActive && gameState === 'result' && (
-                          <div className="absolute inset-0 border-4 border-yellow-400 rounded-[1.5rem] animate-ping" />
-                        )}
-                     </div>
-                  </button>
-                );
-              })}
-           </div>
-        </main>
+      {/* Footer Controls */}
+      <footer className="p-4 bg-gradient-to-t from-black to-transparent">
+        <div className="max-w-md mx-auto space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 bg-black/60 px-4 py-2 rounded-full border border-white/10">
+              <GoldCoinIcon className="h-5 w-5 text-yellow-400" />
+              <span className="text-lg font-black text-yellow-500 italic">{wallet.toLocaleString()}</span>
+            </div>
+          </div>
 
-        <footer className="relative z-50 p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent -mt-12">
-           <div className="max-w-md mx-auto space-y-4">
-              <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-2 bg-black/60 px-4 py-2 rounded-full border border-white/10 shadow-lg">
-                    <GoldCoinIcon className="h-5 w-5 text-yellow-400" />
-                    <span className="text-lg font-black text-yellow-500 italic">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-                 </div>
-                 <button className="bg-black/60 p-2.5 rounded-full border border-white/10 text-yellow-500 shadow-xl">
-                    <Users className="h-6 w-6" />
-                 </button>
-              </div>
+          <div className="bg-[#2d1a12] p-3 rounded-[2.5rem] border-4 border-[#5d4037] flex items-center justify-between gap-3">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {CHIPS.map(chip => (
+                <button 
+                  key={chip.value} 
+                  onClick={() => setSelectedChip(chip.value)} 
+                  className={cn(
+                    "h-12 w-12 rounded-full flex items-center justify-center transition-all border-4 shrink-0 shadow-xl",
+                    selectedChip === chip.value ? "border-white scale-110 ring-2 ring-white/20" : "border-black/20 opacity-60",
+                    chip.color
+                  )}
+                >
+                  <span className="text-[10px] font-black text-white italic">{chip.label}</span>
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={handleRepeat}
+              className="bg-gradient-to-b from-orange-400 to-red-600 px-6 h-12 rounded-full font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
+            >
+              Repeat
+            </button>
+          </div>
+        </div>
+      </footer>
 
-              <div className="bg-[#2d1a12] p-3 rounded-[2.5rem] border-4 border-[#5d4037] shadow-2xl flex items-center justify-between gap-3 overflow-hidden relative">
-                 <div className="flex gap-2 flex-1 overflow-x-auto no-scrollbar relative z-10">
-                    {CHIPS.map(chip => (
-                      <button 
-                        key={chip.value} 
-                        onClick={() => setSelectedChip(chip.value)} 
-                        className={cn(
-                          "h-12 w-12 rounded-full flex items-center justify-center transition-all border-4 shrink-0 shadow-xl relative",
-                          selectedChip === chip.value ? "border-white scale-110 z-10 ring-4 ring-white/20" : "border-black/20 opacity-60 grayscale-[0.2]",
-                          chip.color
-                        )}
-                      >
-                         <span className="text-[10px] font-black text-white italic drop-shadow-md">{chip.label}</span>
-                      </button>
-                    ))}
-                 </div>
-                 <button 
-                   onClick={handleRepeat} 
-                   className="relative z-10 bg-gradient-to-b from-orange-400 to-red-600 px-8 h-12 rounded-full font-black uppercase italic text-xs shadow-xl active:scale-90 transition-all border-2 border-white/30"
-                 >
-                    Repeat
-                 </button>
-              </div>
-           </div>
-        </footer>
-
-        <style jsx global>{`
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          @keyframes shine { 
-            0% { transform: translateX(-200%) skewX(-30deg); } 
-            100% { transform: translateX(200%) skewX(-30deg); } 
-          }
-          .animate-shine { animation: shine 3s infinite linear; }
-        `}</style>
-      </div>
-    </AppLayout>
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        @keyframes shine { 
+          0% { transform: translateX(-200%) skewX(-30deg); } 
+          100% { transform: translateX(200%) skewX(-30deg); } 
+        }
+        .animate-shine { animation: shine 3s infinite linear; }
+      `}</style>
+    </div>
   );
 }
