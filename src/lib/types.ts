@@ -106,6 +106,7 @@ export type RoomParticipant = {
   activeBubble?: string;
   activeEmoji?: string | null;
   sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
+  accountNumber?: string;
   lastSeen?: any;
 };
 

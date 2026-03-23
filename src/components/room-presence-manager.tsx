@@ -25,8 +25,9 @@ export function RoomPresenceManager() {
     avatarUrl: userProfile?.avatarUrl,
     activeFrame: userProfile?.inventory?.activeFrame,
     activeWave: userProfile?.inventory?.activeWave,
-    activeBubble: userProfile?.inventory?.activeBubble
-  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble]);
+    activeBubble: userProfile?.inventory?.activeBubble,
+    accountNumber: userProfile?.accountNumber
+  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.accountNumber]);
 
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user) return;
@@ -79,6 +80,7 @@ export function RoomPresenceManager() {
           lastSeen: serverTimestamp(),
           isMuted: true,
           seatIndex: existingData?.seatIndex ?? 0,
+          accountNumber: userMetadata.accountNumber || null,
         }, { merge: true });
 
         batch.commit().catch(console.error);

@@ -81,7 +81,7 @@ export function TopContributorsCard({
               <div className="flex-1">
                 <p className="font-semibold">{c.user.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  ID: {c.user.id}
+                  ID: {c.user.accountNumber || c.user.id}
                 </p>
               </div>
               <p className="font-mono text-xs text-muted-foreground">

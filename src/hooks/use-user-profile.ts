@@ -7,6 +7,8 @@ export interface UserProfile {
     id: string;
     specialId: string;
     specialIdColor?: string;
+    accountNumber: string;
+    isInternalId?: boolean;
     username: string;
     avatarUrl: string;
     bio?: string;
@@ -31,6 +33,9 @@ export interface UserProfile {
     };
     inventory?: {
       activeFrame?: string;
+      activeWave?: string;
+      activeBubble?: string;
+      activeTheme?: string;
       ownedItems: string[];
     };
     banStatus?: {

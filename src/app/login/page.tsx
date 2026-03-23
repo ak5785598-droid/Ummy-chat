@@ -16,7 +16,7 @@ import {
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
@@ -58,11 +58,23 @@ export default function LoginPage() {
     
     const userRef = doc(firestore, 'users', uid);
     const profileRef = doc(firestore, 'users', uid, 'profile', uid);
+    const counterRef = doc(firestore, 'appConfig', 'counters');
     
     try {
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        const accountNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
+        const accountNumber = await runTransaction(firestore, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          let newId = 100001;
+          
+          if (counterDoc.exists()) {
+            newId = (counterDoc.data()?.lastUserId || 100000) + 1;
+          }
+          
+          transaction.set(counterRef, { lastUserId: newId }, { merge: true });
+          return newId.toString();
+        });
+
         const baseData = {
           id: uid,
           username: displayName || `Tribe_${accountNumber.slice(-4)}`,
@@ -105,6 +117,7 @@ export default function LoginPage() {
             following: 0
           }
         });
+        console.log(`✅ Profile created with Internal ID: ${accountNumber}`);
       }
     } catch (err) {
       console.error("[Identity Sync] Error:", err);

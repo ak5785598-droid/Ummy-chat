@@ -94,7 +94,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
                            </div>
                            <div className="flex items-center gap-1.5 mt-1">
                               <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-3 text-[6px] font-black px-1.5 uppercase">Lv. 1</Badge>
-                              <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest">ID:{p.uid.slice(0, 6)}</p>
+                              <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest">ID:{p.accountNumber || p.uid.slice(0, 6)}</p>
                            </div>
                         </div>
                      </div>

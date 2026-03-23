@@ -23,7 +23,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
-import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where } from "firebase/firestore";
+import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 
 export function AppLayout({ 
@@ -63,6 +63,37 @@ export function AppLayout({
       return chat.lastSenderId !== user.uid && !readBy.includes(user.uid);
     });
   }, [chatsForUnread, user]);
+
+  // INTERNAL ID MIGRATION PROTOCOL
+  useEffect(() => {
+    const migrateId = async () => {
+      if (!firestore || !user || !userProfile) return;
+      if ((userProfile as any).isInternalId) return;
+
+      try {
+        const userRef = doc(firestore, 'users', user.uid);
+        const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+        const counterRef = doc(firestore, 'appConfig', 'counters');
+
+        await runTransaction(firestore, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          let newId = 100001;
+          if (counterDoc.exists()) {
+            newId = (counterDoc.data()?.lastUserId || 100000) + 1;
+          }
+          transaction.set(counterRef, { lastUserId: newId }, { merge: true });
+          transaction.update(userRef, { accountNumber: newId.toString(), isInternalId: true, updatedAt: serverTimestamp() });
+          transaction.update(profileRef, { accountNumber: newId.toString(), isInternalId: true, updatedAt: serverTimestamp() });
+        });
+        console.log(`✅ Migrated existing user to Internal ID: ${user.uid}`);
+      } catch (err) {
+        // Silently skip if transaction fails (another instance might be doing it)
+      }
+    };
+    if (user && userProfile && !(userProfile as any).isInternalId) {
+      migrateId();
+    }
+  }, [firestore, user, userProfile]);
 
   const handleLogout = async () => {
     if (!auth || !user || !firestore) return;
