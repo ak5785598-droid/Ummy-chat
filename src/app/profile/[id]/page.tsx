@@ -468,8 +468,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
              ))}
           </div>
 
-          <header className="relative w-full px-6 pt-8 pb-4 flex flex-col items-center pt-safe">
-             <div className="absolute top-8 right-6 flex items-center gap-2">
+          <header className="relative w-full px-6 pt-safe pb-4 flex flex-col items-center">
+             <div className="pt-2 absolute top-8 right-6 flex items-center gap-2">
                 <EditProfileDialog 
                   profile={profile} 
                   trigger={

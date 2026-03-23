@@ -135,8 +135,9 @@ export default function RoomsPage() {
     <AppLayout>
       <div className="min-h-full flex flex-col font-headline animate-in fade-in duration-700">
         
-        <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0 pt-safe">
-          <div className="flex items-center gap-2.5">
+        <header className="flex items-center justify-between px-2 pt-safe pb-1 shrink-0">
+          <div className="pt-2 flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setHeaderTab('recommend')}
               className={cn(
@@ -165,7 +166,8 @@ export default function RoomsPage() {
               <Home className="h-4 w-4" />
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
         {headerTab === 'recommend' ? (
           <>

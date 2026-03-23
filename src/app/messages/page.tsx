@@ -379,7 +379,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout hideBottomNav={!!activeChatId}>
       <div className="min-h-full bg-gradient-to-b from-[#f3e5f5] via-[#f3e5f5] to-[#ffffff] flex flex-col relative font-headline animate-in fade-in duration-1000 overflow-x-hidden">
         
         <div className="absolute inset-0 pointer-events-none opacity-40">

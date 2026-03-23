@@ -113,7 +113,8 @@ export function UserSearchDialog() {
         </DialogHeader>
 
         {/* High-Fidelity Header - Mirrored from Blueprint */}
-        <div className="pt-12 px-4 pb-2 space-y-4 bg-white shrink-0">
+        <div className="pt-safe px-4 pb-2 bg-white shrink-0 shadow-sm relative z-10">
+          <div className="pt-2 space-y-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" strokeWidth={2.5} />
@@ -159,6 +160,7 @@ export function UserSearchDialog() {
             </TabsList>
           </Tabs>
         </div>
+      </div>
 
         <div className="flex-1 bg-white relative p-6">
           {isSearching ? (

@@ -79,9 +79,12 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
       const roomRef = doc(firestore, 'chatRooms', user.uid);
       
       // IDENTITY SYNC PROTOCOL: 
-      // Room Number matches Special ID if assigned, else fallback to automatic Account Number.
-      const roomNumber = userProfile.accountNumber || '0000';
-
+      // Generate a random 6-digit room number
+      let roomNumber = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Collision Avoidance logic could go here, but for now we generate and set.
+      // In a high-traffic app, we would query if this number exists.
+      
       await setDoc(roomRef, {
         id: user.uid,
         name, 

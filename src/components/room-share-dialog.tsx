@@ -30,10 +30,10 @@ export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogPro
 
   const roomUrl = typeof window !== 'undefined' ? `${window.location.origin}/rooms/${room.id}` : '';
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(roomUrl);
+   const handleCopy = () => {
+    navigator.clipboard.writeText(room.roomNumber || '');
     setCopied(true);
-    toast({ title: 'Link Secured', description: 'Room URL synchronized to clipboard.' });
+    toast({ title: 'Tribal ID Secured', description: 'Room ID synchronized to clipboard.' });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -47,7 +47,7 @@ export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogPro
           <div className="flex-1 text-left">
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">Broadcast Frequency</DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-              Invite Tribe Members to {room.title}
+              Invite Tribe Members via Tribal ID
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -59,26 +59,16 @@ export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogPro
               </div>
               <div>
                  <h3 className="font-black uppercase italic text-lg">{room.title}</h3>
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tribal ID: {room.roomNumber}</p>
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Tribal ID: {room.roomNumber}</p>
               </div>
            </div>
 
            <div className="space-y-4">
-              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100">
-                 <input 
-                   readOnly 
-                   value={roomUrl} 
-                   className="flex-1 bg-transparent px-4 py-2 text-xs font-medium text-gray-500 outline-none"
-                 />
-                 <button 
-                   onClick={handleCopy}
-                   className={cn(
-                     "h-10 w-10 rounded-xl flex items-center justify-center transition-all active:scale-90",
-                     copied ? "bg-green-500 text-white" : "bg-black text-white"
-                   )}
-                 >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                 </button>
+              <div className="flex flex-col items-center gap-2">
+                 <div className="text-4xl font-black italic tracking-tighter text-slate-900 bg-slate-100 px-8 py-4 rounded-3xl border-2 border-slate-200 shadow-inner">
+                    #{room.roomNumber}
+                 </div>
+                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">Tap Invite to Copy This ID</p>
               </div>
            </div>
         </div>

@@ -606,8 +606,9 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
 
-      <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
-        <div className="flex items-center gap-2 max-w-[70%] min-w-0">
+      <header className="relative z-50 flex items-center justify-between p-3 pt-safe px-4 shrink-0 w-full">
+        <div className="pt-2 flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 max-w-[70%] min-w-0">
           <div 
             onClick={() => setIsFollowersOpen(true)}
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
@@ -639,6 +640,7 @@ export function RoomClient({ room }: { room: Room }) {
           {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
           <button onClick={() => setIsExitPortalOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
+        </div>
         </div>
       </header>
 
@@ -707,7 +709,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
+      <footer className="relative z-50 px-6 pb-safe flex items-center justify-between pt-6 shrink-0">
+        <div className="pb-4 pt-4 flex items-center justify-between w-full relative">
         <div className="flex items-center">
            <button 
              onClick={handleInputClick} 
@@ -720,7 +723,7 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
              className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
@@ -752,6 +755,7 @@ export function RoomClient({ room }: { room: Room }) {
            <button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
               <LayoutGrid className="h-4 w-4 text-white" />
            </button>
+        </div>
         </div>
       </footer>
 
@@ -792,9 +796,11 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <button 
             onClick={() => setPreviewImage(null)}
-            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
+            className="absolute top-safe right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
           >
-            <X className="h-6 w-6" />
+            <div className="pt-4">
+              <X className="h-6 w-6" />
+            </div>
           </button>
           {previewImage && (
             <div className="relative w-full h-full flex items-center justify-center p-4">
