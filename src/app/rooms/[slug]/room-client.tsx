@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Mic,
@@ -92,12 +92,23 @@ import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
+import { useVoiceActivity } from '@/hooks/use-voice-activity';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 
-function RemoteAudio({ stream, muted, audioContext }: { stream: MediaStream, muted: boolean, audioContext: AudioContext | null }) {
+function RemoteAudio({ stream, muted, audioContext, onSpeakingChange }: { 
+  stream: MediaStream, 
+  muted: boolean, 
+  audioContext: AudioContext | null,
+  onSpeakingChange: (isSpeaking: boolean) => void
+}) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  const isSpeaking = useVoiceActivity(stream, audioContext);
+
+  useEffect(() => {
+    onSpeakingChange(isSpeaking);
+  }, [isSpeaking, onSpeakingChange]);
 
   useEffect(() => {
     if (!stream || !audioContext) return;
@@ -128,6 +139,19 @@ function RemoteAudio({ stream, muted, audioContext }: { stream: MediaStream, mut
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
 
+// Local Voice Activity Monitor
+function VADMonitor({ stream, audioContext, onSpeakingChange }: { 
+  stream: MediaStream | null, 
+  audioContext: AudioContext | null,
+  onSpeakingChange: (isSpeaking: boolean) => void
+}) {
+  const isSpeaking = useVoiceActivity(stream, audioContext);
+  useEffect(() => {
+    onSpeakingChange(isSpeaking);
+  }, [isSpeaking, onSpeakingChange]);
+  return null;
+}
+
 const Seat = ({ 
   index, 
   label, 
@@ -136,7 +160,8 @@ const Seat = ({
   theme, 
   onClick,
   roomOwnerId,
-  roomModeratorIds
+  roomModeratorIds,
+  isSpeaking
 }: { 
   index: number, 
   label: string, 
@@ -145,7 +170,8 @@ const Seat = ({
   theme: any,
   onClick: (index: number, occupant?: RoomParticipant) => void,
   roomOwnerId: string,
-  roomModeratorIds: string[]
+  roomModeratorIds: string[],
+  isSpeaking?: boolean
 }) => {
   const isOccupantOwner = occupant?.uid === roomOwnerId;
   const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
@@ -154,7 +180,7 @@ const Seat = ({
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
-        {occupant && !occupant.isMuted && (
+        {occupant && !occupant.isMuted && isSpeaking && (
           <div className="absolute -inset-1 rounded-full border-2 animate-voice-wave" style={{ color: theme.accentColor }} />
         )}
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
@@ -197,7 +223,7 @@ const Seat = ({
         )}
         {occupant && !isOccupantOwner && isOccupantAdmin && (
           <div className="bg-green-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
-             <Home className="h-1 w-1 text-white fill-current" />
+             <ShieldCheck className="h-1 w-1 text-white fill-current" />
           </div>
         )}
         <span className="text-[7px] font-black uppercase text-white truncate max-w-[55px] drop-shadow-sm leading-none">
@@ -224,15 +250,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [now, setNow] = useState<number | null>(null);
-  
-  const [sessionJoinTime] = useState(() => new Date());
-
-  const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
-  const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
-  const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
-  const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
-  const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
-  const [isMutedLocal, setIsMutedLocal] = useState(false);
+  const [activeSpeakers, setActiveSpeakers] = useState<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -252,13 +270,18 @@ export function RoomClient({ room }: { room: Room }) {
     };
   }, []);
   
+  const [sessionJoinTime] = useState(() => new Date());
+  const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
+  const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
+  const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
+  const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
+  const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
+  const [isMutedLocal, setIsMutedLocal] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
-
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastProcessedId = useRef<string | null>(null);
 
@@ -299,7 +322,7 @@ export function RoomClient({ room }: { room: Room }) {
     } else {
       const followObj = {
         id: room.id,
-        title: room.title || room.name || 'Frequency',
+        title: room.title || (room as any).name || 'Frequency',
         coverUrl: room.coverUrl || '',
         roomNumber: room.roomNumber || '0000',
         ownerId: room.ownerId || '',
@@ -343,7 +366,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
+  const { localStream, remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -357,7 +380,6 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
-  // AUTO-SCROLL SYNC
   useEffect(() => {
     if (messagesEndRef.current) {
       const timer = setTimeout(() => {
@@ -367,26 +389,19 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
-  // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
     if (!firestoreMessages || firestoreMessages.length === 0) return;
-
-    // Identify the starting point for the new delta
     const startIndex = lastProcessedId.current 
       ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
       : 0;
-
     const newBatch = firestoreMessages.slice(startIndex);
-    
     newBatch.forEach(msg => {
       if (msg.type === 'gift' && msg.giftId) {
-        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
         setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
       } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
     });
-
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
@@ -408,13 +423,10 @@ export function RoomClient({ room }: { room: Room }) {
         name: 'Custom' 
       };
     }
-
     const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
     if (staticTheme) return staticTheme;
-
     const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
     if (dbTheme) return dbTheme;
-
     return ROOM_THEMES[0];
   }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
 
@@ -423,12 +435,10 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
     if (e) e.preventDefault();
     if ((!messageText.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
-    
     if (isChatMuted && !canManageRoom) {
       toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
       return;
     }
-
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: messageText, 
       imageUrl: imageUrl || null,
@@ -445,7 +455,6 @@ export function RoomClient({ room }: { room: Room }) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage || !currentUser || !room.id) return;
-
     setIsUploadingImage(true);
     try {
       const timestamp = Date.now();
@@ -478,10 +487,8 @@ export function RoomClient({ room }: { room: Room }) {
         participantCount: increment(-1),
         updatedAt: serverTimestamp() 
       });
-
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
-      
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
@@ -532,13 +539,23 @@ export function RoomClient({ room }: { room: Room }) {
     });
   };
 
+  const handlePlayLocalMusic = (file: File) => {
+    if (musicAudioRef.current) {
+      const url = URL.createObjectURL(file);
+      musicAudioRef.current.src = url;
+      musicAudioRef.current.play().catch(e => {
+        console.warn('[Music Sync] Play failed:', e);
+        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
+      });
+      // @ts-ignore
+      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+      if (stream) setMusicStream(stream);
+    }
+  };
+
   const handleInputClick = () => {
     if (isChatMuted && !canManageRoom) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Chat Restricted', 
-        description: 'Room authority has closed public messaging.' 
-      });
+      toast({ variant: 'destructive', title: 'Chat Restricted', description: 'Room authority has closed public messaging.' });
       return;
     }
     setShowInput(true);
@@ -562,23 +579,6 @@ export function RoomClient({ room }: { room: Room }) {
     setShowInput(true);
   };
 
-  const handlePlayLocalMusic = (file: File) => {
-    if (musicAudioRef.current) {
-      const url = URL.createObjectURL(file);
-      musicAudioRef.current.src = url;
-      musicAudioRef.current.play().catch(e => {
-        console.warn('[Music Sync] Play failed:', e);
-        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
-      });
-      
-      // @ts-ignore
-      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
-      if (stream) {
-        setMusicStream(stream);
-      }
-    }
-  };
-
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
@@ -600,9 +600,37 @@ export function RoomClient({ room }: { room: Room }) {
         onComplete={() => setActiveGiftSync(null)} 
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
+      
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-        <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} audioContext={audioContextRef.current} />
+        <RemoteAudio 
+          key={peerId} 
+          stream={stream} 
+          muted={isMutedLocal} 
+          audioContext={audioContextRef.current}
+          onSpeakingChange={(isSpeaking) => {
+            setActiveSpeakers(prev => {
+              const next = new Set(prev);
+              if (isSpeaking) next.add(peerId);
+              else next.delete(peerId);
+              return next;
+            });
+          }}
+        />
       ))}
+
+      <VADMonitor 
+        stream={localStream} 
+        audioContext={audioContextRef.current} 
+        onSpeakingChange={(isSpeaking) => {
+          if (!currentUser?.uid) return;
+          setActiveSpeakers(prev => {
+            const next = new Set(prev);
+            if (isSpeaking) next.add(currentUser.uid);
+            else next.delete(currentUser.uid);
+            return next;
+          });
+        }} 
+      />
       
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
@@ -622,38 +650,38 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-3 pt-safe px-4 shrink-0 w-full">
         <div className="pt-5 flex items-center justify-between w-full">
           <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <div 
-            onClick={() => setIsFollowersOpen(true)}
-            className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
-          >
-            <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
-              <AvatarImage src={room.coverUrl || undefined} />
-              <AvatarFallback>UM</AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1.5 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
-               <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
-               <span className="text-[7px] font-black text-yellow-400 leading-none">
-                 {room.stats?.totalGifts?.toLocaleString() || 0}
-               </span>
+            <div 
+              onClick={() => setIsFollowersOpen(true)}
+              className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+            >
+              <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
+                <AvatarImage src={room.coverUrl || undefined} />
+                <AvatarFallback>UM</AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1.5 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
+                 <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
+                 <span className="text-[7px] font-black text-yellow-400 leading-none">
+                   {room.stats?.totalGifts?.toLocaleString() || 0}
+                 </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col min-w-0">
+               <div className="flex items-center gap-1 min-w-0">
+                  <h1 className="font-black text-[13px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[90px]">{room.title}</h1>
+                  <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
+                     {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
+                  </button>
+               </div>
+               <p className="text-[9px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
             </div>
           </div>
-
-          <div className="flex flex-col min-w-0">
-             <div className="flex items-center gap-1 min-w-0">
-                <h1 className="font-black text-[13px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[90px]">{room.title}</h1>
-                <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
-                   {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
-                </button>
-             </div>
-             <p className="text-[9px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
+            {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
+            <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
+            <button onClick={() => setIsExitPortalOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
           </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
-          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
-          <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
-        </div>
         </div>
       </header>
 
@@ -661,14 +689,40 @@ export function RoomClient({ room }: { room: Room }) {
         <div className={cn("flex-1 flex flex-col items-center justify-start gap-3 pt-2 overflow-y-auto no-scrollbar w-full", chatConfig.padding)}>
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
-                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+                <Seat 
+                  index={1} 
+                  label="No.1" 
+                  theme={currentTheme} 
+                  occupant={participants.find(p => p.seatIndex === 1)} 
+                  isLocked={room.lockedSeats?.includes(1)} 
+                  onClick={handleSeatClick} 
+                  roomOwnerId={room.ownerId} 
+                  roomModeratorIds={room.moderatorIds || []} 
+                  isSpeaking={activeSpeakers.has(participants.find(p => p.seatIndex === 1)?.uid || '')}
+                />
               </div>
            </div>
-           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
-              {extraSeats.map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
-              ))}
+           
+           <div className="w-full grid grid-cols-4 gap-1.5 px-4 mb-4">
+              {extraSeats.map(idx => {
+                const occupant = participants.find(p => p.seatIndex === idx);
+                return (
+                  <Seat 
+                    key={idx} 
+                    index={idx} 
+                    label={`No.${idx}`} 
+                    theme={currentTheme} 
+                    occupant={occupant} 
+                    isLocked={room.lockedSeats?.includes(idx)} 
+                    onClick={handleSeatClick} 
+                    roomOwnerId={room.ownerId} 
+                    roomModeratorIds={room.moderatorIds || []} 
+                    isSpeaking={activeSpeakers.has(occupant?.uid || '')}
+                  />
+                );
+              })}
            </div>
+
            <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
               {globalConfig?.globalAnnouncement && (
                 <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
@@ -724,51 +778,51 @@ export function RoomClient({ room }: { room: Room }) {
 
       <footer className="relative z-50 px-6 pb-safe flex items-center justify-between pt-6 shrink-0">
         <div className="pb-4 pt-4 flex items-center justify-between w-full relative">
-        <div className="flex items-center">
-           <button 
-             onClick={handleInputClick} 
-             className={cn(
-               "backdrop-blur-xl rounded-full h-10 w-10 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
-               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
-             )}
-           >
-              <MessageSquare className="h-5 w-5" />
-           </button>
-        </div>
+          <div className="flex items-center">
+             <button 
+               onClick={handleInputClick} 
+               className={cn(
+                 "backdrop-blur-xl rounded-full h-10 w-10 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
+                 isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
+               )}
+             >
+                <MessageSquare className="h-5 w-5" />
+             </button>
+          </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
-           <button 
-             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
-           >
-              <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
-              
-              <img 
-                src="https://img.icons8.com/color/96/gift--v1.png" 
-                className="h-11 w-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
-                alt="Gift"
-              />
-           </button>
-        </div>
+          <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1">
+             <button 
+               onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
+               className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
+             >
+                <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
+                
+                <img 
+                  src="https://img.icons8.com/color/96/gift--v1.png" 
+                  className="h-11 w-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
+                  alt="Gift"
+                />
+             </button>
+          </div>
 
-        <div className="flex items-center gap-1.5">
-           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
-              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-           </button>
-           
-           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-             <SmilePlus className="h-4 w-4 text-white" />
-           </button>
+          <div className="flex items-center gap-1.5">
+             <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+                {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+             </button>
+             
+             <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+               <SmilePlus className="h-4 w-4 text-white" />
+             </button>
 
-           <button onClick={() => setIsMessagesOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <Mail className="h-4 w-4 text-white" />
-           </button>
+             <button onClick={() => setIsMessagesOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+                <Mail className="h-4 w-4 text-white" />
+             </button>
 
-           <button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <LayoutGrid className="h-4 w-4 text-white" />
-           </button>
-        </div>
+             <button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+                <LayoutGrid className="h-4 w-4 text-white" />
+             </button>
+          </div>
         </div>
       </footer>
 
