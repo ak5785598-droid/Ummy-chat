@@ -27,11 +27,11 @@ const ANIMALS = [
   { id: 'turtle', emoji: '🐢', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400' },
   { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300' },
   { id: 'sheep', emoji: '🐑', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white' },
-  { id: 'fox', emoji: '🦊', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
-  { id: 'rhino', emoji: '🦏', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
-  { id: 'elephant', emoji: '🐘', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
-  { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
-  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'top-left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
+  { id: 'fox', emoji: '🐶', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300' },
+  { id: 'rhino', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400' },
+  { id: 'elephant', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400' },
+  { id: 'lion', emoji: '🐯', multiplier: 25, label: 'x45', pos: 'left', color: 'from-orange-400 to-red-600', border: 'border-orange-400' },
+  { id: 'tiger', emoji: '🦁', multiplier: 45, label: 'x25', pos: 'top-left', color: 'from-yellow-400 to-orange-600', border: 'border-yellow-400' },
 ];
 
 const CHIPS = [
@@ -54,7 +54,7 @@ export default function WildPartyPage() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(20);
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [lastBets, setLastBets] = useState<Record<string, number>>({});
@@ -146,11 +146,12 @@ export default function WildPartyPage() {
     const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
     let currentStep = 0;
     const totalSteps = (ANIMALS.length * 4) + targetIdx;
-    let speed = 50;
+    let speed = 70;
 
     const runChase = () => {
       setHighlightIdx(currentStep % ANIMALS.length);
       playTickSound();
+      playmusicSound();
       currentStep++;
       if (currentStep <= totalSteps) {
         const remaining = totalSteps - currentStep;
@@ -199,7 +200,7 @@ export default function WildPartyPage() {
       setMyBets({});
       setHighlightIdx(null);
       setGameState('betting');
-      setTimeLeft(15);
+      setTimeLeft(20);
     }, 5000);
   };
 
