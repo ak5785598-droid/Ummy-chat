@@ -167,5 +167,74 @@ export const ROOM_THEMES: RoomTheme[] = [
   seatColor: 'rgba(255, 255, 255, 0.2)', 
   accentColor: '#f8fafc', 
   category: 'general' 
+ },
+ // --- ROMANTIC LOVE COLLECTION ---
+ { 
+  id: 'celestial_love', 
+  name: 'Celestial Love', 
+  url: '/themes/celestial_love.png',
+  seatColor: 'rgba(99, 102, 241, 0.25)',
+  accentColor: '#818cf8',
+  category: 'entertainment'
+ },
+ { 
+  id: 'moonlit_romance', 
+  name: 'Moonlit Romance', 
+  url: '/themes/moonlit_romance.png',
+  seatColor: 'rgba(192, 132, 252, 0.25)',
+  accentColor: '#c084fc',
+  category: 'entertainment'
+ },
+ { 
+  id: 'midnight_proposal', 
+  name: 'Midnight Proposal', 
+  url: '/themes/midnight_proposal.png',
+  seatColor: 'rgba(59, 130, 246, 0.25)',
+  accentColor: '#60a5fa',
+  category: 'entertainment'
+ },
+ { 
+  id: 'dreamy_hearts', 
+  name: 'Dreamy Hearts', 
+  url: '/themes/dreamy_hearts.png',
+  seatColor: 'rgba(232, 121, 249, 0.25)',
+  accentColor: '#e879f9',
+  category: 'entertainment'
+ },
+ { 
+  id: 'sunset_shore', 
+  name: 'Sunset Shore', 
+  url: '/themes/sunset_shore.png',
+  seatColor: 'rgba(251, 146, 60, 0.25)',
+  accentColor: '#fb923c',
+  category: 'entertainment'
+ },
+ // --- UMMY BRANDED COLLECTION ---
+ { 
+  id: 'ummy_love_vibes', 
+  name: 'Ummy Love Vibes', 
+  url: '/themes/ummy_love_vibes.png',
+  isOfficial: true,
+  seatColor: 'rgba(251, 146, 60, 0.25)',
+  accentColor: '#fb923c',
+  category: 'entertainment'
+ },
+ { 
+  id: 'ummy_emoji_party', 
+  name: 'Ummy Fun Emoji Party', 
+  url: '/themes/ummy_emoji_party.png',
+  isOfficial: true,
+  seatColor: 'rgba(236, 72, 153, 0.25)',
+  accentColor: '#ec4899',
+  category: 'entertainment'
+ },
+ { 
+  id: 'ummy_support_hub', 
+  name: 'Ummy Support Center', 
+  url: '/themes/ummy_support_hub.png',
+  isOfficial: true,
+  seatColor: 'rgba(139, 92, 246, 0.25)',
+  accentColor: '#8b5cf6',
+  category: 'help'
  }
 ];
