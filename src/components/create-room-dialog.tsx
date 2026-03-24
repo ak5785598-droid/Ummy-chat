@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDoc, setDoc, runTransaction, type Transaction } from 'firebase/firestore';
 import { Plus, Loader, Zap } from 'lucide-react';
 import {
  Dialog,
@@ -79,8 +79,41 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
    const roomRef = doc(firestore, 'chatRooms', user.uid);
    
    // IDENTITY SYNC PROTOCOL: 
-   // Generate a random 6-digit room number
-   let roomNumber = Math.floor(100000 + Math.random() * 900000).toString();
+   // Generate a sequential room number starting at 100
+   const roomNumber = await runTransaction(firestore, async (transaction: Transaction) => {
+    const counterRef = doc(firestore, 'appConfig', 'counters');
+    const counterDoc = await transaction.get(counterRef);
+    let nextRoomId = 100;
+
+    if (user.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
+      // Special check for Creator's first room
+      if (counterDoc.exists() && counterDoc.data()?.lastRoomId !== undefined) {
+        const lastId = counterDoc.data().lastRoomId;
+        if (lastId < 100) {
+           nextRoomId = 100;
+        } else {
+           nextRoomId = lastId + 1;
+        }
+      } else {
+        nextRoomId = 100;
+      }
+    } else {
+      if (counterDoc.exists()) {
+        const data = counterDoc.data();
+        const lastId = data?.lastRoomId;
+        if (lastId === undefined || lastId < 100) {
+          nextRoomId = 101; 
+        } else {
+          nextRoomId = lastId + 1;
+        }
+      } else {
+        nextRoomId = 101;
+      }
+    }
+
+    transaction.set(counterRef, { lastRoomId: nextRoomId }, { merge: true });
+    return nextRoomId.toString();
+   });
    
    // Collision Avoidance logic could go here, but for now we generate and set.
    // In a high-traffic app, we would query if this number exists.

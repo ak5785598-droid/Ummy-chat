@@ -64,35 +64,75 @@ export function AppLayout({
   });
  }, [chatsForUnread, user]);
 
- // INTERNAL ID MIGRATION PROTOCOL
+  // SEQUENTIAL ID SYSTEM: Permanent Allotment Protocol
  useEffect(() => {
-  const migrateId = async () => {
+  const syncIdentities = async () => {
    if (!firestore || !user || !userProfile) return;
-   if ((userProfile as any).isInternalId) return;
+
+   const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+   const currentAccNum = userProfile.accountNumber;
+   const needsUserSync = !currentAccNum || currentAccNum.length > 4 || (user.uid === CREATOR_ID && currentAccNum !== '0000');
 
    try {
-    const userRef = doc(firestore, 'users', user.uid);
-    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-    const counterRef = doc(firestore, 'appConfig', 'counters');
+    // 1. User ID Handshake
+    if (needsUserSync) {
+     const userRef = doc(firestore, 'users', user.uid);
+     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+     const counterRef = doc(firestore, 'appConfig', 'counters');
 
-    await runTransaction(firestore, async (transaction) => {
-     const counterDoc = await transaction.get(counterRef);
-     let newId = 100001;
-     if (counterDoc.exists()) {
-      newId = (counterDoc.data()?.lastUserId || 100000) + 1;
+     await runTransaction(firestore, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      let nextUserId = 1;
+
+      if (user.uid === CREATOR_ID) {
+       nextUserId = 0;
+      } else {
+       const lastId = counterDoc.data()?.lastUserId;
+       if (lastId === undefined || lastId > 1000) nextUserId = 1;
+       else nextUserId = lastId + 1;
+      }
+
+      const paddedId = nextUserId.toString().padStart(4, '0');
+      transaction.set(counterRef, { lastUserId: Math.max(nextUserId, counterDoc.data()?.lastUserId || 0) }, { merge: true });
+      transaction.update(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
+      transaction.update(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
+     });
+     console.log(`✅ Sequential User ID Synced: ${user.uid}`);
+    }
+
+    // 2. Room ID Handshake
+    const roomRef = doc(firestore, 'chatRooms', user.uid);
+    const roomSnap = await getDoc(roomRef);
+    if (roomSnap.exists()) {
+     const currentRoomNum = roomSnap.data().roomNumber;
+     const needsRoomSync = !currentRoomNum || currentRoomNum.length > 3 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
+     
+     if (needsRoomSync) {
+      const counterRef = doc(firestore, 'appConfig', 'counters');
+      await runTransaction(firestore, async (transaction) => {
+       const counterDoc = await transaction.get(counterRef);
+       let nextRoomId = 101;
+
+       if (user.uid === CREATOR_ID) {
+        nextRoomId = 100;
+       } else {
+        const lastId = counterDoc.data()?.lastRoomId;
+        if (lastId === undefined || lastId < 100) nextRoomId = 101;
+        else nextRoomId = lastId + 1;
+       }
+
+       transaction.set(counterRef, { lastRoomId: Math.max(nextRoomId, counterDoc.data()?.lastRoomId || 0) }, { merge: true });
+       transaction.update(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() });
+      });
+      console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
      }
-     transaction.set(counterRef, { lastUserId: newId }, { merge: true });
-     transaction.update(userRef, { accountNumber: newId.toString(), isInternalId: true, updatedAt: serverTimestamp() });
-     transaction.update(profileRef, { accountNumber: newId.toString(), isInternalId: true, updatedAt: serverTimestamp() });
-    });
-    console.log(`✅ Migrated existing user to Internal ID: ${user.uid}`);
+    }
    } catch (err) {
-    // Silently skip if transaction fails (another instance might be doing it)
+    console.error("[Identity Sync] Handshake failed:", err);
    }
   };
-  if (user && userProfile && !(userProfile as any).isInternalId) {
-   migrateId();
-  }
+
+  syncIdentities();
  }, [firestore, user, userProfile]);
 
  const handleLogout = async () => {

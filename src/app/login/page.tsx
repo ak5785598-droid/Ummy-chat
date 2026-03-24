@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { doc, getDoc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Beautiful Ummy Login Portal - Purple Gradient Design
@@ -65,14 +66,40 @@ export default function LoginPage() {
    if (!userSnap.exists()) {
     const accountNumber = await runTransaction(firestore, async (transaction) => {
      const counterDoc = await transaction.get(counterRef);
-     let newId = 100001;
+     let nextUserId = 0;
      
-     if (counterDoc.exists()) {
-      newId = (counterDoc.data()?.lastUserId || 100000) + 1;
+     if (uid === CREATOR_ID) {
+      // Special check to see if 0000 is already taken (to avoid double incrementing if creator relogs)
+      // But we'll just force 0000 for creator and keep counter at current if already exists
+      if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
+         // If counter exists, we don't necessarily want to reset it, 
+         // but the creator MUST be 0000.
+         // If the counter is still at some 100000 range, we'll start it over at 0.
+         const lastId = counterDoc.data().lastUserId;
+         if (lastId > 1000) {
+            nextUserId = 0; 
+         } else {
+            nextUserId = lastId + 1;
+         }
+      } else {
+         nextUserId = 0;
+      }
+     } else {
+      if (counterDoc.exists()) {
+       const data = counterDoc.data();
+       const lastId = data?.lastUserId;
+       if (lastId === undefined || lastId > 100000) {
+          nextUserId = 1; // Start fresh if no counter or legacy counter
+       } else {
+          nextUserId = lastId + 1;
+       }
+      } else {
+       nextUserId = 1;
+      }
      }
      
-     transaction.set(counterRef, { lastUserId: newId }, { merge: true });
-     return newId.toString();
+     transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
+     return nextUserId.toString().padStart(4, '0');
     });
 
     const baseData = {

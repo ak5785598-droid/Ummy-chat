@@ -67,6 +67,7 @@ import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { Card } from '@/components/ui/card';
 import { signOut } from 'firebase/auth';
 import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
+import { OfficialCenterDialog } from '@/components/official-center-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
@@ -596,6 +597,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
         <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
         {isCertifiedSeller && <SellerTransferDialog />}
+        {(currentUser?.uid === CREATOR_ID || isOfficialCenter) && <OfficialCenterDialog isAuthorized={true} />}
        </Card>
        <Card className="rounded-2xl border-none shadow-sm overflow-hidden bg-white px-3">
         <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
@@ -605,43 +607,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
        </Card>
 
-        { (currentUser?.uid === CREATOR_ID || isOfficialCenter) && isOwnProfile && (
-         <Card className="rounded-2xl border-none shadow-md overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 px-3 py-1 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none" />
-          <div className="flex items-center gap-2 px-2 pt-3 pb-2">
-           <div className="bg-gradient-to-br from-red-500 to-orange-500 p-1.5 rounded-xl shadow-lg"><ShieldCheck className="h-4 w-4 text-white" /></div>
-           <span className="text-[10px] font-black text-white/80 uppercase tracking-[0.3em]">Supreme Authority</span>
-          </div>
-          <button onClick={() => router.push('/admin')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-red-500/20 text-red-400"><ShieldCheck className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Admin Portal</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/admin')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-400"><Crown className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Broadcast & Banning</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/store')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-400"><ShoppingBag className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Store Management</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/games')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-green-500/20 text-green-400"><Target className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Game Controls</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/tasks')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-blue-500/20 text-blue-400"><ClipboardList className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Task Management</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/wallet')} className="w-full flex items-center justify-between py-3 border-b border-white/5 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-cyan-500/20 text-cyan-400"><CreditCard className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Coin Dispatch</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-          <button onClick={() => router.push('/leaderboard')} className="w-full flex items-center justify-between py-3 px-2 hover:bg-white/5 active:bg-white/10 transition-all text-left">
-           <div className="flex items-center gap-3"><div className="p-1.5 rounded-xl bg-orange-500/20 text-orange-400"><Trophy className="h-4 w-4" /></div><span className="font-medium text-sm tracking-tight text-white">Leaderboard</span></div>
-           <ChevronRight className="h-4 w-4 text-white/30" />
-          </button>
-         </Card>
-        )}
+        
      </div>
     </div>
 
