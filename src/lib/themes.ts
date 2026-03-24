@@ -132,4 +132,40 @@ export const ROOM_THEMES: RoomTheme[] = [
   accentColor: '#FFCC00', 
   category: 'general' 
  },
+ { 
+  id: 'ummy_help_dark', 
+  name: 'Ummy Help Center', 
+  url: '/themes/help_center_dark.png',
+  isOfficial: true,
+  seatColor: 'rgba(59, 130, 246, 0.2)',
+  accentColor: '#3b82f6',
+  category: 'general'
+ },
+ { 
+  id: 'ummy_help_light', 
+  name: 'Ummy Support Light', 
+  url: '/themes/help_center_light.png',
+  isOfficial: true,
+  seatColor: 'rgba(255, 255, 255, 0.2)',
+  accentColor: '#f8fafc',
+  category: 'general'
+ },
+ { 
+  id: 'ummy_official_dark', 
+  name: 'Ummy Official Dark', 
+  url: '/themes/official_hub_dark.png', 
+  isOfficial: true, 
+  seatColor: 'rgba(251, 191, 36, 0.2)', 
+  accentColor: '#fbbf24', 
+  category: 'general' 
+ },
+ { 
+  id: 'ummy_official_light', 
+  name: 'Ummy Official Light', 
+  url: '/themes/official_hub_light.png', 
+  isOfficial: true, 
+  seatColor: 'rgba(255, 255, 255, 0.2)', 
+  accentColor: '#f8fafc', 
+  category: 'general' 
+ }
 ];

@@ -659,6 +659,24 @@ export function RoomClient({ room }: { room: Room }) {
      priority 
     />
     <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
+
+    {(room.roomThemeId === 'ummy_help_dark' || room.roomThemeId === 'ummy_help_light') && (
+     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none opacity-30 mix-blend-overlay pb-32">
+       <div className="bg-white/5 backdrop-blur-[2px] p-8 rounded-[3rem] border border-white/10 flex flex-col items-center shadow-2xl">
+         <UmmyLogoIcon className="h-32 w-32 mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] opacity-90" />
+         <h1 className="text-3xl font-black text-white tracking-widest uppercase drop-shadow-md">Ummy Help</h1>
+       </div>
+     </div>
+    )}
+
+    {(room.roomThemeId === 'ummy_official_dark' || room.roomThemeId === 'ummy_official_light') && (
+     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none opacity-30 mix-blend-overlay pb-32">
+       <div className="bg-white/5 backdrop-blur-[2px] p-8 rounded-[3rem] border border-white/10 flex flex-col items-center shadow-2xl">
+         <UmmyLogoIcon className="h-32 w-32 mb-4 drop-shadow-[0_0_15px_rgba(255,204,0,0.8)] opacity-90" />
+         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-400 tracking-widest uppercase drop-shadow-md">Ummy Official</h1>
+       </div>
+     </div>
+    )}
    </div>
 
    <header className="relative z-50 flex items-center justify-between p-3 pt-safe px-4 shrink-0 w-full">
