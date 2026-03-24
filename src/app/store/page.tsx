@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -158,81 +157,83 @@ export default function StorePage() {
   toast({ title: 'Item Equipped' });
  };
 
- if (isProfileLoading) return <AppLayout><div className="flex h-[50vh] items-center justify-center"><Loader className="animate-spin" /></div></AppLayout>;
+ if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-[#f3e5f5]"><Loader className="animate-spin text-primary h-8 w-8" /></div>;
 
  return (
-  <AppLayout>
-   <div className="space-y-8 max-w-6xl mx-auto pb-24 animate-in fade-in duration-700">
-    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
+  <div className="min-h-screen bg-[#f3e5f5] pb-safe">
+   <div className="space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-6 pb-24 animate-in fade-in duration-700">
+    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-primary/10 pb-6">
      <div className="flex items-center gap-4">
-       <button onClick={() => router.back()} className="p-2 bg-secondary/50 rounded-full hover:bg-secondary transition-colors"><ChevronLeft className="h-6 w-6 text-gray-800" /></button>
+       <button onClick={() => router.back()} className="p-2 bg-white/50 rounded-full shadow-sm hover:bg-white transition-colors"><ChevronLeft className="h-6 w-6 text-slate-800" /></button>
        <div>
-        <h1 className="text-4xl font-bold font-sans uppercase tracking-tight flex items-center gap-3 text-slate-900">
-         <ShoppingBag className="text-primary h-10 w-10" /> Ummy Boutique
+        <h1 className="text-3xl font-black font-sans uppercase tracking-tight flex items-center gap-2 text-slate-900">
+         <ShoppingBag className="text-primary h-8 w-8" /> Ummy Boutique
         </h1>
-        <p className="text-muted-foreground font-body text-lg">Customize your frequency identity.</p>
+        <p className="text-muted-foreground font-body text-sm mt-1 font-medium">Customize your frequency identity.</p>
        </div>
      </div>
-     <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-8 py-4 rounded-2xl border-2 border-primary/20 flex items-center gap-4 shadow-xl cursor-pointer">
-      <GoldCoinIcon className="h-10 w-10" />
-      <div className="flex flex-col">
-       <span className="text-3xl font-bold text-primary ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-       <span className="text-[10px] uppercase font-bold tracking-wider text-primary/60">Tap to Recharge</span>
+     <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-6 py-3 rounded-2xl border-2 border-primary/20 flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+      <GoldCoinIcon className="h-8 w-8" />
+      <div className="flex flex-col justify-center">
+       <span className="text-2xl font-black text-primary leading-none">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+       <span className="text-[9px] uppercase font-bold tracking-wider text-primary/70 mt-1">Tap to Recharge</span>
       </div>
      </div>
     </header>
 
-    <Tabs defaultValue="All" className="w-full space-y-8">
-     <TabsList className="bg-secondary/50 p-1.5 h-14 rounded-full border border-white/50 w-full md:w-fit overflow-x-auto no-scrollbar">
+    <Tabs defaultValue="All" className="w-full space-y-6">
+     <TabsList className="bg-white/60 backdrop-blur-md p-1.5 h-12 rounded-full border border-primary/10 w-full md:w-fit overflow-x-auto no-scrollbar shadow-sm">
       {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
-       <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-bold uppercase tracking-wider text-xs data-[state=active]:bg-primary data-[state=active]:text-white">{cat}</TabsTrigger>
+       <TabsTrigger key={cat} value={cat} className="rounded-full px-6 font-bold uppercase tracking-wider text-xs data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all">{cat}</TabsTrigger>
       ))}
      </TabsList>
 
      {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(category => (
       <TabsContent key={category} value={category} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
         {allItems.filter(i => category === 'All' || i.type === category).map(item => {
          const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
          const isActive = userProfile?.inventory?.activeFrame === item.id || userProfile?.inventory?.activeTheme === item.id || userProfile?.inventory?.activeBubble === item.id || userProfile?.inventory?.activeWave === item.id;
          
          return (
-          <Card key={item.id} className="relative overflow-hidden group border-none shadow-lg rounded-3xl bg-white">
-           <div className="aspect-square bg-gradient-to-b from-secondary/30 to-transparent flex flex-col items-center justify-center p-10 relative">
+          <Card key={item.id} className="relative overflow-hidden group border-none shadow-sm hover:shadow-md transition-shadow rounded-[1.5rem] bg-white ring-1 ring-black/5">
+           <div className="aspect-square bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center p-4 relative">
             {item.type === 'Frame' ? (
-             <AvatarFrame frameId={item.id} className="w-24 h-24">
-               <Avatar className="w-full h-full border-2 border-slate-200 shadow-xl"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
+             <AvatarFrame frameId={item.id} className="w-20 h-20 md:w-24 md:h-24">
+               <Avatar className="w-full h-full border-2 border-slate-200 shadow-xl overflow-hidden"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
              </AvatarFrame>
             ) : item.type === 'Theme' ? (
-             <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+             <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md border-[3px] border-white">
                <Image src={item.url} alt={item.name} fill className="object-cover" unoptimized />
              </div>
             ) : item.type === 'Bubble' ? (
-             <div className="w-full flex justify-center transform scale-125 origin-center">
-              <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px] min-w-[120px] text-center">
-               Hello Wafa 
+             <div className="w-full flex justify-center py-4">
+              <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px] min-w-[100px] text-center shadow-md border-none">
+               Hello Ummy 
               </ChatMessageBubble>
              </div>
-            ) : <item.icon className={cn("h-24 w-24 opacity-20", item.color)} />}
-            <Badge className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-foreground border-none font-bold uppercase text-[9px] tracking-wider px-2 shadow-sm">{item.type}</Badge>
+            ) : <item.icon className={cn("h-12 w-12 md:h-16 md:w-16 opacity-30", item.color)} />}
+            <Badge className="absolute top-2 right-2 bg-white/95 backdrop-blur-md text-slate-800 border-none font-bold uppercase text-[8px] tracking-wider px-1.5 py-0.5 shadow-sm rounded-md">{item.type}</Badge>
            </div>
-           <CardHeader className="text-center pb-2">
-            <CardTitle className="font-sans uppercase text-xl tracking-tight text-slate-900">{item.name}</CardTitle>
-            <CardDescription className="text-xs font-body ">{item.description}</CardDescription>
+           
+           <CardHeader className="text-center pb-1 pt-3 px-2">
+            <CardTitle className="font-sans uppercase text-sm md:text-base font-black tracking-tight text-slate-900 truncate">{item.name}</CardTitle>
+            <CardDescription className="text-[9px] md:text-[10px] font-medium text-slate-500 truncate mt-0.5">{item.description}</CardDescription>
            </CardHeader>
-           <CardFooter className="flex flex-col gap-4 p-8 pt-4">
-            <div className="flex items-center gap-1 font-bold text-2xl text-primary ">
-              <GoldCoinIcon className="h-6 w-6" />
+           
+           <CardFooter className="flex flex-col gap-2.5 p-3 pt-1">
+            <div className="flex items-center justify-center gap-1 font-black text-lg text-primary ">
+              <GoldCoinIcon className="h-4 w-4 md:h-5 md:w-5" />
               {item.price.toLocaleString()}
-              {item.durationDays && <span className="text-[10px] font-bold text-slate-400 ml-1">/ {item.durationDays}d</span>}
+              {item.durationDays && <span className="text-[8px] font-bold text-slate-400 ml-1">/ {item.durationDays}d</span>}
             </div>
             {isOwned ? (
-             <Button onClick={() => handleEquip(item)} className={cn("w-full h-12 rounded-2xl font-bold uppercase shadow-lg", isActive ? "bg-green-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-              {isActive ? <><Check className="mr-2 h-4 w-4" /> Active</> : 'Equip'}
+             <Button onClick={() => handleEquip(item)} className={cn("w-full h-9 md:h-10 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider shadow-sm transition-all", isActive ? "bg-green-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800")}>
+              {isActive ? <><Check className="mr-1 h-3 w-3" /> Active</> : 'Equip'}
              </Button>
             ) : (
-             <Button onClick={() => handlePurchase(item)} className="w-full h-12 rounded-2xl font-bold uppercase shadow-xl bg-primary text-white hover:bg-primary/90 transition-all active:scale-95">
-               Purchase Now
+             <Button onClick={() => handlePurchase(item)} className="w-full h-9 md:h-10 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider shadow-md bg-primary text-white hover:bg-primary/90 transition-all active:scale-95">
+               Purchase
              </Button>
             )}
            </CardFooter>
@@ -244,6 +245,6 @@ export default function StorePage() {
      ))}
     </Tabs>
    </div>
-  </AppLayout>
+  </div>
  );
 }
