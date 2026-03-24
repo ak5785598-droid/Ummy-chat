@@ -138,6 +138,7 @@ export default function TeenPattiGamePage() {
     
     {gameState === 'result' && winnerId && (
      <GameResultOverlay 
+      gameId="teen-patti"
       winningSymbol={<img src={winnerBanner || ''} className="h-16 w-16 object-contain" alt="Winner" />} 
       winAmount={totalWinAmount} 
       winners={winners} 

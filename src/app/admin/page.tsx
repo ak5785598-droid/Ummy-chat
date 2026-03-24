@@ -381,7 +381,7 @@ export default function AdminPage() {
   addDoc(notifRef, msgData)
    .then(() => { toast({ title: 'Message Dispatched' }); setDmContent(''); })
    .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData })); })
-   .finally(() => setOpen(false));
+   .finally(() => setIsSendingDm(false));
  };
 
  const handleDispatchCoins = () => {
@@ -467,11 +467,11 @@ export default function AdminPage() {
   if (!firestore || !targetUserForCenter) return;
   const tags = targetUserForCenter.tags || [];
   const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
-  const isCurrentlyActive = tags.some(t => sellerTags.includes(t));
+  const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
   const userRef = doc(firestore, 'users', targetUserForCenter.id);
   const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
   let newTags;
-  if (isCurrentlyActive) { newTags = tags.filter(t => !sellerTags.includes(t)); }
+  if (isCurrentlyActive) { newTags = tags.filter((t: string) => !sellerTags.includes(t)); }
   else { newTags = [...tags, 'Seller']; }
   const updateData = { tags: newTags, updatedAt: serverTimestamp() };
   updateDocumentNonBlocking(userRef, updateData);
@@ -533,7 +533,7 @@ export default function AdminPage() {
  const handleRemoveBanner = (index: number) => {
   if (!firestore || !isCreator) return;
   const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
-  const newSlides = currentSlides.filter((_, i) => i !== index);
+  const newSlides = currentSlides.filter((_: any, i: number) => i !== index);
   setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
  };
 
@@ -901,7 +901,7 @@ export default function AdminPage() {
         <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
          <CardHeader className="px-0"><CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-500"><MessageSquareText className="h-6 w-6" /> Direct Messenger</CardTitle></CardHeader>
          <div className="flex flex-col gap-4"><SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} /><div className="flex gap-4"><Input placeholder="Recipient..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl" disabled={isSearchingDm}>Find</Button></div></div>
-         {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-3xl space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-bold uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-xl">Send Sync</Button></div>)}
+         {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-3xl space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-bold uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleDirectMessage} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-xl">Send Sync</Button></div>)}
         </Card>
       </TabsContent>
 

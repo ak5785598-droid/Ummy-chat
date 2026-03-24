@@ -176,3 +176,13 @@ export type AdminLog = {
  details: any;
  createdAt: any;
 }
+
+export type PkBattle = {
+ id: string;
+ room1: Room & { participants: RoomParticipant[] };
+ room2: Room & { participants: RoomParticipant[] };
+ score1: number;
+ score2: number;
+ startTime: any;
+ duration: number;
+};

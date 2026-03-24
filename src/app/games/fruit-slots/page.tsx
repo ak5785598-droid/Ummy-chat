@@ -337,7 +337,7 @@ export default function FruitSlotsPage() {
          {history.map((id, i) => (
           <div key={i} className="relative shrink-0 flex flex-col items-center">
            <div className="h-8 w-8 bg-black/40 rounded-full border border-white/10 flex items-center justify-center text-xl shadow-inner">
-             {FRUITS.find(f => f.pos === id)?.emoji}
+             {FRUITS.find(f => f.id === id)?.emoji}
            </div>
            {i === 0 && <span className="absolute -top-1 -right-1 bg-green-500 text-[6px] px-1 rounded-full font-bold animate-pulse">New</span>}
           </div>

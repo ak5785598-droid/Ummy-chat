@@ -160,7 +160,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
  // MARK AS READ PROTOCOL
  useEffect(() => {
-  if (open && chatId && currentUser?.uid && firestore && messages?.length > 0) {
+  if (open && chatId && currentUser?.uid && firestore && (messages?.length ?? 0) > 0) {
    const chatRef = doc(firestore, 'privateChats', chatId);
    updateDocumentNonBlocking(chatRef, {
     lastMessageReadBy: arrayUnion(currentUser.uid)

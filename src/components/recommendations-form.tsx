@@ -38,9 +38,9 @@ export function RecommendationsForm() {
    });
 
    if (result.success) {
-    setRecommendations(result.data);
+    setRecommendations(result.data ?? null);
    } else {
-    setError(result.error);
+    setError(result.error ?? null);
    }
   });
  };

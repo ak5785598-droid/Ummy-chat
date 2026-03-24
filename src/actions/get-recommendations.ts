@@ -7,7 +7,7 @@ import {
 
 export async function getRecommendationsAction(
  input: ChatRoomRecommendationsInput
-) {
+): Promise<{ success: boolean, data?: string[], error?: string }> {
  try {
   const result = await getChatRoomRecommendations(input);
   return { success: true, data: result.recommendedChatRooms };

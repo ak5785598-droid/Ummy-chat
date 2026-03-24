@@ -27,7 +27,7 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
       </div>
       <div className="flex justify-between items-center gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
-          <Link href={`/profile/${host1.id}`}>
+          <Link href={`/profile/${host1.uid}`}>
             <Avatar className="h-16 w-16 border-2 border-blue-500">
               <AvatarImage src={host1.avatarUrl} alt={host1.name + "'s PK Avatar"} />
               <AvatarFallback>{host1.name.charAt(0)}</AvatarFallback>
@@ -43,7 +43,7 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
         </div>
         
         <div className="flex flex-col items-center gap-2 w-1/3">
-          <Link href={`/profile/${host2.id}`}>
+          <Link href={`/profile/${host2.uid}`}>
             <Avatar className="h-16 w-16 border-2 border-red-500">
               <AvatarImage src={host2.avatarUrl} alt={host2.name + "'s Opponent PK Avatar"} />
               <AvatarFallback>{host2.name.charAt(0)}</AvatarFallback>

@@ -24,6 +24,9 @@ export interface UserProfile {
    followers: number;
    fans: number;
    dailyFans: number;
+   dailyGiftsReceived?: number;
+   dailyGifts?: number;
+   dailyGameWins?: number;
   };
   level?: {
    rich: number;
@@ -46,6 +49,7 @@ export interface UserProfile {
   updatedAt?: any;
   lastSignInAt?: any;
   lastMoneyTreeClaimAt?: any;
+  isOnline?: boolean;
 }
 
 /**
