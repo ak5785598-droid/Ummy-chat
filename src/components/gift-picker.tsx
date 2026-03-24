@@ -41,27 +41,33 @@ export interface GiftItem {
  icon: string;
  animationId: string;
  type?: 'standard' | 'lucky';
+ isPremium?: boolean;
 }
 
 const GIFTS: Record<string, GiftItem[]> = {
  'Hot': [
-  { id: 'rose', name: 'Rose', price: 100, icon: '🌹', animationId: 'rose' },
-  { id: 'heart', name: 'Heart', price: 499, icon: '💖', animationId: 'heart' },
-  { id: 'ring', name: 'Propose Ring', price: 100000, icon: '💍', animationId: 'propose-ring' },
-  { id: 'car', name: 'Elite Car', price: 50000, icon: '🏎️', animationId: 'car' },
+  { id: 'neon_heart', name: 'Neon Heart', price: 100, icon: '💝', animationId: 'neon-heart' },
+  { id: 'cyber_rose', name: 'Cyber Rose', price: 299, icon: '🌹', animationId: 'cyber-rose' },
+  { id: 'halo', name: 'Angelic Halo', price: 999, icon: '😇', animationId: 'halo' },
+  { id: 'golden_sword', name: 'Ocean Sword', price: 5000, icon: '⚔️', animationId: 'golden-sword' },
+  { id: 'magic_lamp', name: 'Magic Lamp', price: 8000, icon: '🪔', animationId: 'magic-lamp' },
+  { id: 'diamond', name: 'Diamond', price: 15000, icon: '💎', animationId: 'diamond' },
  ],
  'Lucky': [
-  { id: 'lucky_clover', name: 'Lucky Clover', price: 100, icon: '🍀', SVGAanimationId: 'lucky-clover', type: 'lucky' },
-  { id: 'lucky_crown', name: 'Lucky Crown', price: 500, icon: '👑', SVGAanimationId: 'lucky-crown', type: 'lucky' },
-  { id: 'lucky_maple', name: 'Lucky Maple', price: 1000, icon: '🍁', SVGAanimationId: 'lucky-maple', type: 'lucky' },
-  { id: 'lucky_star', name: 'Lucky Star', price: 5000, icon: '⭐', SVGAanimationId: 'lucky-star', type: 'lucky' },
-  { id: 'lucky_apple', name: 'lucky apple', price:250, icon: '🍎', SVGAanimationId: 'lucky-apple', type: 'lucky' }, 
+  { id: 'lucky_clover', name: 'Lucky Clover', price: 100, icon: '🍀', animationId: 'lucky-clover', type: 'lucky' },
+  { id: 'magic_wand', name: 'Magic Wand', price: 500, icon: '🪄', animationId: 'magic-wand', type: 'lucky' },
+  { id: 'jackpot', name: 'Jackpot', price: 2000, icon: '🎰', animationId: 'jackpot', type: 'lucky' },
+  { id: 'treasure', name: 'Treasure', price: 10000, icon: '🪙', animationId: 'treasure', type: 'lucky' },
  ],
  'Luxury': [
-  { id: 'cake', name: 'Cake', price: 500000, icon: '🎂', animationId: 'cake' },
-  { id: 'l1', name: 'Rolex Sync', price: 205000, icon: '⌚', animationId: 'rolex' },
-  { id: 'l2', name: 'Elite Jet', price: 502000, icon: '🛩️', animationId: 'jet' },
-  { id: 'l3', name: 'Dragon', price: 9999999, icon: '🐉', animation: 'dragon' }, 
+  { id: 'cyber_car', name: 'Cyberpunk 911', price: 74999, icon: '🏎️', animationId: 'cyber-car', isPremium: true },
+  { id: 'quantum_jet', name: 'Quantum Jet', price: 150000, icon: '🛩️', animationId: 'quantum-jet', isPremium: true },
+  { id: 'galactic_castle', name: 'Star Castle', price: 500000, icon: '🏰', animationId: 'galactic-castle', isPremium: true },
+  { id: 'holo_dragon', name: 'Holo Dragon', price: 999999, icon: '🐉', animationId: 'holo-dragon', isPremium: true }, 
+ ],
+ 'SVIP': [
+  { id: 'crown_of_kings', name: 'King\'s Crown', price: 50000, icon: '👑', animationId: 'crown-of-kings', isPremium: true },
+  { id: 'diamond_throne', name: 'Diamond Throne', price: 250000, icon: '💺', animationId: 'diamond-throne', isPremium: true },
  ]
 };
 
@@ -208,7 +214,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[380px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-sans shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+   <DialogContent className="sm:max-w-[400px] bg-[#12161f]/95 backdrop-blur-3xl border border-white/5 p-0 rounded-t-[40px] sm:rounded-[40px] overflow-hidden text-white font-sans shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-full duration-500">
     <DialogHeader className="sr-only">
      <DialogTitle>Gift Vault</DialogTitle>
      <DialogDescription>Dispatch tribal assets to seated members.</DialogDescription>
@@ -221,7 +227,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         onClick={selectAll}
         className={cn(
          "h-10 px-4 rounded-full font-bold uppercase text-[10px] transition-all shrink-0 border-2",
-         selectedUids.length === seatedParticipants.length ? "bg-white text-black border-white" : "bg-white/5 text-white/40 border-white/10"
+         selectedUids.length === seatedParticipants.length ? "bg-white text-black border-white" : "bg-[#1f2430] text-white/40 border-transparent hover:bg-white/10"
         )}
        >
         All
@@ -234,13 +240,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         >
           <Avatar className={cn(
            "h-10 w-10 border-2 transition-all",
-           selectedUids.includes(p.uid) ? "border-primary scale-110 shadow-lg" : "border-white/10"
+           selectedUids.includes(p.uid) ? "border-[#00E676] scale-110 shadow-[0_0_15px_rgba(0,230,118,0.5)]" : "border-white/10"
           )}>
            <AvatarImage src={p.avatarUrl} />
            <AvatarFallback>{(p.name || 'U').charAt(0)}</AvatarFallback>
           </Avatar>
           {selectedUids.includes(p.uid) && (
-           <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+           <div className="absolute -top-1 -right-1 bg-[#00E676] rounded-full p-0.5">
             <Check className="h-2 w-2 text-black" strokeWidth={4} />
            </div>
           )}
@@ -250,66 +256,78 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
       <div className="flex items-center justify-between">
        <Tabs defaultValue="Hot" className="w-full">
-         <TabsList className="bg-transparent p-0 gap-4 h-8 border-none justify-start">
+         <TabsList className="bg-transparent p-0 gap-5 h-8 border-none justify-start mb-2 overflow-x-auto no-scrollbar w-full">
           {['Hot', 'Lucky', 'Luxury', 'SVIP'].map(tab => (
-           <TabsTrigger key={`tab-trigger-${tab}`} value={tab} className="p-0 text-xs font-bold uppercase text-white/40 data-[state=active]:text-white data-[state=active]:bg-transparent relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white after:opacity-0 data-[state=active]:after:opacity-100 transition-all">
+           <TabsTrigger key={`tab-trigger-${tab}`} value={tab} className="p-0 text-[13px] font-bold text-white/40 data-[state=active]:text-[#00E676] data-[state=active]:bg-transparent relative after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-[#00E676] after:opacity-0 data-[state=active]:after:opacity-100 transition-all shrink-0">
             {tab}
            </TabsTrigger>
           ))}
          </TabsList>
 
-         {Object.entries(GIFTS).map(([category, items]) => (
-          <TabsContent key={`tab-content-${category}`} value={category} className="mt-4 animate-in fade-in duration-500">
-           <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-             {items.map(gift => (
-              <button 
-               key={`gift-item-${gift.id}`} 
-               onClick={() => setSelectedGift(gift)}
-               className={cn(
-                "flex flex-col items-center gap-1 group relative py-2 rounded-xl transition-all",
-                selectedGift?.id === gift.id ? "bg-white/10 ring-1 ring-white/20 shadow-xl" : "hover:bg-white/5"
-               )}
-              >
-               <div className="text-3xl drop-shadow-lg mb-1 group-hover:scale-110 transition-transform">{gift.icon}</div>
-               <span className="text-[8px] font-bold text-white uppercase tracking-tight text-center leading-none truncate w-full px-1">{gift.name}</span>
-               <div className="flex items-center gap-0.5 text-yellow-500">
-                 <GoldCoinIcon className="h-2 w-2" />
-                 <span className="text-[9px] font-bold ">{gift.price}</span>
-               </div>
-              </button>
-             ))}
-           </div>
-          </TabsContent>
-         ))}
+         <div className="h-[260px] overflow-y-auto no-scrollbar pb-4 pt-1">
+          {Object.entries(GIFTS).map(([category, items]) => (
+           <TabsContent key={`tab-content-${category}`} value={category} className="mt-0 animate-in fade-in duration-500">
+            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+              {items.map(gift => (
+               <button 
+                key={`gift-item-${gift.id}`} 
+                onClick={() => setSelectedGift(gift)}
+                className={cn(
+                 "flex flex-col items-center gap-1 group relative py-3 rounded-2xl transition-all border",
+                 selectedGift?.id === gift.id ? "bg-[#1f2430] border-[#00E676] shadow-[0_4px_20px_rgba(0,230,118,0.15)] scale-[1.02]" : "bg-transparent border-transparent hover:bg-white/5",
+                 gift.isPremium && "bg-gradient-to-b from-white/5 to-transparent border-white/5"
+                )}
+               >
+                {gift.isPremium && (
+                 <div className="absolute -top-1 -right-1 bg-pink-500 rounded-full p-0.5 shadow-[0_0_10px_rgba(236,72,153,0.8)] z-10">
+                  <Sparkles className="h-2.5 w-2.5 text-white" />
+                 </div>
+                )}
+                <div className="text-[40px] drop-shadow-2xl mb-1 group-hover:scale-110 transition-transform duration-300 transform-gpu">{gift.icon}</div>
+                <span className="text-[10px] font-medium text-white/90 text-center leading-tight truncate w-full px-1">{gift.name}</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <GoldCoinIcon className="h-3 w-3" />
+                  <span className="text-[10px] font-bold text-yellow-400">{gift.price}</span>
+                </div>
+               </button>
+              ))}
+            </div>
+           </TabsContent>
+          ))}
+         </div>
        </Tabs>
       </div>
     </div>
 
-    <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-1.5">
+    <div className="p-4 bg-[#0a0c10] border-t border-white/5 flex items-center justify-between gap-3 rounded-b-[40px] sm:rounded-b-[40px]">
+      <div className="flex items-center gap-1.5 bg-[#1f2430] px-3 py-1.5 rounded-full border border-white/5 active:scale-95 transition-transform cursor-pointer">
        <GoldCoinIcon className="h-4 w-4" />
-       <span className="text-xs font-bold text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+       <span className="text-xs font-bold text-white tracking-wide">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+       <ChevronRight className="h-3 w-3 text-white/40 ml-1" />
       </div>
 
       <div className="flex items-center gap-2">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-8 rounded-full bg-white/5 border-white/10 text-white font-bold text-[10px] px-2">
+         <SelectTrigger className="w-16 h-9 rounded-full bg-[#1f2430] border-white/5 text-white font-bold text-[11px] px-3 shadow-inner">
           <SelectValue />
          </SelectTrigger>
-         <SelectContent className="bg-slate-900 border-white/10 text-white">
-          {['1', '10', '99', '520', '999'].map(q => (
-           <SelectItem key={`qty-${q}`} value={q} className="font-bold text-xs">{q}</SelectItem>
+         <SelectContent className="bg-[#1f2430] border-white/10 text-white rounded-xl shadow-2xl">
+          {['1', '9', '49', '99', '499'].map(q => (
+           <SelectItem key={`qty-${q}`} value={q} className="font-bold text-xs hover:bg-white/5 focus:bg-white/5">{q}</SelectItem>
           ))}
          </SelectContent>
        </Select>
 
-       <Button 
+       <button 
         onClick={handleSend}
         disabled={!selectedGift || isSending || selectedUids.length === 0}
-        className="bg-gradient-to-r from-yellow-400 to-orange-600 text-white h-8 px-6 rounded-full font-bold uppercase text-[10px] shadow-lg active:scale-95 transition-all"
+        className={cn(
+         "h-9 px-7 rounded-full font-bold uppercase text-[12px] shadow-[0_0_20px_rgba(0,230,118,0.4)] transition-all flex items-center justify-center min-w-[80px]",
+         !selectedGift || selectedUids.length === 0 ? "bg-[#1f2430] text-white/30 shadow-none pointer-events-none" : "bg-[#00E676] text-black hover:bg-[#00c853] active:scale-95"
+        )}
        >
-         {isSending ? <Loader className="h-3 w-3 animate-spin" /> : 'Send'}
-       </Button>
+         {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'Send'}
+       </button>
       </div>
     </div>
    </DialogContent>

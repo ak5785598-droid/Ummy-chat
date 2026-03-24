@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface EmojiReactionOverlayProps {
  emoji?: string | null;
@@ -9,57 +10,74 @@ interface EmojiReactionOverlayProps {
 }
 
 /**
- * Animated Emoji Reaction Overlay.
- * Displays an "acting" emoji that FULLY COVERS the entire seat.
- * Mapped to the specific tribe set: 😀, 😂, 😘, 🥰, 😎, 🤗, 😡, 😭, 💋.
+ * Animated Floating Emoji Reaction Overlay.
+ * Replaces the static pulse with a TikTok/Instagram style float.
  */
 export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverlayProps) {
- const [isVisible, setIsVisible] = useState(false);
+ const [activeEmojis, setActiveEmojis] = useState<{ id: number, emoji: string, startX: number }[]>([]);
 
  useEffect(() => {
   if (emoji) {
-   setIsVisible(true);
-   const timer = setTimeout(() => setIsVisible(false), 4000);
-   return () => clearTimeout(timer);
+   const newEmoji = { 
+    id: Date.now() + Math.random(), 
+    emoji,
+    startX: Math.random() * 40 - 20 // Random spread across the area
+   };
+   
+   setActiveEmojis(prev => [...prev, newEmoji]);
+
+   // Remove after animation completes
+   setTimeout(() => {
+    setActiveEmojis(prev => prev.filter(e => e.id !== newEmoji.id));
+   }, 3000);
   }
  }, [emoji]);
 
- if (!emoji || !isVisible) return null;
-
- const getAnimationClass = (e: string) => {
-  switch (e) {
-   case '😀': return 'animate-reaction-pulse';
-   case '😂': return 'animate-reaction-bounce';
-   case '😘': return 'animate-reaction-heartbeat';
-   case '🥰': return 'animate-reaction-heartbeat';
-   case '😎': return 'animate-reaction-glitter';
-   case '🤗': return 'animate-reaction-float';
-   case '😡': return 'animate-reaction-shock';
-   case '😭': return 'animate-reaction-cry';
-   case '💋': return 'animate-reaction-pulse';
-   default: return 'animate-bounce';
-  }
- };
+ if (activeEmojis.length === 0) return null;
 
  const sizeClasses = {
-  sm: 'text-5xl',
-  md: 'text-7xl',
-  lg: 'text-8xl',
-  xl: 'text-9xl',
+  sm: 'text-4xl',
+  md: 'text-6xl',
+  lg: 'text-7xl',
+  xl: 'text-8xl',
  };
 
  return (
-  <div className={cn(
-   "absolute inset-0 z-[100] flex items-center justify-center select-none rounded-2xl animate-in zoom-in duration-300",
-   "bg-black/80 backdrop-blur-md"
-  )}>
-   <span className={cn(
-    "drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] leading-none",
-    sizeClasses[size],
-    getAnimationClass(emoji)
-   )}>
-    {emoji}
-   </span>
+  <div className="absolute inset-x-0 bottom-0 h-40 z-[100] pointer-events-none overflow-visible flex justify-center">
+   <AnimatePresence>
+    {activeEmojis.map(reaction => (
+     <motion.div
+      key={reaction.id}
+      className={cn(
+       "absolute bottom-0 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] leading-none transform-gpu",
+       sizeClasses[size]
+      )}
+      initial={{ 
+       y: 20, 
+       x: reaction.startX,
+       scale: 0.5, 
+       opacity: 0,
+       rotate: -20
+      }}
+      animate={{ 
+       y: -150 - (Math.random() * 50), // Float up
+       x: reaction.startX + (Math.random() * 40 - 20), // Drift horizontally
+       scale: [0.5, 1.2, 1], 
+       opacity: [0, 1, 1, 0],
+       rotate: 0 + (Math.random() * 40 - 20)
+      }}
+      exit={{ opacity: 0, scale: 0.5 }}
+      transition={{ 
+       duration: 2.5 + Math.random() * 1, // 2.5s to 3.5s float
+       ease: [0.25, 1, 0.5, 1], // easeOutQuart-like fast start, slow end
+       opacity: { times: [0, 0.1, 0.8, 1] },
+       scale: { times: [0, 0.1, 1] }
+      }}
+     >
+      {reaction.emoji}
+     </motion.div>
+    ))}
+   </AnimatePresence>
   </div>
  );
 }
