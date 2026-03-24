@@ -37,7 +37,8 @@ import {
   LogOut,
   UserX,
   BadgeCheck,
-  Trash2
+  Trash2,
+  ShieldAlert
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -312,7 +313,7 @@ const PublicProfileView = ({
 
          <div className="space-y-2">
             <div className="px-1">
-               <h4 className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1 ml-1">Signature Bio</h4>
+               <h4 className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1.5 ml-1">Signature Bio</h4>
                <p className="text-[11px] font-body italic text-gray-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   {profile.bio || 'Personality signature established.'}
                </p>
@@ -445,6 +446,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
   const isCertifiedSeller = isSeller || currentUser?.uid === CREATOR_ID;
+  const hasAdminAccess = profile?.tags?.some((t: string) => ['Official', 'Super Admin', 'Admin Management'].includes(t));
 
   if (isUserLoading || isProfileLoading) return (
     <AppLayout hideSidebarOnMobile><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-black uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
@@ -598,6 +600,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 />
                 <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                
+                {hasAdminAccess && (
+                  <ProfileMenuItem 
+                    icon={ShieldAlert} 
+                    label="Admin Portal" 
+                    iconColor="bg-indigo-50 text-indigo-600" 
+                    onClick={() => router.push('/admin')} 
+                  />
+                )}
+
                 {isCertifiedSeller && <SellerTransferDialog />}
              </Card>
              <Card className="rounded-[1.25rem] border-none shadow-sm overflow-hidden bg-white px-2">
