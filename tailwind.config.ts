@@ -13,10 +13,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-headline)', 'sans-serif'],
-        serif: ['var(--font-body)', 'serif'],
-        body: ['var(--font-body)', 'serif'],
-        headline: ['var(--font-headline)', 'sans-serif'],
+        sans: ['var(--font-outfit)', 'sans-serif'],
+        serif: ['var(--font-inter)', 'sans-serif'],
+        body: ['var(--font-inter)', 'sans-serif'],
+        headline: ['var(--font-outfit)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

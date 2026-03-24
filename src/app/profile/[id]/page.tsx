@@ -102,10 +102,10 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 const StatItem = ({ label, value, onClick }: { label: string, value: number | string, onClick?: () => void }) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center justify-center flex-1 py-1 active:scale-95 transition-transform"
+  className="flex flex-col items-center justify-center flex-1 py-1 active-press group"
  >
-  <span className="text-xl font-bold text-gray-900 leading-none">{value}</span>
-  <span className="text-[11px] font-semibold text-gray-500 tracking-wide mt-1">{label}</span>
+  <span className="text-2xl font-black text-slate-800 leading-none group-hover:text-primary transition-colors">{value}</span>
+  <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-1.5">{label}</span>
  </button>
 );
 
@@ -498,7 +498,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-           <h1 className="text-xl font-bold text-gray-800 tracking-tight pr-2 leading-none truncate">{profile.username}</h1>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tight pr-2 leading-none truncate">{profile.username}</h1>
            <span className="text-base leading-none">🇮🇳</span>
            <GenderCircle gender={profile.gender} />
            <RichLevelBadge level={profile.level?.rich || 1} />
@@ -525,35 +525,35 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
        <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
      </div>
 
-     <div className="px-3 grid grid-cols-2 gap-3 mb-6">
+     <div className="px-5 grid grid-cols-2 gap-4 mb-8">
        <div 
         onClick={() => router.push('/wallet')} 
-        className="h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-4 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border border-orange-300/50"
+        className="h-24 rounded-[1.5rem] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(251,146,60,0.3)] active-press group cursor-pointer border border-white/20"
        >
-        <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+        <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s' }} />
         <div className="relative z-30 flex flex-col h-full justify-between">
           <div className="flex items-center gap-2">
-           <div className="bg-white/20 backdrop-blur-md p-1 rounded-md border border-white/20"><GoldCoinIcon className="h-4 w-4 drop-shadow-sm" /></div>
-           <h3 className="text-[10px] font-semibold text-white/90 tracking-wider uppercase">{t.profile.coins}</h3>
+           <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
+           <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.coins}</h3>
           </div>
-          <div className="flex items-baseline"><span className="text-lg font-bold text-white tracking-tight drop-shadow-sm">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
+          <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
         </div>
-        <div className="absolute -bottom-4 -right-4 w-24 h-24 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000"><GoldCoinIcon className="w-full h-full" /></div>
+        <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-700"><GoldCoinIcon className="w-full h-full" /></div>
        </div>
 
        <div 
         onClick={() => router.push('/wallet')} 
-        className="h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-4 relative overflow-hidden shadow-md active:scale-95 transition-all group cursor-pointer border border-blue-300/50"
+        className="h-24 rounded-[1.5rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(59,130,246,0.3)] active-press group cursor-pointer border border-white/20"
        >
-        <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
+        <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s' }} />
         <div className="relative z-30 flex flex-col h-full justify-between">
           <div className="flex items-center gap-2">
-           <div className="bg-white/20 backdrop-blur-md p-1 rounded-md border border-white/20"><Gem className="h-4 w-4 text-white fill-current drop-shadow-sm" /></div>
-           <h3 className="text-[10px] font-semibold text-white/90 tracking-wider uppercase">{t.profile.diamonds}</h3>
+           <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
+           <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.diamonds}</h3>
           </div>
-          <div className="flex items-baseline"><span className="text-lg font-bold text-white tracking-tight drop-shadow-sm">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
+          <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
         </div>
-        <div className="absolute -bottom-4 -right-4 w-24 h-24 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000"><Gem className="w-full h-full text-white fill-current" /></div>
+        <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-110 transition-transform duration-700"><Gem className="w-full h-full text-white fill-current" /></div>
        </div>
      </div>
 

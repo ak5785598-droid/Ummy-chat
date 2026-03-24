@@ -1,20 +1,19 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Alegreya, Belleza } from 'next/font/google';
+import { Outfit, Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from './providers';
 
-const fontHeadline = Belleza({
+const fontHeadline = Outfit({
  subsets: ['latin'],
- weight: ['400'],
- variable: '--font-sans',
+ variable: '--font-outfit',
  display: 'swap',
 });
 
-const fontBody = Alegreya({
+const fontBody = Inter({
  subsets: ['latin'],
- variable: '--font-body',
+ variable: '--font-inter',
  display: 'swap',
 });
 
@@ -37,7 +36,7 @@ export const viewport: Viewport = {
  initialScale: 1,
  maximumScale: 5,
  userScalable: true,
- themeColor: '#f3e5f5',
+ themeColor: '#F8F9FE',
  viewportFit: 'cover',
  interactiveWidget: 'resizes-content',
 };
@@ -48,10 +47,10 @@ export default function RootLayout({
  children: React.ReactNode;
 }>) {
  return (
-  <html lang="en" suppressHydrationWarning className="bg-[#f3e5f5] h-full w-full">
+  <html lang="en" suppressHydrationWarning className="bg-[#F8F9FE] h-full w-full">
    <body
     className={cn(
-     'min-h-screen bg-[#f3e5f5] text-slate-900 antialiased touch-manipulation',
+     'min-h-screen bg-[#F8F9FE] text-slate-900 antialiased touch-manipulation',
      fontHeadline.variable,
      fontBody.variable
     )}

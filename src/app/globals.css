@@ -58,7 +58,7 @@
   }
   
   html, body {
-    @apply min-h-screen w-full bg-[#f3e5f5];
+    @apply min-h-screen w-full bg-[#F8F9FE];
     min-height: 100dvh;
     min-height: -webkit-fill-available;
     touch-action: pan-x pan-y;
@@ -70,7 +70,7 @@
   }
 
   body {
-    @apply bg-[#f3e5f5] text-foreground antialiased;
+    @apply bg-[#F8F9FE] text-foreground antialiased;
     /* Removed global padding to allow backgrounds to bleed into safe areas */
     padding: 0;
   }
@@ -94,10 +94,16 @@
   .top-safe { top: max(16px, env(safe-area-inset-top)); }
   .bottom-safe { bottom: max(16px, env(safe-area-inset-bottom)); }
   .bg-ummy-gradient {
-    background: linear-gradient(180deg, #f3e5f5 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, #F8F9FE 0%, #FFFFFF 100%);
   }
   .glass-card {
-    @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
+    @apply bg-white/80 backdrop-blur-[20px] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+  .hover-scale {
+    @apply transition-transform hover:scale-[1.02] duration-200;
+  }
+  .active-press {
+    @apply active:scale-95 transition-transform duration-100;
   }
   .logo-glow {
     filter: drop-shadow(0 0 45px rgba(156, 39, 176, 0.4));

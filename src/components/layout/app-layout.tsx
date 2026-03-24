@@ -192,40 +192,34 @@ export function AppLayout({
      </main>
      
      {shouldShowBottomNav && (
-      <nav 
-       style={{ 
-        position: 'fixed', 
-        bottom: 'calc(env(safe-area-inset-bottom) + 12px)', 
-        left: '5%', 
-        right: '5%', 
-        zIndex: 999 
-       }}
-       className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-14 shrink-0 px-2 rounded-2xl border-2 border-primary/20 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
-      >
-       <Link href="/rooms" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
-        {pathname === '/rooms' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-        <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.home}</span>
+      <nav className="md:hidden fixed z-[999] bottom-safe left-4 right-4 flex items-center justify-around bg-white/85 backdrop-blur-[24px] h-16 shrink-0 px-2 rounded-full border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] mb-2">
+       <Link href="/rooms" className={cn("flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-full active-press relative overflow-hidden", pathname === '/rooms' ? "text-primary" : "text-slate-400")}>
+        {pathname === '/rooms' && <div className="absolute inset-0 bg-primary/10 rounded-full animate-in fade-in zoom-in duration-300" />}
+        <Home className={cn("h-6 w-6 relative z-10 transition-all duration-300", pathname === '/rooms' ? "fill-primary scale-110" : "")} />
+        <span className="text-[9px] font-black uppercase tracking-wider relative z-10">{t.nav.home}</span>
        </Link>
-       <Link href="/discover" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
-        {pathname === '/discover' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-        <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.discover}</span>
+       
+       <Link href="/discover" className={cn("flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-full active-press relative overflow-hidden", pathname === '/discover' ? "text-primary" : "text-slate-400")}>
+        {pathname === '/discover' && <div className="absolute inset-0 bg-primary/10 rounded-full animate-in fade-in zoom-in duration-300" />}
+        <Compass className={cn("h-6 w-6 relative z-10 transition-all duration-300", pathname === '/discover' ? "fill-primary scale-110" : "")} />
+        <span className="text-[9px] font-black uppercase tracking-wider relative z-10">{t.nav.discover}</span>
        </Link>
-       <Link href="/messages" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
-        {pathname === '/messages' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-        <div className="relative">
-         <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
+       
+       <Link href="/messages" className={cn("flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-full active-press relative overflow-hidden", pathname === '/messages' ? "text-primary" : "text-slate-400")}>
+        {pathname === '/messages' && <div className="absolute inset-0 bg-primary/10 rounded-full animate-in fade-in zoom-in duration-300" />}
+        <div className="relative z-10">
+         <Mail className={cn("h-6 w-6 transition-all duration-300", pathname === '/messages' ? "fill-primary scale-110" : "")} />
          {hasUnread && (
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#1a0b2e] animate-pulse shadow-sm" />
+          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse shadow-sm" />
          )}
         </div>
-        <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.message}</span>
+        <span className="text-[9px] font-black uppercase tracking-wider relative z-10">{t.nav.message}</span>
        </Link>
-       <Link href="/profile" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
-        {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-        <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.me}</span>
+       
+       <Link href="/profile" className={cn("flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-full active-press relative overflow-hidden", pathname?.startsWith('/profile') ? "text-primary" : "text-slate-400")}>
+        {pathname?.startsWith('/profile') && <div className="absolute inset-0 bg-primary/10 rounded-full animate-in fade-in zoom-in duration-300" />}
+        <User className={cn("h-6 w-6 relative z-10 transition-all duration-300", pathname?.startsWith('/profile') ? "fill-primary scale-110" : "")} />
+        <span className="text-[9px] font-black uppercase tracking-wider relative z-10">{t.nav.me}</span>
        </Link>
       </nav>
      )}

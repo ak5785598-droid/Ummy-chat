@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Star, Users } from 'lucide-react';
 
 interface ChatRoomCardProps {
  room: any;
@@ -15,131 +13,73 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Re-engineered for Square Identity (1:1 Ratio).
- * Features Identity Color Sync for the room name.
- * Hardened with Room ID (Account Number) visibility.
+ * Re-engineered for Edge-to-Edge Identity.
+ * Features ultra-premium backdrop blurs and heavy font integrations.
  */
-export function ChatRoomCard({ room, variant = 'default' }: ChatRoomCardProps) {
+export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
  const { userProfile: owner } = useUserProfile(room?.ownerId);
 
  if (!room) return null;
 
  const roomTitle = room.name || room.title || 'Frequency';
- const roomTopic = room.description || room.topic || 'Synchronizing...';
  const ownerName = owner?.username || 'Tribe Member';
- 
- // Real-time occupant frequency reporting
  const liveCount = Number(room.participantCount || 0);
 
- /**
-  * IDENTITY COLOR SYNC ENGINE
-  */
- const getSyncGradient = () => {
-  const themeId = room.roomThemeId;
-  const category = room.category?.toLowerCase?.() || 'chat';
-
-  if (themeId === 'official_ummy') return 'from-yellow-500 via-amber-500 to-orange-600';
-  if (themeId === 'gaming_arcade' || category === 'games') return 'from-blue-500 via-cyan-500 to-indigo-500';
-  if (themeId === 'neon_universe' || category === 'party') return 'from-purple-500 via-pink-500 to-rose-500';
-  if (themeId === 'emoji_party') return 'from-orange-400 via-yellow-500 to-amber-500';
-  
-  if (category === 'chat') return 'from-sky-500 to-blue-600';
-  if (category === 'newcomers') return 'from-emerald-500 to-teal-400';
-
-  return 'from-slate-900 to-slate-700';
- };
-
- if (variant === 'modern') {
-  return (
-   <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 font-sans active:scale-95 transition-transform">
-    <div className="bg-white rounded-2xl overflow-hidden shadow-xl border-2 border-white group-hover:border-primary/20 transition-all flex flex-col relative">
-     {/* Glass Glossy Overlay */}
-     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30" />
-     
-     {/* Square Cover Image Dimension (1:1) */}
-     <div className="relative aspect-square w-full bg-slate-50">
-      {room.coverUrl ? (
-       <Image
-        key={room.coverUrl}
-        src={room.coverUrl}
-        alt={roomTitle}
-        fill
-        unoptimized
-        className="object-cover transition-transform duration-1000 group-hover:scale-110"
-       />
-      ) : (
-       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-slate-200 scale-150 opacity-20 text-4xl">🏠</div>
-       </div>
-      )}
-      
-      {/* Top-Left Overlays: Flag and Room ID */}
-      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-20">
-        <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/10 w-fit">
-         <span className="text-[10px]">🇮🇳</span>
-        </div>
-        <div className="bg-black/30 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10 w-fit">
-         <span className="text-[7px] font-bold text-white/90 uppercase tracking-tight">ID:{room.roomNumber || '0000'}</span>
-        </div>
-      </div>
-
-      {/* Top-Right Live Indicator Protocol */}
-      <div className="absolute top-2.5 right-2.5 z-20">
-        <div className="bg-black/40 backdrop-blur-md text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-xl border border-white/20 flex items-center gap-1">
-         <div className={cn("h-1 w-1 rounded-full animate-pulse", liveCount > 0 ? "bg-green-500" : "bg-slate-500")} />
-         LIVE {liveCount}
-        </div>
-      </div>
-
-      {/* Bottom Glass Pill (Host) */}
-      <div className="absolute bottom-3 left-3 z-20">
-        <div className="bg-black/40 backdrop-blur-xl rounded-full pl-1 pr-3 py-1 flex items-center gap-1.5 border border-white/10 w-fit max-w-[120px] shadow-2xl">
-         <Avatar className="h-5 w-5 border border-white/30 shadow-sm">
-           <AvatarImage src={owner?.avatarUrl} />
-           <AvatarFallback className="text-[6px] bg-slate-800 text-white">U</AvatarFallback>
-         </Avatar>
-         <span className="text-[9px] font-bold text-white truncate uppercase tracking-tight">{ownerName}</span>
-        </div>
-      </div>
-
-      <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/20 to-transparent z-10" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent z-10" />
-     </div>
-     
-     {/* Connected Content Section */}
-     <div className="p-3 bg-white space-y-0.5 relative z-20">
-      <h3 className={cn(
-       "font-bold text-xs truncate uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r",
-       getSyncGradient()
-      )}>
-       {roomTitle}
-      </h3>
-      <p className="text-[8px] font-bold text-slate-400 truncate uppercase tracking-wider leading-none">{roomTopic}</p>
-     </div>
-    </div>
-   </Link>
-  );
- }
-
  return (
-  <Link href={`/rooms/${room.id}`} className="group block active:scale-95 transition-transform">
-   <div className="overflow-hidden bg-white border-none rounded-2xl shadow-md flex flex-col">
-    <div className="relative aspect-square w-full bg-slate-100">
-     {room.coverUrl && (
-      <Image key={room.coverUrl} src={room.coverUrl} alt={roomTitle} fill unoptimized className="object-cover" />
-     )}
-     <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10">
-       <span className="text-[7px] font-bold text-white uppercase">ID:{room.roomNumber}</span>
+  <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 hover-scale active-press">
+   <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] bg-[#F8F9FE] isolate ring-1 ring-black/5">
+    {/* Full Cover Background */}
+    {room.coverUrl ? (
+     <Image
+      key={room.coverUrl}
+      src={room.coverUrl}
+      alt={roomTitle}
+      fill
+      unoptimized
+      className="object-cover transition-transform duration-1000 group-hover:scale-110"
+     />
+    ) : (
+     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+      <span className="text-primary/20 scale-150 text-4xl">🏠</span>
+     </div>
+    )}
+
+    {/* Cinematic Gradients for Text Legibility */}
+    <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
+    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10 pointer-events-none" />
+
+    {/* Top Left: ID & Flag Tag */}
+    <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
+     <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full pl-1.5 pr-2.5 py-1 border border-white/20 shadow-sm">
+      <span className="text-[10px] leading-none">🇮🇳</span>
+      <span className="text-[8px] font-black text-white uppercase tracking-wider leading-none">ID:{room.roomNumber || '0000'}</span>
      </div>
     </div>
-    <div className="p-3">
-     <h3 className={cn(
-      "font-bold truncate uppercase text-sm bg-clip-text text-transparent bg-gradient-to-r",
-      getSyncGradient()
-     )}>
+
+    {/* Top Right: Live Viewers */}
+    <div className="absolute top-3 right-3 z-20">
+     <div className="bg-black/40 backdrop-blur-md text-white text-[8px] font-black px-2 py-1 rounded-full border border-white/20 flex items-center gap-1.5 shadow-sm">
+      <div className={cn("h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]", liveCount > 0 ? "bg-[#00E5FF] text-[#00E5FF] animate-pulse" : "bg-slate-400 text-slate-400")} />
+      {liveCount}
+     </div>
+    </div>
+
+    {/* Bottom Content: Title & Host */}
+    <div className="absolute bottom-0 left-0 right-0 p-3.5 z-20 flex flex-col gap-1">
+     <h3 className="font-black text-sm text-white truncate drop-shadow-md leading-tight">
       {roomTitle}
      </h3>
+     <div className="flex items-center gap-1.5 mt-0.5">
+      <Avatar className="h-4 w-4 border border-white/30 shadow-sm">
+       <AvatarImage src={owner?.avatarUrl} />
+       <AvatarFallback className="text-[6px] bg-slate-800 text-white font-bold">U</AvatarFallback>
+      </Avatar>
+      <span className="text-[8px] font-bold text-white/90 truncate uppercase tracking-widest">{ownerName}</span>
+     </div>
     </div>
+    
+    {/* Glass Gloss Overlay for Apple-like shine */}
+    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none z-30 mix-blend-overlay" />
    </div>
   </Link>
  );
