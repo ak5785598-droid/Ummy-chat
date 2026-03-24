@@ -748,6 +748,7 @@ export default function AdminPage() {
         <TabsTrigger value="boutique-hub" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><ShoppingBag className="h-4 w-4" /> Boutique Hub</TabsTrigger>
         <TabsTrigger value="loading-screen" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Loader className="h-4 w-4" /> Loading Screen Sync</TabsTrigger>
         <TabsTrigger value="game-loading" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Gamepad2 className="h-4 w-4" /> Game Loading Sync</TabsTrigger>
+         <TabsTrigger value="system" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><RefreshCcw className="h-4 w-4" /> System Control</TabsTrigger>
        </TabsList>
       </ScrollArea>
      </div>
