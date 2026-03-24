@@ -464,23 +464,44 @@ export default function AdminPage() {
  };
 
  const handleToggleSellerCenter = () => {
-  if (!firestore || !targetUserForCenter) return;
-  const tags = targetUserForCenter.tags || [];
-  const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
-  const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
-  const userRef = doc(firestore, 'users', targetUserForCenter.id);
-  const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
-  let newTags;
-  if (isCurrentlyActive) { newTags = tags.filter((t: string) => !sellerTags.includes(t)); }
-  else { newTags = [...tags, 'Seller']; }
-  const updateData = { tags: newTags, updatedAt: serverTimestamp() };
-  updateDocumentNonBlocking(userRef, updateData);
-  updateDocumentNonBlocking(profileRef, updateData);
-  setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
-  if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
-  setFoundUsers(prev => prev.map(u => u.id === targetUserForCenter.id ? { ...u, tags: newTags } : u));
-  toast({ title: isCurrentlyActive ? 'Center Revoked' : 'Center Activated' });
- };
+   if (!firestore || !targetUserForCenter) return;
+   const tags = targetUserForCenter.tags || [];
+   const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
+   const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
+   const userRef = doc(firestore, 'users', targetUserForCenter.id);
+   const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
+   let newTags;
+   if (isCurrentlyActive) { newTags = tags.filter((t: string) => !sellerTags.includes(t)); }
+   else { newTags = [...tags, 'Seller']; }
+   const updateData = { tags: newTags, updatedAt: serverTimestamp() };
+   updateDocumentNonBlocking(userRef, updateData);
+   updateDocumentNonBlocking(profileRef, updateData);
+   setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
+   if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
+   setFoundUsers(prev => prev.map(u => u.id === targetUserForCenter.id ? { ...u, tags: newTags } : u));
+   toast({ title: isCurrentlyActive ? 'Seller Center Revoked' : 'Seller Center Activated' });
+  };
+
+  
+
+  const handleToggleOfficialCenter = () => {
+   if (!firestore || !targetUserForCenter) return;
+   const tags = targetUserForCenter.tags || [];
+   const adminTags = ['Official center', 'Admin'];
+   const isCurrentlyActive = tags.some((t: string) => adminTags.includes(t));
+   const userRef = doc(firestore, 'users', targetUserForCenter.id);
+   const profileRef = doc(firestore, 'users', targetUserForCenter.id, 'profile', targetUserForCenter.id);
+   let newTags;
+   if (isCurrentlyActive) { newTags = tags.filter((t: string) => !adminTags.includes(t)); }
+   else { newTags = [...tags, 'Official center']; }
+   const updateData = { tags: newTags, updatedAt: serverTimestamp() };
+   updateDocumentNonBlocking(userRef, updateData);
+   updateDocumentNonBlocking(profileRef, updateData);
+   setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
+   if (targetUserForTags?.id === targetUserForCenter.id) setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
+   setFoundUsers(prev => prev.map(u => u.id === targetUserForCenter.id ? { ...u, tags: newTags } : u));
+   toast({ title: isCurrentlyActive ? 'Admin Portal Revoked' : 'Admin Portal Activated' });
+  };
 
  const handleRemoveAllTags = (targetUid: string) => {
   if (!firestore) return;
@@ -856,11 +877,90 @@ export default function AdminPage() {
 
       <TabsContent value="assign-center" className="m-0 space-y-6">
         <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
-         <CardHeader className="px-0"><CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Assign Center</CardTitle></CardHeader>
-         <div className="flex flex-col gap-4"><SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} /><div className="flex gap-4"><Input placeholder={centerSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} value={centerSearchId} onChange={(e) => setCenterSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 rounded-2xl border-2" /><Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-bold uppercase " disabled={isSearchingCenter}>Find</Button></div></div>
-         {targetUserForCenter && (<div className="mt-10 p-8 border-2 rounded-3xl space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20"><div className="flex items-center justify-between border-b pb-6"><div className="flex items-center gap-4"><Avatar className="h-16 w-16 border-2 border-white shadow-xl"><AvatarImage src={targetUserForCenter.avatarUrl || undefined}/></Avatar><div><p className="font-bold uppercase text-xl tracking-tight text-slate-900">{targetUserForCenter.username}</p><span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span></div></div><div>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? (<Badge className="bg-green-500 text-white font-bold uppercase text-[10px] py-1 px-3">Active</Badge>) : (<Badge className="bg-slate-200 text-slate-400 font-bold uppercase text-[10px] py-1 px-3 shadow-none">Inactive</Badge>)}</div></div><Button onClick={handleToggleSellerCenter} className={cn("w-full h-16 rounded-xl font-bold uppercase text-xl shadow-xl transition-all", targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? "bg-red-50 text-red-600 border-2 border-red-100" : "bg-indigo-600 text-white")}>{targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) ? <><UserX className="mr-2 h-6 w-6" /> Revoke Center</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activate Center</>}</Button></div>)}
+         <CardHeader className="px-0">
+          <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Center Management</CardTitle>
+          <CardDescription>Delegate Seller or Official Center authority to tribal members.</CardDescription>
+         </CardHeader>
+         <div className="flex flex-col gap-4">
+          <SearchToggle mode={centerSearchMode} setMode={setCenterSearchMode} />
+          <div className="flex gap-4">
+           <Input 
+            placeholder={centerSearchMode === 'id' ? "Enter ID..." : "Enter Username..."} 
+            value={centerSearchId} 
+            onChange={(e) => setCenterSearchId(e.target.value)} 
+            onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} 
+            className="h-14 rounded-2xl border-2" 
+           />
+           <Button onClick={() => handleGenericSearch(centerSearchMode, centerSearchId, setTargetUserForCenter, setIsSearchingCenter)} className="h-14 px-8 rounded-2xl bg-black text-white font-bold uppercase " disabled={isSearchingCenter}>Find</Button>
+          </div>
+         </div>
+         {targetUserForCenter && (
+          <div className="mt-10 p-8 border-2 rounded-3xl space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
+           <div className="flex items-center justify-between border-b pb-6">
+            <div className="flex items-center gap-4">
+             <Avatar className="h-16 w-16 border-2 border-white shadow-xl">
+              <AvatarImage src={targetUserForCenter.avatarUrl || undefined}/>
+             </Avatar>
+             <div>
+              <p className="font-bold uppercase text-xl tracking-tight text-slate-900">{targetUserForCenter.username}</p>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Account: {targetUserForCenter.accountNumber}</span>
+             </div>
+            </div>
+            <div className="flex gap-2">
+             {targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && (
+              <Badge className="bg-orange-500 text-white font-bold uppercase text-[10px] py-1 px-3">Seller</Badge>
+             )}
+             {targetUserForCenter.tags?.some((t: string) => ['Official center', 'Admin'].includes(t)) && (
+              <Badge className="bg-indigo-500 text-white font-bold uppercase text-[10px] py-1 px-3">Admin</Badge>
+             )}
+            </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+             <div className="flex items-center gap-2">
+              <Store className="h-4 w-4 text-orange-500" />
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Seller Center</h4>
+             </div>
+             <Button 
+              onClick={handleToggleSellerCenter} 
+              className={cn(
+               "w-full h-16 rounded-xl font-bold uppercase text-sm shadow-lg transition-all", 
+               targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) 
+                ? "bg-red-50 text-red-600 border-2 border-red-100" 
+                : "bg-orange-500 text-white"
+              )}
+             >
+              {targetUserForCenter.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) 
+               ? <><UserX className="mr-2 h-5 w-5" /> Revoke Seller</> 
+               : <><Plus className="mr-2 h-5 w-5" /> Activate Seller</>}
+             </Button>
+            </div>
+
+            <div className="space-y-4">
+             <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-indigo-500" />
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Official Center (Admin)</h4>
+             </div>
+             <Button 
+              onClick={handleToggleOfficialCenter} 
+              className={cn(
+               "w-full h-16 rounded-xl font-bold uppercase text-sm shadow-lg transition-all", 
+               targetUserForCenter.tags?.some((t: string) => ['Official center', 'Admin'].includes(t)) 
+                ? "bg-red-50 text-red-600 border-2 border-red-100" 
+                : "bg-indigo-600 text-white"
+              )}
+             >
+              {targetUserForCenter.tags?.some((t: string) => ['Official center', 'Admin'].includes(t)) 
+               ? <><Gavel className="mr-2 h-5 w-5" /> Revoke Admin</> 
+               : <><ShieldCheck className="mr-2 h-5 w-5" /> Activate Admin Portal</>}
+             </Button>
+            </div>
+           </div>
+          </div>
+         )}
         </Card>
-      </TabsContent>
+       </TabsContent>
 
       <TabsContent value="id-ban" className="m-0 space-y-6">
         <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">

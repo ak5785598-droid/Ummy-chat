@@ -440,6 +440,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
  };
 
  const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
+  const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin'].includes(t));
  const isOfficial = profile?.tags?.includes('Official');
  const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -604,7 +605,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
        </Card>
 
-        {currentUser?.uid === CREATOR_ID && (
+        { (currentUser?.uid === CREATOR_ID || isOfficialCenter) && isOwnProfile && (
          <Card className="rounded-2xl border-none shadow-md overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 px-3 py-1 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none" />
           <div className="flex items-center gap-2 px-2 pt-3 pb-2">
