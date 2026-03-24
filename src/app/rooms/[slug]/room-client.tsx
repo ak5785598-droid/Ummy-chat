@@ -37,6 +37,7 @@ import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import {
  Dialog,
  DialogContent,
@@ -446,6 +447,7 @@ export function RoomClient({ room }: { room: Room }) {
    senderId: currentUser.uid, 
    senderName: userProfile.username || 'User', 
    senderAvatar: userProfile.avatarUrl || null, 
+   senderBubble: userProfile.inventory?.activeBubble || null,
    chatRoomId: room.id, 
    timestamp: serverTimestamp(), 
    type: 'text'
@@ -751,23 +753,51 @@ export function RoomClient({ room }: { room: Room }) {
             setIsUserProfileCardOpen(true);
            }
           }}
-          className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+          className={cn(
+           "flex items-start gap-1.5 rounded-lg p-1 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-sm mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto",
+           msg.senderBubble ? "bg-transparent p-0" : "bg-black/40 backdrop-blur-md border border-white/5"
+          )}
           >
-           <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
-           <div className="flex flex-col">
-            <span className={cn("text-[7px] font-bold uppercase tracking-tight leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
-            {msg.imageUrl && (
-             <div 
-              onClick={(e) => {
-               e.stopPropagation();
-               setPreviewImage(msg.imageUrl);
-              }}
-              className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
-             >
-              <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
-             </div>
+           {!msg.senderBubble && (
+            <Avatar className="h-5 w-5 shrink-0 border border-white/10 mt-0.5"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
+           )}
+           <div className="flex flex-col flex-1 min-w-0">
+            {msg.senderBubble ? (
+             <ChatMessageBubble bubbleId={msg.senderBubble} isMe={msg.senderId === currentUser?.uid} className="px-2 py-1.5 shadow-md border-none text-[10px]">
+              <div className="flex items-center gap-1.5 mb-1">
+               <Avatar className="h-4 w-4 shrink-0 shadow-sm"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[8px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
+               <span className="text-[8px] font-bold text-white/90 uppercase tracking-tight">{msg.senderName || 'Tribe Member'}</span>
+              </div>
+              {msg.imageUrl && (
+               <div 
+                onClick={(e) => {
+                 e.stopPropagation();
+                 setPreviewImage(msg.imageUrl);
+                }}
+                className="mb-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10 shadow-sm"
+               >
+                <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+               </div>
+              )}
+              {msg.content && <p className="font-bold leading-snug drop-shadow-sm">{msg.content}</p>}
+             </ChatMessageBubble>
+            ) : (
+             <>
+              <span className={cn("text-[7px] font-bold uppercase tracking-tight leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
+              {msg.imageUrl && (
+               <div 
+                onClick={(e) => {
+                 e.stopPropagation();
+                 setPreviewImage(msg.imageUrl);
+                }}
+                className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
+               >
+                <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+               </div>
+              )}
+              {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
+             </>
             )}
-            {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
            </div>
           </div>
          ))}

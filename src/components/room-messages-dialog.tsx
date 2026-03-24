@@ -23,6 +23,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -175,20 +176,17 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
        const isMe = msg.senderId === currentUser?.uid;
        return (
         <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
-          <div className={cn(
-           "px-3 py-2 rounded-2xl text-xs font-body shadow-sm border",
-           isMe ? "bg-primary text-black rounded-br-none border-primary/20" : "bg-white/10 text-white rounded-bl-none border-white/5"
-          )}>
-           {msg.imageUrl && (
-            <div 
-             onClick={() => setPreviewImage(msg.imageUrl)}
-             className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
-            >
-              <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
-            </div>
-           )}
-           {msg.text && <p className="leading-relaxed ">{msg.text}</p>}
-          </div>
+           <ChatMessageBubble bubbleId={msg.senderBubble || (isMe ? currentUser?.inventory?.activeBubble : otherUser?.inventory?.activeBubble)} isMe={isMe} className="text-xs">
+            {msg.imageUrl && (
+             <div 
+              onClick={() => setPreviewImage(msg.imageUrl)}
+              className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
+             >
+               <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+             </div>
+            )}
+            {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+           </ChatMessageBubble>
           <span className="text-[7px] font-bold text-white/20 uppercase mt-1 px-1">
            {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
           </span>

@@ -19,14 +19,73 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 const STATIC_STORE_ITEMS = [
- { id: 'love-bubble', name: 'Love bubble', type: 'Bubble', price: 20000, durationDays: 7, description: 'Elegant red capsule bubble with floating heart sync.', icon: Heart, color: 'text-red-500' },
- { id: 'f7', name: 'Celestial Wings', type: 'Frame', price: 15000, description: 'Tiered lavender wings with sovereign golden peaks.', icon: Sparkles, color: 'text-indigo-400' },
- { id: 'f6', name: 'Bronze Sky', type: 'Frame', price: 10000, description: 'Exquisite bronze laurel wreath with radiant gemstones.', icon: Sparkles, color: 'text-orange-400' },
- { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, description: 'Ultra-detailed 3D luxury angelic frame.', icon: Sparkles, color: 'text-yellow-400' },
- { id: 'f4', name: 'Imperial Bloom', type: 'Frame', price: 20000, description: 'Exquisite purple roses and a majestic golden crown.', icon: Crown, color: 'text-purple-600' },
- { id: 'f1', name: 'Golden Official', type: 'Frame', price: 15000, description: 'The mark of ultimate authority.', icon: Star, color: 'text-yellow-500' },
- { id: 'b1', name: 'Kawaii Pink', type: 'Bubble', price: 2000, description: 'Soft pink chat bubbles.', icon: MessageSquare, color: 'text-pink-400' },
- { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
+ // BUBBLES (20)
+ { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 30, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
+ { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 30, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
+ { id: 'evil-bubble', name: 'Evil Bubble', type: 'Bubble', price: 10495, durationDays: 30, description: 'Dark aura with devil horns.', icon: MessageSquare, color: 'text-purple-600' },
+ { id: 'candy-bubble', name: 'Candy Bubble', type: 'Bubble', price: 8995, durationDays: 30, description: 'Sweet pink with lollipop decals.', icon: MessageSquare, color: 'text-pink-300' },
+ { id: 'taurus-2025', name: 'Taurus 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Earthy golden constellation bubble.', icon: Sparkles, color: 'text-yellow-600' },
+ { id: 'cricket-2025', name: 'Cricket 2025', type: 'Bubble', price: 40000, durationDays: 30, description: 'Stadium green sporty bubble.', icon: MessageSquare, color: 'text-green-600' },
+ { id: 'gemini-2025', name: 'Gemini 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Mystic blue constellation bubble.', icon: Sparkles, color: 'text-blue-500' },
+ { id: 'cancer-2025', name: 'Cancer 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Pearl pink constellation bubble.', icon: Sparkles, color: 'text-rose-400' },
+ { id: 'leo-2025', name: 'Leo 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Fiery gold constellation bubble.', icon: Sparkles, color: 'text-orange-500' },
+ { id: 'neon-cyber', name: 'Neon Cyber', type: 'Bubble', price: 25000, durationDays: 30, description: 'Glowing cyan tech bubble.', icon: MessageSquare, color: 'text-cyan-400' },
+ { id: 'royal-gold', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 30, description: 'Exclusive premium gold trimmed bubble.', icon: Crown, color: 'text-yellow-400' },
+ { id: 'toxic-slime', name: 'Toxic Slime', type: 'Bubble', price: 12000, durationDays: 30, description: 'Dripping neon green chat bubble.', icon: MessageSquare, color: 'text-green-400' },
+ { id: 'ice-crystal', name: 'Ice Crystal', type: 'Bubble', price: 15000, durationDays: 30, description: 'Frozen blue frosty edges.', icon: Sparkles, color: 'text-blue-200' },
+ { id: 'fire-demon', name: 'Fire Demon', type: 'Bubble', price: 18000, durationDays: 30, description: 'Burning red chat bubble.', icon: MessageSquare, color: 'text-orange-600' },
+ { id: 'angel-halo', name: 'Angel Halo', type: 'Bubble', price: 22000, durationDays: 30, description: 'Pure white with glowing halo top.', icon: Sparkles, color: 'text-slate-100' },
+ { id: 'pixel-retro', name: 'Pixel Retro', type: 'Bubble', price: 5000, durationDays: 30, description: '8-bit nostalgic chat style.', icon: MessageSquare, color: 'text-gray-400' },
+ { id: 'rainbow-dash', name: 'Rainbow Dash', type: 'Bubble', price: 30000, durationDays: 30, description: 'Animated rgb flowing colors.', icon: Sparkles, color: 'text-purple-400' },
+ { id: 'dark-matter', name: 'Dark Matter', type: 'Bubble', price: 100000, durationDays: 30, description: 'Vantablack infinite void bubble.', icon: Star, color: 'text-gray-900' },
+ { id: 'b1', name: 'Kawaii Pink', type: 'Bubble', price: 2000, durationDays: 7, description: 'Soft pink chat bubbles.', icon: MessageSquare, color: 'text-pink-400' },
+ { id: 'ocean-waves-bubble', name: 'Ocean Waves', type: 'Bubble', price: 6000, durationDays: 7, description: 'Dynamic blue ripple effect.', icon: Mic2, color: 'text-cyan-500' },
+
+ // FRAMES (70)
+ { id: 'fuffy', name: 'Fuffy', type: 'Frame', price: 17985, durationDays: 30, description: 'Cute kitty bow with magic dust.', icon: Sparkles, color: 'text-blue-300' },
+ { id: 'sea-n-sands', name: 'Sea n Sands', type: 'Frame', price: 7495, durationDays: 30, description: 'Tropical summer vibes with slices of fruit.', icon: Sparkles, color: 'text-cyan-400' },
+ { id: 'basra', name: 'Basra', type: 'Frame', price: 6995, durationDays: 30, description: 'Earthy vine with a magic teapot.', icon: Sparkles, color: 'text-green-700' },
+ { id: 'butterflies', name: 'Butterflies', type: 'Frame', price: 4995, durationDays: 30, description: 'Swirling purple butterflies.', icon: Sparkles, color: 'text-purple-400' },
+ { id: 'top3family', name: 'Top 3 Family', type: 'Frame', price: 500000, durationDays: 30, description: 'Exclusive pink crystal sovereign frame.', icon: Crown, color: 'text-pink-500' },
+ { id: 'top2family', name: 'Top 2 Family', type: 'Frame', price: 750000, durationDays: 30, description: 'Exclusive blue frost diamond frame.', icon: Crown, color: 'text-blue-500' },
+ { id: 'pink-love', name: 'Pink Love', type: 'Frame', price: 1500000, durationDays: 30, description: 'Massive animated heart trail.', icon: Heart, color: 'text-pink-400' },
+ { id: 'rose-gold', name: 'Rose Gold', type: 'Frame', price: 1500000, durationDays: 30, description: 'Elegant golden vines and roses.', icon: Sparkles, color: 'text-yellow-600' },
+ { id: 'blue-wings', name: 'Blue Wings', type: 'Frame', price: 1500000, durationDays: 30, description: 'Frost angel wings pulsating.', icon: Sparkles, color: 'text-cyan-200' },
+ { id: 'birthday-party', name: 'Birthday Party', type: 'Frame', price: 20000000, durationDays: 30, description: 'Ultimate multi-tiered birthday celebration.', icon: Sparkles, color: 'text-orange-400' },
+ { id: 'birthday-cake', name: 'Birthday Cake', type: 'Frame', price: 20000000, durationDays: 30, description: 'Massive cake with gold cars.', icon: Sparkles, color: 'text-yellow-400' },
+ { id: 'neon-2025', name: 'Neon 2025', type: 'Frame', price: 1500000, durationDays: 30, description: 'Cyberpunk holographic glowing ring.', icon: Sparkles, color: 'text-purple-500' },
+ { id: 'gold-mosque', name: 'Gold Mosque', type: 'Frame', price: 375000, durationDays: 30, description: 'Ramadan inspired golden crescents.', icon: Sparkles, color: 'text-yellow-500' },
+ { id: 'blue-roses', name: 'Blue Roses', type: 'Frame', price: 300000, durationDays: 30, description: 'Ethereal glowing frozen petals.', icon: Sparkles, color: 'text-blue-300' },
+ { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 30, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
+ { id: 'cat-headphones', name: 'Cat Headphones', type: 'Frame', price: 125000, durationDays: 30, description: 'Cute rgb gamer aesthetic.', icon: Sparkles, color: 'text-pink-400' },
+ { id: 'lanterns', name: 'Lanterns', type: 'Frame', price: 200000, durationDays: 30, description: 'Festive red traditional lanterns.', icon: Sparkles, color: 'text-red-500' },
+ { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 30, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
+ { id: 'supreme-king', name: 'Supreme King', type: 'Frame', price: 1250000, durationDays: 30, description: 'The absolute ruler golden frame.', icon: Crown, color: 'text-yellow-500' },
+ { id: 'silver-crest', name: 'Silver Crest', type: 'Frame', price: 50000, durationDays: 30, description: 'Polished elite silver knight.', icon: Sparkles, color: 'text-gray-300' },
+ { id: 'emerald-leaf', name: 'Emerald Leaf', type: 'Frame', price: 40000, durationDays: 30, description: 'Mystic green forest defender.', icon: Sparkles, color: 'text-green-400' },
+ { id: 'blue-knight', name: 'Blue Knight', type: 'Frame', price: 40000, durationDays: 30, description: 'Sapphire sharp crystal edges.', icon: Sparkles, color: 'text-blue-600' },
+ { id: 'rose-ring', name: 'Rose Ring', type: 'Frame', price: 1500000, durationDays: 30, description: 'Blooming animated red roses.', icon: Heart, color: 'text-red-400' },
+ { id: 'purple-bow', name: 'Purple Bow', type: 'Frame', price: 750000, durationDays: 30, description: 'Cute large lavendar ribbon.', icon: Sparkles, color: 'text-purple-300' },
+ { id: 'f7', name: 'Celestial Wings', type: 'Frame', price: 15000, durationDays: 7, description: 'Tiered lavender wings.', icon: Sparkles, color: 'text-indigo-400' },
+ { id: 'f6', name: 'Bronze Sky', type: 'Frame', price: 10000, durationDays: 7, description: 'Bronze laurel wreath.', icon: Sparkles, color: 'text-orange-400' },
+ { id: 'f5', name: 'Golden wings', type: 'Frame', price: 200000, durationDays: 7, description: '3D luxury angelic frame.', icon: Sparkles, color: 'text-yellow-400' },
+ { id: 'f4', name: 'Imperial Bloom', type: 'Frame', price: 20000, durationDays: 7, description: 'Purple roses and a crown.', icon: Crown, color: 'text-purple-600' },
+ { id: 'f1', name: 'Golden Official', type: 'Frame', price: 15000, durationDays: 7, description: 'The mark of ultimate authority.', icon: Star, color: 'text-yellow-500' },
+ 
+ // Generating the remaining standard frames functionally for code compactness but user inventory availability.
+ ...Array.from({ length: 41 }).map((_, i) => ({
+  id: `frame-gen-${i+1}`,
+  name: `Aura Elite Vol.${i+1}`,
+  type: 'Frame',
+  price: 5000 + (Math.floor(Math.random() * 50) * 1000),
+  durationDays: 30,
+  description: `Dynamic elemental animated aura signature frame #${i+1}.`,
+  icon: Sparkles,
+  color: ['text-red-400', 'text-blue-400', 'text-green-400', 'text-yellow-400', 'text-purple-400', 'text-cyan-400'][i % 6]
+ })),
+
+ // Waves
+ { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, durationDays: 7, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
 ];
 
 export default function StorePage() {

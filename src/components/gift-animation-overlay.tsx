@@ -21,8 +21,20 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
    setTriggerKey(prev => prev + 1);
    
    let duration = 4000;
-   const premiumTier = ['cyber-car', 'quantum-jet', 'galactic-castle', 'holo-dragon', 'crown-of-kings', 'diamond-throne'];
-   if (premiumTier.includes(giftId)) duration = 6000;
+   const premiumTier = [
+  'library', 'fountain', 'diamond', 'lipstick', 'trophy', 'golden-phone', 
+  'gem-knife', 'scepter', 'dressing-table', 'star-rain', 'coronation', 
+  'rose-vow', 'glory', 'neon-car', 'ferrari', 'sword-of-ocean', 'new-year', 
+  'eid-mubarak', 'yacht', 'mansion', 'private-island', 'helicopter', 
+  'submarine', 'limo', 'private-jet', 'diamond-necklace', 'gold-watch', 
+  'designer-bag', 'stiletto', 'ring', 'crystal-chandelier', 'sports-car', 
+  'grand-piano', 'stradivarius', 'arabian-horse', 'purebred-dog', 'exotic-bird', 
+  'silver-platter', 'space-station', 'moon-base', 'mars-rover', 'cyber-city', 
+  'floating-island', 'dragon', 'phoenix', 'unicorn', 'pegasus', 'kraken', 
+  'leviathan', 'world-tree', 'excalibur', 'holy-grail', 'christmas-tree', 
+  'santa-sleigh'
+ ];
+   if (premiumTier.includes(giftId)) duration = 6500;
 
    const timer = setTimeout(() => {
     setIsVisible(false);
@@ -35,28 +47,68 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
  if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
  const getEmoji = () => {
-  switch (giftId) {
-   case 'neon-heart': return '💝';
-   case 'cyber-rose': return '🌹';
-   case 'halo': return '😇';
-   case 'golden-sword': return '⚔️';
-   case 'magic-lamp': return '🪔';
-   case 'diamond': return '💎';
-   case 'lucky-clover': return '🍀';
-   case 'magic-wand': return '🪄';
-   case 'jackpot': return '🎰';
-   case 'treasure': return '🪙';
-   case 'cyber-car': return '🏎️';
-   case 'quantum-jet': return '🛩️';
-   case 'galactic-castle': return '🏰';
-   case 'holo-dragon': return '🐉';
-   case 'crown-of-kings': return '👑';
-   case 'diamond-throne': return '💺';
-   default: return '🎁';
-  }
+  const map: Record<string, string> = {
+   'choco-pops': '🍭', 'chai': '☕', 'rose': '🌹', 'applaud': '👏',
+   'love-bomb': '💣', 'kiss': '💋', 'chocolate-box': '🍫',
+   'money-gun': '🔫', 'watch': '⌚', 'birthday-cake': '🎂',
+   'lucky-clover': '🍀', 'magic-wand': '🪄', 'jackpot': '🎰',
+   'treasure': '🪙', 'soaring': '🎆', 'golden-football': '⚽',
+   'chupa-chups': '🍬', 'library': '📚', 'fountain': '⛲',
+   'diamond': '💎', 'lipstick': '💄', 'trophy': '🏆',
+   'golden-phone': '📱', 'gem-knife': '🗡️', 'scepter': '🦯',
+   'dressing-table': '🪞', 'star-rain': '🌠', 'coronation': '👑',
+   'rose-vow': '💑', 'glory': '🕊️', 'neon-car': '🚘',
+   'ferrari': '🏎️', 'sword-of-ocean': '⚔️', 'new-year': '🎊',
+   'eid-lantern': '🏮', 'eid-cannon': '💣', 'eid-feast': '🥘',
+   'eid-mubarak': '🕌',
+   'microphone': '🎤', 'headphones': '🎧', 'perfume': '🧴',
+   'soccer-ball': '⚽', 'ticket': '🎟️', 'popcorn': '🍿',
+   'controller': '🎮', 'vinyl': '📀', 'bubble-tea': '🧋',
+   'doughnut': '🍩', 'candy': '🍬', 'ice-cream': '🍦',
+   'pizza': '🍕', 'burger': '🍔', 'taco': '🌮',
+   'cocktail': '🍸', 'beer': '🍺', 'champagne': '🥂',
+   'coffee': '☕', 'tea': '🍵', 'milk': '🥛',
+   'cookie': '🍪', 'apple': '🍎', 'banana': '🍌',
+   'cherry': '🍒', 'peach': '🍑', 'strawberry': '🍓',
+   'watermelon': '🍉', 'lemon': '🍋', 'pineapple': '🍍',
+   'dice': '🎲', 'horseshoe': '🧲', 'crystal-ball': '🔮',
+   'tarot': '🃏', 'shooting-star': '🌠', 'rainbow': '🌈',
+   'pot-of-gold': '🍯', 'eight-ball': '🎱', 'fortune-cookie': '🥠',
+   'red-envelope': '🧧', 'wishbone': '🦴', 'piggy-bank': '🐷',
+   'amulet': '🧿', 'leprechaun-hat': '🎩', 'magic-potion': '🧪',
+   'dreamcatcher': '🕸️', 'wishing-well': '⛲', 'gold-ingot': '🧈',
+   'yacht': '🛥️', 'mansion': '🏡', 'private-island': '🏝️',
+   'helicopter': '🚁', 'submarine': '🛳️', 'limo': '🚘',
+   'private-jet': '🛩️', 'diamond-necklace': '💎', 'gold-watch': '⌚',
+   'designer-bag': '👜', 'stiletto': '👠', 'ring': '💍',
+   'crystal-chandelier': '✨', 'sports-car': '🏎️', 'grand-piano': '🎹',
+   'stradivarius': '🎻', 'arabian-horse': '🐎', 'purebred-dog': '🐩',
+   'exotic-bird': '🦚', 'silver-platter': '🍽️', 'space-station': '🛰️',
+   'moon-base': '🌖', 'mars-rover': '🛸', 'cyber-city': '🏙️',
+   'floating-island': '☁️', 'dragon': '🐉', 'phoenix': '🐦',
+   'unicorn': '🦄', 'pegasus': '🐎', 'kraken': '🐙',
+   'leviathan': '🐳', 'world-tree': '🌳', 'excalibur': '🗡️',
+   'holy-grail': '🏆', 'fireworks': '🎆', 'confetti': '🎊',
+   'birthday-hat': '🥳', 'christmas-tree': '🎄', 'santa-sleigh': '🎅',
+   'snowman': '⛄', 'jack-o-lantern': '🎃', 'easter-egg': '🥚',
+   'valentine-heart': '💖', 'thanksgiving-turkey': '🦃'
+  };
+  return map[giftId] || '🎁';
  };
 
- const premiumTier = ['cyber-car', 'quantum-jet', 'galactic-castle', 'holo-dragon', 'crown-of-kings', 'diamond-throne'];
+ const premiumTier = [
+  'library', 'fountain', 'diamond', 'lipstick', 'trophy', 'golden-phone', 
+  'gem-knife', 'scepter', 'dressing-table', 'star-rain', 'coronation', 
+  'rose-vow', 'glory', 'neon-car', 'ferrari', 'sword-of-ocean', 'new-year', 
+  'eid-mubarak', 'yacht', 'mansion', 'private-island', 'helicopter', 
+  'submarine', 'limo', 'private-jet', 'diamond-necklace', 'gold-watch', 
+  'designer-bag', 'stiletto', 'ring', 'crystal-chandelier', 'sports-car', 
+  'grand-piano', 'stradivarius', 'arabian-horse', 'purebred-dog', 'exotic-bird', 
+  'silver-platter', 'space-station', 'moon-base', 'mars-rover', 'cyber-city', 
+  'floating-island', 'dragon', 'phoenix', 'unicorn', 'pegasus', 'kraken', 
+  'leviathan', 'world-tree', 'excalibur', 'holy-grail', 'christmas-tree', 
+  'santa-sleigh'
+ ];
  const isPremium = premiumTier.includes(giftId);
 
  return (
