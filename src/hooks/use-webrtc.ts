@@ -17,8 +17,8 @@ export type PeerConnectionState = 'new' | 'connecting' | 'connected' | 'disconne
 /**
  * PRODUCTION WEBRTC HOOK (V2 SCALED)
  * 1. ICE Batching: Local queues ICE candidates to drop Firestore writes by 95%.
- * 2. SDP Munging: Strict Bandwidth Control (32kbps) for infinite listener scaling.
- * 3. Connection Diagnostics & Resiliency.
+ * 2. SDP Munging: Robust Bandwidth Injection (128kbps) + Stereo Hinting.
+ * 3. Transceiver Engine: Dedicated Send/Recv channels for full-duplex stability.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, musicStream: MediaStream | null = null) {
  const { user } = useUser();
@@ -29,7 +29,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  const [connectionStates, setConnectionStates] = useState<Map<string, PeerConnectionState>>(new Map());
  
  const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
- const senders = useRef<Map<string, Map<string, RTCRtpSender>>>(new Map()); 
  const makingOffer = useRef<Map<string, boolean>>(new Map());
  const ignoreOffer = useRef<Map<string, boolean>>(new Map());
  const iceCandidatesQueue = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
@@ -56,9 +55,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  // ---------------------------------------------------------------------------
  const mungeSDP = (sdp?: string) => {
   if (!sdp) return sdp;
-  // Expand bandwidth to 64kbps for better robustness
-  // Use a more generic regex to target audio media sections
-  return sdp.replace(/a=mid:(audio|mic|0|1)\r\n/g, 'a=mid:$1\r\nb=AS:64\r\n');
+  // V2: Robust m=audio Injection (128kbps) for high-capacity rooms
+  let newSdp = sdp.replace(/m=audio.*?\r\n/g, '$&b=AS:128\r\n');
+  // Add stereo hint to Opus (FMT 111) for better quality
+  return newSdp.replace(/a=rtpmap:111 opus\/48000\/2/g, 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 sprop-stereo=1');
  };
 
  const updateConnectionState = useCallback((peerId: string, state: PeerConnectionState) => {
@@ -134,43 +134,27 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
  useEffect(() => {
   const updateTracks = async () => {
+   const micTrack = localStream?.getAudioTracks()[0];
+   const musicTrack = musicStream?.getAudioTracks()[0];
+
    for (const [peerId, pc] of peerConnections.current.entries()) {
-    const peerSenders = senders.current.get(peerId) || new Map();
-    const audioTrack = localStream?.getAudioTracks()[0];
+    const transceivers = pc.getTransceivers();
     
-    if (audioTrack) {
-     if (peerSenders.has('mic')) {
-      const sender = peerSenders.get('mic');
-      if (sender?.track !== audioTrack) sender?.replaceTrack(audioTrack);
-     } else {
-      const sender = pc.addTrack(audioTrack, localStream!);
-      peerSenders.set('mic', sender);
-     }
-    } else {
-     const sender = peerSenders.get('mic');
-     if (sender) {
-      try { pc.removeTrack(sender); } catch (e) {}
-      peerSenders.delete('mic');
-     }
+    // Update Mic Transceiver
+    const micTransceiver = transceivers[0]; 
+    if (micTransceiver && micTrack) {
+      if (micTransceiver.sender.track !== micTrack) {
+       micTransceiver.sender.replaceTrack(micTrack);
+      }
     }
 
-    const musicTrack = musicStream?.getAudioTracks()[0];
-    if (musicTrack) {
-     if (peerSenders.has('music')) {
-      const sender = peerSenders.get('music');
-      if (sender?.track !== musicTrack) sender?.replaceTrack(musicTrack);
-     } else {
-      const sender = pc.addTrack(musicTrack, musicStream!);
-      peerSenders.set('music', sender);
-     }
-    } else {
-     const sender = peerSenders.get('music');
-     if (sender) {
-      try { pc.removeTrack(sender); } catch (e) {}
-      peerSenders.delete('music');
-     }
+    // Update Music Transceiver
+    const musicTransceiver = transceivers[1];
+    if (musicTransceiver && musicTrack) {
+      if (musicTransceiver.sender.track !== musicTrack) {
+       musicTransceiver.sender.replaceTrack(musicTrack);
+      }
     }
-    senders.current.set(peerId, peerSenders);
    }
   };
   updateTracks();
@@ -204,12 +188,20 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
    };
 
-   const peerSenders = new Map();
+   // V2: Transceiver-based Track Management
    const micTrack = localStream?.getAudioTracks()[0];
-   if (micTrack) peerSenders.set('mic', pc.addTrack(micTrack, localStream!));
+   if (micTrack) {
+    pc.addTransceiver(micTrack, { direction: 'sendrecv', streams: [localStream!] });
+   } else {
+    pc.addTransceiver('audio', { direction: 'recvonly' });
+   }
+
    const musTrack = musicStream?.getAudioTracks()[0];
-   if (musTrack) peerSenders.set('music', pc.addTrack(musTrack, musicStream!));
-   senders.current.set(peerId, peerSenders);
+   if (musTrack) {
+    pc.addTransceiver(musTrack, { direction: 'sendonly', streams: [musicStream!] });
+   } else {
+    pc.addTransceiver('audio', { direction: 'recvonly' });
+   }
 
    // -----------------------------------------------------------------------
    // ICE CANDIDATE BATCHING ENGINE

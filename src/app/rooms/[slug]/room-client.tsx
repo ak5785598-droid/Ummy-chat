@@ -78,7 +78,8 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
-import { useWebRTC } from '@/hooks/use-webrtc';
+import { useAgora } from '@/hooks/use-agora';
+import { IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
@@ -96,8 +97,8 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { useVoiceActivity } from '@/hooks/use-voice-activity';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 
-function RemoteAudio({ stream, muted, audioContext, peerId, onSpeakingChange }: { 
- stream: MediaStream, 
+function RemoteAudio({ user, muted, audioContext, peerId, onSpeakingChange }: { 
+ user: IAgoraRTCRemoteUser, 
  muted: boolean, 
  audioContext: AudioContext | null,
  peerId: string,
@@ -106,6 +107,12 @@ function RemoteAudio({ stream, muted, audioContext, peerId, onSpeakingChange }: 
  const audioRef = useRef<HTMLAudioElement>(null);
  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
  const gainRef = useRef<GainNode | null>(null);
+ 
+ const stream = useMemo(() => {
+  if (!user.audioTrack) return null;
+  return new MediaStream([user.audioTrack.getMediaStreamTrack()]);
+ }, [user.audioTrack]);
+
  const isSpeaking = useVoiceActivity(stream, audioContext);
 
  useEffect(() => {
@@ -121,14 +128,10 @@ function RemoteAudio({ stream, muted, audioContext, peerId, onSpeakingChange }: 
   sourceRef.current = ctx.createMediaStreamSource(stream);
   gainRef.current = ctx.createGain();
   sourceRef.current.connect(gainRef.current);
-  gainRef.current.connect(ctx.destination);
   
-  // Gain at 1.5 for extra clarity without clipping
-  gainRef.current.gain.setValueAtTime(muted ? 0 : 1.2, ctx.currentTime);
-
   if (audioRef.current) {
    audioRef.current.srcObject = stream;
-   audioRef.current.muted = true;
+   audioRef.current.muted = true; // Audio played by SDK
    audioRef.current.play().catch(() => {});
   }
 
@@ -380,7 +383,7 @@ export function RoomClient({ room }: { room: Room }) {
  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
  
- const { localStream, remoteStreams, connectionStates } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
+ const { localAudioTrack, remoteUsers, connectionStates } = useAgora(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, currentUser?.uid, musicStream);
 
  const messagesQuery = useMemoFirebase(() => {
   if (!firestore || !room.id) return null;
@@ -630,22 +633,22 @@ export function RoomClient({ room }: { room: Room }) {
    />
    <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
    
-   {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-    <RemoteAudio 
-     key={peerId} 
-     stream={stream} 
-     muted={isMutedLocal} 
-     audioContext={audioContextRef.current}
-     peerId={peerId}
-     onSpeakingChange={handleSpeakingChange}
-    />
-   ))}
+   {remoteUsers.map((u) => (
+     <RemoteAudio 
+      key={u.uid} 
+      user={u} 
+      muted={isMutedLocal} 
+      audioContext={audioContextRef.current}
+      peerId={u.uid as string}
+      onSpeakingChange={handleSpeakingChange}
+     />
+    ))}
 
-   <VADMonitor 
-    stream={localStream} 
-    audioContext={audioContextRef.current} 
-    onSpeakingChange={handleLocalSpeakingChange} 
-   />
+    <VADMonitor 
+     stream={localAudioTrack ? new MediaStream([localAudioTrack.getMediaStreamTrack()]) : null} 
+     audioContext={audioContextRef.current} 
+     onSpeakingChange={handleLocalSpeakingChange} 
+    />
    
    <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
