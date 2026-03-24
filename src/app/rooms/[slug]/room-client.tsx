@@ -124,7 +124,7 @@ function RemoteAudio({ stream, muted, audioContext, peerId, onSpeakingChange }: 
   gainRef.current.connect(ctx.destination);
   
   // Gain at 1.5 for extra clarity without clipping
-  gainRef.current.gain.setValueAtTime(muted ? 0 : 1.5, ctx.currentTime);
+  gainRef.current.gain.setValueAtTime(muted ? 0 : 1.2, ctx.currentTime);
 
   if (audioRef.current) {
    audioRef.current.srcObject = stream;

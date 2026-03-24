@@ -56,8 +56,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  // ---------------------------------------------------------------------------
  const mungeSDP = (sdp?: string) => {
   if (!sdp) return sdp;
-  // Strictly enforce 32kbps (Application Specific constraint) scaling
-  return sdp.replace(/a=mid:(audio|mic)\r\n/g, 'a=mid:$1\r\nb=AS:32\r\n');
+  // Expand bandwidth to 64kbps for better robustness
+  // Use a more generic regex to target audio media sections
+  return sdp.replace(/a=mid:(audio|mic|0|1)\r\n/g, 'a=mid:$1\r\nb=AS:64\r\n');
  };
 
  const updateConnectionState = useCallback((peerId: string, state: PeerConnectionState) => {
@@ -85,8 +86,17 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
+      // Chromium-specific advanced flags for stability
+      // @ts-ignore
+      googEchoCancellation: true,
+      // @ts-ignore
+      googAutoGainControl: true,
+      // @ts-ignore
+      googNoiseSuppression: true,
+      // @ts-ignore
+      googHighpassFilter: true,
       sampleRate: 48000,
-      channelCount: 1 // Mono stream saves bandwidth
+      channelCount: 1 
      }, 
      video: false 
     });
