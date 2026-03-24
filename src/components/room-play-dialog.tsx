@@ -38,15 +38,16 @@ import { searchVideosAction } from '@/actions/get-videos';
 import { useRoomContext } from './room-provider';
 
 interface RoomPlayDialogProps {
- open: boolean;
- onOpenChange: (open: boolean) => void;
- participants?: RoomParticipant[];
- roomId?: string;
- room?: any;
- isMutedLocal: boolean;
- setIsMutedLocal: (val: boolean) => void;
- onOpenGames: () => void;
- onPlayLocalMusic?: (file: File) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  participants?: RoomParticipant[];
+  roomId?: string;
+  room?: any;
+  isMutedLocal: boolean;
+  setIsMutedLocal: (val: boolean) => void;
+  onOpenGames: () => void;
+  onPlayLocalMusic?: (file: File) => void;
+  onClearChat?: () => void;
 }
 
 /**
@@ -54,15 +55,16 @@ interface RoomPlayDialogProps {
  * Interactive tools for authorities and tribe members.
  */
 export function RoomPlayDialog({ 
- open, 
- onOpenChange, 
- participants = [], 
- roomId, 
- room,
- isMutedLocal,
- setIsMutedLocal,
- onOpenGames,
- onPlayLocalMusic
+  open, 
+  onOpenChange, 
+  participants = [], 
+  roomId, 
+  room,
+  isMutedLocal,
+  setIsMutedLocal,
+  onOpenGames,
+  onPlayLocalMusic,
+  onClearChat
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
  const [view, setView] = useState<'grid' | 'selection' | 'rules' | 'music'>('grid');
@@ -101,7 +103,8 @@ export function RoomPlayDialog({
    snap.docs.forEach(d => batch.delete(d.ref));
    
    await batch.commit();
-   toast({ title: 'Frequency Purified', description: 'Chat history cleared.' });
+    toast({ title: 'Frequency Purified', description: 'Chat history cleared.' });
+    if (onClearChat) onClearChat();
    onOpenChange(false);
   } catch (e: any) {
    console.error(e);
@@ -160,12 +163,12 @@ export function RoomPlayDialog({
  };
 
  const handlePlayDeviceTrack = (file: File) => {
-  setIsMusicEnabled(true);
-  if (onPlayLocalMusic) {
-   onPlayLocalMusic(file);
-   toast({ title: 'Broadcasting Track', description: `Syncing ${file.name} to room.` });
-  }
- };
+   setIsMusicEnabled(true);
+   if (onPlayLocalMusic) {
+    onPlayLocalMusic(file);
+    toast({ title: 'Broadcasting Track', description: `Syncing ${file.name} to room.` });
+   }
+  };
 
  const options = [
   { 

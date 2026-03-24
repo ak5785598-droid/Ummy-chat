@@ -264,6 +264,7 @@ export function RoomClient({ room }: { room: Room }) {
  const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
  const [now, setNow] = useState<number | null>(null);
  const [activeSpeakers, setActiveSpeakers] = useState<Set<string>>(new Set());
+  const [showAnnouncements, setShowAnnouncements] = useState(true);
  const audioContextRef = useRef<AudioContext | null>(null);
 
  useEffect(() => {
@@ -655,7 +656,7 @@ export function RoomClient({ room }: { room: Room }) {
      alt="Background" 
      fill 
      unoptimized
-     className="object-cover opacity-60 animate-in fade-in duration-1000" 
+     className="object-contain opacity-60 animate-in fade-in duration-1000" 
      priority 
     />
     <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
@@ -757,19 +758,21 @@ export function RoomClient({ room }: { room: Room }) {
        })}
       </div>
 
-      <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
-       {globalConfig?.globalAnnouncement && (
-        <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
-          <Zap className="h-2 w-2 text-red-400 fill-current" />
-          <p className="text-[10px] font-bold text-red-200 uppercase tracking-tight leading-relaxed">
-           Official: {globalConfig.globalAnnouncement}
-          </p>
-        </div>
-       )}
-       <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-tight drop-shadow-md text-left leading-relaxed">
-         Announcement: {room.announcement || "Welcome to Umm Chat"}
-       </p>
-      </div>
+      {showAnnouncements && (
+       <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
+        {globalConfig?.globalAnnouncement && (
+         <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
+           <Zap className="h-2 w-2 text-red-400 fill-current" />
+           <p className="text-[10px] font-bold text-red-200 uppercase tracking-tight leading-relaxed">
+            Official: {globalConfig.globalAnnouncement}
+           </p>
+         </div>
+        )}
+        <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-tight drop-shadow-md text-left leading-relaxed">
+          Announcement: {room.announcement || "Welcome to Umm Chat"}
+        </p>
+       </div>
+      )}
     </div>
 
     <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
@@ -807,7 +810,7 @@ export function RoomClient({ room }: { room: Room }) {
                 }}
                 className="mb-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10 shadow-sm"
                >
-                <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                <Image src={msg.imageUrl} fill className="object-contain" alt="Sent vibe" unoptimized />
                </div>
               )}
               {msg.content && <p className="font-bold leading-snug drop-shadow-sm">{msg.content}</p>}
@@ -989,6 +992,7 @@ export function RoomClient({ room }: { room: Room }) {
     setIsMutedLocal={setIsMutedLocal}
     onOpenGames={() => setIsRoomGamesOpen(true)}
     onPlayLocalMusic={handlePlayLocalMusic}
+     onClearChat={() => setShowAnnouncements(false)}
    />
    <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
    <RoomMessagesDialog 
