@@ -130,8 +130,7 @@ export function AppLayout({
  const isMainNav = pathname === '/rooms' || 
           pathname === '/discover' || 
           pathname === '/messages' || 
-          pathname === '/profile' ||
-          pathname === `/profile/${user?.uid}`;
+          pathname?.startsWith('/profile');
 
  const shouldShowBottomNav = !hideBottomNav && isMainNav && !hideSidebarOnMobile;
 
