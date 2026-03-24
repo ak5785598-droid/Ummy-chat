@@ -50,12 +50,19 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    });
 
    try {
-    // Join channel
+    console.warn('[Agora] Attempting to join room:', roomId, 'with UID:', uid);
     await client.join(APP_ID, roomId, null, uid);
     setIsReady(true);
-    console.log('[Agora] Joined room:', roomId);
-   } catch (error) {
-    console.error('[Agora] Join failed:', error);
+    console.warn('[Agora] Join SUCCESS');
+   } catch (error: any) {
+    console.error('[Agora] Join FAILED:', error);
+    if (error.code === 'CAN_NOT_GET_GATEWAY_SERVER') {
+     console.warn('[Agora] Network Error: Cannot reach Agora servers.');
+    } else if (error.code === 'INVALID_APP_ID') {
+     console.warn('[Agora] App ID is invalid.');
+    } else if (error.message?.includes('token')) {
+     console.warn('[Agora] TOKEN REQUIRED: Your Agora project has "App Certificate" enabled. You must disable it for testing or provide a token server.');
+    }
    }
   };
 
@@ -80,17 +87,22 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    const client = clientRef.current!;
    
    if (isInSeat) {
+    console.warn('[Agora] Switching to broadcaster/host role...');
     await client.setClientRole('host');
     if (!localAudioTrack) {
-     const track = await AgoraRTC.createMicrophoneAudioTrack({
-      AEC: true,
-      AGC: true,
-      ANS: true,
-      encoderConfig: 'high_quality_stereo'
-     });
-     setLocalAudioTrack(track);
-     await client.publish(track);
-     console.log('[Agora] Published local mic');
+     try {
+      const track = await AgoraRTC.createMicrophoneAudioTrack({
+       AEC: true,
+       AGC: true,
+       ANS: true,
+       encoderConfig: 'high_quality_stereo'
+      });
+      setLocalAudioTrack(track);
+      await client.publish(track);
+      console.warn('[Agora] Mic PUBLISHED successfully');
+     } catch (err) {
+      console.error('[Agora] Mic Publish FAILED:', err);
+     }
     }
    } else {
     if (localAudioTrack) {
