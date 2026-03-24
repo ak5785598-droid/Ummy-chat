@@ -163,7 +163,8 @@ const Seat = ({
  onClick,
  roomOwnerId,
  roomModeratorIds,
- isSpeaking
+ isSpeaking,
+ connectionState
 }: { 
  index: number, 
  label: string, 
@@ -173,7 +174,8 @@ const Seat = ({
  onClick: (index: number, occupant?: RoomParticipant) => void,
  roomOwnerId: string,
  roomModeratorIds: string[],
- isSpeaking?: boolean
+ isSpeaking?: boolean,
+ connectionState?: 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
 }) => {
  const isOccupantOwner = occupant?.uid === roomOwnerId;
  const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
@@ -215,6 +217,15 @@ const Seat = ({
      </div>
     </AvatarFrame>
     {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
+    {occupant && connectionState && (
+     <div className="absolute top-0 right-0 z-30 flex items-center justify-center p-0.5 bg-black/60 rounded-full border border-white/20 backdrop-blur-sm shadow-md">
+      <div className={cn("h-1.5 w-1.5 rounded-full shadow-[0_0_5px_currentColor]", 
+       connectionState === 'connected' ? "bg-green-500 text-green-500" :
+       connectionState === 'connecting' || connectionState === 'new' ? "bg-yellow-500 text-yellow-500 animate-pulse" :
+       "bg-red-500 text-red-500 animate-pulse"
+      )} />
+     </div>
+    )}
    </div>
    
    <div className="flex items-center justify-center gap-0.5 w-full mt-0.5">
@@ -368,7 +379,7 @@ export function RoomClient({ room }: { room: Room }) {
  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
  
- const { localStream, remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
+ const { localStream, remoteStreams, connectionStates } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
 
  const messagesQuery = useMemoFirebase(() => {
   if (!firestore || !room.id) return null;
@@ -702,6 +713,7 @@ export function RoomClient({ room }: { room: Room }) {
          roomOwnerId={room.ownerId} 
          roomModeratorIds={room.moderatorIds || []} 
          isSpeaking={activeSpeakers.has(participants.find(p => p.seatIndex === 1)?.uid || '')}
+         connectionState={connectionStates.get(participants.find(p => p.seatIndex === 1)?.uid || '')}
         />
        </div>
       </div>
@@ -721,6 +733,7 @@ export function RoomClient({ room }: { room: Room }) {
           roomOwnerId={room.ownerId} 
           roomModeratorIds={room.moderatorIds || []} 
           isSpeaking={activeSpeakers.has(occupant?.uid || '')}
+          connectionState={occupant ? connectionStates.get(occupant.uid) : undefined}
          />
         );
        })}
