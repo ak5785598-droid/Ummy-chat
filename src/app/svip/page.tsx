@@ -43,7 +43,7 @@ export default function SvipClubPage() {
  );
 
  return (
-  <AppLayout hideSidebarOnMobile hideBottomNav>
+  <AppLayout>
    <div className="min-h-full bg-[#0a0514] text-white font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-700">
     
     {/* Cinematic Header */}

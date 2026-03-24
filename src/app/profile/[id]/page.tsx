@@ -446,14 +446,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
  if (isUserLoading || isProfileLoading) return (
-  <AppLayout hideSidebarOnMobile><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-bold uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
+  <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-bold uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
  );
  
  if (!profile) return null;
 
  if (isOwnProfile) {
   return (
-   <AppLayout hideSidebarOnMobile>
+   <AppLayout>
     <div className="min-h-full bg-gradient-to-b from-[#f7f8fa] to-[#ffffff] text-gray-900 font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
      
      <div className="absolute inset-0 pointer-events-none opacity-40">
@@ -612,7 +612,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
  }
 
  return (
-  <AppLayout hideSidebarOnMobile>
+  <AppLayout>
     <PublicProfileView 
      profile={profile} 
      onBack={() => router.back()} 

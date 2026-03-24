@@ -92,7 +92,7 @@ export default function DiamondExchangePage() {
 
  if (isUserLoading || isProfileLoading) {
   return (
-   <AppLayout hideSidebarOnMobile>
+   <AppLayout>
     <div className="flex h-screen items-center justify-center bg-white">
      <Loader className="animate-spin text-primary h-8 w-8" />
     </div>
@@ -103,7 +103,7 @@ export default function DiamondExchangePage() {
  if (!user) return null;
 
  return (
-  <AppLayout hideSidebarOnMobile>
+  <AppLayout>
    <div className="min-h-full bg-white font-sans flex flex-col animate-in fade-in duration-700">
     
     {/* Header Protocol */}

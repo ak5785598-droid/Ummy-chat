@@ -469,7 +469,7 @@ function LeaderboardContent() {
 
 export default function LeaderboardPage() {
  return (
-  <AppLayout hideSidebarOnMobile>
+  <AppLayout>
    <Suspense fallback={
     <div className="flex h-screen items-center justify-center bg-[#050505]">
      <Loader className="animate-spin text-primary h-8 w-8" />

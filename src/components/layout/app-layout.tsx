@@ -130,9 +130,20 @@ export function AppLayout({
  const isMainNav = pathname === '/rooms' || 
           pathname === '/discover' || 
           pathname === '/messages' || 
-          pathname?.startsWith('/profile');
+          pathname?.startsWith('/profile') ||
+          pathname?.startsWith('/wallet') ||
+          pathname?.startsWith('/store') ||
+          pathname?.startsWith('/settings') ||
+          pathname?.startsWith('/tasks') ||
+          pathname?.startsWith('/level') ||
+          pathname?.startsWith('/cp-house') ||
+          pathname?.startsWith('/help-center') ||
+          pathname?.startsWith('/about') ||
+          pathname?.startsWith('/leaderboard') ||
+          pathname?.startsWith('/games') ||
+          pathname?.startsWith('/svip');
 
- const shouldShowBottomNav = !hideBottomNav && isMainNav && !hideSidebarOnMobile;
+ const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
 
  return (
   <SidebarProvider defaultOpen={false}>

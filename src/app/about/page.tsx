@@ -24,7 +24,7 @@ export default function AboutPage() {
  const router = useRouter();
 
  return (
-  <AppLayout hideSidebarOnMobile hideBottomNav fullScreen>
+  <AppLayout fullScreen>
    <div className="min-h-full bg-[#f8f9fa] font-sans flex flex-col animate-in fade-in duration-700 overflow-hidden relative">
     
     {/* Ambient Top Gradient Sync */}

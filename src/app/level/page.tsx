@@ -75,7 +75,7 @@ export default function UserLevelPage() {
  const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
 
  return (
-  <AppLayout hideSidebarOnMobile>
+  <AppLayout>
    <div className="min-h-full bg-white font-sans pb-20 animate-in fade-in duration-700">
     <header className="p-6 pt-10 flex items-center justify-between">
      <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
