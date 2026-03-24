@@ -236,5 +236,63 @@ export const ROOM_THEMES: RoomTheme[] = [
   seatColor: 'rgba(139, 92, 246, 0.25)',
   accentColor: '#8b5cf6',
   category: 'help'
+ },
+
+ // --- UMMY OFFICIAL COLLECTION ---
+ { 
+  id: 'ummy_golden_glow', 
+  name: 'Ummy Golden Glow', 
+  url: '/themes/ummy_golden_glow.png',
+  isOfficial: true,
+  seatColor: 'rgba(251, 191, 36, 0.25)',
+  accentColor: '#fbbf24',
+  category: 'general'
+ },
+ { 
+  id: 'ummy_neon_night', 
+  name: 'Ummy Neon Night', 
+  url: '/themes/ummy_neon_night.png',
+  isOfficial: true,
+  seatColor: 'rgba(168, 85, 247, 0.25)',
+  accentColor: '#a855f7',
+  category: 'general'
+ },
+ { 
+  id: 'ummy_galaxy', 
+  name: 'Ummy Galaxy', 
+  url: '/themes/ummy_galaxy.png',
+  isOfficial: true,
+  seatColor: 'rgba(99, 102, 241, 0.25)',
+  accentColor: '#6366f1',
+  category: 'general'
+ },
+ { 
+  id: 'ummy_spring_garden', 
+  name: 'Ummy Spring Garden', 
+  url: '/themes/ummy_spring_garden.png',
+  isOfficial: true,
+  seatColor: 'rgba(74, 222, 128, 0.25)',
+  accentColor: '#4ade80',
+  category: 'general'
+ },
+
+ // --- UMMY HELP COLLECTION ---
+ { 
+  id: 'ummy_help_desk', 
+  name: 'Ummy Help Desk', 
+  url: '/themes/ummy_help_desk.png',
+  isOfficial: true,
+  seatColor: 'rgba(20, 184, 166, 0.25)',
+  accentColor: '#14b8a6',
+  category: 'help'
+ },
+ { 
+  id: 'ummy_help_guide', 
+  name: 'Ummy Help Guide', 
+  url: '/themes/ummy_help_guide.png',
+  isOfficial: true,
+  seatColor: 'rgba(167, 139, 250, 0.25)',
+  accentColor: '#a78bfa',
+  category: 'help'
  }
 ];
