@@ -17,6 +17,7 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 const STATIC_STORE_ITEMS = [
  // BUBBLES (20)
@@ -199,15 +200,21 @@ export default function StorePage() {
           <Card key={item.id} className="relative overflow-hidden group border-none shadow-lg rounded-3xl bg-white">
            <div className="aspect-square bg-gradient-to-b from-secondary/30 to-transparent flex flex-col items-center justify-center p-10 relative">
             {item.type === 'Frame' ? (
-             <AvatarFrame frameId={item.id} className="w-32 h-24">
-               <Avatar className="w-full h-full border-4 border-white shadow-xl"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
+             <AvatarFrame frameId={item.id} className="w-24 h-24">
+               <Avatar className="w-full h-full border-2 border-slate-200 shadow-xl"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
              </AvatarFrame>
             ) : item.type === 'Theme' ? (
              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-xl border-4 border-white">
                <Image src={item.url} alt={item.name} fill className="object-cover" unoptimized />
              </div>
+            ) : item.type === 'Bubble' ? (
+             <div className="w-full flex justify-center transform scale-125 origin-center">
+              <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px] min-w-[120px] text-center">
+               Hello Wafa 
+              </ChatMessageBubble>
+             </div>
             ) : <item.icon className={cn("h-24 w-24 opacity-20", item.color)} />}
-            <Badge className="absolute top-6 right-6 bg-white/80 backdrop-blur-md text-foreground border-none font-bold uppercase text-[10px] tracking-wider px-3 shadow-sm">{item.type}</Badge>
+            <Badge className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-foreground border-none font-bold uppercase text-[9px] tracking-wider px-2 shadow-sm">{item.type}</Badge>
            </div>
            <CardHeader className="text-center pb-2">
             <CardTitle className="font-sans uppercase text-xl tracking-tight text-slate-900">{item.name}</CardTitle>

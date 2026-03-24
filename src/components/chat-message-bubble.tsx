@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Heart, Star, Moon } from 'lucide-react';
 
 interface ChatMessageBubbleProps {
  bubbleId?: string | null;
@@ -10,16 +10,15 @@ interface ChatMessageBubbleProps {
 }
 
 /**
- * Dynamic Chat Bubble renderer.
- * Applies CSS backgrounds, glowing borders, and floating decorators based on the bubble ID.
+ * High-Fidelity Chat Bubble renderer.
+ * Designed exactly like Wafa (pill-shaped, rich gradients, dynamic tails/decorators).
  */
 export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatMessageBubbleProps) {
- // Default styling if no premium bubble is equipped
  if (!bubbleId || bubbleId === 'None') {
   return (
    <div className={cn(
-    "px-3 py-2 rounded-2xl text-[13px] font-medium shadow-sm border max-w-[85%]",
-    isMe ? "bg-[#00E676] text-black rounded-br-none border-[#00E676]/20 self-end" : "bg-white/15 text-white rounded-bl-none border-white/5 self-start",
+    "px-3 py-1.5 rounded-full text-[13px] font-medium shadow-sm border max-w-[85%] relative",
+    isMe ? "bg-[#00E676] text-black rounded-br-sm border-[#00E676]/20 self-end" : "bg-white/15 text-white rounded-bl-sm border-white/5 self-start",
     className
    )}>
     {children}
@@ -27,89 +26,91 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
   );
  }
 
- // Style configurations for the 20+ bubbles
- const styles: Record<string, { bg: string, text: string, border: string, shadow: string, decorator?: React.ReactNode }> = {
+ // Style configurations for premium Wafa-style bubbles
+ const styles: Record<string, { bg: string, text: string, border: string, shadow: string, decorator?: React.ReactNode, tailColor: string }> = {
   'heart-bubble': {
    bg: 'bg-gradient-to-r from-pink-500 to-rose-400',
    text: 'text-white font-bold',
-   border: 'border-pink-300',
-   shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.5)]',
-   decorator: <div className="absolute -top-2 -right-2 text-lg animate-bounce drop-shadow-md">💖</div>
+   border: 'border-white border border-opacity-40',
+   shadow: 'shadow-[0_4px_15px_rgba(236,72,153,0.4)]',
+   tailColor: 'fill-rose-400',
+   decorator: <div className="absolute -top-1.5 -right-2 text-lg drop-shadow-md animate-bounce">💖</div>
   },
   'love-bubble': {
-   bg: 'bg-gradient-to-br from-red-600 to-red-400',
+   bg: 'bg-gradient-to-r from-red-600 to-red-500',
    text: 'text-white font-bold',
-   border: 'border-red-300',
-   shadow: 'shadow-[0_0_20px_rgba(220,38,38,0.6)]',
-   decorator: <div className="absolute -bottom-2 -left-2 text-xl drop-shadow-md">💌</div>
+   border: 'border-white/30 border-2',
+   shadow: 'shadow-[0_4px_15px_rgba(220,38,38,0.5)]',
+   tailColor: 'fill-red-500',
+   decorator: <div className="absolute top-1/2 -translate-y-1/2 -right-3 text-xl drop-shadow-lg">💌</div>
   },
   'evil-bubble': {
-   bg: 'bg-[#1a0033]',
-   text: 'text-purple-200',
-   border: 'border-purple-600 border-[2px]',
-   shadow: 'shadow-[0_0_15px_rgba(147,51,234,0.6)]',
+   bg: 'bg-gradient-to-r from-[#2a0845] to-[#6441A5]',
+   text: 'text-purple-100 font-bold',
+   border: 'border-purple-500 border-2',
+   shadow: 'shadow-[0_4px_20px_rgba(147,51,234,0.5)]',
+   tailColor: 'fill-[#6441A5]',
    decorator: (
     <>
-     <div className="absolute -top-3 left-1 text-xl">😈</div>
-     <div className="absolute -bottom-1 -right-2 text-lg">🔱</div>
+     <div className="absolute -top-3 left-3 text-xl drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">😈</div>
+     <div className="absolute -bottom-1 -right-2 text-lg drop-shadow-lg">🔱</div>
     </>
    )
   },
   'candy-bubble': {
-   bg: 'bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300',
-   text: 'text-white font-bold drop-shadow-sm',
-   border: 'border-white border-[2px] border-dashed',
-   shadow: 'shadow-lg',
-   decorator: <div className="absolute -bottom-2 -right-2 text-2xl animate-spin-slow">🍭</div>
+   bg: 'bg-gradient-to-r from-[#ff9a9e] via-[#fecfef] to-[#ff9a9e]',
+   text: 'text-pink-900 font-black',
+   border: 'border-white border-2 border-dashed',
+   shadow: 'shadow-[0_2px_10px_rgba(255,154,158,0.5)]',
+   tailColor: 'fill-[#ff9a9e]',
+   decorator: <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-2xl animate-spin-slow drop-shadow-md">🍭</div>
   },
   'taurus-2025': {
-   bg: 'bg-gradient-to-tr from-yellow-700 to-yellow-500',
-   text: 'text-white font-bold',
-   border: 'border-yellow-200',
-   shadow: 'shadow-[0_0_10px_rgba(202,138,4,0.5)]',
-   decorator: <div className="absolute top-1/2 -right-4 -translate-y-1/2 text-2xl">♉</div>
+   bg: 'bg-gradient-to-r from-[#F09819] to-[#EDDE5D]',
+   text: 'text-yellow-950 font-black',
+   border: 'border-white/50 border-2',
+   shadow: 'shadow-[0_4px_15px_rgba(240,152,25,0.4)]',
+   tailColor: 'fill-[#EDDE5D]',
+   decorator: <div className="absolute top-1/2 -right-4 -translate-y-1/2 text-2xl drop-shadow-lg">♉</div>
   },
   'cricket-2025': {
-   bg: 'bg-gradient-to-r from-green-700 to-emerald-500',
-   text: 'text-white font-bold',
-   border: 'border-green-300',
-   shadow: 'shadow-md',
-   decorator: <div className="absolute -top-3 -right-2 text-xl animate-bounce">🏏</div>
+   bg: 'bg-gradient-to-r from-teal-700 to-emerald-500',
+   text: 'text-white font-bold tracking-wide',
+   border: 'border-emerald-300 border-2',
+   shadow: 'shadow-[0_4px_15px_rgba(16,185,129,0.4)]',
+   tailColor: 'fill-emerald-500',
+   decorator: <div className="absolute top-1/2 -translate-y-1/2 -right-3 text-xl">🏏</div>
   },
   'neon-cyber': {
-   bg: 'bg-black/80 backdrop-blur-md',
-   text: 'text-cyan-400 font-mono tracking-wide',
-   border: 'border-cyan-400 border-[2px]',
-   shadow: 'shadow-[0_0_20px_rgba(34,211,238,0.8)]',
-   decorator: <Sparkles className="absolute -top-2 -left-2 h-5 w-5 text-cyan-400 animate-pulse" />
+   bg: 'bg-black/90 backdrop-blur-xl',
+   text: 'text-[#00ffff] font-mono font-bold tracking-wider',
+   border: 'border-[#00ffff] border-[2px]',
+   shadow: 'shadow-[0_0_20px_rgba(0,255,255,0.6)]',
+   tailColor: 'fill-[#00ffff]',
+   decorator: <Sparkles className="absolute -top-2 -left-2 h-5 w-5 text-[#00ffff] animate-pulse drop-shadow-[0_0_5px_rgba(0,255,255,1)]" />
   },
   'royal-gold': {
-   bg: 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600',
-   text: 'text-yellow-950 font-black',
-   border: 'border-yellow-200 border-[2px]',
-   shadow: 'shadow-[0_4px_15px_rgba(234,179,8,0.6)]',
-   decorator: <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl drop-shadow-xl">👑</div>
-  },
-  'toxic-slime': {
-   bg: 'bg-lime-900',
-   text: 'text-lime-300 font-bold',
-   border: 'border-lime-500 border-b-[4px]',
-   shadow: 'shadow-[0_10px_20px_rgba(132,204,22,0.4)]',
-   decorator: <div className="absolute -bottom-3 left-4 text-xl animate-pulse">💧</div>
+   bg: 'bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728]',
+   text: 'text-yellow-950 font-black uppercase tracking-tight',
+   border: 'border-yellow-100 border-2 shadow-inner',
+   shadow: 'shadow-[0_6px_20px_rgba(212,175,55,0.6)]',
+   tailColor: 'fill-[#B38728]',
+   decorator: <div className="absolute -top-5 right-2 text-2xl drop-shadow-xl z-20">👑</div>
   },
   'ice-crystal': {
-   bg: 'bg-blue-900/80 backdrop-blur-md',
-   text: 'text-cyan-100 font-medium',
-   border: 'border-cyan-200 border-[2px]',
-   shadow: 'shadow-[0_0_30px_rgba(165,243,252,0.6)]',
+   bg: 'bg-gradient-to-r from-cyan-300 to-blue-300',
+   text: 'text-blue-950 font-bold',
+   border: 'border-white border-[2px]',
+   shadow: 'shadow-[0_0_20px_rgba(165,243,252,0.8)]',
+   tailColor: 'fill-blue-300',
    decorator: <div className="absolute -top-2 -right-2 text-xl animate-pulse">❄️</div>
   },
-  // Default fallback for dynamically generated ones
   'default-premium': {
    bg: 'bg-gradient-to-r from-indigo-500 to-purple-500',
-   text: 'text-white font-medium',
-   border: 'border-purple-300',
+   text: 'text-white font-bold',
+   border: 'border-white/30 border-2',
    shadow: 'shadow-lg',
+   tailColor: 'fill-purple-500',
   }
  };
 
@@ -117,16 +118,29 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
 
  return (
   <div className={cn(
-   "relative px-4 py-2.5 rounded-2xl max-w-[85%] transition-all",
-   isMe ? "self-end rounded-br-none" : "self-start rounded-bl-none",
+   "relative px-4 py-1.5 rounded-full max-w-[85%] transition-all flex items-center min-h-[36px]",
+   isMe ? "self-end" : "self-start",
    config.bg,
    config.text,
-   config.border ? `border ${config.border}` : '',
+   config.border,
    config.shadow,
    className
   )}>
+   {/* Pointy Talk Bubble Tail for realism */}
+   <svg 
+    viewBox="0 0 10 10" 
+    className={cn(
+     "absolute w-3 h-3 bottom-0", 
+     isMe ? "-right-1.5 translate-y-[-4px] scale-x-[-1]" : "-left-1.5 translate-y-[-4px]",
+     config.tailColor
+    )}
+   >
+     <path d="M0 0 L10 10 L0 10 Z" />
+   </svg>
+
    {config.decorator}
-   <div className="relative z-10 leading-relaxed drop-shadow-sm">
+   
+   <div className="relative z-10 w-full truncate whitespace-normal pr-4">
     {children}
    </div>
   </div>

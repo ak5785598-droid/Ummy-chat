@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Crown } from 'lucide-react';
 
 interface AvatarFrameProps {
  frameId?: string | null;
@@ -12,33 +11,39 @@ interface AvatarFrameProps {
 }
 
 /**
- * Dynamic Frame Generator for the 70+ Store Frames.
- * Renders procedural, high-fidelity CSS and SVG frames to save bundle size.
+ * High-Fidelity Dynamic Frame Generator
+ * Uses complex layered SVG paths instead of CSS borders to achieve the 
+ * "perfect" premium look found in Wafa/Haza.
  */
 function DynamicFrameGenerator({ frameId }: { frameId: string }) {
  if (frameId.startsWith('frame-gen-')) {
-  // Procedural elemental auras
   const idNum = parseInt(frameId.split('-')[2]);
   const colors = [
-   ['#f87171', '#ef4444'], // red
-   ['#60a5fa', '#3b82f6'], // blue
-   ['#4ade80', '#22c55e'], // green
-   ['#facc15', '#eab308'], // yellow
-   ['#c084fc', '#a855f7'], // purple
-   ['#22d3ee', '#06b6d4'], // cyan
+   { g1: '#fca5a5', g2: '#ef4444', g3: '#991b1b' }, // fire
+   { g1: '#93c5fd', g2: '#3b82f6', g3: '#1e3a8a' }, // water
+   { g1: '#86efac', g2: '#22c55e', g3: '#14532d' }, // earth
+   { g1: '#fde047', g2: '#eab308', g3: '#713f12' }, // lightning
+   { g1: '#d8b4fe', g2: '#a855f7', g3: '#581c87' }, // void
+   { g1: '#67e8f9', g2: '#06b6d4', g3: '#164e63' }, // ice
   ][idNum % 6];
   
   return (
-   <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl overflow-visible animate-spin-slow">
-    <circle cx="50" cy="50" r="48" fill="none" stroke={`url(#grad-${idNum})`} strokeWidth="3" strokeDasharray="30 10" className="animate-pulse" />
+   <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_4px_15px_rgba(0,0,0,0.5)] overflow-visible">
     <defs>
-     <linearGradient id={`grad-${idNum}`} x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor={colors[0]} />
-      <stop offset="100%" stopColor={colors[1]} />
+     <linearGradient id={`aura-${idNum}`} x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor={colors.g1} />
+      <stop offset="50%" stopColor={colors.g2} />
+      <stop offset="100%" stopColor={colors.g3} />
      </linearGradient>
     </defs>
-    <circle cx="20" cy="20" r="4" fill={colors[0]} className="animate-bounce" />
-    <circle cx="80" cy="80" r="3" fill={colors[1]} className="animate-ping" />
+    {/* Base Ring */}
+    <circle cx="50" cy="50" r="48" fill="none" stroke={`url(#aura-${idNum})`} strokeWidth="4" className="animate-spin-slow opacity-90" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke={colors.g1} strokeWidth="1" strokeDasharray="5 5" className="animate-spin-reverse opacity-70" style={{ animationDuration: '6s' }} />
+    {/* Premium outer flares */}
+    <path d="M50 0 L55 5 L50 10 L45 5 Z" fill={colors.g1} className="animate-pulse" />
+    <path d="M50 90 L55 95 L50 100 L45 95 Z" fill={colors.g1} className="animate-pulse" />
+    <path d="M0 50 L5 45 L10 50 L5 55 Z" fill={colors.g1} className="animate-pulse" />
+    <path d="M90 50 L95 45 L100 50 L95 55 Z" fill={colors.g1} className="animate-pulse" />
    </svg>
   );
  }
@@ -46,80 +51,156 @@ function DynamicFrameGenerator({ frameId }: { frameId: string }) {
  switch (frameId) {
   case 'fuffy':
    return (
-    <div className="absolute inset-0 rounded-full border-[5px] border-blue-300 shadow-[0_0_15px_rgba(147,197,253,0.8)]">
-     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-yellow-200 text-xs px-2 py-0.5 rounded-full border-2 border-yellow-400 font-bold drop-shadow-md">🎀 Kitty</div>
-     <div className="absolute top-0 right-0 w-4 h-4 rounded-full bg-white shadow-lg animate-pulse" />
-    </div>
+    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl overflow-visible">
+     <defs>
+      <linearGradient id="fuffyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+       <stop offset="0%" stopColor="#c4b5fd" />
+       <stop offset="100%" stopColor="#e879f9" />
+      </linearGradient>
+      <filter id="glowFuffy"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+     </defs>
+     {/* Core Ring */}
+     <circle cx="50" cy="50" r="48" fill="none" stroke="url(#fuffyGrad)" strokeWidth="6" filter="url(#glowFuffy)" />
+     <circle cx="50" cy="50" r="44" fill="none" stroke="#fff" strokeWidth="1.5" opacity="0.6" strokeDasharray="10 4" className="animate-spin-slow" />
+     {/* Fuffy Bow */}
+     <g transform="translate(50, 95) scale(1.5)">
+      <path d="M-15,-5 Q-20,-15 -10,-15 Q-5,-10 0,-5 Q5,-10 10,-15 Q20,-15 15,-5 Q10,0 5,2 Q0,5 -5,2 Z" fill="#fde047" stroke="#ca8a04" strokeWidth="1" className="drop-shadow-lg" />
+      <circle cx="0" cy="-2" r="4" fill="#ef4444" />
+     </g>
+     {/* Magic Dust */}
+     <circle cx="20" cy="15" r="2" fill="#fff" className="animate-ping" />
+     <circle cx="85" cy="40" r="1.5" fill="#fff" className="animate-pulse" />
+    </svg>
    );
+
   case 'sea-n-sands':
    return (
-    <div className="absolute inset-0 rounded-full border-[5px] border-cyan-400 border-dashed shadow-[0_0_20px_rgba(34,211,238,0.6)] animate-spin-slow">
-     <div className="absolute -right-2 top-10 text-xl rotate-12">🍹</div>
-     <div className="absolute -left-2 top-2 text-xl -rotate-12">🍉</div>
-    </div>
-   );
-  case 'basra':
-   return (
-    <div className="absolute inset-0 rounded-full border-[6px] border-[#5c4033] shadow-inner flex items-center justify-center">
-     <div className="absolute inset-0 border-2 border-green-500 rounded-full animate-ping opacity-20" />
-     <div className="absolute -bottom-2 right-0 text-2xl drop-shadow-xl z-30">🫖</div>
-    </div>
-   );
-  case 'butterflies':
-   return (
-    <div className="absolute inset-0 rounded-full border-[4px] border-purple-300 shadow-[0_0_10px_rgba(216,180,254,0.8)]">
-     <div className="absolute inset-0 animate-spin-slow opacity-80">
-      <div className="absolute -top-3 left-4 text-xl rotate-45">🦋</div>
-      <div className="absolute bottom-4 -right-2 text-xl -rotate-45">🦋</div>
-      <div className="absolute top-1/2 -left-4 text-xl">🦋</div>
-     </div>
-    </div>
-   );
-  case 'top3family':
-   return (
-    <div className="absolute inset-0 rounded-full border-[6px] border-pink-400 outline outline-2 outline-pink-200 outline-offset-2 flex flex-col items-center shadow-[0_0_30px_rgba(244,114,182,0.8)]">
-     <Crown className="absolute -top-6 text-pink-500 h-8 w-8 drop-shadow-lg fill-current animate-bounce" />
-     <div className="absolute -bottom-2 w-full text-center text-[8px] font-black uppercase text-white bg-pink-500 rounded px-1 tracking-widest shadow-lg">Top 3</div>
-    </div>
-   );
-  case 'top2family':
-   return (
-    <div className="absolute inset-0 rounded-full border-[6px] border-blue-400 outline outline-2 outline-blue-200 outline-offset-2 flex flex-col items-center shadow-[0_0_30px_rgba(96,165,250,0.8)]">
-     <Crown className="absolute -top-6 text-blue-500 h-8 w-8 drop-shadow-lg fill-current animate-bounce" />
-     <div className="absolute -bottom-2 w-full text-center text-[8px] font-black uppercase text-white bg-blue-500 rounded px-1 tracking-widest shadow-lg">Top 2</div>
-    </div>
-   );
-  case 'pink-love':
-   return (
-    <div className="absolute inset-0 rounded-full border-[6px] border-pink-400 shadow-[0_0_40px_rgba(244,114,182,0.6)]">
-     <div className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }}>
-      <div className="absolute -top-2 left-1/2 text-2xl shadow-xl drop-shadow-[0_0_10px_rgba(255,105,180,1)]">💖</div>
-     </div>
-    </div>
-   );
-  case 'neon-2025':
-   return (
-    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl overflow-visible">
-     <circle cx="50" cy="50" r="46" fill="none" stroke="#a855f7" strokeWidth="6" strokeDasharray="50 20" className="animate-spin" style={{ animationDuration: '3s' }} />
-     <circle cx="50" cy="50" r="50" fill="none" stroke="#06b6d4" strokeWidth="2" strokeDasharray="10 30" className="animate-spin-reverse" style={{ animationDuration: '5s' }} />
-     <g transform="translate(50, 95)">
-       <text y="0" fontSize="12" textAnchor="middle" fill="#fff" fontWeight="900" style={{filter: 'drop-shadow(0 0 10px #06b6d4)'}}>2025</text>
+    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
+     <circle cx="50" cy="50" r="48" fill="none" stroke="#22d3ee" strokeWidth="8" strokeDasharray="15 10" className="animate-spin" style={{ animationDuration: '10s' }} />
+     <circle cx="50" cy="50" r="42" fill="none" stroke="#0891b2" strokeWidth="2" opacity="0.8" />
+     {/* Vector Watermelon Wedge */}
+     <g transform="translate(8, 20) rotate(-30) scale(0.6)" className="drop-shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+      <path d="M0,0 Q20,-20 40,0 L20,30 Z" fill="#ef4444" stroke="#4ade80" strokeWidth="4" />
+      <circle cx="15" cy="5" r="1.5" fill="#000" />
+      <circle cx="25" cy="5" r="1.5" fill="#000" />
+      <circle cx="20" cy="12" r="1.5" fill="#000" />
+     </g>
+     {/* Cocktails Vector */}
+     <g transform="translate(85, 80) rotate(15) scale(0.6)" className="drop-shadow-lg">
+      <path d="M-15,-20 L15,-20 L5,5 L5,25 L-5,25 L-5,5 Z" fill="rgba(255,165,0,0.7)" stroke="#fff" strokeWidth="2" />
+      <path d="M0,-25 L10,-35" stroke="#ec4899" strokeWidth="3" />
+      <circle cx="-10" cy="-20" r="6" fill="#fde047" />
      </g>
     </svg>
    );
-  case 'birthday-cake':
-  case 'birthday-party':
-   return (
-    <div className="absolute inset-0 rounded-full border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,1)]">
-     <div className="absolute -top-4 w-full flex justify-center gap-2 text-xl animate-bounce">
-       🎈 🎈
-     </div>
-     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-3xl drop-shadow-xl z-30">🎂</div>
-    </div>
-   );
-  case 'supreme-king':
+
+  case 'top3family':
+  case 'top2family': {
+   const isTop2 = frameId === 'top2family';
+   const colorA = isTop2 ? '#60a5fa' : '#f472b6';
+   const colorB = isTop2 ? '#2563eb' : '#db2777';
+   const label = isTop2 ? 'TOP 2' : 'TOP 3';
+   
    return (
     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl overflow-visible">
+     <defs>
+      <linearGradient id="topFamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+       <stop offset="0%" stopColor={colorA} />
+       <stop offset="100%" stopColor={colorB} />
+      </linearGradient>
+      <filter id="glowFam"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+     </defs>
+     
+     {/* Heavy Metallic Base Rings */}
+     <circle cx="50" cy="50" r="48" fill="none" stroke="url(#topFamGrad)" strokeWidth="8" filter="url(#glowFam)" />
+     <circle cx="50" cy="50" r="43" fill="none" stroke="#fff" strokeWidth="2" opacity="0.9" />
+     <circle cx="50" cy="50" r="53" fill="none" stroke="#fff" strokeWidth="1" opacity="0.5" />
+     
+     {/* Majestic Crown Top */}
+     <g transform="translate(50, -5) scale(0.6)" className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] animate-pulse">
+      <path d="M-30,20 L-40,-15 L-15,5 L0,-25 L15,5 L40,-15 L30,20 Z" fill={colorA} stroke="#fff" strokeWidth="3" />
+      <circle cx="-40" cy="-15" r="5" fill="#fbbf24" />
+      <circle cx="0" cy="-25" r="6" fill="#fbbf24" />
+      <circle cx="40" cy="-15" r="5" fill="#fbbf24" />
+     </g>
+
+     {/* Text Banner Bottom */}
+     <g transform="translate(50, 98) scale(1.2)">
+      <path d="M-30,-10 L30,-10 L35,5 L-35,5 Z" fill={colorB} stroke="#fff" strokeWidth="1" className="drop-shadow-lg" />
+      <text y="0" fontSize="8" fill="#fff" textAnchor="middle" fontWeight="900" letterSpacing="1">{label}</text>
+     </g>
+    </svg>
+   );
+  }
+
+  case 'pink-love':
+  case 'rose-gold': {
+   const isRose = frameId === 'rose-gold';
+   const gradId = isRose ? 'roseGrad' : 'pinkGrad';
+   return (
+    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_20px_rgba(244,114,182,0.6)] overflow-visible">
+     <defs>
+      <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+       <stop offset="0%" stopColor={isRose ? "#fcd34d" : "#fbcfe8"} />
+       <stop offset="50%" stopColor={isRose ? "#b45309" : "#be185d"} />
+       <stop offset="100%" stopColor={isRose ? "#fcd34d" : "#fbcfe8"} />
+      </linearGradient>
+     </defs>
+     <circle cx="50" cy="50" r="48" fill="none" stroke={`url(#${gradId})`} strokeWidth="7" />
+     {/* Moving Hearts Path */}
+     <g className="animate-spin" style={{ animationDuration: '4s' }}>
+      <path d="M45,-2 Q40,-10 50,-5 Q60,-10 55,-2 Q50,5 50,5 Z" fill="#ef4444" stroke="#fff" strokeWidth="1" className="drop-shadow-lg" />
+     </g>
+     <g className="animate-spin" style={{ animationDuration: '6s', animationDirection: 'reverse' }}>
+      <path d="M95,48 Q90,40 100,45 Q110,40 105,48 Q100,55 100,55 Z" fill={isRose ? "#fcd34d" : "#f472b6"} />
+     </g>
+     <g className="animate-spin" style={{ animationDuration: '8s' }}>
+      <path d="M45,98 Q40,90 50,95 Q60,90 55,98 Q50,105 50,105 Z" fill="#ef4444" />
+     </g>
+    </svg>
+   );
+  }
+
+  case 'neon-2025':
+   return (
+    <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+     <defs>
+      <filter id="cyberGlow"><feGaussianBlur stdDeviation="4" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+     </defs>
+     <circle cx="50" cy="50" r="46" fill="none" stroke="#a855f7" strokeWidth="5" strokeDasharray="30 15" className="animate-spin-slow" filter="url(#cyberGlow)" />
+     <circle cx="50" cy="50" r="50" fill="none" stroke="#06b6d4" strokeWidth="2" strokeDasharray="10 20" className="animate-spin-reverse" filter="url(#cyberGlow)" style={{ animationDuration: '3s' }} />
+     
+     <g transform="translate(50, 100)">
+      <rect x="-25" y="-12" width="50" height="20" fill="#000" stroke="#06b6d4" strokeWidth="2" rx="4" />
+      <text y="2" fontSize="12" textAnchor="middle" fill="#fff" fontWeight="900" style={{ filter: 'drop-shadow(0 0 5px #06b6d4)' }}>2025</text>
+     </g>
+    </svg>
+   );
+
+  case 'basra':
+   return (
+    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
+     <circle cx="50" cy="50" r="48" fill="none" stroke="#4a3f35" strokeWidth="8" />
+     <circle cx="50" cy="50" r="46" fill="none" stroke="#22c55e" strokeWidth="2" strokeDasharray="10 10" className="animate-spin-slow opacity-60" />
+     <g transform="translate(85, 85) rotate(-15) scale(0.7)" className="drop-shadow-2xl">
+      {/* Magic Teapot Vector */}
+      <path d="M-15,-10 Q0,-30 15,-10 L25,10 L-25,10 Z" fill="#ca8a04" stroke="#fef08a" strokeWidth="2" />
+      <path d="M-25,0 Q-35,-10 -20,-15" fill="none" stroke="#ca8a04" strokeWidth="4" />
+      <path d="M25,-5 Q35,-10 30,-5" fill="none" stroke="#ca8a04" strokeWidth="3" />
+      <circle cx="0" cy="0" r="4" fill="#ef4444" />
+     </g>
+     <g transform="translate(10, 10) scale(0.6)">
+      <path d="M0,0 Q10,-10 20,0 Q10,10 0,0" fill="#22c55e" />
+     </g>
+     <g transform="translate(90, 20) scale(0.6) rotate(60)">
+      <path d="M0,0 Q10,-10 20,0 Q10,10 0,0" fill="#22c55e" />
+     </g>
+    </svg>
+   );
+
+  case 'supreme-king':
+   return (
+    <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_10px_30px_rgba(234,179,8,0.7)]">
      <defs>
       <linearGradient id="kingGold" x1="0%" y1="0%" x2="100%" y2="100%">
        <stop offset="0%" stopColor="#FFF281" />
@@ -127,60 +208,27 @@ function DynamicFrameGenerator({ frameId }: { frameId: string }) {
        <stop offset="100%" stopColor="#B8860B" />
       </linearGradient>
      </defs>
-     <circle cx="50" cy="50" r="46" fill="none" stroke="url(#kingGold)" strokeWidth="8" className="animate-pulse" />
-     <path d="M 50 -10 L 60 10 L 80 0 L 70 20 L 95 30 L 75 40 L 85 60 L 65 55 L 70 80 L 50 65 L 30 80 L 35 55 L 15 60 L 25 40 L 5 30 L 30 20 L 20 0 L 40 10 Z" fill="none" stroke="url(#kingGold)" strokeWidth="2" className="animate-spin-slow opacity-50" />
-     <g transform="translate(50, -5)">
-       <Crown className="h-10 w-10 text-yellow-400 fill-current -translate-x-5 -translate-y-5 drop-shadow-[0_0_15px_rgba(234,179,8,1)]" />
+     <circle cx="50" cy="50" r="48" fill="none" stroke="url(#kingGold)" strokeWidth="10" />
+     <path d="M 50 2 L 60 10 L 80 0 L 70 20 L 95 30 L 75 40 L 85 60 L 65 55 L 70 80 L 50 65 L 30 80 L 35 55 L 15 60 L 25 40 L 5 30 L 30 20 L 20 0 L 40 10 Z" fill="none" stroke="#fff" strokeWidth="1.5" className="animate-spin-slow opacity-60" />
+     <g transform="translate(50, -5) scale(0.8)">
+       <path d="M-40,20 L-50,-20 L-20,0 L0,-30 L20,0 L50,-20 L40,20 Z" fill="url(#kingGold)" stroke="#fff" strokeWidth="2" className="drop-shadow-lg" />
+       <circle cx="-50" cy="-20" r="6" fill="#ef4444" />
+       <circle cx="0" cy="-30" r="8" fill="#ef4444" />
+       <circle cx="50" cy="-20" r="6" fill="#ef4444" />
      </g>
     </svg>
    );
-  case 'gold-mosque':
-   return (
-    <div className="absolute inset-0 rounded-full border-[5px] border-yellow-500 border-dotted shadow-[0_0_20px_rgba(234,179,8,0.5)]">
-     <div className="absolute -bottom-1 right-2 text-2xl drop-shadow-lg z-30">🕌</div>
-     <div className="absolute -top-2 left-2 text-xl drop-shadow-lg animate-pulse">🌙</div>
-    </div>
-   );
-  case 'rose-ring':
-   return (
-    <div className="absolute inset-0 rounded-full border-[4px] border-red-500 flex items-center justify-center">
-     <div className="absolute inset-0 animate-spin-slow">
-      <div className="absolute top-0 right-4 text-xl">🌹</div>
-      <div className="absolute bottom-0 left-4 text-xl">🌹</div>
-     </div>
-    </div>
-   );
-  case 'ruby-crown':
-  case 'emerald-leaf':
-  case 'blue-knight':
-  case 'silver-crest':
-  case 'angel-wings':
-  case 'blue-roses':
-  case 'cat-headphones':
-  case 'lanterns':
-  case 'purple-bow':
-   // Generic premium generator for these specialized names
-   const config: Record<string, { color: string, emoji: string, border: string }> = {
-    'ruby-crown': { color: 'border-red-500', emoji: '👑', border: 'solid' },
-    'emerald-leaf': { color: 'border-green-500', emoji: '🌿', border: 'dashed' },
-    'blue-knight': { color: 'border-blue-600', emoji: '⚔️', border: 'solid' },
-    'silver-crest': { color: 'border-gray-300', emoji: '🛡️', border: 'double' },
-    'angel-wings': { color: 'border-yellow-200', emoji: '🕊️', border: 'dotted' },
-    'blue-roses': { color: 'border-blue-300', emoji: '❄️', border: 'solid' },
-    'cat-headphones': { color: 'border-pink-400', emoji: '🎧', border: 'solid' },
-    'lanterns': { color: 'border-red-500', emoji: '🏮', border: 'dashed' },
-    'purple-bow': { color: 'border-purple-400', emoji: '🎀', border: 'solid' },
-   };
-   const { color, emoji, border } = config[frameId] || config['ruby-crown'];
-   return (
-    <div className={cn(`absolute inset-0 rounded-full border-[5px] ${color} shadow-lg animate-pulse`)} style={{ borderStyle: border as any }}>
-     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-2xl drop-shadow-xl z-30 bg-black/40 rounded-full p-1 border border-white/20 backdrop-blur-md">
-      {emoji}
-     </div>
-    </div>
-   );
+
   default:
-   return null;
+   // Elegant default frame rendering for items like 'ruby-crown', 'emerald-leaf', etc.
+   // Instead of just basic borders, providing a lush SVG frame.
+   return (
+    <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-lg">
+     <circle cx="50" cy="50" r="48" fill="none" stroke="#e2e8f0" strokeWidth="6" />
+     <circle cx="50" cy="50" r="48" fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="8 8" className="animate-spin-slow" />
+     <circle cx="50" cy="50" r="54" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.4" />
+    </svg>
+   );
  }
 }
 
@@ -189,23 +237,21 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   return <div className={cn('relative', className)}>{children}</div>;
  }
 
- // Support legacy frames
- const isHonor2026 = frameId === 'honor-2026';
- const isVibe2026 = frameId === '2026-vibe';
- const isDevil = frameId === 'little-devil';
- const isIndia = frameId === 'i-love-india';
- const isGolden = frameId === 'f1' || frameId === 'Official';
- const isWings = frameId === 'f5';
- const isUmmyCS = frameId === 'ummy-cs';
+ // Support legacy hardcoded frames gracefully, wrapping them in new logic.
+ const isLegacyGold = frameId === 'f1' || frameId === 'Official' || frameId === 'honor-2026';
 
  return (
-  <div className={cn('relative flex items-center justify-center p-1', className)}>
-   <div className="absolute inset-0 z-20 pointer-events-none scale-110">
+  <div className={cn('relative flex items-center justify-center', className)}>
+   
+   {/* 
+       FRAME CONTAINER 
+       inset-[-20%] ensures the massive frame borders stay completely completely 
+       outside of the core Avatar image radius. This prevents DP overlapping.
+   */}
+   <div className="absolute inset-[-20%] z-20 pointer-events-none flex items-center justify-center">
     
-    <DynamicFrameGenerator frameId={frameId} />
-
-    {isHonor2026 && (
-     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
+    {isLegacyGold ? (
+     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_20px_rgba(250,204,21,0.5)] animate-in fade-in duration-1000 overflow-visible">
       <defs>
        <linearGradient id="honorGold" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#FFF281" />
@@ -213,75 +259,20 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
         <stop offset="100%" stopColor="#B8860B" />
        </linearGradient>
       </defs>
-      <circle cx="50" cy="50" r="46" fill="none" stroke="url(#honorGold)" strokeWidth="4" />
-      <g transform="translate(50, 10)">
-        <Crown className="h-6 w-6 text-yellow-400 fill-current -translate-x-3 -translate-y-3" />
-      </g>
-      <g transform="translate(50, 85)">
-        <text y="0" fontSize="10" textAnchor="middle" fill="#FFD700" fontWeight="900" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))'}}>2026</text>
-      </g>
+      <circle cx="50" cy="50" r="48" fill="none" stroke="url(#honorGold)" strokeWidth="6" className="animate-pulse" />
+      <circle cx="50" cy="50" r="53" fill="none" stroke="#fef08a" strokeWidth="1" opacity="0.6" />
      </svg>
+    ) : (
+     <DynamicFrameGenerator frameId={frameId} />
     )}
 
-    {isVibe2026 && (
-     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
-      <circle cx="50" cy="50" r="46" fill="none" stroke="#a78bfa" strokeWidth="4" className="animate-pulse" />
-      <g transform="translate(50, 85)">
-        <text y="0" fontSize="10" textAnchor="middle" fill="#f472b6" fontWeight="900" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))'}}>2026</text>
-      </g>
-     </svg>
-    )}
-
-    {isDevil && (
-     <div className="absolute inset-0 border-4 border-red-500 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.6)]">
-       <div className="absolute -top-4 left-4 text-red-500 text-xl">😈</div>
-       <div className="absolute -top-4 right-4 text-red-500 text-xl rotate-y-180">😈</div>
-     </div>
-    )}
-
-    {isIndia && (
-     <div className="absolute inset-0 border-4 border-green-500 rounded-full">
-       <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-orange-500 text-lg">🇮🇳</div>
-     </div>
-    )}
-
-    {isUmmyCS && (
-     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl animate-in fade-in duration-1000 overflow-visible">
-      <defs>
-       <linearGradient id="csGold" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#FFF281" />
-        <stop offset="30%" stopColor="#FFD700" />
-        <stop offset="100%" stopColor="#B8860B" />
-       </linearGradient>
-       <linearGradient id="csEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#10b981" />
-        <stop offset="100%" stopColor="#064e3b" />
-       </linearGradient>
-      </defs>
-      <circle cx="50" cy="50" r="46" fill="none" stroke="url(#csEmerald)" strokeWidth="5" />
-      <circle cx="50" cy="50" r="43" fill="none" stroke="url(#csGold)" strokeWidth="1.5" className="animate-pulse" />
-      <g transform="translate(50, 88)">
-        <path d="M -48 -12 Q 0 -22 48 -12 L 48 12 Q 0 2 -48 12 Z" fill="url(#csEmerald)" stroke="url(#csGold)" strokeWidth="1.5" />
-        <text y="2" fontSize="9" textAnchor="middle" fill="#FFD700" fontWeight="900">Ummy CS</text>
-      </g>
-     </svg>
-    )}
-
-    {isGolden && (
-     <div className="absolute inset-0 border-4 border-yellow-500 rounded-full animate-pulse shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
-    )}
-
-    {isWings && (
-     <div className="absolute inset-0 border-[6px] border-yellow-400 rounded-full opacity-90 shadow-2xl">
-      <div className="absolute -left-6 top-1/2 -translate-y-1/2 text-2xl">🕊️</div>
-      <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-2xl rotate-y-180">🕊️</div>
-     </div>
-    )}
    </div>
 
-   <div className="relative z-10 rounded-full overflow-hidden">
+   {/* AVATAR CONTAINER */}
+   <div className="relative z-10 rounded-full overflow-hidden w-full h-full bg-slate-900 border border-white/10">
     {children}
    </div>
+   
   </div>
  );
 }
