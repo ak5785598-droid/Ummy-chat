@@ -70,8 +70,8 @@ export function AppLayout({
    if (!firestore || !user || !userProfile) return;
 
    const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-   const currentAccNum = userProfile.accountNumber;
-   const needsUserSync = !currentAccNum || currentAccNum.length > 4 || (user.uid === CREATOR_ID && currentAccNum !== '0000');
+   const currentAccNum = userProfile.accountNumber || '';
+   const needsUserSync = !currentAccNum || currentAccNum.length !== 4 || isNaN(parseInt(currentAccNum)) || (user.uid === CREATOR_ID && currentAccNum !== '0000');
 
    try {
     // 1. User ID Handshake
@@ -88,12 +88,16 @@ export function AppLayout({
        nextUserId = 0;
       } else {
        const lastId = counterDoc.data()?.lastUserId;
-       if (lastId === undefined || lastId > 1000) nextUserId = 1;
+       // If lastId is 0 (Creator) or some low number, increment.
+       // Only reset to 1 if it's way out of range (legacy 100001 format)
+       if (lastId === undefined || lastId > 5000) nextUserId = 1;
        else nextUserId = lastId + 1;
       }
 
       const paddedId = nextUserId.toString().padStart(4, '0');
-      transaction.set(counterRef, { lastUserId: Math.max(nextUserId, counterDoc.data()?.lastUserId || 0) }, { merge: true });
+      // Critical: Ensure we don't downgrade the counter if creator relogs
+      const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
+      transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
       transaction.update(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
       transaction.update(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
      });
@@ -105,7 +109,7 @@ export function AppLayout({
     const roomSnap = await getDoc(roomRef);
     if (roomSnap.exists()) {
      const currentRoomNum = roomSnap.data().roomNumber;
-     const needsRoomSync = !currentRoomNum || currentRoomNum.length > 3 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
+     const needsRoomSync = !currentRoomNum || parseInt(currentRoomNum) < 100 || currentRoomNum.length > 4 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
      
      if (needsRoomSync) {
       const counterRef = doc(firestore, 'appConfig', 'counters');
@@ -117,11 +121,12 @@ export function AppLayout({
         nextRoomId = 100;
        } else {
         const lastId = counterDoc.data()?.lastRoomId;
-        if (lastId === undefined || lastId < 100) nextRoomId = 101;
+        if (lastId === undefined || lastId < 100 || lastId > 10000) nextRoomId = 101;
         else nextRoomId = lastId + 1;
        }
 
-       transaction.set(counterRef, { lastRoomId: Math.max(nextRoomId, counterDoc.data()?.lastRoomId || 0) }, { merge: true });
+       const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
+       transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
        transaction.update(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() });
       });
       console.log(`✅ Sequential Room ID Synced: ${user.uid}`);

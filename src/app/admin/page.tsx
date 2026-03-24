@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useStorage, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -192,6 +192,7 @@ export default function AdminPage() {
 
  const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
+ const [isSyncingIDs, setIsSyncingIDs] = useState(false);
 
  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
@@ -284,6 +285,67 @@ export default function AdminPage() {
    toast({ title: 'Member Directory Synchronized' });
   } catch (e) { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); } 
   finally { setIsSyncingDirectory(false); }
+ };
+
+ const handleGlobalIdentitySync = async () => {
+  if (!firestore || !isCreator) return;
+  setIsSyncingIDs(true);
+  try {
+   const counterRef = doc(firestore, 'appConfig', 'counters');
+   const counterDoc = await getDoc(counterRef);
+   let lastUserId = counterDoc.exists() ? (counterDoc.data().lastUserId || 0) : 0;
+   let lastRoomId = counterDoc.exists() ? (counterDoc.data().lastRoomId || 99) : 99;
+
+   const usersSnap = await getDocs(collection(firestore, 'users'));
+   const batch = writeBatch(firestore);
+   let count = 0;
+
+   for (const d of usersSnap.docs) {
+    const data = d.data();
+    const needsSync = !data.accountNumber || data.accountNumber.length !== 4 || isNaN(parseInt(data.accountNumber)) || (d.id === CREATOR_ID && data.accountNumber !== '0000');
+    if (needsSync) {
+     let newId;
+     if (d.id === CREATOR_ID) newId = 0;
+     else {
+      lastUserId++;
+      newId = lastUserId;
+     }
+     const paddedId = newId.toString().padStart(4, '0');
+     batch.update(doc(firestore, 'users', d.id), { accountNumber: paddedId, updatedAt: serverTimestamp() });
+     batch.update(doc(firestore, 'users', d.id, 'profile', d.id), { accountNumber: paddedId, updatedAt: serverTimestamp() });
+     count++;
+    }
+   }
+
+   const roomsSnap = await getDocs(collection(firestore, 'chatRooms'));
+   for (const d of roomsSnap.docs) {
+    const data = d.data();
+    const needsSync = !data.roomNumber || parseInt(data.roomNumber) < 100 || data.roomNumber.length > 4 || (data.ownerId === CREATOR_ID && data.roomNumber !== '100');
+    if (needsSync) {
+     let newId;
+     if (data.ownerId === CREATOR_ID) newId = 100;
+     else {
+      lastRoomId++;
+      newId = lastRoomId;
+     }
+     batch.update(doc(firestore, 'chatRooms', d.id), { roomNumber: newId.toString(), updatedAt: serverTimestamp() });
+     count++;
+    }
+   }
+
+   if (count > 0) {
+    batch.set(counterRef, { lastUserId, lastRoomId }, { merge: true });
+    await batch.commit();
+    toast({ title: 'Global Identity Sync Complete', description: `${count} records re-indexed successfully.` });
+   } else {
+    toast({ title: 'System Already Synced', description: 'All IDs follow the valid sequential format.' });
+   }
+  } catch (e) {
+   console.error(e);
+   toast({ variant: 'destructive', title: 'Sync Failed' });
+  } finally {
+   setIsSyncingIDs(false);
+  }
  };
 
  const handleSearchUsers = async () => {
@@ -1084,7 +1146,43 @@ export default function AdminPage() {
         </Card>
       </TabsContent>
      </div>
-    </Tabs>
+          <TabsContent value="system" className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2">
+       <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">
+        <CardHeader className="p-8 pb-4">
+         <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+           <div className="h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+            <RefreshCcw className="h-6 w-6" />
+           </div>
+           <div>
+            <CardTitle className="text-xl uppercase tracking-tighter text-slate-900">Global Identity Sync</CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Re-index all User and Room IDs sequentially</CardDescription>
+           </div>
+          </div>
+          <Button 
+           onClick={handleGlobalIdentitySync}
+           disabled={isSyncingIDs}
+           className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-slate-900/20"
+          >
+           {isSyncingIDs ? <Loader className="animate-spin h-5 w-5" /> : 'Start Global Sync'}
+          </Button>
+         </div>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <div className="bg-amber-50 rounded-2xl p-6 border border-amber-100 flex gap-4">
+            <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-[11px] font-black uppercase text-amber-900 tracking-tight">Warning: Irreversible Action</p>
+              <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase opacity-80">
+                This will re-allot IDs for EVERY user and room that does not follow the new 4-digit/100+ standard. Ensure the counters are correctly initialized before starting.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+       </Card>
+      </TabsContent>
+
+     </Tabs>
    </div>
   </AppLayout>
  );
