@@ -123,14 +123,14 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
  const filteredThemes = useMemo(() => {
   const baseline = ROOM_THEMES.filter(theme => {
    if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
-   if (userIsOfficial || isOwner) return theme.category !== 'help';
-   return theme.category === 'general';
+   if (userIsOfficial || isOwner) return true;
+   return theme.category === 'entertainment' || theme.category === 'general';
   });
 
   const dynamic = (customThemes || []).filter(theme => {
    if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
-   if (userIsOfficial || isOwner) return theme.category !== 'help';
-   return theme.category === 'general';
+   if (userIsOfficial || isOwner) return true;
+   return theme.category === 'entertainment' || theme.category === 'general';
   });
 
   return [...baseline, ...dynamic];
