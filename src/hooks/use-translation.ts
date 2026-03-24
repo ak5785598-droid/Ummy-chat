@@ -7,8 +7,8 @@ import { TRANSLATIONS } from '@/lib/translations';
  * Accesses the global translation frequency.
  */
 export function useTranslation() {
-  const { language, setLanguage } = useLanguage();
-  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
+ const { language, setLanguage } = useLanguage();
+ const t = TRANSLATIONS[language] || TRANSLATIONS.en;
 
-  return { t, language, setLanguage };
+ return { t, language, setLanguage };
 }

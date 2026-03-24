@@ -11,49 +11,49 @@ import { z } from 'genkit';
 import { searchYoutubeVideosTool } from '../tools/youtube-search';
 
 const YoutubeSearchInputSchema = z.object({
-  query: z.string().describe('The search query for YouTube videos.'),
+ query: z.string().describe('The search query for YouTube videos.'),
 });
 export type YoutubeSearchInput = z.infer<typeof YoutubeSearchInputSchema>;
 
 const VideoSearchResultSchema = z.object({
-  videoId: z.string(),
-  title: z.string(),
-  thumbnailUrl: z.string(),
+ videoId: z.string(),
+ title: z.string(),
+ thumbnailUrl: z.string(),
 });
 export type VideoSearchResult = z.infer<typeof VideoSearchResultSchema>;
 
 const YoutubeSearchOutputSchema = z.object({
-  results: z
-    .array(VideoSearchResultSchema)
-    .describe('A list of YouTube video search results.'),
+ results: z
+  .array(VideoSearchResultSchema)
+  .describe('A list of YouTube video search results.'),
 });
 export type YoutubeSearchOutput = z.infer<typeof YoutubeSearchOutputSchema>;
 
 export async function searchYoutubeVideos(
-  input: YoutubeSearchInput
+ input: YoutubeSearchInput
 ): Promise<YoutubeSearchOutput> {
-  return youtubeVideoSearchFlow(input);
+ return youtubeVideoSearchFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'youtubeVideoSearchPrompt',
-  input: { schema: YoutubeSearchInputSchema },
-  output: { schema: YoutubeSearchOutputSchema },
-  tools: [searchYoutubeVideosTool],
-  prompt: `You are a helpful assistant that finds YouTube videos. Use the provided tool to search for videos based on the user's query.
+ name: 'youtubeVideoSearchPrompt',
+ input: { schema: YoutubeSearchInputSchema },
+ output: { schema: YoutubeSearchOutputSchema },
+ tools: [searchYoutubeVideosTool],
+ prompt: `You are a helpful assistant that finds YouTube videos. Use the provided tool to search for videos based on the user's query.
 
-  Search query: {{{query}}}
-  `,
+ Search query: {{{query}}}
+ `,
 });
 
 const youtubeVideoSearchFlow = ai.defineFlow(
-  {
-    name: 'youtubeVideoSearchFlow',
-    inputSchema: YoutubeSearchInputSchema,
-    outputSchema: YoutubeSearchOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
+ {
+  name: 'youtubeVideoSearchFlow',
+  inputSchema: YoutubeSearchInputSchema,
+  outputSchema: YoutubeSearchOutputSchema,
+ },
+ async (input) => {
+  const { output } = await prompt(input);
+  return output!;
+ }
 );

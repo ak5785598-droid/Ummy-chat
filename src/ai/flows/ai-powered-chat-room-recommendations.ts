@@ -15,53 +15,53 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ChatRoomRecommendationsInputSchema = z.object({
-  interests: z
-    .string()
-    .describe('A comma-separated list of the user\'s interests.'),
-  profileInformation: z.string().describe('Additional profile information about the user.'),
+ interests: z
+  .string()
+  .describe('A comma-separated list of the user\'s interests.'),
+ profileInformation: z.string().describe('Additional profile information about the user.'),
 });
 export type ChatRoomRecommendationsInput = z.infer<
-  typeof ChatRoomRecommendationsInputSchema
+ typeof ChatRoomRecommendationsInputSchema
 >;
 
 const ChatRoomRecommendationsOutputSchema = z.object({
-  recommendedChatRooms: z
-    .array(z.string())
-    .describe('A list of recommended chat rooms based on the user\'s interests and profile information.'),
+ recommendedChatRooms: z
+  .array(z.string())
+  .describe('A list of recommended chat rooms based on the user\'s interests and profile information.'),
 });
 export type ChatRoomRecommendationsOutput = z.infer<
-  typeof ChatRoomRecommendationsOutputSchema
+ typeof ChatRoomRecommendationsOutputSchema
 >;
 
 export async function getChatRoomRecommendations(
-  input: ChatRoomRecommendationsInput
+ input: ChatRoomRecommendationsInput
 ): Promise<ChatRoomRecommendationsOutput> {
-  return chatRoomRecommendationsFlow(input);
+ return chatRoomRecommendationsFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'chatRoomRecommendationsPrompt',
-  input: {schema: ChatRoomRecommendationsInputSchema},
-  output: {schema: ChatRoomRecommendationsOutputSchema},
-  prompt: `You are an AI assistant that recommends chat rooms to users based on their interests and profile information.
+ name: 'chatRoomRecommendationsPrompt',
+ input: {schema: ChatRoomRecommendationsInputSchema},
+ output: {schema: ChatRoomRecommendationsOutputSchema},
+ prompt: `You are an AI assistant that recommends chat rooms to users based on their interests and profile information.
 
-  The user's interests are: {{{interests}}}
-  The user's profile information is: {{{profileInformation}}}
+ The user's interests are: {{{interests}}}
+ The user's profile information is: {{{profileInformation}}}
 
-  Based on this information, recommend a list of chat rooms that the user might be interested in.
-  The chat rooms should be comma separated, and should be real sounding chat rooms, and not example values.
-  Do not return any other text other than the comma separated list of chat rooms.
-  `,
+ Based on this information, recommend a list of chat rooms that the user might be interested in.
+ The chat rooms should be comma separated, and should be real sounding chat rooms, and not example values.
+ Do not return any other text other than the comma separated list of chat rooms.
+ `,
 });
 
 const chatRoomRecommendationsFlow = ai.defineFlow(
-  {
-    name: 'chatRoomRecommendationsFlow',
-    inputSchema: ChatRoomRecommendationsInputSchema,
-    outputSchema: ChatRoomRecommendationsOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
+ {
+  name: 'chatRoomRecommendationsFlow',
+  inputSchema: ChatRoomRecommendationsInputSchema,
+  outputSchema: ChatRoomRecommendationsOutputSchema,
+ },
+ async input => {
+  const {output} = await prompt(input);
+  return output!;
+ }
 );

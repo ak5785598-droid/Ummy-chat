@@ -15,19 +15,19 @@ import type { ReactNode } from 'react';
  * Synchronized with the Global Linguistic Protocol.
  */
 export function Providers({ children }: { children: ReactNode }) {
-  return (
-    <FirebaseClientProvider>
-      <LanguageProvider>
-        <AdBlockWarning />
-        <ProfileInitializer />
-        <GlobalPresenceManager />
-        <GlobalBanGuard>
-          <RoomProvider>
-            <RoomPresenceManager />
-            {children}
-          </RoomProvider>
-        </GlobalBanGuard>
-      </LanguageProvider>
-    </FirebaseClientProvider>
-  );
+ return (
+  <FirebaseClientProvider>
+   <LanguageProvider>
+    <AdBlockWarning />
+    <ProfileInitializer />
+    <GlobalPresenceManager />
+    <GlobalBanGuard>
+     <RoomProvider>
+      <RoomPresenceManager />
+      {children}
+     </RoomProvider>
+    </GlobalBanGuard>
+   </LanguageProvider>
+  </FirebaseClientProvider>
+ );
 }

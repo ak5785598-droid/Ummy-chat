@@ -1,178 +1,178 @@
 export type User = {
-  id: string;
-  accountNumber: string; // Sequential numeric ID
-  name: string;
-  username?: string;
-  avatarUrl: string;
-  bio?: string;
-  isOnline?: boolean;
-  coverUrl?: string;
-  gender?: 'Male' | 'Female' | null;
-  country?: string | null;
-  level?: {
-    rich: number;
-    charm: number;
-  };
-  frame?: 'CG' | 'Official' | 'Leader' | 'Seller' | 'None';
-  tags?: string[];
-  stats?: {
-    sent?: number;
-    followers?: number;
-    fans?: number;
-    totalGifts?: number;
-    dailyFans?: number; 
-    dailyGiftsReceived?: number;
-    weeklyGiftsReceived?: number;
-    monthlyGiftsReceived?: number;
-    dailyGameWins?: number;
-    weeklyGameWins?: number;
-    monthlyGameWins?: number;
-    friends?: number;
-    following?: number;
-  };
-  wallet?: {
-    coins: number;
-    diamonds: number;
-    totalSpent: number;
-    dailySpent: number;
-    weeklySpent: number;
-    monthlySpent: number;
-  };
-  inventory?: {
-    activeFrame?: string;
-    activeTheme?: string;
-    activeBubble?: string;
-    activeWave?: string;
-    ownedItems: string[];
-    expiries?: Record<string, any>; // itemId -> Timestamp for individual expiry
-  };
-  banStatus?: {
-    isBanned: boolean;
-    bannedUntil: any;
-    reason: string;
-  };
-  createdAt?: any;
-  updatedAt?: any;
-  lastSignInAt?: any;
-  currentRoomId?: string | null;
+ id: string;
+ accountNumber: string; // Sequential numeric ID
+ name: string;
+ username?: string;
+ avatarUrl: string;
+ bio?: string;
+ isOnline?: boolean;
+ coverUrl?: string;
+ gender?: 'Male' | 'Female' | null;
+ country?: string | null;
+ level?: {
+  rich: number;
+  charm: number;
+ };
+ frame?: 'CG' | 'Official' | 'Leader' | 'Seller' | 'None';
+ tags?: string[];
+ stats?: {
+  sent?: number;
+  followers?: number;
+  fans?: number;
+  totalGifts?: number;
+  dailyFans?: number; 
+  dailyGiftsReceived?: number;
+  weeklyGiftsReceived?: number;
+  monthlyGiftsReceived?: number;
+  dailyGameWins?: number;
+  weeklyGameWins?: number;
+  monthlyGameWins?: number;
+  friends?: number;
+  following?: number;
+ };
+ wallet?: {
+  coins: number;
+  diamonds: number;
+  totalSpent: number;
+  dailySpent: number;
+  weeklySpent: number;
+  monthlySpent: number;
+ };
+ inventory?: {
+  activeFrame?: string;
+  activeTheme?: string;
+  activeBubble?: string;
+  activeWave?: string;
+  ownedItems: string[];
+  expiries?: Record<string, any>; // itemId -> Timestamp for individual expiry
+ };
+ banStatus?: {
+  isBanned: boolean;
+  bannedUntil: any;
+  reason: string;
+ };
+ createdAt?: any;
+ updatedAt?: any;
+ lastSignInAt?: any;
+ currentRoomId?: string | null;
 };
 
 export type Message = {
-  id: string;
-  text: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar: string;
-  senderBubble?: string | null;
-  timestamp: any;
-  type?: 'text' | 'gift' | 'entrance' | 'leave' | 'emoji' | 'lucky-rain' | 'lucky-bag';
-  giftId?: string;
-  recipientName?: string;
-  luckyWin?: { multiplier: number; winAmount: number } | null;
-  bagId?: string;
-  amount?: number;
-  imageUrl?: string | null;
-  content?: string; // Standardizing field names
+ id: string;
+ text: string;
+ senderId: string;
+ senderName: string;
+ senderAvatar: string;
+ senderBubble?: string | null;
+ timestamp: any;
+ type?: 'text' | 'gift' | 'entrance' | 'leave' | 'emoji' | 'lucky-rain' | 'lucky-bag';
+ giftId?: string;
+ recipientName?: string;
+ luckyWin?: { multiplier: number; winAmount: number } | null;
+ bagId?: string;
+ amount?: number;
+ imageUrl?: string | null;
+ content?: string; // Standardizing field names
 };
 
 export type PrivateChat = {
-  id: string;
-  participantIds: string[];
-  lastMessage: string;
-  lastSenderId: string;
-  updatedAt: any;
+ id: string;
+ participantIds: string[];
+ lastMessage: string;
+ lastSenderId: string;
+ updatedAt: any;
 };
 
 export type PrivateMessage = {
-  id: string;
-  text: string;
-  senderId: string;
-  timestamp: any;
-  imageUrl?: string | null;
+ id: string;
+ text: string;
+ senderId: string;
+ timestamp: any;
+ imageUrl?: string | null;
 };
 
 export type RoomParticipant = {
-  uid: string;
-  name: string;
-  avatarUrl: string;
-  seatIndex: number;
-  isMuted: boolean;
-  isSilenced?: boolean; // Admin imposed silence
-  joinedAt: any;
-  activeFrame?: string;
-  activeWave?: string;
-  activeBubble?: string;
-  activeEmoji?: string | null;
-  sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
-  accountNumber?: string;
-  lastSeen?: any;
+ uid: string;
+ name: string;
+ avatarUrl: string;
+ seatIndex: number;
+ isMuted: boolean;
+ isSilenced?: boolean; // Admin imposed silence
+ joinedAt: any;
+ activeFrame?: string;
+ activeWave?: string;
+ activeBubble?: string;
+ activeEmoji?: string | null;
+ sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
+ accountNumber?: string;
+ lastSeen?: any;
 };
 
 export type Room = {
-  id: string;
-  roomNumber: string; // Sequential 4-digit ID starting 0001
-  slug: string;
-  title: string;
-  topic: string;
-  category: 'Popular' | 'Game' | 'Chat' | 'Singing';
-  coverUrl: string;
-  backgroundUrl?: string;
-  roomThemeId?: string;
-  announcement?: string;
-  password?: string;
-  ownerId: string;
-  moderatorIds?: string[];
-  lockedSeats?: number[];
-  createdAt: any;
-  participantCount?: number;
-  isChatMuted?: boolean;
-  isCalculatorActive?: boolean; // 🔥 CALCULATOR TOGGLE
-  currentMusicUrl?: string | null;
-  maxActiveMics?: number;
-  isSuperMic?: boolean;
-  stats?: {
-    totalGifts: number;
-    dailyGifts: number;
-    weeklyGifts: number;
-    monthlyGifts: number;
-  };
+ id: string;
+ roomNumber: string; // Sequential 4-digit ID starting 0001
+ slug: string;
+ title: string;
+ topic: string;
+ category: 'Popular' | 'Game' | 'Chat' | 'Singing';
+ coverUrl: string;
+ backgroundUrl?: string;
+ roomThemeId?: string;
+ announcement?: string;
+ password?: string;
+ ownerId: string;
+ moderatorIds?: string[];
+ lockedSeats?: number[];
+ createdAt: any;
+ participantCount?: number;
+ isChatMuted?: boolean;
+ isCalculatorActive?: boolean; // 🔥 CALCULATOR TOGGLE
+ currentMusicUrl?: string | null;
+ maxActiveMics?: number;
+ isSuperMic?: boolean;
+ stats?: {
+  totalGifts: number;
+  dailyGifts: number;
+  weeklyGifts: number;
+  monthlyGifts: number;
+ };
 };
 
 export type Game = {
-  id: string;
-  title: string;
-  slug: string;
-  coverUrl: string;
-  backgroundUrl?: string;
-  cost: number;
-  imageHint: string;
+ id: string;
+ title: string;
+ slug: string;
+ coverUrl: string;
+ backgroundUrl?: string;
+ cost: number;
+ imageHint: string;
 };
 
 export type CoinPackage = {
-  id: string;
-  amount: number;
-  price: number;
-  bonus?: number;
+ id: string;
+ amount: number;
+ price: number;
+ bonus?: number;
 };
 
 export type Task = {
-  id: string;
-  title: string;
-  description: string;
-  coinReward: number;
-  isCompleted: boolean;
-  cta: {
-      label: string;
-      href: string;
-  }
+ id: string;
+ title: string;
+ description: string;
+ coinReward: number;
+ isCompleted: boolean;
+ cta: {
+   label: string;
+   href: string;
+ }
 };
 
 export type AdminLog = {
-  id: string;
-  adminId: string;
-  adminName: string;
-  targetId: string;
-  action: string;
-  details: any;
-  createdAt: any;
+ id: string;
+ adminId: string;
+ adminName: string;
+ targetId: string;
+ action: string;
+ details: any;
+ createdAt: any;
 }
