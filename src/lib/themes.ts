@@ -134,21 +134,21 @@ export const ROOM_THEMES: RoomTheme[] = [
  },
  { 
   id: 'ummy_help_dark', 
-  name: 'Ummy Help Center', 
+  name: 'Ummy Help', 
   url: '/themes/help_center_dark.png',
   isOfficial: true,
   seatColor: 'rgba(59, 130, 246, 0.2)',
   accentColor: '#3b82f6',
-  category: 'general'
+  category: 'help'
  },
  { 
   id: 'ummy_help_light', 
-  name: 'Ummy Support Light', 
+  name: 'Ummy Help Light', 
   url: '/themes/help_center_light.png',
   isOfficial: true,
   seatColor: 'rgba(255, 255, 255, 0.2)',
   accentColor: '#f8fafc',
-  category: 'general'
+  category: 'help'
  },
  { 
   id: 'ummy_official_dark', 

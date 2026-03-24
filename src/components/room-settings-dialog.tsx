@@ -102,8 +102,8 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
  const fileInputRef = useRef<HTMLInputElement>(null);
 
  const isOwner = user?.uid === room.ownerId;
- const isOfficialHelpRoom = room.id === 'ummy-help-center';
- const userIsOfficial = userProfile?.tags?.some(t => ['Admin', 'Official', 'Super Admin'].includes(t));
+ const isOfficialHelpRoom = room.id === 'ummy-help';
+ const userIsOfficial = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin'].includes(t));
  const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
 
  const participantsQuery = useMemoFirebase(() => {
