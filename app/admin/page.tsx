@@ -395,7 +395,7 @@ export default function AdminPage() {
     addDoc(notifRef, msgData)
       .then(() => { toast({ title: 'Message Dispatched' }); setDmContent(''); })
       .catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: notifRef.path, operation: 'create', requestResourceData: msgData })); })
-      .finally(() => setOpen(false));
+      .finally(() => setIsSendingDm(false));
   };
 
   const handleDispatchCoins = () => {
@@ -970,7 +970,7 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl p-8 bg-white">
                   <CardHeader className="px-0"><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-indigo-500"><MessageSquareText className="h-6 w-6" /> Direct Messenger</CardTitle></CardHeader>
                   <div className="flex flex-col gap-4"><SearchToggle mode={dmSearchMode} setMode={setDmSearchMode} /><div className="flex gap-4"><Input placeholder="Recipient..." value={dmSearchId} onChange={(e) => setDmSearchId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 rounded-2xl" /><Button onClick={() => handleGenericSearch(dmSearchMode, dmSearchId, setTargetUserForDm, setIsSearchingDm)} className="h-14 px-8 rounded-2xl" disabled={isSearchingDm}>Find</Button></div></div>
-                  {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-black uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleDirectMessage()} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem]">Send Sync</Button></div>)}
+                  {targetUserForDm && (<div className="mt-10 p-8 border-2 rounded-[2.5rem] space-y-8"><div className="flex items-center gap-4"><Avatar className="h-16 w-16"><AvatarImage src={targetUserForDm.avatarUrl || undefined}/></Avatar><p className="font-black uppercase text-xl">{targetUserForDm.username}</p></div><div className="space-y-4"><Input value={dmTitle} onChange={(e) => setDmTitle(e.target.value)} className="h-14 rounded-2xl" /><Textarea placeholder="Private msg..." value={dmContent} onChange={(e) => setDmContent(e.target.value)} className="h-40 rounded-3xl" /></div><Button onClick={handleDirectMessage} disabled={isSendingDm || !dmContent.trim()} className="w-full h-16 rounded-[1.5rem]">Send Sync</Button></div>)}
                </Card>
             </TabsContent>
 
@@ -1051,7 +1051,7 @@ export default function AdminPage() {
                            <ImageIcon className="h-5 w-5 text-primary" />
                            <span className="font-black uppercase italic text-sm text-slate-900">Splash Background Sync</span>
                         </div>
-                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white flex items-center justify-center">
+                        <div className="relative aspect-[9/16] max-w-[300px] mx-auto rounded-3xl overflow-hidden bg-slate-900 border-2 border-white shadow-xl flex items-center justify-center">
                            {config?.splashScreenUrl ? (<Image src={config.splashScreenUrl} fill className="object-cover" alt="Splash" unoptimized />) : (<div className="text-white/20">Stars Active</div>)}{isUploadingSplashBG && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin" /></div>}<button onClick={() => splashBGFileInputRef.current?.click()} className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-xl text-primary"><Camera className="h-6 w-6" /></button></div>
                         <input type="file" ref={splashBGFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleSplashBGUpload(e.target.files[0])} />
                      </div>
