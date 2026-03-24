@@ -656,7 +656,7 @@ export function RoomClient({ room }: { room: Room }) {
      alt="Background" 
      fill 
      unoptimized
-     className="object-contain opacity-60 animate-in fade-in duration-1000" 
+     className="object-cover opacity-60 animate-in fade-in duration-1000" 
      priority 
     />
     <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
