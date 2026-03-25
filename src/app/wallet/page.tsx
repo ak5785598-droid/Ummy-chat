@@ -32,7 +32,7 @@ const COIN_PACKAGES = [
  { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
  { id: 'p5', amount: '12,500,000', price: '2500 INR', bonus: '+2500000' },
  { id: 'p6', amount: '50,000,000', price: '10000 INR', bonus: '+13500000' },
- { Id: 'p7', amount: '10,000', price: '1 INR', bonus: '+200' }, 
+ { id: 'p7', amount: '10,000', price: '1 INR', bonus: '+200' }, 
 ];
 
 /**
@@ -89,6 +89,18 @@ export default function WalletPage() {
  }, [firestore, user]);
 
  const { data: rechargeHistory, isLoading: isRechargeHistoryLoading } = useCollection(rechargeRequestsQuery);
+
+  const unifiedHistory = useMemo(() => {
+    const list = [
+      ...(exchangeHistory || []).map((h: any) => ({ ...h, historyType: 'exchange' })),
+      ...(rechargeHistory || []).map((h: any) => ({ ...h, historyType: 'recharge' }))
+    ];
+    return list.sort((a, b) => {
+      const timeA = a.timestamp?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+      const timeB = b.timestamp?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+      return timeB.getTime() - timeA.getTime();
+    });
+  }, [exchangeHistory, rechargeHistory]);
 
  const handleRazorpayRecharge = async () => {
    if (!user || !firestore) return;
