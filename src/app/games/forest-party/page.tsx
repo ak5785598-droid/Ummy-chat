@@ -335,9 +335,9 @@ export default function WildPartyPage() {
            animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]", 
            animal.pos === 'bottom' && "bottom-0", 
            animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]", 
-           animal.pos === 'top-left' && "top-[8℅] left-[8℅]", 
-           animal.pos === 'left' && " left-0", 
-           isActive && "z-30 brightness-130 scale-110" 
+           animal.pos === 'left' && "left-0", 
+           animal.pos === 'top-left' && "top-[8%] left-[8%]", 
+           isActive && "z-30 brightness-125 scale-110" 
           )} 
          > 
            <div className="relative"> 
