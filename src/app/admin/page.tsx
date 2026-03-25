@@ -965,6 +965,34 @@ export default function AdminPage() {
                 <Wallet className="h-5 w-5 text-green-600" />
                 <span className="font-bold uppercase text-sm text-green-900">Payment Collection QR (UPI)</span>
               </div>
+              
+              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-green-100 shadow-sm">
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Payment Gateway Status</p>
+                  <p className="text-xs font-bold text-slate-900 uppercase">Current: {config?.paymentMode === 'razorpay' ? 'Razorpay (Live)' : 'Offline (Manual)'}</p>
+                </div>
+                <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                  <Button 
+                    size="sm" 
+                    variant={config?.paymentMode === 'offline' || !config?.paymentMode ? 'default' : 'ghost'} 
+                    onClick={() => updateDoc(configRef!, { paymentMode: 'offline' })}
+                    className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                  >
+                    Offline
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={config?.paymentMode === 'razorpay' ? 'default' : 'ghost'} 
+                    onClick={() => updateDoc(configRef!, { paymentMode: 'razorpay' })}
+                    className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                  >
+                    Razorpay
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+              </div>
               {config?.paymentQrUrl && (
                 <Button variant="ghost" size="sm" className="text-[8px] font-bold uppercase text-red-500" onClick={() => updateDoc(configRef!, { paymentQrUrl: null })}>Reset QR</Button>
               )}

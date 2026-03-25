@@ -75,9 +75,103 @@ export default function WalletPage() {
 
  const { data: exchangeHistory, isLoading: isHistoryLoading } = useCollection(historyQuery);
 
- const handleRechargeNow = async () => {
+ const handleRazorpayRecharge = async () => {
    if (!user || !firestore) return;
-   setIsOfflineDialogOpen(true);
+   const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
+   if (!pkg) return;
+
+   const priceINR = parseInt(pkg.price.split(' ')[0]);
+   if (isNaN(priceINR)) return;
+
+   setIsProcessing(true);
+
+   try {
+    const order = await createOrderAction(priceINR);
+    
+    if (!order.success) {
+     toast({ variant: 'destructive', title: 'Order Failed', description: order.error });
+     setIsProcessing(false);
+     return;
+    }
+
+    const options = {
+     key: order.keyId,
+     amount: order.amount,
+     currency: 'INR',
+     name: 'Tribal Pulse',
+     description: `Recharge ${pkg.amount} Coins`,
+     order_id: order.orderId,
+     handler: async (response: any) => {
+      const verification = await verifyPaymentAction(
+       response.razorpay_order_id,
+       response.razorpay_payment_id,
+       response.razorpay_signature
+      );
+
+      if (!verification.success) {
+       toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error || 'Payment verification failed.' });
+       setIsProcessing(false);
+       return;
+      }
+
+      const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
+      const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
+      const totalGain = amountValue + bonusValue;
+
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+      await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+      
+      try {
+       const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+       await addDoc(historyRef, {
+        type: 'purchase',
+        coinAmount: totalGain,
+        packageId: pkg.id,
+        amountPaid: pkg.price,
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        timestamp: serverTimestamp()
+       });
+      } catch (e) {
+       console.error('Failed to log history', e);
+      }
+      
+      toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
+      setIsProcessing(false);
+     },
+     prefill: {
+      name: user.displayName || '',
+      email: user.email || '',
+     },
+     theme: {
+      color: '#ffcc00',
+     },
+     modal: {
+      ondismiss: () => setIsProcessing(false)
+     }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+   } catch (err: any) {
+    console.error('[Payment Error]', err);
+    toast({ variant: 'destructive', title: 'Payment Interruption', description: 'Could not connect to Razorpay Gateway.' });
+    setIsProcessing(false);
+   }
+  };
+
+  const handleRechargeNow = async () => {
+   if (!user || !firestore) return;
+   
+   if (config?.paymentMode === 'razorpay') {
+     handleRazorpayRecharge();
+   } else {
+     setIsOfflineDialogOpen(true);
+   }
   };
 
   const handleSubmitManualRecharge = async () => {
