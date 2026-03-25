@@ -231,7 +231,14 @@ export default function WalletPage() {
       <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
        <ChevronLeft className="h-6 w-6 text-gray-800" />
       </button>
-      <h1 className="text-xl font-bold uppercase tracking-tight">Wallet</h1>
+      <div>
+        <h1 className="text-xl font-bold uppercase tracking-tight">Wallet</h1>
+        {config?.paymentMode !== 'razorpay' && (
+          <p className="text-[8px] font-bold text-green-500 uppercase tracking-widest mt-0.5 flex items-center gap-1 animate-pulse">
+            <Shield className="h-2 w-2" /> Secure Offline Mode
+          </p>
+        )}
+      </div>
       <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2 active:scale-95 transition-transform">
        {showRecords ? 'Close' : 'Record'}
       </button>

@@ -173,20 +173,9 @@ export function AppLayout({
  if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
  const isMainNav = pathname === '/rooms' || 
-          pathname === '/discover' || 
-          pathname === '/messages' || 
-          pathname?.startsWith('/profile') ||
-          pathname?.startsWith('/wallet') ||
-          pathname?.startsWith('/store') ||
-          pathname?.startsWith('/settings') ||
-          pathname?.startsWith('/tasks') ||
-          pathname?.startsWith('/level') ||
-          pathname?.startsWith('/cp-house') ||
-          pathname?.startsWith('/help-center') ||
-          pathname?.startsWith('/about') ||
-          pathname?.startsWith('/leaderboard') ||
-          pathname?.startsWith('/games') ||
-          pathname?.startsWith('/svip');
+           pathname === '/discover' || 
+           pathname === '/messages' || 
+           pathname === '/profile';
 
  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
 
