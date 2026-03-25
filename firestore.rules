@@ -16,13 +16,14 @@ service cloud.firestore {
     }
 
     function isNotBanned() {
-      if (isCreator()) { return true; }
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      if (!exists(userPath)) { return true; }
-      let userData = get(userPath).data;
-      return !('banStatus' in userData) || 
-             userData.banStatus.isBanned == false || 
-             (userData.banStatus.bannedUntil != null && userData.banStatus.bannedUntil < request.time);
+      return isCreator() || 
+             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
+             (
+               !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
+               (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time)
+             );
     }
 
     // Root Users Collection
