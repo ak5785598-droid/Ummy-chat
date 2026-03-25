@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
