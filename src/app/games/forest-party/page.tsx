@@ -43,7 +43,8 @@ const CHIPS = [
  { value: 300000, label: '300K', color: 'bg-pink-500' },
  { value: 1000000, label: '1M', color: 'bg-purple-500' },
  { value: 10000000, label: '10M', color: 'bg-indigo-500' },
- { value: 100000000, label: '100M', color: 'bg-violate-500' },
+ { value: 100000000, label: '100M', color: 'bg-purple-500' },
+ { value: 500000000, label: '500M', color:  'bg-sky-500' }, 
 ];
 
 export default function WildPartyPage() {
@@ -144,8 +145,8 @@ export default function WildPartyPage() {
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const totalSteps = (ANIMALS.length * 4) + targetIdx;
-  let speed = 50;
+  const totalSteps = (ANIMALS.length * 5) + targetIdx;
+  let speed = 20;
 
   const runChase = () => {
    setHighlightIdx(currentStep % ANIMALS.length);
@@ -154,7 +155,7 @@ export default function WildPartyPage() {
    if (currentStep <= totalSteps) {
     const remaining = totalSteps - currentStep;
     if (remaining < 12) speed += 20;
-    if (remaining < 6) speed += 40;
+    if (remaining < 6) speed += 20;
     setTimeout(runChase, speed);
    } else {
     setTimeout(() => showResult(winningId), 800);
@@ -334,9 +335,9 @@ export default function WildPartyPage() {
            animal.pos === 'bottom-right' && "bottom-[8%] right-[8%]", 
            animal.pos === 'bottom' && "bottom-0", 
            animal.pos === 'bottom-left' && "bottom-[8%] left-[8%]", 
-           animal.pos === 'left' && "left-0", 
-           animal.pos === 'top-left' && "top-[8%] left-[8%]", 
-           isActive && "z-30 brightness-125 scale-110" 
+           animal.pos === 'top-left' && "top-[8℅] left-[8℅]", 
+           animal.pos === 'left' && " left-0", 
+           isActive && "z-30 brightness-130 scale-110" 
           )} 
          > 
            <div className="relative"> 
