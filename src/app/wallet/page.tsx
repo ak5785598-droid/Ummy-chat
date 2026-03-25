@@ -32,6 +32,7 @@ const COIN_PACKAGES = [
  { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
  { id: 'p5', amount: '12,500,000', price: '2500 INR', bonus: '+2500000' },
  { id: 'p6', amount: '50,000,000', price: '10000 INR', bonus: '+13500000' },
+ { Id: 'p7', amount: '10,000', price: '1 INR', bonus: '+200' }, 
 ];
 
 /**
