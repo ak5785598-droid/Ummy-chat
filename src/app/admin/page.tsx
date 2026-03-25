@@ -606,13 +606,16 @@ export default function AdminPage() {
         query(
           collection(firestore, "rechargeRequests"),
           where("status", "==", "approved"),
+          // Only sync recharges from system launch (today onwards)
+          where("createdAt", ">=", Timestamp.fromDate(new Date("2026-03-25T00:00:00Z"))),
         ),
       );
       const rechargeMap = new Map();
       rechargeSnap.forEach((doc) => {
         const data = doc.data();
         const res = rechargeMap.get(data.uid) || 0;
-        rechargeMap.set(data.uid, res + (data.coins || 0));
+        // Correctly sum base coins and bonus
+        rechargeMap.set(data.uid, res + (data.coins || 0) + (data.bonus || 0));
       });
 
       // 3. Process users in safe batches
@@ -677,6 +680,96 @@ export default function AdminPage() {
         title: "Reset Failed",
         description: "Check console or alert for details.",
       });
+    } finally {
+      setIsResettingEconomy(false);
+    }
+  };
+
+  const handleGlobalDiamondReset = async () => {
+    if (!firestore || !isCreator) return;
+    if (
+      !confirm(
+        "DIAMOND PURGE: This will set EVERY user's diamond balance to 0. THIS ACTION IS IRREVERSIBLE. Proceed?",
+      )
+    )
+      return;
+
+    setIsResettingEconomy(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, "users"));
+      let batch = writeBatch(firestore);
+      let ops = 0;
+      const batches = [];
+
+      usersSnap.forEach((uDoc) => {
+        batch.set(
+          doc(firestore, "users", uDoc.id),
+          { "wallet.diamonds": 0, updatedAt: serverTimestamp() },
+          { merge: true },
+        );
+        batch.set(
+          doc(firestore, "users", uDoc.id, "profile", uDoc.id),
+          { "wallet.diamonds": 0, updatedAt: serverTimestamp() },
+          { merge: true },
+        );
+        ops += 2;
+        if (ops >= 400) {
+          batches.push(batch.commit());
+          batch = writeBatch(firestore);
+          ops = 0;
+        }
+      });
+
+      if (ops > 0) batches.push(batch.commit());
+      await Promise.all(batches);
+      toast({
+        title: "Diamond Purge Complete",
+        description: "All balances reset to 0.",
+      });
+    } catch (e: any) {
+      console.error(e);
+      alert(`DIAMOND PURGE FAILED: ${e.message}`);
+    } finally {
+      setIsResettingEconomy(false);
+    }
+  };
+
+  const handleClearRechargeHistory = async () => {
+    if (!firestore || !isCreator) return;
+    if (
+      !confirm(
+        "WIPE HISTORY: This will delete ALL recharge records BEFORE today. Proceed?",
+      )
+    )
+      return;
+
+    setIsResettingEconomy(true);
+    try {
+      const snap = await getDocs(
+        query(
+          collection(firestore, "rechargeRequests"),
+          where("createdAt", "<", Timestamp.fromDate(new Date("2026-03-25T00:00:00Z"))),
+        ),
+      );
+      let batch = writeBatch(firestore);
+      let ops = 0;
+      const batches = [];
+
+      snap.forEach((d) => {
+        batch.delete(d.ref);
+        ops++;
+        if (ops >= 400) {
+          batches.push(batch.commit());
+          batch = writeBatch(firestore);
+          ops = 0;
+        }
+      });
+
+      if (ops > 0) batches.push(batch.commit());
+      await Promise.all(batches);
+      toast({ title: "Test History Wiped", description: `Removed ${snap.size} old records.` });
+    } catch (e: any) {
+      console.error(e);
     } finally {
       setIsResettingEconomy(false);
     }
@@ -1846,8 +1939,16 @@ export default function AdminPage() {
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
                     <Wallet className="h-6 w-6" /> Recharge Requests
                   </CardTitle>
-                  <CardDescription>
-                    Verify manual UPI payments and credit coins to users.
+                  <CardDescription className="flex items-center justify-between">
+                    <span>Verify manual UPI payments and credit coins to users.</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleClearRechargeHistory}
+                      className="text-[10px] font-bold text-red-500 uppercase h-8 px-4 border border-red-100 rounded-xl hover:bg-red-50"
+                    >
+                      Wipe Old Test Records
+                    </Button>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
@@ -3783,10 +3884,33 @@ export default function AdminPage() {
                     <p className="text-[10px] font-bold text-red-700 leading-relaxed uppercase opacity-80">
                       This will reset EVERY user's current coin balance to 0,
                       then scan the "Recharge Requests" database and give back
-                      coins only for APPROVED manual recharges. Use ONLY before
-                      starting the new economic phase.
+                      coins (plus bonuses) ONLY for APPROVED manual recharges
+                      made from today (March 25, 2026) onwards.
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    onClick={handleGlobalDiamondReset}
+                    disabled={isResettingEconomy}
+                    variant="destructive"
+                    className="h-14 rounded-2xl font-bold uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-900/20"
+                  >
+                    {isResettingEconomy ? (
+                      <Loader className="animate-spin h-5 w-5" />
+                    ) : (
+                      "Execute Diamond Purge"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleClearRechargeHistory}
+                    disabled={isResettingEconomy}
+                    variant="outline"
+                    className="h-14 rounded-2xl font-bold uppercase tracking-widest border-2 border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    Wipe Test Records
+                  </Button>
                 </div>
               </CardContent>
             </Card>
