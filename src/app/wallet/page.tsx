@@ -1,19 +1,22 @@
+import Image from 'next/image';
 'use client';
 
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
-import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { createOrderAction, verifyPaymentAction } from '@/actions/payments';
 import Script from 'next/script';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 declare global {
  interface Window {
@@ -45,6 +48,15 @@ export default function WalletPage() {
  const [showRecords, setShowRecords] = useState(false);
  const [selectedPackageId, setSelectedPackageId] = useState('p1');
  const [isProcessing, setIsProcessing] = useState(false);
+  const [isOfflineDialogOpen, setIsOfflineDialogOpen] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
+  const [isSubmittingManual, setIsSubmittingManual] = useState(false);
+
+  const configRef = useMemoFirebase(() => {
+   if (!firestore) return null;
+   return doc(firestore, 'appConfig', 'global');
+  }, [firestore]);
+  const { data: config } = useDoc(configRef);
 
  useEffect(() => {
   if (!isUserLoading && !user) {
@@ -64,98 +76,46 @@ export default function WalletPage() {
  const { data: exchangeHistory, isLoading: isHistoryLoading } = useCollection(historyQuery);
 
  const handleRechargeNow = async () => {
-  if (!user || !firestore) return;
-  const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
-  if (!pkg) return;
+   if (!user || !firestore) return;
+   setIsOfflineDialogOpen(true);
+  };
 
-  const priceINR = parseInt(pkg.price.split(' ')[0]);
-  if (isNaN(priceINR)) return;
-
-  setIsProcessing(true);
-
-  try {
-   const order = await createOrderAction(priceINR);
-   
-   if (!order.success) {
-    toast({ variant: 'destructive', title: 'Order Failed', description: order.error });
-    setIsProcessing(false);
+  const handleSubmitManualRecharge = async () => {
+   if (!user || !firestore || !utrNumber.trim()) {
+    toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter the Transaction ID / UTR Number.' });
     return;
    }
 
-   const options = {
-    key: order.keyId,
-    amount: order.amount,
-    currency: 'INR',
-    name: 'Tribal Pulse',
-    description: `Recharge ${pkg.amount} Coins`,
-    order_id: order.orderId,
-    handler: async (response: any) => {
-     const verification = await verifyPaymentAction(
-      response.razorpay_order_id,
-      response.razorpay_payment_id,
-      response.razorpay_signature
-     );
+   const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
+   if (!pkg) return;
 
-     if (!verification.success) {
-      toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error || 'Payment verification failed.' });
-      setIsProcessing(false);
-      return;
-     }
+   setIsSubmittingManual(true);
+   try {
+    const requestRef = collection(firestore, 'rechargeRequests');
+    await addDoc(requestRef, {
+     uid: user.uid,
+     username: userProfile?.username || 'Unknown',
+     accountNumber: userProfile?.accountNumber || '0000',
+     amount: pkg.price,
+     coins: parseInt(pkg.amount.replace(/,/g, '')),
+     bonus: pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0,
+     utrNumber: utrNumber.trim(),
+     status: 'pending',
+     createdAt: serverTimestamp()
+    });
 
-     // SECURE FULFILLMENT: Ideally this should happen via Server Webhook 
-     // We proceed with client-side update after successful server signature verification
-     const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
-     const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
-     const totalGain = amountValue + bonusValue;
+    toast({ title: 'Request Submitted', description: 'Your payment is being verified by the admin.' });
+    setIsOfflineDialogOpen(false);
+    setUtrNumber('');
+   } catch (error) {
+    console.error('Manual recharge error', error);
+    toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not send request. Please try again.' });
+   } finally {
+    setIsSubmittingManual(false);
+   }
+  };
 
-     const userRef = doc(firestore, 'users', user.uid);
-     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-     
-     await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-     await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-     
-     // Log transaction to history
-     try {
-      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
-      await addDoc(historyRef, {
-       type: 'purchase',
-       coinAmount: totalGain,
-       packageId: pkg.id,
-       amountPaid: pkg.price,
-       razorpayOrderId: response.razorpay_order_id,
-       razorpayPaymentId: response.razorpay_payment_id,
-       timestamp: serverTimestamp()
-      });
-     } catch (e) {
-      console.error('Failed to log history', e);
-     }
-     
-     toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
-     setIsProcessing(false);
-    },
-    prefill: {
-     name: user.displayName || '',
-     email: user.email || '',
-    },
-    theme: {
-     color: '#ffcc00',
-    },
-    modal: {
-     ondismiss: () => setIsProcessing(false)
-    }
-   };
-
-   const rzp = new window.Razorpay(options);
-   rzp.open();
-
-  } catch (err: any) {
-   console.error('[Payment Error]', err);
-   toast({ variant: 'destructive', title: 'Payment Interruption', description: 'Could not connect to Razorpay Gateway.' });
-   setIsProcessing(false);
-  }
- };
-
- if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || isProfileLoading) {
   return (
    <AppLayout>
     <div className="flex h-[80vh] items-center justify-center bg-white">
@@ -394,6 +354,53 @@ export default function WalletPage() {
      </div>
     )}
    </div>
+   <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
+    <DialogContent className="sm:max-w-md bg-white border-none rounded-[2rem] p-6 shadow-2xl font-sans">
+     <DialogHeader>
+      <DialogTitle className="text-xl font-bold uppercase tracking-tight text-center">Offline Recharge</DialogTitle>
+      <DialogDescription className="text-center text-[10px] font-bold uppercase text-gray-400">Scan & Pay via UPI</DialogDescription>
+     </DialogHeader>
+     <div className="flex flex-col items-center gap-6 py-4">
+      <div className="relative w-48 h-48 bg-gray-50 rounded-2xl border-2 border-gray-100 p-2 overflow-hidden flex items-center justify-center">
+       {/* Use Global App Config QR if available, else placeholder */}
+       {config?.paymentQrUrl ? (
+        <Image src={config.paymentQrUrl} fill className="object-contain" alt="Payment QR" unoptimized />
+       ) : (
+        <div className="text-center p-4">
+         <Shield className="h-8 w-8 mx-auto text-gray-200 mb-2" />
+         <p className="text-[8px] font-bold text-gray-300 uppercase leading-tight">Admin QR Syncing...</p>
+        </div>
+       )}
+      </div>
+      
+      <div className="w-full space-y-4">
+       <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+        <p className="text-[10px] font-bold text-yellow-700 uppercase mb-1">Package Selected</p>
+        <p className="text-sm font-bold text-gray-900">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} Coins for {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
+       </div>
+
+       <div className="space-y-2">
+        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Transaction ID / UTR Number</label>
+        <Input 
+         value={utrNumber}
+         onChange={(e) => setUtrNumber(e.target.value)}
+         placeholder="Enter 12-digit UTR No."
+         className="h-12 bg-gray-50 border-gray-100 rounded-xl font-bold text-center"
+        />
+       </div>
+
+       <Button 
+        onClick={handleSubmitManualRecharge}
+        disabled={isSubmittingManual}
+        className="w-full h-14 bg-yellow-400 hover:bg-yellow-500 text-black font-bold uppercase rounded-xl shadow-lg shadow-yellow-500/20"
+       >
+        {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment'}
+       </Button>
+      </div>
+     </div>
+    </DialogContent>
+   </Dialog>
+
    <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
   </AppLayout>
  );

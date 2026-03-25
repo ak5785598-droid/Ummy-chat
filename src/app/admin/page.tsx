@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag, ShieldAlert } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag, ShieldAlert, ArrowRightLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -193,6 +193,9 @@ export default function AdminPage() {
  const [appStats, setAppStats] = useState({ totalCoins: 0, totalDiamonds: 0, totalSpent: 0, totalUsers: 0 });
  const [isSyncingAppData, setIsSyncingAppData] = useState(false);
  const [isSyncingIDs, setIsSyncingIDs] = useState(false);
+  const [isProcessingRechargeAction, setIsProcessingRechargeAction] = useState<string | null>(null);
+  const [isUploadingPaymentQr, setIsUploadingPaymentQr] = useState(false);
+  const paymentQrFileInputRef = useRef<HTMLInputElement>(null);
 
  const [tribalMembers, setTribalMembers] = useState<any[]>([]);
  const [isSyncingDirectory, setIsSyncingDirectory] = useState(false);
@@ -227,6 +230,12 @@ export default function AdminPage() {
   return doc(firestore, 'appConfig', 'global');
  }, [firestore, isCreator]);
  const { data: config } = useDoc(configRef);
+
+  const rechargeQuery = useMemoFirebase(() => {
+   if (!firestore || !isCreator) return null;
+   return query(collection(firestore, 'rechargeRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+  }, [firestore, isCreator]);
+  const { data: pendingRecharges } = useCollection(rechargeQuery);
 
  const bannerConfigRef = useMemoFirebase(() => {
   if (!firestore || !isCreator) return null;
@@ -694,7 +703,71 @@ export default function AdminPage() {
   } finally { setIsUploadingSplashBG(false); }
  };
 
- const handleLogoUpload = async (f: File) => {
+ const handleApproveRecharge = async (req: any) => {
+    if (!firestore || !isCreator) return;
+    setIsProcessingRechargeAction(req.id);
+    try {
+      const userRef = doc(firestore, 'users', req.uid);
+      const profileRef = doc(firestore, 'users', req.uid, 'profile', req.uid);
+      const requestRef = doc(firestore, 'rechargeRequests', req.id);
+      const historyRef = collection(firestore, 'users', req.uid, 'diamondExchanges');
+
+      const totalGain = (req.coins || 0) + (req.bonus || 0);
+
+      // Perform atomic updates
+      const batch = writeBatch(firestore);
+      batch.update(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+      batch.update(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+      batch.update(requestRef, { status: 'approved', processedAt: serverTimestamp() });
+      
+      const historyDoc = doc(historyRef);
+      batch.set(historyDoc, {
+        type: 'purchase',
+        coinAmount: totalGain,
+        packageAmount: req.amount,
+        utrNumber: req.utrNumber,
+        method: 'offline_qr',
+        timestamp: serverTimestamp(),
+        status: 'completed'
+      });
+
+      await batch.commit();
+      toast({ title: 'Recharge Approved', description: `${totalGain.toLocaleString()} coins credited to ${req.username}.` });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Approval Failed' });
+    } finally {
+      setIsProcessingRechargeAction(null);
+    }
+  };
+
+  const handleRejectRecharge = async (requestId: string) => {
+    if (!firestore || !isCreator) return;
+    if (!confirm('Reject this recharge request?')) return;
+    setIsProcessingRechargeAction(requestId);
+    try {
+      await updateDoc(doc(firestore, 'rechargeRequests', requestId), { status: 'rejected', processedAt: serverTimestamp() });
+      toast({ title: 'Request Rejected' });
+    } finally {
+      setIsProcessingRechargeAction(null);
+    }
+  };
+
+  const handlePaymentQrUpload = async (f: File) => {
+    if (!storage || !firestore || !configRef) return;
+    setIsUploadingPaymentQr(true);
+    try {
+      const sRef = ref(storage, `branding/payment_qr_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      await updateDoc(configRef, { paymentQrUrl: url, updatedAt: serverTimestamp() });
+      toast({ title: 'Payment QR Synchronized' });
+    } finally {
+      setIsUploadingPaymentQr(false);
+    }
+  };
+
+  const handleLogoUpload = async (f: File) => {
   if (!storage || !firestore || !configRef) return;
   setIsUploadingLogo(true);
   try {
@@ -728,6 +801,7 @@ export default function AdminPage() {
      <div className="w-full md:w-72 shrink-0 md:sticky md:top-24 h-fit">
       <ScrollArea className="h-[calc(100vh-200px)] pr-4">
        <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-3xl border border-slate-100 p-3 gap-2 overflow-visible">
+        <TabsTrigger value="recharge-requests" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-green-600 data-[state=active]:text-white shadow-lg animate-pulse"><Wallet className="h-4 w-4" /> Recharge Requests {pendingRecharges && pendingRecharges.length > 0 && <Badge className="ml-auto bg-white text-green-600 font-bold">{pendingRecharges.length}</Badge>}</TabsTrigger>
         <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Database className="h-4 w-4" /> App Ledger</TabsTrigger>
         <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Palette className="h-4 w-4" /> App Branding</TabsTrigger>
         <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Pin className="h-4 w-4" /> Pin Control</TabsTrigger>
@@ -754,6 +828,77 @@ export default function AdminPage() {
      </div>
 
      <div className="flex-1 w-full min-w-0">
+      <TabsContent value="recharge-requests" className="m-0 space-y-6">
+        <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+          <CardHeader className="px-0">
+            <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600"><Wallet className="h-6 w-6" /> Recharge Requests</CardTitle>
+            <CardDescription>Verify manual UPI payments and credit coins to users.</CardDescription>
+          </CardHeader>
+          <CardContent className="px-0">
+            {!pendingRecharges || pendingRecharges.length === 0 ? (
+              <div className="py-20 text-center opacity-20 font-bold uppercase text-xs tracking-widest leading-loose">
+                No Pending Requests<br/>Frequency Clear
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingRecharges.map((req: any) => (
+                  <div key={req.id} className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-white shadow-md">
+                        <AvatarFallback className="bg-green-100 text-green-600 font-bold">{req.username?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-slate-900 uppercase">{req.username}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: {req.accountNumber} | {format(req.createdAt?.toDate?.() || new Date(), 'HH:mm - MMM d')}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center md:items-start gap-1">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">UTR / Ref Number</p>
+                      <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono font-bold text-blue-600 select-all">{req.utrNumber}</code>
+                    </div>
+
+                    <div className="flex items-center gap-4 px-6 border-x border-slate-200">
+                      <div className="text-center">
+                        <p className="text-[10px] font-bold uppercase text-slate-400">Amount</p>
+                        <p className="font-bold text-slate-900 uppercase italic tracking-tighter">{req.amount}</p>
+                      </div>
+                      <ArrowRightLeft className="h-4 w-4 text-slate-300" strokeWidth={3} />
+                      <div className="text-center">
+                        <p className="text-[10px] font-bold uppercase text-slate-400">Coins</p>
+                        <div className="flex items-center gap-1 font-bold text-green-600 uppercase tracking-tighter">
+                          <GoldCoinIcon className="h-4 w-4" />
+                          <span>{(req.coins + req.bonus).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => handleRejectRecharge(req.id)}
+                        disabled={isProcessingRechargeAction === req.id}
+                        className="rounded-xl text-red-500 hover:bg-red-50"
+                      >
+                        {isProcessingRechargeAction === req.id ? <Loader className="animate-spin" /> : <X className="h-5 w-5" />}
+                      </Button>
+                      <Button 
+                        onClick={() => handleApproveRecharge(req)}
+                        disabled={isProcessingRechargeAction === req.id}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold uppercase h-12 px-8 rounded-xl shadow-lg shadow-green-600/20 active:scale-95 transition-all"
+                      >
+                        {isProcessingRechargeAction === req.id ? <Loader className="animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                        Approve
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       <TabsContent value="app-data" className="m-0 space-y-6">
         <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
          <CardHeader className="px-0 flex flex-row items-center justify-between">
@@ -814,7 +959,48 @@ export default function AdminPage() {
            <CardDescription>Manage the background image shown during app initialization and dimension transitions.</CardDescription>
          </CardHeader>
          <CardContent className="px-0 space-y-10">
-           <div className="p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 space-y-4">
+           <div className="p-6 bg-green-50 rounded-3xl border-2 border-green-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-green-600" />
+                <span className="font-bold uppercase text-sm text-green-900">Payment Collection QR (UPI)</span>
+              </div>
+              {config?.paymentQrUrl && (
+                <Button variant="ghost" size="sm" className="text-[8px] font-bold uppercase text-red-500" onClick={() => updateDoc(configRef!, { paymentQrUrl: null })}>Reset QR</Button>
+              )}
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="relative h-48 w-48 rounded-[2rem] bg-white shadow-2xl border-8 border-white flex items-center justify-center overflow-hidden">
+                {config?.paymentQrUrl ? (
+                  <Image src={config.paymentQrUrl} alt="UPI QR" fill className="object-contain p-4" unoptimized />
+                ) : (
+                  <div className="text-center opacity-20">
+                    <ShieldAlert className="h-8 w-8 mx-auto mb-2 text-green-300" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">No QR Active</span>
+                  </div>
+                )}
+                {isUploadingPaymentQr && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader className="animate-spin text-white" /></div>}
+              </div>
+              
+              <div className="flex-1 space-y-4">
+                <p className="text-[11px] font-bold text-green-700 leading-relaxed uppercase opacity-80">
+                  This QR will be displayed to all users during recharge. Ensure it is your correct Google Pay, PhonePe, or BHIM UPI code.
+                </p>
+                <Button 
+                  onClick={() => paymentQrFileInputRef.current?.click()} 
+                  disabled={isUploadingPaymentQr}
+                  className="h-14 px-8 rounded-2xl bg-green-600 text-white font-bold uppercase shadow-xl shadow-green-600/20 transition-all hover:bg-green-700 active:scale-95"
+                >
+                  {isUploadingPaymentQr ? <Loader className="animate-spin mr-2" /> : <Camera className="h-5 w-5 mr-3" />}
+                  Synchronize QR Code
+                </Button>
+                <input type="file" ref={paymentQrFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handlePaymentQrUpload(e.target.files[0])} />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                <ImageIcon className="h-5 w-5 text-indigo-600" />
