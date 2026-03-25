@@ -1450,7 +1450,7 @@ export default function AdminPage() {
          <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
            <div className="h-12 w-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg">
-            <Coins className="h-6 w-6" />
+            <GoldCoinIcon className="h-6 w-6" />
            </div>
            <div>
             <CardTitle className="text-xl uppercase tracking-tighter text-slate-900">Economy Purge & Sync</CardTitle>
