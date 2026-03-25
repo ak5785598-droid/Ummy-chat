@@ -136,5 +136,11 @@ service cloud.firestore {
     match /transactions/{id} {
       allow read, write: if isCreator();
     }
+
+    match /rechargeRequests/{requestId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isCreator());
+      allow create: if isSignedIn() && isNotBanned();
+      allow update, delete: if isCreator();
+    }
   }
 }

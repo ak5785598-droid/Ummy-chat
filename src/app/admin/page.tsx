@@ -1509,21 +1509,6 @@ export default function AdminPage() {
       </TabsContent>
 
      </Tabs>
-      {/* Administrative Device Sync */}
-      <div className="mt-20 mb-20 p-8 rounded-[2rem] bg-slate-50 border border-slate-100 border-dashed max-w-2xl mx-auto text-center">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">System Identity Protocol</h3>
-        <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm inline-block group hover:border-blue-400 transition-all cursor-copy active:scale-95" onClick={() => { 
-          if (typeof window !== 'undefined') {
-            navigator.clipboard.writeText(user?.uid || ''); 
-            toast({ title: 'UID Copied' }); 
-          }
-        }}>
-          <code className="text-[12px] font-mono font-bold text-slate-900 select-all">{user?.uid || 'Loading...'}</code>
-        </div>
-        <p className="text-[9px] font-bold text-slate-400 mt-6 leading-relaxed uppercase opacity-60">
-          Click the ID above to copy it. Your active account must be synchronized with the system rules to perform Economy Purges.
-        </p>
-      </div>
 
    </div>
   </AppLayout>
