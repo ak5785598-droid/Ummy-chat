@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
@@ -262,32 +262,57 @@ export default function WalletPage() {
 
     {showRecords ? (
      <div className="flex-1 p-6 space-y-4 animate-in slide-in-from-right duration-300 overflow-y-auto no-scrollbar">
-       <h2 className="text-sm font-bold uppercase text-gray-400 mb-6">Exchange History</h2>
-       {isHistoryLoading ? (
+       <h2 className="text-sm font-bold uppercase text-gray-400 mb-6">Unified Ledger</h2>
+       {(isHistoryLoading || isRechargeHistoryLoading) ? (
         <div className="flex justify-center pt-20">
          <Loader className="animate-spin text-primary h-8 w-8" />
         </div>
        ) : !exchangeHistory || exchangeHistory.length === 0 ? (
         <div className="py-40 text-center opacity-20 uppercase font-bold text-xs">No Records Found</div>
        ) : (
-        exchangeHistory.map((record: any) => (
+        unifiedHistory.map((record: any) => (
          <div key={record.id} className="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-           <p className="text-[10px] font-bold text-gray-400 uppercase">{record.timestamp ? format(record.timestamp.toDate(), 'MMM d, HH:mm') : 'Syncing...'}</p>
-           <p className="font-bold text-sm uppercase text-gray-800">{record.type === 'exchange' ? 'Diamond Exchange' : 'Package Purchase'}</p>
-           {record.diamondAmount && (
-            <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
-              <Gem className="h-3 w-3" />
-              <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
-            </div>
+           <p className="text-[10px] font-bold text-gray-400 uppercase">
+             {record.historyType === 'exchange' 
+               ? (record.timestamp ? format(record.timestamp.toDate(), 'MMM d, HH:mm') : 'Syncing...')
+               : (record.createdAt ? format(record.createdAt.toDate(), 'MMM d, HH:mm') : 'Syncing...')
+             }
+           </p>
+           <p className="font-bold text-sm uppercase text-gray-800">
+             {record.historyType === 'exchange' 
+               ? (record.type === 'exchange' ? 'Diamond Exchange' : 'Package Purchase')
+               : 'Manual Recharge'
+             }
+           </p>
+           {record.historyType === 'exchange' ? (
+             record.diamondAmount && (
+               <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
+                 <Gem className="h-3 w-3" />
+                 <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
+               </div>
+             )
+           ) : (
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">UTR: {record.utrNumber}</p>
            )}
           </div>
           <div className="text-right">
            <div className="flex items-center gap-1.5 justify-end">
-            <span className="font-bold text-green-600">+{record.coinAmount?.toLocaleString()}</span>
+            <span className="font-bold text-green-600">+{record.coinAmount?.toLocaleString() || (record.coins + (record.bonus || 0)).toLocaleString()}</span>
             <GoldCoinIcon className="h-4 w-4" />
            </div>
-           <p className="text-[8px] font-bold text-green-600 uppercase tracking-wider mt-1">Completed</p>
+           {record.historyType === 'exchange' ? (
+             <p className="text-[8px] font-bold text-green-600 uppercase tracking-wider mt-1">Completed</p>
+           ) : (
+             <div className={cn(
+               "text-[8px] font-bold uppercase tracking-wider mt-1 px-2 py-0.5 rounded-full inline-block",
+               record.status === 'approved' ? "bg-green-100 text-green-600" :
+               record.status === 'rejected' ? "bg-red-100 text-red-600" :
+               "bg-amber-100 text-amber-600 animate-pulse"
+             )}>
+               {record.status}
+             </div>
+           )}
           </div>
          </div>
         ))

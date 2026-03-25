@@ -314,8 +314,6 @@ export default function AdminPage() {
 
       // 3. Process users in safe batches
       const usersSnap = await getDocs(collection(firestore, 'users'));
-      const totalUsers = usersSnap.size;
-      let processedCount = 0;
       let batch = writeBatch(firestore);
       let operationsInBatch = 0;
       const batchesToWait = [];
@@ -327,11 +325,13 @@ export default function AdminPage() {
         const userRef = doc(firestore, 'users', uid);
         const profileRef = doc(firestore, 'users', uid, 'profile', uid);
         
+        // Update user main document
         batch.update(userRef, { 'wallet.coins': validCoins, updatedAt: serverTimestamp() });
-        batch.update(profileRef, { 'wallet.coins': validCoins, updatedAt: serverTimestamp() });
+        
+        // Use setDoc with merge for profile in case it doesn't exist yet
+        batch.set(profileRef, { 'wallet.coins': validCoins, updatedAt: serverTimestamp() }, { merge: true });
         
         operationsInBatch += 2;
-        processedCount++;
 
         if (operationsInBatch >= 400) { 
            batchesToWait.push(batch.commit());
@@ -346,9 +346,10 @@ export default function AdminPage() {
 
       await Promise.all(batchesToWait);
       toast({ title: 'Economy Reset Complete', description: `Processed ${usersSnap.size} users. Balances synchronized to manual recharges.` });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Reset failed', err);
-      toast({ variant: 'destructive', title: 'Reset Failed', description: 'Check console for errors.' });
+      alert(`ECONOMY RESET FAILED: ${err.message || 'Unknown Error'}`);
+      toast({ variant: 'destructive', title: 'Reset Failed', description: 'Check console or alert for details.' });
     } finally {
       setIsResettingEconomy(false);
     }
