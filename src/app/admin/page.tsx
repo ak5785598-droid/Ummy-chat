@@ -616,20 +616,26 @@ export default function AdminPage() {
     setIsResettingEconomy(true);
     try {
       // 1. Fetch all approved recharge requests
+      // Note: We bypass the composite index requirement by filtering the date in memory
       const rechargeSnap = await getDocs(
         query(
           collection(firestore, "rechargeRequests"),
           where("status", "==", "approved"),
-          // Only sync recharges from system launch (today onwards)
-          where("createdAt", ">=", Timestamp.fromDate(new Date("2026-03-25T00:00:00Z"))),
         ),
       );
+
+      const launchDate = new Date("2026-03-25T00:00:00Z");
       const rechargeMap = new Map();
+
       rechargeSnap.forEach((doc) => {
         const data = doc.data();
-        const res = rechargeMap.get(data.uid) || 0;
-        // Correctly sum base coins and bonus
-        rechargeMap.set(data.uid, res + (data.coins || 0) + (data.bonus || 0));
+        const createdAt = data.createdAt?.toDate?.() || new Date(0);
+
+        if (createdAt >= launchDate) {
+          const res = rechargeMap.get(data.uid) || 0;
+          // Correctly sum base coins and bonus
+          rechargeMap.set(data.uid, res + (data.coins || 0) + (data.bonus || 0));
+        }
       });
 
       // 3. Process users in safe batches
@@ -646,16 +652,15 @@ export default function AdminPage() {
         const profileRef = doc(firestore!, "users", uid, "profile", uid);
 
         // Robust set with merge handles missing objects
-        batch.set(
-          userRef,
-          { "wallet.coins": validCoins, updatedAt: serverTimestamp() },
-          { merge: true },
-        );
-        batch.set(
-          profileRef,
-          { "wallet.coins": validCoins, updatedAt: serverTimestamp() },
-          { merge: true },
-        );
+        // We set coins to valid amount and RESET diamonds to 0
+        const resetPayload = {
+          "wallet.coins": validCoins,
+          "wallet.diamonds": 0,
+          updatedAt: serverTimestamp(),
+        };
+
+        batch.set(userRef, resetPayload, { merge: true });
+        batch.set(profileRef, resetPayload, { merge: true });
 
         operationsInBatch += 2;
         processedUids.add(uid);
