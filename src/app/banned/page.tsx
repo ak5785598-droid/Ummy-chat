@@ -77,12 +77,14 @@ export default function BannedPage() {
       </div>
      </div>
 
-     <div className="space-y-4 px-2">
-      <h1 className="text-5xl font-bold uppercase tracking-tight text-red-500 leading-none">Identity Blocked</h1>
-      <p className="text-white/80 font-body text-xl leading-relaxed">
-        You have ban ({timeLeft}). Contact ummy official team for any support.
-      </p>
-     </div>
+      <div className="space-y-4 px-2">
+       <h1 className="text-5xl font-bold uppercase tracking-tight text-red-500 leading-none">Identity Blocked</h1>
+       <p className="text-white/80 font-body text-xl leading-relaxed">
+         Your account has been Ban Till {userProfile?.banStatus?.bannedUntil ? format(userProfile.banStatus.bannedUntil.toDate(), 'PPP p') : 'Permanent'}
+         <br />
+         Contact our Official Team for any Support.
+       </p>
+      </div>
 
      <div className="w-full p-6 bg-white/5 backdrop-blur-xl rounded-2xl border-2 border-white/5 shadow-2xl space-y-6">
       <div className="flex items-center justify-between border-b border-white/5 pb-4">

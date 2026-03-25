@@ -6,14 +6,17 @@ import { FcGoogle } from 'react-icons/fc';
 import { Loader, Phone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import {
  GoogleAuthProvider,
  signInWithPopup,
  FacebookAuthProvider,
  RecaptchaVerifier,
  signInWithPhoneNumber,
+ signOut,
  type ConfirmationResult,
 } from 'firebase/auth';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { doc, getDoc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
@@ -27,6 +30,7 @@ export default function LoginPage() {
  const router = useRouter();
  const auth = useAuth();
  const { user, isUserLoading } = useUser();
+ const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid || undefined);
  const firestore = useFirestore();
  const { toast } = useToast();
 
@@ -49,10 +53,23 @@ export default function LoginPage() {
  const activeBg = loginBg || splashBg || fallbackBg;
 
  useEffect(() => {
-  if (!isUserLoading && user) {
+  if (!isUserLoading && !isProfileLoading && user && userProfile) {
+   if (userProfile.banStatus?.isBanned) {
+    const until = userProfile.banStatus.bannedUntil?.toDate();
+    if (!until || until > new Date()) {
+     const dateStr = until ? format(until, 'PPP p') : 'Permanent';
+     if (auth) signOut(auth);
+     toast({
+      variant: 'destructive',
+      title: 'Account Banned',
+      description: `Your account has been Ban Till ${dateStr} Contact our Official Team for any Support.`,
+     });
+     return;
+    }
+   }
    router.replace('/rooms');
   }
- }, [user, isUserLoading, router]);
+ }, [user, isUserLoading, userProfile, isProfileLoading, router, auth, toast]);
 
  const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
   if (!firestore || !uid) return;
@@ -63,7 +80,23 @@ export default function LoginPage() {
   
   try {
    const userSnap = await getDoc(userRef);
-   if (!userSnap.exists()) {
+   if (userSnap.exists()) {
+    const userData = userSnap.data();
+    if (userData.banStatus?.isBanned) {
+     const until = userData.banStatus.bannedUntil?.toDate();
+     if (!until || until > new Date()) {
+      const dateStr = until ? format(until, 'PPP p') : 'Permanent';
+      if (auth) await signOut(auth);
+      toast({
+       variant: 'destructive',
+       title: 'Account Banned',
+       description: `Your account has been Ban Till ${dateStr} Contact our Official Team for any Support.`,
+      });
+      setIsSigningIn(false);
+      return;
+     }
+    }
+   } else {
     const accountNumber = await runTransaction(firestore, async (transaction) => {
      const counterDoc = await transaction.get(counterRef);
      let nextUserId = 0;

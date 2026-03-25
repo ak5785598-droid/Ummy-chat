@@ -49,6 +49,9 @@ export interface UserProfile {
   updatedAt?: any;
   lastSignInAt?: any;
   lastMoneyTreeClaimAt?: any;
+  isAdmin?: boolean;
+  idColor?: 'red' | 'blue' | 'purple' | 'none';
+  isBudgetId?: boolean;
   isOnline?: boolean;
 }
 

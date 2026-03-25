@@ -303,7 +303,10 @@ export default function AdminPage() {
   const { isUploading: isUploadingGameBG, uploadGameBackground } =
     useGameBackgroundUpload();
 
+  const { userProfile: currentUserProfile } = useUserProfile(user?.uid || undefined);
   const isCreator = user?.uid === CREATOR_ID;
+  const isAdminDelegated = currentUserProfile?.isAdmin === true;
+  const isAuthorized = isCreator || isAdminDelegated;
 
   const [activeTab, setActiveTab] = useState("app-data");
   const [searchQuery, setSearchQuery] = useState("");
@@ -348,6 +351,17 @@ export default function AdminPage() {
   const [globalAnnouncement2Input, setGlobalAnnouncement2Input] = useState("");
   const [isUpdatingGlobalNotice, setIsUpdatingGlobalNotice] = useState(false);
   const [isUpdatingGlobalNotice2, setIsUpdatingGlobalNotice2] = useState(false);
+
+  // Sovereign ID management
+  const [sovereignSearchMode, setSovereignSearchMode] = useState<"id" | "name">("id");
+  const [sovereignSearchId, setSovereignSearchId] = useState("");
+  const [targetUserForSovereign, setTargetUserForSovereign] = useState<any>(null);
+  const [isSearchingSovereign, setIsSearchingSovereign] = useState(false);
+  const [newSovereignId, setNewSovereignId] = useState("");
+  const [selectedIdColor, setSelectedIdColor] = useState<string>("none");
+  const [isSovereignAdmin, setIsSovereignAdmin] = useState(false);
+  const [isSovereignBudget, setIsSovereignBudget] = useState(false);
+  const [isUpdatingSovereign, setIsUpdatingSovereign] = useState(false);
 
   const [dmSearchId, setDmSearchId] = useState("");
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
@@ -1376,6 +1390,71 @@ export default function AdminPage() {
     toast({ title: "Authority Purged" });
   };
 
+  const handleSovereignSearch = () => {
+    handleGenericSearch(
+      sovereignSearchMode,
+      sovereignSearchId,
+      (u: any) => {
+        setTargetUserForSovereign(u);
+        if (u) {
+          setNewSovereignId(u.accountNumber || "");
+          setSelectedIdColor(u.idColor || "none");
+          setIsSovereignAdmin(u.isAdmin || false);
+          setIsSovereignBudget(u.isBudgetId || false);
+        }
+      },
+      setIsSearchingSovereign,
+    );
+  };
+
+  const handleUpdateSovereignIdentity = async () => {
+    if (!firestore || !targetUserForSovereign || !isAuthorized) return;
+    setIsUpdatingSovereign(true);
+    try {
+      const userRef = doc(firestore, "users", targetUserForSovereign.id);
+      const profileRef = doc(
+        firestore,
+        "users",
+        targetUserForSovereign.id,
+        "profile",
+        targetUserForSovereign.id,
+      );
+
+      const updateData: any = {
+        updatedAt: serverTimestamp(),
+        accountNumber: newSovereignId,
+        idColor: selectedIdColor,
+        isAdmin: isSovereignAdmin,
+        isBudgetId: isSovereignBudget,
+      };
+
+      const batch = writeBatch(firestore);
+      batch.update(userRef, updateData);
+      batch.update(profileRef, updateData);
+      await batch.commit();
+
+      setTargetUserForSovereign((prev: any) => ({ ...prev, ...updateData }));
+      setFoundUsers((prev) =>
+        prev.map((u) =>
+          u.id === targetUserForSovereign.id ? { ...u, ...updateData } : u,
+        ),
+      );
+      toast({
+        title: "Sovereign Identity Updated",
+        description: "Permanent changes applied to user frequencies.",
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsUpdatingSovereign(false);
+    }
+  };
+
   const handleBannerImageUpload = async (index: number, f: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);
@@ -1757,7 +1836,7 @@ export default function AdminPage() {
     }
   };
 
-  if (!isCreator)
+  if (!isAuthorized)
     return (
       <AppLayout>
         <div className="flex h-[50vh] items-center justify-center text-destructive font-sans">
@@ -1921,6 +2000,12 @@ export default function AdminPage() {
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
                   <Gamepad2 className="h-4 w-4" /> Game Loading Sync
+                </TabsTrigger>
+                <TabsTrigger
+                  value="sovereign-ids"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Crown className="h-4 w-4" /> Sovereign IDs
                 </TabsTrigger>
                 <TabsTrigger
                   value="system"
@@ -3794,8 +3879,197 @@ export default function AdminPage() {
               </Card>
             </TabsContent>
           </div>
-          <TabsContent
-            value="system"
+            <TabsContent value="sovereign-ids" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
+                    <Crown className="h-6 w-6" /> Sovereign ID Management
+                  </CardTitle>
+                </CardHeader>
+                <div className="flex flex-col gap-4">
+                  <div className="flex bg-slate-100 p-1 rounded-2xl w-fit">
+                    <Button
+                      size="sm"
+                      variant={sovereignSearchMode === "id" ? "default" : "ghost"}
+                      onClick={() => setSovereignSearchMode("id")}
+                      className="text-[10px] font-bold uppercase px-6 h-10 rounded-xl"
+                    >
+                      Search ID
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={sovereignSearchMode === "name" ? "default" : "ghost"}
+                      onClick={() => setSovereignSearchMode("name")}
+                      className="text-[10px] font-bold uppercase px-6 h-10 rounded-xl"
+                    >
+                      Search Name
+                    </Button>
+                  </div>
+                  <div className="flex gap-4">
+                    <Input
+                      placeholder={
+                        sovereignSearchMode === "id"
+                          ? "Enter Account Number (e.g. 1001)"
+                          : "Enter Username..."
+                      }
+                      value={sovereignSearchId}
+                      onChange={(e) => setSovereignSearchId(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleSovereignSearch()
+                      }
+                      className="h-14 rounded-2xl border-2"
+                    />
+                    <Button
+                      onClick={handleSovereignSearch}
+                      className="h-14 px-8 rounded-2xl bg-black text-white font-bold uppercase "
+                      disabled={isSearchingSovereign}
+                    >
+                      Find
+                    </Button>
+                  </div>
+                </div>
+
+                {targetUserForSovereign && (
+                  <div className="mt-10 p-10 border-2 border-indigo-100 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-indigo-50/10">
+                    <div className="flex items-center justify-between border-b border-indigo-100 pb-8">
+                      <div className="flex items-center gap-5">
+                        <Avatar className="h-20 w-20 border-4 border-white shadow-2xl">
+                          <AvatarImage
+                            src={targetUserForSovereign.avatarUrl || undefined}
+                          />
+                        </Avatar>
+                        <div>
+                          <p className="font-black uppercase text-2xl tracking-tighter text-slate-900">
+                            {targetUserForSovereign.username}
+                          </p>
+                          <div className="flex gap-2">
+                            <Badge className="bg-slate-200 text-slate-500 font-bold uppercase text-[9px]">
+                              Current ID: {targetUserForSovereign.accountNumber}
+                            </Badge>
+                            {targetUserForSovereign.isAdmin && (
+                              <Badge className="bg-indigo-600 text-white font-bold uppercase text-[9px]">
+                                Administrator
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-indigo-600 tracking-widest ml-1">
+                            New Sovereign Number
+                          </label>
+                          <Input
+                            placeholder="Enter Permanent ID (e.g. 007)"
+                            value={newSovereignId}
+                            onChange={(e) => setNewSovereignId(e.target.value)}
+                            className="h-14 rounded-2xl border-2 border-indigo-50 bg-white focus:border-indigo-400 font-bold text-lg"
+                          />
+                          <p className="text-[8px] font-bold text-slate-400 uppercase ml-1">
+                            Warning: This override is permanent.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-indigo-600 tracking-widest ml-1">
+                            Identity Color Signature
+                          </label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { id: "none", label: "None", color: "bg-slate-100 text-slate-400" },
+                              { id: "red", label: "Red", color: "bg-red-500 text-white" },
+                              { id: "blue", label: "Blue", color: "bg-blue-500 text-white" },
+                              { id: "purple", label: "Purple", color: "bg-purple-600 text-white" },
+                            ].map((c) => (
+                              <button
+                                key={c.id}
+                                onClick={() => setSelectedIdColor(c.id as any)}
+                                className={cn(
+                                  "h-12 rounded-xl text-[9px] font-black uppercase transition-all shadow-sm",
+                                  c.color,
+                                  selectedIdColor === c.id
+                                    ? "ring-2 ring-indigo-500 ring-offset-2 scale-105"
+                                    : "opacity-60 hover:opacity-100",
+                                )}
+                              >
+                                {c.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-3xl border-2 border-indigo-50 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="font-bold uppercase text-xs text-slate-800">
+                                Delegation of Authority
+                              </p>
+                              <p className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">
+                                Grant administrative portal access
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={isSovereignAdmin ? "default" : "outline"}
+                              onClick={() => setIsSovereignAdmin(!isSovereignAdmin)}
+                              className={cn(
+                                "h-10 px-6 rounded-xl font-bold uppercase text-[9px]",
+                                isSovereignAdmin ? "bg-indigo-600" : "text-slate-400",
+                              )}
+                            >
+                              {isSovereignAdmin ? "Active" : "Disabled"}
+                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="font-bold uppercase text-xs text-slate-800">
+                                Special Budget ID
+                              </p>
+                              <p className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">
+                                Visual badge for official budget accounts
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={isSovereignBudget ? "default" : "outline"}
+                              onClick={() => setIsSovereignBudget(!isSovereignBudget)}
+                              className={cn(
+                                "h-10 px-6 rounded-xl font-bold uppercase text-[9px]",
+                                isSovereignBudget ? "bg-amber-500 border-none text-white" : "text-slate-400",
+                              )}
+                            >
+                              {isSovereignBudget ? "Active" : "Disabled"}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleUpdateSovereignIdentity}
+                          disabled={isUpdatingSovereign}
+                          className="w-full h-16 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold uppercase text-lg shadow-xl shadow-indigo-200 transition-all active:scale-95 flex gap-3"
+                        >
+                          {isUpdatingSovereign ? (
+                            <Loader className="animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-6 w-6" /> Save Sovereign Profile
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="system"
             className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2"
           >
             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">

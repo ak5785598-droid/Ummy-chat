@@ -259,9 +259,15 @@ const PublicProfileView = ({
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={handleCopyId}>
-           ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-         </p>
+         <div className="flex items-center gap-2" onClick={handleCopyId}>
+           <span className={cn(
+               "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
+               profile.idColor === 'red' ? 'text-red-500' : 
+               profile.idColor === 'blue' ? 'text-blue-500' : 
+               profile.idColor === 'purple' ? 'text-purple-600' : 
+               'text-gray-400'
+             )}>ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />{profile.isBudgetId && (<Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>)}</span>
+         </div>
          {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
          {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
          {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
@@ -440,8 +446,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
  };
 
- const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || currentUser?.uid === CREATOR_ID;
-  const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin'].includes(t));
+  const isAuthorizedAdmin = currentUser?.uid === CREATOR_ID || profile?.isAdmin === true;
+  const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || isAuthorizedAdmin;
+  const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin', 'Official Center'].includes(t)) || isAuthorizedAdmin;
+
  const isOfficial = profile?.tags?.includes('Official');
  const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
@@ -508,9 +516,20 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity" onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}>
-             {t.profile.id}:{(profile as any).accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-           </p>
+            <p className={cn(
+                "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
+                profile.idColor === 'red' ? 'text-red-500' : 
+                profile.idColor === 'blue' ? 'text-blue-500' : 
+                profile.idColor === 'purple' ? 'text-purple-600' : 
+                'text-gray-400'
+              )} 
+              onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}
+            >
+              {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+              {profile.isBudgetId && (
+                <Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>
+              )}
+            </p>
            {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
            {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
            {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}

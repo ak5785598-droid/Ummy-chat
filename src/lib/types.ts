@@ -55,6 +55,9 @@ export type User = {
  updatedAt?: any;
  lastSignInAt?: any;
  currentRoomId?: string | null;
+ isAdmin?: boolean;
+ idColor?: 'red' | 'blue' | 'purple' | 'none';
+ isBudgetId?: boolean;
 };
 
 export type Message = {
