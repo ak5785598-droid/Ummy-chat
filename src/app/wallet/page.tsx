@@ -534,35 +534,6 @@ export default function WalletPage() {
        </>
       )}
      </div>
-
-       )}
-      </div>
-      
-      <div className="w-full space-y-4">
-       <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-        <p className="text-[10px] font-bold text-yellow-700 uppercase mb-1">Package Selected</p>
-        <p className="text-sm font-bold text-gray-900">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} Coins for {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
-       </div>
-
-       <div className="space-y-2">
-        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Transaction ID / UTR Number</label>
-        <Input 
-         value={utrNumber}
-         onChange={(e) => setUtrNumber(e.target.value)}
-         placeholder="Enter 12-digit UTR No."
-         className="h-12 bg-gray-50 border-gray-100 rounded-xl font-bold text-center"
-        />
-       </div>
-
-       <Button 
-        onClick={handleSubmitManualRecharge}
-        disabled={isSubmittingManual}
-        className="w-full h-14 bg-yellow-400 hover:bg-yellow-500 text-black font-bold uppercase rounded-xl shadow-lg shadow-yellow-500/20"
-       >
-        {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment'}
-       </Button>
-      </div>
-     </div>
     </DialogContent>
    </Dialog>
 
