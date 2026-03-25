@@ -534,15 +534,7 @@ export default function WalletPage() {
        </>
       )}
      </div>
-      <div className="relative w-48 h-48 bg-gray-50 rounded-2xl border-2 border-gray-100 p-2 overflow-hidden flex items-center justify-center">
-       {/* Use Global App Config QR if available, else placeholder */}
-       {config?.paymentQrUrl ? (
-        <Image src={config.paymentQrUrl} fill className="object-contain" alt="Payment QR" unoptimized />
-       ) : (
-        <div className="text-center p-4">
-         <Shield className="h-8 w-8 mx-auto text-gray-200 mb-2" />
-         <p className="text-[8px] font-bold text-gray-300 uppercase leading-tight">Admin QR Syncing...</p>
-        </div>
+
        )}
       </div>
       
