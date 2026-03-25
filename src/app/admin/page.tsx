@@ -312,10 +312,13 @@ export default function AdminPage() {
         rechargeMap.set(data.uid, res + (data.coins || 0));
       });
 
-      // 2. Fetch all users
+      // 3. Process users in safe batches
       const usersSnap = await getDocs(collection(firestore, 'users'));
-      const batch = writeBatch(firestore);
-      let count = 0;
+      const totalUsers = usersSnap.size;
+      let processedCount = 0;
+      let batch = writeBatch(firestore);
+      let operationsInBatch = 0;
+      const batchesToWait = [];
 
       for (const userDoc of usersSnap.docs) {
         const uid = userDoc.id;
@@ -327,15 +330,21 @@ export default function AdminPage() {
         batch.update(userRef, { 'wallet.coins': validCoins, updatedAt: serverTimestamp() });
         batch.update(profileRef, { 'wallet.coins': validCoins, updatedAt: serverTimestamp() });
         
-        count++;
-        if (count >= 200) { // Batch limit protection
-           await batch.commit();
-           // start new batch
-           // (Simplified for this script context)
+        operationsInBatch += 2;
+        processedCount++;
+
+        if (operationsInBatch >= 400) { 
+           batchesToWait.push(batch.commit());
+           batch = writeBatch(firestore);
+           operationsInBatch = 0;
         }
       }
       
-      await batch.commit();
+      if (operationsInBatch > 0) {
+        batchesToWait.push(batch.commit());
+      }
+
+      await Promise.all(batchesToWait);
       toast({ title: 'Economy Reset Complete', description: `Processed ${usersSnap.size} users. Balances synchronized to manual recharges.` });
     } catch (err) {
       console.error('Reset failed', err);
@@ -355,8 +364,10 @@ export default function AdminPage() {
    let lastRoomId = counterDoc.exists() ? (counterDoc.data().lastRoomId || 99) : 99;
 
    const usersSnap = await getDocs(collection(firestore, 'users'));
-   const batch = writeBatch(firestore);
-   let count = 0;
+   let batch = writeBatch(firestore);
+   let totalOps = 0;
+   let changedCount = 0;
+   const batchesToWait = [];
 
    for (const d of usersSnap.docs) {
     const data = d.data();
@@ -371,7 +382,14 @@ export default function AdminPage() {
      const paddedId = newId.toString().padStart(4, '0');
      batch.update(doc(firestore, 'users', d.id), { accountNumber: paddedId, updatedAt: serverTimestamp() });
      batch.update(doc(firestore, 'users', d.id, 'profile', d.id), { accountNumber: paddedId, updatedAt: serverTimestamp() });
-     count++;
+     totalOps += 2;
+     changedCount++;
+
+     if (totalOps >= 400) {
+      batchesToWait.push(batch.commit());
+      batch = writeBatch(firestore);
+      totalOps = 0;
+     }
     }
    }
 
@@ -387,14 +405,22 @@ export default function AdminPage() {
       newId = lastRoomId;
      }
      batch.update(doc(firestore, 'chatRooms', d.id), { roomNumber: newId.toString(), updatedAt: serverTimestamp() });
-     count++;
+     totalOps++;
+     changedCount++;
+
+     if (totalOps >= 400) {
+      batchesToWait.push(batch.commit());
+      batch = writeBatch(firestore);
+      totalOps = 0;
+     }
     }
    }
 
-   if (count > 0) {
+   if (changedCount > 0) {
     batch.set(counterRef, { lastUserId, lastRoomId }, { merge: true });
-    await batch.commit();
-    toast({ title: 'Global Identity Sync Complete', description: `${count} records re-indexed successfully.` });
+    batchesToWait.push(batch.commit());
+    await Promise.all(batchesToWait);
+    toast({ title: 'Global Identity Sync Complete', description: `${changedCount} records re-indexed successfully.` });
    } else {
     toast({ title: 'System Already Synced', description: 'All IDs follow the valid sequential format.' });
    }
