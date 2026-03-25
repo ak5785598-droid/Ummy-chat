@@ -10,7 +10,7 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -52,6 +52,7 @@ export default function WalletPage() {
   const [isOfflineDialogOpen, setIsOfflineDialogOpen] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
+  const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false);
 
   const configRef = useMemoFirebase(() => {
    if (!firestore) return null;
@@ -75,6 +76,18 @@ export default function WalletPage() {
  }, [firestore, user]);
 
  const { data: exchangeHistory, isLoading: isHistoryLoading } = useCollection(historyQuery);
+
+ const rechargeRequestsQuery = useMemoFirebase(() => {
+  if (!firestore || !user) return null;
+  return query(
+   collection(firestore, 'rechargeRequests'),
+   where('uid', '==', user.uid),
+   orderBy('createdAt', 'desc'),
+   limit(10)
+  );
+ }, [firestore, user]);
+
+ const { data: rechargeHistory, isLoading: isRechargeHistoryLoading } = useCollection(rechargeRequestsQuery);
 
  const handleRazorpayRecharge = async () => {
    if (!user || !firestore) return;
@@ -200,8 +213,9 @@ export default function WalletPage() {
     });
 
     toast({ title: 'Request Submitted', description: 'Your payment is being verified by the admin.' });
-    setIsOfflineDialogOpen(false);
+    setShowSubmissionSuccess(true);
     setUtrNumber('');
+    // Refresh history if needed (handled by useCollection)
    } catch (error) {
     console.error('Manual recharge error', error);
     toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not send request. Please try again.' });
@@ -463,6 +477,63 @@ export default function WalletPage() {
       <DialogDescription className="text-center text-[10px] font-bold uppercase text-gray-400">Scan & Pay via UPI</DialogDescription>
      </DialogHeader>
      <div className="flex flex-col items-center gap-6 py-4">
+      {showSubmissionSuccess ? (
+       <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-300">
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto border-4 border-green-100">
+         <CheckCircle2 className="h-10 w-10 text-green-500" />
+        </div>
+        <div className="space-y-2">
+         <h2 className="text-xl font-bold uppercase text-slate-900 tracking-tight">Request Received</h2>
+         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Admin will verify your UTR and<br/>credit coins within 5-10 minutes.</p>
+        </div>
+        <Button 
+         onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
+         className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+        >
+         View Records
+        </Button>
+       </div>
+      ) : (
+       <>
+        <div className="relative w-48 h-48 bg-gray-50 rounded-2xl border-2 border-gray-100 p-2 overflow-hidden flex items-center justify-center">
+         {/* Use Global App Config QR if available, else placeholder */}
+         {config?.paymentQrUrl ? (
+          <Image src={config.paymentQrUrl} fill className="object-contain" alt="Payment QR" unoptimized />
+         ) : (
+          <div className="text-center p-4">
+           <Shield className="h-8 w-8 mx-auto text-gray-200 mb-2" />
+           <p className="text-[8px] font-bold text-gray-300 uppercase leading-tight">Admin QR Syncing...</p>
+          </div>
+         )}
+        </div>
+        
+        <div className="w-full space-y-4">
+         <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+          <p className="text-[10px] font-bold text-yellow-700 uppercase mb-1">Package Selected</p>
+          <p className="text-sm font-bold text-gray-900">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} Coins for {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
+         </div>
+
+         <div className="space-y-2">
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Transaction ID / UTR Number</label>
+          <Input 
+           value={utrNumber}
+           onChange={(e) => setUtrNumber(e.target.value)}
+           placeholder="Enter 12-digit UTR No."
+           className="h-12 bg-gray-50 border-gray-100 rounded-xl font-bold text-center"
+          />
+         </div>
+
+         <Button 
+          onClick={handleSubmitManualRecharge}
+          disabled={isSubmittingManual}
+          className="w-full h-14 bg-yellow-400 hover:bg-yellow-500 text-black font-bold uppercase rounded-xl shadow-lg shadow-yellow-500/20"
+         >
+          {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment'}
+         </Button>
+        </div>
+       </>
+      )}
+     </div>
       <div className="relative w-48 h-48 bg-gray-50 rounded-2xl border-2 border-gray-100 p-2 overflow-hidden flex items-center justify-center">
        {/* Use Global App Config QR if available, else placeholder */}
        {config?.paymentQrUrl ? (
