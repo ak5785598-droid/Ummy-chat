@@ -93,6 +93,7 @@ import { RoomGamesDialog } from '@/components/room-games-dialog';
 import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
+import { RoomGameOverlay } from '@/components/room-game-overlay';
 
 function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -228,6 +229,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
   
   const [sessionJoinTime] = useState(() => new Date());
@@ -843,7 +845,18 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onPlayLocalMusic={handlePlayLocalMusic}
       />
-      <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
+      <RoomGamesDialog 
+        open={isRoomGamesOpen} 
+        onOpenChange={setIsRoomGamesOpen} 
+        onSelectGame={(slug) => {
+          setActiveGameSlug(slug);
+          setIsRoomGamesOpen(false);
+        }}
+      />
+      <RoomGameOverlay 
+        activeGame={activeGameSlug} 
+        onClose={() => setActiveGameSlug(null)} 
+      />
       <RoomMessagesDialog 
         open={isMessagesOpen} 
         onOpenChange={(val) => {

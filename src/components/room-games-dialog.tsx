@@ -23,6 +23,7 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 interface RoomGamesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSelectGame?: (slug: string) => void;
 }
 
 const FALLBACK_GAMES = [
@@ -35,7 +36,7 @@ const FALLBACK_GAMES = [
 /**
  * High-Fidelity Room Games Portal.
  */
-export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
+export function RoomGamesDialog({ open, onOpenChange, onSelectGame }: RoomGamesDialogProps) {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -60,8 +61,12 @@ export function RoomGamesDialog({ open, onOpenChange }: RoomGamesDialogProps) {
   }, [firestoreGames]);
 
   const handleGameClick = (slug: string) => {
-    router.push(`/games/${slug}`);
-    onOpenChange(false);
+    if (onSelectGame) {
+      onSelectGame(slug);
+    } else {
+      router.push(`/games/${slug}`);
+      onOpenChange(false);
+    }
   };
 
   const handleLogoChangeClick = (e: React.MouseEvent, slug: string) => {
