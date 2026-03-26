@@ -31,6 +31,7 @@ service cloud.firestore {
 
     // Root Users Collection
     match /users/{userId} {
+      // allow read for own document always (to detect ban status), but restricted for others
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin() || isNotBanned());
       allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       
