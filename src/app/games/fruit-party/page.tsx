@@ -221,7 +221,7 @@ export default function FruitPartyPage() {
   const specialChicken = PlaceHolderImages.find(img => img.id === 'fruit-party-special-chicken');
 
   return (
-    <AppLayout fullScreen>
+    <AppLayout>
       <div className="h-[100dvh] w-full bg-[#58319d] flex flex-col relative overflow-hidden font-headline text-white">
         <CompactRoomView />
 

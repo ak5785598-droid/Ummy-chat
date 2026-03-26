@@ -13,6 +13,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { GameModal } from '@/components/game-modal';
 import type { Game } from '@/lib/types';
 
 const FALLBACK_GAMES: Game[] = [
@@ -32,6 +33,7 @@ export default function GamesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const counts: Record<string, number> = {};
@@ -72,6 +74,16 @@ export default function GamesPage() {
         uploadGameLogo(game, file);
       }
     }
+  };
+
+  const handleGameClick = (game: Game) => {
+    setSelectedGameId(game.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedGameId(null);
   };
 
   return (
@@ -115,7 +127,7 @@ export default function GamesPage() {
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 pt-4">
                   {activeGames.map((game) => (
                     <div key={game.id} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
-                      <Link href={`/games/${game.slug}`} className="block relative">
+                      <button onClick={() => handleGameClick(game)} className="block relative w-full">
                         {/* 3D Depth Layer */}
                         <div className="absolute inset-0 bg-purple-600/20 rounded-[2.5rem] translate-z-[-20px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         
@@ -161,7 +173,7 @@ export default function GamesPage() {
                               <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">3D Reality</span>
                            </div>
                         </div>
-                      </Link>
+                      </button>
                     </div>
                   ))}
                </div>
@@ -187,6 +199,24 @@ export default function GamesPage() {
 
         </div>
       </div>
+
+      {/* Game Modal */}
+      <GameModal 
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={selectedGameId ? activeGames.find(g => g.id === selectedGameId)?.title || 'Game' : 'Game'}
+      >
+        {selectedGameId && (
+          <div className="w-full h-full flex items-center justify-center">
+            <iframe 
+              src={`/games/${activeGames.find(g => g.id === selectedGameId)?.slug}`}
+              className="w-full h-full border-0 rounded-2xl"
+              title={activeGames.find(g => g.id === selectedGameId)?.title || 'Game'}
+            />
+          </div>
+        )}
+      </GameModal>
+
       <style jsx global>{`
         .perspective-1000 { perspective: 1000px; }
         .preserve-3d { transform-style: preserve-3d; }
