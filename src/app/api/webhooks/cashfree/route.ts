@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { doc, increment, serverTimestamp, getDoc, updateDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase-admin'; // Use admin SDK for background updates if possible, or standard with service account
+import { adminDb, admin } from '@/lib/firebase-admin';
 
-// Note: For Next.js App Router, we define a POST handler
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
@@ -14,7 +12,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    // Verify signature
     const secretKey = process.env.CASHFREE_SECRET_KEY;
     if (!secretKey) {
       console.error('CASHFREE_SECRET_KEY missing');
@@ -34,14 +31,13 @@ export async function POST(req: NextRequest) {
 
     const payload = JSON.parse(rawBody);
     const { data } = payload;
-    const { order, payment } = data;
+    const { order } = data;
 
     if (order.order_status === 'PAID') {
       const orderId = order.order_id;
       const customerId = order.customer_details.customer_id;
       const amountPaid = order.order_amount;
 
-      // Import COIN_PACKAGES logic (simplified for server side)
       const COIN_PACKAGES = [
         { id: 'p1', amount: 50000, price: 10 },
         { id: 'p2', amount: 500000, price: 100 },
@@ -60,48 +56,41 @@ export async function POST(req: NextRequest) {
         totalGain = 10200;
       }
 
-      // Check for idempotency (has this order been processed?)
-      // We can check if an entry exists in diamondExchanges with this orderId
-      // For brevity in this script, we'll assume standard firebase-admin setup or similar
-      // Since I don't have the full admin setup here, I'll use the client-side imported DB 
-      // but in a real webhook you should use a service account for reliability.
-      
-      const { db: firestore } = await import('@/firebase'); 
-      if (!firestore) throw new Error('Firestore not initialized');
+      // Idempotency check with Admin SDK
+      const historyRef = adminDb.collection('users').doc(customerId).collection('diamondExchanges');
+      const existingQuery = await historyRef.where('orderId', '==', orderId).get();
 
-      // 1. Check if already processed
-      const historyRef = collection(firestore, 'users', customerId, 'diamondExchanges');
-      const q = query(historyRef, where('orderId', '==', orderId));
-      const existing = await getDocs(q);
-
-      if (!existing.empty) {
+      if (!existingQuery.empty) {
         console.log(`Order ${orderId} already processed. Skipping.`);
         return NextResponse.json({ status: 'already_processed' });
       }
 
-      // 2. Update Wallet
-      const userRef = doc(firestore, 'users', customerId);
-      const profileRef = doc(firestore, 'users', customerId, 'profile', customerId);
+      // Atomic Update with Admin SDK
+      const userRef = adminDb.collection('users').doc(customerId);
+      const profileRef = userRef.collection('profile').doc(customerId);
 
-      await updateDoc(userRef, { 
-        'wallet.coins': increment(totalGain), 
-        updatedAt: serverTimestamp() 
+      const batch = adminDb.batch();
+      
+      batch.update(userRef, { 
+        'wallet.coins': admin.firestore.FieldValue.increment(totalGain), 
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() 
       });
-      await updateDoc(profileRef, { 
-        'wallet.coins': increment(totalGain), 
-        updatedAt: serverTimestamp() 
+      
+      batch.update(profileRef, { 
+        'wallet.coins': admin.firestore.FieldValue.increment(totalGain), 
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() 
       });
 
-      // 3. Record History
-      await addDoc(historyRef, {
+      batch.add(historyRef, {
         type: 'purchase',
         coinAmount: totalGain,
         provider: 'cashfree_webhook',
         orderId: orderId,
         amountPaid: amountPaid,
-        timestamp: serverTimestamp()
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
       });
 
+      await batch.commit();
       console.log(`Successfully credited ${totalGain} coins to user ${customerId} via Webhook`);
     }
 
