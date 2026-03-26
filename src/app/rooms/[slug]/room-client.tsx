@@ -640,7 +640,8 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className={cn("flex-1 flex flex-col items-center justify-start gap-3 pt-2 overflow-y-auto no-scrollbar w-full", chatConfig.padding)}>
+        {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
+        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
@@ -651,18 +652,16 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
            </div>
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="h-2 w-2 rounded-full bg-white/10 animate-pulse" />
-            </div>
         </div>
 
-        <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
-           <ScrollArea className="h-full pr-3 pointer-events-auto">
-              <div className="flex flex-col gap-1 justify-end min-h-full pb-2">
-                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER (Point 4 & 6) - TRANSPARENT & NORMAL FONT (Wafa-style) */}
+        {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
+        <div className="flex-1 w-full overflow-hidden mt-4 relative">
+           <ScrollArea className="h-full w-full pointer-events-auto px-3">
+              <div className="flex flex-col gap-1 justify-start min-h-full pb-20">
+                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
-                   <div className="flex flex-col gap-1 mb-4 px-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
+                   <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
                      <div className="relative overflow-hidden bg-white/5 backdrop-blur-sm border border-white/5 rounded-2xl p-4">
                        <div className="space-y-4">
                          {globalConfig?.globalAnnouncement && (
@@ -693,8 +692,8 @@ export function RoomClient({ room }: { room: Room }) {
                  {/* SYSTEM MESSAGES AT THE TOP (Wafa-style, e.g., "Cleared chat") */}
                  {firestoreMessages?.filter(m => m.type === 'system').map((msg: any) => (
                    <div key={msg.id} className="flex justify-center w-full px-4 mb-2 animate-in fade-in slide-in-from-top-1 duration-500">
-                     <div className="bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/5">
-                        <p className="text-[10px] font-normal text-white/60 text-center tracking-tight leading-none">
+                     <div className="bg-black/20 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/5">
+                        <p className="text-[10px] font-normal text-white/50 text-center tracking-tight leading-none">
                           {msg.content}
                         </p>
                      </div>
@@ -711,7 +710,7 @@ export function RoomClient({ room }: { room: Room }) {
                         setIsUserProfileCardOpen(true);
                       }
                     }}
-                    className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+                    className="flex items-start gap-1.5 bg-black/30 backdrop-blur-sm rounded-lg p-1.5 border border-white/5 w-fit max-w-[90%] animate-in fade-in slide-in-from-left-2 mb-0.5 cursor-pointer active:scale-[0.98] transition-all pointer-events-auto"
                    >
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
@@ -722,12 +721,12 @@ export function RoomClient({ room }: { room: Room }) {
                               e.stopPropagation();
                               setPreviewImage(msg.imageUrl);
                             }}
-                            className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"
+                            className="mt-1 relative aspect-square w-40 rounded-lg overflow-hidden border border-white/10"
                           >
                             <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
                           </div>
                         )}
-                        {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
+                        {msg.content && <p className="text-[10px] font-normal text-white/90 leading-relaxed break-all">{msg.content}</p>}
                       </div>
                    </div>
                  ))}
