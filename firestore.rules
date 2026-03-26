@@ -35,7 +35,7 @@ service cloud.firestore {
       allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       
       match /profile/{profileId} {
-        allow read: if isSignedIn() && isNotBanned();
+        allow read: if isOwner(userId) || (isSignedIn() && isNotBanned());
         allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       }
       
@@ -73,7 +73,7 @@ service cloud.firestore {
     }
 
     match /{path=**}/profile/{profileId} {
-      allow read: if isSignedIn() && isNotBanned();
+      allow read: if (isSignedIn() && (request.auth.uid == profileId)) || (isSignedIn() && isNotBanned());
     }
 
     match /privateChats/{chatId} {
