@@ -659,52 +659,50 @@ export function RoomClient({ room }: { room: Room }) {
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full pb-2">
-                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER (Point 4 & 6) */}
+                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER (Point 4 & 6) - TRANSPARENT & NORMAL FONT (Wafa-style) */}
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
-                   <div className="flex flex-col gap-1.5 mb-6 px-1 animate-in fade-in slide-in-from-top-4 duration-1000">
-                     <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 group">
-                       {/* Animated background accent */}
-                       <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 via-yellow-500 to-blue-500" />
-                       
-                       <div className="space-y-3">
+                   <div className="flex flex-col gap-1 mb-4 px-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
+                     <div className="relative overflow-hidden bg-white/5 backdrop-blur-sm border border-white/5 rounded-2xl p-4">
+                       <div className="space-y-4">
                          {globalConfig?.globalAnnouncement && (
-                           <div className="flex items-start gap-3">
-                             <div className="mt-0.5 bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)] uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
+                           <div className="flex items-start gap-2.5">
+                             <div className="mt-1 bg-red-500 text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
                                <Zap className="h-2 w-2 fill-current" />
                                OFFICIAL
                              </div>
-                             <p className="text-[10px] font-bold text-red-100/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
                                {globalConfig.globalAnnouncement}
                              </p>
                            </div>
                          )}
                          
-                         <div className="flex items-start gap-3 pt-2 border-t border-white/5">
-                            <div className="mt-0.5 bg-yellow-500 text-black text-[7px] font-black px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(234,179,8,0.5)] uppercase tracking-tighter shrink-0">
+                         <div className="flex items-start gap-2.5 pt-2 border-t border-white/5">
+                            <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
                               INFO
                             </div>
-                            <p className="text-[10px] font-bold text-yellow-400/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                            <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
                                {room.announcement || "Welcome to the tribe!"}
                             </p>
                          </div>
                        </div>
-                       
-                       {/* Subtle decorative elements */}
-                       <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                         <MessageSquare className="h-16 w-16 text-white" />
-                       </div>
-                     </div>
-                     
-                     {/* Separation divider (Point 5) */}
-                     <div className="flex items-center gap-2 px-2 opacity-20">
-                       <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                       <div className="h-1 w-1 rounded-full bg-white/50" />
-                       <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
                      </div>
                    </div>
                  )}
-                 {firestoreMessages?.map((msg: any) => (
+
+                 {/* SYSTEM MESSAGES AT THE TOP (Wafa-style, e.g., "Cleared chat") */}
+                 {firestoreMessages?.filter(m => m.type === 'system').map((msg: any) => (
+                   <div key={msg.id} className="flex justify-center w-full px-4 mb-2 animate-in fade-in slide-in-from-top-1 duration-500">
+                     <div className="bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/5">
+                        <p className="text-[10px] font-normal text-white/60 text-center tracking-tight leading-none">
+                          {msg.content}
+                        </p>
+                     </div>
+                   </div>
+                 ))}
+
+                 {/* NORMAL CHAT MESSAGES */}
+                 {firestoreMessages?.filter(m => m.type !== 'system').map((msg: any) => (
                    <div 
                     key={msg.id || Math.random().toString()} 
                     onClick={() => {
