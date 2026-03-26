@@ -32,9 +32,9 @@ export function GlobalBanGuard({ children }: { children: React.ReactNode }) {
    }
 
    // Enforcement redirect
-   if (pathname !== '/banned' && !pathname.startsWith('/login') && pathname !== '/') {
+   if (!pathname.startsWith('/login') && pathname !== '/') {
     console.warn(`[Ban Guard] Redirecting restricted frequency: ${user?.uid}`);
-    router.replace('/banned');
+    router.replace('/login');
    }
   } else {
    // Automatic Restoration: If user was on banned page but is no longer banned
