@@ -651,24 +651,43 @@ export function RoomClient({ room }: { room: Room }) {
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
            </div>
-           <div className="mt-4 flex flex-col items-start gap-1 px-6 w-full">
-              {globalConfig?.globalAnnouncement && (
-                <div className="flex items-center gap-1.5 bg-red-500/20 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 rounded-md animate-in slide-in-from-left-2 duration-700">
-                   <Zap className="h-2 w-2 text-red-400 fill-current" />
-                   <p className="text-[10px] font-black text-red-200 uppercase italic tracking-tight leading-relaxed">
-                      Official: {globalConfig.globalAnnouncement}
-                   </p>
-                </div>
-              )}
-              <p className="text-[10px] font-black text-yellow-400 uppercase italic tracking-tight drop-shadow-md text-left leading-relaxed">
-                 Announcement: {room.announcement || "Welcome to Umm Chat"}
-              </p>
-           </div>
+            <div className="flex flex-col items-center justify-center p-4">
+              <div className="h-2 w-2 rounded-full bg-white/10 animate-pulse" />
+            </div>
         </div>
 
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
-              <div className="flex flex-col gap-1 justify-end min-h-full">
+              <div className="flex flex-col gap-1 justify-end min-h-full pb-2">
+                 {/* PERSISTENT VIRTUAL ANNOUNCEMENTS */}
+                 {(globalConfig?.globalAnnouncement || room.announcement) && (
+                   <div className="flex flex-col gap-1.5 mb-4 px-1 animate-in fade-in slide-in-from-left-4 duration-1000">
+                     {globalConfig?.globalAnnouncement && (
+                       <div className="flex items-start gap-2 max-w-[90%]">
+                         <div className="mt-0.5 bg-red-500/90 text-white text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5 shadow-lg">
+                           <Zap className="h-2 w-2 fill-current" />
+                           OFFICIAL
+                         </div>
+                         <div className="bg-red-500/15 backdrop-blur-md border border-red-500/20 rounded-2xl rounded-tl-none px-3 py-2 shadow-xl">
+                            <p className="text-[10px] font-bold text-red-100/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                               {globalConfig.globalAnnouncement}
+                            </p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     <div className="flex items-start gap-2 max-w-[90%]">
+                        <div className="mt-0.5 bg-yellow-500/90 text-black text-[7px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0 shadow-lg">
+                          INFO
+                        </div>
+                        <div className="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl rounded-tl-none px-3 py-2 shadow-xl">
+                          <p className="text-[10px] font-bold text-yellow-400/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                             {room.announcement || "Welcome to the frequency!"}
+                          </p>
+                        </div>
+                     </div>
+                   </div>
+                 )}
                  {firestoreMessages?.map((msg: any) => (
                    <div 
                     key={msg.id || Math.random().toString()} 
