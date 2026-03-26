@@ -15,34 +15,45 @@ export function GlobalBanGuard({ children }: { children: React.ReactNode }) {
  const router = useRouter();
  const pathname = usePathname();
 
- useEffect(() => {
-  if (isUserLoading || isProfileLoading || !userProfile) return;
+  useEffect(() => {
+    if (isUserLoading || isProfileLoading || !userProfile) return;
 
-  const banStatus = userProfile.banStatus;
-  const isBanned = banStatus?.isBanned === true;
-  
-  if (isBanned) {
-   // Check for expiration
-   if (banStatus.bannedUntil) {
-    const until = banStatus.bannedUntil.toDate();
-    if (until < new Date()) {
-     // Ban frequency expired - restoration protocol (server side update preferred but client side redirect safe)
-     return;
+    const banStatus = userProfile.banStatus;
+    const isBanned = banStatus?.isBanned === true;
+    
+    if (isBanned) {
+      // Check for expiration
+      const until = banStatus.bannedUntil?.toDate?.() || null;
+      if (until && until < new Date()) {
+        // Ban frequency expired
+        return;
+       }
+
+      // Enforcement redirect
+      if (pathname !== '/login') {
+        console.warn(`[Ban Guard] Redirecting restricted frequency: ${user?.uid}`);
+        router.replace('/login');
+      }
+    } else {
+      // Automatic Restoration
+      if (pathname === '/banned') {
+        router.replace('/rooms');
+      }
     }
-   }
+  }, [userProfile, isUserLoading, isProfileLoading, router, pathname, user?.uid]);
 
-   // Enforcement redirect
-   if (pathname !== '/login') {
-    console.warn(`[Ban Guard] Redirecting restricted frequency: ${user?.uid}`);
-    router.replace('/login');
-   }
-  } else {
-   // Automatic Restoration: If user was on banned page but is no longer banned
-   if (pathname === '/banned') {
-    router.replace('/rooms');
-   }
+  // CRITICAL: Block children if user is banned or still loading to prevent permission errors
+  if (isUserLoading || isProfileLoading) {
+    return null; // Or a high-level loading state
   }
- }, [userProfile, isUserLoading, isProfileLoading, router, pathname, user?.uid]);
 
- return <>{children}</>;
+  const isBanned = userProfile?.banStatus?.isBanned === true;
+  const until = userProfile?.banStatus?.bannedUntil?.toDate?.() || null;
+  const isActiveBan = isBanned && (!until || until > new Date());
+
+  if (isActiveBan && pathname !== '/login') {
+    return null; // Stop children (RoomProvider, etc) from rendering
+  }
+
+  return <>{children}</>;
 }
