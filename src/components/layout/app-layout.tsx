@@ -42,8 +42,8 @@ export function AppLayout({
 }) {
  const pathname = usePathname();
  const router = useRouter();
- const { user } = useUser();
- const { userProfile } = useUserProfile(user?.uid);
+  const { user, isUserLoading } = useUser();
+  const { userProfile, isLoading: isProfileLoading, error: profileError } = useUserProfile(user?.uid || undefined);
  const auth = useAuth();
  const firestore = useFirestore();
  const { t } = useTranslation();
@@ -168,11 +168,30 @@ export function AppLayout({
   }
  };
 
- const isOfficial = userProfile?.tags?.some(tag => 
-  ['Admin', 'Official', 'Super Admin'].includes(tag)
- );
+  const isOfficial = userProfile?.tags?.some(tag => 
+   ['Admin', 'Official', 'Super Admin'].includes(tag)
+  );
 
- if (!mounted) return null;
+  if (!mounted) return null;
+
+  // Handle Loading States
+  if (isUserLoading || isProfileLoading) {
+    // If we're loading, don't show children yet to prevent flashing/errors
+    // We could return a SplashScreen here if needed
+    return null; 
+  }
+
+  // Handle Case where profile read fails due to permission (likely ban)
+  if ((profileError as any)?.code === 'permission-denied' || (user && !userProfile && !isProfileLoading && profileError)) {
+    return (
+      <BanDialog 
+        isOpen={true} 
+        onClose={handleLogout}
+        bannedUntil={null} // Fallback to permanent if we can't read the date
+        accountNumber="Restricted"
+      />
+    );
+  }
  if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
 
  const isMainNav = pathname === '/rooms' || 
