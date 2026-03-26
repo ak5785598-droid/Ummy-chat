@@ -286,6 +286,7 @@ export default function WalletPage() {
         return;
       }
 
+      const { load } = await import('@cashfreepayments/cashfree-js');
       const cashfree = await load({
         mode: CASHFREE_MODE === 'production' ? "production" : "sandbox"
       });
