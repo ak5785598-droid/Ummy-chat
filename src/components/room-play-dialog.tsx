@@ -86,21 +86,32 @@ export function RoomPlayDialog({
  const isChatMuted = room?.isChatMuted || false;
 
  const handleClearChat = async () => {
-  if (!firestore || !roomId) return;
+  if (!firestore || !roomId || !user) return;
   setIsClearingChat(true);
   
   try {
    const messagesRef = collection(firestore, 'chatRooms', roomId, 'messages');
    const snap = await getDocs(messagesRef);
    
-   if (snap.empty) {
-    toast({ title: 'Frequency Clean', description: 'No messages to clear.' });
-    setIsClearingChat(false);
-    return;
-   }
-
    const batch = writeBatch(firestore);
+   
+   // 1. Delete all existing messages
    snap.docs.forEach(d => batch.delete(d.ref));
+   
+   // 2. Add System Message: "[Name] cleared the chat message"
+   const systemMsgRef = doc(messagesRef);
+   batch.set(systemMsgRef, {
+     content: `${user.displayName || 'Admin'} cleared the chat message`,
+     type: 'system',
+     timestamp: serverTimestamp(),
+   });
+
+   // 3. Update room document with clear timestamp
+   const roomRef = doc(firestore, 'chatRooms', roomId);
+   batch.update(roomRef, {
+     chatClearedAt: serverTimestamp(),
+     updatedAt: serverTimestamp()
+   });
    
    await batch.commit();
     toast({ title: 'Frequency Purified', description: 'Chat history cleared.' });
@@ -108,6 +119,7 @@ export function RoomPlayDialog({
    onOpenChange(false);
   } catch (e: any) {
    console.error(e);
+   toast({ variant: 'destructive', title: 'Purification Failed' });
   } finally {
    setIsClearingChat(false);
   }

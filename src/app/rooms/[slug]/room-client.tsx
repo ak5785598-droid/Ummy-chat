@@ -659,8 +659,9 @@ export function RoomClient({ room }: { room: Room }) {
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full pb-2">
-                 {/* PERSISTENT VIRTUAL ANNOUNCEMENTS */}
-                 {(globalConfig?.globalAnnouncement || room.announcement) && (
+                 {/* PERSISTENT VIRTUAL ANNOUNCEMENTS (Hidden if cleared during current session) */}
+                 {(globalConfig?.globalAnnouncement || room.announcement) && 
+                  (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
                    <div className="flex flex-col gap-1.5 mb-4 px-1 animate-in fade-in slide-in-from-left-4 duration-1000">
                      {globalConfig?.globalAnnouncement && (
                        <div className="flex items-start gap-2 max-w-[90%]">
