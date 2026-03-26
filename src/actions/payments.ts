@@ -18,12 +18,29 @@ const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
 
-// Cashfree instance initialization
-const cashfree = new Cashfree(
- CASHFREE_MODE === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
- CASHFREE_APP_ID,
- CASHFREE_SECRET_KEY
-);
+// Cashfree initialization helper to avoid top-level errors during build
+let cashfreeInstance: any = null;
+
+function getCashfreeInstance() {
+ if (cashfreeInstance) return cashfreeInstance;
+ 
+ const app_id = process.env.CASHFREE_APP_ID;
+ const secret_key = process.env.CASHFREE_SECRET_KEY;
+ 
+ if (!app_id || !secret_key) {
+  // Return null or throw a helpful error if called during runtime,
+  // but don't break the module import during build.
+  console.warn('[Payment Sync] Cashfree credentials missing in environment.');
+  return null;
+ }
+
+ cashfreeInstance = new Cashfree(
+  CASHFREE_MODE === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+  app_id,
+  secret_key
+ );
+ return cashfreeInstance;
+}
 
 export async function createOrderAction(amount: number) {
  if (!razorpay || !RAZORPAY_KEY_ID) {
@@ -64,7 +81,10 @@ export async function createCashfreeOrderAction(amount: number, userDetails: { i
    }
   };
 
-  const response = await cashfree.PGCreateOrder(request);
+  const instance = getCashfreeInstance();
+  if (!instance) return { success: false, error: 'Cashfree configuration missing.' };
+
+  const response = await instance.PGCreateOrder(request);
   
   if (response.data) {
    return { 
@@ -108,7 +128,10 @@ export async function verifyPaymentAction(
 }
 export async function verifyCashfreeOrderAction(order_id: string) {
  try {
-  const response = await cashfree.PGFetchOrder(order_id);
+  const instance = getCashfreeInstance();
+  if (!instance) return { success: false, error: 'Cashfree configuration missing.' };
+
+  const response = await instance.PGFetchOrder(order_id);
   const data = response.data;
 
   if (data && data.order_status === "PAID") {
