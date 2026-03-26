@@ -21,15 +21,12 @@ service cloud.firestore {
     }
 
     function isNotBanned() {
-      // Admins are never considered banned for rule purposes
-      if (isAdmin()) return true;
-      
-      let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
-      return !exists(userDoc) || 
-             !('banStatus' in get(userDoc).data) || 
-             get(userDoc).data.banStatus.isBanned == false || 
-             (get(userDoc).data.banStatus.bannedUntil != null && 
-              get(userDoc).data.banStatus.bannedUntil < request.time);
+      return isAdmin() || 
+             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
+             !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time);
     }
 
     // Root Users Collection
