@@ -182,7 +182,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
-  const [isExitPortalOpen, setIsExitPortalOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -636,7 +635,7 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
           {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
-          <button onClick={() => setIsExitPortalOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
+          <button onClick={() => setShowExitDialog(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
         </div>
       </header>
 
@@ -808,24 +807,6 @@ export function RoomClient({ room }: { room: Room }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
-        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Exit Frequency</DialogTitle>
-            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
-          </DialogHeader>
-          <div className="p-12 flex items-center justify-around gap-8">
-            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
-              <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
-            </button>
-            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
-              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
-              <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
