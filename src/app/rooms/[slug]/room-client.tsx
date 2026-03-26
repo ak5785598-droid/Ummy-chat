@@ -659,33 +659,48 @@ export function RoomClient({ room }: { room: Room }) {
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full pb-2">
-                 {/* PERSISTENT VIRTUAL ANNOUNCEMENTS (Hidden if cleared during current session) */}
+                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER (Point 4 & 6) */}
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
-                   <div className="flex flex-col gap-1.5 mb-4 px-1 animate-in fade-in slide-in-from-left-4 duration-1000">
-                     {globalConfig?.globalAnnouncement && (
-                       <div className="flex items-start gap-2 max-w-[90%]">
-                         <div className="mt-0.5 bg-red-500/90 text-white text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5 shadow-lg">
-                           <Zap className="h-2 w-2 fill-current" />
-                           OFFICIAL
-                         </div>
-                         <div className="bg-red-500/15 backdrop-blur-md border border-red-500/20 rounded-2xl rounded-tl-none px-3 py-2 shadow-xl">
-                            <p className="text-[10px] font-bold text-red-100/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                   <div className="flex flex-col gap-1.5 mb-6 px-1 animate-in fade-in slide-in-from-top-4 duration-1000">
+                     <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 group">
+                       {/* Animated background accent */}
+                       <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 via-yellow-500 to-blue-500" />
+                       
+                       <div className="space-y-3">
+                         {globalConfig?.globalAnnouncement && (
+                           <div className="flex items-start gap-3">
+                             <div className="mt-0.5 bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)] uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
+                               <Zap className="h-2 w-2 fill-current" />
+                               OFFICIAL
+                             </div>
+                             <p className="text-[10px] font-bold text-red-100/90 leading-relaxed tracking-tight italic drop-shadow-sm">
                                {globalConfig.globalAnnouncement}
+                             </p>
+                           </div>
+                         )}
+                         
+                         <div className="flex items-start gap-3 pt-2 border-t border-white/5">
+                            <div className="mt-0.5 bg-yellow-500 text-black text-[7px] font-black px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(234,179,8,0.5)] uppercase tracking-tighter shrink-0">
+                              INFO
+                            </div>
+                            <p className="text-[10px] font-bold text-yellow-400/90 leading-relaxed tracking-tight italic drop-shadow-sm">
+                               {room.announcement || "Welcome to the tribe!"}
                             </p>
                          </div>
                        </div>
-                     )}
+                       
+                       {/* Subtle decorative elements */}
+                       <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                         <MessageSquare className="h-16 w-16 text-white" />
+                       </div>
+                     </div>
                      
-                     <div className="flex items-start gap-2 max-w-[90%]">
-                        <div className="mt-0.5 bg-yellow-500/90 text-black text-[7px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0 shadow-lg">
-                          INFO
-                        </div>
-                        <div className="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl rounded-tl-none px-3 py-2 shadow-xl">
-                          <p className="text-[10px] font-bold text-yellow-400/90 leading-relaxed tracking-tight italic drop-shadow-sm">
-                             {room.announcement || "Welcome to the frequency!"}
-                          </p>
-                        </div>
+                     {/* Separation divider (Point 5) */}
+                     <div className="flex items-center gap-2 px-2 opacity-20">
+                       <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                       <div className="h-1 w-1 rounded-full bg-white/50" />
+                       <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
                      </div>
                    </div>
                  )}
