@@ -288,7 +288,7 @@ export function RoomClient({ room }: { room: Room }) {
     } else {
       const followObj = {
         id: room.id,
-        title: room.title || room.name || 'Frequency',
+        title: room.title || 'Frequency',
         coverUrl: room.coverUrl || '',
         roomNumber: room.roomNumber || '0000',
         ownerId: room.ownerId || '',

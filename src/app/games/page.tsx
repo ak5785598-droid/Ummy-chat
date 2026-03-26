@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ export default function GamesPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && selectedGameId) {
-      const game = activeGames.find(g => g.id === selectedGameId);
+      const game = activeGames.find((g: Game) => g.id === selectedGameId);
       if (game) {
         uploadGameLogo(game, file);
       }
@@ -139,7 +139,7 @@ export default function GamesPage() {
                <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-10 w-10" /></div>
              ) : (
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 pt-4">
-                  {activeGames.map((game) => (
+                  {activeGames.map((game: Game) => (
                     <div key={game.id} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
                       <button onClick={() => handleGameClick(game)} className="block relative w-full">
                         {/* 3D Depth Layer */}
@@ -218,14 +218,14 @@ export default function GamesPage() {
       <GameModal 
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={selectedGameId ? activeGames.find(g => g.id === selectedGameId)?.title || 'Game' : 'Game'}
+        title={selectedGameId ? activeGames.find((g: Game) => g.id === selectedGameId)?.title || 'Game' : 'Game'}
       >
         {selectedGameId && (
           <div className="w-full h-full flex items-center justify-center">
             <iframe 
-              src={`/games/${activeGames.find(g => g.id === selectedGameId)?.slug}`}
+              src={`/games/${activeGames.find((g: Game) => g.id === selectedGameId)?.slug}`}
               className="w-full h-full border-0 rounded-2xl"
-              title={activeGames.find(g => g.id === selectedGameId)?.title || 'Game'}
+              title={activeGames.find((g: Game) => g.id === selectedGameId)?.title || 'Game'}
             />
           </div>
         )}
