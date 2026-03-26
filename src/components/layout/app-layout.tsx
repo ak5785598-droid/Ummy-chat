@@ -194,6 +194,7 @@ export function AppLayout({
 
   // Handle Case where profile read fails due to permission (likely ban)
   if ((profileError as any)?.code === 'permission-denied' || (user && !userProfile && !isProfileLoading && profileError)) {
+    console.log('Permission denied detected - showing ban dialog immediately');
     return (
       <BanDialog 
         isOpen={true} 
