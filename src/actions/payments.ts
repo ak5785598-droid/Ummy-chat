@@ -2,7 +2,7 @@
 
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { Cashfree, CFEnvironment } from 'cashfree-pg';
+// Removed top-level Cashfree import
 
 // Razorpay Config
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
@@ -21,18 +21,20 @@ const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
 // Cashfree initialization helper to avoid top-level errors during build
 let cashfreeInstance: any = null;
 
-function getCashfreeInstance() {
+async function getCashfreeInstance() {
  if (cashfreeInstance) return cashfreeInstance;
  
  const app_id = process.env.CASHFREE_APP_ID;
  const secret_key = process.env.CASHFREE_SECRET_KEY;
+ const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
  
  if (!app_id || !secret_key) {
-  // Return null or throw a helpful error if called during runtime,
-  // but don't break the module import during build.
   console.warn('[Payment Sync] Cashfree credentials missing in environment.');
   return null;
  }
+
+ // Dynamic import to prevent build-time resolution issues
+ const { Cashfree, CFEnvironment } = await import('cashfree-pg');
 
  cashfreeInstance = new Cashfree(
   CASHFREE_MODE === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
@@ -81,7 +83,7 @@ export async function createCashfreeOrderAction(amount: number, userDetails: { i
    }
   };
 
-  const instance = getCashfreeInstance();
+  const instance = await getCashfreeInstance();
   if (!instance) return { success: false, error: 'Cashfree configuration missing.' };
 
   const response = await instance.PGCreateOrder(request);
@@ -128,7 +130,7 @@ export async function verifyPaymentAction(
 }
 export async function verifyCashfreeOrderAction(order_id: string) {
  try {
-  const instance = getCashfreeInstance();
+  const instance = await getCashfreeInstance();
   if (!instance) return { success: false, error: 'Cashfree configuration missing.' };
 
   const response = await instance.PGFetchOrder(order_id);
