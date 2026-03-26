@@ -53,18 +53,27 @@ export default function LoginPage() {
  
  const activeBg = loginBg || splashBg || fallbackBg;
 
- useEffect(() => {
-  if (!isUserLoading && !isProfileLoading && user && userProfile) {
-   if (userProfile.banStatus?.isBanned) {
-    const until = userProfile.banStatus.bannedUntil?.toDate();
-    if (!until || until > new Date()) {
-     setBanInfo({ isBanned: true, bannedUntil: userProfile.banStatus.bannedUntil });
-     return;
+  useEffect(() => {
+    // Wait until both user and profile are loaded (or definitively failed)
+    if (isUserLoading || isProfileLoading) return;
+
+    if (user && userProfile) {
+      console.log(`[Login] Checking Ban Status for: ${user.uid}`);
+      if (userProfile.banStatus?.isBanned) {
+        const until = userProfile.banStatus.bannedUntil?.toDate?.() || null;
+        if (!until || until > new Date()) {
+          console.log(`[Login] User IS BANNED. Showing modal.`);
+          setBanInfo({ isBanned: true, bannedUntil: userProfile.banStatus.bannedUntil });
+          return;
+        } else {
+          console.log(`[Login] Ban EXPIRED. Allowing entry.`);
+        }
+      }
+      
+      console.log(`[Login] Authorized. Navigating to discovery.`);
+      router.replace('/rooms');
     }
-   }
-   router.replace('/rooms');
-  }
- }, [user, isUserLoading, userProfile, isProfileLoading, router]);
+  }, [user, isUserLoading, userProfile, isProfileLoading, router]);
 
  const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
   if (!firestore || !uid) return;
