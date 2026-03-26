@@ -174,8 +174,19 @@ export function AppLayout({
 
   if (!mounted) return null;
 
-  // Handle Loading States
+  // Handle Loading States - but check for ban first
   if (isUserLoading || isProfileLoading) {
+    // Check if we have ban error during loading
+    if ((profileError as any)?.code === 'permission-denied') {
+      return (
+        <BanDialog 
+          isOpen={true} 
+          onClose={handleLogout}
+          bannedUntil={null} // Fallback to permanent if we can't read the date
+          accountNumber="Restricted"
+        />
+      );
+    }
     // If we're loading, don't show children yet to prevent flashing/errors
     // We could return a SplashScreen here if needed
     return null; 
@@ -203,6 +214,7 @@ export function AppLayout({
 
   // GLOBAL BAN GUARD: If user is banned, block all content with the Management Message
   if (userProfile?.banStatus?.isBanned) {
+    console.log('User is banned:', userProfile.banStatus);
     const until = userProfile.banStatus.bannedUntil?.toDate?.() || null;
     if (!until || until > new Date()) {
       return (
