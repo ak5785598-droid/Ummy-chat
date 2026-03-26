@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -245,14 +245,6 @@ function GamesPageContent() {
 
 export default function GamesPage() {
   return (
-    <Suspense fallback={
-      <AppLayout>
-        <div className="min-h-screen bg-[#0a0514] flex items-center justify-center">
-          <Loader className="animate-spin text-primary h-10 w-10" />
-        </div>
-      </AppLayout>
-    }>
-      <GamesPageContent />
-    </Suspense>
+    <GamesPageContent />
   );
 }
