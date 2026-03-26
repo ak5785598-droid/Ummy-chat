@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
-import Image from "next/image";
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { GameControllerIcon } from "@/components/icons";
@@ -14,6 +14,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { GameModal } from '@/components/game-modal';
+import { useSearchParams } from 'next/navigation';
 import type { Game } from '@/lib/types';
 
 const FALLBACK_GAMES: Game[] = [
@@ -34,6 +35,19 @@ export default function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const searchParams = useSearchParams();
+  
+  // Handle URL parameter for opening game in modal
+  useEffect(() => {
+    const gameParam = searchParams.get('game');
+    if (gameParam) {
+      const game = FALLBACK_GAMES.find(g => g.slug === gameParam);
+      if (game) {
+        setSelectedGameId(game.id);
+        setIsModalOpen(true);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const counts: Record<string, number> = {};
