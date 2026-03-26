@@ -107,16 +107,23 @@ function WalletContent() {
 
   useEffect(() => {
     const autoVerifyCashfree = async () => {
-      if (!orderIdParam || !user || !firestore || isVerifyingOrder) return;
+      console.log(`[Wallet][AutoVerify] Triggered with orderId: ${orderIdParam}, user: ${user?.uid}`);
+      if (!orderIdParam || !user || !firestore || isVerifyingOrder) {
+        console.log(`[Wallet][AutoVerify] Skipping. orderIdParam: ${!!orderIdParam}, user: ${!!user}, firestore: ${!!firestore}, isVerifyingOrder: ${isVerifyingOrder}`);
+        return;
+      }
       
       setIsVerifyingOrder(true);
       setIsProcessing(true);
       
       try {
+        console.log(`[Wallet][AutoVerify] Calling verifyCashfreeOrderAction for: ${orderIdParam}`);
         const verification = await verifyCashfreeOrderAction(orderIdParam);
+        console.log(`[Wallet][AutoVerify] Verification Response:`, verification);
         
         if (verification.success && verification.order_amount) {
            const amountPaid = verification.order_amount;
+           console.log(`[Wallet][AutoVerify] Verification Success. Amount Paid: ${amountPaid}`);
            const pkg = COIN_PACKAGES.find(p => parseInt(p.price) === amountPaid);
            
            let totalGain = amountPaid * 5000;
@@ -127,10 +134,13 @@ function WalletContent() {
            } else if (amountPaid === 1) {
              totalGain = 10000 + 200;
            }
+           
+           console.log(`[Wallet][AutoVerify] Final Coin Gain: ${totalGain}`);
 
            const userRef = doc(firestore, 'users', user.uid);
            const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
            
+           console.log(`[Wallet][AutoVerify] Updating Firestore documents for user: ${user.uid}`);
            await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
            await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
            
@@ -144,11 +154,14 @@ function WalletContent() {
              timestamp: serverTimestamp()
            });
 
+           console.log(`[Wallet][AutoVerify] Success Notification & Navigation`);
            toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins from Cashfree order.` });
            router.replace('/wallet');
+        } else {
+           console.warn(`[Wallet][AutoVerify] Verification FAILED or Incomplete:`, verification.error);
         }
       } catch (e) {
-        console.error('Auto-verification error', e);
+        console.error('[Wallet][AutoVerify] Critical Error:', e);
       } finally {
         setIsVerifyingOrder(false);
         setIsProcessing(false);

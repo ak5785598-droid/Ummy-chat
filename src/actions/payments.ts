@@ -130,29 +130,40 @@ export async function verifyPaymentAction(
  }
 }
 export async function verifyCashfreeOrderAction(order_id: string) {
- try {
-  const instance = await getCashfreeInstance();
-  if (!instance) return { success: false, error: 'Cashfree configuration missing.' };
+  console.log(`[Payment Action] Verifying Cashfree Order: ${order_id}`);
+  try {
+    const instance = await getCashfreeInstance();
+    if (!instance) {
+      console.error('[Payment Action] Cashfree instance failed to initialize');
+      return { success: false, error: 'Cashfree configuration missing.' };
+    }
 
-  const response = await instance.PGFetchOrder(order_id);
-  const data = response.data;
+    const response = await instance.PGFetchOrder(order_id);
+    const data = response.data;
+    console.log(`[Payment Action] Cashfree Response for ${order_id}:`, {
+      order_id: data?.order_id,
+      order_status: data?.order_status,
+      order_amount: data?.order_amount
+    });
 
-  if (data && data.order_status === "PAID") {
-   return { 
-    success: true, 
-    order_id: data.order_id, 
-    order_amount: data.order_amount,
-    customer_id: data.customer_details?.customer_id 
-   };
+    if (data && data.order_status === "PAID") {
+      return { 
+        success: true, 
+        order_id: data.order_id, 
+        order_amount: data.order_amount,
+        customer_id: data.customer_details?.customer_id 
+      };
+    }
+
+    return { 
+      success: false, 
+      error: `Order status is ${data?.order_status || 'unknown'}`,
+      status: data?.order_status,
+      raw: data 
+    };
+  } catch (error: any) {
+    const errorData = error?.response?.data || error;
+    console.error('[Payment Action] Cashfree Verification Critical Error:', errorData);
+    return { success: false, error: 'Verification synchronization failed.', detail: errorData };
   }
-
-  return { 
-    success: false, 
-    error: `Order status is ${data?.order_status || 'unknown'}`,
-    status: data?.order_status 
-  };
- } catch (error: any) {
-  console.error('[Payment Sync] Cashfree Verification Error:', error?.response?.data || error);
-  return { success: false, error: 'Verification synchronization failed.' };
- }
 }
