@@ -2,19 +2,28 @@
 
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { Cashfree, CFEnvironment } from 'cashfree-pg';
 
-/**
- * @fileOverview High-Fidelity Payment Sync Actions.
- * Handles secure order creation and signature verification via Razorpay.
- */
-
+// Razorpay Config
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 const razorpay = (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) ? new Razorpay({
  key_id: RAZORPAY_KEY_ID,
  key_secret: RAZORPAY_KEY_SECRET,
-}) : null;
+ }) : null;
+
+// Cashfree Config
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
+const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
+
+// Cashfree instance initialization
+const cashfree = new Cashfree(
+ CASHFREE_MODE === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+ CASHFREE_APP_ID,
+ CASHFREE_SECRET_KEY
+);
 
 export async function createOrderAction(amount: number) {
  if (!razorpay || !RAZORPAY_KEY_ID) {
@@ -31,8 +40,44 @@ export async function createOrderAction(amount: number) {
   const order = await razorpay.orders.create(options);
   return { success: true, orderId: order.id, amount: order.amount, keyId: RAZORPAY_KEY_ID };
  } catch (error: any) {
-  console.error('[Payment Sync] Order Creation Error:', error);
+  console.error('[Payment Sync] Razorpay Order Error:', error);
   return { success: false, error: 'Failed to initialize payment frequency.' };
+ }
+}
+
+export async function createCashfreeOrderAction(amount: number, userDetails: { id: string, name: string, email: string }) {
+ try {
+  const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+  const request = {
+   order_amount: amount,
+   order_currency: "INR",
+   order_id: orderId,
+   customer_details: {
+    customer_id: userDetails.id || `cust_${Date.now()}`,
+    customer_phone: "9999999999", // placeholder as required
+    customer_name: userDetails.name || 'Valued User',
+    customer_email: userDetails.email || 'user@example.com'
+   },
+   order_meta: {
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/wallet?order_id={order_id}`
+   }
+  };
+
+  const response = await cashfree.PGCreateOrder(request);
+  
+  if (response.data) {
+   return { 
+    success: true, 
+    paymentSessionId: response.data.payment_session_id,
+    orderId: response.data.order_id 
+   };
+  }
+
+  return { success: false, error: 'Failed to generate session' };
+ } catch (error: any) {
+  console.error('[Payment Sync] Cashfree Order Error:', error?.response?.data || error);
+  return { success: false, error: error?.response?.data?.message || 'Cashfree frequency synchronization failed.' };
  }
 }
 
@@ -57,7 +102,7 @@ export async function verifyPaymentAction(
   console.log(`[Payment Sync] Verification successful for payment: ${razorpay_payment_id}`);
   return { success: true };
  } else {
-  console.error(`[Payment Sync] Signature mismatch for order: ${razorpay_order_id}`);
+  console.log(`[Payment Sync] Signature mismatch for order: ${razorpay_order_id}`);
   return { success: false, error: 'Payment signature frequency mismatch.' };
  }
 }

@@ -2311,6 +2311,8 @@ export default function AdminPage() {
                             Current:{" "}
                             {config?.paymentMode === "razorpay"
                               ? "Razorpay (Live)"
+                              : config?.paymentMode === "cashfree"
+                              ? "Cashfree (Live)"
                               : "Offline (Manual)"}
                           </p>
                         </div>
@@ -2343,6 +2345,20 @@ export default function AdminPage() {
                             className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
                           >
                             Razorpay
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={
+                              config?.paymentMode === "cashfree"
+                                ? "default"
+                                : "ghost"
+                            }
+                            onClick={() =>
+                              updateDoc(configRef!, { paymentMode: "cashfree" })
+                            }
+                            className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                          >
+                            Cashfree
                           </Button>
                         </div>
                       </div>

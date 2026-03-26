@@ -14,8 +14,9 @@ import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, C
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { createOrderAction, verifyPaymentAction } from '@/actions/payments';
+import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction } from '@/actions/payments';
 import Script from 'next/script';
+import { load } from '@cashfreepayments/cashfree-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
@@ -24,6 +25,8 @@ declare global {
   Razorpay: any;
  }
 }
+
+const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
 
 const COIN_PACKAGES = [
  { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
@@ -191,11 +194,55 @@ export default function WalletPage() {
    }
   };
 
+  const handleCashfreeRecharge = async () => {
+    if (!user || !firestore) return;
+    const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
+    if (!pkg) return;
+
+    const priceINR = parseInt(pkg.price.split(' ')[0]);
+    if (isNaN(priceINR)) return;
+
+    setIsProcessing(true);
+
+    try {
+      const order = await createCashfreeOrderAction(priceINR, {
+        id: user.uid,
+        name: user.displayName || 'User',
+        email: user.email || ''
+      });
+
+      if (!order.success) {
+        toast({ variant: 'destructive', title: 'Order Failed', description: order.error });
+        setIsProcessing(false);
+        return;
+      }
+
+      const cashfree = await load({
+        mode: CASHFREE_MODE === 'production' ? "production" : "sandbox"
+      });
+
+      let checkoutOptions = {
+        paymentSessionId: order.paymentSessionId,
+        redirectTarget: "_modal",
+      };
+
+      await cashfree.checkout(checkoutOptions);
+      
+      setIsProcessing(false);
+    } catch (err: any) {
+      console.error('[Cashfree Error]', err);
+      toast({ variant: 'destructive', title: 'Payment Interruption', description: 'Could not connect to Cashfree Gateway.' });
+      setIsProcessing(false);
+    }
+  };
+
   const handleRechargeNow = async () => {
    if (!user || !firestore) return;
    
    if (config?.paymentMode === 'razorpay') {
      handleRazorpayRecharge();
+   } else if (config?.paymentMode === 'cashfree') {
+     handleCashfreeRecharge();
    } else {
      setIsOfflineDialogOpen(true);
    }
