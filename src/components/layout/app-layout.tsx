@@ -295,13 +295,14 @@ export function AppLayout({
       <nav 
        style={{ 
         position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 999,
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        bottom: 'calc(env(safe-area-inset-bottom) + 8px)', 
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '90%',
+        maxWidth: '400px',
+        zIndex: 999 
        }}
-       className="md:hidden flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-[calc(env(safe-area-inset-bottom)+70px)] shrink-0 px-2 rounded-t-[2.5rem] border-t-2 border-primary/20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+       className="flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-14 shrink-0 px-2 rounded-2xl border-2 border-primary/20 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
       >
        <Link href="/rooms" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
         {pathname === '/rooms' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
