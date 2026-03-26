@@ -14,61 +14,46 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        request.auth.uid == '1338' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
       );
     }
 
     function isNotBanned() {
-      return isAdmin() || 
-             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
-             (
-               !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
-               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
-               (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
-                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time)
-             );
+      // Admins are never considered banned for rule purposes
+      if (isAdmin()) return true;
+      
+      let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
+      return !exists(userDoc) || 
+             !('banStatus' in get(userDoc).data) || 
+             get(userDoc).data.banStatus.isBanned == false || 
+             (get(userDoc).data.banStatus.bannedUntil != null && 
+              get(userDoc).data.banStatus.bannedUntil < request.time);
     }
 
     // Root Users Collection
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin() || isNotBanned());
       allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       
       match /profile/{profileId} {
-        allow read: if isOwner(userId) || (isSignedIn() && isNotBanned());
+        allow read: if isSignedIn();
         allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       }
       
       match /profileVisitors/{visitorId} {
-        allow read: if isSignedIn() && isNotBanned();
-        allow write: if isSignedIn() && isNotBanned();
+        allow read, write: if isSignedIn() && isNotBanned();
       }
 
       match /notifications/{notifId} {
         allow read: if isOwner(userId) || isAdmin();
-        allow write: if isSignedIn() && isNotBanned();
-      }
-
-      match /topContributors/{contribId} {
-        allow read: if isSignedIn() && isNotBanned();
-        allow write: if isSignedIn() && isNotBanned();
+        allow write: if isSignedIn();
       }
       
-      match /diamondExchanges/{id} {
-        allow read, write: if isOwner(userId) && isNotBanned();
-      }
-      
-      match /followedRooms/{roomId} {
-        allow read: if isSignedIn() && isNotBanned();
-        allow write: if isOwner(userId) && isNotBanned();
-      }
-      
-      match /completedTasks/{id} {
-        allow read, write: if (isOwner(userId) && isNotBanned()) || isAdmin();
-      }
-
-      match /collectedTasks/{id} {
-        allow read, write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+      match /{allSub=**} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       }
     }
 
