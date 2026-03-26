@@ -573,7 +573,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room.maxActiveMics]);
 
   return (
-    <div className="relative flex flex-col h-[100dvh] w-full bg-black overflow-hidden text-white font-headline">
+    <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-black overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5">
       <DailyRewardDialog />
       <ExitRoomDialog 
         isOpen={showExitDialog}
