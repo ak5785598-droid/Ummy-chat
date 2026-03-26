@@ -3,18 +3,24 @@ import crypto from 'crypto';
 import { adminDb, admin } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  const reqId = Math.random().toString(36).substring(7);
+  console.log(`[Cashfree Webhook][${reqId}] Received new request`);
+  
   try {
     const rawBody = await req.text();
     const signature = req.headers.get('x-webhook-signature');
     const timestamp = req.headers.get('x-webhook-timestamp');
 
+    console.log(`[Cashfree Webhook][${reqId}] Headers - Signature: ${!!signature}, Timestamp: ${timestamp}`);
+
     if (!signature || !timestamp) {
+      console.warn(`[Cashfree Webhook][${reqId}] Rejected: Missing headers`);
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
     const secretKey = process.env.CASHFREE_SECRET_KEY;
     if (!secretKey) {
-      console.error('CASHFREE_SECRET_KEY missing');
+      console.error(`[Cashfree Webhook][${reqId}] ERROR: CASHFREE_SECRET_KEY is undefined`);
       return NextResponse.json({ error: 'Server config error' }, { status: 500 });
     }
 
@@ -25,18 +31,34 @@ export async function POST(req: NextRequest) {
       .digest('base64');
 
     if (expectedSignature !== signature) {
-      console.error('Cashfree Webhook Signature Mismatch');
+      console.error(`[Cashfree Webhook][${reqId}] ERROR: Signature Mismatch. Expected: ${expectedSignature.substring(0, 5)}..., Got: ${signature.substring(0, 5)}...`);
+      // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      // LOG and continue for debugging if needed, but safer to reject
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const payload = JSON.parse(rawBody);
-    const { data } = payload;
+    console.log(`[Cashfree Webhook][${reqId}] Payload Type: ${payload.type}`);
+    
+    // For V3, the data is inside payload.data
+    const data = payload.data;
+    if (!data || !data.order) {
+       console.warn(`[Cashfree Webhook][${reqId}] Rejected: No order data in payload`);
+       return NextResponse.json({ status: 'no_data' });
+    }
+
     const { order } = data;
+    console.log(`[Cashfree Webhook][${reqId}] Order ID: ${order.order_id}, Status: ${order.order_status}`);
 
     if (order.order_status === 'PAID') {
       const orderId = order.order_id;
-      const customerId = order.customer_details.customer_id;
+      const customerId = order.customer_details?.customer_id;
       const amountPaid = order.order_amount;
+
+      if (!customerId) {
+        console.error(`[Cashfree Webhook][${reqId}] ERROR: customer_id missing in order details`);
+        return NextResponse.json({ error: 'customer_id missing' }, { status: 400 });
+      }
 
       const COIN_PACKAGES = [
         { id: 'p1', amount: 50000, price: 10 },
@@ -56,16 +78,18 @@ export async function POST(req: NextRequest) {
         totalGain = 10200;
       }
 
-      // Idempotency check with Admin SDK
+      console.log(`[Cashfree Webhook][${reqId}] Processing credit: ${totalGain} coins for user ${customerId}`);
+
+      // Idempotency check
       const historyRef = adminDb.collection('users').doc(customerId).collection('diamondExchanges');
       const existingQuery = await historyRef.where('orderId', '==', orderId).get();
 
       if (!existingQuery.empty) {
-        console.log(`Order ${orderId} already processed. Skipping.`);
+        console.log(`[Cashfree Webhook][${reqId}] Order ${orderId} already processed. Skipping.`);
         return NextResponse.json({ status: 'already_processed' });
       }
 
-      // Atomic Update with Admin SDK
+      // Atomic Update
       const userRef = adminDb.collection('users').doc(customerId);
       const profileRef = userRef.collection('profile').doc(customerId);
 
@@ -91,12 +115,14 @@ export async function POST(req: NextRequest) {
       });
 
       await batch.commit();
-      console.log(`Successfully credited ${totalGain} coins to user ${customerId} via Webhook`);
+      console.log(`[Cashfree Webhook][${reqId}] SUCCESS: Credited ${totalGain} coins to user ${customerId}`);
+    } else {
+       console.log(`[Cashfree Webhook][${reqId}] Ignored: Status is ${order.order_status}`);
     }
 
     return NextResponse.json({ status: 'ok' });
   } catch (error: any) {
-    console.error('Cashfree Webhook Error:', error);
+    console.error(`[Cashfree Webhook][${reqId}] CRITICAL ERROR:`, error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
