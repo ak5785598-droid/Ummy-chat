@@ -25,6 +25,7 @@ import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 import { RoomMiniPlayer } from "@/components/room-mini-player";
+import { BanDialog } from "@/components/ban-dialog";
 import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -186,45 +187,12 @@ export function AppLayout({
     const until = userProfile.banStatus.bannedUntil?.toDate?.() || null;
     if (!until || until > new Date()) {
       return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-4 animate-in fade-in duration-700">
-          <div className="relative w-full max-w-sm rounded-[3rem] bg-gradient-to-br from-[#2a0505] to-[#140505] border-2 border-red-500/20 shadow-[0_0_100px_rgba(239,68,68,0.3)] p-8 flex flex-col items-center text-center space-y-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-600/20 blur-3xl animate-pulse rounded-full" />
-              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center border-2 border-white/10 shadow-2xl relative z-10">
-                <Ban className="h-10 w-10 text-white" />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h2 className="text-3xl font-black uppercase italic tracking-tighter text-red-500">Identity Blocked</h2>
-              <p className="text-white/70 font-medium leading-relaxed">
-                Your account is restricted by management.
-                <br />
-                <span className="text-white font-bold underline decoration-red-500/50">Reason: Terms Violation</span>
-              </p>
-            </div>
-
-            <div className="w-full bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Restoration Date</span>
-                <span className="text-lg font-bold text-white">
-                  {until ? format(until, 'PPP p') : 'Permanent Exclusion'}
-                </span>
-              </div>
-              <div className="h-px w-full bg-white/5" />
-              <div className="text-[11px] font-medium text-white/50 italic">
-                Please contact management for official support and restoration requests.
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="w-full h-14 rounded-2xl bg-white text-black font-black uppercase text-sm shadow-xl hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              <X className="w-5 h-5" /> Sign Out
-            </button>
-          </div>
-        </div>
+        <BanDialog 
+          isOpen={true} 
+          onClose={handleLogout}
+          bannedUntil={userProfile.banStatus.bannedUntil}
+          accountNumber={userProfile.accountNumber}
+        />
       );
     }
   }
