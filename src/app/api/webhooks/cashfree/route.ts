@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp() 
       });
 
-      batch.add(historyRef, {
+      const historyDocRef = historyRef.doc();
+      batch.set(historyDocRef, {
         type: 'purchase',
         coinAmount: totalGain,
         provider: 'cashfree_webhook',
