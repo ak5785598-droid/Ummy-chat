@@ -106,3 +106,27 @@ export async function verifyPaymentAction(
   return { success: false, error: 'Payment signature frequency mismatch.' };
  }
 }
+export async function verifyCashfreeOrderAction(order_id: string) {
+ try {
+  const response = await cashfree.PGFetchOrder(order_id);
+  const data = response.data;
+
+  if (data && data.order_status === "PAID") {
+   return { 
+    success: true, 
+    order_id: data.order_id, 
+    order_amount: data.order_amount,
+    customer_id: data.customer_details?.customer_id 
+   };
+  }
+
+  return { 
+    success: false, 
+    error: `Order status is ${data?.order_status || 'unknown'}`,
+    status: data?.order_status 
+  };
+ } catch (error: any) {
+  console.error('[Payment Sync] Cashfree Verification Error:', error?.response?.data || error);
+  return { success: false, error: 'Verification synchronization failed.' };
+ }
+}

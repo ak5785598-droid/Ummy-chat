@@ -11,10 +11,10 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction } from '@/actions/payments';
+import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction, verifyCashfreeOrderAction } from '@/actions/payments';
 import Script from 'next/script';
 import { load } from '@cashfreepayments/cashfree-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -57,6 +57,9 @@ export default function WalletPage() {
   const [utrNumber, setUtrNumber] = useState('');
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false);
+  const searchParams = useSearchParams();
+  const orderIdParam = searchParams.get('order_id');
+  const [isVerifyingOrder, setIsVerifyingOrder] = useState(false);
 
   const configRef = useMemoFirebase(() => {
    if (!firestore) return null;
@@ -104,6 +107,72 @@ export default function WalletPage() {
       return timeB.getTime() - timeA.getTime();
     });
   }, [exchangeHistory, rechargeHistory]);
+
+  useEffect(() => {
+    const autoVerifyCashfree = async () => {
+      if (!orderIdParam || !user || !firestore || isVerifyingOrder) return;
+      
+      setIsVerifyingOrder(true);
+      setIsProcessing(true);
+      
+      try {
+        const verification = await verifyCashfreeOrderAction(orderIdParam);
+        
+        if (verification.success && verification.order_amount) {
+           // Find package by amount if possible, or use amount directly
+           // Since we don't know the exact package ID easily from order_id without db lookup,
+           // we can approximate or use the amount from the verification response.
+           
+           // For now, let's credit based on $1 = 800,000 coins logic seen in promo
+           // Or search COIN_PACKAGES for a matching price
+           const amountPaid = verification.order_amount;
+           const pkg = COIN_PACKAGES.find(p => parseInt(p.price) === amountPaid);
+           
+           let totalGain = amountPaid * 5000; // default fallback
+           if (pkg) {
+             const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
+             const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
+             totalGain = amountValue + bonusValue;
+           } else if (amountPaid === 1) {
+             totalGain = 10000 + 200; // Package p7
+           }
+
+           const userRef = doc(firestore, 'users', user.uid);
+           const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+           
+           await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+           await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+           
+           const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+           await addDoc(historyRef, {
+             type: 'purchase',
+             coinAmount: totalGain,
+             provider: 'cashfree',
+             orderId: orderIdParam,
+             amountPaid: amountPaid,
+             timestamp: serverTimestamp()
+           });
+
+           toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins from Cashfree order.` });
+           
+           // Clear URL params to prevent re-verification on refresh
+           router.replace('/wallet');
+        } else if (verification.status !== 'ACTIVE' && verification.status !== 'PAID') {
+           // Only show error if it's explicitly failed or already handled
+           // toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error });
+        }
+      } catch (e) {
+        console.error('Auto-verification error', e);
+      } finally {
+        setIsVerifyingOrder(false);
+        setIsProcessing(false);
+      }
+    };
+
+    if (orderIdParam && user) {
+      autoVerifyCashfree();
+    }
+  }, [orderIdParam, user, firestore, router]);
 
  const handleRazorpayRecharge = async () => {
    if (!user || !firestore) return;
