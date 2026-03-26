@@ -88,7 +88,8 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     currentMusicUrl: firestoreRoom.currentMusicUrl,
     maxActiveMics: firestoreRoom.maxActiveMics,
     roomThemeId: firestoreRoom.roomThemeId,
-    isSuperMic: firestoreRoom.isSuperMic || false
+    isSuperMic: firestoreRoom.isSuperMic || false,
+    chatClearedAt: firestoreRoom.chatClearedAt
    } as any;
   }
 
