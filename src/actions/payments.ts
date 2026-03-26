@@ -79,7 +79,8 @@ export async function createCashfreeOrderAction(amount: number, userDetails: { i
     customer_email: userDetails.email || 'user@example.com'
    },
    order_meta: {
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/wallet?order_id={order_id}`
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/wallet?order_id={order_id}`,
+    notify_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/webhooks/cashfree`
    }
   };
 

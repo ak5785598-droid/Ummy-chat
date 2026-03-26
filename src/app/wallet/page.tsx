@@ -431,7 +431,6 @@ function WalletContent() {
       </div>
      ) : (
       <div className="flex-1 flex flex-col overflow-hidden">
-       {/* Category Frequencies */}
        <div className="flex justify-around border-b border-gray-50 bg-white shrink-0">
          <button 
           onClick={() => setActiveTab('Coins')}
