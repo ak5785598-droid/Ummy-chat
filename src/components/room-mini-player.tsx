@@ -59,7 +59,7 @@ export function RoomMiniPlayer() {
   };
 
   return (
-    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+80px)] left-2 right-2 z-[100] animate-in slide-in-from-bottom-2 duration-300">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+90px)] left-2 right-2 z-[1001] animate-in slide-in-from-bottom-2 duration-300">
       <div 
         className="bg-black/80 border border-white/5 rounded-full shadow-xl px-4 py-2 flex items-center justify-between backdrop-blur-xl"
         onClick={handleReturn}
