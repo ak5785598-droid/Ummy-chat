@@ -101,8 +101,8 @@ export default function LudoGamePage() {
   }
 
   return (
-    <AppLayout fullScreen>
-      <div className="h-screen w-full bg-black flex flex-col relative overflow-hidden font-headline" onClick={handleInteraction}>
+    <AppLayout>
+      <div className="h-screen w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden font-headline" onClick={handleInteraction}>
         <CompactRoomView />
 
         <header className="relative z-40 p-3 pt-32 px-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">

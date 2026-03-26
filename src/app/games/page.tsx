@@ -13,30 +13,27 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
+import { GameModal } from '@/components/game-modal';
 import type { Game } from '@/lib/types';
 
-const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-
 const FALLBACK_GAMES: Game[] = [
-  { id: 'g-carrom', title: 'Carrom Masters', slug: 'carrom', coverUrl: 'https://images.unsplash.com/photo-1632064824547-e77c36851495?q=80&w=1000', cost: 0, imageHint: 'carrom board game' },
-  { id: 'g7', title: 'Lion Fight', slug: 'lion-fight', coverUrl: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000', cost: 0, imageHint: '3d lion fighting' },
-  { id: 'fallback-roulette', title: 'Roulette', slug: 'roulette', coverUrl: '', cost: 0, imageHint: 'roulette wheel' },
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
   { id: 'fallback-fruit', title: 'Fruit Party', slug: 'fruit-party', coverUrl: 'https://images.unsplash.com/photo-1611080634139-6c8821f5f6ca?q=80&w=1000', cost: 0, imageHint: '3d fruit icons' },
   { id: 'fallback-wild', title: 'Wild Party', slug: 'forest-party', coverUrl: '', cost: 0, imageHint: '3d lion head' },
+  { id: 'fallback-slot', title: 'Lucky Slot 777', slug: 'lucky-slot-777', coverUrl: '', cost: 0, imageHint: '3d slot machine' },
+  { id: 'fallback-pyramid', title: 'Pyramid Battle', slug: 'pyramid-battle', coverUrl: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000', cost: 0, imageHint: 'egyptian pyramid' },
+  { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d dragon character' },
 ];
 
-/**
- * 3D Tribe Arena - Global Game Frequencies.
- */
 export default function GamesPage() {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { isUploading, uploadGameLogo } = useGameLogoUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const counts: Record<string, number> = {};
@@ -46,37 +43,47 @@ export default function GamesPage() {
     setLiveCounts(counts);
   }, []);
 
-  const isSovereign = user?.uid === CREATOR_ID;
+  const isAdmin = userProfile?.tags?.includes('Admin') || userProfile?.tags?.includes('Official');
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'games'));
+    return query(collection(firestore, 'games'), orderBy('title', 'asc'));
   }, [firestore, user]);
 
   const { data: firestoreGames, isLoading: isGamesLoading } = useCollection(gamesQuery);
 
   const activeGames = useMemo(() => {
     return FALLBACK_GAMES.map(fb => {
-      const match = firestoreGames?.find(g => g.slug === fb.slug);
+      const match = firestoreGames?.find(g => g.slug === fb.slug || g.id === fb.id);
       return match ? { ...fb, ...match } : fb;
     });
   }, [firestoreGames]);
 
-  const handleLogoChangeClick = (e: React.MouseEvent, slug: string) => {
+  const handleLogoChangeClick = (e: React.MouseEvent, gameId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setSelectedGameSlug(slug);
+    setSelectedGameId(gameId);
     fileInputRef.current?.click();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && selectedGameSlug) {
-      const game = activeGames.find(g => g.slug === selectedGameSlug);
+    if (file && selectedGameId) {
+      const game = activeGames.find(g => g.id === selectedGameId);
       if (game) {
         uploadGameLogo(game, file);
       }
     }
+  };
+
+  const handleGameClick = (game: Game) => {
+    setSelectedGameId(game.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedGameId(null);
   };
 
   return (
@@ -109,33 +116,27 @@ export default function GamesPage() {
           </header>
 
           <section className="space-y-12">
-             <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-3">
-                   <Zap className="h-6 w-6 text-yellow-500 fill-current animate-bounce" />
-                   <h3 className="font-headline text-2xl font-black uppercase italic tracking-widest text-white/80">Select Dimension</h3>
-                </div>
-                {isSovereign && (
-                  <Badge className="bg-primary text-black font-black uppercase italic animate-pulse">Identity Sync Active</Badge>
-                )}
+             <div className="flex items-center gap-3 px-2">
+                <Zap className="h-6 w-6 text-yellow-500 fill-current animate-bounce" />
+                <h3 className="font-headline text-2xl font-black uppercase italic tracking-widest text-white/80">Select Dimension</h3>
              </div>
 
-             {isGamesLoading && !firestoreGames ? (
+             {isGamesLoading ? (
                <div className="flex justify-center py-20"><Loader className="animate-spin text-primary h-10 w-10" /></div>
              ) : (
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 pt-4">
                   {activeGames.map((game) => (
-                    <div key={game.slug} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
-                      <div className="block relative">
+                    <div key={game.id} className="group relative transition-all duration-500 transform-gpu preserve-3d hover:rotate-x-12 hover:rotate-y-6">
+                      <button onClick={() => handleGameClick(game)} className="block relative w-full">
+                        {/* 3D Depth Layer */}
                         <div className="absolute inset-0 bg-purple-600/20 rounded-[2.5rem] translate-z-[-20px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         
-                        <Link href={`/games/${game.slug}`} className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-purple-500/50 group-hover:shadow-[0_40px_80px_rgba(168,85,247,0.3)] group-hover:-translate-y-4 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                        <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-purple-500/50 group-hover:shadow-[0_40px_80px_rgba(168,85,247,0.3)] group-hover:-translate-y-4 bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
                            {game.coverUrl ? (
                              <Image 
-                               key={game.coverUrl} 
                                src={game.coverUrl} 
                                alt={game.title} 
                                fill 
-                               unoptimized 
                                className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
                                data-ai-hint={game.imageHint}
                              />
@@ -146,15 +147,16 @@ export default function GamesPage() {
                              </div>
                            )}
                            
+                           {/* High-fidelity glass overlay */}
                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0514] via-transparent to-transparent opacity-60" />
                            
-                           {isSovereign && (
+                           {isAdmin && (
                              <button 
-                               onClick={(e) => handleLogoChangeClick(e, game.slug)}
-                               className="absolute top-4 right-4 bg-primary text-black p-2.5 rounded-full z-30 shadow-[0_0_20px_rgba(255,204,0,0.5)] border-2 border-white hover:scale-110 transition-all active:scale-90"
+                               onClick={(e) => handleLogoChangeClick(e, game.id)}
+                               className="absolute top-4 right-4 bg-black/60 p-2 rounded-full border border-white/20 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-primary hover:text-black"
                              >
-                               {isUploading && selectedGameSlug === game.slug ? <Loader className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                               {isUploading && selectedGameId === game.id ? <Loader className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                              </button>
                            )}
 
@@ -162,16 +164,16 @@ export default function GamesPage() {
                               <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                               <span className="text-[10px] font-black text-white/80">{(liveCounts[game.slug] || 100).toLocaleString()}</span>
                            </div>
-                        </Link>
+                        </div>
                         
                         <div className="mt-6 px-2 space-y-1 text-center translate-z-[30px]">
                            <h4 className="font-black text-sm uppercase italic truncate group-hover:text-purple-400 transition-colors tracking-tighter drop-shadow-lg">{game.title}</h4>
                            <div className="flex items-center justify-center gap-2">
-                              <div className="h-0.5 w-4 rounded-full bg-purple-500 group-hover:w-8 transition-all duration-500" />
+                              <div className="h-1 w-4 rounded-full bg-purple-500 group-hover:w-8 transition-all duration-500" />
                               <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">3D Reality</span>
                            </div>
                         </div>
-                      </div>
+                      </button>
                     </div>
                   ))}
                </div>
@@ -197,6 +199,24 @@ export default function GamesPage() {
 
         </div>
       </div>
+
+      {/* Game Modal */}
+      <GameModal 
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={selectedGameId ? activeGames.find(g => g.id === selectedGameId)?.title || 'Game' : 'Game'}
+      >
+        {selectedGameId && (
+          <div className="w-full h-full flex items-center justify-center">
+            <iframe 
+              src={`/games/${activeGames.find(g => g.id === selectedGameId)?.slug}`}
+              className="w-full h-full border-0 rounded-2xl"
+              title={activeGames.find(g => g.id === selectedGameId)?.title || 'Game'}
+            />
+          </div>
+        )}
+      </GameModal>
+
       <style jsx global>{`
         .perspective-1000 { perspective: 1000px; }
         .preserve-3d { transform-style: preserve-3d; }
