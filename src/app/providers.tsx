@@ -8,6 +8,7 @@ import { GlobalPresenceManager } from '@/components/global-presence-manager';
 import { GlobalBanGuard } from '@/components/global-ban-guard';
 import { LanguageProvider } from '@/components/language-provider';
 import { AdBlockWarning } from '@/components/ad-block-warning';
+import { ActiveRoomManager } from '@/components/active-room-manager';
 import type { ReactNode } from 'react';
 
 /**
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <GlobalPresenceManager />
     <GlobalBanGuard>
      <RoomProvider>
+      <ActiveRoomManager />
       <RoomPresenceManager />
       {children}
      </RoomProvider>

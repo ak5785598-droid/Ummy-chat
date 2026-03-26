@@ -24,6 +24,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
+import { RoomMiniPlayer } from "@/components/room-mini-player";
 import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -332,6 +333,7 @@ export function AppLayout({
       </nav>
      )}
      <FloatingRoomBar />
+     <RoomMiniPlayer />
     </SidebarInset>
    </div>
   </SidebarProvider>

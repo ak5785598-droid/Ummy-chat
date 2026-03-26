@@ -94,45 +94,9 @@ import { RoomMessagesDialog } from '@/components/room-messages-dialog';
 import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 import { RoomGameOverlay } from '@/components/room-game-overlay';
+import { ExitRoomDialog } from '@/components/exit-room-dialog';
 
-function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const contextRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-
-  useEffect(() => {
-    if (!stream) return;
-    if (!contextRef.current) {
-      contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    const ctx = contextRef.current;
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-    }
-    sourceRef.current = ctx.createMediaStreamSource(stream);
-    gainRef.current = ctx.createGain();
-    sourceRef.current.connect(gainRef.current);
-    gainRef.current.connect(ctx.destination);
-    gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
-    if (ctx.state === 'suspended') {
-      const resume = () => ctx.resume().catch(() => {});
-      window.addEventListener('click', resume, { once: true });
-      window.addEventListener('touchstart', resume, { once: true });
-    }
-    if (audioRef.current) {
-      audioRef.current.srcObject = stream;
-      audioRef.current.muted = true;
-      audioRef.current.play().catch(() => {});
-    }
-    return () => {
-      if (sourceRef.current) sourceRef.current.disconnect();
-      if (gainRef.current) gainRef.current.disconnect();
-    };
-  }, [stream, muted]);
-
-  return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
-}
+// RemoteAudio shifted to ActiveRoomManager
 
 const Seat = ({ 
   index, 
@@ -229,6 +193,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
   
@@ -257,7 +222,7 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const storage = useStorage();
-  const { setActiveRoom, setIsMinimized } = useRoomContext();
+  const { setActiveRoom, setIsMinimized, setMinimizedRoom } = useRoomContext();
 
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
@@ -332,7 +297,7 @@ export function RoomClient({ room }: { room: Room }) {
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   
-  const { remoteStreams } = useWebRTC(room.id, isInSeat, currentUserParticipant?.isMuted ?? true, musicStream);
+  // Audio connection handled by ActiveRoomManager
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
@@ -380,6 +345,29 @@ export function RoomClient({ room }: { room: Room }) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
   }, [firestoreMessages]);
+
+  /**
+   * NAVIGATION & BACK BUTTON INTERCEPTION
+   */
+  useEffect(() => {
+    // Sync context on mount
+    setActiveRoom(room);
+    setMinimizedRoom(null);
+
+    // Add a dummy entry to history to intercept back
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // Re-push to keep user on same URL while dialog is open
+      window.history.pushState(null, '', window.location.href);
+      setShowExitDialog(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [room, setActiveRoom, setMinimizedRoom]);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -458,7 +446,11 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
   };
 
-  const handleMinimize = () => { setIsMinimized(true); router.push('/rooms'); };
+  const handleMinimize = () => { 
+    setMinimizedRoom(room);
+    setActiveRoom(null);
+    router.push('/rooms'); 
+  };
   
   const handleExit = () => { 
     if (firestore && currentUser) {
@@ -477,6 +469,7 @@ export function RoomClient({ room }: { room: Room }) {
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
     setActiveRoom(null); 
+    setMinimizedRoom(null);
     router.push('/rooms'); 
   };
 
@@ -583,15 +576,18 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-[100dvh] w-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
+      <ExitRoomDialog 
+        isOpen={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onMinimize={handleMinimize}
+        onConfirmExit={handleExit}
+      />
       <GiftAnimationOverlay 
         giftId={activeGiftSync?.id || null} 
         senderName={activeGiftSync?.senderName}
         onComplete={() => setActiveGiftSync(null)} 
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
-      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-        <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
-      ))}
       
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
 
