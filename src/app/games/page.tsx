@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const FALLBACK_GAMES: Game[] = [
   { id: 'fallback-teen', title: 'Dragon Battle', slug: 'teen-patti', coverUrl: '', cost: 0, imageHint: '3d dragon character' },
 ];
 
-export default function GamesPage() {
+function GamesPageContent() {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -240,5 +240,19 @@ export default function GamesPage() {
         .translate-z-[30px] { transform: translateZ(30px); }
       `}</style>
     </AppLayout>
+  );
+}
+
+export default function GamesPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="min-h-screen bg-[#0a0514] flex items-center justify-center">
+          <Loader className="animate-spin text-primary h-10 w-10" />
+        </div>
+      </AppLayout>
+    }>
+      <GamesPageContent />
+    </Suspense>
   );
 }
