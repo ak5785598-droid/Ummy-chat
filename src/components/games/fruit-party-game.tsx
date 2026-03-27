@@ -39,11 +39,16 @@ const ITEMS = [
 ];
 
 const CHIPS = [
- { value: 10, label: '10' },
  { value: 100, label: '100' },
- { value: 500, label: '500' },
- { value: 2000, label: '2000' },
- { value: 10000, label: '10000' },
+ { value: 1000, label: '1k' },
+ { value: 50000, label: '50k' },
+ { value: 100000, label: '100k' },
+ { value: 500000, label: '500k' },
+ { value: 1000000, label: '1M' }, 
+ { value: 5000000, label: '5M' }, 
+ { value: 50000000, label: '50M' }, 
+ { value: 100000000, label: '100M' }, 
+ { value: 500000000, label: '500M' }, 
 ];
 
 interface FruitPartyGameProps {
