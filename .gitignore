@@ -43,3 +43,20 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# Android Build
+/android.keystore
+/*.apk
+/*.aab
+/*.idsig
+/.gradle/
+/app/
+/gradle/
+/gradlew
+/gradlew.bat
+/settings.gradle
+/build.gradle
+/manifest-checksum.txt
+/cert.txt
+/cert_full.txt
+/store_icon.png
