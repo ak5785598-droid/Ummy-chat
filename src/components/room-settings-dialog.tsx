@@ -12,7 +12,9 @@ import {
  Trash2,
  Lock,
  Palette,
- ShieldCheck
+ ShieldCheck,
+ Mic,
+ MicOff
 } from 'lucide-react';
 import {
  Dialog,
@@ -38,12 +40,15 @@ import { Badge } from '@/components/ui/badge';
 import { ROOM_THEMES, RoomTheme } from '@/lib/themes';
 import { Label } from '@/components/ui/label';
 import {
- Select,
- SelectContent,
- SelectItem,
- SelectTrigger,
- SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MicrophonePermissionHelper } from "@/components/microphone-permission-helper";
 import Image from 'next/image';
 
 interface RoomSettingsDialogProps {
@@ -85,6 +90,7 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
  const [isEditingTheme, setIsEditingTheme] = useState(false);
  const [isEditingPassword, setIsEditingPassword] = useState(false);
  const [isManagingAdmins, setIsManagingAdmins] = useState(false);
+ const [isTestingMic, setIsTestingMic] = useState(false);
  
  const [newName, setNewName] = useState(room.title || room.name);
  const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
@@ -250,6 +256,11 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         <SettingItem label="Room Name" value={room.title || room.name} onClick={() => setIsEditingName(true)} />
         <SettingItem label="Announcement" value={room.announcement} onClick={() => setIsEditingAnnouncement(true)} />
         
+        {/* Microphone Test */}
+        <SettingItem label="Microphone Test" onClick={() => setIsTestingMic(true)}>
+          <Mic className="h-4 w-4 text-gray-400" />
+        </SettingItem>
+        
         {/* Re-engineered Mic Selection Portal */}
         <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">
          <span className="font-bold text-[14px] text-gray-800 uppercase tracking-tight">Number of Mic</span>
@@ -346,6 +357,21 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
         </header>
         <div className="p-8">
          <Textarea value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)} className="h-40 rounded-2xl border-2 text-lg font-body focus:border-primary transition-all p-6" autoFocus />
+        </div>
+      </div>
+     )}
+
+     {isTestingMic && (
+      <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+        <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+         <button onClick={() => setIsTestingMic(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+           <ChevronLeft className="h-6 w-6 text-gray-800" />
+         </button>
+         <h3 className="font-bold uppercase text-lg tracking-tight">Microphone Test</h3>
+         <div className="w-10" />
+        </header>
+        <div className="p-6">
+         <MicrophonePermissionHelper />
         </div>
       </div>
      )}

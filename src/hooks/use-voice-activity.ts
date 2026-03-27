@@ -3,18 +3,20 @@
 import { useEffect, useState, useRef } from 'react';
 
 /**
- * useVoiceActivity
- * Real-time volume analysis to detect active speech.
- * Threshold tuned for mobile microphones to isolate background noise.
+ * useVoiceActivity - ENHANCED VERSION
+ * Real-time volume analysis with intensity levels for dynamic wave animations
+ * Returns both speaking state and intensity level (0-100)
  */
 export function useVoiceActivity(stream: MediaStream | null, audioContext: AudioContext | null) {
  const [isSpeaking, setIsSpeaking] = useState(false);
+ const [intensity, setIntensity] = useState(0); // 0-100 intensity level
  const analyserRef = useRef<AnalyserNode | null>(null);
  const rafId = useRef<number | null>(null);
 
  useEffect(() => {
   if (!stream || !audioContext) {
    setIsSpeaking(false);
+   setIntensity(0);
    return;
   }
 
@@ -25,8 +27,8 @@ export function useVoiceActivity(stream: MediaStream | null, audioContext: Audio
    if (audioContext.state === 'closed') return;
    
    analyser = audioContext.createAnalyser();
-   analyser.fftSize = 256;
-   analyser.smoothingTimeConstant = 0.5;
+   analyser.fftSize = 512; // Increased for better frequency resolution
+   analyser.smoothingTimeConstant = 0.3; // Reduced for more responsive detection
    
    source = audioContext.createMediaStreamSource(stream);
    source.connect(analyser);
@@ -34,29 +36,55 @@ export function useVoiceActivity(stream: MediaStream | null, audioContext: Audio
    const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
    let silenceCount = 0;
+   let peakIntensity = 0;
+   
    const checkVolume = () => {
     if (!analyser) return;
     analyser.getByteFrequencyData(dataArray);
     
-    // Calculate root mean square or simple average for volume
+    // Calculate RMS (Root Mean Square) for accurate volume measurement
     let sum = 0;
+    let peakValue = 0;
     for (let i = 0; i < dataArray.length; i++) {
-     sum += dataArray[i];
+     const value = dataArray[i];
+     sum += value * value;
+     if (value > peakValue) peakValue = value;
     }
-    const average = sum / dataArray.length;
+    const rms = Math.sqrt(sum / dataArray.length);
     
-    // Tuned threshold: 12-15 is usually good for voice vs background
-    const threshold = 12; // Lowered from 18 for better sensitivity
-    const isCurrentlySpeaking = average > threshold;
+    // Dynamic threshold based on ambient noise
+    const baseThreshold = 8;
+    const adaptiveThreshold = Math.max(baseThreshold, peakValue * 0.1);
+    
+    // Calculate intensity (0-100 scale)
+    const maxPossibleValue = 255;
+    let currentIntensity = Math.min(100, (rms / maxPossibleValue) * 100 * 3); // Scale up for sensitivity
+    
+    // Smooth intensity changes to prevent flickering
+    currentIntensity = Math.max(0, currentIntensity - 5); // Minimum threshold
+    
+    const isCurrentlySpeaking = rms > adaptiveThreshold;
+    
+    // Update peak intensity for visual feedback
+    if (currentIntensity > peakIntensity) {
+     peakIntensity = currentIntensity;
+    } else {
+     peakIntensity *= 0.95; // Decay factor
+    }
 
     if (isCurrentlySpeaking) {
      silenceCount = 0;
      setIsSpeaking(true);
+     setIntensity(currentIntensity);
     } else {
      silenceCount++;
-     // Add a small "hold" time (approx 300ms) to prevent flickering
-     if (silenceCount > 15) {
+     // Hold intensity for a moment before fading out
+     if (silenceCount > 10) {
       setIsSpeaking(false);
+      setIntensity(0);
+     } else {
+      // Fade out intensity
+      setIntensity(prev => Math.max(0, prev * 0.8));
      }
     }
     
@@ -66,14 +94,18 @@ export function useVoiceActivity(stream: MediaStream | null, audioContext: Audio
    checkVolume();
   } catch (err) {
    console.warn('[VAD] Failed to initialize volume analyzer:', err);
+   setIsSpeaking(false);
+   setIntensity(0);
   }
 
   return () => {
    if (rafId.current) cancelAnimationFrame(rafId.current);
    if (source) try { source.disconnect(); } catch (e) {}
    if (analyser) try { analyser.disconnect(); } catch (e) {}
+   setIsSpeaking(false);
+   setIntensity(0);
   };
  }, [stream, audioContext]);
 
- return isSpeaking;
+ return { isSpeaking, intensity };
 }

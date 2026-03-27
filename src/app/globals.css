@@ -120,6 +120,24 @@
 }
 .animate-voice-wave { animation: voice-wave 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
+.voice-wave-low { 
+  animation: voice-wave 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-width: 1px !important;
+}
+.voice-wave-medium { 
+  animation: voice-wave 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-width: 2px !important;
+}
+.voice-wave-high { 
+  animation: voice-wave 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-width: 3px !important;
+}
+.voice-wave-intense { 
+  animation: voice-wave 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-width: 4px !important;
+  filter: brightness(1.2);
+}
+
 @keyframes shimmer-gold { 0% { filter: brightness(1); } 50% { filter: brightness(1.4) contrast(1.2); } 100% { filter: brightness(1); } }
 .animate-shimmer-gold { animation: shimmer-gold 2s infinite; }
 

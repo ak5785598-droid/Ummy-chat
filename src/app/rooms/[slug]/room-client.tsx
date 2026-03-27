@@ -78,6 +78,9 @@ import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { useWebRTC } from '@/hooks/use-webrtc';
+import { useVoiceActivity } from '@/hooks/use-voice-activity';
+import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
+import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
@@ -115,8 +118,13 @@ const Seat = ({
   theme: any,
   onClick: (index: number, occupant?: RoomParticipant) => void,
   roomOwnerId: string,
-  roomModeratorIds: string[]
+  roomModeratorIds: string[],
+  isSpeaking?: boolean,
+  intensity?: number
 }) => {
+  const { user } = useUser();
+  const { isSpeaking, intensity } = useVoiceActivityContext();
+  const currentUser = user;
   const isOccupantOwner = occupant?.uid === roomOwnerId;
   const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
 
@@ -124,9 +132,21 @@ const Seat = ({
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
-        {occupant && !occupant.isMuted && (
+        
+        {/* Dynamic Voice Wave Indicator - Only show for current user */}
+        {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
+          <VoiceWaveIndicator 
+            isSpeaking={isSpeaking} 
+            intensity={intensity}
+            accentColor={theme.accentColor}
+          />
+        )}
+        
+        {/* Fallback for other users (static wave when not muted) */}
+        {occupant && occupant.uid !== currentUser?.uid && !occupant.isMuted && (
           <div className="absolute -inset-1 rounded-full border-2 animate-voice-wave" style={{ color: theme.accentColor }} />
         )}
+        
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
           <div className={cn(
             "relative p-1 rounded-full",
@@ -222,6 +242,9 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
   const storage = useStorage();
   const { setActiveRoom, setIsMinimized, setMinimizedRoom } = useRoomContext();
+  
+  // Get voice activity from context
+  const { isSpeaking, intensity } = useVoiceActivityContext();
 
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
@@ -644,12 +667,12 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
-                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
               </div>
            </div>
            <div className="w-full grid grid-cols-4 gap-1.5 px-4">
               {extraSeats.map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
               ))}
            </div>
         </div>

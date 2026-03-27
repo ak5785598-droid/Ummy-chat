@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
+import { useVoiceActivity } from '@/hooks/use-voice-activity';
+import { useVoiceActivityContext } from './voice-activity-provider';
 import { collection, query, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { RoomParticipant } from '@/lib/types';
 
@@ -78,7 +80,20 @@ export function ActiveRoomManager() {
   const isMuted = currentUserParticipant?.isMuted ?? true;
 
   // WebRTC Hook - Always active as long as sessionRoom exists
-  const { remoteStreams } = useWebRTC(roomId || '', isInSeat, isMuted);
+  const { localStream, remoteStreams } = useWebRTC(roomId || '', isInSeat, isMuted);
+  
+  // Voice Activity Detection - Enhanced with intensity
+  const audioContextRef = useRef<AudioContext | null>(null);
+  if (!audioContextRef.current && typeof window !== 'undefined') {
+    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  const { isSpeaking, intensity } = useVoiceActivity(localStream, audioContextRef.current);
+  
+  // Share voice activity with context
+  const { setVoiceActivity } = useVoiceActivityContext();
+  useEffect(() => {
+    setVoiceActivity(isSpeaking, intensity);
+  }, [isSpeaking, intensity, setVoiceActivity]);
 
   // If a room is active but not minimized, and we have no minimizedRoom, we are in "Full View"
   // If we have a minimizedRoom but no activeRoom, we are in "Minimized View"

@@ -81,12 +81,26 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const startLocalStream = async () => {
    try {
     console.log('[WebRTC] Requesting local mic frequency sync...');
+    
+    // Check microphone permissions first
+    const permissions = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    console.log('[WebRTC] Microphone permission state:', permissions.state);
+    
+    if (permissions.state === 'denied') {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Mic Access Denied', 
+        description: 'Please enable microphone permissions in your browser settings and refresh.' 
+      });
+      return;
+    }
+    
     const rawStream = await navigator.mediaDevices.getUserMedia({ 
      audio: {
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
-      // Chromium-specific advanced flags for stability
+      // Enhanced audio constraints for better quality
       // @ts-ignore
       googEchoCancellation: true,
       // @ts-ignore
@@ -95,23 +109,75 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       googNoiseSuppression: true,
       // @ts-ignore
       googHighpassFilter: true,
+      // @ts-ignore
+      googAudioMirroring: false,
       sampleRate: 48000,
-      channelCount: 1 
+      channelCount: 1,
+      latency: 0.01,
+      // Add gain control for better volume
+      gainControl: true
      }, 
      video: false 
     });
 
+    console.log('[WebRTC] Microphone access granted, stream active:', rawStream.active);
+    
+    // Test audio track
+    const audioTracks = rawStream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      console.warn('[WebRTC] No audio tracks found in stream');
+      return;
+    }
+    
+    const audioTrack = audioTracks[0];
+    console.log('[WebRTC] Audio track settings:', {
+      enabled: audioTrack.enabled,
+      muted: audioTrack.muted,
+      readyState: audioTrack.readyState,
+      label: audioTrack.label
+    });
+
     if (!audioContextRef.current) {
      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+     console.log('[WebRTC] AudioContext created:', audioContextRef.current.state);
     }
+    
     setLocalStream(rawStream);
+    console.log('[WebRTC] Local stream set successfully');
+    
    } catch (err: any) {
-    console.warn('[WebRTC] Hardware Sync Denied:', err.message);
+    console.error('[WebRTC] Hardware Sync Failed:', err);
+    
+    // Detailed error handling
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
      toast({ 
       variant: 'destructive', 
-      title: 'Mic Access Denied', 
-      description: 'Please enable microphone permissions in your browser.' 
+      title: 'Microphone Access Required', 
+      description: 'Please allow microphone access to use voice chat. Click the microphone icon in your browser address bar.' 
+     });
+    } else if (err.name === 'NotFoundError') {
+     toast({ 
+      variant: 'destructive', 
+      title: 'No Microphone Found', 
+      description: 'Please connect a microphone and refresh the page.' 
+     });
+    } else if (err.name === 'NotReadableError') {
+     toast({ 
+      variant: 'destructive', 
+      title: 'Microphone in Use', 
+      description: 'Another application is using the microphone. Please close other apps and try again.' 
+     });
+    } else if (err.name === 'OverconstrainedError') {
+     toast({ 
+      variant: 'destructive', 
+      title: 'Microphone Not Supported', 
+      description: 'Your microphone does not support the required audio format.' 
+     });
+    } else {
+     toast({ 
+      variant: 'destructive', 
+      title: 'Microphone Error', 
+      description: `Failed to access microphone: ${err.message}` 
      });
     }
    }
