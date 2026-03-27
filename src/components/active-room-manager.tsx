@@ -12,43 +12,39 @@ import { RoomParticipant } from '@/lib/types';
 /**
  * Global Audio Component for Remote Streams
  */
-function RemoteAudio({ stream, muted }: { stream: MediaStream, muted: boolean }) {
+function RemoteAudio({ stream, audioContext, muted }: { stream: MediaStream, audioContext: AudioContext, muted: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const contextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
-    if (!stream) return;
-    if (!contextRef.current) {
-      contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    const ctx = contextRef.current;
-    if (sourceRef.current) sourceRef.current.disconnect();
+    if (!stream || !audioContext) return;
     
-    sourceRef.current = ctx.createMediaStreamSource(stream);
-    gainRef.current = ctx.createGain();
-    sourceRef.current.connect(gainRef.current);
-    gainRef.current.connect(ctx.destination);
-    gainRef.current.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
+    try {
+      if (sourceRef.current) {
+        sourceRef.current.disconnect();
+      }
+      
+      sourceRef.current = audioContext.createMediaStreamSource(stream);
+      gainRef.current = audioContext.createGain();
+      sourceRef.current.connect(gainRef.current);
+      gainRef.current.connect(audioContext.destination);
+      gainRef.current.gain.setValueAtTime(muted ? 0 : 1, audioContext.currentTime);
 
-    if (ctx.state === 'suspended') {
-      const resume = () => ctx.resume().catch(() => {});
-      window.addEventListener('click', resume, { once: true });
-      window.addEventListener('touchstart', resume, { once: true });
-    }
-
-    if (audioRef.current) {
-      audioRef.current.srcObject = stream;
-      audioRef.current.muted = true;
-      audioRef.current.play().catch(() => {});
+      if (audioRef.current) {
+        audioRef.current.srcObject = stream;
+        audioRef.current.muted = true; // Still keep muted to avoid echo but use Web Audio for output
+        audioRef.current.play().catch(e => console.warn('[RemoteAudio] Play failed:', e));
+      }
+    } catch (err) {
+      console.error('[RemoteAudio] Initialization Error:', err);
     }
 
     return () => {
-      if (sourceRef.current) sourceRef.current.disconnect();
-      if (gainRef.current) gainRef.current.disconnect();
+      if (sourceRef.current) try { sourceRef.current.disconnect(); } catch (e) {}
+      if (gainRef.current) try { gainRef.current.disconnect(); } catch (e) {}
     };
-  }, [stream, muted]);
+  }, [stream, audioContext, muted]);
 
   return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 }
@@ -62,6 +58,39 @@ export function ActiveRoomManager() {
   const { user } = useUser();
   const firestore = useFirestore();
   
+  // SHARED AUDIO CONTEXT - Singleton-like management in manager
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const [isAudioContextReady, setIsAudioContextReady] = useState(false);
+
+  useEffect(() => {
+    // Initialize standard AudioContext
+    if (typeof window !== 'undefined' && !audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 48000
+      });
+      setIsAudioContextReady(true);
+    }
+
+    const resumeContext = async () => {
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume().catch(e => console.warn('[WebRTC] Context resume failed:', e));
+        console.log('[WebRTC] AudioContext Resumed:', audioContextRef.current.state);
+      }
+    };
+
+    // Global interaction listeners to wake up audio context
+    window.addEventListener('click', resumeContext, { once: true });
+    window.addEventListener('touchstart', resumeContext, { once: true });
+    window.addEventListener('keydown', resumeContext, { once: true });
+
+    return () => {
+      window.removeEventListener('click', resumeContext);
+      window.removeEventListener('touchstart', resumeContext);
+      window.removeEventListener('keydown', resumeContext);
+    };
+  }, []);
+
   // The "Session Room" is either the one the user is physically in, or the one minimized in background
   const sessionRoom = activeRoom || minimizedRoom;
   const roomId = sessionRoom?.id;
@@ -82,11 +111,7 @@ export function ActiveRoomManager() {
   // WebRTC Hook - Always active as long as sessionRoom exists
   const { localStream, remoteStreams } = useWebRTC(roomId || '', isInSeat, isMuted);
   
-  // Voice Activity Detection - Enhanced with intensity
-  const audioContextRef = useRef<AudioContext | null>(null);
-  if (!audioContextRef.current && typeof window !== 'undefined') {
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
+  // Voice Activity Detection - Enhanced with intensity using Shared Context
   const { isSpeaking, intensity } = useVoiceActivity(localStream, audioContextRef.current);
   
   // Share voice activity with context
@@ -95,15 +120,17 @@ export function ActiveRoomManager() {
     setVoiceActivity(isSpeaking, intensity);
   }, [isSpeaking, intensity, setVoiceActivity]);
 
-  // If a room is active but not minimized, and we have no minimizedRoom, we are in "Full View"
-  // If we have a minimizedRoom but no activeRoom, we are in "Minimized View"
-  
   if (!sessionRoom) return null;
 
   return (
     <>
-      {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
-        <RemoteAudio key={`${roomId}-${peerId}`} stream={stream} muted={false} />
+      {isAudioContextReady && audioContextRef.current && Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+        <RemoteAudio 
+          key={`${roomId}-${peerId}`} 
+          stream={stream} 
+          audioContext={audioContextRef.current!} 
+          muted={false} 
+        />
       ))}
     </>
   );

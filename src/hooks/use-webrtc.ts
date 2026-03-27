@@ -34,7 +34,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  const iceCandidatesQueue = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
  const pendingCandidates = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
  const iceDebounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
- const audioContextRef = useRef<AudioContext | null>(null);
 
  const joinTime = useRef(Date.now());
 
@@ -45,9 +44,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    { urls: 'stun:stun2.l.google.com:19302' },
    { urls: 'stun:stun3.l.google.com:19302' },
    { urls: 'stun:stun4.l.google.com:19302' },
+   { urls: 'stun:stun.services.mozilla.com' },
+   { urls: 'stun:stun.l.google.com:19305' },
    { urls: 'stun:global.stun.twilio.com:3478' },
   ],
   iceCandidatePoolSize: 10,
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require'
  };
 
  // ---------------------------------------------------------------------------
@@ -58,12 +61,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   // V2: Robust m=audio Injection (128kbps) for high-capacity rooms
   let newSdp = sdp.replace(/m=audio.*?\r\n/g, '$&b=AS:128\r\n');
   // Add stereo hint to Opus (FMT 111) for better quality
-  return newSdp.replace(/a=rtpmap:111 opus\/48000\/2/g, 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 sprop-stereo=1');
+  return newSdp.replace(/a=rtpmap:111 opus\/48000\/2/g, 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 sprop-stereo=1; stereo=1; maxaveragebitrate=128000');
  };
 
  const updateConnectionState = useCallback((peerId: string, state: PeerConnectionState) => {
   setConnectionStates(prev => {
    const next = new Map(prev);
+   if (next.get(peerId) === state) return prev;
    next.set(peerId, state);
    return next;
   });
@@ -72,6 +76,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  useEffect(() => {
   if (!isInSeat || !user || !roomId) {
    if (localStream) {
+    console.log('[WebRTC] Stopping local stream (Not in seat/room)');
     localStream.getTracks().forEach(t => t.stop());
     setLocalStream(null);
    }
@@ -82,17 +87,21 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    try {
     console.log('[WebRTC] Requesting local mic frequency sync...');
     
-    // Check microphone permissions first
-    const permissions = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-    console.log('[WebRTC] Microphone permission state:', permissions.state);
-    
-    if (permissions.state === 'denied') {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Mic Access Denied', 
-        description: 'Please enable microphone permissions in your browser settings and refresh.' 
-      });
-      return;
+    // Check microphone permissions first if supported
+    if (navigator.permissions && (navigator.permissions as any).query) {
+      try {
+        const permissions = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        if (permissions.state === 'denied') {
+          toast({ 
+            variant: 'destructive', 
+            title: 'Mic Access Denied', 
+            description: 'Please enable microphone permissions in your browser settings and refresh.' 
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('[WebRTC] Permission query failed:', e);
+      }
     }
     
     const rawStream = await navigator.mediaDevices.getUserMedia({ 
@@ -100,7 +109,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
-      // Enhanced audio constraints for better quality
       // @ts-ignore
       googEchoCancellation: true,
       // @ts-ignore
@@ -109,85 +117,27 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       googNoiseSuppression: true,
       // @ts-ignore
       googHighpassFilter: true,
-      // @ts-ignore
-      googAudioMirroring: false,
       sampleRate: 48000,
       channelCount: 1,
-      latency: 0.01,
-      // Add gain control for better volume
-      gainControl: true
      }, 
      video: false 
     });
 
-    console.log('[WebRTC] Microphone access granted, stream active:', rawStream.active);
-    
-    // Test audio track
-    const audioTracks = rawStream.getAudioTracks();
-    if (audioTracks.length === 0) {
-      console.warn('[WebRTC] No audio tracks found in stream');
-      return;
-    }
-    
-    const audioTrack = audioTracks[0];
-    console.log('[WebRTC] Audio track settings:', {
-      enabled: audioTrack.enabled,
-      muted: audioTrack.muted,
-      readyState: audioTrack.readyState,
-      label: audioTrack.label
-    });
-
-    if (!audioContextRef.current) {
-     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-     console.log('[WebRTC] AudioContext created:', audioContextRef.current.state);
-    }
-    
+    console.log('[WebRTC] Microphone access granted, tracks:', rawStream.getAudioTracks().length);
     setLocalStream(rawStream);
-    console.log('[WebRTC] Local stream set successfully');
-    
    } catch (err: any) {
     console.error('[WebRTC] Hardware Sync Failed:', err);
-    
-    // Detailed error handling
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-     toast({ 
-      variant: 'destructive', 
-      title: 'Microphone Access Required', 
-      description: 'Please allow microphone access to use voice chat. Click the microphone icon in your browser address bar.' 
-     });
-    } else if (err.name === 'NotFoundError') {
-     toast({ 
-      variant: 'destructive', 
-      title: 'No Microphone Found', 
-      description: 'Please connect a microphone and refresh the page.' 
-     });
-    } else if (err.name === 'NotReadableError') {
-     toast({ 
-      variant: 'destructive', 
-      title: 'Microphone in Use', 
-      description: 'Another application is using the microphone. Please close other apps and try again.' 
-     });
-    } else if (err.name === 'OverconstrainedError') {
-     toast({ 
-      variant: 'destructive', 
-      title: 'Microphone Not Supported', 
-      description: 'Your microphone does not support the required audio format.' 
-     });
-    } else {
-     toast({ 
-      variant: 'destructive', 
-      title: 'Microphone Error', 
-      description: `Failed to access microphone: ${err.message}` 
-     });
-    }
+    toast({ 
+     variant: 'destructive', 
+     title: 'Microphone Error', 
+     description: `Failed to access microphone: ${err.message}` 
+    });
    }
   };
 
-  startLocalStream();
-
-  return () => {
-   if (localStream) localStream.getTracks().forEach(t => t.stop());
-  };
+  if (!localStream) {
+    startLocalStream();
+  }
  }, [isInSeat, user?.uid, roomId]);
 
  useEffect(() => {
@@ -204,13 +154,14 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    const musicTrack = musicStream?.getAudioTracks()[0];
 
    for (const [peerId, pc] of peerConnections.current.entries()) {
+    if (pc.connectionState === 'closed') continue;
     const transceivers = pc.getTransceivers();
     
     // Update Mic Transceiver
     const micTransceiver = transceivers[0]; 
     if (micTransceiver && micTrack) {
       if (micTransceiver.sender.track !== micTrack) {
-       micTransceiver.sender.replaceTrack(micTrack);
+       micTransceiver.sender.replaceTrack(micTrack).catch(e => console.warn(`[WebRTC] replaceTrack failed for ${peerId}:`, e));
       }
     }
 
@@ -218,7 +169,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     const musicTransceiver = transceivers[1];
     if (musicTransceiver && musicTrack) {
       if (musicTransceiver.sender.track !== musicTrack) {
-       musicTransceiver.sender.replaceTrack(musicTrack);
+       musicTransceiver.sender.replaceTrack(musicTrack).catch(e => console.warn(`[WebRTC] replaceTrack failed for ${peerId}:`, e));
       }
     }
    }
@@ -231,27 +182,31 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
   const initiateConnection = (peerId: string) => {
    if (peerConnections.current.has(peerId)) {
-    // Check if we need to auto-reconnect a failed state
     const currentPc = peerConnections.current.get(peerId);
-    if (currentPc?.connectionState === 'failed' || currentPc?.connectionState === 'closed') {
-      currentPc.close();
-      peerConnections.current.delete(peerId);
-    } else {
+    if (currentPc?.connectionState !== 'failed' && currentPc?.connectionState !== 'closed') {
       return;
     }
+    currentPc?.close();
+    peerConnections.current.delete(peerId);
    }
    
-   console.log(`[WebRTC] Initiating Scaled P2P to ${peerId}`);
+   console.log(`[WebRTC] Connecting to ${peerId}...`);
    const pc = new RTCPeerConnection(iceConfig);
    peerConnections.current.set(peerId, pc);
    updateConnectionState(peerId, pc.connectionState as PeerConnectionState);
 
    pc.onconnectionstatechange = () => {
-    updateConnectionState(peerId, pc.connectionState as PeerConnectionState);
-    if (pc.connectionState === 'failed') {
-      console.warn(`[WebRTC] Connection with ${peerId} failed. Attempting auto-reconnect in 3s...`);
+    const state = pc.connectionState as PeerConnectionState;
+    console.log(`[WebRTC] State for ${peerId}: ${state}`);
+    updateConnectionState(peerId, state);
+    if (state === 'failed') {
+      console.warn(`[WebRTC] Connection with ${peerId} failed. Reconnect in 3s...`);
       setTimeout(() => initiateConnection(peerId), 3000);
     }
+   };
+
+   pc.oniceconnectionstatechange = () => {
+     console.log(`[WebRTC] ICE State for ${peerId}: ${pc.iceConnectionState}`);
    };
 
    // V2: Transceiver-based Track Management
@@ -269,18 +224,15 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     pc.addTransceiver('audio', { direction: 'recvonly' });
    }
 
-   // -----------------------------------------------------------------------
-   // ICE CANDIDATE BATCHING ENGINE
-   // Reduces Firestore writes from ~20 per connection to ~1 per connection
-   // -----------------------------------------------------------------------
    pc.onicecandidate = (event) => {
     if (event.candidate) {
      const queue = pendingCandidates.current.get(peerId) || [];
      queue.push(event.candidate.toJSON());
      pendingCandidates.current.set(peerId, queue);
 
-     const timer = iceDebounceTimers.current.get(peerId);
-     if (timer) clearTimeout(timer);
+     if (iceDebounceTimers.current.has(peerId)) {
+       clearTimeout(iceDebounceTimers.current.get(peerId)!);
+     }
 
      const newTimer = setTimeout(() => {
       const toSend = pendingCandidates.current.get(peerId);
@@ -288,12 +240,13 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
        sendSignal(peerId, { type: 'candidates_batch', candidates: toSend, from: user.uid });
        pendingCandidates.current.set(peerId, []);
       }
-     }, 400); // 400ms buffer
+     }, 500);
      iceDebounceTimers.current.set(peerId, newTimer);
     }
    };
 
    pc.ontrack = (event) => {
+    console.log(`[WebRTC] Received remote track from ${peerId}`);
     setRemoteStreams(prev => {
      const next = new Map(prev);
      next.set(peerId, event.streams[0]);
@@ -305,12 +258,11 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     try {
      makingOffer.current.set(peerId, true);
      const offer = await pc.createOffer();
-     offer.sdp = mungeSDP(offer.sdp); // Strictly scale bandwidth output
-     
+     offer.sdp = mungeSDP(offer.sdp);
      await pc.setLocalDescription(offer);
      sendSignal(peerId, { type: 'offer', sdp: pc.localDescription?.sdp, from: user.uid });
     } catch (err) {
-     console.error(`[WebRTC] Negotiation Failed:`, err);
+     console.error(`[WebRTC] Negotiation failed:`, err);
     } finally {
      makingOffer.current.set(peerId, false);
     }
@@ -319,6 +271,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
   const processQueuedCandidates = async (peerId: string, pc: RTCPeerConnection) => {
     const queue = iceCandidatesQueue.current.get(peerId) || [];
+    if (queue.length === 0) return;
+    console.log(`[WebRTC] Processing ${queue.length} queued candidates for ${peerId}`);
     for (const cand of queue) {
      try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
     }
@@ -327,8 +281,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
   const handleSignal = async (signal: any) => {
    const peerId = signal.from;
+   if (!peerId) return;
+
    let pc = peerConnections.current.get(peerId);
-   if (!pc) {
+   if (!pc || pc.connectionState === 'closed') {
     if (signal.type === 'offer') {
      initiateConnection(peerId);
      pc = peerConnections.current.get(peerId)!;
@@ -339,14 +295,15 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     if (signal.type === 'offer') {
      const polite = user.uid > peerId;
      const offerCollision = (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
-     ignoreOffer.current.set(peerId, !polite && offerCollision);
-     // Add 5-second clock drift allowance to prevent missing signals
-     if (signal.timestamp && signal.timestamp.toMillis() < (joinTime.current - 5000)) return;
      
+     if (offerCollision && !polite) {
+       console.log(`[WebRTC] Ignoring offer collision from ${peerId} (Impolite)`);
+       return;
+     }
+
      await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
-     
      const answer = await pc.createAnswer();
-     answer.sdp = mungeSDP(answer.sdp); // STRICT BANDWIDTH CONTROL
+     answer.sdp = mungeSDP(answer.sdp);
      await pc.setLocalDescription(answer);
      
      sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
@@ -358,9 +315,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       await processQueuedCandidates(peerId, pc);
      }
     } else if (signal.type === 'candidates_batch') {
-     // HANDLE BATCHED ICE CANDIDATES
      const cands = signal.candidates || [];
-     if (pc.remoteDescription) {
+     if (pc.remoteDescription && pc.signalingState !== 'closed') {
       for (const cand of cands) {
        try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (err) {}
       }
@@ -369,18 +325,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       queue.push(...cands);
       iceCandidatesQueue.current.set(peerId, queue);
      }
-    } else if (signal.type === 'candidate' && !signal.candidates) {
-     // Handle Legacy unbatched candidates correctly (Backwards compatibility)
-     if (pc.remoteDescription) {
-      try { await pc.addIceCandidate(new RTCIceCandidate(signal.candidate)); } catch (err) {}
-     } else {
-      const queue = iceCandidatesQueue.current.get(peerId) || [];
-      queue.push(signal.candidate);
-      iceCandidatesQueue.current.set(peerId, queue);
-     }
     }
    } catch (err) {
-    console.error(`[WebRTC] Signal Error:`, err);
+    console.error(`[WebRTC] Signal handling error:`, err);
    }
   };
 
@@ -393,12 +340,16 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     if (isPeerSpeaker || isInSeat) {
      if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) initiateConnection(peerId);
      if (change.type === 'removed') {
-        // Disconnect and cleanup cleanly
         const pc = peerConnections.current.get(peerId);
         if (pc) {
           pc.close();
           peerConnections.current.delete(peerId);
           updateConnectionState(peerId, 'closed');
+          setRemoteStreams(prev => {
+            const next = new Map(prev);
+            next.delete(peerId);
+            return next;
+          });
         }
      }
     }
@@ -430,7 +381,11 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  const sendSignal = (toPeerId: string, payload: any) => {
   if (!firestore || !roomId) return;
   const ref = collection(firestore, 'chatRooms', roomId, 'participants', toPeerId, 'signaling');
-  addDoc(ref, { ...payload, timestamp: serverTimestamp() }).catch(() => {});
+  addDoc(ref, { 
+    ...payload, 
+    timestamp: serverTimestamp(),
+    from: user?.uid 
+  }).catch(e => console.error('[WebRTC] Signal send failed:', e));
  };
 
  return { localStream, remoteStreams, connectionStates };
