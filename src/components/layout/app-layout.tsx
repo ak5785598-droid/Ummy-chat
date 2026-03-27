@@ -26,7 +26,6 @@ import { signOut } from "firebase/auth";
 import { FloatingRoomBar } from "@/components/floating-room-bar";
 import { RoomMiniPlayer } from "@/components/room-mini-player";
 import { BanDialog } from "@/components/ban-dialog";
-import { VoiceActivityProvider } from "@/components/voice-activity-provider";
 import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -232,7 +231,6 @@ export function AppLayout({
 
  return (
   <SidebarProvider defaultOpen={false}>
-   <VoiceActivityProvider>
     <div className="flex h-[100dvh] w-full bg-[#f3e5f5] font-sans overflow-hidden relative">
     <Sidebar className="bg-[#140028] border-none text-white">
      <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
@@ -339,7 +337,6 @@ export function AppLayout({
      <RoomMiniPlayer />
     </SidebarInset>
    </div>
-   </VoiceActivityProvider>
   </SidebarProvider>
  );
 }

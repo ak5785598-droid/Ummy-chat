@@ -9,6 +9,7 @@ import { GlobalBanGuard } from '@/components/global-ban-guard';
 import { LanguageProvider } from '@/components/language-provider';
 import { AdBlockWarning } from '@/components/ad-block-warning';
 import { ActiveRoomManager } from '@/components/active-room-manager';
+import { VoiceActivityProvider } from '@/components/voice-activity-provider';
 import type { ReactNode } from 'react';
 
 /**
@@ -23,11 +24,13 @@ export function Providers({ children }: { children: ReactNode }) {
     <ProfileInitializer />
     <GlobalPresenceManager />
     <GlobalBanGuard>
-     <RoomProvider>
-      <ActiveRoomManager />
-      <RoomPresenceManager />
-      {children}
-     </RoomProvider>
+     <VoiceActivityProvider>
+      <RoomProvider>
+       <ActiveRoomManager />
+       <RoomPresenceManager />
+       {children}
+      </RoomProvider>
+     </VoiceActivityProvider>
     </GlobalBanGuard>
    </LanguageProvider>
   </FirebaseClientProvider>
