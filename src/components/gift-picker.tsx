@@ -47,6 +47,8 @@ export interface GiftItem {
 const GIFTS: Record<string, GiftItem[]> = {
  'Hot': [
   { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
+  { id: 'pizza', name: 'pizza', price: 499, icon: '🍕', animationId: 'pizza' }, 
+  { id: 'doughnut', name: 'doughnut', price: 999, icon: '🍩', animationId: 'doughnut' }, 
   { id: 'chai', name: 'Chai', price: 700, icon: '☕', animationId: 'chai' },
   { id: 'rose', name: 'Rose', price: 300, icon: '🌹', animationId: 'rose' },
   { id: 'applaud', name: 'Applaud', price: 500, icon: '👏', animationId: 'applaud' },
@@ -78,12 +80,6 @@ const GIFTS: Record<string, GiftItem[]> = {
   { id: 'tea', name: 'Tea', price: 1550, icon: '🍵', animationId: 'tea' },
   { id: 'milk', name: 'Milk', price: 40499, icon: '🥛', animationId: 'milk' },
   { id: 'cookie', name: 'Cookie', price: 4000, icon: '🍪', animationId: 'cookie' },
-  { id: 'apple', name: 'Apple', price: 10, icon: '🍎', animationId: 'apple' }, 
-  { id: 'cherry', name: 'Cherry', price: 80, icon: '🍒', animationId: 'cherry' },
-  { id: 'strawberry', name: 'Strawberry', price: 120, icon: '🍓', animationId: 'strawberry' },
-  { id: 'watermelon', name: 'Watermelon', price: 250, icon: '🍉', animationId: 'watermelon' },
-  { id: 'lemon', name: 'Lemon', price: 700, icon: '🍋', animationId: 'lemon' },
-  { id: 'pineapple', name: 'Pineapple', price: 300, icon: '🍍', animationId: 'pineapple' },
  ],
  'Lucky': [
   { id: 'lucky_clover', name: 'Clover', price: 100, icon: '🍀', animationId: 'lucky-clover', type: 'lucky'},

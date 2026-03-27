@@ -11,7 +11,7 @@ import {
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
-const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋'];
+const REACTIONS = ['😀', '😂', '😘', '🥰', '😎', '🤗', '😡', '😭', '💋', '😤', '👊', '😱' ];
 
 interface RoomEmojiPickerDialogProps {
  open: boolean;
