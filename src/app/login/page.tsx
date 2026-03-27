@@ -63,6 +63,7 @@ export default function LoginPage() {
     if (isUserLoading || user || !auth) return;
 
     const handleOneTapResponse = async (response: any) => {
+      console.log("📥 One Tap response received");
       setIsSigningIn(true);
       try {
         const credential = GoogleAuthProvider.credential(response.credential);
@@ -84,18 +85,36 @@ export default function LoginPage() {
       }
     };
 
-    // @ts-ignore
-    if (window.google) {
+    const initializeGIS = () => {
       // @ts-ignore
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleOneTapResponse,
-        auto_select: true,
-        cancel_on_tap_outside: false
-      });
-      // @ts-ignore
-      window.google.accounts.id.prompt();
-    }
+      if (window.google?.accounts?.id) {
+        console.log("🚀 Initializing Google One Tap...");
+        // @ts-ignore
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleOneTapResponse,
+          auto_select: true,
+          cancel_on_tap_outside: false,
+          itp_support: true
+        });
+        // @ts-ignore
+        window.google.accounts.id.prompt((notification: any) => {
+           console.log("🔔 One Tap Prompt Status:", notification.getMomentType(), notification.isNotDisplayed(), notification.getSkippedReason());
+           if (notification.isNotDisplayed() || notification.isSkipedMoment()) {
+              console.warn("⚠️ One Tap NOT displayed. Reason:", notification.getSkippedReason());
+           }
+        });
+      } else {
+        console.log("⏳ Waiting for Google GIS script...");
+      }
+    };
+
+    // Try immediate
+    initializeGIS();
+    
+    // Also try after a short delay to ensure script availability
+    const timer = setTimeout(initializeGIS, 1500);
+    return () => clearTimeout(timer);
   }, [user, isUserLoading, auth, router, toast]);
 
   useEffect(() => {
