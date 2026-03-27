@@ -97,6 +97,20 @@ export default function LoginPage() {
           cancel_on_tap_outside: false,
           itp_support: true
         });
+
+        // 🟢 Render Official GSI Button
+        // @ts-ignore
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-gsi-button"),
+          { 
+            theme: "outline", 
+            size: "large", 
+            text: "signin_with",
+            shape: "pill",
+            width: "350"
+          }
+        );
+
         // @ts-ignore
         window.google.accounts.id.prompt((notification: any) => {
            console.log("🔔 One Tap Prompt Status:", notification.getMomentType(), notification.isNotDisplayed(), notification.getSkippedReason());
@@ -408,14 +422,7 @@ export default function LoginPage() {
               Continue with Facebook
             </button>
 
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={isSigningIn}
-              className="w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
-              Sign in with Google
-            </button>
+            <div id="google-gsi-button" className="w-full flex justify-center h-12 overflow-hidden rounded-xl bg-white" />
           </div>
 
           <div className="flex items-center gap-2">
