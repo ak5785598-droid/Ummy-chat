@@ -101,7 +101,6 @@ export function AppLayout({
        nextUserId = 0;
       } else {
        const lastId = counterDoc.data()?.lastUserId;
-       // If lastId is 0 (Creator) or some low number, increment.
        // Only reset to 1 if it's way out of range (legacy 100001 format)
        if (lastId === undefined || lastId > 5000) nextUserId = 1;
        else nextUserId = lastId + 1;
@@ -304,9 +303,9 @@ export function AppLayout({
      </SidebarFooter>
     </Sidebar>
 
-     <SidebarInset className="bg-background flex flex-col p-0 w-full max-w-full">
+     <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-screen overflow-hidden">
       <main className={cn(
-       "min-h-screen w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
+       "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
       "touch-auto", // Ensure touch events are handled correctly
       shouldShowBottomNav && "pb-32"
      )}

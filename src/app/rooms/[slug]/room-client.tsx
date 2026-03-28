@@ -390,8 +390,8 @@ export function RoomClient({ room }: { room: Room }) {
         setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
       } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
-      } else if (msg.type === 'entrance' && msg.senderId !== currentUser?.uid) {
-        // AI WELCOME BOT LOGIC
+      } else if (msg.type === 'entrance') {
+        // AI WELCOME BOT LOGIC: Welcome everyone (including current user)
         handleAIWelcome(msg.senderName);
       } else if (msg.type === 'emoji' && (msg as any).isSfx) {
         // SOUNDBOARD SFX SYNC
