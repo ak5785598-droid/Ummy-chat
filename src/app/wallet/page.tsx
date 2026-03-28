@@ -610,162 +610,109 @@ function WalletContent() {
     </div>
 
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
-     <DialogContent className="sm:max-w-[100%] md:max-w-2xl bg-white border-none rounded-[2rem] p-0 shadow-2xl font-sans overflow-hidden">
-      <div className="flex flex-col">
-        {/* WEPLAY-STYLE INSTRUCTION BANNER */}
-        <div className="relative w-full p-6 pb-20 bg-gradient-to-br from-[#E040FB] via-[#D500F9] to-[#651FFF] overflow-hidden">
+     <DialogContent className="sm:max-w-full md:max-w-2xl bg-white border-none rounded-[1.5rem] p-0 shadow-2xl font-sans overflow-hidden">
+      <div className="flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+        {/* COMPACT WEPLAY-STYLE BANNER */}
+        <div className="relative w-full p-4 pt-6 bg-gradient-to-br from-[#E040FB] via-[#D500F9] to-[#651FFF] overflow-hidden shrink-0">
           {/* Sparkly Background Elements */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="absolute bg-white rounded-full animate-pulse" 
-                style={{ 
-                  width: Math.random() * 4 + 1 + 'px', 
-                  height: Math.random() * 4 + 1 + 'px', 
-                  top: Math.random() * 100 + '%', 
-                  left: Math.random() * 100 + '%' 
-                }}
-              />
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} className="absolute bg-white rounded-full animate-pulse" 
+                style={{ width: '2px', height: '2px', top: Math.random() * 100 + '%', left: Math.random() * 100 + '%' }} />
             ))}
           </div>
 
-          <div className="relative z-10 flex flex-col items-center gap-4">
-            <div className="flex flex-col items-center">
-              <UmmyLogoIcon className="h-12 w-12 drop-shadow-lg" />
-              <h3 className="text-white font-bold text-xl drop-shadow-md">Ummy chat</h3>
+          <div className="relative z-10 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <UmmyLogoIcon className="h-6 w-6" />
+              <h3 className="text-white font-bold text-sm tracking-tight">Manual Recharge</h3>
             </div>
 
-            <div className="w-full flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4 mt-2">
-              {/* Hindi Instructions */}
-              <div className="flex-1 space-y-2 text-white/95">
-                <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md p-1.5 px-3 rounded-lg border border-white/10">
-                  <span className="text-yellow-400 font-bold">⚠️</span>
-                  <p className="text-[10px] font-bold leading-none">अभी हमारे ऐप पर ऑनलाइन रिचार्ज की सुविधा उपलब्ध नहीं है !</p>
+            {/* Instruction Grid */}
+            <div className="w-full grid grid-cols-2 gap-3 items-start">
+              {/* Hindi Column */}
+              <div className="flex flex-col gap-1.5 opacity-90">
+                <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-[7px] text-white font-bold leading-none">
+                  ⚠️ ऑनलाइन रिचार्ज उपलब्ध नहीं है
                 </div>
-                <div className="space-y-1.5 pl-2">
-                  {[
-                    "कोई भी रिचार्ज पैकेज चुनें",
-                    "दिए गए QR का स्क्रीनशॉट लें",
-                    "QR को अपने मोबाइल से स्कैन करें",
-                    "पैकेज के अनुसार पेमेंट करें",
-                    "पेमेंट के बाद 12 अंकों का UTR नंबर दर्ज करें (5~8 मिनट प्रतीक्षा करें)",
-                    "समस्या होने पर QR में दिए गए नंबर पर संपर्क करें"
-                  ].map((step, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <span className="text-[12px] font-black text-yellow-400 leading-tight">{idx + 1}.</span>
-                      <p className="text-[11px] font-medium leading-tight">{step}</p>
-                    </div>
+                <div className="space-y-0.5">
+                  {["पैकेज चुनें", "QR स्क्रीनशॉट लें", "मोबाइल से स्कैन करें", "पेमेंट पूरा करें", "UTR नंबर भरें", "नंबर पर संपर्क करें"].map((s, i) => (
+                    <p key={i} className="text-[9px] text-white/90 leading-tight">
+                      <span className="text-yellow-400 font-bold mr-1">{i+1}.</span>{s}
+                    </p>
                   ))}
-                </div>
-                <div className="pt-2 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-green-300">धन्यवाद 🙏 आपके धैर्य के लिए</span>
                 </div>
               </div>
 
-              {/* QR Centerpiece */}
-              <div className="shrink-0 relative w-48 h-48 bg-white rounded-2xl p-2 shadow-2xl border-4 border-blue-500 scale-105 z-20">
-                {config?.paymentQrUrl ? (
-                  <div className="h-full w-full relative flex flex-col">
-                    <div className="bg-white px-2 py-0.5 self-center">
-                       <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-4 object-contain" />
-                    </div>
-                    <div className="flex-1 relative mt-1">
-                      <Image src={config.paymentQrUrl} fill className="object-contain" alt="Payment QR" unoptimized />
-                    </div>
-                    <div className="text-[8px] font-black text-blue-600 text-center uppercase tracking-tighter mt-1">Scan with any UPI app</div>
-                  </div>
-                ) : (
-                  <div className="h-full w-full flex flex-col items-center justify-center opacity-30">
-                    <Shield className="h-10 w-10 text-slate-400 mb-2" />
-                    <p className="text-[10px] font-bold uppercase text-center">Syncing QR...</p>
-                  </div>
-                )}
-              </div>
-
-              {/* English Instructions */}
-              <div className="flex-1 space-y-2 text-white/95 text-right md:text-left">
-                <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md p-1.5 px-3 rounded-lg border border-white/10 justify-end md:justify-start">
-                  <span className="text-yellow-400 font-bold">⚠️</span>
-                  <p className="text-[10px] font-bold leading-none">Online recharge is currently not available on our app.</p>
+              {/* English Column */}
+              <div className="flex flex-col gap-1.5 opacity-90 text-right">
+                <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-[7px] text-white font-bold leading-none justify-end">
+                  ⚠️ Online recharge unavailable
                 </div>
-                <div className="space-y-1.5 pr-2 md:pl-2">
-                  {[
-                    "Select any recharge package",
-                    "Take a screenshot of the QR code",
-                    "Scan the QR using your mobile",
-                    "Make payment as per the package",
-                    "Enter the 12-digit UTR after payment (wait 5~8 minutes)",
-                    "For issues, contact the number on QR"
-                  ].map((step, idx) => (
-                    <div key={idx} className="flex gap-2 justify-end md:justify-start">
-                      <span className="text-[12px] font-black text-yellow-400 leading-tight order-2 md:order-1">{idx + 1}.</span>
-                      <p className="text-[11px] font-medium leading-tight order-1 md:order-2">{step}</p>
-                    </div>
+                <div className="space-y-0.5">
+                  {["Select Package", "Screenshot QR", "Scan with mobile", "Make payment", "Enter UTR No.", "Contact support"].map((s, i) => (
+                    <p key={i} className="text-[9px] text-white/90 leading-tight text-right">
+                      {s}<span className="text-yellow-400 font-bold ml-1">{i+1}.</span>
+                    </p>
                   ))}
                 </div>
-                <div className="pt-2 flex items-center gap-2 justify-end md:justify-start">
-                  <span className="text-[10px] font-bold text-green-300">Thank you for your patience 🙏</span>
-                </div>
               </div>
+            </div>
+
+            {/* Centered QR (Large) */}
+            <div className="relative w-40 h-40 bg-white rounded-xl p-1.5 shadow-2xl border-4 border-white/20 -mb-8 z-20">
+              {config?.paymentQrUrl ? (
+                <div className="h-full w-full flex flex-col">
+                  <div className="bg-white flex justify-center mb-0.5"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-3" /></div>
+                  <div className="flex-1 relative">
+                    <Image src={config.paymentQrUrl} fill className="object-contain" alt="QR" unoptimized />
+                  </div>
+                  <p className="text-[10px] font-black text-blue-600 text-center uppercase tracking-tighter mt-0.5">{config.upiId || '7209741932@ptyes'}</p>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-300 text-[8px] font-bold">Syncing QR...</div>
+              )}
             </div>
           </div>
-
-          <div className="absolute -bottom-2 -left-10 -right-10 h-10 bg-white rounded-[50%] blur-xl opacity-30" />
         </div>
 
-        {/* INPUT SECTION */}
-        <div className="px-8 pb-10 pt-8 bg-white relative">
+        {/* INPUT SECTION (Moved Up) */}
+        <div className="px-5 pb-8 pt-10 bg-white">
           {showSubmissionSuccess ? (
-            <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-300">
-              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto border-4 border-green-100">
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-xl font-bold uppercase text-slate-900 tracking-tight">Request Received</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Admin will verify your UTR and<br/>credit coins within 5-10 minutes.</p>
-              </div>
-              <Button 
-                onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
-                className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-              >
-                View Records
-              </Button>
+            <div className="text-center py-4 space-y-4 animate-in zoom-in-95 duration-300">
+              <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto" />
+              <h2 className="text-lg font-bold uppercase text-gray-900 leading-none">Request Received</h2>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Coins will credit in 5-10m</p>
+              <Button onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
+                className="w-full h-12 bg-black text-white rounded-xl font-bold uppercase text-xs" >View Records</Button>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Total Amount</p>
-                  <p className="text-xl font-black text-gray-900">
-                    {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}
-                  </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="space-y-0.5">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase leading-none">Amount</p>
+                  <p className="text-lg font-black leading-none">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
                 </div>
-                <div className="text-right">
-                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Coins Gain</p>
-                   <p className="text-sm font-bold text-yellow-600">
+                <div className="text-right space-y-0.5">
+                   <p className="text-[8px] font-bold text-gray-400 uppercase leading-none">Coins Gain</p>
+                   <p className="text-xs font-bold text-yellow-600 leading-none">
                      {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} + Bonus
                    </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-gray-500 ml-1">Submit Transaction ID / UTR</label>
-                <div className="relative">
-                  <Input 
-                    value={utrNumber || ''}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    placeholder="Enter 12-digit UTR Number"
-                    className="h-14 bg-white border-2 border-gray-100 focus:border-blue-500 rounded-2xl font-black text-center text-lg tracking-widest transition-all"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase text-gray-500 ml-1">Submit Transaction UTR Number</label>
+                <Input 
+                  value={utrNumber || ''}
+                  onChange={(e) => setUtrNumber(e.target.value)}
+                  placeholder="Enter 12-digit UTR ID"
+                  className="h-12 bg-gray-50 border-gray-100 focus:border-[#651FFF] focus:bg-white rounded-xl font-black text-center text-lg tracking-[0.2em] transition-all"
+                />
               </div>
 
-              <Button 
-                onClick={handleSubmitManualRecharge}
-                disabled={isSubmittingManual}
-                className="w-full h-15 bg-[#651FFF] hover:bg-[#6200EA] text-white font-bold uppercase rounded-2xl shadow-xl shadow-purple-500/20 py-4"
-              >
+              <Button onClick={handleSubmitManualRecharge} disabled={isSubmittingManual}
+                className="w-full h-14 bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase rounded-xl shadow-lg shadow-purple-500/20" >
                 {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment Submission'}
               </Button>
             </div>
