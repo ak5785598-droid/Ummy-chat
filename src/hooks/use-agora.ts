@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
+import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+
+// Dynamic import of Agora to prevent SSR window errors
+let AgoraRTC: any = null;
+if (typeof window !== 'undefined') {
+  AgoraRTC = require('agora-rtc-sdk-ng').default;
+}
 
 // Helper to reliably convert Firestore String UID to a Numeric UID for Agora compatibility
 function hashUidToNumber(uid: string): number {
