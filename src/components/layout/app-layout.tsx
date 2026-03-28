@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castle, Home, Users, User, Compass, Ban, X, Loader } from "lucide-react";
+import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castle, Home, Users, User, Compass, Ban, X, Loader, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ import { BanDialog } from "@/components/ban-dialog";
 import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
 import { GlobalActivityBanner } from "@/components/global-activity-banner";
+import { DailyQuestsDialog } from "@/components/daily-quests-dialog";
 
 export function AppLayout({ 
  children, 
@@ -49,6 +50,7 @@ export function AppLayout({
  const firestore = useFirestore();
  const { t } = useTranslation();
  const [mounted, setMounted] = useState(false);
+ const [showQuests, setShowQuests] = useState(false);
 
  useEffect(() => { setMounted(true); }, []);
 
@@ -241,16 +243,21 @@ export function AppLayout({
     }
   }
 
- return (
-  <SidebarProvider defaultOpen={false}>
-    <div className="flex h-[100dvh] w-full bg-[#f3e5f5] font-sans overflow-hidden relative">
-      <GlobalActivityBanner />
+  return (
+   <SidebarProvider defaultOpen={false}>
+    <GlobalActivityBanner />
     <Sidebar className="bg-[#140028] border-none text-white">
      <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
       <div className="flex items-center gap-3">
        <UmmyLogoIcon className="h-10 w-10" />
        <span className="font-bold text-3xl tracking-tight uppercase text-white">Ummy</span>
       </div>
+      <button 
+        onClick={() => setShowQuests(true)}
+        className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/20 animate-pulse active:scale-90 transition-transform"
+      >
+        <Trophy className="h-5 w-5" />
+      </button>
      </SidebarHeader>
      <SidebarContent className="bg-transparent px-2">
       <SidebarMenu>
@@ -356,7 +363,10 @@ export function AppLayout({
      <FloatingRoomBar />
      <RoomMiniPlayer />
     </SidebarInset>
-   </div>
-  </SidebarProvider>
- );
+    <DailyQuestsDialog 
+       isOpen={showQuests} 
+       onClose={() => setShowQuests(false)} 
+     />
+   </SidebarProvider>
+  );
 }

@@ -25,7 +25,8 @@ import {
  Lock,
  MessageSquare,
  MapPin,
- Users
+ Users,
+ Zap
 } from 'lucide-react';
 import { 
  Dialog, 
@@ -47,6 +48,7 @@ import { CsLeaderTag } from '@/components/cs-leader-tag';
 import { useRouter } from 'next/navigation';
 import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { CPProposeDialog } from '@/components/cp-propose-dialog';
 
 interface RoomUserProfileDialogProps {
  userId: string | null;
@@ -109,6 +111,7 @@ export function RoomUserProfileDialog({
  const { userProfile: profile, isLoading } = useUserProfile(userId || undefined);
  const { toast } = useToast();
  const router = useRouter();
+ const [showPropose, setShowPropose] = React.useState(false);
 
  if (!userId) return null;
 
@@ -181,6 +184,15 @@ export function RoomUserProfileDialog({
          {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
          {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
          {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
+         
+         {profile.relationship && profile.relationship.type !== 'None' && (
+           <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
+              <Heart className="h-3 w-3 text-rose-500 fill-current" />
+              <span className="text-[9px] font-black uppercase text-rose-500 tracking-tight">
+                {profile.relationship.type}: {profile.relationship.partnerName}
+              </span>
+           </div>
+         )}
         </div>
       </div>
 
@@ -227,6 +239,15 @@ export function RoomUserProfileDialog({
         >
          <GiftIcon className="h-6 w-6 text-white fill-white" />
         </button>
+
+        {!isMe && (!profile.relationship || profile.relationship.type === 'None') && (
+          <button 
+           onClick={() => setShowPropose(true)}
+           className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 active:scale-90 transition-transform"
+          >
+           <Zap className="h-5 w-5 fill-current" />
+          </button>
+        )}
       </div>
 
       {isMe && (
@@ -257,6 +278,18 @@ export function RoomUserProfileDialog({
      </div>
     ) : null}
    </DialogContent>
+
+   {profile && (
+     <CPProposeDialog 
+       isOpen={showPropose}
+       onClose={() => setShowPropose(false)}
+       targetUser={{
+         uid: profile.id,
+         username: profile.username,
+         avatarUrl: profile.avatarUrl
+       }}
+     />
+   )}
   </Dialog>
  );
 }

@@ -13,6 +13,7 @@ export interface RoomTheme {
  category?: 'help' | 'entertainment' | 'general';
  price?: number;
  durationDays?: number;
+ animationId?: 'galaxy' | 'stars' | 'love' | 'rain';
 }
 
 export const ROOM_THEMES: RoomTheme[] = [
@@ -130,7 +131,8 @@ export const ROOM_THEMES: RoomTheme[] = [
   isOfficial: true, 
   seatColor: 'rgba(255, 204, 0, 0.2)', 
   accentColor: '#FFCC00', 
-  category: 'general' 
+  category: 'general',
+  animationId: 'stars'
  },
  { 
   id: 'ummy_help_dark', 
@@ -191,7 +193,8 @@ export const ROOM_THEMES: RoomTheme[] = [
   url: '/themes/midnight_proposal.png',
   seatColor: 'rgba(59, 130, 246, 0.25)',
   accentColor: '#60a5fa',
-  category: 'entertainment'
+  category: 'entertainment',
+  animationId: 'rain'
  },
  { 
   id: 'dreamy_hearts', 
@@ -199,7 +202,8 @@ export const ROOM_THEMES: RoomTheme[] = [
   url: '/themes/dreamy_hearts.png',
   seatColor: 'rgba(232, 121, 249, 0.25)',
   accentColor: '#e879f9',
-  category: 'entertainment'
+  category: 'entertainment',
+  animationId: 'love'
  },
  { 
   id: 'sunset_shore', 
@@ -264,7 +268,8 @@ export const ROOM_THEMES: RoomTheme[] = [
   isOfficial: true,
   seatColor: 'rgba(99, 102, 241, 0.25)',
   accentColor: '#6366f1',
-  category: 'general'
+  category: 'general',
+  animationId: 'galaxy'
  },
  { 
   id: 'ummy_spring_garden', 

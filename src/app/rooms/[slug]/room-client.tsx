@@ -98,6 +98,8 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 import { RoomGameOverlay } from '@/components/room-game-overlay';
 import { ExitRoomDialog } from '@/components/exit-room-dialog';
+import { RoomSoundboard } from '@/components/room-soundboard';
+import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 
 // RemoteAudio shifted to ActiveRoomManager
@@ -198,6 +200,8 @@ const Seat = ({
 
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
+  const [showSoundboard, setShowSoundboard] = useState(false);
+  const [activeLiveTheme, setActiveLiveTheme] = useState<'galaxy' | 'stars' | 'love' | 'rain' | 'none'>('none');
   const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
@@ -386,13 +390,59 @@ export function RoomClient({ room }: { room: Room }) {
         setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
       } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
+      } else if (msg.type === 'entrance' && msg.senderId !== currentUser?.uid) {
+        // AI WELCOME BOT LOGIC
+        handleAIWelcome(msg.senderName);
+      } else if (msg.type === 'emoji' && (msg as any).isSfx) {
+        // SOUNDBOARD SFX SYNC
+        playLocalSfx((msg as any).sfxId);
       }
     });
 
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
-  }, [firestoreMessages]);
+  }, [firestoreMessages, currentUser?.uid]);
+
+  const handleAIWelcome = async (newUserName: string) => {
+    if (!firestore || !room.id) return;
+    
+    // AI Greeting Logic: Welcome new users automatically
+    const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
+    await addDocumentNonBlocking(messagesRef, {
+      text: `Welcome ${newUserName}! Enjoy the vibes in ${room.title}! 💖✨`,
+      senderId: 'SYSTEM_BOT',
+      senderName: room.ownerId === currentUser?.uid ? 'You (via Bot)' : `${room.title} Bot`,
+      senderAvatar: '/logo.png',
+      type: 'text',
+      timestamp: serverTimestamp()
+    });
+  };
+
+  const handleSfxTrigger = async (sfxId: string) => {
+    if (!firestore || !room.id || !currentUser || !userProfile) return;
+    
+    // Broadcast SFX to all participants
+    const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
+    await addDocumentNonBlocking(messagesRef, {
+      text: `triggered ${sfxId}`,
+      senderId: currentUser.uid,
+      senderName: userProfile.username,
+      senderAvatar: userProfile.avatarUrl,
+      type: 'emoji',
+      isSfx: true,
+      sfxId: sfxId,
+      timestamp: serverTimestamp()
+    });
+
+    setShowSoundboard(false);
+  };
+
+  const playLocalSfx = (sfxId: string) => {
+    // In a real app, we'd play a sound file here. 
+    // For now, we vibrate and show a quick toast to indicate the effect.
+    if (window.navigator?.vibrate) window.navigator.vibrate(50);
+  };
 
   /**
    * NAVIGATION & BACK BUTTON INTERCEPTION
@@ -442,6 +492,15 @@ export function RoomClient({ room }: { room: Room }) {
 
     return ROOM_THEMES[0];
   }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
+
+  // Sync activeLiveTheme with the current theme's animationId
+  useEffect(() => {
+    if (currentTheme.animationId) {
+      setActiveLiveTheme(currentTheme.animationId as any);
+    } else {
+      setActiveLiveTheme('none');
+    }
+  }, [currentTheme.animationId]);
 
   const bgUrl = currentTheme.url;
 
@@ -658,6 +717,9 @@ export function RoomClient({ room }: { room: Room }) {
         crossOrigin="anonymous" 
        />
 
+      {/* LIVE BACKGROUND OVERLAY */}
+      <LiveBackground themeId={activeLiveTheme} />
+
       <div className="absolute inset-0 z-0">
         <Image 
           key={`${room.roomThemeId}`} 
@@ -670,6 +732,13 @@ export function RoomClient({ room }: { room: Room }) {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
+
+      {/* SOUNDBOARD OVERLAY */}
+      {showSoundboard && (
+        <div className="fixed inset-x-0 bottom-24 px-6 z-50 animate-in slide-in-from-bottom-10 duration-300">
+           <RoomSoundboard onTrigger={handleSfxTrigger} />
+        </div>
+      )}
 
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
@@ -917,6 +986,41 @@ export function RoomClient({ room }: { room: Room }) {
           >
             <X className="h-6 w-6" />
           </button>
+          
+          {/* Toolbar inside preview */}
+          <div className="absolute bottom-12 flex items-center gap-4 z-[410]">
+            <button 
+              onClick={() => setIsGiftPickerOpen(true)}
+              className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:scale-90 transition-transform"
+            >
+              <GiftIcon className="h-5 w-5" />
+            </button>
+
+            {/* SOUNDBOARD TRIGGER */}
+            {currentUserParticipant?.seatIndex !== undefined && (
+              <button 
+                onClick={() => setShowSoundboard(!showSoundboard)}
+                className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-primary active:scale-90 transition-transform"
+              >
+                <Volume2 className="h-5 w-5" />
+              </button>
+            )}
+
+            {/* LIVE THEME SELECTOR (PREMIUM) */}
+            {userProfile?.isAdmin && (
+              <button 
+                onClick={() => {
+                  const themes: any[] = ['galaxy', 'stars', 'love', 'rain', 'none'];
+                  const next = themes[(themes.indexOf(activeLiveTheme) + 1) % themes.length];
+                  setActiveLiveTheme(next);
+                }}
+                className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:scale-90 transition-transform"
+              >
+                <ImageIcon className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+
           {previewImage && (
             <div className="relative w-full h-full flex items-center justify-center p-4">
               <Image 

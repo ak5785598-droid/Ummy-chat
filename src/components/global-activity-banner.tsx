@@ -35,8 +35,18 @@ export function GlobalActivityBanner() {
 
   if (!activeEvent) return null;
 
-  // Only show if it happened in the last 60 seconds
-  const isRecent = activeEvent.timestamp?.toDate?.() > new Date(Date.now() - 60000);
+  // Extremely defensive check for timestamp to prevent crashes
+  let isRecent = false;
+  try {
+    const timestamp = activeEvent.timestamp;
+    if (timestamp) {
+      const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+      isRecent = date.getTime() > (Date.now() - 60000);
+    }
+  } catch (err) {
+    console.warn("GlobalActivityBanner: Date conversion failed", err);
+  }
+
   if (!isRecent) return null;
 
   return (

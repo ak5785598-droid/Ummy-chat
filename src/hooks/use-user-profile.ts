@@ -44,12 +44,21 @@ export interface UserProfile {
    bannedUntil: any;
    reason: string;
   };
+  relationship?: {
+    type: 'CP' | 'BFF' | 'Love' | 'None';
+    partnerUid: string;
+    partnerName: string;
+    partnerAvatar: string;
+    level: number;
+    startDate: any;
+  };
   tags?: string[];
   createdAt?: any;
   updatedAt?: any;
   lastSignInAt?: any;
   lastMoneyTreeClaimAt?: any;
   isAdmin?: boolean;
+  activityPoints?: number;
   idColor?: 'red' | 'blue' | 'purple' | 'none';
   isBudgetId?: boolean;
   isOnline?: boolean;
