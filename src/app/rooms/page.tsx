@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
+import { RankingCard, FamilyCard, CpCard } from '@/components/premium-feature-cards';
 
 const ICON_MAP: Record<string, any> = {
  Sparkles,
@@ -178,61 +179,43 @@ export default function RoomsPage() {
         plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
        >
         <CarouselContent>
-         {displaySlides.map((slide: any, idx: number) => {
-          const Icon = ICON_MAP[slide.iconName] || Sparkles;
-          return (
-           <CarouselItem key={idx}>
-            <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
-              {slide.imageUrl && (
-               <Image 
-                src={slide.imageUrl} 
-                alt="" 
-                fill 
-                className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" 
-                unoptimized 
-               />
-              )}
-              <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-              <div className="relative z-10">
-               <div className="flex items-center gap-1.5 mb-0.5">
-                 <Icon className="h-3 w-3 text-white animate-pulse" />
-                 <h3 className="text-sm font-bold uppercase tracking-tight text-white drop-shadow-md">{slide.title}</h3>
+          {displaySlides.map((slide: any, idx: number) => {
+           const Icon = ICON_MAP[slide.iconName] || Sparkles;
+           return (
+            <CarouselItem key={idx}>
+             <div className={cn("h-[120px] w-full rounded-[1.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+               {slide.imageUrl && (
+                <Image 
+                 src={slide.imageUrl} 
+                 alt="" 
+                 fill 
+                 className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" 
+                 unoptimized 
+                />
+               )}
+               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
+               <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon className="h-5 w-5 text-white animate-pulse" />
+                  <h3 className="text-2xl font-black uppercase tracking-tighter text-white drop-shadow-2xl">{slide.title}</h3>
+                </div>
+                <p className="text-[10px] font-black text-white/80 uppercase tracking-[0.4em] leading-none drop-shadow-md">{slide.subtitle || slide.sub}</p>
                </div>
-               <p className="text-[8px] font-bold text-white/70 uppercase tracking-wider leading-none">{slide.subtitle || slide.sub}</p>
-              </div>
-              <div className="absolute top-0 right-0 p-2 opacity-10">
-               <UmmyLogoIcon className="h-12 w-12 rotate-12" />
-              </div>
-            </div>
-           </CarouselItem>
-          );
-         })}
+               <div className="absolute top-0 right-0 p-4 opacity-10">
+                <UmmyLogoIcon className="h-20 w-20 rotate-12" />
+               </div>
+             </div>
+            </CarouselItem>
+           );
+          })}
         </CarouselContent>
        </Carousel>
       </div>
 
-      <section className="px-2 grid grid-cols-3 gap-2 mb-1.5">
-       <button onClick={() => router.push('/leaderboard?type=rich')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/30 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
-         <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-         <span className="absolute top-1 left-1.5 text-white font-bold uppercase text-[6px] tracking-wider opacity-90">{t.profile.level}</span>
-         <div className="relative z-10 group-hover:scale-110 transition-transform">
-          <Crown className="h-7 w-7 text-white fill-yellow-200 drop-shadow-[0_0_8px_#ffffffcc]" />
-         </div>
-       </button>
-       <button onClick={() => router.push('/leaderboard?type=games')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
-         <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
-         <span className="absolute top-1 left-1.5 text-white font-bold uppercase text-[6px] tracking-wider opacity-90">{t.nav.games}</span>
-         <div className="relative z-10 group-hover:scale-110 transition-transform">
-          <Gamepad2 className="h-7 w-7 text-white fill-indigo-200 drop-shadow-[0_0_8px_#ffffffcc]" />
-         </div>
-       </button>
-       <button onClick={() => router.push('/cp-challenge')} className="group relative aspect-square rounded-[1rem] bg-gradient-to-br from-[#ff4d4d] via-[#f43f5e] to-[#be123c] border-2 border-white/30 shadow-xl overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-center p-1.5">
-         <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
-         <span className="absolute top-1 left-1.5 text-white font-bold uppercase text-[6px] tracking-wider opacity-90">{t.profile.cp}</span>
-         <div className="relative z-10 group-hover:scale-110 transition-transform">
-          <Heart className="h-7 w-7 text-white fill-pink-200 drop-shadow-[0_0_8px_#ffffffcc]" />
-         </div>
-       </button>
+      <section className="px-2 grid grid-cols-3 gap-2.5 mb-3">
+        <RankingCard />
+        <FamilyCard />
+        <CpCard />
       </section>
 
       <div className="px-2 mb-1.5">
