@@ -30,7 +30,17 @@ import {
   Zap,
   ImageIcon,
   Loader,
-  ShieldCheck
+  ShieldCheck,
+  Minus,
+  MoreVertical,
+  Music,
+  Music2,
+  Phone,
+  Settings,
+  Shield,
+  Smile,
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -403,6 +413,20 @@ export function RoomClient({ room }: { room: Room }) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
   }, [firestoreMessages, currentUser?.uid]);
+
+  // LOCAL AUTO-WELCOME TRIGGER: Ensure user is greeted reliably upon entry
+  const hasAutoWelcomed = useRef(false);
+  useEffect(() => {
+    if (!userProfile?.username || hasAutoWelcomed.current) return;
+    
+    // Slight delay for premium onboarding feel
+    const timer = setTimeout(() => {
+      handleAIWelcome(userProfile.username || 'Tribe Member');
+      hasAutoWelcomed.current = true;
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [userProfile?.username]);
 
   const handleAIWelcome = async (newUserName: string) => {
     if (!firestore || !room.id) return;
@@ -814,12 +838,23 @@ export function RoomClient({ room }: { room: Room }) {
                            </div>
                          )}
                          
-                         <div className="flex items-start gap-2.5 pt-2 border-t border-white/5">
+                         <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
                             <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
                               INFO
                             </div>
                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
                                {room.announcement || "Welcome to the tribe!"}
+                            </p>
+                         </div>
+
+                         {/* PERSISTENT AI GUIDE BANNER */}
+                         <div className="flex items-start gap-2.5 pt-2 border-t border-white/5">
+                            <div className="mt-1 bg-primary text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
+                              <Sparkles className="h-2 w-2 fill-current" />
+                              UMMY AI
+                            </div>
+                            <p className="text-[11px] font-medium text-primary leading-snug tracking-tight italic">
+                               Hey! Main Ummy AI hoon, koi bhi sawal ho toh zaroor pucho! 💖✨
                             </p>
                          </div>
                        </div>
