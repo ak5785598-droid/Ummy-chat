@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useAgora } from '@/hooks/use-agora';
 import { useVoiceActivityContext } from './voice-activity-provider';
-import { collection, query, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { RoomParticipant } from '@/lib/types';
+
+// Helper to reliably convert Firestore String UID to a Numeric UID (Matches useAgora)
+const hashUidToNumber = (uid: string): number => {
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    const char = uid.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+};
 
 /**
  * PERSISTENT ROOM MANAGER
@@ -42,17 +53,6 @@ export function ActiveRoomManager() {
 
   useEffect(() => {
     if (!client || !user?.uid) return;
-
-    // Helper to reliably convert Firestore String UID to a Numeric UID (Matches useAgora)
-    const hashUidToNumber = (uid: string): number => {
-      let hash = 0;
-      for (let i = 0; i < uid.length; i++) {
-        const char = uid.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-      }
-      return Math.abs(hash);
-    };
 
     const numericUid = hashUidToNumber(user.uid);
 

@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack, IRemoteAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
-
-type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'failed';
+import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
@@ -38,7 +36,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    const numericUid = hashUidToNumber(uid);
 
    // Handle remote users
-   client.on('user-published', async (user, mediaType) => {
+   const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
     try {
       await client.subscribe(user, mediaType);
       if (mediaType === 'audio') {
@@ -49,15 +47,19 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     } catch (err) {
       console.error('[Agora] Subscribe FAILED:', err);
     }
-   });
+   };
 
-   client.on('user-unpublished', (user) => {
+   const handleUserUnpublished = (user: IAgoraRTCRemoteUser) => {
     setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-   });
+   };
 
-   client.on('user-left', (user) => {
+   const handleUserLeft = (user: IAgoraRTCRemoteUser) => {
     setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-   });
+   };
+
+   client.on('user-published', handleUserPublished);
+   client.on('user-unpublished', handleUserUnpublished);
+   client.on('user-left', handleUserLeft);
 
    try {
     console.warn('[Agora] Joining room:', roomId, 'as Numeric UID:', numericUid);
@@ -68,12 +70,19 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    } catch (error: any) {
     console.error('[Agora] Join FAILED:', error);
    }
+
+   return () => {
+    client.off('user-published', handleUserPublished);
+    client.off('user-unpublished', handleUserUnpublished);
+    client.off('user-left', handleUserLeft);
+   };
   };
 
-  init();
+  const cleanupPromise = init();
 
   return () => {
    const cleanup = async () => {
+    await cleanupPromise;
     if (clientRef.current) {
      if (localAudioTrack) {
        localAudioTrack.stop();
@@ -86,7 +95,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    };
    cleanup();
   };
- }, [roomId, uid]);
+ }, [roomId, uid, localAudioTrack]);
 
  // Handle Publishing (Mic control based on Seat status)
  useEffect(() => {
@@ -123,7 +132,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   };
 
   handlePublishing();
- }, [isInSeat, isReady]);
+ }, [isInSeat, isReady, localAudioTrack]);
 
  // Handle Music Publishing
  useEffect(() => {
@@ -149,7 +158,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    }
   };
   handleMusic();
- }, [musicStream, isInSeat, isReady]);
+ }, [musicStream, isInSeat, isReady, localMusicTrack]);
 
  // Handle Muting
  useEffect(() => {
