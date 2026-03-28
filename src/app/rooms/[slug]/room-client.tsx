@@ -407,13 +407,13 @@ export function RoomClient({ room }: { room: Room }) {
   const handleAIWelcome = async (newUserName: string) => {
     if (!firestore || !room.id) return;
     
-    // AI Greeting Logic: Welcome new users automatically
+    // AI Greeting Logic: High-Fidelity Welcome System
     const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
     await addDocumentNonBlocking(messagesRef, {
-      text: `Welcome ${newUserName}! Enjoy the vibes in ${room.title}! 💖✨`,
+      content: `Welcome to Ummy, ${newUserName}! Ummy mein aapka swagat hai, main Ummy AI hoon, aapki kya sahayta karoon? 💖✨`,
       senderId: 'SYSTEM_BOT',
-      senderName: room.ownerId === currentUser?.uid ? 'You (via Bot)' : `${room.title} Bot`,
-      senderAvatar: '/logo.png',
+      senderName: 'Ummy AI',
+      senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
       type: 'text',
       timestamp: serverTimestamp()
     });
