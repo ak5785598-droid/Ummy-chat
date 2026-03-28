@@ -406,13 +406,80 @@ export function RoomClient({ room }: { room: Room }) {
       } else if (msg.type === 'emoji' && (msg as any).isSfx) {
         // SOUNDBOARD SFX SYNC
         playLocalSfx((msg as any).sfxId);
+      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT') {
+        // UMmy AI GUARD & GUIDE ENGINE
+        handleAIEngine(msg);
       }
     });
 
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
-  }, [firestoreMessages, currentUser?.uid]);
+  }, [firestoreMessages, currentUser?.uid, canManageRoom]); // Added canManageRoom dependency for moderation authority
+
+  // AI GUARD STATE
+  const warningCounts = useRef<Record<string, number>>({});
+
+  const handleAIEngine = async (msg: any) => {
+    if (!firestore || !room.id || !msg.content) return;
+    const content = msg.content.toLowerCase();
+    
+    // 1. PROFANITY SHIELD (Moderation)
+    const slurs = ['abuse1', 'slur2', 'badword3']; // Placeholder for a real slur list
+    const isBad = slurs.some(s => content.includes(s));
+    
+    if (isBad) {
+      const currentStrikes = (warningCounts.current[msg.senderId] || 0) + 1;
+      warningCounts.current[msg.senderId] = currentStrikes;
+
+      if (currentStrikes < 3) {
+        // Send Warning
+        await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+          content: `@${msg.senderName}, aapke shabd niyam ke khilaf hain! please sudhar jao. (Warning ${currentStrikes}/3) 🛡️`,
+          senderId: 'SYSTEM_BOT',
+          senderName: 'Ummy AI Shield',
+          senderAvatar: 'https://img.icons8.com/isometric/512/shield.png',
+          type: 'text',
+          timestamp: serverTimestamp()
+        });
+      } else {
+        // STRIKE 3 - EXECUTE KICK (Only if I am Owner/Mod)
+        if (canManageRoom) {
+          await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+           content: `${msg.senderName} ko 3 warnings mil chuki hain. Room se bahar nikala jaa raha hai! 🚫`,
+           senderId: 'SYSTEM_BOT',
+           senderName: 'Ummy AI Shield',
+           senderAvatar: 'https://img.icons8.com/isometric/512/shield.png',
+           type: 'text',
+           timestamp: serverTimestamp()
+          });
+          handleKick(msg.senderId, 60); // Kick for 60 mins
+        }
+      }
+      return;
+    }
+
+    // 2. SMART GUIDE (Q&A)
+    const keywords = {
+      seat: "Khali bubble par click karke seat join karein!",
+      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
+      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
+      level: "Gifts aur Daily login se aapka level badhega!",
+      coin: "Coins store se purchase karein ya events join karein!"
+    };
+
+    const match = Object.entries(keywords).find(([k]) => content.includes(k));
+    if (match) {
+      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: `@${msg.senderName}, ${match[1]} 💖✨`,
+        senderId: 'SYSTEM_BOT',
+        senderName: 'Ummy AI Guide',
+        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
+        type: 'text',
+        timestamp: serverTimestamp()
+      });
+    }
+  };
 
   // LOCAL AUTO-WELCOME TRIGGER: Ensure user is greeted reliably upon entry
   const hasAutoWelcomed = useRef(false);
