@@ -86,6 +86,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
+import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse } from '@/actions/ai-actions';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';

@@ -30,7 +30,7 @@ export function GlobalActivityBanner() {
     );
   }, [firestore]);
 
-  const { data: activities } = useCollection<any>(activityQuery);
+  const { data: activities } = useCollection<any>(activityQuery, { silent: true });
   const activeEvent = activities?.[0];
 
   if (!activeEvent) return null;
