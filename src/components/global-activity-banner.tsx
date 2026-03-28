@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { 
   useFirestore, 
-  useCollection 
+  useCollection,
+  useMemoFirebase
 } from '@/firebase';
 import { 
   collection, 
@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function GlobalActivityBanner() {
   const firestore = useFirestore();
 
-  const activityQuery = useMemo(() => {
+  const activityQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'globalActivity'),
