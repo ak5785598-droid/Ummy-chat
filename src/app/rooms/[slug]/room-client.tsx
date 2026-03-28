@@ -781,8 +781,7 @@ export function RoomClient({ room }: { room: Room }) {
                           }
                         }}
                         className={cn(
-                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1 cursor-pointer active:scale-95 transition-all pointer-events-auto",
-                          isMe ? "self-end flex-row-reverse" : "self-start flex-row"
+                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row"
                         )}
                       >
                         <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
@@ -790,8 +789,8 @@ export function RoomClient({ room }: { room: Room }) {
                           <AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
                         </Avatar>
                         
-                        <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                           <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/40")}>
+                        <div className="flex flex-col items-start min-w-0">
+                           <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/40")}>
                              {msg.senderName || 'Tribe Member'}
                            </span>
                            
@@ -807,7 +806,7 @@ export function RoomClient({ room }: { room: Room }) {
                                  <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
                                </div>
                              )}
-                             {msg.content && <p className="break-all">{msg.content}</p>}
+                             {msg.content && <p className="break-words py-0.5">{msg.content}</p>}
                            </ChatMessageBubble>
                         </div>
                       </div>
