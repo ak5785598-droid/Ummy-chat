@@ -726,7 +726,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
         <div className="flex-1 w-full overflow-hidden mt-4 relative">
            <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
-              <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-20">
+              <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
                  {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
@@ -868,30 +868,39 @@ export function RoomClient({ room }: { room: Room }) {
       </footer>
 
       {showInput && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline">
-           <div className="bg-slate-900 rounded-[2rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10">
-              <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[9px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-4 w-4" /></button></div>
-              <div className="flex gap-2">
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-12 font-headline pointer-events-none">
+           <div 
+             className="absolute inset-0 bg-black/5 pointer-events-auto" 
+             onClick={() => setShowInput(false)} 
+           />
+           <div className="relative z-10 bg-slate-900/40 backdrop-blur-2xl rounded-full p-2.5 px-3 flex items-center gap-3 animate-in slide-in-from-bottom-5 border border-white/10 pointer-events-auto shadow-2xl mx-2">
+              <input 
+                type="file" 
+                ref={imageInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleImageUpload} 
+              />
+              <button 
+                type="button"
+                disabled={isUploadingImage}
+                onClick={() => imageInputRef.current?.click()}
+                className="bg-white/10 text-white h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 border border-white/5"
+              >
+                 {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5 opacity-70" />}
+              </button>
+              <form className="flex-1 flex items-center gap-2" onSubmit={(e: React.FormEvent) => { handleSendMessage(e); setShowInput(false); }}>
                  <input 
-                   type="file" 
-                   ref={imageInputRef} 
-                   className="hidden" 
-                   accept="image/*" 
-                   onChange={handleImageUpload} 
+                   autoFocus 
+                   value={messageText} 
+                   onChange={(e) => setMessageText(e.target.value)} 
+                   className="flex-1 bg-transparent border-none focus:ring-0 px-1 text-white text-[13px] placeholder:text-white/30" 
+                   placeholder="Type a message..." 
                  />
-                 <button 
-                   type="button"
-                   disabled={isUploadingImage}
-                   onClick={() => imageInputRef.current?.click()}
-                   className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
-                 >
-                    {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
+                 <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
+                    <Mail className="h-5 w-5" />
                  </button>
-                 <form className="flex-1 flex gap-2" onSubmit={(e: React.FormEvent) => { handleSendMessage(e); setShowInput(false); }}>
-                    <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
-                    <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button>
-                 </form>
-              </div>
+              </form>
            </div>
         </div>
       )}
