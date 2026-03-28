@@ -24,6 +24,8 @@ interface RoomSeatMenuDialogProps {
  occupantAvatarUrl?: string | null;
  canManage: boolean;
  currentUserId?: string;
+ currentUserName?: string | null;
+ currentUserAvatarUrl?: string | null;
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
@@ -44,6 +46,8 @@ export function RoomSeatMenuDialog({
  occupantAvatarUrl,
  canManage,
  currentUserId,
+ currentUserName,
+ currentUserAvatarUrl,
  onLeaveSeat,
  onKick,
  onSendGift
@@ -59,7 +63,9 @@ export function RoomSeatMenuDialog({
   const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', currentUserId);
   setDocumentNonBlocking(participantRef, {
    seatIndex: seatIndex,
-   isMuted: true,
+   isMuted: false,
+   name: currentUserName || 'Tribe Member',
+   avatarUrl: currentUserAvatarUrl || null,
    updatedAt: serverTimestamp()
   }, { merge: true });
   

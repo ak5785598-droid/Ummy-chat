@@ -53,15 +53,16 @@ export function useVoiceActivity(stream: MediaStream | null, audioContext: Audio
     const rms = Math.sqrt(sum / dataArray.length);
     
     // Dynamic threshold based on ambient noise
-    const baseThreshold = 8;
-    const adaptiveThreshold = Math.max(baseThreshold, peakValue * 0.1);
+    const baseThreshold = 12; // Increased from 8 to ignore low-level ambient noise
+    const adaptiveThreshold = Math.max(baseThreshold, peakValue * 0.12);
     
     // Calculate intensity (0-100 scale)
     const maxPossibleValue = 255;
-    let currentIntensity = Math.min(100, (rms / maxPossibleValue) * 100 * 3); // Scale up for sensitivity
+    // Reduced from * 3 to * 1.5 for more realistic sensitivity
+    let currentIntensity = Math.min(100, (rms / maxPossibleValue) * 100 * 1.5); 
     
     // Smooth intensity changes to prevent flickering
-    currentIntensity = Math.max(0, currentIntensity - 5); // Minimum threshold
+    currentIntensity = Math.max(0, currentIntensity - 2); // Minimum threshold filter
     
     const isCurrentlySpeaking = rms > adaptiveThreshold;
     

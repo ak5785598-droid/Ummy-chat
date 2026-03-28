@@ -44,30 +44,33 @@ export function RoomPresenceManager() {
    const profileRef = doc(firestore, 'users', uid, 'profile', uid);
    const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-   if (lastRoomId.current !== roomId) {
-    lastRoomId.current = roomId;
+   const existingSnap = await getDoc(participantRef);
+   const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-    const existingSnap = await getDoc(participantRef);
-    const existingData = existingSnap.exists() ? existingSnap.data() : null;
+   const isNewRoom = lastRoomId.current !== roomId;
+   if (isNewRoom || (userProfile && existingData?.name === 'Guest')) {
+    lastRoomId.current = roomId;
 
     const batch = writeBatch(firestore);
     
-    addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
-     content: 'entered the room',
-     senderId: uid,
-     senderName: userMetadata.username || 'Tribe Member',
-     senderAvatar: userMetadata.avatarUrl || null,
-     chatRoomId: roomId,
-     timestamp: serverTimestamp(),
-     type: 'entrance'
-    });
+    if (isNewRoom) {
+      addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+       content: 'entered the room',
+       senderId: uid,
+       senderName: userMetadata.username || 'Tribe Member',
+       senderAvatar: userMetadata.avatarUrl || null,
+       chatRoomId: roomId,
+       timestamp: serverTimestamp(),
+       type: 'entrance'
+      });
 
-    if (!existingSnap.exists()) {
-     batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+      if (!existingSnap.exists()) {
+       batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+      }
+
+      batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+      batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
     }
-
-    batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
-    batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
 
     batch.set(participantRef, {
      uid: uid,
@@ -76,9 +79,9 @@ export function RoomPresenceManager() {
      activeFrame: userMetadata.activeFrame || 'None',
      activeWave: userMetadata.activeWave || 'Default',
      activeBubble: userMetadata.activeBubble || 'None',
-     joinedAt: serverTimestamp(),
+     joinedAt: existingData?.joinedAt || serverTimestamp(),
      lastSeen: serverTimestamp(),
-     isMuted: true,
+     isMuted: existingData?.isMuted ?? true,
      seatIndex: existingData?.seatIndex ?? 0,
      accountNumber: userMetadata.accountNumber || null,
     }, { merge: true });

@@ -142,11 +142,6 @@ const Seat = ({
           />
         )}
         
-        {/* Fallback for other users (static wave when not muted) */}
-        {occupant && occupant.uid !== currentUser?.uid && !occupant.isMuted && (
-          <div className="absolute -inset-1 rounded-full border-2 animate-voice-wave" style={{ color: theme.accentColor }} />
-        )}
-        
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
           <div className={cn(
             "relative p-1 rounded-full",
@@ -911,6 +906,8 @@ export function RoomClient({ room }: { room: Room }) {
         occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
+        currentUserName={userProfile?.username}
+        currentUserAvatarUrl={userProfile?.avatarUrl}
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
         onSendGift={handleOpenGiftPickerFromMenu}
