@@ -71,7 +71,7 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  if (!user || !firestore || !userProfile) return;
+  if (!user || !firestore) return;
 
   setIsSubmitting(true);
 
@@ -79,44 +79,37 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
    const roomRef = doc(firestore, 'chatRooms', user.uid);
    
    // IDENTITY SYNC PROTOCOL: 
-   // Generate a sequential room number starting at 100
-   const roomNumber = await runTransaction(firestore, async (transaction: Transaction) => {
-    const counterRef = doc(firestore, 'appConfig', 'counters');
-    const counterDoc = await transaction.get(counterRef);
-    let nextRoomId = 100;
+   // Try to generate a sequential room number, but fallback to random if denied
+   let roomNumber: string;
+   try {
+     roomNumber = await runTransaction(firestore, async (transaction: Transaction) => {
+       const counterRef = doc(firestore, 'appConfig', 'counters');
+       const counterDoc = await transaction.get(counterRef);
+       let nextRoomId = 100;
 
-    if (user.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
-      // Special check for Creator's first room
-      if (counterDoc.exists() && counterDoc.data()?.lastRoomId !== undefined) {
-        const lastId = counterDoc.data().lastRoomId;
-        if (lastId < 100) {
-           nextRoomId = 100;
-        } else {
-           nextRoomId = lastId + 1;
-        }
-      } else {
-        nextRoomId = 100;
-      }
-    } else {
-      if (counterDoc.exists()) {
-        const data = counterDoc.data();
-        const lastId = data?.lastRoomId;
-        if (lastId === undefined || lastId < 100) {
-          nextRoomId = 101; 
-        } else {
-          nextRoomId = lastId + 1;
-        }
-      } else {
-        nextRoomId = 101;
-      }
-    }
+       if (user.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
+         if (counterDoc.exists() && counterDoc.data()?.lastRoomId !== undefined) {
+           const lastId = counterDoc.data().lastRoomId;
+           nextRoomId = lastId < 100 ? 100 : lastId + 1;
+         }
+       } else {
+         if (counterDoc.exists()) {
+           const data = counterDoc.data();
+           const lastId = data?.lastRoomId;
+           nextRoomId = (lastId === undefined || lastId < 100) ? 101 : lastId + 1;
+         } else {
+           nextRoomId = 101;
+         }
+       }
 
-    transaction.set(counterRef, { lastRoomId: nextRoomId }, { merge: true });
-    return nextRoomId.toString();
-   });
-   
-   // Collision Avoidance logic could go here, but for now we generate and set.
-   // In a high-traffic app, we would query if this number exists.
+       transaction.set(counterRef, { lastRoomId: nextRoomId }, { merge: true });
+       return nextRoomId.toString();
+     });
+   } catch (txError) {
+     console.warn('[Identity Sync] Transaction failed, using random ID fallback:', txError);
+     // Fallback: Use a random 6-digit number if we don't have permission to write to appConfig
+     roomNumber = Math.floor(100000 + Math.random() * 900000).toString();
+   }
    
    await setDoc(roomRef, {
     id: user.uid,
@@ -132,12 +125,14 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
     participantCount: 0, 
     announcement: 'Welcome to the frequency!',
     roomThemeId: 'misty',
-    isPinned: false
+    isPinned: false,
+    participantUids: [user.uid]
    });
    
    setOpen(false);
    router.push(`/rooms/${user.uid}`);
   } catch (error: any) {
+   console.error('[Room Creation] FAILED:', error);
    toast({ variant: 'destructive', title: 'Room Failed', description: error.message });
   } finally {
    setIsSubmitting(false);
