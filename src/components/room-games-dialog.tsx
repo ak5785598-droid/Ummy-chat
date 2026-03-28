@@ -29,8 +29,9 @@ interface RoomGamesDialogProps {
 const FALLBACK_GAMES = [
   { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: false, slug: 'roulette' },
   { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
-  { id: 'wild-party', title: 'Wild Party', iconId: 'game-wild-party', isNew: false, slug: 'forest-party' },
-  { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: false, slug: 'ludo' },
+  { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: true, slug: 'ludo' },
+  { id: 'carrom', title: 'Carrom', iconId: 'game-carrom', isNew: true, slug: 'carrom' },
+  { id: 'chess', title: 'Chess', iconId: 'game-chess', isNew: true, slug: 'chess' },
 ];
 
 /**
