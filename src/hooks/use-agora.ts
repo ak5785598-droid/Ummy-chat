@@ -24,7 +24,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
  const [isReady, setIsReady] = useState(false);
 
  useEffect(() => {
-  if (!APP_ID || !roomId || !uid) return;
+  if (!APP_ID) {
+    console.warn('[Agora] NEXT_PUBLIC_AGORA_APP_ID is missing in environment variables. Voice system will NOT initialize.');
+    return;
+  }
+  if (!roomId || !uid) return;
 
   const init = async () => {
    if (!clientRef.current) {
