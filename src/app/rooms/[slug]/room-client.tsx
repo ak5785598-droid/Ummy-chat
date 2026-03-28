@@ -386,6 +386,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
+    // CRITICAL: Filter for duplicates - Only the Room Owner handles the AI automation logic
+    const isLocalOwner = currentUser?.uid === room.ownerId;
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
     // Identify the starting point for the new delta
@@ -403,12 +405,13 @@ export function RoomClient({ room }: { room: Room }) {
         setIsLuckyRainActive(true);
       } else if (msg.type === 'entrance') {
         // AI WELCOME BOT LOGIC: Welcome everyone (including current user)
-        handleAIWelcome(msg.senderName);
+        // Guard: Only owner client speaks as AI
+        if (isLocalOwner) handleAIWelcome(msg.senderName);
       } else if (msg.type === 'emoji' && (msg as any).isSfx) {
         // SOUNDBOARD SFX SYNC
         playLocalSfx((msg as any).sfxId);
-      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT') {
-        // UMmy AI GUARD & GUIDE ENGINE
+      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isLocalOwner) {
+        // UMmy AI GUARD & GUIDE ENGINE: Only owner client handles conversational triggers
         handleAIEngine(msg);
       }
     });
@@ -416,7 +419,9 @@ export function RoomClient({ room }: { room: Room }) {
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
-  }, [firestoreMessages, currentUser?.uid, canManageRoom]); // Added canManageRoom dependency for moderation authority
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId]); // Added room.ownerId for correct guard
+
+  // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
 
   // AI GUARD STATE
   const warningCounts = useRef<Record<string, number>>({});
@@ -651,7 +656,7 @@ export function RoomClient({ room }: { room: Room }) {
       const url = await getDownloadURL(result.ref);
       await handleSendMessage(undefined, url);
       setShowInput(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image upload failed:", error);
       toast({ variant: 'destructive', title: 'Upload Failed' });
     } finally {
@@ -904,7 +909,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
-        <div className="flex-1 w-full overflow-hidden mt-4 relative">
+        <div className="flex-1 w-full overflow-hidden mt-4 relative flex flex-col">
            <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
               <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
                  {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
