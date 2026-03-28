@@ -563,15 +563,29 @@ export function RoomClient({ room }: { room: Room }) {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
       musicAudioRef.current.src = url;
-      musicAudioRef.current.play().catch(e => {
-        console.warn('[Music Sync] Play failed:', e);
-        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
-      });
       
-      // @ts-ignore
-      const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
-      if (stream) {
-        setMusicStream(stream);
+      // Important: captureStream works best on an active, non-suspended element
+      const playPromise = musicAudioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log('[Music] Play started, capturing stream...');
+          // Slight delay to ensure the browser has initialized the audio tracks
+          setTimeout(() => {
+            if (musicAudioRef.current) {
+              // @ts-ignore
+              const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+              if (stream && stream.getAudioTracks().length > 0) {
+                setMusicStream(stream);
+                console.log('[Music] Stream captured successfully');
+              } else {
+                console.warn('[Music] Capture returned empty stream, retrying...');
+              }
+            }
+          }, 200);
+        }).catch(e => {
+          console.warn('[Music] Play failed:', e);
+          toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
+        });
       }
     }
   };
@@ -604,7 +618,11 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       
-      <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
+       <audio 
+        ref={musicAudioRef} 
+        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }} 
+        crossOrigin="anonymous" 
+       />
 
       <div className="absolute inset-0 z-0">
         <Image 

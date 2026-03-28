@@ -147,7 +147,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
  // EFFECT 3: Dual-Stream Music Track (Separate Phantom Client)
  useEffect(() => {
-  if (!APP_ID || !roomId || !uid || !AgoraRTC || !isInSeat) return;
+  if (!APP_ID || !roomId || !uid || !AgoraRTC) return;
 
   const handleMusic = async () => {
    if (musicStream) {
@@ -156,12 +156,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       console.warn('[Agora-Music] Initializing Music Bot...');
       const musicClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       musicClientRef.current = musicClient;
-      const musicUid = hashUidToNumber(uid) + 10000000; // Use high-offset UID for music bot
+      
+      // Use XOR mask for safer secondary UID (ensures it's within uint32)
+      const musicUid = (hashUidToNumber(uid) ^ 0x01010101) >>> 0;
       
       try {
         await musicClient.join(APP_ID, roomId, null, musicUid);
         setIsMusicReady(true);
-        console.warn('[Agora-Music] Bot Joined Room');
+        console.warn('[Agora-Music] Bot Joined Room:', musicUid);
       } catch (err) {
         console.error('[Agora-Music] Bot Join FAILED:', err);
         return;
@@ -215,7 +217,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       musicClientRef.current = null;
     }
   };
- }, [musicStream, isInSeat, roomId, uid, isMusicReady, localMusicTrack]);
+ }, [musicStream, roomId, uid, isMusicReady, localMusicTrack]);
 
  // EFFECT 4: Mute Control
  useEffect(() => {
