@@ -86,7 +86,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
-import { useRoomContext } from '@/components/room-provider';
+import { getUmmyAIResponse } from '@/actions/ai-actions';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
@@ -473,7 +473,26 @@ export function RoomClient({ room }: { room: Room }) {
       await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
         content: `@${msg.senderName}, ${match[1]} 💖✨`,
         senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI Guide',
+        senderName: 'Ummy AI',
+        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
+        type: 'text',
+        timestamp: serverTimestamp()
+      });
+      return; // Skip LLM if we matched a local keyword
+    }
+
+    // 3. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy')
+    const triggerWords = ['ai', 'ummy', 'ummi'];
+    const isTriggered = triggerWords.some(t => content.includes(t));
+    
+    if (isTriggered) {
+      // Show local "AI is typing..." simulator (Optional, for now just call)
+      const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
+      
+      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: aiResponse,
+        senderId: 'SYSTEM_BOT',
+        senderName: 'Ummy AI',
         senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
         type: 'text',
         timestamp: serverTimestamp()
