@@ -155,10 +155,12 @@ const Seat = ({
               style={{ backgroundColor: theme.seatColor || 'rgba(255, 255, 255, 0.1)' }}
             >
               {occupant ? (
-                <Avatar className="h-full w-full p-0.5">
-                  <AvatarImage src={occupant.avatarUrl || undefined} />
-                  <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
+                  <Avatar className="h-full w-full p-0.5">
+                    <AvatarImage src={occupant.avatarUrl || undefined} />
+                    <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
               ) : isLocked ? (
                 <Lock className="h-3.5 w-3.5 text-red-500/40" />
               ) : (
