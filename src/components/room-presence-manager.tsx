@@ -47,47 +47,50 @@ export function RoomPresenceManager() {
    const existingSnap = await getDoc(participantRef);
    const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-   const isNewRoom = lastRoomId.current !== roomId;
-   if (isNewRoom || (userProfile && existingData?.name === 'Guest')) {
-    lastRoomId.current = roomId;
+    const isNewRoom = lastRoomId.current !== roomId;
+    // Fix: Redundant check for Guest status to ensure profile sync once loaded
+    const needsProfileSync = userProfile && (existingData?.name === 'Guest' || !existingData?.avatarUrl || existingData?.name !== userMetadata.username);
 
-    const batch = writeBatch(firestore);
-    
-    if (isNewRoom) {
-      addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
-       content: 'entered the room',
-       senderId: uid,
-       senderName: userMetadata.username || 'Tribe Member',
-       senderAvatar: userMetadata.avatarUrl || null,
-       chatRoomId: roomId,
-       timestamp: serverTimestamp(),
-       type: 'entrance'
-      });
+    if (isNewRoom || needsProfileSync) {
+     lastRoomId.current = roomId;
 
-      if (!existingSnap.exists()) {
-       batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
-      }
+     const batch = writeBatch(firestore);
+     
+     if (isNewRoom) {
+       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+        content: 'entered the room',
+        senderId: uid,
+        senderName: userMetadata.username || 'Tribe Member',
+        senderAvatar: userMetadata.avatarUrl || null,
+        chatRoomId: roomId,
+        timestamp: serverTimestamp(),
+        type: 'entrance'
+       });
 
-      batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
-      batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+       if (!existingSnap.exists()) {
+        batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+       }
+
+       batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+       batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+     }
+
+     batch.set(participantRef, {
+      uid: uid,
+      name: userMetadata.username || 'Guest',
+      avatarUrl: userMetadata.avatarUrl || null,
+      activeFrame: userMetadata.activeFrame || 'None',
+      activeWave: userMetadata.activeWave || 'Default',
+      activeBubble: userMetadata.activeBubble || 'None',
+      joinedAt: existingData?.joinedAt || serverTimestamp(),
+      lastSeen: serverTimestamp(),
+      isMuted: existingData?.isMuted ?? true,
+      seatIndex: existingData?.seatIndex ?? 0,
+      accountNumber: userMetadata.accountNumber || null,
+     }, { merge: true });
+
+     batch.commit().catch(console.error);
     }
-
-    batch.set(participantRef, {
-     uid: uid,
-     name: userMetadata.username || 'Guest',
-     avatarUrl: userMetadata.avatarUrl || null,
-     activeFrame: userMetadata.activeFrame || 'None',
-     activeWave: userMetadata.activeWave || 'Default',
-     activeBubble: userMetadata.activeBubble || 'None',
-     joinedAt: existingData?.joinedAt || serverTimestamp(),
-     lastSeen: serverTimestamp(),
-     isMuted: existingData?.isMuted ?? true,
-     seatIndex: existingData?.seatIndex ?? 0,
-     accountNumber: userMetadata.accountNumber || null,
-    }, { merge: true });
-
-    batch.commit().catch(console.error);
-   }
 
    if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
    heartbeatInterval.current = setInterval(() => {

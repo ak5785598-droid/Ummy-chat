@@ -42,15 +42,18 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    { urls: 'stun:stun.l.google.com:19302' },
    { urls: 'stun:stun1.l.google.com:19302' },
    { urls: 'stun:stun2.l.google.com:19302' },
+   { urls: 'stun:stun3.l.google.com:19302' },
+   { urls: 'stun:stun4.l.google.com:19302' },
    { urls: 'stun:stun.services.mozilla.com' },
    { urls: 'stun:global.stun.twilio.com:3478' },
-   // IMPORTANT: ADD YOUR TURN SERVERS HERE FOR MOBILE NETWORK RELIABILITY
-   // { urls: 'turn:your-turn-server.com', username: 'user', credential: 'password' }
+   { urls: 'stun:stun.relay.metered.ca:80' },
+   // STUN for Indian ISP (Jio/Airtel) compatibility
+   { urls: 'stun:stun.jio.com' }
   ],
   iceCandidatePoolSize: 10,
   bundlePolicy: 'max-bundle',
   rtcpMuxPolicy: 'require',
-  iceTransportPolicy: 'all' // Try 'relay' to force TURN if testing, 'all' for normal
+  iceTransportPolicy: 'all' 
  };
 
  // ---------------------------------------------------------------------------
@@ -213,9 +216,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     };
 
    // V2: Transceiver-based Track Management
+   // Fix: Always use 'sendrecv' for Speakers, even if mic is delayed
    const micTrack = localStream?.getAudioTracks()[0];
-   if (micTrack) {
-    pc.addTransceiver(micTrack, { direction: 'sendrecv', streams: [localStream!] });
+   if (isInSeat) {
+    pc.addTransceiver(micTrack || 'audio', { direction: 'sendrecv', streams: [localStream!].filter(s => !!s) });
    } else {
     pc.addTransceiver('audio', { direction: 'recvonly' });
    }

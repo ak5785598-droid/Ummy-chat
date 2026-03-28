@@ -92,14 +92,11 @@ export function ActiveRoomManager() {
     };
 
     // Global interaction listeners to wake up audio context
-    window.addEventListener('click', resumeContext, { once: true });
-    window.addEventListener('touchstart', resumeContext, { once: true });
-    window.addEventListener('keydown', resumeContext, { once: true });
+    const events = ['click', 'touchstart', 'keydown', 'mousedown', 'mouseup'];
+    events.forEach(e => window.addEventListener(e, resumeContext, { once: true }));
 
     return () => {
-      window.removeEventListener('click', resumeContext);
-      window.removeEventListener('touchstart', resumeContext);
-      window.removeEventListener('keydown', resumeContext);
+      events.forEach(e => window.removeEventListener(e, resumeContext));
     };
   }, []);
 
