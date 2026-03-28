@@ -137,42 +137,21 @@ export default function RoomsPage() {
    <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700">
     
     <header className="flex items-center justify-between px-2 pt-safe pb-1 shrink-0">
-     <div className="pt-5 flex items-center justify-between w-full">
-      <div className="flex items-center gap-2.5">
-      <button 
-       onClick={() => setHeaderTab('recommend')}
-       className={cn(
-        "text-lg font-bold uppercase tracking-tight transition-all",
-        headerTab === 'recommend' ? "text-slate-900 scale-105" : "text-slate-300"
-       )}
-      >
-       {t.home.recommend}
-      </button>
-      <button 
-       onClick={() => setHeaderTab('me')}
-       className={cn(
-        "text-lg font-bold uppercase tracking-tight transition-all",
-        headerTab === 'me' ? "text-slate-900 scale-105" : "text-slate-300"
-       )}
-      >
-       {t.home.mine}
-      </button>
-     </div>
-     <div className="flex items-center gap-1.5">
-      <UserSearchDialog />
-      <button 
-       onClick={() => user?.uid ? router.push(`/rooms/${user.uid}`) : null}
-       className="p-1 bg-white rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all text-slate-800"
-      >
-       <Home className="h-4 w-4" />
-      </button>
-     </div>
-    </div>
-   </header>
+      <div className="pt-2 flex items-center justify-between w-full">
+         <div className="flex items-center gap-4">
+            <button onClick={() => setHeaderTab('recommend')} className={cn("text-2xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900 scale-105" : "text-slate-300 opacity-50")}>Recommend</button>
+            <button onClick={() => setHeaderTab('me')} className={cn("text-2xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'me' ? "text-slate-900 scale-105" : "text-slate-300 opacity-50")}>Me</button>
+         </div>
+         <div className="flex items-center gap-2">
+            <UserSearchDialog />
+            <button onClick={() => user?.uid ? router.push(`/rooms/${user.uid}`) : null} className="p-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-lg border border-white/20 active:scale-90 transition-all"><Home className="h-5 w-5 text-slate-800" /></button>
+         </div>
+      </div>
+    </header>
 
-    {headerTab === 'recommend' ? (
-     <>
-      <div className="px-2 mb-1.5 mt-1">
+     {headerTab === 'recommend' ? (
+      <>
+       <div className="px-2 mb-1 mt-0">
        <Carousel 
         className="w-full" 
         opts={{ loop: true }}
@@ -218,23 +197,40 @@ export default function RoomsPage() {
         <CpCard />
       </section>
 
-      <div className="px-2 mb-1.5">
-       <div className="bg-gradient-to-r from-[#9C27B0] via-[#E91E63] to-[#9C27B0] h-8 rounded-full shadow-lg border-2 border-white/40 flex items-center justify-between px-4 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
-        <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
-        <div className="flex items-center gap-1.5 relative z-10">
-          <Star className="h-3 w-3 text-yellow-400 fill-current animate-pulse" />
-          <span className="text-white font-bold uppercase text-[9px] tracking-wider drop-shadow-md">{t.home.topRooms}</span>
-        </div>
-        <div className="flex -space-x-1 relative z-10">
-         {[1, 2, 3, 4].map((i) => (
-          <Avatar key={i} className="h-4 w-4 border-2 border-white shadow-md">
-           <AvatarImage src={`https://picsum.photos/seed/${i + 50}/100`} />
-           <AvatarFallback className="text-[4px] bg-slate-200">U</AvatarFallback>
-          </Avatar>
-         ))}
-        </div>
+       <div className="px-2 mb-3">
+         <div className="bg-gradient-to-r from-purple-500/20 via-pink-500/10 to-purple-500/20 backdrop-blur-xl rounded-[2rem] p-4 border border-white/20 shadow-2xl overflow-hidden relative group">
+           <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+           <div className="flex items-center justify-between mb-3 relative z-10 px-1">
+              <div className="flex items-center gap-2">
+                 <div className="bg-yellow-400 p-1 rounded-full shadow-lg animate-pulse">
+                    <Star className="h-3 w-3 text-white fill-current" />
+                 </div>
+                 <span className="text-white font-black uppercase text-xs tracking-[0.2em] italic drop-shadow-md">Top Rooms Grid</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-white/40" />
+           </div>
+           <div className="flex items-center gap-3.5 overflow-x-auto no-scrollbar pb-1 relative z-10">
+              {roomsData?.slice(0, 10).map((room: any) => (
+                <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-90 transition-all cursor-pointer">
+                   <div className="relative">
+                      <Avatar className="h-16 w-16 border-[3px] border-white/30 shadow-2xl ring-2 ring-white/5">
+                         <AvatarImage src={room.coverUrl} className="object-cover" />
+                         <AvatarFallback className="bg-slate-200">U</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1 shadow-lg">
+                         <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                         <span className="text-[8px] font-black text-white">{room.participantCount || 0}</span>
+                      </div>
+                   </div>
+                   <span className="text-[9px] font-black text-white/70 uppercase tracking-tighter truncate w-16 text-center">{room.title}</span>
+                </div>
+              ))}
+              {!roomsData && [1,2,3,4,5].map(i => (
+                <div key={i} className="h-16 w-16 rounded-full bg-white/10 animate-pulse shrink-0" />
+              ))}
+           </div>
+         </div>
        </div>
-      </div>
 
       <div className="px-2 mb-1.5">
        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
