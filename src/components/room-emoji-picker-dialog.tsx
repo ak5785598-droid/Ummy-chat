@@ -33,11 +33,6 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: RoomEmojiP
   const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
   updateDocumentNonBlocking(pRef, { activeEmoji: emoji, updatedAt: serverTimestamp() });
   
-  // Auto-clear active emoji after 5 seconds for visual focus
-  setTimeout(() => {
-   updateDocumentNonBlocking(pRef, { activeEmoji: null });
-  }, 5000);
-  
   onOpenChange(false);
  };
 

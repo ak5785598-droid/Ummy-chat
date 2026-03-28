@@ -21,10 +21,10 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: EmojiReactionOverla
       const newEmoji = { id: Date.now(), emoji };
       setActiveEmoji(newEmoji);
 
-      // Keep static for the full 5 seconds
+      // Match the new 3-second rule
       const timer = setTimeout(() => {
         setActiveEmoji(null);
-      }, 5000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [emoji]);

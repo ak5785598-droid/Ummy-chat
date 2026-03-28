@@ -347,6 +347,19 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
+  // PERSISTENT EMOJI AUTO-CLEAR (3-SECOND RULE)
+  useEffect(() => {
+    if (!firestore || !room.id || !currentUser?.uid || !currentUserParticipant?.activeEmoji) return;
+
+    const clearTimer = setTimeout(() => {
+      console.log('[Emoji] Auto-clearing active emoji after 3s...');
+      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+      updateDocumentNonBlocking(pRef, { activeEmoji: null });
+    }, 3000);
+
+    return () => clearTimeout(clearTimer);
+  }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
+
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
     if (!firestoreMessages || firestoreMessages.length === 0) return;
