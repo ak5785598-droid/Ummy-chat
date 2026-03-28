@@ -68,7 +68,25 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       await client.subscribe(user, mediaType);
       if (mediaType === 'audio') {
        console.warn('[Agora] Remote user published audio:', user.uid);
-       user.audioTrack?.play();
+       
+       // Resume audio context for browser autoplay policy
+       if (typeof window !== 'undefined' && (window as any).AudioContext) {
+        const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+         await ctx.resume();
+         console.log('[Agora] AudioContext resumed');
+        }
+       }
+       
+       // Play remote track with error handling
+       try {
+        user.audioTrack?.play();
+        console.warn('[Agora] Remote audio PLAYING for uid:', user.uid);
+       } catch (playErr) {
+        console.error('[Agora] Remote audio play FAILED:', playErr);
+       }
+       
        setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
       }
     } catch (err) {
@@ -135,17 +153,19 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    if (isInSeat) {
     if (!localAudioTrack) {
      try {
+      console.log('[Agora] Creating local audio track...');
       const track = await AgoraRTC.createMicrophoneAudioTrack({
        AEC: true,
        AGC: true,
        ANS: true,
        encoderConfig: 'high_quality_stereo'
       });
+      console.log('[Agora] Local audio track CREATED:', !!track);
       setLocalAudioTrack(track);
       await client.publish(track);
-      console.warn('[Agora] Mic PUBLISHED successfully');
-     } catch (err) {
-      console.error('[Agora] Mic Publish FAILED:', err);
+      console.warn('[Agora] Mic PUBLISHED successfully - UID:', hashUidToNumber(uid!));
+     } catch (err: any) {
+      console.error('[Agora] Mic Publish FAILED:', err.message || err);
      }
     }
    } else {
