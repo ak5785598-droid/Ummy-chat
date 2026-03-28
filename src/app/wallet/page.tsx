@@ -578,7 +578,8 @@ function WalletContent() {
          </footer>
         )}
        </div>
-     )}
+      )}
+     </div>
 
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
@@ -697,12 +698,14 @@ function WalletContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={
-      <div className="flex h-[80vh] items-center justify-center bg-white">
-        <Loader className="animate-spin text-primary h-8 w-8" />
-      </div>
-    }>
-      <WalletContent />
-    </Suspense>
+    <AppLayout>
+      <Suspense fallback={
+        <div className="flex h-[80vh] items-center justify-center bg-white">
+          <Loader className="animate-spin text-primary h-8 w-8" />
+        </div>
+      }>
+        <WalletContent />
+      </Suspense>
+    </AppLayout>
   );
 }
