@@ -49,15 +49,17 @@ export function VoiceWaveIndicator({
   return (
     <div 
       className={cn(
-        "absolute -inset-1 rounded-full border-2 transition-all duration-150",
+        "absolute -inset-2 rounded-full border-2 transition-all duration-150 z-0",
         waveClass,
         className
       )}
       style={{ 
         color: accentColor,
+        borderColor: accentColor,
         transform: `scale(${dynamicScale})`,
         opacity: dynamicOpacity,
-        boxShadow: `0 0 ${intensity / 5}px ${accentColor}`
+        boxShadow: `0 0 ${intensity / 2}px ${accentColor}, inset 0 0 ${intensity / 4}px ${accentColor}`,
+        background: `radial-gradient(circle, ${accentColor}1A 0%, transparent 70%)`
       }}
     />
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
+import { ItemPreview } from '@/components/item-preview';
+import { Eye } from 'lucide-react';
 
 const STATIC_STORE_ITEMS = [
  // BUBBLES (20)
@@ -94,6 +96,7 @@ export default function StorePage() {
  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
  const firestore = useFirestore();
  const { toast } = useToast();
+ const [previewItem, setPreviewItem] = useState<any>(null);
 
  const themesQuery = useMemoFirebase(() => {
   if (!firestore) return null;
@@ -214,6 +217,16 @@ export default function StorePage() {
              </div>
             ) : <item.icon className={cn("h-12 w-12 md:h-16 md:w-16 opacity-30", item.color)} />}
             <Badge className="absolute top-2 right-2 bg-white/95 backdrop-blur-md text-slate-800 border-none font-bold uppercase text-[8px] tracking-wider px-1.5 py-0.5 shadow-sm rounded-md">{item.type}</Badge>
+            
+            {/* Try-On Button Layer */}
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center pointer-events-none">
+               <button 
+                 onClick={(e) => { e.stopPropagation(); setPreviewItem(item); }}
+                 className="bg-white/90 backdrop-blur-md text-primary font-black uppercase text-[9px] tracking-widest px-4 py-2 rounded-full shadow-xl pointer-events-auto transform translate-y-4 group-hover:translate-y-0 transition-all flex items-center gap-2"
+               >
+                  <Eye className="h-3.5 w-3.5" /> Try On
+               </button>
+            </div>
            </div>
            
            <CardHeader className="text-center pb-1 pt-3 px-2">
@@ -244,6 +257,12 @@ export default function StorePage() {
       </TabsContent>
      ))}
     </Tabs>
+    
+    <ItemPreview 
+      isOpen={!!previewItem} 
+      onClose={() => setPreviewItem(null)} 
+      item={previewItem} 
+    />
    </div>
   </div>
  );

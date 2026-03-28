@@ -11,7 +11,8 @@ import {
   setDoc, 
   serverTimestamp, 
   arrayUnion, 
-  increment 
+  increment,
+  runTransaction
 } from 'firebase/firestore';
 import { CarromGameState, CarromPiece, CarromPlayer } from '@/lib/types';
 import { updatePhysics } from '@/lib/carrom-physics';
@@ -49,11 +50,12 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     }
   }, [gameDocRef, userId, gameState, roomId]);
 
-  const selectMode = useCallback(async (mode: 'freestyle' | 'professional') => {
+  const selectMode = useCallback(async (mode: 'freestyle' | 'professional', entryFee: number = 0) => {
     if (!gameDocRef || gameState?.status !== 'mode_select') return;
     await updateDocumentNonBlocking(gameDocRef, { 
       status: 'lobby',
       mode,
+      entryFee,
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState]);
@@ -61,24 +63,54 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   const joinArena = useCallback(async (userProfile: any) => {
     if (!gameDocRef || !userId || !userProfile || gameState?.status !== 'lobby') return;
 
+    // 1. Minimum Balance Check
+    const entryFee = gameState.entryFee || 0;
+    if ((userProfile.coins || 0) < entryFee) {
+      alert("Insufficient coins to join this professional match!");
+      return;
+    }
+
     const existingPlayer = gameState.players.find((p: any) => p.uid === userId);
     if (existingPlayer) return;
 
     if (gameState.players.length >= 4) return;
 
-    const newPlayer: CarromPlayer = {
-      uid: userId,
-      username: userProfile.username || 'P',
-      avatarUrl: userProfile.avatarUrl || '',
-      score: 0,
-      isReady: false
-    };
+    // 2. Atomic Deduction & Join
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+        const userRef = doc(firestore!, 'users', userId);
+        const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
+        const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
 
-    await updateDocumentNonBlocking(gameDocRef, {
-      players: arrayUnion(newPlayer),
-      updatedAt: serverTimestamp()
-    });
-  }, [gameDocRef, userId, gameState]);
+        if (entryFee > 0) {
+          transaction.update(userRef, { coins: increment(-entryFee) });
+          transaction.update(profileRef, { coins: increment(-entryFee) });
+          transaction.set(walletRef, {
+            userId,
+            amount: -entryFee,
+            type: 'game_entry',
+            gameId: `carrom_${roomId}`,
+            timestamp: serverTimestamp()
+          });
+        }
+
+        const newPlayer: CarromPlayer = {
+          uid: userId,
+          username: userProfile.username || 'P',
+          avatarUrl: userProfile.avatarUrl || '',
+          score: 0,
+          isReady: false
+        };
+
+        transaction.update(gameDocRef, {
+          players: arrayUnion(newPlayer),
+          updatedAt: serverTimestamp()
+        });
+      });
+    } catch (err) {
+      console.error("Failed to join arena:", err);
+    }
+  }, [gameDocRef, userId, gameState, firestore, roomId]);
 
   const startMatch = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.status !== 'lobby') return;
@@ -168,14 +200,55 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     });
   }, [gameDocRef, gameState, userId]);
 
+  const endMatch = useCallback(async (winnerId: string) => {
+    if (!gameDocRef || !gameState || gameState.status !== 'playing') return;
+
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+        const gameSnap = await transaction.get(gameDocRef);
+        if (!gameSnap.exists()) return;
+
+        const entryFee = gameSnap.data().entryFee || 0;
+        const totalPlayers = gameSnap.data().players.length;
+        const totalPool = entryFee * totalPlayers;
+        const prize = Math.floor(totalPool * 0.9); // 10% Platform Rake
+
+        if (prize > 0) {
+          const winnerRef = doc(firestore!, 'users', winnerId);
+          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
+          const walletRef = doc(firestore!, 'walletTransactions', `win_${winnerId}_${Date.now()}`);
+
+          transaction.update(winnerRef, { coins: increment(prize) });
+          transaction.update(winnerProfileRef, { coins: increment(prize) });
+          transaction.set(walletRef, {
+            userId: winnerId,
+            amount: prize,
+            type: 'game_win',
+            gameId: `carrom_${roomId}`,
+            timestamp: serverTimestamp()
+          });
+        }
+
+        transaction.update(gameDocRef, {
+          status: 'ended',
+          winner: winnerId,
+          prize,
+          updatedAt: serverTimestamp()
+        });
+      });
+    } catch (err) {
+      console.error("Failed to end match and pay winner:", err);
+    }
+  }, [gameDocRef, gameState, firestore, roomId]);
+
   return {
     gameState: gameState as CarromGameState | undefined,
     isLoading,
     initializeGame,
     selectMode,
     joinArena,
-    startMatch,
     updateStriker,
-    strike
+    strike,
+    endMatch
   };
 }

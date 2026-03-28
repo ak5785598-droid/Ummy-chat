@@ -28,6 +28,7 @@ import { RoomMiniPlayer } from "@/components/room-mini-player";
 import { BanDialog } from "@/components/ban-dialog";
 import { doc, getDoc, writeBatch, serverTimestamp, increment, query, collection, where, runTransaction } from "firebase/firestore";
 import { useTranslation } from "@/hooks/use-translation";
+import { GlobalActivityBanner } from "@/components/global-activity-banner";
 
 export function AppLayout({ 
  children, 
@@ -243,6 +244,7 @@ export function AppLayout({
  return (
   <SidebarProvider defaultOpen={false}>
     <div className="flex h-[100dvh] w-full bg-[#f3e5f5] font-sans overflow-hidden relative">
+      <GlobalActivityBanner />
     <Sidebar className="bg-[#140028] border-none text-white">
      <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
       <div className="flex items-center gap-3">
@@ -268,7 +270,8 @@ export function AppLayout({
        </SidebarMenuItem>
        <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.boutique}</span></Link></SidebarMenuButton></SidebarMenuItem>
        <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.rankings}</span></Link></SidebarMenuButton></SidebarMenuItem>
-       <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.games}</span></Link></SidebarMenuButton></SidebarMenuItem>
+        <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.games}</span></Link></SidebarMenuButton></SidebarMenuItem>
+        <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname?.startsWith('/families')} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/families" className="flex items-center gap-4"><Users className="h-6 w-6" /><span className="text-base font-bold uppercase ">Families</span></Link></SidebarMenuButton></SidebarMenuItem>
        {isOfficial && (
         <SidebarMenuItem>
          <SidebarMenuButton asChild isActive={pathname === '/admin'} className="h-14 rounded-xl px-4 mt-4 bg-primary/10">
@@ -324,6 +327,12 @@ export function AppLayout({
         {pathname === '/discover' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
         <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
         <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.discover}</span>
+       </Link>
+
+       <Link href="/families" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname?.startsWith('/families') ? "text-[#00E5FF]" : "text-white/40")}>
+        {pathname?.startsWith('/families') && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
+        <Users className={cn("h-5 w-5", pathname?.startsWith('/families') ? "fill-current" : "")} />
+        <span className="text-[9px] font-bold uppercase tracking-tight">Family</span>
        </Link>
        
        <Link href="/messages" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>

@@ -118,9 +118,17 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
      key={triggerKey} 
      className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden"
      initial={{ opacity: 0 }}
-     animate={{ opacity: 1 }}
+     animate={{ 
+       opacity: 1,
+       x: isPremium ? [0, -10, 10, -10, 10, 0] : 0,
+       y: isPremium ? [0, 5, -5, 5, -5, 0] : 0
+     }}
      exit={{ opacity: 0 }}
-     transition={{ duration: 0.5 }}
+     transition={{ 
+       opacity: { duration: 0.5 },
+       x: { duration: 0.4, repeat: 2, ease: "linear" },
+       y: { duration: 0.3, repeat: 3, ease: "linear" }
+     }}
     >
      {/* Screen Flash for Premium */}
      {isPremium && (

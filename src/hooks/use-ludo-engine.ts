@@ -11,7 +11,8 @@ import {
   setDoc, 
   serverTimestamp, 
   arrayUnion, 
-  increment 
+  increment,
+  runTransaction
 } from 'firebase/firestore';
 import { LudoGameState, LudoPlayer, LudoPiece } from '@/lib/types';
 
@@ -61,19 +62,48 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
         status: 'lobby',
         updatedAt: serverTimestamp()
       });
-    } else if (gameState.status === 'lobby' && !gameState.players.find((p: any) => p.uid === userId)) {
       // Join existing lobby
+      const entryFee = gameState.entryFee || 0;
+      if ((userProfile.coins || 0) < entryFee) {
+        alert("Insufficient coins to join this professional match!");
+        return;
+      }
+
       const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
-      await updateDocumentNonBlocking(gameDocRef, {
-        players: arrayUnion({
-          uid: userId,
-          username: userProfile.username || `Player ${gameState.players.length + 1}`,
-          avatarUrl: userProfile.avatarUrl || '',
-          color: assignedColor,
-          isReady: true,
-          isActive: true
-        })
-      });
+      
+      try {
+        await runTransaction(firestore!, async (transaction) => {
+           const userRef = doc(firestore!, 'users', userId);
+           const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
+           const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
+
+           if (entryFee > 0) {
+             transaction.update(userRef, { coins: increment(-entryFee) });
+             transaction.update(profileRef, { coins: increment(-entryFee) });
+             transaction.set(walletRef, {
+               userId,
+               amount: -entryFee,
+               type: 'game_entry',
+               gameId: `ludo_${roomId}`,
+               timestamp: serverTimestamp()
+             });
+           }
+
+           transaction.update(gameDocRef, {
+             players: arrayUnion({
+              uid: userId,
+              username: userProfile.username || `Player ${gameState.players.length + 1}`,
+              avatarUrl: userProfile.avatarUrl || '',
+              color: assignedColor,
+              isReady: true,
+              isActive: true
+            }),
+            updatedAt: serverTimestamp()
+           });
+        });
+      } catch (err) {
+        console.error("Failed to join Ludo lobby:", err);
+      }
     }
   }, [gameDocRef, userId, gameState, roomId]);
 
@@ -125,11 +155,53 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     });
   }, [gameDocRef, gameState, userId]);
 
+  const endMatch = useCallback(async (winnerId: string) => {
+    if (!gameDocRef || !gameState) return;
+
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+        const gameSnap = await transaction.get(gameDocRef);
+        if (!gameSnap.exists()) return;
+
+        const entryFee = gameSnap.data().entryFee || 0;
+        const totalPlayers = gameSnap.data().players.length;
+        const totalPool = entryFee * totalPlayers;
+        const prize = Math.floor(totalPool * 0.9); // 10% Plat Rake
+
+        if (prize > 0) {
+          const winnerRef = doc(firestore!, 'users', winnerId);
+          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
+          const walletRef = doc(firestore!, 'walletTransactions', `win_ludo_${winnerId}_${Date.now()}`);
+
+          transaction.update(winnerRef, { coins: increment(prize) });
+          transaction.update(winnerProfileRef, { coins: increment(prize) });
+          transaction.set(walletRef, {
+            userId: winnerId,
+            amount: prize,
+            type: 'game_win',
+            gameId: `ludo_${roomId}`,
+            timestamp: serverTimestamp()
+          });
+        }
+
+        transaction.update(gameDocRef, {
+          status: 'ended',
+          winner: winnerId,
+          prize,
+          updatedAt: serverTimestamp()
+        });
+      });
+    } catch (err) {
+      console.error("Failed to pay Ludo winner:", err);
+    }
+  }, [gameDocRef, gameState, firestore, roomId]);
+
   return {
     gameState: gameState as LudoGameState | undefined,
     isLoading,
     joinLobby,
     rollDice,
-    movePiece
+    movePiece,
+    endMatch
   };
 }
