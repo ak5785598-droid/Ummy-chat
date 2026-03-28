@@ -108,7 +108,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
                 {/* LEVEL STAR BADGE (Matching Screenshot 2) */}
                 <div className="bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center gap-1 pl-1 pr-2 py-0.5 rounded-full shadow-sm">
                   <Star className="h-2 w-2 text-white fill-current" />
-                  <span className="text-[8px] font-black text-white italic">Lv.17</span>
+                  <span className="text-[8px] font-black text-white italic">Lv.{p.level?.rich || 1}</span>
                 </div>
 
                 {/* GENDER BADGE */}

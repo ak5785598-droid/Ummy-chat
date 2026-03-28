@@ -96,7 +96,7 @@ const UserRow = ({
        </div>
        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full">
         <Star className="h-2 w-2 text-white fill-current" />
-        <span className="text-[7px] font-black text-white italic">Lv.17</span>
+        <span className="text-[7px] font-black text-white italic">Lv.{profile.level?.rich || 1}</span>
        </div>
      </div>
     </div>
@@ -188,7 +188,7 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
        <div className="space-y-6">
         <div>
          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Member</label>
-         <p className="text-sm font-black text-gray-800 tracking-tight">{room.participantCount || 100}</p>
+         <p className="text-sm font-black text-gray-800 tracking-tight">{room.participantCount || 0}</p>
         </div>
 
         <div>
