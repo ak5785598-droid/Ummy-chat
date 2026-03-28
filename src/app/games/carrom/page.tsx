@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useUserProfile } from '@/firebase';
+import { useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
  ChevronLeft, 
  Volume2, 
@@ -93,7 +94,7 @@ export default function CarromGamePage() {
 
        {/* DYNAMIC PIECES */}
        <div className="relative w-full h-full">
-         {gameState?.pieces.filter(p => !p.isPocketed).map(piece => (
+         {gameState?.pieces?.filter(p => !p.isPocketed).map(piece => (
            <div 
              key={piece.id}
              className={cn(
@@ -166,13 +167,13 @@ export default function CarromGamePage() {
       <div className="flex gap-4">
         <div className={cn("text-center", gameState?.turn === gameState?.player1?.uid && "scale-110")}>
           <div className={cn("p-1 rounded-full border-2 transition-all", gameState?.turn === gameState?.player1?.uid ? "border-yellow-400 shadow-[0_0_15px_#fbbf24]" : "border-white/10")}>
-            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player1?.avatarUrl} /></Avatar>
+            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player1?.avatarUrl || ''} /></Avatar>
           </div>
           <span className="text-[9px] font-black uppercase mt-1 block">{gameState?.player1?.username || 'Waiting...'}</span>
         </div>
         <div className={cn("text-center", gameState?.turn === gameState?.player2?.uid && "scale-110")}>
           <div className={cn("p-1 rounded-full border-2 transition-all", gameState?.turn === gameState?.player2?.uid ? "border-yellow-400 shadow-[0_0_15px_#fbbf24]" : "border-white/10")}>
-            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player2?.avatarUrl} /></Avatar>
+            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player2?.avatarUrl || ''} /></Avatar>
           </div>
           <span className="text-[9px] font-black uppercase mt-1 block">{gameState?.player2?.username || 'Waiting...'}</span>
         </div>

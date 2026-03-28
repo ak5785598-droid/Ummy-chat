@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useUserProfile } from '@/firebase';
+import { useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
  ChevronLeft, 
  Volume2, 
@@ -135,7 +136,7 @@ export default function ChessGamePage() {
             <div className="flex items-center justify-between w-full bg-white/5 backdrop-blur-2xl p-4 rounded-3xl border border-white/10 shadow-2xl">
                <div className={cn("text-center transition-all", gameState.turn === 'w' ? "scale-110" : "opacity-40")}>
                   <div className={cn("p-1 rounded-full border-2", gameState.turn === 'w' ? "border-white shadow-[0_0_15px_#ffffff]" : "border-transparent")}>
-                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.white?.avatarUrl} /></Avatar>
+                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.white?.avatarUrl || ''} /></Avatar>
                   </div>
                   <span className="text-[10px] font-black uppercase mt-1 block">White</span>
                </div>
@@ -144,7 +145,7 @@ export default function ChessGamePage() {
 
                <div className={cn("text-center transition-all", gameState.turn === 'b' ? "scale-110" : "opacity-40")}>
                   <div className={cn("p-1 rounded-full border-2", gameState.turn === 'b' ? "border-white shadow-[0_0_15px_#ffffff]" : "border-transparent")}>
-                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.black?.avatarUrl} /></Avatar>
+                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.black?.avatarUrl || ''} /></Avatar>
                   </div>
                   <span className="text-[10px] font-black uppercase mt-1 block">Black</span>
                </div>
