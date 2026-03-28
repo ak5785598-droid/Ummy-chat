@@ -8,7 +8,8 @@ const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 // Dynamic import of Agora to prevent SSR window errors
 let AgoraRTC: any = null;
 if (typeof window !== 'undefined') {
-  AgoraRTC = require('agora-rtc-sdk-ng').default;
+  const agoraModule = require('agora-rtc-sdk-ng');
+  AgoraRTC = agoraModule.default || agoraModule;
 }
 
 // Helper to reliably convert Firestore String UID to a Numeric UID for Agora compatibility
@@ -35,6 +36,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     return;
   }
   if (!roomId || !uid) return;
+  if (!AgoraRTC) {
+    console.warn('[Agora] SDK not loaded. Voice system will NOT initialize.');
+    return;
+  }
 
   const init = async () => {
    if (!clientRef.current) {
@@ -112,6 +117,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   if (!clientRef.current || !isReady) return;
 
   const handlePublishing = async () => {
+   if (!AgoraRTC) return;
    const client = clientRef.current!;
    
    if (isInSeat) {
@@ -149,6 +155,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   if (!clientRef.current || !isReady || !isInSeat) return;
 
   const handleMusic = async () => {
+   if (!AgoraRTC) return;
    if (musicStream) {
     if (!localMusicTrack) {
      const track = await AgoraRTC.createCustomAudioTrack({
