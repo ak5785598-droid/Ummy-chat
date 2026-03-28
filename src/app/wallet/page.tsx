@@ -612,107 +612,59 @@ function WalletContent() {
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
      <DialogContent className="sm:max-w-full md:max-w-2xl bg-white border-none rounded-[1.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
-        {/* COMPACT WEPLAY-STYLE BANNER */}
-        <div className="relative w-full p-4 pt-6 bg-gradient-to-br from-[#E040FB] via-[#D500F9] to-[#651FFF] overflow-hidden shrink-0">
-          {/* Sparkly Background Elements */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            {Array.from({ length: 15 }).map((_, i) => (
-              <div key={i} className="absolute bg-white rounded-full animate-pulse" 
-                style={{ width: '2px', height: '2px', top: Math.random() * 100 + '%', left: Math.random() * 100 + '%' }} />
-            ))}
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2">
-              <UmmyLogoIcon className="h-6 w-6" />
-              <h3 className="text-white font-bold text-sm tracking-tight">Manual Recharge</h3>
-            </div>
-
-            {/* Instruction Grid */}
-            <div className="w-full grid grid-cols-2 gap-3 items-start">
-              {/* Hindi Column */}
-              <div className="flex flex-col gap-1.5 opacity-90">
-                <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-[7px] text-white font-bold leading-none">
-                  ⚠️ ऑनलाइन रिचार्ज उपलब्ध नहीं है
-                </div>
-                <div className="space-y-0.5">
-                  {["पैकेज चुनें", "QR स्क्रीनशॉट लें", "मोबाइल से स्कैन करें", "पेमेंट पूरा करें", "UTR नंबर भरें", "नंबर पर संपर्क करें"].map((s, i) => (
-                    <p key={i} className="text-[9px] text-white/90 leading-tight">
-                      <span className="text-yellow-400 font-bold mr-1">{i+1}.</span>{s}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* English Column */}
-              <div className="flex flex-col gap-1.5 opacity-90 text-right">
-                <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded text-[7px] text-white font-bold leading-none justify-end">
-                  ⚠️ Online recharge unavailable
-                </div>
-                <div className="space-y-0.5">
-                  {["Select Package", "Screenshot QR", "Scan with mobile", "Make payment", "Enter UTR No.", "Contact support"].map((s, i) => (
-                    <p key={i} className="text-[9px] text-white/90 leading-tight text-right">
-                      {s}<span className="text-yellow-400 font-bold ml-1">{i+1}.</span>
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Centered QR (Large) */}
-            <div className="relative w-40 h-40 bg-white rounded-xl p-1.5 shadow-2xl border-4 border-white/20 -mb-8 z-20">
-              {config?.paymentQrUrl ? (
-                <div className="h-full w-full flex flex-col">
-                  <div className="bg-white flex justify-center mb-0.5"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-3" /></div>
-                  <div className="flex-1 relative">
-                    <Image src={config.paymentQrUrl} fill className="object-contain" alt="QR" unoptimized />
-                  </div>
-                  <p className="text-[10px] font-black text-blue-600 text-center uppercase tracking-tighter mt-0.5">{config.upiId || '7209741932@ptyes'}</p>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-300 text-[8px] font-bold">Syncing QR...</div>
-              )}
-            </div>
-          </div>
+        {/* ORIGINAL USER-PROVIDED BANNER */}
+        <div className="relative w-full aspect-[2/1] md:aspect-[3/1] bg-gray-100 shrink-0">
+          <Image 
+            src="/images/recharge-instructions.jpg" 
+            fill 
+            className="object-contain" 
+            alt="Manual Recharge Instructions" 
+            unoptimized 
+            priority
+          />
         </div>
 
-        {/* INPUT SECTION (Moved Up) */}
-        <div className="px-5 pb-8 pt-10 bg-white">
+        {/* INPUT SECTION (Positioned For High Visibility) */}
+        <div className="px-6 pb-10 pt-4 bg-white">
           {showSubmissionSuccess ? (
-            <div className="text-center py-4 space-y-4 animate-in zoom-in-95 duration-300">
-              <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto" />
-              <h2 className="text-lg font-bold uppercase text-gray-900 leading-none">Request Received</h2>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Coins will credit in 5-10m</p>
+            <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-300">
+              <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold uppercase text-slate-900 tracking-tight">Request Received</h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Admin will verify and credit coins within 5-10 minutes.</p>
+              </div>
               <Button onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
-                className="w-full h-12 bg-black text-white rounded-xl font-bold uppercase text-xs" >View Records</Button>
+                className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all" >View Records</Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="space-y-0.5">
-                  <p className="text-[8px] font-bold text-gray-400 uppercase leading-none">Amount</p>
-                  <p className="text-lg font-black leading-none">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Package Total</p>
+                  <p className="text-xl font-black text-gray-900">
+                    {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}
+                  </p>
                 </div>
                 <div className="text-right space-y-0.5">
-                   <p className="text-[8px] font-bold text-gray-400 uppercase leading-none">Coins Gain</p>
-                   <p className="text-xs font-bold text-yellow-600 leading-none">
+                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Coins Gain</p>
+                   <p className="text-sm font-bold text-yellow-600">
                      {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} + Bonus
                    </p>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase text-gray-500 ml-1">Submit Transaction UTR Number</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-500 ml-1">Submit Transaction UTR / ID</label>
                 <Input 
                   value={utrNumber || ''}
                   onChange={(e) => setUtrNumber(e.target.value)}
                   placeholder="Enter 12-digit UTR ID"
-                  className="h-12 bg-gray-50 border-gray-100 focus:border-[#651FFF] focus:bg-white rounded-xl font-black text-center text-lg tracking-[0.2em] transition-all"
+                  className="h-14 bg-gray-50 border-gray-100 focus:border-[#651FFF] focus:bg-white rounded-2xl font-black text-center text-lg tracking-[0.2em] transition-all"
                 />
               </div>
 
               <Button onClick={handleSubmitManualRecharge} disabled={isSubmittingManual}
-                className="w-full h-14 bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase rounded-xl shadow-lg shadow-purple-500/20" >
+                className="w-full h-16 bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase rounded-2xl shadow-xl shadow-purple-500/20" >
                 {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment Submission'}
               </Button>
             </div>
