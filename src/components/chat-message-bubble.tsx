@@ -138,7 +138,7 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
 
    {config.decorator}
    
-   <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible">
+   <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-all overflow-wrap-anywhere" style={{ overflowWrap: 'anywhere' }}>
     {children}
    </div>
   </div>

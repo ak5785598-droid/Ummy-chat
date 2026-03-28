@@ -46,13 +46,20 @@ export function AppLayout({
  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const { userProfile, isLoading: isProfileLoading, error: profileError } = useUserProfile(user?.uid || undefined);
- const auth = useAuth();
- const firestore = useFirestore();
- const { t } = useTranslation();
- const [mounted, setMounted] = useState(false);
- const [showQuests, setShowQuests] = useState(false);
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  const [showQuests, setShowQuests] = useState(false);
 
- useEffect(() => { setMounted(true); }, []);
+  const isOfficial = useMemo(() => 
+    userProfile?.tags?.some(tag => ['Admin', 'Official', 'Super Admin'].includes(tag)) || false
+  , [userProfile]);
+
+  const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+  const isCreator = user?.uid === CREATOR_ID;
+
+  useEffect(() => { setMounted(true); }, []);
 
  // UNREAD SYNC LOGIC
  const unreadChatsQuery = useMemoFirebase(() => {
@@ -140,11 +147,13 @@ export function AppLayout({
     }
    } catch (err) {
     console.error("[Identity Sync] Handshake failed:", err);
+    }
+   };
+ 
+   if (isCreator || isOfficial) {
+     syncIdentities();
    }
-  };
-
-  syncIdentities();
- }, [firestore, user, userProfile]);
+  }, [firestore, user, userProfile, isCreator, isOfficial]);
 
  const handleLogout = async () => {
   if (!auth || !user || !firestore) return;
@@ -170,10 +179,6 @@ export function AppLayout({
    window.location.href = '/login';
   }
  };
-
-  const isOfficial = userProfile?.tags?.some(tag => 
-   ['Admin', 'Official', 'Super Admin'].includes(tag)
-  );
 
   if (!mounted) return null;
 
@@ -299,9 +304,9 @@ export function AppLayout({
      </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-full overflow-hidden">
-     <main className={cn(
-      "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
+     <SidebarInset className="bg-background flex flex-col p-0 w-full max-w-full">
+      <main className={cn(
+       "min-h-screen w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
       "touch-auto", // Ensure touch events are handled correctly
       shouldShowBottomNav && "pb-32"
      )}
