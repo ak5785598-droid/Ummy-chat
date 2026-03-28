@@ -77,8 +77,6 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
-import { useWebRTC } from '@/hooks/use-webrtc';
-import { useVoiceActivity } from '@/hooks/use-voice-activity';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -140,11 +138,6 @@ const Seat = ({
             intensity={intensity}
             accentColor={theme.accentColor}
           />
-        )}
-        
-        {/* Fallback for other users (static wave when not muted) */}
-        {occupant && occupant.uid !== currentUser?.uid && !occupant.isMuted && (
-          <div className="absolute -inset-1 rounded-full border-2 animate-voice-wave" style={{ color: theme.accentColor }} />
         )}
         
         <AvatarFrame frameId={occupant?.activeFrame} size="md">
@@ -911,6 +904,8 @@ export function RoomClient({ room }: { room: Room }) {
         occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
+        currentUserName={userProfile?.username}
+        currentUserAvatarUrl={userProfile?.avatarUrl}
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
         onSendGift={handleOpenGiftPickerFromMenu}

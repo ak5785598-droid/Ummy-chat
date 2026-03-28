@@ -204,7 +204,18 @@ export function AppLayout({
       />
     );
   }
- if (fullScreen || pathname?.startsWith('/login') || pathname === '/') return <main className="h-full w-full relative">{children}</main>;
+  if (
+    fullScreen || 
+    pathname?.startsWith('/login') || 
+    pathname === '/' ||
+    pathname === '/terms' ||
+    pathname === '/privacy-policy' ||
+    pathname === '/refund-policy' ||
+    pathname === '/contact' ||
+    pathname === '/help-center'
+  ) {
+    return <main className="h-full w-full relative">{children}</main>;
+  }
 
  const isMainNav = pathname === '/rooms' || 
            pathname === '/discover' || 

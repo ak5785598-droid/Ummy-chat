@@ -44,47 +44,67 @@ export function RoomPresenceManager() {
    const profileRef = doc(firestore, 'users', uid, 'profile', uid);
    const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', uid);
 
-   if (lastRoomId.current !== roomId) {
-    lastRoomId.current = roomId;
+   const existingSnap = await getDoc(participantRef);
+   const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-    const existingSnap = await getDoc(participantRef);
-    const existingData = existingSnap.exists() ? existingSnap.data() : null;
+    const isNewRoom = lastRoomId.current !== roomId;
+    // Fix: Redundant check for Guest status to ensure profile sync once loaded
+    const needsProfileSync = userProfile && (existingData?.name === 'Guest' || !existingData?.avatarUrl || existingData?.name !== userMetadata.username);
 
-    const batch = writeBatch(firestore);
-    
-    addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
-     content: 'entered the room',
-     senderId: uid,
-     senderName: userMetadata.username || 'Tribe Member',
-     senderAvatar: userMetadata.avatarUrl || null,
-     chatRoomId: roomId,
-     timestamp: serverTimestamp(),
-     type: 'entrance'
-    });
+    if (isNewRoom || needsProfileSync) {
+     lastRoomId.current = roomId;
 
-    if (!existingSnap.exists()) {
-     batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+     const batch = writeBatch(firestore);
+     
+     if (isNewRoom) {
+       addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'messages'), {
+        content: 'entered the room',
+        senderId: uid,
+        senderName: userMetadata.username || 'Tribe Member',
+        senderAvatar: userMetadata.avatarUrl || null,
+        chatRoomId: roomId,
+        timestamp: serverTimestamp(),
+        type: 'entrance'
+       });
+
+       if (!existingSnap.exists()) {
+        batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+        
+        // ONLY set initial seat/mute status if it's a completely new participant
+        batch.set(participantRef, {
+         uid: uid,
+         name: userMetadata.username || 'Guest',
+         avatarUrl: userMetadata.avatarUrl || null,
+         activeFrame: userMetadata.activeFrame || 'None',
+         activeWave: userMetadata.activeWave || 'Default',
+         activeBubble: userMetadata.activeBubble || 'None',
+         joinedAt: serverTimestamp(),
+         lastSeen: serverTimestamp(),
+         isMuted: true,
+         seatIndex: 0,
+         accountNumber: userMetadata.accountNumber || null,
+        }, { merge: true });
+       }
+
+       batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+       batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
+     }
+
+     // PROFILE SYNC - ONLY update metadata fields, NEVER touch seatIndex or isMuted here
+     if (needsProfileSync) {
+       batch.update(participantRef, {
+         name: userMetadata.username || 'Guest',
+         avatarUrl: userMetadata.avatarUrl || null,
+         activeFrame: userMetadata.activeFrame || 'None',
+         activeWave: userMetadata.activeWave || 'Default',
+         activeBubble: userMetadata.activeBubble || 'None',
+         accountNumber: userMetadata.accountNumber || null,
+         lastSeen: serverTimestamp(),
+       });
+     }
+
+     batch.commit().catch(console.error);
     }
-
-    batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
-    batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
-
-    batch.set(participantRef, {
-     uid: uid,
-     name: userMetadata.username || 'Guest',
-     avatarUrl: userMetadata.avatarUrl || null,
-     activeFrame: userMetadata.activeFrame || 'None',
-     activeWave: userMetadata.activeWave || 'Default',
-     activeBubble: userMetadata.activeBubble || 'None',
-     joinedAt: serverTimestamp(),
-     lastSeen: serverTimestamp(),
-     isMuted: true,
-     seatIndex: existingData?.seatIndex ?? 0,
-     accountNumber: userMetadata.accountNumber || null,
-    }, { merge: true });
-
-    batch.commit().catch(console.error);
-   }
 
    if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
    heartbeatInterval.current = setInterval(() => {

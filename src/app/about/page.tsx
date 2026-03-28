@@ -86,23 +86,23 @@ export default function AboutPage() {
                
                <section className="space-y-2">
                 <h4 className="font-bold text-slate-900 uppercase text-sm tracking-tight">*1. Eligibility*</h4>
-                <p>You must be 18+ to use Ummy. By using the app, you confirm you're at least 18.</p>
+                <p>You must be 18+ to use Ummy. By using the app, you confirm you&apos;re at least 18.</p>
                </section>
 
                <section className="space-y-2">
                 <h4 className="font-bold text-slate-900 uppercase text-sm tracking-tight">*2. Account*</h4>
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li>Create an account with accurate info.</li>
-                  <li>Keep your account secure; you're responsible for activity on your account.</li>
-                  <li>Don't share your account or let others use it.</li>
+                  <li>Keep your account secure; you&apos;re responsible for activity on your account.</li>
+                  <li>Don&apos;t share your account or let others use it.</li>
                 </ul>
                </section>
 
                <section className="space-y-2">
                 <h4 className="font-bold text-slate-900 uppercase text-sm tracking-tight">*3. Content*</h4>
                 <ul className="list-disc pl-5 space-y-1.5">
-                  <li>Post content that's legal, respectful, and doesn't violate others' rights.</li>
-                  <li>Don't post explicit, abusive, or harmful content.</li>
+                  <li>Post content that&apos;s legal, respectful, and doesn&apos;t violate others&apos; rights.</li>
+                  <li>Don&apos;t post explicit, abusive, or harmful content.</li>
                   <li>You own your content, but grant Ummy permission to use it for the app.</li>
                 </ul>
                </section>
@@ -143,7 +143,7 @@ export default function AboutPage() {
 
                <section className="space-y-2">
                 <h4 className="font-bold text-slate-900 uppercase text-sm tracking-tight">*8. Intellectual Property*</h4>
-                <p>Ummy owns the app's IP. Don't copy or misuse Ummy's features.</p>
+                <p>Ummy owns the app&apos;s IP. Don&apos;t copy or misuse Ummy&apos;s features.</p>
                </section>
 
                <section className="space-y-2">
@@ -199,7 +199,7 @@ export default function AboutPage() {
                </div>
 
                <p className="font-bold text-slate-800 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
-                We care about your privacy 😊. Here's how we handle your info:
+                We care about your privacy 😊. Here&apos;s how we handle your info:
                </p>
                
                <section className="space-y-2">

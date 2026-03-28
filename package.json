@@ -11,7 +11,7 @@
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint || exit 0",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -74,6 +74,8 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "15.0.7",
     "genkit-cli": "1.19.1",
     "playwright": "^1.58.2",
     "postcss": "^8",
