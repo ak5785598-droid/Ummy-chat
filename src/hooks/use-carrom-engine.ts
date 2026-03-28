@@ -13,95 +13,168 @@ import {
   arrayUnion, 
   increment 
 } from 'firebase/firestore';
-import { CarromGameState, CarromPiece } from '@/lib/types';
+import { CarromGameState, CarromPiece, CarromPlayer } from '@/lib/types';
+import { updatePhysics } from '@/lib/carrom-physics';
 
 /**
  * Carrom Master Multiplayer Engine.
- * Handles matchmaking, physics state sync, and turns.
+ * Handles state machine transitions, physics sync, and matchmaking.
  */
 export function useCarromEngine(roomId: string | null, userId: string | null) {
   const firestore = useFirestore();
   const gameDocRef = useMemo(() => (!firestore || !roomId) ? null : doc(firestore, 'games', `carrom_${roomId}`), [firestore, roomId]);
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
-  const joinArena = useCallback(async (userProfile: any) => {
-    if (!gameDocRef || !userId || !userProfile) return;
-
+  const initializeGame = useCallback(async () => {
+    if (!gameDocRef || !userId) return;
+    
+    // Initialize if doesn't exist
     if (!gameState) {
-      // Initialize Board with Coins
-      const initialPieces: CarromPiece[] = [
-        { id: 'queen', type: 'queen', position: { x: 50, y: 50 }, isPocketed: false },
-        // Ring 1 (6 coins)
-        ...[...Array(6)].map((_, i) => ({
-          id: `r1-${i}`,
-          type: i % 2 === 0 ? 'white' : 'black' as any,
-          position: { x: 50 + Math.cos(i * 60 * Math.PI / 180) * 8, y: 50 + Math.sin(i * 60 * Math.PI / 180) * 8 },
-          isPocketed: false
-        })),
-        // Ring 2 (12 coins)
-        ...[...Array(12)].map((_, i) => ({
-          id: `r2-${i}`,
-          type: i % 3 === 0 ? 'white' : 'black' as any,
-          position: { x: 50 + Math.cos(i * 30 * Math.PI / 180) * 16, y: 50 + Math.sin(i * 30 * Math.PI / 180) * 16 },
-          isPocketed: false
-        }))
-      ];
-
       await setDoc(gameDocRef, {
         id: `carrom_${roomId}`,
         roomId,
-        player1: {
-          uid: userId,
-          username: userProfile.username || 'P1',
-          avatarUrl: userProfile.avatarUrl || '',
-          score: 0
-        },
-        player2: null,
-        turn: userId,
+        players: [],
+        turn: '',
         strikerPos: 50,
-        pieces: initialPieces,
-        status: 'lobby',
+        pieces: [],
+        status: 'loading',
+        mode: 'none',
         updatedAt: serverTimestamp()
       });
-    } else if (gameState.status === 'lobby' && !gameState.player1?.uid && gameState.player1?.uid !== userId) {
-        // This case shouldn't happen unless player1 left
-    } else if (gameState.status === 'lobby' && !gameState.player2 && gameState.player1?.uid !== userId) {
-      await updateDocumentNonBlocking(gameDocRef, {
-        player2: {
-          uid: userId,
-          username: userProfile.username || 'P2',
-          avatarUrl: userProfile.avatarUrl || '',
-          score: 0
-        },
-        status: 'playing'
-      });
+      
+      // Artificial delay for loading feel
+      setTimeout(async () => {
+        await updateDocumentNonBlocking(gameDocRef, { status: 'mode_select' });
+      }, 2000);
     }
   }, [gameDocRef, userId, gameState, roomId]);
 
+  const selectMode = useCallback(async (mode: 'freestyle' | 'professional') => {
+    if (!gameDocRef || gameState?.status !== 'mode_select') return;
+    await updateDocumentNonBlocking(gameDocRef, { 
+      status: 'lobby',
+      mode,
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, gameState]);
+
+  const joinArena = useCallback(async (userProfile: any) => {
+    if (!gameDocRef || !userId || !userProfile || gameState?.status !== 'lobby') return;
+
+    const existingPlayer = gameState.players.find((p: any) => p.uid === userId);
+    if (existingPlayer) return;
+
+    if (gameState.players.length >= 4) return;
+
+    const newPlayer: CarromPlayer = {
+      uid: userId,
+      username: userProfile.username || 'P',
+      avatarUrl: userProfile.avatarUrl || '',
+      score: 0,
+      isReady: false
+    };
+
+    await updateDocumentNonBlocking(gameDocRef, {
+      players: arrayUnion(newPlayer),
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, userId, gameState]);
+
+  const startMatch = useCallback(async () => {
+    if (!gameDocRef || !gameState || gameState.status !== 'lobby') return;
+    if (gameState.players.length < 2) return;
+
+    // Initialize Board with Coins
+    const initialPieces: CarromPiece[] = [
+      { id: 'queen', type: 'queen', position: { x: 50, y: 50 }, velocity: { x: 0, y: 0 }, isPocketed: false },
+      // Ring 1 (6 coins)
+      ...[...Array(6)].map((_, i) => ({
+        id: `r1-${i}`,
+        type: i % 2 === 0 ? 'white' : 'black' as any,
+        position: { x: 50 + Math.cos(i * 60 * Math.PI / 180) * 8, y: 50 + Math.sin(i * 60 * Math.PI / 180) * 8 },
+        velocity: { x: 0, y: 0 },
+        isPocketed: false
+      })),
+      // Ring 2 (12 coins)
+      ...[...Array(12)].map((_, i) => ({
+        id: `r2-${i}`,
+        type: i % 3 === 0 ? 'white' : 'black' as any,
+        position: { x: 50 + Math.cos(i * 30 * Math.PI / 180) * 16, y: 50 + Math.sin(i * 30 * Math.PI / 180) * 16 },
+        velocity: { x: 0, y: 0 },
+        isPocketed: false
+      })),
+      // Striker (Initially at bottom)
+      { id: 'striker', type: 'striker', position: { x: 50, y: 85 }, velocity: { x: 0, y: 0 }, isPocketed: false }
+    ];
+
+    await updateDocumentNonBlocking(gameDocRef, {
+      status: 'playing',
+      pieces: initialPieces,
+      turn: gameState.players[0].uid,
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, gameState]);
+
   const updateStriker = useCallback(async (pos: number) => {
-    if (!gameDocRef || !gameState || gameState.turn !== userId) return;
+    if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
+    
+    // Update striker X position within current turn boundaries
     updateDocumentNonBlocking(gameDocRef, { strikerPos: pos });
   }, [gameDocRef, gameState, userId]);
 
-  const strike = useCallback(async () => {
-    if (!gameDocRef || !gameState || gameState.turn !== userId) return;
+  const strike = useCallback(async (angle: number, power: number) => {
+    if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
 
-    // Logic: In a real app we'd trigger a physics calculation.
-    // Here we simulate a turn switch for the prototype.
-    const nextTurn = gameState.player1?.uid === userId ? gameState.player2?.uid : gameState.player1?.uid;
+    // Apply impulse to striker
+    const pieces = [...gameState.pieces];
+    const striker = pieces.find(p => p.id === 'striker');
+    if (!striker) return;
 
-    if (nextTurn) {
-      await updateDocumentNonBlocking(gameDocRef, {
-        turn: nextTurn,
-        updatedAt: serverTimestamp()
-      });
+    // Convert angle/power to velocity
+    const rad = (angle - 90) * Math.PI / 180; // 0 is top
+    striker.velocity = {
+      x: Math.cos(rad) * power,
+      y: Math.sin(rad) * power
+    };
+
+    // Simulate physics until stop
+    let currentPieces = pieces;
+    let iterations = 0;
+    const MAX_ITER = 300;
+    
+    while (iterations < MAX_ITER) {
+      const { pieces: nextPieces, hasMovement } = updatePhysics(currentPieces);
+      currentPieces = nextPieces;
+      if (!hasMovement) break;
+      iterations++;
     }
+
+    // Reset striker for next turn
+    const finalPieces = currentPieces.map(p => {
+      if (p.id === 'striker') {
+        return { ...p, position: { x: 50, y: 85 }, velocity: { x: 0, y: 0 }, isPocketed: false };
+      }
+      return p;
+    });
+
+    // Switch turns
+    const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === userId);
+    const nextPlayer = gameState.players[(currentPlayerIndex + 1) % gameState.players.length];
+
+    await updateDocumentNonBlocking(gameDocRef, {
+      pieces: finalPieces,
+      turn: nextPlayer.uid,
+      updatedAt: serverTimestamp()
+    });
   }, [gameDocRef, gameState, userId]);
 
   return {
     gameState: gameState as CarromGameState | undefined,
     isLoading,
+    initializeGame,
+    selectMode,
     joinArena,
+    startMatch,
     updateStriker,
     strike
   };

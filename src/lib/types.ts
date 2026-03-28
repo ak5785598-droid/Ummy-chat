@@ -228,18 +228,28 @@ export type CarromPiece = {
   id: string;
   type: 'white' | 'black' | 'queen' | 'striker';
   position: { x: number; y: number };
+  velocity: { x: number; y: number };
   isPocketed: boolean;
+};
+
+export type CarromPlayer = {
+  uid: string;
+  username: string;
+  avatarUrl: string;
+  score: number;
+  isReady: boolean;
 };
 
 export type CarromGameState = {
   id: string;
   roomId: string;
-  player1: { uid: string; username: string; avatarUrl: string; score: number } | null;
-  player2: { uid: string; username: string; avatarUrl: string; score: number } | null;
+  players: CarromPlayer[]; // Support up to 4
   turn: string; // UID of current player
   strikerPos: number; // 0-100 for side slider
   pieces: CarromPiece[];
-  status: 'lobby' | 'playing' | 'ended';
+  status: 'loading' | 'mode_select' | 'lobby' | 'playing' | 'ended';
+  mode: 'freestyle' | 'professional' | 'none';
+  winner?: string;
   updatedAt: any;
 };
 

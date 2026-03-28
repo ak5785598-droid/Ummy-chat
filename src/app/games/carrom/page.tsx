@@ -6,193 +6,388 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, 
- Volume2, 
- VolumeX, 
- HelpCircle, 
- Trophy, 
- X,
- ChevronDown,
- Users,
- Move,
- Loader,
- Play
+  ChevronLeft, 
+  Volume2, 
+  VolumeX, 
+  HelpCircle, 
+  Trophy, 
+  X,
+  Plus,
+  Play,
+  Settings,
+  Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Slider } from '@/components/ui/slider';
 import { useCarromEngine } from '@/hooks/use-carrom-engine';
+import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * High-Fidelity Carrom Arena - Multiplayer Integration.
- * Synchronizes striker position, turns, and lobby state.
+ * High-Fidelity Carrom Master.
+ * Matches the requested screenshots for loading, lobby, and core gameplay.
  */
 function CarromGameContent() {
- const router = useRouter();
- const searchParams = useSearchParams();
- const roomId = searchParams.get('roomId') || 'global_room';
- const { user: currentUser } = useUser();
- const { userProfile } = useUserProfile(currentUser?.uid);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomId = searchParams.get('roomId') || 'lobby';
+  const { user: currentUser } = useUser();
+  const { userProfile } = useUserProfile(currentUser?.uid);
 
- const [isLaunching, setIsLaunching] = useState(true);
- const [isMuted, setIsMuted] = useState(false);
+  const { 
+    gameState, 
+    initializeGame, 
+    selectMode, 
+    joinArena, 
+    startMatch,
+    updateStriker,
+    strike 
+  } = useCarromEngine(roomId, currentUser?.uid || null);
 
- // CARROM ENGINE SYNC
- const { gameState, isLoading, joinArena, updateStriker, strike } = useCarromEngine(roomId, currentUser?.uid || null);
+  const [power, setPower] = useState(0);
+  const [angle, setAngle] = useState(0);
+  const [isStriking, setIsStriking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
- useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 1500);
-  return () => clearTimeout(timer);
- }, []);
+  useEffect(() => {
+    initializeGame();
+  }, [initializeGame]);
 
- if (isLaunching || isLoading) {
-  return (
-   <div className="h-screen w-full bg-[#004d40] flex flex-col items-center justify-center space-y-6 font-sans relative overflow-hidden">
-    <Loader className="h-20 w-20 text-[#fbc02d] animate-spin" />
-    <h1 className="text-4xl font-bold text-white uppercase italic tracking-tighter">Calibrating Board</h1>
-   </div>
-  );
- }
-
- const isMyTurn = gameState?.turn === currentUser?.uid;
- const myPlayerNum = gameState?.player1?.uid === currentUser?.uid ? 1 : gameState?.player2?.uid === currentUser?.uid ? 2 : null;
-
- return (
-  <AppLayout fullScreen>
-   <div className="h-screen w-full bg-gradient-to-b from-[#00838f] to-[#004d40] flex flex-col relative overflow-hidden font-sans text-white">
-    <CompactRoomView />
-
-    <header className="relative z-50 flex items-center justify-between p-4 pt-32 shrink-0">
-      <div className="flex gap-1.5">
-       <button className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 active:scale-90 transition-all shadow-lg"><Move className="h-4 w-4" /></button>
-       <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 active:scale-90 transition-all shadow-lg">
-        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-       </button>
+  if (!gameState || gameState.status === 'loading') {
+    return (
+      <div className="h-screen w-full bg-[#1A0B2E] flex flex-col items-center justify-center p-8 font-sans overflow-hidden">
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="relative w-64 h-64 mb-12"
+        >
+          <img 
+            src="file:///C:/Users/HP/.gemini/antigravity/brain/c5b87f75-d5b9-4f21-bb57-7a31664c39b3/carrom_loading_logo_1774734575628.png" 
+            className="w-full h-full object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+            alt="Carrom Master"
+          />
+        </motion.div>
+        
+        <div className="w-full max-w-xs space-y-4">
+          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
+            <motion.div 
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 2.5, ease: "easeInOut" }}
+              className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_15px_#fbbf24]"
+            />
+          </div>
+          <p className="text-center text-white/40 text-[10px] uppercase font-black tracking-[0.3em] animate-pulse">Syncing Arena...</p>
+        </div>
       </div>
-      
-      <h1 className="text-xl font-black text-white uppercase tracking-tighter drop-shadow-md">Carrom • Multiplayer</h1>
+    );
+  }
 
-      <div className="flex gap-1.5">
-       <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 active:scale-90 transition-all shadow-lg"><X className="h-4 w-4" /></button>
+  // --- MODE SELECTION ---
+  if (gameState.status === 'mode_select') {
+    return (
+      <div className="h-screen w-full bg-[#00897B] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#004D40]/20 to-[#009688]/80 pointer-events-none" />
+        
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative z-10 w-full max-w-sm bg-[#00695C]/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/10 shadow-2xl flex flex-col items-center"
+        >
+          <h2 className="text-white text-2xl font-black uppercase tracking-tighter mb-12 drop-shadow-lg">Select Mode</h2>
+          
+          <div className="w-full space-y-4">
+            <button 
+              onClick={() => selectMode('freestyle')}
+              className="w-full bg-[#FFB300] hover:bg-[#FFA000] text-black py-4 rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 transition-all border-b-4 border-yellow-700"
+            >
+              Freestyle
+            </button>
+            <button 
+              disabled
+              className="w-full bg-[#424242]/40 text-white/30 py-4 rounded-3xl font-black uppercase text-sm tracking-widest border border-white/5 flex items-center justify-center gap-2"
+            >
+              Coming Soon <X className="h-3 w-3" />
+            </button>
+          </div>
+        </motion.div>
       </div>
-    </header>
+    );
+  }
 
-    <main className="flex-1 flex flex-col items-center justify-center p-4 relative z-10 transition-all duration-1000">
-      {/* Wooden Board Structure */}
-      <div className="relative w-full max-w-[380px] aspect-square bg-[#f5ba78] rounded-2xl border-[12px] border-[#004d40] shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex items-center justify-center p-4">
-       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-20 pointer-events-none" />
-       
-       <div className="absolute top-0 left-0 w-10 h-10 bg-black rounded-full -translate-x-3 -translate-y-3" />
-       <div className="absolute top-0 right-0 w-10 h-10 bg-black rounded-full translate-x-3 -translate-y-3" />
-       <div className="absolute bottom-0 left-0 w-10 h-10 bg-black rounded-full -translate-x-3 translate-y-3" />
-       <div className="absolute bottom-0 right-0 w-10 h-10 bg-black rounded-full translate-x-3 translate-y-3" />
+  // --- LOBBY ARENA ---
+  if (gameState.status === 'lobby') {
+    const isAdmin = gameState.players[0]?.uid === currentUser?.uid;
+    const canStart = gameState.players.length >= 2;
 
-       {/* Baselines */}
-       <div className="absolute bottom-10 left-12 right-12 h-[2px] bg-[#8d6e63]/40" />
-       <div className="absolute top-10 left-12 right-12 h-[2px] bg-[#8d6e63]/40" />
-       <div className="absolute left-10 top-12 bottom-12 w-[2px] bg-[#8d6e63]/40" />
-       <div className="absolute right-10 top-12 bottom-12 w-[2px] bg-[#8d6e63]/40" />
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-[#006064] to-[#004D40] flex flex-col items-center p-8 font-sans relative overflow-hidden">
+        <div className="w-full flex justify-between items-center mb-12 relative z-20">
+          <button onClick={() => router.back()} className="p-2 bg-white/10 rounded-full backdrop-blur-md border border-white/10"><X className="h-5 w-5 text-white" /></button>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tighter drop-shadow-lg">Carrom Arena</h2>
+          <div className="w-9" />
+        </div>
 
-       {/* DYNAMIC PIECES */}
-       <div className="relative w-full h-full">
-         {gameState?.pieces?.filter(p => !p.isPocketed).map(piece => (
-           <div 
-             key={piece.id}
-             className={cn(
-               "absolute w-6 h-6 rounded-full border-2 shadow-2xl transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2",
-               piece.type === 'white' ? "bg-white border-gray-300" : piece.type === 'black' ? "bg-[#1a1a1a] border-gray-800" : "bg-red-600 border-red-400"
-             )}
-             style={{ left: `${piece.position.x}%`, top: `${piece.position.y}%` }}
-           />
-         ))}
+        <div className="w-full max-w-sm bg-black/20 backdrop-blur-3xl rounded-[3rem] p-8 border border-white/10 shadow-2xl relative z-10 flex flex-col items-center">
+           <h3 className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-8">Waiting for players</h3>
+           
+           <div className="grid grid-cols-4 gap-4 mb-12">
+             {Array.from({ length: 4 }).map((_, i) => {
+               const p = gameState.players[i];
+               return (
+                 <div key={i} className="flex flex-col items-center gap-2">
+                   {p ? (
+                     <div className="relative">
+                        <Avatar className="h-16 w-16 border-4 border-yellow-500 shadow-[0_0_20px_#eab308]">
+                          <AvatarImage src={p.avatarUrl} />
+                          <AvatarFallback className="bg-[#4D2C19] text-white">P</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 left-1/2 -cross-x-1/2 bg-[#00E676] px-1.5 py-0.5 rounded-full text-[6px] font-black text-white">READY</div>
+                     </div>
+                   ) : (
+                     <button 
+                      onClick={() => joinArena(userProfile)}
+                      className="h-16 w-16 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center text-white/20 hover:bg-white/10 hover:border-white/40 transition-all"
+                     >
+                       <Plus className="h-6 w-6" />
+                     </button>
+                   )}
+                   <span className="text-[8px] font-bold text-white/50 truncate w-16 text-center uppercase">{p?.username || 'Open'}</span>
+                 </div>
+               );
+             })}
+           </div>
 
-         {/* STRIKER (Multiplayer Synced) */}
-         <div 
-           className={cn(
-             "absolute h-10 w-10 bg-gradient-to-br from-white to-gray-300 rounded-full border-2 border-gray-400 shadow-2xl flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-75",
-             isMyTurn && "ring-4 ring-[#00E5FF] animate-reaction-pulse"
-           )}
-           style={{ 
-             left: `${gameState?.strikerPos || 50}%`, 
-             top: myPlayerNum === 1 ? '85%' : '15%' // P1 at bottom, P2 at top
-           }}
-         />
-       </div>
-      </div>
-
-      {/* MATCHMAKING / CONTROLS */}
-      <div className="mt-12 flex flex-col items-center gap-6 w-full max-w-[300px]">
-        {!gameState && (
-          <button 
-           onClick={() => joinArena(userProfile)}
-           className="bg-[#fbc02d] text-black px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all text-sm"
-          >
-           Enter Arena
-          </button>
-        )}
-
-        {gameState?.status === 'lobby' && !myPlayerNum && (
-          <button onClick={() => joinArena(userProfile)} className="bg-[#fbc02d] text-black px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all text-sm">Join Match</button>
-        )}
-
-        {gameState && isMyTurn && (
-          <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom duration-500">
-             <div className="bg-[#a67c52] rounded-full p-1 border-4 border-[#8d6e63] shadow-inner">
-               <Slider 
-                 value={[gameState.strikerPos || 50]} 
-                 onValueChange={(v) => updateStriker(v[0])} 
-                 max={88}
-                 min={12}
-                 step={1}
-               />
-             </div>
+           {isAdmin ? (
              <button 
-               onClick={strike}
-               className="w-full bg-white text-[#004d40] py-4 rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-2 shadow-2xl active:scale-95 transition-all border-b-4 border-gray-200"
+               onClick={startMatch}
+               disabled={!canStart}
+               className={cn(
+                 "w-full py-5 rounded-3xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all border-b-4",
+                 canStart ? "bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-yellow-700 active:scale-95" : "bg-white/5 text-white/10 border-transparent grayscale"
+               )}
              >
-               <Play className="h-4 w-4 fill-current" /> Strike
+               Start Match
              </button>
-          </div>
-        )}
-
-        {gameState && !isMyTurn && (
-          <div className="flex flex-col items-center gap-4 py-8 bg-black/20 rounded-[2rem] px-8 w-full border border-white/5">
-             <Loader className="h-6 w-6 text-yellow-400 animate-spin" />
-             <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Waiting for Opponent</p>
-          </div>
-        )}
-      </div>
-    </main>
-
-    <footer className="p-6 pb-12 flex items-center justify-between shrink-0">
-      <div className="flex gap-4">
-        <div className={cn("text-center", gameState?.turn === gameState?.player1?.uid && "scale-110")}>
-          <div className={cn("p-1 rounded-full border-2 transition-all", gameState?.turn === gameState?.player1?.uid ? "border-yellow-400 shadow-[0_0_15px_#fbbf24]" : "border-white/10")}>
-            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player1?.avatarUrl || ''} /></Avatar>
-          </div>
-          <span className="text-[9px] font-black uppercase mt-1 block">{gameState?.player1?.username || 'Waiting...'}</span>
-        </div>
-        <div className={cn("text-center", gameState?.turn === gameState?.player2?.uid && "scale-110")}>
-          <div className={cn("p-1 rounded-full border-2 transition-all", gameState?.turn === gameState?.player2?.uid ? "border-yellow-400 shadow-[0_0_15px_#fbbf24]" : "border-white/10")}>
-            <Avatar className="h-12 w-12 border-2 border-white/20"><AvatarImage src={gameState?.player2?.avatarUrl || ''} /></Avatar>
-          </div>
-          <span className="text-[9px] font-black uppercase mt-1 block">{gameState?.player2?.username || 'Waiting...'}</span>
+           ) : (
+             <p className="text-white/30 text-[9px] font-bold uppercase tracking-wider animate-pulse">Host starting soon...</p>
+           )}
         </div>
       </div>
-      <div className="text-right">
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Ummy Physics Engine</p>
-        <div className="h-1 w-24 bg-white/5 rounded-full mt-2"><div className="h-full bg-yellow-400 w-1/3" /></div>
+    );
+  }
+
+  // --- CORE GAMEPLAY ARENA ---
+  const isMyTurn = gameState.turn === currentUser?.uid;
+
+  return (
+    <AppLayout fullScreen>
+      <div className="h-screen w-full bg-[#004D40] flex flex-col relative overflow-hidden font-sans select-none">
+        
+        {/* Arena Header */}
+        <header className="relative z-50 flex items-center justify-between p-4 pt-32 shrink-0 bg-gradient-to-b from-black/20 to-transparent">
+          <div className="flex gap-2">
+            <button className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md"><Maximize2 className="h-4 w-4 text-white" /></button>
+            <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md">
+              {isMuted ? <VolumeX className="h-4 w-4 text-white" /> : <Volume2 className="h-4 w-4 text-white" />}
+            </button>
+          </div>
+          
+          <h2 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-red-600 animate-pulse" /> Carrom Live
+          </h2>
+
+          <div className="flex gap-2">
+            <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md"><X className="h-4 w-4 text-white" /></button>
+          </div>
+        </header>
+
+        {/* The Board */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="relative w-full max-w-[400px] aspect-square rounded-[2rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] border-[14px] border-[#3D2616] p-4 bg-[#F5D4B2]">
+             {/* Board Texture */}
+             <img 
+               src="file:///C:/Users/HP/.gemini/antigravity/brain/c5b87f75-d5b9-4f21-bb57-7a31664c39b3/carrom_board_texture_1774734551904.png" 
+               className="absolute inset-0 w-full h-full object-cover opacity-90"
+               alt="Board"
+             />
+
+             {/* Coins & Pieces */}
+             <div className="relative w-full h-full z-10 pointer-events-none">
+                {gameState.pieces.map(piece => {
+                  if (piece.isPocketed) return null;
+                  const isStriker = piece.id === 'striker';
+                  const radius = isStriker ? 5.5 : 3.5;
+                  
+                  return (
+                    <motion.div 
+                      key={piece.id}
+                      animate={{ left: `${piece.position.x}%`, top: `${piece.position.y}%` }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                      className={cn(
+                        "absolute rounded-full shadow-2xl flex items-center justify-center -translate-x-1/2 -translate-y-1/2",
+                        isStriker ? "w-[11%] h-[11%] bg-gradient-to-br from-white via-gray-100 to-gray-300 border-2 border-gray-400 z-30" : "w-[7%] h-[7%] border z-20",
+                        piece.type === 'white' && "bg-gradient-to-br from-white to-gray-200 border-gray-300",
+                        piece.type === 'black' && "bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] border-black/40",
+                        piece.type === 'queen' && "bg-gradient-to-br from-pink-600 via-rose-500 to-red-600 border-red-300"
+                      )}
+                    >
+                      {isStriker && <div className="h-[60%] w-[60%] rounded-full border border-gray-200/50 flex items-center justify-center"><div className="h-1 w-1 bg-gray-400 rounded-full" /></div>}
+                      {!isStriker && <div className="h-4/5 w-4/5 rounded-full border border-black/10" />}
+                    </motion.div>
+                  );
+                })}
+
+             {/* Aiming Line */}
+             {isMyTurn && !isStriking && (
+               <div 
+                 className="absolute bottom-[15%] w-0"
+                 style={{ 
+                   left: `${gameState.strikerPos || 50}%`,
+                   transform: `rotate(${angle}deg)`,
+                   zIndex: 25
+                 }}
+               >
+                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] h-64 bg-gradient-to-t from-white via-white/40 to-transparent border-l-2 border-dashed border-white/20" />
+                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-2">
+                    <ChevronLeft className="h-4 w-4 text-white rotate-90" />
+                 </div>
+               </div>
+             )}
+          </div>
+          
+          {/* Aim Control Handler */}
+          {isMyTurn && !isStriking && (
+            <div 
+              className="absolute inset-x-0 top-1/2 bottom-0 z-40 cursor-crosshair"
+              onMouseMove={(e) => {
+                if (e.buttons !== 1) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const centerX = rect.width * ((gameState.strikerPos || 50) / 100);
+                const dx = e.clientX - (rect.left + centerX);
+                const dy = e.clientY - (rect.bottom - 40);
+                const newAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
+                setAngle(Math.max(-45, Math.min(45, newAngle)));
+              }}
+              onTouchMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const centerX = rect.width * ((gameState.strikerPos || 50) / 100);
+                const dx = e.touches[0].clientX - (rect.left + centerX);
+                const dy = e.touches[0].clientY - (rect.bottom - 40);
+                const newAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
+                setAngle(Math.max(-45, Math.min(45, newAngle)));
+              }}
+            />
+          )}
+
+          {/* Striker Position Slider Area (Touch Only) */}
+          {isMyTurn && !isStriking && (
+             <div 
+               className="absolute bottom-10 left-[15%] right-[15%] h-12 bg-black/10 rounded-full border border-white/5 z-50 flex items-center px-2"
+               onTouchMove={(e) => {
+                 const rect = e.currentTarget.getBoundingClientRect();
+                 const x = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
+                 updateStriker(Math.max(10, Math.min(90, x)));
+               }}
+             >
+                <div 
+                  className="h-8 w-8 bg-white rounded-full shadow-lg border-2 border-yellow-400 absolute transition-all"
+                  style={{ left: `calc(${gameState.strikerPos || 50}% - 16px)` }}
+                />
+             </div>
+          )}
+          </div>
+        </div>
+
+        {/* Bottom Controls */}
+        <footer className="p-6 pb-20 mt-4 flex flex-col items-center gap-6 relative z-50">
+           {isMyTurn ? (
+              <div className="w-full max-w-sm space-y-6">
+                 {/* Power Bar */}
+                 <div className="px-4">
+                    <p className="text-[9px] font-black uppercase text-white/40 tracking-widest text-center mb-3">Release to Strike: {power}%</p>
+                    <div className="relative h-4 w-full bg-white/5 rounded-full border border-white/10 overflow-hidden">
+                       <motion.input 
+                         type="range"
+                         min="0"
+                         max="100"
+                         value={power}
+                         onChange={(e) => setPower(parseInt(e.target.value))}
+                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                       />
+                       <motion.div 
+                         className="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
+                         style={{ width: `${power}%` }}
+                       />
+                    </div>
+                 </div>
+
+                 {/* Controls Row */}
+                 <div className="flex items-center justify-between gap-4 px-2">
+                    <div className="flex items-center gap-3">
+                       {gameState.players.slice(0, 2).map((p, i) => (
+                         <div key={i} className={cn("flex flex-col items-center", gameState.turn === p.uid ? "scale-110" : "opacity-40")}>
+                           <Avatar className={cn("h-10 w-10 border-2 transition-all", gameState.turn === p.uid ? "border-yellow-400 shadow-[0_0_15px_#fbbf24]" : "border-white/10")}>
+                              <AvatarImage src={p.avatarUrl} />
+                           </Avatar>
+                           <span className="text-[7px] font-bold uppercase mt-1 text-white">{p.username}</span>
+                           <span className="text-[10px] font-black text-yellow-400">{p.score}</span>
+                         </div>
+                       ))}
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setIsStriking(true);
+                        strike(angle, power / 10);
+                        setTimeout(() => { setIsStriking(false); setPower(0); }, 2000);
+                      }}
+                      className="flex-1 bg-gradient-to-br from-[#00E5FF] to-[#0091EA] py-4 rounded-3xl font-black uppercase tracking-wider text-sm shadow-[0_0_30px_#00e6ff] active:scale-95 transition-all text-black"
+                    >
+                      STRIKE
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      <div className="h-6 w-10 bg-black/40 rounded-lg flex items-center justify-center border border-white/10">
+                         <div className="h-3 w-3 rounded-full bg-white" />
+                         <span className="text-[9px] font-black ml-1">10</span>
+                      </div>
+                      <div className="h-6 w-10 bg-black/40 rounded-lg flex items-center justify-center border border-white/10">
+                         <div className="h-3 w-3 rounded-full bg-red-600" />
+                         <span className="text-[9px] font-black ml-1">50</span>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+           ) : (
+              <div className="flex flex-col items-center gap-4 bg-black/40 backdrop-blur-3xl px-12 py-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-2">Enemy is Aiming</p>
+                 <div className="flex items-center gap-4">
+                    {gameState.players.map((p, i) => (
+                      <div key={i} className={cn("relative", gameState.turn === p.uid && "animate-reaction-pulse")}>
+                        <Avatar className={cn("h-12 w-12 border-2", gameState.turn === p.uid ? "border-red-500 shadow-[0_0_15px_#ef4444]" : "border-white/10")}>
+                          <AvatarImage src={p.avatarUrl} />
+                        </Avatar>
+                        {gameState.turn === p.uid && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full h-4 w-4 flex items-center justify-center text-[8px] font-black">!</div>}
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           )}
+        </footer>
+
+        {/* Global Particle/Glow background for premium feel */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
+           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
+        </div>
       </div>
-    </footer>
-   </div>
-  </AppLayout>
- );
+    </AppLayout>
+  );
 }
 
 export default function CarromGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-[#3d2b1f] flex items-center justify-center font-headline text-white">SYNCING CARROM...</div>}>
+    <Suspense fallback={<div className="h-screen w-full bg-[#1A0B2E] flex items-center justify-center font-black text-white uppercase tracking-[0.5em] animate-pulse">Initializing Board...</div>}>
       <CarromGameContent />
     </Suspense>
   );
