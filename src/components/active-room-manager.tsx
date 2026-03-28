@@ -20,9 +20,12 @@ function RemoteAudio({ stream, audioContext, muted }: { stream: MediaStream, aud
   useEffect(() => {
     if (!stream || !audioContext) return;
     
+    console.log(`[RemoteAudio] Managing stream for ${stream.id}, context state: ${audioContext.state}`);
+
     try {
+      // Cleanup previous nodes if they exist
       if (sourceRef.current) {
-        sourceRef.current.disconnect();
+        try { sourceRef.current.disconnect(); } catch (e) {}
       }
       
       sourceRef.current = audioContext.createMediaStreamSource(stream);
@@ -33,14 +36,17 @@ function RemoteAudio({ stream, audioContext, muted }: { stream: MediaStream, aud
 
       if (audioRef.current) {
         audioRef.current.srcObject = stream;
-        audioRef.current.muted = true; // Still keep muted to avoid echo but use Web Audio for output
-        audioRef.current.play().catch(e => console.warn('[RemoteAudio] Play failed:', e));
+        audioRef.current.muted = true; // Use Web Audio for output, keep element muted to avoid direct routing issues
+        audioRef.current.play().catch(e => {
+          if (e.name !== 'AbortError') console.warn('[RemoteAudio] Play failed:', e);
+        });
       }
     } catch (err) {
       console.error('[RemoteAudio] Initialization Error:', err);
     }
 
     return () => {
+      console.log(`[RemoteAudio] Cleaning up stream for ${stream?.id}`);
       if (sourceRef.current) try { sourceRef.current.disconnect(); } catch (e) {}
       if (gainRef.current) try { gainRef.current.disconnect(); } catch (e) {}
     };
@@ -65,10 +71,16 @@ export function ActiveRoomManager() {
   useEffect(() => {
     // Initialize standard AudioContext
     if (typeof window !== 'undefined' && !audioContextRef.current) {
+      console.log('[WebRTC] Initializing Shared AudioContext...');
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
         latencyHint: 'interactive',
         sampleRate: 48000
       });
+
+      audioContextRef.current.onstatechange = () => {
+        console.log('[WebRTC] AudioContext state changed:', audioContextRef.current?.state);
+      };
+
       setIsAudioContextReady(true);
     }
 

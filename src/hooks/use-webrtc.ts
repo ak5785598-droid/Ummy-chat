@@ -42,15 +42,15 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    { urls: 'stun:stun.l.google.com:19302' },
    { urls: 'stun:stun1.l.google.com:19302' },
    { urls: 'stun:stun2.l.google.com:19302' },
-   { urls: 'stun:stun3.l.google.com:19302' },
-   { urls: 'stun:stun4.l.google.com:19302' },
    { urls: 'stun:stun.services.mozilla.com' },
-   { urls: 'stun:stun.l.google.com:19305' },
    { urls: 'stun:global.stun.twilio.com:3478' },
+   // IMPORTANT: ADD YOUR TURN SERVERS HERE FOR MOBILE NETWORK RELIABILITY
+   // { urls: 'turn:your-turn-server.com', username: 'user', credential: 'password' }
   ],
   iceCandidatePoolSize: 10,
   bundlePolicy: 'max-bundle',
-  rtcpMuxPolicy: 'require'
+  rtcpMuxPolicy: 'require',
+  iceTransportPolicy: 'all' // Try 'relay' to force TURN if testing, 'all' for normal
  };
 
  // ---------------------------------------------------------------------------
@@ -58,10 +58,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
  // ---------------------------------------------------------------------------
  const mungeSDP = (sdp?: string) => {
   if (!sdp) return sdp;
-  // V2: Robust m=audio Injection (128kbps) for high-capacity rooms
-  let newSdp = sdp.replace(/m=audio.*?\r\n/g, '$&b=AS:128\r\n');
-  // Add stereo hint to Opus (FMT 111) for better quality
-  return newSdp.replace(/a=rtpmap:111 opus\/48000\/2/g, 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 sprop-stereo=1; stereo=1; maxaveragebitrate=128000');
+  // V2: Optimized m=audio Injection (64kbps) for mobile stability
+  let newSdp = sdp.replace(/m=audio.*?\r\n/g, '$&b=AS:64\r\n');
+  // Add stereo hint to Opus (FMT 111) for better quality at lower bitrates
+  return newSdp.replace(/a=rtpmap:111 opus\/48000\/2/g, 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 sprop-stereo=1; stereo=1; maxaveragebitrate=64000');
  };
 
  const updateConnectionState = useCallback((peerId: string, state: PeerConnectionState) => {
@@ -85,26 +85,9 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
   const startLocalStream = async () => {
    try {
-    console.log('[WebRTC] Requesting local mic frequency sync...');
+    console.log('[WebRTC] Initiating Hardware Sync...');
     
-    // Check microphone permissions first if supported
-    if (navigator.permissions && (navigator.permissions as any).query) {
-      try {
-        const permissions = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        if (permissions.state === 'denied') {
-          toast({ 
-            variant: 'destructive', 
-            title: 'Mic Access Denied', 
-            description: 'Please enable microphone permissions in your browser settings and refresh.' 
-          });
-          return;
-        }
-      } catch (e) {
-        console.warn('[WebRTC] Permission query failed:', e);
-      }
-    }
-    
-    const rawStream = await navigator.mediaDevices.getUserMedia({ 
+    const constraints: MediaStreamConstraints = {
      audio: {
       echoCancellation: true,
       noiseSuppression: true,
@@ -119,25 +102,32 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       googHighpassFilter: true,
       sampleRate: 48000,
       channelCount: 1,
-     }, 
-     video: false 
-    });
+      // @ts-ignore
+      latency: 0,
+     },
+     video: false
+    };
 
-    console.log('[WebRTC] Microphone access granted, tracks:', rawStream.getAudioTracks().length);
+    const rawStream = await navigator.mediaDevices.getUserMedia(constraints);
+    console.log('[WebRTC] Mic Acquired:', rawStream.id, 'Tracks:', rawStream.getAudioTracks().length);
     setLocalStream(rawStream);
    } catch (err: any) {
-    console.error('[WebRTC] Hardware Sync Failed:', err);
+    console.error('[WebRTC] Mic Sync Failed:', err);
+    
+    let errorMsg = `Failed to access microphone: ${err.message}`;
+    if (err.name === 'NotAllowedError') errorMsg = 'Mic access denied. Please check site permissions.';
+    if (err.name === 'NotFoundError') errorMsg = 'No microphone detected.';
+    if (err.name === 'NotReadableError') errorMsg = 'Mic is busy (Already in use by another app).';
+
     toast({ 
      variant: 'destructive', 
-     title: 'Microphone Error', 
-     description: `Failed to access microphone: ${err.message}` 
+     title: 'Voice Error', 
+     description: errorMsg
     });
    }
   };
 
-  if (!localStream) {
-    startLocalStream();
-  }
+  if (!localStream) startLocalStream();
  }, [isInSeat, user?.uid, roomId]);
 
  useEffect(() => {
@@ -195,19 +185,32 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
    peerConnections.current.set(peerId, pc);
    updateConnectionState(peerId, pc.connectionState as PeerConnectionState);
 
-   pc.onconnectionstatechange = () => {
-    const state = pc.connectionState as PeerConnectionState;
-    console.log(`[WebRTC] State for ${peerId}: ${state}`);
-    updateConnectionState(peerId, state);
-    if (state === 'failed') {
-      console.warn(`[WebRTC] Connection with ${peerId} failed. Reconnect in 3s...`);
-      setTimeout(() => initiateConnection(peerId), 3000);
-    }
-   };
+    pc.onconnectionstatechange = () => {
+     const state = pc.connectionState as PeerConnectionState;
+     console.log(`[WebRTC] State update for ${peerId}: ${state}`);
+     updateConnectionState(peerId, state);
 
-   pc.oniceconnectionstatechange = () => {
-     console.log(`[WebRTC] ICE State for ${peerId}: ${pc.iceConnectionState}`);
-   };
+     if (state === 'failed' || state === 'disconnected') {
+       console.warn(`[WebRTC] Connection link broken for ${peerId}. state: ${state}`);
+       // Trigger watchdog recovery if it's still a participant
+       setTimeout(() => {
+         const currentPc = peerConnections.current.get(peerId);
+         if (currentPc && (currentPc.connectionState === 'failed' || currentPc.connectionState === 'disconnected')) {
+           console.log(`[WebRTC] Watchdog: Re-initiating lost connection to ${peerId}`);
+           initiateConnection(peerId);
+         }
+       }, 5000); // 5s watchdog delay
+     }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+     const iceState = pc.iceConnectionState;
+     console.log(`[WebRTC] ICE State for ${peerId}: ${iceState}`);
+     if (iceState === 'failed') {
+       pc.restartIce();
+       console.log(`[WebRTC] ICE Restart initiated for ${peerId}`);
+     }
+    };
 
    // V2: Transceiver-based Track Management
    const micTrack = localStream?.getAudioTracks()[0];
@@ -240,7 +243,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
        sendSignal(peerId, { type: 'candidates_batch', candidates: toSend, from: user.uid });
        pendingCandidates.current.set(peerId, []);
       }
-     }, 200); // Reduced to 200ms for faster handshake
+     }, 150); // Optimized for mobile handshake latency
      iceDebounceTimers.current.set(peerId, newTimer);
     }
    };
@@ -340,11 +343,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     const data = change.doc.data();
     const isPeerSpeaker = (data.seatIndex || 0) > 0;
     
-    // OPTIMIZED MESH LOGIC: 
-    // 1. If I am a speaker, I connect to ALL other speakers.
-    // 2. If I am a listener, I ONLY connect to speakers.
-    // 3. Speakers don't need to connect to listeners (listeners will connect to them to hear).
-    
     if (change.type === 'removed') {
        const pc = peerConnections.current.get(peerId);
        if (pc) {
@@ -360,26 +358,45 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
        return;
     }
 
+    // DETERMINISTIC MESH LOGIC:
+    // 1. Listeners connect to all Speakers.
+    // 2. Speakers only initiate to other Speakers if their UID is smaller (one-way).
+    // 3. Speakers NEVER initiate to Listeners (Listeners pull from Speakers).
+    
     if (isPeerSpeaker) {
-      // A speaker was added/modified -> everyone needs to connect to hear them
-      initiateConnection(peerId);
-    } else if (isInSeat) {
-      // A listener was added/modified, and I am a speaker
-      // We DON'T initiate connection to listeners. The listener will initiate to us.
-      // This halves the number of connection attempts and avoids offer collisions.
+      if (isInSeat) {
+        // Speaker-to-Speaker: Deterministic handshake (Smaller UID initiates)
+        if (user.uid < peerId) {
+          console.log(`[WebRTC] Initiating Speaker-to-Speaker: ${user.uid} -> ${peerId}`);
+          initiateConnection(peerId);
+        } else {
+          console.log(`[WebRTC] Waiting for Speaker-to-Speaker: ${peerId} -> ${user.uid}`);
+        }
+      } else {
+        // Listener-to-Speaker: Always initiate
+        console.log(`[WebRTC] Initiating Listener-to-Speaker: ${user.uid} -> ${peerId}`);
+        initiateConnection(peerId);
+      }
+    } else {
+      // Peer is a Listener
+      // We don't initiate to listeners. They will initiate to us if we are a speaker.
     }
    });
   });
 
   const signalingRef = collection(firestore, 'chatRooms', roomId, 'participants', user.uid, 'signaling');
   const unsubSignaling = onSnapshot(signalingRef, (snapshot) => {
-   snapshot.docChanges().forEach((change) => {
-    if (change.type === 'added') {
+   // Handle deletions first if needed, but Firestore batches snapshots
+   const docs = snapshot.docChanges().filter(change => change.type === 'added');
+   if (docs.length === 0) return;
+
+   console.log(`[WebRTC] Incoming signal batch: ${docs.length} messages`);
+   
+   docs.forEach((change) => {
      const signal = change.doc.data();
-     // Clean up first to prevent multiple triggers
+     // Cleanup signaling doc immediately to keep the collection thin
      deleteDoc(change.doc.ref).catch(() => {});
      handleSignal(signal);
-    }
    });
   });
 
