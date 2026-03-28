@@ -16,13 +16,13 @@ interface ChatMessageBubbleProps {
 export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatMessageBubbleProps) {
  if (!bubbleId || bubbleId === 'None') {
   return (
-    <div className={cn(
-     "px-3 py-1.5 rounded-2xl text-[13px] font-medium shadow-sm border max-w-[85%] min-w-[50px] relative",
-     isMe ? "bg-[#00E676] text-black rounded-br-sm border-[#00E676]/20 self-end" : "bg-white/15 text-white rounded-bl-sm border-white/5 self-start",
-     className
-    )}>
-     {children}
-    </div>
+   <div className={cn(
+    "px-3 py-1.5 rounded-2xl text-[13px] font-medium shadow-sm border max-w-full min-w-[50px] relative",
+    isMe ? "bg-[#00E676] text-black border-[#00E676]/20" : "bg-white/15 text-white border-white/5",
+    className
+   )}>
+    {children}
+   </div>
   );
  }
 
@@ -116,22 +116,20 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
 
  const config = styles[bubbleId] || styles['default-premium'];
 
-  return (
-   <div className={cn(
-    "relative px-4 py-2 rounded-2xl max-w-[85%] transition-all flex items-center min-h-[38px] min-w-[60px]",
-    isMe ? "self-end" : "self-start",
-    config.bg,
-    config.text,
-    config.border,
-    config.shadow,
-    className
-   )}>
+ return (
+  <div className={cn(
+   "relative px-4 py-2 rounded-2xl max-w-full transition-all flex items-center min-h-[38px] min-w-[60px]",
+   config.bg,
+   config.text,
+   config.border,
+   config.shadow,
+   className
+  )}>
    {/* Pointy Talk Bubble Tail for realism */}
    <svg 
     viewBox="0 0 10 10" 
     className={cn(
-     "absolute w-3 h-3 bottom-0", 
-     isMe ? "-right-1.5 translate-y-[-4px] scale-x-[-1]" : "-left-1.5 translate-y-[-4px]",
+     "absolute w-3 h-3 bottom-0 -left-1.5 translate-y-[-4px]", 
      config.tailColor
     )}
    >
@@ -140,9 +138,9 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
 
    {config.decorator}
    
-    <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible">
-     {children}
-    </div>
+   <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible">
+    {children}
+   </div>
   </div>
  );
 }

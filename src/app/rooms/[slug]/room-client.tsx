@@ -712,9 +712,10 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
-                <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
+                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
               </div>
            </div>
+           
            <div className="w-full grid grid-cols-4 gap-1.5 px-4">
               {extraSeats.map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
@@ -724,8 +725,8 @@ export function RoomClient({ room }: { room: Room }) {
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
         <div className="flex-1 w-full overflow-hidden mt-4 relative">
-           <ScrollArea className="h-full w-full pointer-events-auto px-3">
-              <div className="flex flex-col gap-1 justify-start min-h-full pb-20">
+           <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
+              <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-20">
                  {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
@@ -781,7 +782,7 @@ export function RoomClient({ room }: { room: Room }) {
                           }
                         }}
                         className={cn(
-                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row"
+                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full"
                         )}
                       >
                         <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
