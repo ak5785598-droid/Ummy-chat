@@ -66,8 +66,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
  const updateConnectionState = useCallback((peerId: string, state: PeerConnectionState) => {
   setConnectionStates(prev => {
+   if (prev.get(peerId) === state) return prev;
    const next = new Map(prev);
-   if (next.get(peerId) === state) return prev;
    next.set(peerId, state);
    return next;
   });
@@ -240,7 +240,7 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
        sendSignal(peerId, { type: 'candidates_batch', candidates: toSend, from: user.uid });
        pendingCandidates.current.set(peerId, []);
       }
-     }, 500);
+     }, 200); // Reduced to 200ms for faster handshake
      iceDebounceTimers.current.set(peerId, newTimer);
     }
    };
@@ -335,23 +335,38 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const unsubParticipants = onSnapshot(participantsRef, (snapshot) => {
    snapshot.docChanges().forEach((change) => {
     const peerId = change.doc.id;
-    if (peerId === user.uid) return;
-    const isPeerSpeaker = (change.doc.data().seatIndex || 0) > 0;
-    if (isPeerSpeaker || isInSeat) {
-     if (change.type === 'added' || (change.type === 'modified' && isPeerSpeaker)) initiateConnection(peerId);
-     if (change.type === 'removed') {
-        const pc = peerConnections.current.get(peerId);
-        if (pc) {
-          pc.close();
-          peerConnections.current.delete(peerId);
-          updateConnectionState(peerId, 'closed');
-          setRemoteStreams(prev => {
-            const next = new Map(prev);
-            next.delete(peerId);
-            return next;
-          });
-        }
-     }
+    if (peerId === user.uid || !peerId) return;
+    
+    const data = change.doc.data();
+    const isPeerSpeaker = (data.seatIndex || 0) > 0;
+    
+    // OPTIMIZED MESH LOGIC: 
+    // 1. If I am a speaker, I connect to ALL other speakers.
+    // 2. If I am a listener, I ONLY connect to speakers.
+    // 3. Speakers don't need to connect to listeners (listeners will connect to them to hear).
+    
+    if (change.type === 'removed') {
+       const pc = peerConnections.current.get(peerId);
+       if (pc) {
+         pc.close();
+         peerConnections.current.delete(peerId);
+         updateConnectionState(peerId, 'closed');
+         setRemoteStreams(prev => {
+           const next = new Map(prev);
+           next.delete(peerId);
+           return next;
+         });
+       }
+       return;
+    }
+
+    if (isPeerSpeaker) {
+      // A speaker was added/modified -> everyone needs to connect to hear them
+      initiateConnection(peerId);
+    } else if (isInSeat) {
+      // A listener was added/modified, and I am a speaker
+      // We DON'T initiate connection to listeners. The listener will initiate to us.
+      // This halves the number of connection attempts and avoids offer collisions.
     }
    });
   });
@@ -360,8 +375,10 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const unsubSignaling = onSnapshot(signalingRef, (snapshot) => {
    snapshot.docChanges().forEach((change) => {
     if (change.type === 'added') {
-     handleSignal(change.doc.data());
+     const signal = change.doc.data();
+     // Clean up first to prevent multiple triggers
      deleteDoc(change.doc.ref).catch(() => {});
+     handleSignal(signal);
     }
    });
   });
