@@ -242,3 +242,21 @@ export type CarromGameState = {
   status: 'lobby' | 'playing' | 'ended';
   updatedAt: any;
 };
+
+export type ChessPiece = {
+  id: string;
+  type: 'p' | 'r' | 'n' | 'b' | 'q' | 'k'; // pawn, rook, knight, bishop, queen, king
+  color: 'w' | 'b';
+  position: string; // e.g. 'e2'
+};
+
+export type ChessGameState = {
+  id: string;
+  roomId: string;
+  white: { uid: string; username: string; avatarUrl: string } | null;
+  black: { uid: string; username: string; avatarUrl: string } | null;
+  turn: 'w' | 'b';
+  fen: string; // Standard Chess algebraic notation
+  status: 'lobby' | 'playing' | 'checkmate' | 'draw';
+  updatedAt: any;
+};
