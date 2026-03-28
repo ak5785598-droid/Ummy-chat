@@ -69,25 +69,39 @@ export function RoomPresenceManager() {
 
        if (!existingSnap.exists()) {
         batch.update(roomDocRef, { participantCount: increment(1), updatedAt: serverTimestamp() });
+        
+        // ONLY set initial seat/mute status if it's a completely new participant
+        batch.set(participantRef, {
+         uid: uid,
+         name: userMetadata.username || 'Guest',
+         avatarUrl: userMetadata.avatarUrl || null,
+         activeFrame: userMetadata.activeFrame || 'None',
+         activeWave: userMetadata.activeWave || 'Default',
+         activeBubble: userMetadata.activeBubble || 'None',
+         joinedAt: serverTimestamp(),
+         lastSeen: serverTimestamp(),
+         isMuted: true,
+         seatIndex: 0,
+         accountNumber: userMetadata.accountNumber || null,
+        }, { merge: true });
        }
 
        batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
        batch.update(profileRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
      }
 
-     batch.set(participantRef, {
-      uid: uid,
-      name: userMetadata.username || 'Guest',
-      avatarUrl: userMetadata.avatarUrl || null,
-      activeFrame: userMetadata.activeFrame || 'None',
-      activeWave: userMetadata.activeWave || 'Default',
-      activeBubble: userMetadata.activeBubble || 'None',
-      joinedAt: existingData?.joinedAt || serverTimestamp(),
-      lastSeen: serverTimestamp(),
-      isMuted: existingData?.isMuted ?? true,
-      seatIndex: existingData?.seatIndex ?? 0,
-      accountNumber: userMetadata.accountNumber || null,
-     }, { merge: true });
+     // PROFILE SYNC - ONLY update metadata fields, NEVER touch seatIndex or isMuted here
+     if (needsProfileSync) {
+       batch.update(participantRef, {
+         name: userMetadata.username || 'Guest',
+         avatarUrl: userMetadata.avatarUrl || null,
+         activeFrame: userMetadata.activeFrame || 'None',
+         activeWave: userMetadata.activeWave || 'Default',
+         activeBubble: userMetadata.activeBubble || 'None',
+         accountNumber: userMetadata.accountNumber || null,
+         lastSeen: serverTimestamp(),
+       });
+     }
 
      batch.commit().catch(console.error);
     }

@@ -41,14 +41,27 @@ export function ActiveRoomManager() {
   const { setVoiceActivity } = useVoiceActivityContext();
 
   useEffect(() => {
-    if (!client) return;
+    if (!client || !user?.uid) return;
+
+    // Helper to reliably convert Firestore String UID to a Numeric UID (Matches useAgora)
+    const hashUidToNumber = (uid: string): number => {
+      let hash = 0;
+      for (let i = 0; i < uid.length; i++) {
+        const char = uid.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    };
+
+    const numericUid = hashUidToNumber(user.uid);
 
     // Enable Agora volume monitoring
     client.enableAudioVolumeIndicator();
     
     const handleVolume = (volumes: { uid: string | number, level: number }[]) => {
-      // Find local user volume
-      const local = volumes.find(v => v.uid === user?.uid || v.uid === 0);
+      // Find local user volume (can be 0 or the numeric hash)
+      const local = volumes.find(v => v.uid === numericUid || v.uid === 0);
       if (local) {
         const isSpeaking = local.level > 5;
         const scaledIntensity = Math.min(100, local.level * 1.5);

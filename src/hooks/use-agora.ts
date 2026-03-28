@@ -7,11 +7,21 @@ type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'failed';
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
+// Helper to reliably convert Firestore String UID to a Numeric UID for Agora compatibility
+function hashUidToNumber(uid: string): number {
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    const char = uid.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
 export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicStream: MediaStream | null = null) {
  const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
  const [localMusicTrack, setLocalMusicTrack] = useState<any>(null);
  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
- const [connectionStates, setConnectionStates] = useState<Map<string, ConnectionStatus>>(new Map());
  const clientRef = useRef<IAgoraRTCClient | null>(null);
  const [isReady, setIsReady] = useState(false);
 
@@ -20,49 +30,43 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
   const init = async () => {
    if (!clientRef.current) {
-    clientRef.current = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+    // SWITCH TO RTC MODE: Standard for group calls, eliminates role-switching lag
+    clientRef.current = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
    }
 
    const client = clientRef.current;
+   const numericUid = hashUidToNumber(uid);
 
    // Handle remote users
    client.on('user-published', async (user, mediaType) => {
-    await client.subscribe(user, mediaType);
-    if (mediaType === 'audio') {
-     user.audioTrack?.play();
-     setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
-     setConnectionStates(prev => new Map(prev).set(user.uid as string, 'connected'));
+    try {
+      await client.subscribe(user, mediaType);
+      if (mediaType === 'audio') {
+       console.warn('[Agora] Remote user published audio:', user.uid);
+       user.audioTrack?.play();
+       setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
+      }
+    } catch (err) {
+      console.error('[Agora] Subscribe FAILED:', err);
     }
    });
 
    client.on('user-unpublished', (user) => {
     setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-    setConnectionStates(prev => new Map(prev).set(user.uid as string, 'disconnected'));
    });
 
    client.on('user-left', (user) => {
     setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-    setConnectionStates(prev => {
-     const next = new Map(prev);
-     next.delete(user.uid as string);
-     return next;
-    });
    });
 
    try {
-    console.warn('[Agora] Attempting to join room:', roomId, 'with UID:', uid);
-    await client.join(APP_ID, roomId, null, uid);
+    console.warn('[Agora] Joining room:', roomId, 'as Numeric UID:', numericUid);
+    // Use Numeric UID for 100% platform compatibility
+    await client.join(APP_ID, roomId, null, numericUid);
     setIsReady(true);
     console.warn('[Agora] Join SUCCESS');
    } catch (error: any) {
     console.error('[Agora] Join FAILED:', error);
-    if (error.code === 'CAN_NOT_GET_GATEWAY_SERVER') {
-     console.warn('[Agora] Network Error: Cannot reach Agora servers.');
-    } else if (error.code === 'INVALID_APP_ID') {
-     console.warn('[Agora] App ID is invalid.');
-    } else if (error.message?.includes('token')) {
-     console.warn('[Agora] TOKEN REQUIRED: Your Agora project has "App Certificate" enabled. You must disable it for testing or provide a token server.');
-    }
    }
   };
 
@@ -71,24 +75,27 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   return () => {
    const cleanup = async () => {
     if (clientRef.current) {
+     if (localAudioTrack) {
+       localAudioTrack.stop();
+       localAudioTrack.close();
+     }
      await clientRef.current.leave();
      clientRef.current.removeAllListeners();
+     clientRef.current = null;
     }
    };
    cleanup();
   };
  }, [roomId, uid]);
 
- // Handle Publishing (Broadcaster vs Audience)
+ // Handle Publishing (Mic control based on Seat status)
  useEffect(() => {
   if (!clientRef.current || !isReady) return;
 
-  const handleRole = async () => {
+  const handlePublishing = async () => {
    const client = clientRef.current!;
    
    if (isInSeat) {
-    console.warn('[Agora] Switching to broadcaster/host role...');
-    await client.setClientRole('host');
     if (!localAudioTrack) {
      try {
       const track = await AgoraRTC.createMicrophoneAudioTrack({
@@ -110,13 +117,12 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
      localAudioTrack.stop();
      localAudioTrack.close();
      setLocalAudioTrack(null);
+     console.warn('[Agora] Mic UNPUBLISHED (Left Seat)');
     }
-    await client.setClientRole('audience');
-    console.log('[Agora] Switched to audience');
    }
   };
 
-  handleRole();
+  handlePublishing();
  }, [isInSeat, isReady]);
 
  // Handle Music Publishing
@@ -149,9 +155,9 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
  useEffect(() => {
   if (localAudioTrack) {
    localAudioTrack.setMuted(isMuted);
-   console.log('[Agora] Local mute state:', isMuted);
+   console.warn('[Agora] Local mute state:', isMuted);
   }
  }, [isMuted, localAudioTrack]);
 
- return { localAudioTrack, remoteUsers, connectionStates, client: clientRef.current };
+ return { localAudioTrack, remoteUsers, client: clientRef.current };
 }
