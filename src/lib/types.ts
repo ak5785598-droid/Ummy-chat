@@ -186,11 +186,40 @@ export type AdminLog = {
 }
 
 export type PkBattle = {
- id: string;
- room1: Room & { participants: RoomParticipant[] };
- room2: Room & { participants: RoomParticipant[] };
- score1: number;
- score2: number;
- startTime: any;
- duration: number;
+  id: string;
+  room1: Room & { participants: RoomParticipant[] };
+  room2: Room & { participants: RoomParticipant[] };
+  score1: number;
+  score2: number;
+  startTime: any;
+  duration: number;
+};
+
+export type LudoPlayer = {
+  uid: string;
+  username: string;
+  avatarUrl: string;
+  color: 'red' | 'blue' | 'yellow' | 'green';
+  isReady: boolean;
+  isActive: boolean;
+};
+
+export type LudoPiece = {
+  id: string;
+  ownerUid: string;
+  color: 'red' | 'blue' | 'yellow' | 'green';
+  position: number; // 0: Home Base, 1-52: Path, 53-57: Path to Home, 58/100: Finished
+};
+
+export type LudoGameState = {
+  id: string;
+  roomId: string;
+  players: LudoPlayer[];
+  pieces: LudoPiece[];
+  turn: string; // UID of current player
+  dice: number | null;
+  diceRolled: boolean;
+  status: 'lobby' | 'playing' | 'ended';
+  winner?: string;
+  updatedAt: any;
 };
