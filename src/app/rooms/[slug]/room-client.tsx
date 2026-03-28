@@ -932,10 +932,10 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenChange={setIsRoomGamesOpen} 
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
-            // Standalone Games: Navigate to full page and minimize room
+            // Standalone Games: Navigate to full page with roomId and minimize room
             setMinimizedRoom(room);
             setActiveRoom(null);
-            router.push(`/games/${slug}`);
+            router.push(`/games/${slug}?roomId=${room.id}`);
           } else {
             // Overlay Games: Show in-room overlay
             setActiveGameSlug(slug);

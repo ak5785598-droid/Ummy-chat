@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -32,17 +32,18 @@ const pieceMap: Record<string, string> = {
   'pb': '♟', 'rb': '♜', 'nb': '♞', 'bb': '♝', 'qb': '♛', 'kb': '♚'
 };
 
-export default function ChessGamePage() {
- const router = useRouter();
- const { user: currentUser } = useUser();
- const { userProfile } = useUserProfile(currentUser?.uid);
-
- const [isLaunching, setIsLaunching] = useState(true);
- const [isMuted, setIsMuted] = useState(false);
- const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-
- // CHESS ENGINE SYNC
- const { gameState, isLoading, startMatch, makeMove } = useChessEngine('global_room', currentUser?.uid || null);
+function ChessGameContent() {
+   const router = useRouter();
+   const searchParams = useSearchParams();
+   const roomId = searchParams.get('roomId') || 'global_room';
+   const { user: currentUser } = useUser();
+   const { userProfile } = useUserProfile(currentUser?.uid);
+   const [isLaunching, setIsLaunching] = useState(true);
+   const [isMuted, setIsMuted] = useState(false);
+   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+ 
+   // CHESS ENGINE SYNC
+   const { gameState, isLoading, startMatch, makeMove } = useChessEngine(roomId, currentUser?.uid || null);
 
  useEffect(() => {
   const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -164,4 +165,12 @@ export default function ChessGamePage() {
    </div>
   </AppLayout>
  );
+}
+
+export default function ChessGamePage() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full bg-[#1a1a1a] flex items-center justify-center font-headline text-white">SYNCING CHESS...</div>}>
+      <ChessGameContent />
+    </Suspense>
+  );
 }

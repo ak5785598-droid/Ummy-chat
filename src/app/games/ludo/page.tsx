@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -49,15 +49,17 @@ const LudoPieceSVG = ({ color, position, onClick, isSelectable }: {
   );
 };
 
-export default function LudoGamePage() {
+function LudoGameContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomId = searchParams.get('roomId') || 'global_room';
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const [isLaunching, setIsLaunching] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
 
   // LUDO ENGINE SYNC
-  const { gameState, isLoading, joinLobby, rollDice, movePiece } = useLudoEngine('global_room', currentUser?.uid || null);
+  const { gameState, isLoading, joinLobby, rollDice, movePiece } = useLudoEngine(roomId, currentUser?.uid || null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -214,5 +216,13 @@ export default function LudoGamePage() {
         </main>
       </div>
     </AppLayout>
+  );
+}
+
+export default function LudoGamePage() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full bg-[#0a1a4a] flex items-center justify-center font-headline text-white">SYNCING LUDO...</div>}>
+      <LudoGameContent />
+    </Suspense>
   );
 }

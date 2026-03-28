@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -28,8 +28,10 @@ import { useCarromEngine } from '@/hooks/use-carrom-engine';
  * High-Fidelity Carrom Arena - Multiplayer Integration.
  * Synchronizes striker position, turns, and lobby state.
  */
-export default function CarromGamePage() {
+function CarromGameContent() {
  const router = useRouter();
+ const searchParams = useSearchParams();
+ const roomId = searchParams.get('roomId') || 'global_room';
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
 
@@ -37,7 +39,7 @@ export default function CarromGamePage() {
  const [isMuted, setIsMuted] = useState(false);
 
  // CARROM ENGINE SYNC
- const { gameState, isLoading, joinArena, updateStriker, strike } = useCarromEngine('global_room', currentUser?.uid || null);
+ const { gameState, isLoading, joinArena, updateStriker, strike } = useCarromEngine(roomId, currentUser?.uid || null);
 
  useEffect(() => {
   const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -186,4 +188,12 @@ export default function CarromGamePage() {
    </div>
   </AppLayout>
  );
+}
+
+export default function CarromGamePage() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full bg-[#3d2b1f] flex items-center justify-center font-headline text-white">SYNCING CARROM...</div>}>
+      <CarromGameContent />
+    </Suspense>
+  );
 }
