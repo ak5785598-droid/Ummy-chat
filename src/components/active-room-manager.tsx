@@ -23,16 +23,9 @@ const hashUidToNumber = (uid: string): number => {
  * Exists at the Provider level to ensure Agora and Firestore stay active during minimization.
  */
 export function ActiveRoomManager() {
-  const { activeRoom, minimizedRoom } = useRoomContext();
+  const { activeRoom, minimizedRoom, musicStream } = useRoomContext();
   const { user } = useUser();
   const firestore = useFirestore();
-  
-  console.log('[ActiveRoomManager] State:', { 
-    hasActiveRoom: !!activeRoom, 
-    hasMinimizedRoom: !!minimizedRoom,
-    hasUser: !!user,
-    userUid: user?.uid 
-  });
   
   // The "Session Room" is either the one the user is physically in, or the one minimized in background
   const sessionRoom = activeRoom || minimizedRoom;
@@ -51,15 +44,8 @@ export function ActiveRoomManager() {
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMuted = currentUserParticipant?.isMuted ?? true;
 
-  console.log('[ActiveRoomManager] Participant status:', { 
-    isInSeat, 
-    isMuted, 
-    seatIndex: currentUserParticipant?.seatIndex,
-    hasParticipant: !!currentUserParticipant 
-  });
-
   // AGORA CORE - Professional Voice Engine (New System)
-  const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid);
+  const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, musicStream);
   
   // Voice Activity Bridge (Agora -> UI Waves)
   const { setVoiceActivity } = useVoiceActivityContext();

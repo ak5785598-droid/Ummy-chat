@@ -15,6 +15,8 @@ interface RoomContextType {
   setRoomPlaylist: React.Dispatch<React.SetStateAction<File[]>>;
   isMusicEnabled: boolean;
   setIsMusicEnabled: (val: boolean) => void;
+  musicStream: MediaStream | null;
+  setMusicStream: (stream: MediaStream | null) => void;
 }
 
 const RoomContext = createContext<RoomContextType | undefined>(undefined);
@@ -29,6 +31,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   const [minimizedRoom, setMinimizedRoom] = useState<Room | null>(null);
   const [roomPlaylist, setRoomPlaylist] = useState<File[]>([]);
   const [isMusicEnabled, setIsMusicEnabled] = useState(true);
+  const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
 
   return (
     <RoomContext.Provider value={{ 
@@ -41,7 +44,9 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       roomPlaylist,
       setRoomPlaylist,
       isMusicEnabled,
-      setIsMusicEnabled
+      setIsMusicEnabled,
+      musicStream,
+      setMusicStream
     }}>
       {children}
     </RoomContext.Provider>

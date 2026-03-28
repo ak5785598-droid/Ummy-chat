@@ -222,7 +222,13 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
+  const { 
+    setActiveRoom, 
+    setIsMinimized, 
+    setMinimizedRoom, 
+    musicStream, 
+    setMusicStream 
+  } = useRoomContext();
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -234,7 +240,6 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const storage = useStorage();
-  const { setActiveRoom, setIsMinimized, setMinimizedRoom } = useRoomContext();
   
   // Get voice activity from context
   const { isSpeaking, intensity } = useVoiceActivityContext();
