@@ -57,8 +57,9 @@ export interface UserProfile {
 
 /**
  * Hook to fetch a specific user's profile from Firestore in real-time.
+ * Supports optional useDoc options for error suppression.
  */
-export function useUserProfile(userId: string | undefined) {
+export function useUserProfile(userId: string | undefined, options?: { suppressGlobalError?: boolean }) {
   const firestore = useFirestore();
 
   const userProfileRef = useMemoFirebase(() => {
@@ -66,7 +67,7 @@ export function useUserProfile(userId: string | undefined) {
     return doc(firestore, 'users', userId, 'profile', userId);
   }, [firestore, userId]);
   
-  const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef);
+  const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef, options);
 
   return { userProfile: data, isLoading, error };
 }

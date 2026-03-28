@@ -35,7 +35,7 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid || undefined);
+  const { userProfile, isLoading: isProfileLoading, error: profileError } = useUserProfile(user?.uid || undefined, { suppressGlobalError: true });
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -118,8 +118,16 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [user, isUserLoading, auth, router, toast]);
 
+  // SILENT BAN DETECTION & REDIRECT LOGIC
   useEffect(() => {
-    // Wait until both user and profile are loaded (or definitively failed)
+    // 1. Handle definitive Permission Denied (High chance of ban)
+    if (profileError && (profileError.message.includes('permission') || profileError.message.includes('insufficient'))) {
+      console.log(`[Presence-Ban] Permission denied on profile read. Triggering silent ban check...`);
+      setBanInfo({ isBanned: true, bannedUntil: null }); // Showing generic ban if we can't read the duration
+      return;
+    }
+
+    // 2. Wait until both user and profile are loaded (or definitively failed)
     if (isUserLoading || isProfileLoading) return;
 
     if (user && userProfile) {
@@ -138,7 +146,7 @@ export default function LoginPage() {
       console.log(`[Login] Authorized. Navigating to discovery.`);
       router.replace('/rooms');
     }
-  }, [user, isUserLoading, userProfile, isProfileLoading, router]);
+  }, [user, isUserLoading, userProfile, isProfileLoading, profileError, router]);
 
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore || !uid) return;
