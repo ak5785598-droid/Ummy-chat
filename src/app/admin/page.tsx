@@ -471,35 +471,35 @@ export default function AdminPage() {
   }, [firestoreGames]);
 
   const configRef = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
+    if (!firestore || !isAuthorized) return null;
     return doc(firestore, "appConfig", "global");
-  }, [firestore, isCreator]);
+  }, [firestore, isAuthorized]);
   const { data: config } = useDoc(configRef);
 
   const rechargeQuery = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
+    if (!firestore || !isAuthorized) return null;
     return query(
       collection(firestore, "rechargeRequests"),
       where("status", "==", "pending"),
-      orderBy("createdAt", "desc"),
+      // orderBy("createdAt", "desc"), // Temporarily disabled to rule out index issues
     );
-  }, [firestore, isCreator]);
+  }, [firestore, isAuthorized]);
   const { data: pendingRecharges } = useCollection(rechargeQuery);
 
   const bannerConfigRef = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
+    if (!firestore || !isAuthorized) return null;
     return doc(firestore, "appConfig", "banners");
-  }, [firestore, isCreator]);
+  }, [firestore, isAuthorized]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
   const rankingConfigRef = useMemoFirebase(() => {
-    if (!firestore || !isCreator) return null;
+    if (!firestore || !isAuthorized) return null;
     return doc(firestore, "appConfig", "rankings");
-  }, [firestore, isCreator]);
+  }, [firestore, isAuthorized]);
   const { data: rankingConfig } = useDoc(rankingConfigRef);
 
   const handleUpdateGlobalNotice = () => {
-    if (!firestore || !isCreator || !configRef) return;
+    if (!firestore || !isAuthorized || !configRef) return;
     setIsUpdatingGlobalNotice(true);
     updateDoc(configRef, {
       globalAnnouncement: globalAnnouncementInput,
@@ -527,7 +527,7 @@ export default function AdminPage() {
   };
 
   const handleUpdateGlobalNotice2 = () => {
-    if (!firestore || !isCreator || !configRef) return;
+    if (!firestore || !isAuthorized || !configRef) return;
     setIsUpdatingGlobalNotice2(true);
     updateDoc(configRef, {
       globalAnnouncement2: globalAnnouncement2Input,
@@ -555,7 +555,7 @@ export default function AdminPage() {
   };
 
   const handleSyncAppData = async () => {
-    if (!firestore || !isCreator) return;
+    if (!firestore || !isAuthorized) return;
     setIsSyncingAppData(true);
     try {
       const usersSnap = await getDocs(collection(firestore, "users"));
@@ -586,7 +586,7 @@ export default function AdminPage() {
   };
 
   const handleSyncDirectory = async () => {
-    if (!firestore || !isCreator) return;
+    if (!firestore || !isAuthorized) return;
     setIsSyncingDirectory(true);
     try {
       const snap = await getDocs(
@@ -1700,7 +1700,7 @@ export default function AdminPage() {
   };
 
   const handleApproveRecharge = async (req: any) => {
-    if (!firestore || !isCreator) return;
+    if (!firestore || !isAuthorized) return;
     setIsProcessingRechargeAction(req.id);
     try {
       const userRef = doc(firestore, "users", req.uid);
@@ -1755,7 +1755,7 @@ export default function AdminPage() {
   };
 
   const handleRejectRecharge = async (requestId: string) => {
-    if (!firestore || !isCreator) return;
+    if (!firestore || !isAuthorized) return;
     if (!confirm("Reject this recharge request?")) return;
     setIsProcessingRechargeAction(requestId);
     try {
@@ -1867,9 +1867,14 @@ export default function AdminPage() {
               </p>
             </div>
           </div>
-          <Badge className="bg-primary text-black font-bold uppercase px-4 py-1.5 h-10 rounded-xl">
-            Supreme Creator
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge className="bg-primary text-black font-bold uppercase px-4 py-1.5 h-10 rounded-xl">
+              {isCreator ? "Supreme Creator" : "Staff Administrator"}
+            </Badge>
+            <p className="text-[8px] font-mono text-slate-400 select-all">
+              UID: {user?.uid}
+            </p>
+          </div>
         </header>
 
         <Tabs
