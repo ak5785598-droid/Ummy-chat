@@ -48,18 +48,22 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    if (!client) return;
    const numericUid = hashUidToNumber(uid);
 
+   const resumeAudioContext = async () => {
+     if (typeof window !== 'undefined') {
+       const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+       if (AudioContext) {
+         const ctx = new AudioContext();
+         if (ctx.state === 'suspended') await ctx.resume();
+       }
+     }
+   };
+
    const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
     try {
       await client.subscribe(user, mediaType);
       if (mediaType === 'audio') {
        console.warn('[Agora] Remote audio published:', user.uid);
-       if (typeof window !== 'undefined') {
-         const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-         if (AudioContext) {
-           const ctx = new AudioContext();
-           if (ctx.state === 'suspended') await ctx.resume();
-         }
-       }
+       await resumeAudioContext();
        user.audioTrack?.play();
        if (isMounted) {
          setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
