@@ -2414,18 +2414,43 @@ export default function AdminPage() {
                           recharge. Ensure it is your correct Google Pay,
                           PhonePe, or BHIM UPI code.
                         </p>
-                        <Button
-                          onClick={() => paymentQrFileInputRef.current?.click()}
-                          disabled={isUploadingPaymentQr}
-                          className="h-14 px-8 rounded-2xl bg-green-600 text-white font-bold uppercase shadow-xl shadow-green-600/20 transition-all hover:bg-green-700 active:scale-95"
-                        >
-                          {isUploadingPaymentQr ? (
-                            <Loader className="animate-spin mr-2" />
-                          ) : (
-                            <Camera className="h-5 w-5 mr-3" />
-                          )}
-                          Synchronize QR Code
-                        </Button>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-1.5 px-1 pt-1">
+                            <label className="text-[10px] font-bold uppercase text-slate-400">Support / UPI ID Text</label>
+                            <div className="flex gap-2">
+                              <Input 
+                                defaultValue={config?.upiId || ""} 
+                                placeholder="e.g. 7209741932@ptyes"
+                                className="h-12 bg-white rounded-xl border-2"
+                                id="upi-id-input"
+                              />
+                              <Button 
+                                size="sm" 
+                                className="h-12 px-6 rounded-xl bg-slate-900 text-white font-bold uppercase"
+                                onClick={() => {
+                                  const val = (document.getElementById('upi-id-input') as HTMLInputElement).value;
+                                  updateDoc(configRef!, { upiId: val, updatedAt: serverTimestamp() }).then(() => toast({ title: "UPI ID Synchronized" }));
+                                }}
+                              >
+                                Save ID
+                              </Button>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => paymentQrFileInputRef.current?.click()}
+                            disabled={isUploadingPaymentQr}
+                            className="w-full h-14 px-8 rounded-2xl bg-green-600 text-white font-bold uppercase shadow-xl shadow-green-600/20 transition-all hover:bg-green-700 active:scale-95"
+                          >
+                            {isUploadingPaymentQr ? (
+                              <Loader className="animate-spin mr-2" />
+                            ) : (
+                              <Camera className="h-5 w-5 mr-3" />
+                            )}
+                            Synchronize QR Code Image
+                          </Button>
+                        </div>
                         <input
                           type="file"
                           ref={paymentQrFileInputRef}

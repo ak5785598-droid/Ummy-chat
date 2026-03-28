@@ -10,7 +10,7 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction, veri
 import Script from 'next/script';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 declare global {
  interface Window {
@@ -610,65 +611,135 @@ function WalletContent() {
     </div>
 
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
-     <DialogContent className="sm:max-w-full md:max-w-2xl bg-white border-none rounded-[1.5rem] p-0 shadow-2xl font-sans overflow-hidden">
-      <div className="flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
-        {/* ORIGINAL USER-PROVIDED BANNER */}
-        <div className="relative w-full aspect-[2/1] md:aspect-[3/1] bg-gray-100 shrink-0">
-          <Image 
-            src="/images/recharge-instructions.jpg" 
-            fill 
-            className="object-contain" 
-            alt="Manual Recharge Instructions" 
-            unoptimized 
-            priority
-          />
+     <DialogContent className="sm:max-w-full md:max-w-2xl bg-[#f8f9fa] border-none rounded-[2rem] p-0 shadow-2xl font-sans overflow-hidden">
+      <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
+        
+        {/* SECTION 1: DYNAMIC QR CARD */}
+        <div className="p-6 bg-gradient-to-b from-[#651FFF] to-[#D500F9] pb-12 shrink-0">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2">
+              <UmmyLogoIcon className="h-8 w-8 drop-shadow-lg" />
+              <h3 className="text-white font-black text-lg uppercase tracking-tight">Official Recharge QR</h3>
+            </div>
+
+            <div className="relative w-56 h-56 bg-white rounded-3xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-4 border-white active:scale-[1.05] transition-transform duration-500 z-20">
+              {config?.paymentQrUrl ? (
+                <div className="h-full w-full flex flex-col">
+                  <div className="bg-white flex justify-center mb-1">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-4 object-contain" />
+                  </div>
+                  <div className="flex-1 relative">
+                    <Image src={config.paymentQrUrl} fill className="object-contain" alt="QR" unoptimized priority />
+                  </div>
+                  <div className="mt-1 bg-blue-50 py-1.5 rounded-xl border border-blue-100">
+                    <p className="text-[10px] font-black text-blue-600 text-center uppercase tracking-widest">{config.upiId || '7209741932@ptyes'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-2">
+                  <Loader className="h-8 w-8 animate-spin" />
+                  <p className="text-[10px] font-bold uppercase">Syncing QR...</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* INPUT SECTION (Positioned For High Visibility) */}
-        <div className="px-6 pb-10 pt-4 bg-white">
-          {showSubmissionSuccess ? (
-            <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-300">
-              <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto" />
-              <div className="space-y-2">
-                <h2 className="text-xl font-bold uppercase text-slate-900 tracking-tight">Request Received</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Admin will verify and credit coins within 5-10 minutes.</p>
+        {/* SECTION 2: CLEAR TEXT INSTRUCTIONS */}
+        <div className="px-6 py-8 -mt-6 bg-white rounded-t-[2.5rem] relative z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {/* Hindi Instructions */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-purple-600 border-b border-purple-100 pb-2">
+                <span className="text-xl">🇮🇳</span>
+                <p className="font-black uppercase text-sm">रिचार्ज निर्देश (Hindi)</p>
               </div>
-              <Button onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
-                className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all" >View Records</Button>
+              <div className="space-y-3">
+                {[
+                  "कोई भी रिचार्ज पैकेज चुनें",
+                  "दिए गए QR का स्क्रीनशॉट लें",
+                  "QR को अपने मोबाइल से स्कैन करें",
+                  "पैकेज के अनुसार पेमेंट करें",
+                  "12 अंकों का UTR नंबर दर्ज करें",
+                  "सहायता के लिए QR नंबर पर संपर्क करें"
+                ].map((step, idx) => (
+                  <div key={idx} className="flex gap-3 items-start">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-black text-xs border border-purple-100">{idx + 1}</span>
+                    <p className="text-[13px] font-bold text-slate-700 leading-tight pt-0.5">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Package Total</p>
-                  <p className="text-xl font-black text-gray-900">
-                    {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}
-                  </p>
-                </div>
-                <div className="text-right space-y-0.5">
-                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Coins Gain</p>
-                   <p className="text-sm font-bold text-yellow-600">
-                     {COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} + Bonus
-                   </p>
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-gray-500 ml-1">Submit Transaction UTR / ID</label>
-                <Input 
-                  value={utrNumber || ''}
-                  onChange={(e) => setUtrNumber(e.target.value)}
-                  placeholder="Enter 12-digit UTR ID"
-                  className="h-14 bg-gray-50 border-gray-100 focus:border-[#651FFF] focus:bg-white rounded-2xl font-black text-center text-lg tracking-[0.2em] transition-all"
-                />
+            {/* English Instructions */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-blue-600 border-b border-blue-100 pb-2">
+                <span className="text-xl">🇬🇧</span>
+                <p className="font-black uppercase text-sm">Instructions (English)</p>
               </div>
-
-              <Button onClick={handleSubmitManualRecharge} disabled={isSubmittingManual}
-                className="w-full h-16 bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase rounded-2xl shadow-xl shadow-purple-500/20" >
-                {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment Submission'}
-              </Button>
+              <div className="space-y-3">
+                {[
+                  "Select any recharge package",
+                  "Take a screenshot of QR code",
+                  "Scan QR using your mobile",
+                  "Make payment as per package",
+                  "Enter 12-digit UTR Number",
+                  "For help, contact number on QR"
+                ].map((step, idx) => (
+                  <div key={idx} className="flex gap-3 items-start">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs border border-blue-100">{idx + 1}</span>
+                    <p className="text-[13px] font-bold text-slate-700 leading-tight pt-0.5">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex items-center gap-3 mb-8">
+             <div className="bg-amber-100 p-2 rounded-xl"><ShieldAlert className="h-5 w-5 text-amber-600" /></div>
+             <p className="text-[11px] font-black text-amber-800 uppercase leading-snug">Online recharge is currently not available. Please follow manual steps above.</p>
+          </div>
+
+          {/* INPUT SECTION */}
+          <div className="space-y-6">
+            {showSubmissionSuccess ? (
+              <div className="text-center py-6 space-y-4 animate-in zoom-in-95 duration-300">
+                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto border-4 border-green-100">
+                  <CheckCircle2 className="h-8 w-8 text-green-500" />
+                </div>
+                <h2 className="text-xl font-bold uppercase text-slate-900 leading-tight">Request Received</h2>
+                <Button onClick={() => { setIsOfflineDialogOpen(false); setShowSubmissionSuccess(false); setShowRecords(true); }}
+                  className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase" >View Records</Button>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="p-5 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount to Pay</p>
+                    <p className="text-3xl font-black text-slate-900 italic -skew-x-12">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price}</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-yellow-400 text-black font-black uppercase rounded-lg px-3 py-1">Bonus Credit Active</Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase text-slate-500 ml-1">Submit Transaction UTR / ID</label>
+                  <Input 
+                    value={utrNumber || ''}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    placeholder="Enter 12-digit UTR ID"
+                    className="h-16 bg-slate-50 border-2 border-slate-100 focus:border-[#651FFF] focus:bg-white rounded-2xl font-black text-center text-xl tracking-[0.2em] transition-all shadow-inner"
+                  />
+                </div>
+
+                <Button onClick={handleSubmitManualRecharge} disabled={isSubmittingManual}
+                  className="w-full h-18 bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase rounded-2xl shadow-xl shadow-purple-500/20 text-lg py-5" >
+                  {isSubmittingManual ? <Loader className="animate-spin" /> : 'Confirm Payment Submission'}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
      </DialogContent>
