@@ -138,7 +138,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
       // 2. Clear Stale Participants
       const standingThreshold = new Date(Date.now() - 60000); 
-      const seatedThreshold = new Date(Date.now() - 300000); // 5 minute grace for seated users
+      const seatedThreshold = new Date(Date.now() - 600000); // 10 minute grace for seated users
       
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       

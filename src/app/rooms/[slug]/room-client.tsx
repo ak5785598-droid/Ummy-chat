@@ -311,7 +311,11 @@ export function RoomClient({ room }: { room: Room }) {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
-      return (now - lastSeen) < 65000;
+      
+      // SYNC: Seated users stay visible for 5m (300s) to match background grace periods.
+      // Standing users stay visible for 65s (standard idle).
+      const threshold = (p.seatIndex > 0) ? 300000 : 65000;
+      return (now - lastSeen) < threshold;
     });
   }, [participantsData, now, currentUser?.uid]);
 
