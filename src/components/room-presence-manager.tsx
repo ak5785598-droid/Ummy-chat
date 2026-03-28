@@ -9,6 +9,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 /**
  * Maintains Firestore presence while a room is active.
  * Re-engineered for high-fidelity cleanup and IST (GMT+5:30) Periodic Reset logic.
+ * Feature: Anti-Kick backgrounding resilience for seated users.
  */
  export function RoomPresenceManager() {
   const { activeRoom } = useRoomContext();
@@ -30,7 +31,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
    accountNumber: userProfile?.accountNumber
   }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.accountNumber]);
 
-  // EFFECT 1: JOIN & CLEANUP LOGIC
+  // EFFECT 1: JOIN & CLEANUP & BACKGROUND RESILIENCE
   useEffect(() => {
    if (!firestore || !activeRoom?.id || !user) return;
 
@@ -104,8 +105,10 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     }, 10000);
 
     // CLEANUP: Admin-only task to purge stale sessions
+    // Re-engineered for mobile resilience (Seated users get 5 min grace)
     if (canCleanup && !cleanupInterval.current) {
      cleanupInterval.current = setInterval(async () => {
+      // 1. Periodic IST Resets
       const roomSnap = await getDoc(roomDocRef);
       if (roomSnap.exists()) {
        const now = new Date();
@@ -133,17 +136,26 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
       }
 
-      // PURGE STALE PARTICIPANTS (> 60s idle threshold for mobile resilience)
-      const staleThreshold = new Date(Date.now() - 60000); 
+      // 2. Clear Stale Participants
+      const standingThreshold = new Date(Date.now() - 60000); 
+      const seatedThreshold = new Date(Date.now() - 300000); // 5 minute grace for seated users
+      
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       
       if (!snap.empty) {
        const purgeBatch = writeBatch(firestore);
        let activeCount = 0;
        snap.docs.forEach(d => {
-        const lastSeen = d.data().lastSeen?.toDate?.() || new Date(0);
-        if (lastSeen < staleThreshold && d.id !== uid) purgeBatch.delete(d.ref);
-        else activeCount++;
+        const p = d.data();
+        const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
+        const threshold = (p.seatIndex > 0) ? seatedThreshold : standingThreshold;
+        
+        if (lastSeen < threshold && d.id !== uid) {
+          purgeBatch.delete(d.ref);
+          console.warn(`[Presence-Purge] User: ${d.id} (Seat: ${p.seatIndex})`);
+        } else {
+          activeCount++;
+        }
        });
        purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
        purgeBatch.commit().catch(() => {});
@@ -154,16 +166,25 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
    performJoin();
 
+   // Visibility Listener: Instant refresh upon returning to app
+   const handleVisibility = () => {
+     if (document.visibilityState === 'visible' && user?.uid && activeRoom?.id) {
+       const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
+       setDocumentNonBlocking(pRef, { lastSeen: serverTimestamp() }, { merge: true });
+     }
+   };
+   document.addEventListener('visibilitychange', handleVisibility);
+
    return () => {
     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
     if (cleanupInterval.current) clearInterval(cleanupInterval.current);
+    document.removeEventListener('visibilitychange', handleVisibility);
     cleanupInterval.current = null;
     heartbeatInterval.current = null;
    };
   }, [firestore, activeRoom?.id, user?.uid, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
 
   // EFFECT 2: SEPARATE PROFILE METADATA SYNC
-  // This effect updates name/avatar without ever touching seatIndex
   useEffect(() => {
     if (!firestore || !activeRoom?.id || !user || !hasJoinedRef.current) return;
     
@@ -179,12 +200,5 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     });
   }, [userMetadata, firestore, activeRoom?.id, user?.uid]);
 
- useEffect(() => {
-  return () => {
-   if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
-   if (cleanupInterval.current) clearInterval(cleanupInterval.current);
-  };
- }, []);
-
- return null;
+  return null;
 }
