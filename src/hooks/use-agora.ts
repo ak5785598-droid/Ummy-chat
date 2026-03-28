@@ -5,11 +5,18 @@ import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
+console.log('[Agora] Config check - APP_ID exists:', !!APP_ID, 'Length:', APP_ID?.length);
+
 // Dynamic import of Agora to prevent SSR window errors
 let AgoraRTC: any = null;
 if (typeof window !== 'undefined') {
-  const agoraModule = require('agora-rtc-sdk-ng');
-  AgoraRTC = agoraModule.default || agoraModule;
+  try {
+    const agoraModule = require('agora-rtc-sdk-ng');
+    AgoraRTC = agoraModule.default || agoraModule;
+    console.log('[Agora] SDK loaded successfully:', !!AgoraRTC);
+  } catch (err) {
+    console.error('[Agora] SDK load FAILED:', err);
+  }
 }
 
 // Helper to reliably convert Firestore String UID to a Numeric UID for Agora compatibility
@@ -31,13 +38,18 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
  const [isReady, setIsReady] = useState(false);
 
  useEffect(() => {
+  console.log('[Agora] Init effect triggered:', { hasAppId: !!APP_ID, roomId, hasUid: !!uid, hasAgora: !!AgoraRTC });
+  
   if (!APP_ID) {
-    console.warn('[Agora] NEXT_PUBLIC_AGORA_APP_ID is missing in environment variables. Voice system will NOT initialize.');
+    console.error('[Agora] CRITICAL: NEXT_PUBLIC_AGORA_APP_ID is missing! Voice will NOT work.');
     return;
   }
-  if (!roomId || !uid) return;
+  if (!roomId || !uid) {
+    console.log('[Agora] Missing roomId or uid, skipping init');
+    return;
+  }
   if (!AgoraRTC) {
-    console.warn('[Agora] SDK not loaded. Voice system will NOT initialize.');
+    console.error('[Agora] CRITICAL: SDK not loaded. Voice will NOT work.');
     return;
   }
 

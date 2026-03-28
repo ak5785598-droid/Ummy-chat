@@ -28,6 +28,13 @@ export function ActiveRoomManager() {
   const { user } = useUser();
   const firestore = useFirestore();
   
+  console.log('[ActiveRoomManager] State:', { 
+    hasActiveRoom: !!activeRoom, 
+    hasMinimizedRoom: !!minimizedRoom,
+    hasUser: !!user,
+    userUid: user?.uid 
+  });
+  
   // The "Session Room" is either the one the user is physically in, or the one minimized in background
   const sessionRoom = activeRoom || minimizedRoom;
   const roomId = sessionRoom?.id;
@@ -44,6 +51,13 @@ export function ActiveRoomManager() {
 
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMuted = currentUserParticipant?.isMuted ?? true;
+
+  console.log('[ActiveRoomManager] Participant status:', { 
+    isInSeat, 
+    isMuted, 
+    seatIndex: currentUserParticipant?.seatIndex,
+    hasParticipant: !!currentUserParticipant 
+  });
 
   // AGORA CORE - Professional Voice Engine (New System)
   const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid);
