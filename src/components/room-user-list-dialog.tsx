@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader, Users, Star, Crown, ChevronRight } from 'lucide-react';
+import { Loader, Users, Star, Crown, ChevronRight, X, Heart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -23,12 +23,11 @@ interface RoomUserListDialogProps {
 }
 
 /**
- * High-Fidelity Room Roster Dimension.
- * DEFERRED SYNC: Hydration mismatch protection.
+ * Mobile-First Compact Room Roster.
+ * Matches UI screenshot with centered header and streamlined user rows.
  */
 export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListDialogProps) {
  const firestore = useFirestore();
- // DEFERRED IDENTITY SYNC: Initialize to null for hydration safety
  const [now, setNow] = useState<number | null>(null);
 
  useEffect(() => {
@@ -59,57 +58,84 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] md:rounded-3xl border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom-full duration-500">
-    <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4">
-     <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
-       <Users className="h-6 w-6" />
-     </div>
-     <div className="flex-1 text-left">
-      <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Room Roster</DialogTitle>
-      <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">
-       Currently Synchronized: {participants.length} Members
-      </DialogDescription>
-     </div>
-    </DialogHeader>
+   <DialogContent className="max-w-full sm:max-w-md bg-white text-black p-0 rounded-t-[2rem] border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom duration-500 bottom-0 top-auto fixed translate-y-0">
+    
+    {/* COMPACT CENTERED HEADER */}
+    <div className="relative py-6 px-4 border-b border-gray-100 flex items-center justify-center">
+      <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        Online User: <span className="text-cyan-500 font-black">{participants.length}</span>
+      </h2>
+      <button 
+        onClick={() => onOpenChange(false)}
+        className="absolute right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+      >
+        <X className="h-5 w-5 text-gray-400" />
+      </button>
+    </div>
 
-    <ScrollArea className="max-h-[60vh] p-4">
+    <ScrollArea className="max-h-[70vh] min-h-[40vh] p-0">
       {isLoading ? (
        <div className="py-20 flex flex-col items-center gap-4">
         <Loader className="animate-spin text-primary h-8 w-8" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Syncing Roster...</p>
        </div>
       ) : participants.length > 0 ? (
-       <div className="space-y-2">
+       <div className="divide-y divide-gray-50">
         {participants.map((p: any) => (
-         <div key={p.uid} className="p-4 bg-gray-50 rounded-2xl flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer border border-gray-100/50 hover:bg-gray-100">
+         <div key={p.uid} className="p-4 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
            <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-              <AvatarImage src={p.avatarUrl || undefined} />
-              <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
+            <div className="relative">
+              <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
+                <AvatarImage src={p.avatarUrl || undefined} />
+                <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
+              </Avatar>
+              {p.seatIndex !== undefined && (
+                <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white" />
+              )}
+            </div>
+            
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-gray-900 leading-none">{p.name || 'Incognito User'}</p>
+              
               <div className="flex items-center gap-2">
-               <p className="font-bold text-sm uppercase tracking-tight">{p.name}</p>
-               {p.seatIndex > 0 && <Badge className="bg-green-500 text-white text-[8px] font-bold h-4 px-1.5">ON MIC</Badge>}
-              </div>
-              <div className="flex items-center gap-1.5 mt-1">
-               <Badge className="bg-gradient-to-r from-cyan-400 to-blue-600 border-none h-3 text-[6px] font-bold px-1.5 uppercase">Lv. 1</Badge>
-               <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">ID:{p.accountNumber || p.uid.slice(0, 6)}</p>
+                {/* ROLE BADGE */}
+                {(p.role === 'owner' || p.role === 'admin') && (
+                  <div className="bg-purple-100 p-1 rounded-md">
+                    <Users className="h-3 w-3 text-purple-600 fill-current" />
+                  </div>
+                )}
+                
+                {/* LEVEL STAR BADGE (Matching Screenshot 2) */}
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center gap-1 pl-1 pr-2 py-0.5 rounded-full shadow-sm">
+                  <Star className="h-2 w-2 text-white fill-current" />
+                  <span className="text-[8px] font-black text-white italic">Lv.17</span>
+                </div>
+
+                {/* GENDER BADGE */}
+                <div className={cn(
+                  "h-4 w-4 rounded-full flex items-center justify-center text-white",
+                  p.gender === 'female' ? "bg-pink-400" : "bg-blue-400"
+                )}>
+                  <span className="text-[8px] font-bold">{p.gender === 'female' ? '♀' : '♂'}</span>
+                </div>
               </div>
             </div>
            </div>
-           <ChevronRight className="h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+           
+           <div className="flex items-center gap-2">
+              <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || p.uid.slice(0, 6)}</p>
+              <ChevronRight className="h-4 w-4 text-gray-200" />
+           </div>
          </div>
         ))}
        </div>
       ) : (
-       <div className="py-20 text-center opacity-20 ">The roster is empty.</div>
+       <div className="py-20 text-center opacity-20 font-bold uppercase text-xs tracking-widest">The roster is empty</div>
       )}
     </ScrollArea>
     
-    <div className="p-8 pt-0">
-      <button onClick={() => onOpenChange(false)} className="w-full h-16 bg-black text-white rounded-2xl font-bold uppercase text-lg shadow-xl active:scale-95 transition-all">Close</button>
-    </div>
+    {/* NO FOOTER BUTTON AS PER SCREENSHOT */}
+    <div className="h-8 bg-white" />
    </DialogContent>
   </Dialog>
  );
