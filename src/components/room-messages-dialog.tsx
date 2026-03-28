@@ -100,6 +100,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
  const { toast } = useToast();
  const messagesEndRef = useRef<HTMLDivElement>(null);
  const imageInputRef = useRef<HTMLInputElement>(null);
+ const { userProfile: currentUserProfile } = useUserProfile(currentUser?.uid);
 
  const messagesQuery = useMemoFirebase(() => {
   if (!firestore || !chatId) return null;
@@ -120,6 +121,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
    text: text.trim(),
    imageUrl: imageUrl || null,
    senderId: currentUser.uid,
+   senderBubble: currentUserProfile?.inventory?.activeBubble || null,
    timestamp: serverTimestamp()
   };
 
@@ -176,7 +178,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
        const isMe = msg.senderId === currentUser?.uid;
        return (
         <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
-           <ChatMessageBubble bubbleId={msg.senderBubble || (isMe ? currentUser?.inventory?.activeBubble : otherUser?.inventory?.activeBubble)} isMe={isMe} className="text-xs">
+           <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-xs">
             {msg.imageUrl && (
              <div 
               onClick={() => setPreviewImage(msg.imageUrl)}

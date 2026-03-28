@@ -36,6 +36,7 @@ import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/ico
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -459,6 +460,7 @@ export function RoomClient({ room }: { room: Room }) {
       senderId: currentUser.uid, 
       senderName: userProfile.username || 'User', 
       senderAvatar: userProfile.avatarUrl || null, 
+      senderBubble: userProfile.inventory?.activeBubble || null,
       chatRoomId: room.id, 
       timestamp: serverTimestamp(), 
       type: 'text'
@@ -767,35 +769,50 @@ export function RoomClient({ room }: { room: Room }) {
                  ))}
 
                  {/* NORMAL CHAT MESSAGES */}
-                 {firestoreMessages?.filter(m => m.type !== 'system').map((msg: any) => (
-                   <div 
-                    key={msg.id || Math.random().toString()} 
-                    onClick={() => {
-                      if (msg.senderId) {
-                        setSelectedParticipantUid(msg.senderId);
-                        setIsUserProfileCardOpen(true);
-                      }
-                    }}
-                    className="flex items-start gap-1.5 bg-black/30 backdrop-blur-sm rounded-lg p-1.5 border border-white/5 w-fit max-w-[90%] animate-in fade-in slide-in-from-left-2 mb-0.5 cursor-pointer active:scale-[0.98] transition-all pointer-events-auto"
-                   >
-                      <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
-                      <div className="flex flex-col">
-                        <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
-                        {msg.imageUrl && (
-                          <div 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewImage(msg.imageUrl);
-                            }}
-                            className="mt-1 relative aspect-square w-40 rounded-lg overflow-hidden border border-white/10"
-                          >
-                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
-                          </div>
+                 {firestoreMessages?.filter(m => m.type !== 'system').map((msg: any) => {
+                    const isMe = msg.senderId === currentUser?.uid;
+                    return (
+                      <div 
+                        key={msg.id || Math.random().toString()} 
+                        onClick={() => {
+                          if (msg.senderId) {
+                            setSelectedParticipantUid(msg.senderId);
+                            setIsUserProfileCardOpen(true);
+                          }
+                        }}
+                        className={cn(
+                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1 cursor-pointer active:scale-95 transition-all pointer-events-auto",
+                          isMe ? "self-end flex-row-reverse" : "self-start flex-row"
                         )}
-                        {msg.content && <p className="text-[10px] font-normal text-white/90 leading-relaxed break-all">{msg.content}</p>}
+                      >
+                        <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
+                          <AvatarImage src={msg.senderAvatar || undefined} />
+                          <AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        
+                        <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                           <span className={cn("text-[8px] font-black uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/40")}>
+                             {msg.senderName || 'Tribe Member'}
+                           </span>
+                           
+                           <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-[11px] leading-snug py-1">
+                             {msg.imageUrl && (
+                               <div 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setPreviewImage(msg.imageUrl);
+                                 }}
+                                 className="mt-1 mb-1 relative aspect-square w-40 rounded-lg overflow-hidden border border-white/10 group-hover:scale-[1.02] transition-transform"
+                               >
+                                 <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                               </div>
+                             )}
+                             {msg.content && <p className="break-all">{msg.content}</p>}
+                           </ChatMessageBubble>
+                        </div>
                       </div>
-                   </div>
-                 ))}
+                    );
+                 })}
                  <div ref={messagesEndRef} className="h-0 w-0" />
               </div>
            </ScrollArea>
@@ -870,7 +887,7 @@ export function RoomClient({ room }: { room: Room }) {
                  >
                     {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
                  </button>
-                 <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
+                 <form className="flex-1 flex gap-2" onSubmit={(e: React.FormEvent) => { handleSendMessage(e); setShowInput(false); }}>
                     <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
                     <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button>
                  </form>
