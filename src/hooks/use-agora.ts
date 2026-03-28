@@ -5,29 +5,24 @@ import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
-console.log('[Agora] Config check - APP_ID exists:', !!APP_ID, 'Length:', APP_ID?.length);
-
 // Dynamic import of Agora to prevent SSR window errors
 let AgoraRTC: any = null;
 if (typeof window !== 'undefined') {
   try {
     const agoraModule = require('agora-rtc-sdk-ng');
     AgoraRTC = agoraModule.default || agoraModule;
-    console.log('[Agora] SDK loaded successfully:', !!AgoraRTC);
   } catch (err) {
     console.error('[Agora] SDK load FAILED:', err);
   }
 }
 
-// Helper to reliably convert Firestore String UID to a Numeric UID for Agora compatibility
+// Helper to reliably convert Firestore String UID to a Numeric UID (UInt32) for Agora compatibility
 function hashUidToNumber(uid: string): number {
-  let hash = 0;
+  let hash = 5381;
   for (let i = 0; i < uid.length; i++) {
-    const char = uid.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = (hash * 33) ^ uid.charCodeAt(i);
   }
-  return Math.abs(hash);
+  return (hash >>> 0); // Convert to unsigned 32-bit integer
 }
 
 export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicStream: MediaStream | null = null) {
@@ -37,21 +32,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
  const clientRef = useRef<IAgoraRTCClient | null>(null);
  const [isReady, setIsReady] = useState(false);
 
+ // EFFECT 1: Connection Lifecycle (JOIN / LEAVE)
  useEffect(() => {
-  console.log('[Agora] Init effect triggered:', { hasAppId: !!APP_ID, roomId, hasUid: !!uid, hasAgora: !!AgoraRTC });
-  
-  if (!APP_ID) {
-    console.error('[Agora] CRITICAL: NEXT_PUBLIC_AGORA_APP_ID is missing! Voice will NOT work.');
+  if (!APP_ID || !roomId || !uid || !AgoraRTC) {
+    console.log('[Agora] Missing requirements, skipping init:', { hasAppId: !!APP_ID, roomId, hasUid: !!uid, hasAgora: !!AgoraRTC });
     return;
   }
-  if (!roomId || !uid) {
-    console.log('[Agora] Missing roomId or uid, skipping init');
-    return;
-  }
-  if (!AgoraRTC) {
-    console.error('[Agora] CRITICAL: SDK not loaded. Voice will NOT work.');
-    return;
-  }
+
+  let isMounted = true;
 
   const init = async () => {
    if (!clientRef.current) {
@@ -62,32 +50,27 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    const client = clientRef.current;
    const numericUid = hashUidToNumber(uid);
 
-   // Handle remote users
    const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
     try {
       await client.subscribe(user, mediaType);
       if (mediaType === 'audio') {
        console.warn('[Agora] Remote user published audio:', user.uid);
        
-       // Resume audio context for browser autoplay policy
-       if (typeof window !== 'undefined' && (window as any).AudioContext) {
-        const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') {
-         await ctx.resume();
-         console.log('[Agora] AudioContext resumed');
-        }
+       // Handle AudioContext resume for browser autoplay policies
+       if (typeof window !== 'undefined') {
+         const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+         if (AudioContext) {
+           const ctx = new AudioContext();
+           if (ctx.state === 'suspended') await ctx.resume();
+         }
        }
+
+       // Play remote track
+       user.audioTrack?.play();
        
-       // Play remote track with error handling
-       try {
-        user.audioTrack?.play();
-        console.warn('[Agora] Remote audio PLAYING for uid:', user.uid);
-       } catch (playErr) {
-        console.error('[Agora] Remote audio play FAILED:', playErr);
+       if (isMounted) {
+         setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
        }
-       
-       setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
       }
     } catch (err) {
       console.error('[Agora] Subscribe FAILED:', err);
@@ -95,11 +78,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    };
 
    const handleUserUnpublished = (user: IAgoraRTCRemoteUser) => {
-    setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+    if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
    };
 
    const handleUserLeft = (user: IAgoraRTCRemoteUser) => {
-    setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+    if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
    };
 
    client.on('user-published', handleUserPublished);
@@ -107,65 +90,53 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
    client.on('user-left', handleUserLeft);
 
    try {
-    console.warn('[Agora] Joining room:', roomId, 'as Numeric UID:', numericUid);
-    // Use Numeric UID for 100% platform compatibility
+    console.warn('[Agora] Attempting Join:', roomId, 'UID:', numericUid);
     await client.join(APP_ID, roomId, null, numericUid);
-    setIsReady(true);
+    if (isMounted) setIsReady(true);
     console.warn('[Agora] Join SUCCESS');
    } catch (error: any) {
-    console.error('[Agora] Join FAILED:', error);
+    if (error.code === 'ALREADY_IN_USE') {
+      if (isMounted) setIsReady(true);
+    } else {
+      console.error('[Agora] Join FAILED:', error);
+    }
    }
-
-   return () => {
-    client.off('user-published', handleUserPublished);
-    client.off('user-unpublished', handleUserUnpublished);
-    client.off('user-left', handleUserLeft);
-   };
   };
 
-  const cleanupPromise = init();
+  init();
 
   return () => {
-   const cleanup = async () => {
-    await cleanupPromise;
-    if (clientRef.current) {
-     if (localAudioTrack) {
-       localAudioTrack.stop();
-       localAudioTrack.close();
-     }
-     await clientRef.current.leave();
-     clientRef.current.removeAllListeners();
-     clientRef.current = null;
-    }
-   };
-   cleanup();
+   isMounted = false;
+   if (clientRef.current) {
+    console.warn('[Agora] Leaving room...');
+    clientRef.current.leave();
+    clientRef.current.removeAllListeners();
+    setIsReady(false);
+    setRemoteUsers([]);
+   }
   };
- }, [roomId, uid, localAudioTrack]);
+ }, [roomId, uid]); // ONLY RE-RUN ON ROOM/UID CHANGE
 
- // Handle Publishing (Mic control based on Seat status)
+ // EFFECT 2: Mic Track (PUBLISH / UNPUBLISH)
  useEffect(() => {
-  if (!clientRef.current || !isReady) return;
+  if (!clientRef.current || !isReady || !AgoraRTC) return;
+  const client = clientRef.current;
 
-  const handlePublishing = async () => {
-   if (!AgoraRTC) return;
-   const client = clientRef.current!;
-   
+  const handleMic = async () => {
    if (isInSeat) {
     if (!localAudioTrack) {
      try {
-      console.log('[Agora] Creating local audio track...');
       const track = await AgoraRTC.createMicrophoneAudioTrack({
        AEC: true,
        AGC: true,
        ANS: true,
        encoderConfig: 'high_quality_stereo'
       });
-      console.log('[Agora] Local audio track CREATED:', !!track);
       setLocalAudioTrack(track);
       await client.publish(track);
-      console.warn('[Agora] Mic PUBLISHED successfully - UID:', hashUidToNumber(uid!));
-     } catch (err: any) {
-      console.error('[Agora] Mic Publish FAILED:', err.message || err);
+      console.warn('[Agora] Mic PUBLISHED');
+     } catch (err) {
+      console.error('[Agora] Mic PUBLISH FAILED:', err);
      }
     }
    } else {
@@ -174,46 +145,47 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
      localAudioTrack.stop();
      localAudioTrack.close();
      setLocalAudioTrack(null);
-     console.warn('[Agora] Mic UNPUBLISHED (Left Seat)');
+     console.warn('[Agora] Mic CLOSED');
     }
    }
   };
 
-  handlePublishing();
+  handleMic();
  }, [isInSeat, isReady, localAudioTrack]);
 
- // Handle Music Publishing
+ // EFFECT 3: Music Track
  useEffect(() => {
-  if (!clientRef.current || !isReady || !isInSeat) return;
+  if (!clientRef.current || !isReady || !isInSeat || !AgoraRTC) return;
+  const client = clientRef.current;
 
   const handleMusic = async () => {
-   if (!AgoraRTC) return;
    if (musicStream) {
     if (!localMusicTrack) {
      const track = await AgoraRTC.createCustomAudioTrack({
       mediaStreamTrack: musicStream.getAudioTracks()[0]
      });
      setLocalMusicTrack(track);
-     await clientRef.current?.publish(track);
-     console.log('[Agora] Published local music track');
+     await client.publish(track);
+     console.warn('[Agora] Music PUBLISHED');
     }
    } else {
     if (localMusicTrack) {
-     await clientRef.current?.unpublish(localMusicTrack);
+     await client.unpublish(localMusicTrack);
      localMusicTrack.stop();
      localMusicTrack.close();
      setLocalMusicTrack(null);
+     console.warn('[Agora] Music CLOSED');
     }
    }
   };
   handleMusic();
  }, [musicStream, isInSeat, isReady, localMusicTrack]);
 
- // Handle Muting
+ // EFFECT 4: Mute Control
  useEffect(() => {
   if (localAudioTrack) {
    localAudioTrack.setMuted(isMuted);
-   console.warn('[Agora] Local mute state:', isMuted);
+   console.warn('[Agora] Mic Mute State:', isMuted);
   }
  }, [isMuted, localAudioTrack]);
 

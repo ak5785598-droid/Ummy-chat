@@ -8,15 +8,14 @@ import { useVoiceActivityContext } from './voice-activity-provider';
 import { collection, query } from 'firebase/firestore';
 import { RoomParticipant } from '@/lib/types';
 
-// Helper to reliably convert Firestore String UID to a Numeric UID (Matches useAgora)
+// Helper to reliably convert Firestore String UID to a Numeric UID (UInt32)
+// Matches the implementation in use-agora.ts for consistent volume detection
 const hashUidToNumber = (uid: string): number => {
-  let hash = 0;
+  let hash = 5381;
   for (let i = 0; i < uid.length; i++) {
-    const char = uid.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+    hash = (hash * 33) ^ uid.charCodeAt(i);
   }
-  return Math.abs(hash);
+  return (hash >>> 0);
 };
 
 /**
