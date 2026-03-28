@@ -58,6 +58,8 @@ export type User = {
  isAdmin?: boolean;
  idColor?: 'red' | 'blue' | 'purple' | 'none';
  isBudgetId?: boolean;
+ activityPoints?: number; // Total EXP from staying in rooms/tasks
+ charmPoints?: number; // Total EXP from receiving gifts
 };
 
 export type Message = {
@@ -139,6 +141,9 @@ export type Room = {
   weeklyGifts: number;
   monthlyGifts: number;
  };
+ levelPoints?: number; // Total room EXP from activity/gifting
+ language?: string;
+ tags?: string[];
 };
 
 export type Game = {

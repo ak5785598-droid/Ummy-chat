@@ -83,6 +83,7 @@ import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
 import { RoomUserListDialog } from '@/components/room-user-list-dialog';
+import { RoomInfoDialog } from '@/components/room-info-dialog';
 import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
@@ -96,6 +97,7 @@ import { RoomEmojiPickerDialog } from '@/components/room-emoji-picker-dialog';
 import { RoomFollowersDialog } from '@/components/room-followers-dialog';
 import { RoomGameOverlay } from '@/components/room-game-overlay';
 import { ExitRoomDialog } from '@/components/exit-room-dialog';
+import { useActivityTracker } from '@/hooks/use-activity-tracker';
 
 // RemoteAudio shifted to ActiveRoomManager
 
@@ -198,6 +200,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
+  const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
@@ -224,6 +227,12 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  // SYNC: Initialize standard user hook
+  const { user: currentUser } = useUser();
+
+  // DYNAMIC LEVELING SYNC
+  useActivityTracker(room.id, currentUser?.uid || null);
+
   const { 
     setActiveRoom, 
     setIsMinimized, 
@@ -238,7 +247,6 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { toast } = useToast();
   const router = useRouter();
-  const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const storage = useStorage();
@@ -664,7 +672,7 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
           <div 
-            onClick={() => setIsFollowersOpen(true)}
+            onClick={() => setIsRoomInfoOpen(true)}
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
             <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
@@ -899,6 +907,13 @@ export function RoomClient({ room }: { room: Room }) {
 
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
+      <RoomInfoDialog 
+        open={isRoomInfoOpen} 
+        onOpenChange={setIsRoomInfoOpen} 
+        room={room} 
+        isOwner={isOwner} 
+        isAdmin={canManageRoom} 
+      />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
       <RoomPlayDialog 
