@@ -448,8 +448,15 @@ export function RoomClient({ room }: { room: Room }) {
     
     utterance.pitch = 1.05;
     utterance.rate = 1.0;
+    utterance.volume = 1.0;
+
+    // VOICE WARM-UP: Ensure we clear old tasks before speaking
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    
+    // Some browsers require a small timeout for the engine to reset
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 50);
   };
 
   // AI VOICE INTERACTION (STT)
@@ -472,7 +479,8 @@ export function RoomClient({ room }: { room: Room }) {
     const recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN'; // NATIVE SYNC: Switch to Hindi-India for better Hinglish recognition
     recognition.interimResults = false;
-    recognition.continuous = false;
+    recognition.continuous = true; // Stay listening for more interaction
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsAIListening(true);
@@ -516,11 +524,13 @@ export function RoomClient({ room }: { room: Room }) {
 
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
-    // GLOBAL AI LEADERSHIP ELECTION:
-    // If owner is offline, the client with the lowest UID handles the AI logic.
-    // This ensures AI is 24/7 active in every room without duplicates.
-    const sortedParticipants = [...participants].sort((a, b) => a.uid.localeCompare(b.uid));
-    const ownerOnline = participants.some(p => p.uid === room.ownerId);
+    // GLOBAL AI LEADERSHIP ELECTION V4 (ZERO-LAG):
+    // We use the full participantsData list sorted by UID to ensure 100% stability.
+    // If the owner is in the list, they take priority. Otherwise, the veteran participant (Head of Tribe) handles it.
+    if (!participantsData || participantsData.length === 0) return;
+
+    const sortedParticipants = [...participantsData].sort((a, b) => a.uid.localeCompare(b.uid));
+    const ownerOnline = participantsData.some(p => p.uid === room.ownerId);
     
     const isAIProcessor = ownerOnline 
        ? currentUser?.uid === room.ownerId 
