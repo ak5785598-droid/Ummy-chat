@@ -494,8 +494,7 @@ export function RoomClient({ room }: { room: Room }) {
 
     recognition.onstart = () => {
       setIsAIListening(true);
-      toast({ title: 'AI is listening...', description: 'Speak your question now!' });
-      if (window.navigator?.vibrate) window.navigator.vibrate(50);
+      toast({ title: 'AI is listening...', description: 'Aap bol sakte hain! 🎙️' });
     };
 
     recognition.onresult = async (event: any) => {
@@ -524,7 +523,10 @@ export function RoomClient({ room }: { room: Room }) {
     setIsAIVoiceEnabled(nextValue);
     localStorage.setItem('ummy_ai_voice_enabled', String(nextValue));
     
+    // BROWSER HANDSHAKE: Prime the engine on first interaction
     if (nextValue) {
+      const warmUp = new SpeechSynthesisUtterance("");
+      window.speechSynthesis.speak(warmUp);
       speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
     } else {
       window.speechSynthesis.cancel();
@@ -699,7 +701,7 @@ export function RoomClient({ room }: { room: Room }) {
           type: 'text',
           timestamp: serverTimestamp(),
           processed: true
-        });
+        }, { merge: true });
       } catch (error) {
         console.error("AI Processing Error:", error);
         // Fallback: If AI fails, unlock the message so another client can try if needed
@@ -1121,13 +1123,13 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
            <div className="w-full flex justify-center px-6 mb-1">
               <div className="w-1/4 max-w-[90px]">
-                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
+                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               </div>
            </div>
            
            <div className="w-full grid grid-cols-4 gap-1.5 px-4">
               {extraSeats.map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} isSpeaking={isSpeaking} intensity={intensity} />
+                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
            </div>
         </div>
@@ -1255,6 +1257,17 @@ export function RoomClient({ room }: { room: Room }) {
            >
               <MessageSquare className="h-5 w-5" />
            </button>
+           
+           {/* REPOSITIONED AI MIC - PERSISTENT ACCESS */}
+           <button 
+             onClick={toggleAIListening}
+             className={cn(
+               "ml-2 h-10 w-10 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
+               isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
+             )}
+           >
+              <Sparkles className="h-5 w-5" />
+           </button>
         </div>
 
         <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
@@ -1324,16 +1337,6 @@ export function RoomClient({ room }: { room: Room }) {
                  />
                  <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
                     <Mail className="h-5 w-5" />
-                 </button>
-                 <button 
-                   type="button"
-                   onClick={toggleAIListening}
-                   className={cn(
-                     "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
-                     isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
-                   )}
-                 >
-                    <Sparkles className="h-5 w-5" />
                  </button>
               </form>
            </div>
@@ -1481,6 +1484,7 @@ export function RoomClient({ room }: { room: Room }) {
         roomOwnerId={room.ownerId}
         roomModeratorIds={room.moderatorIds || []}
         onSilence={handleSilence}
+        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
         onKick={handleKick}
         onLeaveSeat={handleLeaveSeat}
         onToggleMod={handleToggleMod}
