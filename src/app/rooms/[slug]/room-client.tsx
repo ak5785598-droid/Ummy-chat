@@ -1122,25 +1122,20 @@ export function RoomClient({ room }: { room: Room }) {
 
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* BASE BACKGROUND - CLEAR & VIBRANT */}
-        <div className="absolute inset-0 bg-black z-[-1]" />
+        <div className="absolute inset-0 bg-[#0A0A0A] z-[-1]" />
         <Image 
           key={`${room.roomThemeId}`} 
           src={bgUrl} 
           alt="Background" 
           fill 
           unoptimized
-          className="object-cover object-center opacity-90 animate-in fade-in duration-1000 contrast-[1.1] saturate-[1.1] brightness-[0.95]" 
+          className="object-cover object-top opacity-95 animate-in fade-in duration-1000 contrast-[1.05] saturate-[1.1] brightness-[0.9]" 
           priority 
         />
         
-        {/* PREMIUM WAFA-STYLE SUNBEAMS (Light Rays) */}
-        <div className="absolute inset-0 z-10 pointer-events-none opacity-40">
-           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.4)_0%,transparent_60%)]" />
-           <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_40px,rgba(255,255,255,0.05)_45px,rgba(255,255,255,0.05)_50px)]" />
-        </div>
-
-        {/* BOTTOM VIGNETTE FOR CHAT CLARITY */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 z-20" />
+        {/* PREMIUM UI CLARITY OVERLAYS (Vignettes) */}
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
       </div>
 
       {/* SOUNDBOARD OVERLAY */}
@@ -1170,7 +1165,7 @@ export function RoomClient({ room }: { room: Room }) {
 
           <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1 min-w-0">
-                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] truncate max-w-[260px]">{room.title}</h1>
+                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,1)] truncate max-w-[260px]">{room.title}</h1>
                 <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                    {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
@@ -1229,7 +1224,7 @@ export function RoomClient({ room }: { room: Room }) {
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
                    <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
-                     <div className="relative overflow-hidden bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
+                     <div className="relative overflow-hidden bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
                        <div className="space-y-4">
                          {globalConfig?.globalAnnouncement && (
                            <div className="flex items-start gap-2.5">
