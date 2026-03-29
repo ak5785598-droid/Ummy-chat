@@ -156,7 +156,11 @@ const Seat = ({
           />
         )}
         
-        <AvatarFrame frameId={occupant?.activeFrame} size="md">
+        <AvatarFrame 
+          frameId={occupant?.activeFrame} 
+          size="md" 
+          badgeType={occupant && isOccupantOwner ? 'owner' : (occupant && isOccupantAdmin ? 'admin' : (vipLevel > 0 ? 'vip' : null))}
+        >
           <div className={cn(
             "relative p-1 rounded-full",
             "after:absolute after:inset-0 after:rounded-full after:border-b-4 after:border-black/30 after:pointer-events-none"
@@ -173,7 +177,11 @@ const Seat = ({
               {occupant ? (
                 <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
                   <Avatar className="h-full w-full p-0.5">
-                    <AvatarImage src={occupant.avatarUrl || undefined} />
+                    <AvatarImage 
+                      src={occupant.avatarUrl || undefined} 
+                      className="image-render-crisp"
+                      style={{ imageRendering: 'auto' }} 
+                    />
                     <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -190,21 +198,13 @@ const Seat = ({
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
       
-      <div className="flex items-center justify-center gap-0.5 w-full mt-2">
-        {occupant && isOccupantOwner && (
-          <div className="bg-yellow-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
-             <Home className="h-1 w-1 text-white fill-current" />
-          </div>
-        )}
-        {vipLevel > 0 && <VipBadge level={vipLevel} showText={false} className="scale-75 origin-left -ml-1 shrink-0" />}
-        {occupant && !isOccupantOwner && isOccupantAdmin && (
-          <div className="bg-green-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
-             <ShieldCheck className="h-1 w-1 text-white fill-current" />
-          </div>
-        )}
-        <span className="text-[8px] font-bold uppercase text-white truncate max-w-[60px] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-          {occupant ? occupant.name : label}
-        </span>
+      {/* Wafa-style Name Bar (Premium Clarity) */}
+      <div className="relative mt-2 w-full flex flex-col items-center">
+        <div className="bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/5 flex items-center gap-1 min-w-[40px] justify-center">
+          <span className="text-[8px] font-black uppercase text-white truncate max-w-[50px] leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+            {occupant ? occupant.name : label}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -671,47 +671,72 @@ export function RoomClient({ room }: { room: Room }) {
         await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
         
         const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
+        const upperResponse = aiResponse.toUpperCase();
       
         // COMMAND PARSER: Execute moderation actions detected in AI response
         const isAdminAction = room.ownerId === msg.senderId || room.moderatorIds?.includes(msg.senderId);
 
-        if (aiResponse.includes('[CMD:CLEAN]')) {
-          if (isAdminAction) handleAIClearChat();
-        } else if (aiResponse.includes('[CMD:MUTE:')) {
-          const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
+        if (upperResponse.includes('[CMD:CLEAN]')) {
+          if (isAdminAction) {
+            handleAIClearChat();
+            toast({ title: 'Sovereign Master', description: 'Purifying chat stream...' });
+          }
+        } else if (upperResponse.includes('[CMD:MUTE:')) {
+          const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
-            if (target) handleSilence(target.uid, false); // Force Mute
+            if (target) {
+              handleSilence(target.uid, false); 
+              toast({ title: 'Sovereign Master', description: `Silence enforced on ${username}.` });
+            }
           }
-        } else if (aiResponse.includes('[CMD:UNMUTE:')) {
-          const username = aiResponse.match(/\[CMD:UNMUTE:(.*?)\]/)?.[1];
+        } else if (upperResponse.includes('[CMD:UNMUTE:')) {
+          const username = aiResponse.match(/\[CMD:UNMUTE:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
-            if (target) handleSilence(target.uid, true); // Force Unmute
+            if (target) {
+              handleSilence(target.uid, true); 
+              toast({ title: 'Sovereign Master', description: `Voice restored to ${username}.` });
+            }
           }
-        } else if (aiResponse.includes('[CMD:KICK:')) {
-          const username = aiResponse.match(/\[CMD:KICK:(.*?)\]/)?.[1];
+        } else if (upperResponse.includes('[CMD:KICK:')) {
+          const username = aiResponse.match(/\[CMD:KICK:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
-            if (target) handleKick(target.uid, 60); // Kick for 60 mins
+            if (target) {
+              handleKick(target.uid, 60); 
+              toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
+            }
           }
-        } else if (aiResponse.includes('[CMD:LOCK:')) {
-          const seatNum = aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1];
+        } else if (upperResponse.includes('[CMD:LOCK:')) {
+          const seatNum = aiResponse.match(/\[CMD:LOCK:(\d+)\]/i)?.[1];
           if (seatNum && isAdminAction) {
             const index = parseInt(seatNum);
-            if (!room.lockedSeats?.includes(index)) handleAILockSeat(index);
+            if (!room.lockedSeats?.includes(index)) {
+              handleAILockSeat(index);
+              toast({ title: 'Sovereign Master', description: `Seat ${index + 1} secured.` });
+            }
           }
-        } else if (aiResponse.includes('[CMD:UNLOCK:')) {
-          const seatNum = aiResponse.match(/\[CMD:UNLOCK:(\d+)\]/)?.[1];
+        } else if (upperResponse.includes('[CMD:UNLOCK:')) {
+          const seatNum = aiResponse.match(/\[CMD:UNLOCK:(\d+)\]/i)?.[1];
           if (seatNum && isAdminAction) {
             const index = parseInt(seatNum);
-            if (room.lockedSeats?.includes(index)) handleAILockSeat(index);
+            if (room.lockedSeats?.includes(index)) {
+              handleAILockSeat(index);
+              toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
+            }
           }
-        } else if (aiResponse.includes('[CMD:GAME:')) {
-          const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
-          if (slug) handleAIOpenGame(slug);
-        } else if (aiResponse.includes('[CMD:MUSIC:OPEN]')) {
-          if (isAdminAction) handleAIOpenMusic();
+        } else if (upperResponse.includes('[CMD:GAME:')) {
+          const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/i)?.[1];
+          if (slug) {
+            handleAIOpenGame(slug);
+            toast({ title: 'Sovereign Master', description: `Initializing ${slug} frequency...` });
+          }
+        } else if (upperResponse.includes('[CMD:MUSIC:OPEN]')) {
+          if (isAdminAction) {
+            handleAIOpenMusic();
+            toast({ title: 'Sovereign Master', description: 'Synchronizing music hub...' });
+          }
         }
 
         // Post the AI response to Firestore
@@ -1344,9 +1369,13 @@ export function RoomClient({ room }: { room: Room }) {
               <Mail className="h-4 w-4 text-white" />
            </button>
 
-           <button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <LayoutGrid className="h-4 w-4 text-white" />
-           </button>
+            <button 
+              onClick={() => setIsRoomPlayOpen(true)} 
+              className="group relative p-2 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full active:scale-90 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)] border border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400"
+            >
+              <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+              <LayoutGrid className="h-5 w-5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+            </button>
         </div>
       </footer>
 

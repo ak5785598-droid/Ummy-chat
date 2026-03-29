@@ -26,29 +26,25 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { GameResultOverlay } from '@/components/game-result-overlay';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS = [
- { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times', pos: 'top' },
- { id: 'bananas', emoji: '🍌', multiplier: 5, label: 'Win 5 times', pos: 'top-right' },
- { id: 'oranges', emoji: '🍊', multiplier: 5, label: 'Win 5 times', pos: 'right' },
- { id: 'watermelon', emoji: '🍉', multiplier: 5, label: 'Win 5 times', pos: 'bottom-right' },
- { id: 'pizza', emoji: '🍕', multiplier: 10, label: 'Win 10 times', pos: 'bottom' },
- { id: 'burrito', emoji: '🌯', multiplier: 15, label: 'Win 15 times', pos: 'bottom-left' },
- { id: 'skewers', emoji: '🍢', multiplier: 25, label: 'Win 25 times', pos: 'left' },
- { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'Win 45 times', pos: 'top-left' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: '5x' },
+  { id: 'bananas', emoji: '🍌', multiplier: 5, label: '5x' },
+  { id: 'oranges', emoji: '🍊', multiplier: 5, label: '5x' },
+  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: '5x' },
+  { id: 'pizza', emoji: '🍕', multiplier: 10, label: '10x' },
+  { id: 'burrito', emoji: '🌯', multiplier: 15, label: '15x' },
+  { id: 'skewers', emoji: '🍢', multiplier: 25, label: '25x' },
+  { id: 'chicken', emoji: '🍗', multiplier: 45, label: '45x' },
 ];
 
 const CHIPS = [
- { value: 100, label: '100' },
- { value: 1000, label: '1k' },
- { value: 50000, label: '50k' },
- { value: 100000, label: '100k' },
- { value: 500000, label: '500k' },
- { value: 1000000, label: '1M' }, 
- { value: 5000000, label: '5M' }, 
- { value: 50000000, label: '50M' }, 
- { value: 100000000, label: '100M' }, 
- { value: 500000000, label: '500M' }, 
+  { value: 10, label: '10' },
+  { value: 50, label: '50' },
+  { value: 100, label: '100' },
+  { value: 500, label: '500' },
+  { value: 1000, label: '1k' },
 ];
 
 interface FruitPartyGameProps {
@@ -322,60 +318,114 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
     </div>
    </div>
 
-   {/* Game Arena */}
-   <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
-    <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
-     
-     {/* Main Wheel Structure */}
-     <div className="absolute inset-0 border-[8px] border-white/5 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
-     <div className="absolute inset-0 border-2 border-yellow-400/20 rounded-full m-1" />
-     
-     <div className="relative z-20 w-36 h-36 bg-[#4c1d95] rounded-full shadow-2xl flex flex-col items-center justify-center border-[8px] border-[#7c3aed] p-2 text-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-radial from-white/10 to-transparent" />
-      <span className="text-5xl font-black text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-in zoom-in duration-300">
-       {gameState === 'betting' ? timeLeft : '🎲'}
-      </span>
-      <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] mt-1 relative z-10">
-       {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
-      </p>
-     </div>
+    {/* Game Arena */}
+    <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
+      <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+        
+        {/* Outer Glowing Ring */}
+        <div className="absolute inset-0 border-[10px] border-white/5 rounded-full shadow-[0_0_50px_rgba(124,58,237,0.3)]" />
+        <div className="absolute inset-2 border-2 border-yellow-400/10 rounded-full" />
+        
+        {/* Dynamic Spinning Glow (BEHIND items) */}
+        {gameState === 'spinning' && (
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-4 rounded-full border-t-8 border-yellow-400/40 blur-md pointer-events-none"
+          />
+        )}
 
-     {/* Wheel Items */}
-     {ITEMS.map((item, idx) => (
-      <button 
-       key={item.id}
-       onClick={() => handlePlaceBet(item.id)}
-       disabled={gameState !== 'betting'}
-       className={cn(
-        "absolute transition-all duration-300 flex flex-col items-center group active:scale-95",
-        item.pos === 'top' && "top-0",
-        item.pos === 'top-right' && "top-[10%] right-[10%]",
-        item.pos === 'right' && "right-0",
-        item.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
-        item.pos === 'bottom' && "bottom-0",
-        item.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
-        item.pos === 'left' && "left-0",
-        item.pos === 'top-left' && "top-[10%] left-[10%]",
-        highlightIdx === idx ? "scale-115 z-30 drop-shadow-[0_0_25px_#facc15]" : "opacity-80 hover:opacity-100"
-       )}
-      >
-       <div className={cn(
-        "h-16 w-16 rounded-2xl flex flex-col items-center justify-center p-0.5 transition-all border-4 relative overflow-hidden shadow-xl",
-        highlightIdx === idx ? "bg-[#7c3aed] border-yellow-400" : "bg-black/40 border-white/10 group-hover:bg-black/60 group-hover:border-white/20"
-       )}>
-        <span className="text-3xl drop-shadow-md relative z-10">{item.emoji}</span>
-        <span className="text-[7px] font-black text-white/40 uppercase mt-0.5 leading-tight relative z-10 tracking-tighter">{item.label}</span>
-       </div>
-       {myBets[item.id] > 0 && (
-        <div className="mt-1 bg-yellow-400 text-black px-2 py-0.5 rounded-full font-black text-[8px] shadow-lg animate-in zoom-in-50 flex items-center gap-1 border border-white/50">
-         <GoldCoinIcon className="h-2 w-2" />
-         {myBets[item.id].toLocaleString()}
+        {/* Center Timer & Status (Premium Hub) */}
+        <div className="relative z-20 w-36 h-36 bg-gradient-to-b from-[#4c1d95] to-[#2e1065] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed]/50 p-2 text-center overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+          <motion.span 
+            key={timeLeft}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-5xl font-black text-yellow-400 leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+          >
+            {gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? '🎰' : '🏆')}
+          </motion.span>
+          <p className="text-[10px] font-black uppercase text-white/50 tracking-[0.2em] mt-2 relative z-10 italic">
+            {gameState === 'betting' ? 'Bet Now' : (gameState === 'spinning' ? 'Spinning' : 'Winner')}
+          </p>
+          
+          {/* Inner Decorative Ring */}
+          <div className="absolute inset-1 border border-white/5 rounded-full pointer-events-none" />
         </div>
-       )}
-      </button>
-     ))}
-    </div>
-   </main>
+
+        {/* Circular Wheel Items (Wafa Engineered) */}
+        {ITEMS.map((item, idx) => {
+          const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
+          const radius = 135; // px
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          return (
+            <button 
+              key={item.id}
+              onClick={() => handlePlaceBet(item.id)}
+              disabled={gameState !== 'betting'}
+              className={cn(
+                "absolute transition-all duration-300 flex flex-col items-center group active:scale-95",
+                highlightIdx === idx ? "z-30" : "z-10"
+              )}
+              style={{ 
+                transform: `translate(${x}px, ${y}px)`,
+                top: 'calc(50% - 32px)',
+                left: 'calc(50% - 32px)'
+              }}
+            >
+              <div className={cn(
+                "h-16 w-16 rounded-2xl flex flex-col items-center justify-center p-0.5 transition-all border-4 relative overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.4)]",
+                highlightIdx === idx 
+                  ? "bg-gradient-to-br from-yellow-400 to-amber-600 border-white scale-125 shadow-[0_0_30px_rgba(250,204,21,0.6)]" 
+                  : "bg-[#1e1b4b]/80 border-white/10 group-hover:bg-[#1e1b4b] group-hover:border-white/20"
+              )}>
+                {/* Winner Blast Effect */}
+                {highlightIdx === idx && (
+                  <motion.div 
+                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                    className="absolute inset-0 bg-white rounded-xl"
+                  />
+                )}
+                
+                <span className={cn(
+                  "text-3xl drop-shadow-md relative z-10 transition-transform",
+                  highlightIdx === idx && "scale-110"
+                )}>
+                  {item.emoji}
+                </span>
+                <span className={cn(
+                  "text-[8px] font-black uppercase mt-0.5 leading-tight relative z-10 tracking-tighter",
+                  highlightIdx === idx ? "text-black" : "text-white/40"
+                )}>
+                  {item.label}
+                </span>
+                
+                {/* Item Background Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
+              </div>
+
+              {/* Bet Tag (Wafa Style) */}
+              <AnimatePresence>
+                {myBets[item.id] > 0 && (
+                  <motion.div 
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="absolute -top-3 bg-indigo-600 text-white px-2 py-0.5 rounded-lg font-black text-[7px] shadow-lg flex items-center gap-1 border border-white/20 z-40 whitespace-nowrap"
+                  >
+                    <GoldCoinIcon className="h-2 w-2" />
+                    {myBets[item.id] > 1000 ? `${(myBets[item.id]/1000).toFixed(1)}k` : myBets[item.id]}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          );
+        })}
+      </div>
+    </main>
 
    {/* Footer Controls */}
    <footer className="relative z-50 p-4 pb-12 space-y-5 bg-black/20 backdrop-blur-md border-t border-white/5">
