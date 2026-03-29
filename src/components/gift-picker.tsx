@@ -257,6 +257,28 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    batch.update(senderRef, senderUpdate);
    batch.update(senderProfileRef, senderUpdate);
 
+   let luckyWin = null;
+   let winAmount = 0;
+
+   if (selectedGift.type === 'lucky') {
+     const rand = Math.random();
+     if (rand < 0.001) { // 0.1% for 100x
+       luckyWin = { multiplier: 100, winAmount: selectedGift.price * 100 };
+       winAmount = luckyWin.winAmount;
+     } else if (rand < 0.01) { // 1% for 10x
+       luckyWin = { multiplier: 10, winAmount: selectedGift.price * 10 };
+       winAmount = luckyWin.winAmount;
+     } else if (rand < 0.05) { // 5% for 3x
+       luckyWin = { multiplier: 3, winAmount: selectedGift.price * 3 };
+       winAmount = luckyWin.winAmount;
+     }
+   }
+
+   if (winAmount > 0) {
+     batch.update(senderRef, { 'wallet.coins': increment(winAmount) });
+     batch.update(senderProfileRef, { 'wallet.coins': increment(winAmount) });
+   }
+
    batch.update(roomRef, {
     'stats.totalGifts': increment(totalCost),
     'stats.dailyGifts': increment(totalCost),
@@ -306,7 +328,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     senderAvatar: userProfile.avatarUrl || null,
     recipientName: recNames,
     giftId: selectedGift.animationId,
-    text: `sent ${selectedGift.name} x${quantity}`,
+    text: `sent ${selectedGift.name} x${quantity}${luckyWin ? ` (WON ${luckyWin.multiplier}x JACKPOT! 🎰)` : ''}`,
+    luckyWin,
     timestamp: serverTimestamp()
    });
 

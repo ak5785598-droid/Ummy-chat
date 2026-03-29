@@ -48,6 +48,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { VipBadge } from '@/components/vip-badge';
+import { MountOverlay, MountEntry } from '@/components/mount-overlay';
 import {
   Dialog,
   DialogContent,
@@ -117,37 +119,35 @@ import { useActivityTracker } from '@/hooks/use-activity-tracker';
 
 const Seat = ({ 
   index, 
-  label, 
   occupant, 
+  onClick, 
+  label, 
   isLocked, 
-  theme, 
-  onClick,
-  roomOwnerId,
-  roomModeratorIds
+  roomOwnerId, 
+  roomModeratorIds = [], 
+  theme 
 }: { 
-  index: number, 
-  label: string, 
-  occupant?: RoomParticipant, 
-  isLocked?: boolean, 
-  theme: any,
-  onClick: (index: number, occupant?: RoomParticipant) => void,
-  roomOwnerId: string,
-  roomModeratorIds: string[],
-  isSpeaking?: boolean,
-  intensity?: number
+  index: number; 
+  occupant?: RoomParticipant; 
+  onClick: (index: number, occupant?: RoomParticipant) => void; 
+  label: string; 
+  isLocked?: boolean; 
+  roomOwnerId: string; 
+  roomModeratorIds: string[]; 
+  theme: any; 
 }) => {
   const { user } = useUser();
   const { isSpeaking, intensity } = useVoiceActivityContext();
   const currentUser = user;
   const isOccupantOwner = occupant?.uid === roomOwnerId;
   const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
+  const vipLevel = (occupant as any)?.vipLevel || 0;
 
   return (
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
         
-        {/* Dynamic Voice Wave Indicator - Only show for current user */}
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
           <VoiceWaveIndicator 
             isSpeaking={isSpeaking} 
@@ -196,9 +196,10 @@ const Seat = ({
              <Home className="h-1 w-1 text-white fill-current" />
           </div>
         )}
+        {vipLevel > 0 && <VipBadge level={vipLevel} showText={false} className="scale-75 origin-left -ml-1 shrink-0" />}
         {occupant && !isOccupantOwner && isOccupantAdmin && (
           <div className="bg-green-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
-             <Home className="h-1 w-1 text-white fill-current" />
+             <ShieldCheck className="h-1 w-1 text-white fill-current" />
           </div>
         )}
         <span className="text-[7px] font-black uppercase text-white truncate max-w-[55px] drop-shadow-sm leading-none">
@@ -231,8 +232,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [now, setNow] = useState<number | null>(null);
   
   const [sessionJoinTime] = useState(() => new Date());
-
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
+  const [mountEntries, setMountEntries] = useState<MountEntry[]>([]);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
@@ -653,29 +654,43 @@ export function RoomClient({ room }: { room: Room }) {
         
         const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
       
-      // COMMAND PARSER: Execute moderation actions detected in AI response
-      if (aiResponse.includes('[CMD:CLEAN]')) {
-        handleAIClearChat();
-      } else if (aiResponse.includes('[CMD:MUTE:')) {
-        const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
-        const target = participants.find(p => p.name?.toLowerCase() === username?.toLowerCase());
-        if (target) handleSilence(target.uid, false);
-      } else if (aiResponse.includes('[CMD:LOCK:')) {
-        const seatNum = parseInt(aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1] || '0');
-        if (seatNum > 0) handleAILockSeat(seatNum);
-      } else if (aiResponse.includes('[CMD:GAME:')) {
-        const gameSlug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
-        if (gameSlug) handleAIOpenGame(gameSlug);
-      }
+        // COMMAND PARSER: Execute moderation actions detected in AI response
+        if (aiResponse.includes('[CMD:CLEAN]')) {
+          handleAIClearChat();
+        } else if (aiResponse.includes('[CMD:MUTE:')) {
+          const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
+          if (username) {
+            handleAIMuteUser(username);
+          }
+        } else if (aiResponse.includes('[CMD:LOCK:')) {
+          const seatNum = aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1];
+          if (seatNum) {
+            handleAILockSeat(parseInt(seatNum));
+          }
+        } else if (aiResponse.includes('[CMD:GAME:')) {
+          const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
+          if (slug) {
+            handleAIGameOpen(slug);
+          }
+        }
 
-      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: aiResponse,
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
-        type: 'text',
-        timestamp: serverTimestamp()
-      });
+        // Post the AI response to Firestore
+        const responseMsgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
+        await setDocumentNonBlocking(responseMsgRef, {
+          content: aiResponse,
+          senderId: 'SYSTEM_BOT',
+          senderName: 'Ummy AI',
+          senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
+          type: 'text',
+          timestamp: serverTimestamp(),
+          processed: true
+        });
+      } catch (error) {
+        console.error("AI Processing Error:", error);
+        // Fallback: If AI fails, unlock the message so another client can try if needed
+        const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
+        await updateDocumentNonBlocking(msgRef, { _processing_ai: false });
+      }
     }
   };
 
@@ -1434,9 +1449,22 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
         onOpenChat={handleOpenChatFromProfile}
         onMention={handleMention}
-        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
         isMe={selectedParticipantUid === currentUser?.uid}
       />
+
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        @keyframes shine {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-shine {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          background-size: 200% 100%;
+          animation: shine 2s infinite linear;
+        }
+      `}</style>
+      <MountOverlay entries={mountEntries} />
     </div>
   );
 }

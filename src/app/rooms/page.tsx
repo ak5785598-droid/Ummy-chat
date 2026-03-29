@@ -16,7 +16,7 @@ import {
  CarouselContent,
  CarouselItem,
 } from "@/components/ui/carousel";
-import { UmmyLogoIcon } from '@/components/icons';
+import { UmmyLogoIcon, GoldCoinIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import { CreateRoomDialog } from '@/components/create-room-dialog';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 import { RankingCard, FamilyCard, CpCard } from '@/components/premium-feature-cards';
+import { VipBadge } from '@/components/vip-badge';
+import { Shield, ShieldCheck } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
  Sparkles,
@@ -46,6 +48,9 @@ export default function RoomsPage() {
  const { t } = useTranslation();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+
+ const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
+ const { data: userProfile } = useDoc(userRef);
 
  const CATEGORIES = [
   { id: "All", label: t.home.categories.all },
@@ -73,19 +78,6 @@ export default function RoomsPage() {
  }, [firestore, user]);
  const { data: myRoomsData } = useCollection(myRoomQuery);
  const myRoom = myRoomsData?.[0];
-
- const followedRoomsQuery = useMemoFirebase(() => {
-  if (!firestore || !user) return null;
-  return query(collection(firestore, 'users', user.uid, 'followedRooms'), limit(20));
- }, [firestore, user]);
- const { data: followedRooms, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
-
- // Filter out owned rooms from the followed list
- const filteredFollowedRooms = useMemo(() => {
-  if (!followedRooms) return [];
-  if (!user) return followedRooms;
-  return followedRooms.filter(r => r.ownerId !== user.uid && r.id !== user.uid);
- }, [followedRooms, user]);
 
  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
  const { data: bannerConfig } = useDoc(bannerRef);
@@ -274,64 +266,91 @@ export default function RoomsPage() {
       </main>
      </>
     ) : (
-     <main className="px-2 flex-1 animate-in slide-in-from-right-4 duration-500">
-       <section className="mb-6 px-4">
-        <h3 className="text-base font-bold uppercase tracking-tight text-slate-900 mb-3 flex items-center gap-2">
-          <Zap className="h-3.5 w-3.5 text-primary fill-current" /> MY FREQUENCY
-        </h3>
-        {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
-         <div className="flex flex-col gap-3">
-          <div className="max-w-[160px]">
-            <ChatRoomCard room={myRoom} variant="modern" />
-          </div>
-          <div className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white shadow-sm flex items-center justify-between">
-            <div className="flex flex-col">
-             <span className="text-[10px] font-bold uppercase text-slate-400">Tribal ID Sync</span>
-             <span className="text-lg font-bold text-slate-900 tracking-tight">#{myRoom.roomNumber}</span>
+      <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-20">
+        {/* Profile Card */}
+        <section className="mb-6 bg-white rounded-[2rem] p-5 shadow-xl border border-slate-100 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="relative">
+              <Avatar className="h-20 w-20 border-2 border-white shadow-2xl">
+                <AvatarImage src={userProfile?.avatarUrl} />
+                <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1">
+                <VipBadge level={userProfile?.level?.rich || 1} />
+              </div>
             </div>
-            <Button size="sm" className="rounded-xl px-6 h-10 font-bold uppercase text-xs shadow-lg" onClick={() => router.push(`/rooms/${myRoom.id}`)}>
-             Enter Room <ArrowRight className="ml-2 h-3.5 w-3.5" />
-            </Button>
+            <div className="flex flex-col gap-0.5">
+              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight">{userProfile?.username || 'Tribe Member'}</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tribal ID: {userProfile?.accountNumber || '---'}</p>
+              <div className="flex items-center gap-1.5 mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 w-fit">
+                <GoldCoinIcon className="h-3 w-3" />
+                <span className="text-xs font-black text-slate-700">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+              </div>
+            </div>
           </div>
-         </div>
-        ) : (
-         <CreateRoomDialog 
-          trigger={
-           <button 
-            className="w-full h-28 rounded-xl border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center gap-2 active:scale-95 transition-all"
-           >
-             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <Plus className="h-4 w-4" />
-             </div>
-             <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{t.home.launch}</span>
-           </button>
-          }
-         />
-        )}
-       </section>
+        </section>
 
-       <section className="px-2">
-        <h3 className="text-base font-bold uppercase tracking-tight text-slate-900 mb-3 flex items-center gap-2 px-2">
-          <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> {t.profile.follow}
-        </h3>
-        {isFollowedLoading ? (
-         <div className="grid grid-cols-2 gap-x-2 gap-y-6">
-           {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
-         </div>
-        ) : filteredFollowedRooms.length > 0 ? (
-         <div className="grid grid-cols-2 gap-x-2 gap-y-6 pb-8">
-           {filteredFollowedRooms.map((room: any) => (
-            <ChatRoomCard key={room.id} room={room} variant="modern" />
-           ))}
-         </div>
-        ) : (
-         <div className="py-12 text-center space-y-3 opacity-40 bg-white/40 rounded-xl border-2 border-dashed border-white/60 mx-2">
-           <Heart className="h-6 w-6 mx-auto text-slate-300" />
-           <p className="font-bold uppercase text-[8px] tracking-wider">No Followed Tribes</p>
-         </div>
-        )}
-       </section>
-     </main>
+        {/* Daily Missions */}
+        <section className="mb-6">
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" /> Daily Missions
+            </h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Resets in 8h</span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { id: '1', title: 'Daily Check-in', sub: 'Claim 5k coins', icon: Shield, progress: 100, color: 'bg-blue-500' },
+              { id: '2', title: 'Gift Master', sub: 'Send 3 Lucky gifts', icon: Sparkles, progress: 33, color: 'bg-pink-500' },
+              { id: '3', title: 'Social Star', sub: 'Stay 20m in voice', icon: Users, progress: 60, color: 'bg-emerald-500' },
+            ].map(task => (
+              <div key={task.id} className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+                <div className="flex items-center gap-3">
+                  <div className={cn("p-2 rounded-xl text-white shadow-lg", task.color)}>
+                    <task.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[13px] font-black uppercase text-slate-900 leading-tight">{task.title}</h4>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">{task.sub}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[13px] font-black text-slate-900">{task.progress}%</span>
+                  </div>
+                </div>
+                <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className={cn("h-full transition-all duration-1000", task.color)} style={{ width: `${task.progress}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* My Frequency Section */}
+        <section className="mb-8 p-1">
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-4 px-1 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary fill-current" /> My Frequency
+          </h3>
+          {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
+            <div className="flex flex-col gap-3">
+              <div className="max-w-[200px]">
+                <ChatRoomCard room={myRoom} variant="modern" />
+              </div>
+            </div>
+          ) : (
+            <CreateRoomDialog 
+              trigger={
+                <button className="w-full h-32 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-primary hover:border-primary transition-all active:scale-95 group">
+                  <div className="bg-slate-50 p-3 rounded-full group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+                    <Plus className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Open My Room</span>
+                </button>
+              }
+            />
+          )}
+        </section>
+      </main>
     )}
 
    </div>
