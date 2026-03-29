@@ -67,7 +67,7 @@ export function GlobalActivityBanner() {
               />
               
               <div className="shrink-0 px-3 flex items-center gap-1.5 z-10 border-r border-white/10">
-                 <Trophy className="h-4 w-4 text-yellow-400 animate-pulse" />
+                 <Trophy className="h-3 w-4 text-yellow-400 animate-pulse" />
                  <span className="text-[10px] font-black uppercase text-yellow-400 tracking-tighter">System</span>
               </div>
 
