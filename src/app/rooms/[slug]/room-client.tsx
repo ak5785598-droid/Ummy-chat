@@ -208,7 +208,7 @@ const Seat = ({
               <span className="text-[7px] font-black text-white leading-none">{index}</span>
             </div>
           )}
-          <span className="text-[10px] font-bold text-white uppercase truncate max-w-[85px] leading-tight text-center tracking-tight">
+          <span className="text-[10px] font-bold text-white uppercase truncate max-w-[85px] leading-tight text-center tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
             {occupant ? occupant.name : label}
           </span>
         </div>
@@ -1122,13 +1122,14 @@ export function RoomClient({ room }: { room: Room }) {
 
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* BASE BACKGROUND - CLEAR & VIBRANT */}
+        <div className="absolute inset-0 bg-black z-[-1]" />
         <Image 
           key={`${room.roomThemeId}`} 
           src={bgUrl} 
           alt="Background" 
           fill 
           unoptimized
-          className="object-cover opacity-90 animate-in fade-in duration-1000 contrast-[1.2] saturate-[1.2] brightness-[1.1]" 
+          className="object-cover object-center opacity-90 animate-in fade-in duration-1000 contrast-[1.1] saturate-[1.1] brightness-[0.95]" 
           priority 
         />
         
@@ -1169,7 +1170,7 @@ export function RoomClient({ room }: { room: Room }) {
 
           <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1 min-w-0">
-                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[260px]">{room.title}</h1>
+                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] truncate max-w-[260px]">{room.title}</h1>
                 <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                    {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
@@ -1228,7 +1229,7 @@ export function RoomClient({ room }: { room: Room }) {
                  {(globalConfig?.globalAnnouncement || room.announcement) && 
                   (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
                    <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
-                     <div className="relative overflow-hidden bg-white/5 border border-white/5 rounded-2xl p-4">
+                     <div className="relative overflow-hidden bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
                        <div className="space-y-4">
                          {globalConfig?.globalAnnouncement && (
                            <div className="flex items-start gap-2.5">
@@ -1293,7 +1294,7 @@ export function RoomClient({ room }: { room: Room }) {
                         </Avatar>
                         
                         <div className="flex flex-col items-start min-w-0">
-                           <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/40")}>
+                           <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]", isMe ? "text-primary" : "text-white/60")}>
                              {msg.senderName || 'Tribe Member'}
                            </span>
                            
