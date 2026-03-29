@@ -35,6 +35,7 @@ import { RoomParticipant } from '@/lib/types';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { collection, getDocs, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { GameControllerIcon } from '@/components/icons';
 import { searchVideosAction } from '@/actions/get-videos';
 import { useRoomContext } from './room-provider';
@@ -81,6 +82,7 @@ export function RoomPlayDialog({
  const fileInputRef = useRef<HTMLInputElement>(null);
 
  const { user } = useUser();
+ const { userProfile } = useUserProfile(user?.uid || undefined);
  const firestore = useFirestore();
  const { toast } = useToast();
 
@@ -102,10 +104,11 @@ export function RoomPlayDialog({
    // 1. Delete all existing messages
    snap.docs.forEach(d => batch.delete(d.ref));
    
-   // 2. Add System Message: "[Name] cleared the chat message"
+   // 2. Add System Message with LATEST Username
+   const currentName = userProfile?.username || user.displayName || 'Admin';
    const systemMsgRef = doc(messagesRef);
    batch.set(systemMsgRef, {
-     content: `${user.displayName || 'Admin'} cleared the chat message`,
+     content: `${currentName} cleared the chat message`,
      type: 'system',
      timestamp: serverTimestamp(),
    });

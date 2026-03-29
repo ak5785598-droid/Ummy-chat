@@ -37,7 +37,8 @@ import {
  LogOut,
  UserX,
  BadgeCheck,
- Trash2
+ Trash2,
+ Users
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -613,10 +614,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           }
          }} 
         />
+        <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
         <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
         <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
         {isCertifiedSeller && <SellerTransferDialog />}
-        {(currentUser?.uid === CREATOR_ID || isOfficialCenter) && <OfficialCenterDialog isAuthorized={true} />}
+        {isAuthorizedAdmin && <OfficialCenterDialog isAuthorized={true} />}
        </Card>
        <Card className="rounded-2xl border-none shadow-sm overflow-hidden bg-white px-3">
         <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />

@@ -340,12 +340,6 @@ export function AppLayout({
         <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.discover}</span>
        </Link>
 
-       <Link href="/families" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname?.startsWith('/families') ? "text-[#00E5FF]" : "text-white/40")}>
-        {pathname?.startsWith('/families') && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
-        <Users className={cn("h-5 w-5", pathname?.startsWith('/families') ? "fill-current" : "")} />
-        <span className="text-[9px] font-bold uppercase tracking-tight">Family</span>
-       </Link>
-       
        <Link href="/messages" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/messages' ? "text-[#00E5FF]" : "text-white/40")}>
         {pathname === '/messages' && <div className="absolute -top-1 w-10 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
         <div className="relative">

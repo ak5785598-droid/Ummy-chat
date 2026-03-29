@@ -19,14 +19,22 @@ export interface UserProfile {
    diamonds: number;
    totalSpent: number;
    dailySpent: number;
+   weeklySpent?: number;
+   monthlySpent?: number;
   };
   stats?: {
    followers: number;
    fans: number;
    dailyFans: number;
    dailyGiftsReceived?: number;
+   weeklyGiftsReceived?: number;
+   monthlyGiftsReceived?: number;
    dailyGifts?: number;
+   weeklyGifts?: number;
+   monthlyGifts?: number;
    dailyGameWins?: number;
+   weeklyGameWins?: number;
+   monthlyGameWins?: number;
   };
   level?: {
    rich: number;
@@ -62,6 +70,7 @@ export interface UserProfile {
   idColor?: 'red' | 'blue' | 'purple' | 'none';
   isBudgetId?: boolean;
   isOnline?: boolean;
+  svip?: number;
 }
 
 /**

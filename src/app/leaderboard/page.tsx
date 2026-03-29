@@ -37,18 +37,21 @@ const ICON_MAP: Record<string, any> = {
 const SVIPBadge = ({ level }: { level: number }) => (
  <div className={cn(
   "flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm border border-orange-500/50 shadow-lg scale-90 origin-left",
-  "bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 animate-shimmer-gold"
+  "bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 animate-shimmer-fast"
  )}>
-  <span className="text-[7px] font-bold text-white uppercase tracking-tight">SVIP {level}</span>
+  <span className="text-[7px] font-black text-white uppercase tracking-tighter leading-none">SVIP {level || 1}</span>
  </div>
 );
 
-const LevelBadge = ({ level }: { level: number }) => (
- <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
-  <Star className="h-2 w-2 text-white fill-current" />
-  <span className="text-[7px] font-bold text-white ">Lv.{level}</span>
- </div>
-);
+const LevelBadge = ({ level }: { level: number | any }) => {
+  const displayLevel = typeof level === 'number' ? level : (level?.rich || 1);
+  return (
+   <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#b45309] border border-white/20 scale-90 origin-left shadow-md">
+    <Star className="h-2 w-2 text-white fill-current" />
+    <span className="text-[7px] font-bold text-white leading-none">Lv.{displayLevel}</span>
+   </div>
+  );
+};
 
 const RankingCountdown = ({ period }: { period: 'daily' | 'weekly' | 'monthly' }) => {
  const [timeLeft, setTimeLeft] = useState<string | null>(null);
@@ -135,13 +138,13 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
  const top3 = items[2];
  const others = items.slice(3);
 
- const getValue = (item: any) => {
-  if (type === 'rich') return item.wallet?.dailySpent || 0;
-  if (type === 'charm') return item.stats?.dailyGiftsReceived || 0;
-  if (type === 'rooms') return item.stats?.dailyGifts || 0;
-  if (type === 'games') return item.stats?.dailyGameWins || 0;
-  return 0;
- };
+  const getValue = (item: any) => {
+   const fieldPrefix = period === 'daily' ? 'daily' : period === 'weekly' ? 'weekly' : 'monthly';
+   const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
+   
+   if (type === 'rich') return item.wallet?.[`${fieldPrefix}${fieldSuffix}`] || 0;
+   return item.stats?.[`${fieldPrefix}${fieldSuffix}`] || 0;
+  };
 
  const getDisplayName = (item: any) => {
   if (type === 'rooms') return item.name || item.title || 'Tribe Room';
@@ -165,25 +168,25 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
     {top1 && (
      <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="relative z-30 flex flex-col items-center mb-12 group transition-all active:scale-95">
        <div className="relative">
-        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-24 bg-yellow-500/10 blur-3xl opacity-50" />
-        <div className="relative z-10 w-32 h-24">
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-           <img src="https://img.icons8.com/color/96/crown.png" className="h-10 w-10 drop-shadow-2xl animate-bounce" alt="Crown" />
-          </div>
-          <div className="relative w-full h-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_30px_rgba(251,191,36,0.5)] border-[4px] border-[#1a1a1a]">
-           <Avatar className="h-full w-full border-2 border-yellow-200">
-             <AvatarImage src={getDisplayImage(top1)} className="object-cover" />
-             <AvatarFallback className="bg-slate-900 text-white font-bold text-xl">1</AvatarFallback>
-           </Avatar>
-           <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-4 py-0.5 rounded-full font-bold text-[10px] shadow-xl border border-yellow-400 ">TOP 1</div>
-          </div>
-        </div>
+         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-24 bg-yellow-500/10 blur-3xl opacity-50" />
+         <div className="relative z-10 w-28 h-28 aspect-square">
+           <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20">
+            <img src="https://img.icons8.com/color/96/crown.png" className="h-10 w-10 drop-shadow-2xl animate-bounce" alt="Crown" />
+           </div>
+           <div className="relative w-full h-full p-1 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_30px_rgba(251,191,36,0.5)] border-[3px] border-[#1a1a1a]">
+            <Avatar className="h-full w-full border-2 border-yellow-200 rounded-full overflow-hidden">
+              <AvatarImage src={getDisplayImage(top1)} className="object-cover h-full w-full" />
+              <AvatarFallback className="bg-slate-900 text-white font-black text-xl">1</AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-b from-red-500 to-red-700 text-white px-3 py-0.5 rounded-full font-black text-[9px] shadow-xl border border-yellow-400 whitespace-nowrap z-20">TOP 1</div>
+           </div>
+         </div>
        </div>
        <div className="mt-6 text-center space-y-1">
-        <h2 className="text-lg font-bold text-white uppercase drop-shadow-md tracking-tight">{getDisplayName(top1)}</h2>
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <SVIPBadge level={8} />
-          <LevelBadge level={91} />
+        <h2 className="text-[15px] font-black text-white uppercase drop-shadow-md tracking-tighter leading-none mb-2">{getDisplayName(top1)}</h2>
+        <div className="flex items-center justify-center gap-1.5 mb-1.5">
+          {top1.svip && <SVIPBadge level={top1.svip} />}
+          <LevelBadge level={top1.level} />
         </div>
         <div className="flex items-center justify-center gap-1.5 text-yellow-500 font-bold">
           <GoldCoinIcon className="h-4 w-4" />
@@ -196,19 +199,19 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
     <div className="flex items-end justify-center gap-3 w-full max-sm px-2 relative z-20">
       {top2 && (
        <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 bg-gradient-to-b from-[#252b41] to-[#1a1f30] rounded-2xl border-2 border-blue-400/20 p-3 pt-10 flex flex-col items-center gap-1.5 shadow-2xl relative transition-all active:scale-95 group">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 aspect-square">
           <div className="relative w-full h-full bg-gradient-to-b from-blue-200 to-blue-500 rounded-full p-1 border-[3px] border-[#1a1a1a]">
-           <Avatar className="h-full w-full border border-white/20">
-             <AvatarImage src={getDisplayImage(top2)} />
+           <Avatar className="h-full w-full border border-white/20 rounded-full overflow-hidden">
+             <AvatarImage src={getDisplayImage(top2)} className="object-cover h-full w-full" />
              <AvatarFallback className="font-bold">2</AvatarFallback>
            </Avatar>
            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-600 to-blue-800 text-white px-2 py-0.5 rounded-full font-bold text-[7px] border border-blue-200 shadow-lg">TOP 2</div>
           </div>
         </div>
-        <p className="font-bold text-xs text-[#fbc02d] uppercase truncate w-20 text-center mt-1 tracking-tight">{getDisplayName(top2)}</p>
-        <div className="flex items-center gap-1 scale-[0.65] origin-center">
-          <SVIPBadge level={5} />
-          <LevelBadge level={61} />
+        <p className="font-black text-xs text-[#fbc02d] uppercase truncate w-24 text-center mt-2 tracking-tighter leading-none">{getDisplayName(top2)}</p>
+        <div className="flex items-center gap-1 scale-[0.7] origin-center my-0.5">
+          {top2.svip && <SVIPBadge level={top2.svip} />}
+          <LevelBadge level={top2.level} />
         </div>
         <div className="flex items-center justify-center gap-1 text-yellow-500">
           <GoldCoinIcon className="h-2.5 w-2.5" />
@@ -219,19 +222,19 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
 
       {top3 && (
        <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 bg-gradient-to-b from-[#2d221a] to-[#1f1610] rounded-2xl border-2 border-amber-400/20 p-3 pt-10 flex flex-col items-center gap-1.5 shadow-2xl relative transition-all active:scale-95 group">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 aspect-square">
           <div className="relative w-full h-full bg-gradient-to-b from-amber-200 to-amber-500 rounded-full p-1 border-[3px] border-[#1a1a1a]">
-           <Avatar className="h-full w-full border border-white/20">
-             <AvatarImage src={getDisplayImage(top3)} />
+           <Avatar className="h-full w-full border border-white/20 rounded-full overflow-hidden">
+             <AvatarImage src={getDisplayImage(top3)} className="object-cover h-full w-full" />
              <AvatarFallback className="font-bold text-xs">3</AvatarFallback>
            </Avatar>
            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gradient-to-b from-amber-600 to-amber-800 text-white px-2 py-0.5 rounded-full font-bold text-[7px] border border-amber-200 shadow-lg">TOP 3</div>
           </div>
         </div>
-        <p className="font-bold text-xs text-white uppercase truncate w-20 text-center mt-1 tracking-tight">{getDisplayName(top3)}</p>
-        <div className="flex items-center gap-1 scale-[0.65] origin-center -my-1">
-          <SVIPBadge level={2} />
-          <LevelBadge level={94} />
+        <p className="font-black text-xs text-white uppercase truncate w-24 text-center mt-2 tracking-tighter leading-none">{getDisplayName(top3)}</p>
+        <div className="flex items-center gap-1 scale-[0.7] origin-center my-0.5">
+          {top3.svip && <SVIPBadge level={top3.svip} />}
+          <LevelBadge level={top3.level} />
         </div>
         <div className="flex items-center justify-center gap-1 text-yellow-500">
           <GoldCoinIcon className="h-2.5 w-2.5" />
@@ -252,13 +255,13 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
        <AvatarImage src={getDisplayImage(item)} />
        <AvatarFallback className="font-bold text-[10px]">{(index + 4)}</AvatarFallback>
       </Avatar>
-      <div className="flex-1 min-w-0">
-       <p className="font-bold text-[11px] uppercase text-yellow-500 truncate tracking-tight mb-0.5">{getDisplayName(item)}</p>
-       <div className="flex items-center gap-1 scale-[0.8] origin-left">
-         <SVIPBadge level={7} />
-         <LevelBadge level={76} />
+       <div className="flex-1 min-w-0">
+        <p className="font-black text-[12px] uppercase text-yellow-500 truncate tracking-tighter leading-none mb-1.5">{getDisplayName(item)}</p>
+        <div className="flex items-center gap-1 scale-[0.8] origin-left">
+          {item.svip && <SVIPBadge level={item.svip} />}
+          <LevelBadge level={item.level} />
+        </div>
        </div>
-      </div>
       <div className="text-right flex items-center gap-1 shrink-0">
        <span className="font-bold text-[11px] text-white/80 ">{formatValue(getValue(item))}</span>
        <GoldCoinIcon className="h-3 w-3 text-yellow-500" />
@@ -321,10 +324,29 @@ function LeaderboardContent() {
  useEffect(() => { setMounted(true); }, []);
  useEffect(() => { if (initialType) setRankingMode(initialType); }, [initialType]);
 
- const richQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50)), [firestore]);
- const charmQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50)), [firestore]);
- const roomsQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50)), [firestore]);
- const gamesQuery = useMemoFirebase(() => !firestore ? null : query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50)), [firestore]);
+  const richQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const field = timePeriod === 'daily' ? 'wallet.dailySpent' : timePeriod === 'weekly' ? 'wallet.weeklySpent' : 'wallet.monthlySpent';
+    return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
+  }, [firestore, timePeriod]);
+
+  const charmQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const field = timePeriod === 'daily' ? 'stats.dailyGiftsReceived' : timePeriod === 'weekly' ? 'stats.weeklyGiftsReceived' : 'stats.monthlyGiftsReceived';
+    return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
+  }, [firestore, timePeriod]);
+
+  const roomsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const field = timePeriod === 'daily' ? 'stats.dailyGifts' : timePeriod === 'weekly' ? 'stats.weeklyGifts' : 'stats.monthlyGifts';
+    return query(collection(firestore, 'chatRooms'), orderBy(field, 'desc'), limit(50));
+  }, [firestore, timePeriod]);
+
+  const gamesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const field = timePeriod === 'daily' ? 'stats.dailyGameWins' : timePeriod === 'weekly' ? 'stats.weeklyGameWins' : 'stats.monthlyGameWins';
+    return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
+  }, [firestore, timePeriod]);
 
  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
@@ -454,12 +476,15 @@ function LeaderboardContent() {
         <AvatarFallback className="bg-black text-white text-xs">U</AvatarFallback>
        </Avatar>
        <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm uppercase text-black truncate leading-none mb-0.5">{me?.username || 'Tribe Member'}</p>
-        <div className="scale-75 origin-left"><LevelBadge level={me?.level?.rich || 1} /></div>
+        <p className="font-black text-sm uppercase text-black truncate leading-none mb-1 shadow-sm">{me?.username || 'Tribe Member'}</p>
+        <div className="flex items-center gap-1 scale-[0.75] origin-left">
+           {me?.svip && <SVIPBadge level={me.svip} />}
+           <LevelBadge level={me?.level} />
+        </div>
        </div>
        <div className="text-right flex items-center gap-1 shrink-0">
-        <span className="text-lg font-bold text-black leading-none">{myValue.toLocaleString()}</span>
-        <GoldCoinIcon className="h-4 w-4 text-black" />
+        <span className="text-lg font-black text-black leading-none drop-shadow-sm">{myValue.toLocaleString()}</span>
+        <GoldCoinIcon className="h-4.4 w-4.4 text-black" />
        </div>
       </div>
     </footer>

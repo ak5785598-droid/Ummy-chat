@@ -155,7 +155,7 @@ export default function RoomsPage() {
            const Icon = ICON_MAP[slide.iconName] || Sparkles;
             return (
              <CarouselItem key={idx}>
-              <div className={cn("h-[100px] w-full rounded-[1.5rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+              <div className={cn("h-[180px] w-full rounded-[2rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
                 {slide.imageUrl && (
                  <Image 
                   src={slide.imageUrl} 
@@ -183,8 +183,8 @@ export default function RoomsPage() {
        </Carousel>
       </div>
 
-        <div className="px-3 mb-3">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[60px]">
+         <div className="px-3 mb-4">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.8rem] p-4 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[120px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                <div className="flex items-center gap-1">
@@ -197,10 +197,10 @@ export default function RoomsPage() {
                   <ArrowRight className="h-2 w-2 text-white/50" />
                </div>
             </div>
-            <div className="h-[90px] flex items-center gap-4 overflow-x-auto no-scrollbar pt-1 pb-1 relative z-10">
+            <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-2 pb-2 relative z-10">
                {roomsData?.slice(0, 10).map((room: any) => (
-                 <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
-                    <div className="relative -mt-6">
+                 <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
+                    <div className="relative">
                        <Avatar className="h-14 w-14 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
                           <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
