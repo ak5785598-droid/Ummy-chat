@@ -248,6 +248,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
     return false;
   });
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // SYNC: Initialize standard user hook
@@ -439,6 +440,10 @@ export function RoomClient({ room }: { room: Room }) {
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    // VOICE WARM-UP: Ensure we clear old tasks before speaking
+    window.speechSynthesis.cancel();
+    setIsAISpeaking(true);
+
     const cleanText = text.replace(/\[CMD:.*?\]/g, '').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voices = window.speechSynthesis.getVoices();
@@ -455,9 +460,9 @@ export function RoomClient({ room }: { room: Room }) {
     utterance.rate = 1.0;
     utterance.volume = 1.0;
 
-    // VOICE WARM-UP: Ensure we clear old tasks before speaking
-    window.speechSynthesis.cancel();
-    
+    utterance.onend = () => setIsAISpeaking(false);
+    utterance.onerror = () => setIsAISpeaking(false);
+
     // Some browsers require a small timeout for the engine to reset
     setTimeout(() => {
       window.speechSynthesis.speak(utterance);
@@ -1085,15 +1090,25 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button 
-            onClick={toggleAIVoice} 
-            className={cn(
-              "p-1.5 rounded-full active:scale-95 transition-transform border border-white/5",
-              isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/30" : "bg-white/10 text-white/40"
+          <div className="relative">
+            <button 
+              onClick={toggleAIVoice} 
+              className={cn(
+                "p-1.5 rounded-full active:scale-95 transition-all border border-white/5 relative z-10",
+                isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/40" : "bg-white/5 text-white/30",
+                isAISpeaking && "animate-pulse shadow-[0_0_15px_rgba(255,51,102,0.6)] border-primary"
+              )}
+            >
+              {isAIVoiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+            <span className={cn(
+              "absolute -top-1 -right-1 text-[7px] font-black px-1 rounded-sm z-20 pointer-events-none transition-colors",
+              isAIVoiceEnabled ? "bg-primary text-white" : "bg-white/20 text-white/60"
+            )}>AI</span>
+            {isAISpeaking && (
+              <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 z-0" />
             )}
-          >
-            {isAIVoiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
+          </div>
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
           {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
