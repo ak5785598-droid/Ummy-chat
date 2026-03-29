@@ -645,7 +645,13 @@ export function RoomClient({ room }: { room: Room }) {
     const isTriggered = triggerWords.some(t => content.includes(t));
     
     if (isTriggered) {
-      const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
+      // PROCESSING LOCK: Add flag to firestore message to signal processing has started
+      // This prevents other clients from also calling the Gemini API
+      try {
+        const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
+        await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
+        
+        const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
       
       // COMMAND PARSER: Execute moderation actions detected in AI response
       if (aiResponse.includes('[CMD:CLEAN]')) {

@@ -161,68 +161,69 @@ export default function RoomsPage() {
         <CarouselContent>
           {displaySlides.map((slide: any, idx: number) => {
            const Icon = ICON_MAP[slide.iconName] || Sparkles;
-           return (
-            <CarouselItem key={idx}>
-             <div className={cn("h-[120px] w-full rounded-[1.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
-               {slide.imageUrl && (
-                <Image 
-                 src={slide.imageUrl} 
-                 alt="" 
-                 fill 
-                 className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" 
-                 unoptimized 
-                />
-               )}
-               <div className="absolute inset-0 bg-white/10 skew-x-[-30deg] -translate-x-[200%] group-hover:animate-shine" />
-               <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon className="h-5 w-5 text-white animate-pulse" />
-                  <h3 className="text-2xl font-black uppercase tracking-tighter text-white drop-shadow-2xl">{slide.title}</h3>
+            return (
+             <CarouselItem key={idx}>
+              <div className={cn("h-[180px] w-full rounded-[1.5rem] bg-gradient-to-br p-6 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+                {slide.imageUrl && (
+                 <Image 
+                  src={slide.imageUrl} 
+                  alt="" 
+                  fill 
+                  className="object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" 
+                  unoptimized 
+                 />
+                )}
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10 px-2">
+                 <div className="flex items-center gap-2 mb-2">
+                   <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                     <Icon className="h-5 w-5 text-white animate-pulse" />
+                   </div>
+                   <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                 </div>
+                 <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
                 </div>
-                <p className="text-[10px] font-black text-white/80 uppercase tracking-[0.4em] leading-none drop-shadow-md">{slide.subtitle || slide.sub}</p>
-               </div>
-               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <UmmyLogoIcon className="h-20 w-20 rotate-12" />
-               </div>
-             </div>
-            </CarouselItem>
-           );
+              </div>
+             </CarouselItem>
+            );
           })}
         </CarouselContent>
        </Carousel>
       </div>
 
-       <div className="px-3 mb-1.5">
-         <div className="bg-gradient-to-r from-purple-500/10 via-pink-500/5 to-purple-500/10 backdrop-blur-xl rounded-[1.2rem] p-2.5 border border-white/10 shadow-lg overflow-hidden relative group">
-           <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-           <div className="flex items-center justify-between mb-1.5 relative z-10 px-1">
-              <div className="flex items-center gap-1.5 text-white/60">
-                 <div className="bg-yellow-400 p-0.5 rounded-full shadow-md">
-                    <Star className="h-2.5 w-2.5 text-white fill-current" />
+        <div className="px-3 mb-3">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group">
+            <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex items-center justify-between mb-3 relative z-10 px-1">
+               <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-yellow-300 to-yellow-600 p-1 rounded-lg shadow-lg">
+                     <Trophy className="h-3 w-3 text-red-700 fill-current" />
+                  </div>
+                  <span className="font-black uppercase text-[12px] tracking-tight text-yellow-300 italic drop-shadow-md">TOP ROOMS GRID</span>
+               </div>
+               <div className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
+                  <ArrowRight className="h-3 w-3 text-white/50" />
+               </div>
+            </div>
+            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
+               {roomsData?.slice(0, 10).map((room: any) => (
+                 <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
+                    <div className="relative">
+                       <Avatar className="h-16 w-16 border-2 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
+                          <AvatarImage src={room.coverUrl} className="object-cover" />
+                          <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
+                       </Avatar>
+                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 px-2 py-0.5 rounded-full border border-white/20 flex items-center gap-1 shadow-xl">
+                          <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
+                          <span className="text-[8px] font-black text-white">{room.participantCount || 0}</span>
+                       </div>
+                    </div>
+                    <span className="text-[9px] font-bold text-white/90 uppercase tracking-tighter truncate w-16 text-center drop-shadow-sm">{room.title}</span>
                  </div>
-                 <span className="font-black uppercase text-[10px] tracking-widest italic">Top Rooms Grid</span>
-              </div>
-              <ArrowRight className="h-3.5 w-3.5 text-white/30" />
-           </div>
-           <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 relative z-10">
-              {roomsData?.slice(0, 10).map((room: any) => (
-                <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1 shrink-0 active:scale-90 transition-all cursor-pointer">
-                   <div className="relative">
-                      <Avatar className="h-14 w-14 border-2 border-white/30 shadow-xl">
-                         <AvatarImage src={room.coverUrl} className="object-cover" />
-                         <AvatarFallback className="bg-slate-200">U</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-1.5 py-0 rounded-full border border-white/10 flex items-center gap-1 shadow-lg">
-                         <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
-                         <span className="text-[7px] font-black text-white">{room.participantCount || 0}</span>
-                      </div>
-                   </div>
-                   <span className="text-[8px] font-black text-white/50 uppercase tracking-tighter truncate w-14 text-center">{room.title}</span>
-                </div>
-              ))}
-           </div>
-         </div>
-       </div>
+               ))}
+            </div>
+          </div>
+        </div>
 
       <div className="px-2.5 mb-1.5">
          <div className="flex gap-2.5">
