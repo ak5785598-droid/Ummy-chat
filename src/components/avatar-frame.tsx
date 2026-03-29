@@ -195,21 +195,7 @@ const EliteFrameRenderer = ({ frameId }: { frameId: string }) => {
   }
 };
 
-export function AvatarFrame({ frameId, children, className, size = 'md', badgeType }: AvatarFrameProps) {
-  const badgeLabel: Record<string, string> = {
-    owner: 'Owner',
-    admin: 'Admin',
-    volunteer: 'Volunteer',
-    vip: 'VIP'
-  };
-
-  const badgeColor: Record<string, string> = {
-    owner: 'from-orange-500/90 to-red-600/90 border-orange-400',
-    admin: 'from-blue-500/90 to-indigo-600/90 border-blue-400',
-    volunteer: 'from-emerald-500/90 to-teal-600/90 border-emerald-400',
-    vip: 'from-yellow-400/90 to-amber-600/90 border-yellow-300'
-  };
-
+export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   const sizeClasses = {
     sm: 'h-10 w-10',
     md: 'h-14 w-14',
@@ -236,24 +222,6 @@ export function AvatarFrame({ frameId, children, className, size = 'md', badgeTy
         <div className="w-full h-full rounded-full overflow-hidden relative z-10">
           {children}
         </div>
-
-        {/* Ribbon Badge Overlay (Wafa Style) */}
-        {badgeType && badgeLabel[badgeType] && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-[40] pointer-events-none w-full flex justify-center">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className={cn(
-                "px-2 py-0.5 rounded-full border shadow-lg bg-gradient-to-r flex items-center justify-center min-w-[32px]",
-                badgeColor[badgeType]
-              )}
-            >
-              <span className="text-[6px] font-black italic uppercase text-white drop-shadow-sm whitespace-nowrap leading-none">
-                {badgeLabel[badgeType]}
-              </span>
-            </motion.div>
-          </div>
-        )}
       </div>
     </div>
   );
