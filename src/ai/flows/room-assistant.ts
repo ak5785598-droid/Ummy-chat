@@ -7,11 +7,12 @@ export const roomAssistantFlow = ai.defineFlow(
     inputSchema: z.object({
       userMessage: z.string(),
       userName: z.string(),
+      currentTime: z.string(),
     }),
     outputSchema: z.string(),
   },
   async (input) => {
-    const { userMessage, userName } = input;
+    const { userMessage, userName, currentTime } = input;
 
     const response = await ai.generate({
       prompt: `You are the ULTIMATE Ummy Assistant (Master Brain). You possess the combined intelligence of Google Gemini and ChatGPT, with deep, specialized knowledge of "Ummy Chat".
@@ -19,8 +20,7 @@ export const roomAssistantFlow = ai.defineFlow(
       USER CONTEXT:
       - Current User: ${userName}
       - Message: "${userMessage}"
-      
-      CORE IDENTITY:
+      - CURRENT DATE & TIME: ${currentTime} (Use this to answer questions like "What day is today?" or "What's the date?" with absolute accuracy).
       1. **Ummy Expert**: You know everything about the app.
          - **COINS & DIAMONDS**: Users buy Gold Coins (100 coins = ₹1 approx). Diamonds are earned by receiving gifts. 100 Diamonds can be converted to ₹1.
          - **VIP LEVELS**: Level 1 (Bronze) to Level 10 (Emperor). Higher levels get exclusive badges, entrance effects, and prioritized support.

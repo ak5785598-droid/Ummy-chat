@@ -655,35 +655,12 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
-    // 2. SMART GUIDE (Q&A)
-    const keywords = {
-      seat: "Khali bubble par click karke seat join karein!",
-      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
-      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
-      level: "Gifts aur Daily login se aapka level badhega!",
-      coin: "Coins store se purchase karein ya events join karein!"
-    };
-
-    const match = Object.entries(keywords).find(([k]) => content.includes(k));
-    if (match) {
-      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `@${msg.senderName}, ${match[1]} 💖✨`,
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
-        type: 'text',
-        timestamp: serverTimestamp()
-      });
-      return; // Skip LLM if we matched a local keyword
-    }
-
-    // 3. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy')
+    // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - Master Brain Override)
     const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
     const isTriggered = triggerWords.some(t => content.includes(t));
     
     if (isTriggered) {
       // PROCESSING LOCK: Add flag to firestore message to signal processing has started
-      // This prevents other clients from also calling the Gemini API
       try {
         const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
         await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
@@ -725,12 +702,34 @@ export function RoomClient({ room }: { room: Room }) {
           timestamp: serverTimestamp(),
           processed: true
         }, { merge: true });
+        return; // EXIT: We handled it with the Master Brain
       } catch (error) {
         console.error("AI Processing Error:", error);
-        // Fallback: If AI fails, unlock the message so another client can try if needed
         const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
         await updateDocumentNonBlocking(msgRef, { _processing_ai: false });
       }
+    }
+
+    // 3. SMART GUIDE (Q&A Keywords - Secondary Fallback)
+    const keywords = {
+      seat: "Khali bubble par click karke seat join karein!",
+      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
+      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
+      level: "Gifts aur Daily login se aapka level badhega!",
+      coin: "Coins store se purchase karein ya events join karein!"
+    };
+
+    const match = Object.entries(keywords).find(([k]) => content.includes(k));
+    if (match) {
+      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
+        content: `@${msg.senderName}, ${match[1]} 💖✨`,
+        senderId: 'SYSTEM_BOT',
+        senderName: 'Ummy AI',
+        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
+        type: 'text',
+        timestamp: serverTimestamp()
+      });
+      return; 
     }
   };
 
