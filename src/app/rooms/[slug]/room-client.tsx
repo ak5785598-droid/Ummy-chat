@@ -159,18 +159,15 @@ const Seat = ({
         <AvatarFrame 
           frameId={occupant?.activeFrame} 
           size="md" 
-          badgeType={occupant && isOccupantOwner ? 'owner' : (occupant && isOccupantAdmin ? 'admin' : (vipLevel > 0 ? 'vip' : null))}
+          badgeType={null}
         >
-          <div className={cn(
-            "relative p-1 rounded-full",
-            "after:absolute after:inset-0 after:rounded-full after:border-b-4 after:border-black/30 after:pointer-events-none"
-          )}>
+          <div className="relative p-1 rounded-full overflow-visible">
             <button 
               onClick={() => onClick(index, occupant)} 
               className={cn(
-                "h-12 w-12 rounded-full flex items-center justify-center border-2 backdrop-blur-sm active:scale-90 transition-all relative z-10",
-                "shadow-[0_4px_0_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]",
-                isLocked ? "border-red-500/40" : "border-white/10"
+                "h-12 w-12 rounded-full flex items-center justify-center border backdrop-blur-[2px] active:scale-90 transition-all relative z-10",
+                "shadow-[0_2px_10px_rgba(0,0,0,0.3)]",
+                isLocked ? "border-red-500/60" : "border-white/20"
               )}
               style={{ backgroundColor: theme.seatColor || 'rgba(255, 255, 255, 0.1)' }}
             >
@@ -179,17 +176,17 @@ const Seat = ({
                   <Avatar className="h-full w-full p-0.5">
                     <AvatarImage 
                       src={occupant.avatarUrl || undefined} 
-                      className="image-render-crisp"
+                      className="image-render-crisp brightness-110 contrast-110 saturate-110"
                       style={{ imageRendering: 'auto' }} 
                     />
                     <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                 </div>
               ) : isLocked ? (
-                <Lock className="h-3.5 w-3.5 text-red-500/40" />
+                <Lock className="h-3.5 w-3.5 text-red-500/60" />
               ) : (
-                <div className="bg-white/10 rounded-full h-7 w-7 flex items-center justify-center shadow-inner">
-                  <Armchair className="text-white/40 h-3.5 w-3.5" />
+                <div className="rounded-full h-7 w-7 flex items-center justify-center">
+                  <Armchair className="text-white/30 h-3.5 w-3.5" />
                 </div>
               )}
             </button>
@@ -198,10 +195,20 @@ const Seat = ({
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
       
-      {/* Wafa-style Name Bar (Premium Clarity) */}
-      <div className="relative mt-2 w-full flex flex-col items-center">
-        <div className="bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/5 flex items-center gap-1 min-w-[40px] justify-center">
-          <span className="text-[8px] font-black uppercase text-white truncate max-w-[50px] leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+      {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
+      <div className="mt-1.5 w-full flex flex-col items-center overflow-visible">
+        <div className="flex items-center gap-1 max-w-full justify-center">
+          {occupant && (
+            <div 
+              className={cn(
+                "h-3.5 w-3.5 rounded-full flex items-center justify-center shrink-0 border border-white/20 shadow-sm",
+                index % 2 === 0 ? "bg-pink-500" : "bg-blue-500"
+              )}
+            >
+              <span className="text-[7px] font-black text-white leading-none">{index}</span>
+            </div>
+          )}
+          <span className="text-[10px] font-bold text-white uppercase truncate max-w-[65px] leading-tight text-center tracking-tight">
             {occupant ? occupant.name : label}
           </span>
         </div>
@@ -1237,21 +1244,10 @@ export function RoomClient({ room }: { room: Room }) {
                          
                          <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
                             <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
-                              INFO
+                               INFO
                             </div>
                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
                                 {room.announcement || "Welcome to the tribe!"}
-                            </p>
-                         </div>
-
-                         {/* PERSISTENT AI GUIDE BANNER */}
-                         <div className="flex items-start gap-2.5 pt-2 border-t border-white/5">
-                            <div className="mt-1 bg-primary text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
-                              <Sparkles className="h-2 w-2 fill-current" />
-                              UMMY AI
-                            </div>
-                            <p className="text-[11px] font-medium text-primary leading-snug tracking-tight italic">
-                               Hey! Main Ummy AI hoon, koi bhi sawal ho toh zaroor pucho! 💖✨
                             </p>
                          </div>
                        </div>

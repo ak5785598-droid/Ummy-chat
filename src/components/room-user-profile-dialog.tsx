@@ -88,8 +88,6 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
  </div>
 );
 
-
-
 export function RoomUserProfileDialog({ 
  userId, 
  open, 
@@ -133,6 +131,19 @@ export function RoomUserProfileDialog({
   router.push(`/profile/${userId}`);
  };
 
+ const handleRemoveFrame = async () => {
+  try {
+    const { updateDocumentNonBlocking } = await import('@/lib/firebase/firestore-utils');
+    await updateDocumentNonBlocking('users', userId, {
+      'inventory.activeFrame': 'None'
+    });
+    toast({ title: 'Frame Removed' });
+    onOpenChange(false);
+  } catch (error) {
+    toast({ variant: 'destructive', title: 'Action Failed' });
+  }
+ };
+
  const isOfficial = profile?.tags?.includes('Official');
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
  const isCS = profile?.tags?.includes('Customer Service');
@@ -162,7 +173,7 @@ export function RoomUserProfileDialog({
       </div>
 
       <div className="mt-2 mb-4">
-        <AvatarFrame frameId={profile.inventory?.activeFrame || 'f5'} size="xl">
+        <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
          <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
            <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
            <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
@@ -251,7 +262,15 @@ export function RoomUserProfileDialog({
       </div>
 
       {isMe && (
-       <div className="w-full px-10 mb-8">
+       <div className="w-full px-10 mb-8 flex flex-col gap-3">
+         <button 
+          onClick={handleRemoveFrame}
+          className="w-full h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center gap-2 font-bold uppercase text-[10px] shadow-sm active:scale-95 transition-all border border-slate-200"
+         >
+          <LogOut className="h-4 w-4" />
+          Remove Frame
+         </button>
+
          <button 
           onClick={() => onLeaveSeat(userId)}
           className="w-full h-14 rounded-full bg-[#00E676] text-white flex items-center justify-center gap-3 font-bold uppercase text-lg shadow-xl shadow-green-500/20 active:scale-95 transition-all"
