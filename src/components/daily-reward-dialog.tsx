@@ -34,7 +34,7 @@ export function DailyRewardDialog() {
       const dateKey = today.toISOString().split('T')[0];
       const storageKey = `ummy_daily_reward_shown_${user.uid}_${dateKey}`;
       
-      // 1. Immediate Local Guard
+      // 1. Immediate Local Guard (Prevents flicker on refresh)
       if (localStorage.getItem(storageKey)) {
         setOpen(false);
         return;
@@ -77,6 +77,7 @@ export function DailyRewardDialog() {
         description: `You received ${rewardAmount.toLocaleString()} Gold Coins.`,
       });
 
+      // Sync local storage
       if (typeof window !== 'undefined') {
         const dateKey = new Date().toISOString().split('T')[0];
         localStorage.setItem(`ummy_daily_reward_shown_${user.uid}_${dateKey}`, 'true');
@@ -164,7 +165,7 @@ export function DailyRewardDialog() {
             <Button 
               onClick={handleSignIn}
               disabled={isSigningIn}
-              className="w-3/4 h-12 rounded-2xl bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-500 text-green-900 font-bold text-lg uppercase shadow-[0_8px_20px_rgba(234,179,8,0.3)] border-b-4 border-yellow-600 hover:scale-[1.02] active:scale-95 transition-all"
+              className="w-[240px] h-11 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-500 text-green-900 font-bold text-lg uppercase shadow-[0_8px_20px_rgba(234,179,8,0.3)] border-b-4 border-yellow-600 hover:scale-[1.02] active:scale-95 transition-all"
             >
               {isSigningIn ? 'Processing...' : 'Sign In'}
             </Button>

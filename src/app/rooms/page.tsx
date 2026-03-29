@@ -155,7 +155,7 @@ export default function RoomsPage() {
            const Icon = ICON_MAP[slide.iconName] || Sparkles;
             return (
              <CarouselItem key={idx}>
-              <div className={cn("h-[180px] w-full rounded-[2rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+              <div className={cn("h-[140px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
                 {slide.imageUrl && (
                  <Image 
                   src={slide.imageUrl} 
@@ -184,7 +184,7 @@ export default function RoomsPage() {
       </div>
 
          <div className="px-3 mb-4">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.8rem] p-4 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[120px]">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[100px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                <div className="flex items-center gap-1">
@@ -201,16 +201,16 @@ export default function RoomsPage() {
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative">
-                       <Avatar className="h-14 w-14 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
+                       <Avatar className="h-10 w-10 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
-                          <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
+                          <AvatarFallback className="bg-red-900/40 text-white/40 font-black text-[10px]">U</AvatarFallback>
                        </Avatar>
-                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 px-2 py-0.5 rounded-full border border-white/20 flex items-center gap-1 shadow-xl">
-                          <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
-                          <span className="text-[8px] font-black text-white">{room.participantCount || 0}</span>
+                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 px-1.5 py-0.5 rounded-full border border-white/20 flex items-center gap-0.5 shadow-xl">
+                          <div className="h-1 w-1 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
+                          <span className="text-[7px] font-black text-white">{room.participantCount || 0}</span>
                        </div>
                     </div>
-                    <span className="text-[9px] font-bold text-white/90 uppercase tracking-tighter truncate w-16 text-center drop-shadow-sm">{room.title}</span>
+                    <span className="text-[8px] font-bold text-white/90 uppercase tracking-tighter truncate w-14 text-center drop-shadow-sm">{room.title}</span>
                  </div>
                ))}
             </div>

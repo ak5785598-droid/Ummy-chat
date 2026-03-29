@@ -1168,8 +1168,8 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
 
           <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <h1 className="font-black text-[15px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[240px]">{room.title}</h1>
+              <div className="flex items-center gap-1 min-w-0">
+                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[260px]">{room.title}</h1>
                 <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                    {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
@@ -1182,25 +1182,25 @@ export function RoomClient({ room }: { room: Room }) {
             <button 
               onClick={toggleAIVoice} 
               className={cn(
-                "p-1.5 rounded-full active:scale-95 transition-all border border-white/5 relative z-10",
+                "p-1 rounded-full active:scale-95 transition-all border border-white/5 relative z-10",
                 isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/40" : "bg-white/5 text-white/30",
                 isAISpeaking && "animate-pulse shadow-[0_0_15px_rgba(255,51,102,0.6)] border-primary"
               )}
             >
-              {isAIVoiceEnabled ? <Volume2 className="h-4.5 w-4.5 text-primary" /> : <VolumeX className="h-4.5 w-4.5 text-white/40" />}
+              {isAIVoiceEnabled ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4 text-white/40" />}
             </button>
             <span className={cn(
-              "absolute -top-1 -right-1 text-[6.5px] font-black px-1 rounded-sm z-20 pointer-events-none transition-colors",
+              "absolute -top-1 -right-0.5 text-[6px] font-black px-0.5 rounded-sm z-20 pointer-events-none transition-colors",
               isAIVoiceEnabled ? "bg-primary text-white" : "bg-white/20 text-white/60"
             )}>AI</span>
             {isAISpeaking && (
               <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 z-0" />
             )}
           </div>
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/60 px-2 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-4 w-4 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
-          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4.5 w-4.5 text-white/60" /></button>} />}
-          <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4.5 w-4.5 text-white/60" /></button>
-          <button onClick={() => setShowExitDialog(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4.5 w-4.5 text-white/60" /></button>
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/60 px-1.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[9px] font-black">{onlineCount}</span></button>
+          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4 text-white/60" /></button>} />}
+          <button onClick={() => setIsShareOpen(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4 text-white/60" /></button>
+          <button onClick={() => setShowExitDialog(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4 text-white/60" /></button>
         </div>
       </header>
 
@@ -1345,17 +1345,17 @@ export function RoomClient({ room }: { room: Room }) {
            </button>
         </div>
 
-        <div className="absolute left-[44%] -translate-x-1/2 -translate-y-1">
+        <div className="absolute left-[42%] -translate-x-1/2 -translate-y-1">
            <button 
              onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-12 w-12 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_20px_rgba(0,176,255,0.5)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
+             className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_15px_rgba(0,176,255,0.4)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
            >
               <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
               
               <img 
                 src="https://img.icons8.com/color/96/gift--v1.png" 
-                className="h-8 w-8 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
+                className="h-7 w-7 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
                 alt="Gift"
               />
            </button>
