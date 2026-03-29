@@ -400,15 +400,72 @@ export function RoomClient({ room }: { room: Room }) {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voices = window.speechSynthesis.getVoices();
     
-    // Attempt to find a natural Hinglish/Hindi/Indian voice
-    const preferredVoice = voices.find(v => v.lang.includes('hi-IN') || v.lang.includes('en-IN')) || voices[0];
-    if (preferredVoice) utterance.voice = preferredVoice;
+    // NATIVE INDIAN SYNC: Prioritize native hi-IN and en-IN voices for a local feel
+    const preferredVoice = voices.find(v => v.lang.includes('hi-IN')) || 
+                           voices.find(v => v.lang.includes('en-IN')) || 
+                           voices[0];
     
-    utterance.pitch = 1.1;
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+      utterance.lang = preferredVoice.lang;
+    } else {
+      utterance.lang = 'hi-IN'; // Fallback to Indian locale
+    }
+    
+    utterance.pitch = 1.05; // Slightly warmer pitch
     utterance.rate = 1.0;
     
-    window.speechSynthesis.cancel(); // Stop any current speech
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
+  };
+
+  // AI VOICE INTERACTION (STT)
+  const [isAIListening, setIsAIListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleAIListening = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: 'Voice Recognition not supported on this device' });
+      return;
+    }
+
+    if (isAIListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US'; // Works best for Hinglish in Chrome
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      setIsAIListening(true);
+      toast({ title: 'AI is listening...', description: 'Speak your question now!' });
+      if (window.navigator?.vibrate) window.navigator.vibrate(50);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        toast({ title: `You said: ${transcript}`, description: 'Sending to AI...' });
+        await handleSendMessage(undefined, undefined, transcript); // Pass transcription as content
+      }
+    };
+
+    recognition.onerror = (err: any) => {
+       console.error('[AI-STT] Recognition Error:', err);
+       setIsAIListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsAIListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
   const toggleAIVoice = () => {
@@ -426,8 +483,16 @@ export function RoomClient({ room }: { room: Room }) {
 
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
-    // CRITICAL: Filter for duplicates - Only the Room Owner handles the AI automation logic
-    const isLocalOwner = currentUser?.uid === room.ownerId;
+    // GLOBAL AI LEADERSHIP ELECTION:
+    // If owner is offline, the client with the lowest UID handles the AI logic.
+    // This ensures AI is 24/7 active in every room without duplicates.
+    const sortedParticipants = [...participants].sort((a, b) => a.uid.localeCompare(b.uid));
+    const ownerOnline = participants.some(p => p.uid === room.ownerId);
+    
+    const isAIProcessor = ownerOnline 
+       ? currentUser?.uid === room.ownerId 
+       : currentUser?.uid === sortedParticipants[0]?.uid;
+
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
     // Identify the starting point for the new delta
@@ -444,14 +509,14 @@ export function RoomClient({ room }: { room: Room }) {
       } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       } else if (msg.type === 'entrance') {
-        // AI WELCOME BOT LOGIC: Welcome everyone (including current user)
-        // Guard: Only owner client speaks as AI
-        if (isLocalOwner) handleAIWelcome(msg.senderName);
+        // AI WELCOME BOT LOGIC: Welcome everyone
+        // Guard: Only designated AI Processor speaks
+        if (isAIProcessor) handleAIWelcome(msg.senderName);
       } else if (msg.type === 'emoji' && (msg as any).isSfx) {
         // SOUNDBOARD SFX SYNC
         playLocalSfx((msg as any).sfxId);
-      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isLocalOwner) {
-        // UMmy AI GUARD & GUIDE ENGINE: Only owner client handles conversational triggers
+      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
+        // UMmy AI GUARD & GUIDE ENGINE: Only designated AI Processor handles conversational triggers
         handleAIEngine(msg);
       }
 
@@ -464,7 +529,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
-  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId]); // Added room.ownerId for correct guard
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participants]); // Added participants for election sync
 
   // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
 
@@ -653,9 +718,10 @@ export function RoomClient({ room }: { room: Room }) {
 
   const bgUrl = currentTheme.url;
 
-  const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
+  const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string, transcription?: string) => {
     if (e) e.preventDefault();
-    if ((!messageText.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
+    const content = transcription || messageText;
+    if ((!content.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
     
     if (isChatMuted && !canManageRoom) {
       toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
@@ -663,7 +729,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, 
+      content: content, 
       imageUrl: imageUrl || null,
       senderId: currentUser.uid, 
       senderName: userProfile.username || 'User', 
@@ -1137,6 +1203,16 @@ export function RoomClient({ room }: { room: Room }) {
                  />
                  <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
                     <Mail className="h-5 w-5" />
+                 </button>
+                 <button 
+                   type="button"
+                   onClick={toggleAIListening}
+                   className={cn(
+                     "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
+                     isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
+                   )}
+                 >
+                    <Sparkles className="h-5 w-5" />
                  </button>
               </form>
            </div>
