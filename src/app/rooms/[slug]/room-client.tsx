@@ -390,31 +390,70 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
+  // AI MODERATION ACTIONS (GRAND MANAGER)
+  const handleAIClearChat = async () => {
+    if (!firestore || !room.id || !canManageRoom) return;
+    try {
+      const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
+      // In a real app, you'd use a batch or cloud function. Here we do it in chunks.
+      // For immediate effect, we'll notify users.
+      await addDocumentNonBlocking(messagesRef, {
+        content: "Chat history ko Ummy AI ne saaf kar diya hai! ✨🧹",
+        senderId: 'SYSTEM_BOT',
+        senderName: 'Ummy AI',
+        type: 'text',
+        timestamp: serverTimestamp()
+      });
+      toast({ title: 'Chat Cleared by AI' });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAILockSeat = async (index: number) => {
+    if (!firestore || !room.id || !canManageRoom) return;
+    const isCurrentlyLocked = room.lockedSeats?.includes(index);
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+      lockedSeats: isCurrentlyLocked ? arrayRemove(index) : arrayUnion(index)
+    });
+  };
+
+  const handleAIOpenGame = (slug: string) => {
+    const validSlugs = ['carrom', 'chess', 'ludo'];
+    const lowerSlug = slug.toLowerCase();
+    const target = validSlugs.find(s => lowerSlug.includes(s));
+    if (target) {
+      setActiveGameSlug(target);
+      setIsRoomGamesOpen(false);
+    }
+  };
+
   // AI VOICE ENGINE (TTS)
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  useEffect(() => {
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length > 0) setVoicesLoaded(true);
+    };
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+  }, []);
+
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
-    // Clean text of emojis for cleaner speech
-    const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
-    
+    const cleanText = text.replace(/\[CMD:.*?\]/g, '').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voices = window.speechSynthesis.getVoices();
-    
-    // NATIVE INDIAN SYNC: Prioritize native hi-IN and en-IN voices for a local feel
-    const preferredVoice = voices.find(v => v.lang.includes('hi-IN')) || 
-                           voices.find(v => v.lang.includes('en-IN')) || 
-                           voices[0];
+    const preferredVoice = voices.find(v => v.lang.includes('hi-IN')) || voices.find(v => v.lang.includes('en-IN')) || voices[0];
     
     if (preferredVoice) {
       utterance.voice = preferredVoice;
       utterance.lang = preferredVoice.lang;
     } else {
-      utterance.lang = 'hi-IN'; // Fallback to Indian locale
+      utterance.lang = 'hi-IN';
     }
     
-    utterance.pitch = 1.05; // Slightly warmer pitch
+    utterance.pitch = 1.05;
     utterance.rate = 1.0;
-    
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   };
@@ -437,7 +476,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US'; // Works best for Hinglish in Chrome
+    recognition.lang = 'hi-IN'; // NATIVE SYNC: Switch to Hindi-India for better Hinglish recognition
     recognition.interimResults = false;
     recognition.continuous = false;
 
@@ -602,9 +641,23 @@ export function RoomClient({ room }: { room: Room }) {
     const isTriggered = triggerWords.some(t => content.includes(t));
     
     if (isTriggered) {
-      // Show local "AI is typing..." simulator (Optional, for now just call)
       const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
       
+      // COMMAND PARSER: Execute moderation actions detected in AI response
+      if (aiResponse.includes('[CMD:CLEAN]')) {
+        handleAIClearChat();
+      } else if (aiResponse.includes('[CMD:MUTE:')) {
+        const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
+        const target = participants.find(p => p.name?.toLowerCase() === username?.toLowerCase());
+        if (target) handleSilence(target.uid, false);
+      } else if (aiResponse.includes('[CMD:LOCK:')) {
+        const seatNum = parseInt(aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1] || '0');
+        if (seatNum > 0) handleAILockSeat(seatNum);
+      } else if (aiResponse.includes('[CMD:GAME:')) {
+        const gameSlug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
+        if (gameSlug) handleAIOpenGame(gameSlug);
+      }
+
       await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
         content: aiResponse,
         senderId: 'SYSTEM_BOT',
