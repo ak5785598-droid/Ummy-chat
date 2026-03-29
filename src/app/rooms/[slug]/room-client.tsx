@@ -190,7 +190,7 @@ const Seat = ({
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
       
-      <div className="flex items-center justify-center gap-0.5 w-full mt-0.5">
+      <div className="flex items-center justify-center gap-0.5 w-full mt-2">
         {occupant && isOccupantOwner && (
           <div className="bg-yellow-500 rounded-full h-2 w-2 flex items-center justify-center shrink-0 border border-white/20 shadow-sm">
              <Home className="h-1 w-1 text-white fill-current" />
@@ -202,7 +202,7 @@ const Seat = ({
              <ShieldCheck className="h-1 w-1 text-white fill-current" />
           </div>
         )}
-        <span className="text-[7px] font-black uppercase text-white truncate max-w-[55px] drop-shadow-sm leading-none">
+        <span className="text-[8px] font-bold uppercase text-white truncate max-w-[60px] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
           {occupant ? occupant.name : label}
         </span>
       </div>
