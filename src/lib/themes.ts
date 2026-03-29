@@ -43,7 +43,7 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'ummy_help_desk', name: 'Ummy Help Desk', url: '/themes/ummy_help_desk.png', isOfficial: true, seatColor: 'rgba(20, 184, 166, 0.25)', accentColor: '#14b8a6', category: 'help' },
   { id: 'ummy_help_guide', name: 'Ummy Help Guide', url: '/themes/ummy_help_guide.png', isOfficial: true, seatColor: 'rgba(167, 139, 250, 0.25)', accentColor: '#a78bfa', category: 'help' },
 
-  // --- NEW SELECTED PREMIUM COLLECTION (FIXED PATHS & ADDITIONS) ---
+  // --- NEW SELECTED PREMIUM COLLECTION (FIXED PATHS & USER SELECTION) ---
   {
     id: 'scenic_neon_night_v2_new', // No. 1
     name: 'Neon Night Scenic',
@@ -77,7 +77,7 @@ export const ROOM_THEMES: RoomTheme[] = [
     category: 'general'
   },
   {
-    id: 'friendly_guide_scenic_new', // No. 7 - FIXED PATH
+    id: 'friendly_guide_scenic_new', // No. 7 - FIXED FILENAME
     name: 'Friendly Guide Scenic',
     url: '/themes/friendly_guide_scenic.png',
     seatColor: 'rgba(34, 197, 94, 0.2)',
@@ -85,39 +85,55 @@ export const ROOM_THEMES: RoomTheme[] = [
     category: 'help'
   },
   {
-    id: 'beach_luxury_scenic_premium_new', // No. 9 - NEW ADDITION
+    id: 'birthday_special_scenic_new', // No. 8
+    name: 'Birthday Special Scenic',
+    url: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&q=80&w=2000',
+    seatColor: 'rgba(236, 72, 153, 0.2)',
+    accentColor: '#ec4899',
+    category: 'entertainment'
+  },
+  {
+    id: 'beach_luxury_scenic_new', // No. 9
     name: 'Beach Luxury Lounge',
-    url: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1540206351-d6465b3ac5c1?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(14, 165, 233, 0.2)',
     accentColor: '#0ea5e9',
     category: 'entertainment'
   },
   {
-    id: 'eid_special_scenic_new', // No. 10 
+    id: 'eid_special_scenic_new', // No. 10
     name: 'Eid Special Scenic',
-    url: 'https://images.unsplash.com/photo-1542813581-99ee30704403?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1594911772125-077551000f08?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(34, 197, 94, 0.2)',
     accentColor: '#22c55e',
     category: 'entertainment'
   },
   {
-    id: 'lights_festival_scenic_premium_new', // No. 11 - NEW ADDITION 
+    id: 'lights_festival_scenic_new', // No. 11
     name: 'Lights Festival Scenic',
-    url: 'https://images.unsplash.com/photo-1512401826075-8015701ae34b?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(251, 191, 36, 0.2)',
     accentColor: '#fbbf24',
     category: 'entertainment'
   },
   {
+    id: 'christmas_cozy_scenic_new', // No. 12
+    name: 'Christmas Cozy Scenic',
+    url: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=2000',
+    seatColor: 'rgba(239, 68, 68, 0.2)',
+    accentColor: '#ef4444',
+    category: 'entertainment'
+  },
+  {
     id: 'holi_scenic_new', // No. 13
     name: 'Holi Festival Scenic',
-    url: 'https://images.unsplash.com/photo-1582650625119-3a21f83cfec6?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1590076215667-873d6f00918c?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(217, 70, 239, 0.2)',
     accentColor: '#d946ef',
     category: 'entertainment'
   },
   {
-    id: 'coding_hacker_v2_new', // No. 15 - NEW ADDITION
+    id: 'coding_hacker_v2_new', // No. 15
     name: 'Hacker Room V2',
     url: '/themes/coding_hacker_v2.png',
     seatColor: 'rgba(34, 197, 94, 0.2)',
@@ -125,7 +141,7 @@ export const ROOM_THEMES: RoomTheme[] = [
     category: 'entertainment'
   },
   {
-    id: 'gaming_arcade_v2_new', // No. 16 - NEW ADDITION
+    id: 'gaming_arcade_v2_new', // No. 16
     name: 'Gaming Arcade V2',
     url: '/themes/gaming_arcade_v2.png',
     seatColor: 'rgba(59, 130, 246, 0.2)',
@@ -141,7 +157,7 @@ export const ROOM_THEMES: RoomTheme[] = [
     category: 'entertainment'
   },
   {
-    id: 'heartbeat_arcade_scenic_new', // No. 20 - FIXED PATH
+    id: 'heartbeat_arcade_scenic_new', // No. 20 - FIXED FILENAME
     name: 'Heartbeat Arcade Scenic',
     url: '/themes/heartbeat_arcade_scenic.png',
     seatColor: 'rgba(255, 255, 255, 0.2)',
@@ -151,7 +167,7 @@ export const ROOM_THEMES: RoomTheme[] = [
   {
     id: 'ummy_golden_glow_scenic_new', // No. 23
     name: 'Ummy Golden Glow Scenic',
-    url: 'https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(251, 191, 36, 0.2)',
     accentColor: '#fbbf24',
     category: 'general'
@@ -167,7 +183,7 @@ export const ROOM_THEMES: RoomTheme[] = [
   {
     id: 'spring_path_scenic_new', // No. 27
     name: 'Spring Path Scenic',
-    url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?q=80&w=2000',
+    url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=80&w=2000',
     seatColor: 'rgba(253, 164, 186, 0.2)',
     accentColor: '#fda4ba',
     category: 'general'
