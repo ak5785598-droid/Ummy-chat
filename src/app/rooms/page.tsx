@@ -197,7 +197,7 @@ export default function RoomsPage() {
                   <ArrowRight className="h-2 w-2 text-white/50" />
                </div>
             </div>
-            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
+            <div className="h-[50px] flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative -mt-5">
