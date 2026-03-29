@@ -205,10 +205,10 @@ const Seat = ({
                 index % 2 === 0 ? "bg-pink-500" : "bg-blue-500"
               )}
             >
-              <span className="text-[7px] font-black text-white leading-none">{index}</span>
+              <span className="text-[7px] font-semibold text-white leading-none">{index}</span>
             </div>
           )}
-          <span className="text-[10px] font-bold text-white uppercase truncate max-w-[85px] leading-tight text-center tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+          <span className="text-[10px] font-semibold text-white uppercase truncate max-w-[85px] leading-tight text-center tracking-tight">
             {occupant ? occupant.name : label}
           </span>
         </div>
