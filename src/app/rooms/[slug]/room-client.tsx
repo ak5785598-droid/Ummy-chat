@@ -1155,11 +1155,11 @@ export function RoomClient({ room }: { room: Room }) {
             onClick={() => setIsRoomInfoOpen(true)}
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
-            <Avatar className="h-12 w-12 rounded-xl border-2 border-white/20 shadow-xl">
+            <Avatar className="h-9 w-9 rounded-lg border-2 border-white/20 shadow-xl">
               <AvatarImage src={room.coverUrl || undefined} />
-              <AvatarFallback>UM</AvatarFallback>
+              <AvatarFallback className="text-[10px]">UM</AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-2 -left-2.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg scale-90">
+            <div className="absolute -bottom-1 -left-1.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg scale-75">
                <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
                <span className="text-[7px] font-black text-yellow-400 leading-none">
                  {room.stats?.totalGifts?.toLocaleString() || 0}
@@ -1168,8 +1168,8 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
 
           <div className="flex flex-col min-w-0">
-             <div className="flex items-center gap-1 min-w-0">
-                <h1 className="font-black text-[13px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[150px]">{room.title}</h1>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-black text-[14px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[200px]">{room.title}</h1>
                 <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                    {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
                 </button>
@@ -1330,7 +1330,7 @@ export function RoomClient({ room }: { room: Room }) {
                isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
              )}
            >
-              <MessageSquare className="h-6 w-6" />
+              <MessageSquare className="h-[18px] w-[18px]" />
            </button>
            
            {/* REPOSITIONED AI MIC - PERSISTENT ACCESS */}
@@ -1341,7 +1341,7 @@ export function RoomClient({ room }: { room: Room }) {
                isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
              )}
            >
-              <Sparkles className="h-6 w-6" />
+              <Sparkles className="h-[18px] w-[18px]" />
            </button>
         </div>
 
@@ -1363,15 +1363,15 @@ export function RoomClient({ room }: { room: Room }) {
 
         <div className="flex items-center gap-1.5">
            <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
-              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-[18px] w-[18px]" /> : <MicOff className="h-[18px] w-[18px]" />}
            </button>
            
            <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-             <SmilePlus className="h-6 w-6 text-white" />
+             <SmilePlus className="h-[18px] w-[18px] text-white" />
            </button>
 
            <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <Mail className="h-6 w-6 text-white" />
+              <Mail className="h-[18px] w-[18px] text-white" />
            </button>
 
             <button 
@@ -1379,7 +1379,7 @@ export function RoomClient({ room }: { room: Room }) {
               className="group relative p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full active:scale-90 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)] border border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400"
             >
               <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-              <LayoutGrid className="h-6 w-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+              <LayoutGrid className="h-[18px] w-[18px] text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
             </button>
         </div>
       </footer>
@@ -1432,7 +1432,7 @@ export function RoomClient({ room }: { room: Room }) {
             onClick={() => setPreviewImage(null)}
             className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
           >
-            <X className="h-6 w-6" />
+            <X className="h-[18px] w-[18px]" />
           </button>
           
           {/* Toolbar inside preview */}

@@ -71,8 +71,8 @@ export function AppLayout({
  
  const hasUnread = useMemo(() => {
   if (!chatsForUnread || !user) return false;
-  return chatsForUnread.some(chat => {
-   const readBy = chat.lastMessageReadBy || [];
+  return chatsForUnread.filter(Boolean).some(chat => {
+   const readBy = Array.isArray(chat?.lastMessageReadBy) ? chat.lastMessageReadBy : [];
    return chat.lastSenderId !== user.uid && !readBy.includes(user.uid);
   });
  }, [chatsForUnread, user]);
@@ -80,10 +80,10 @@ export function AppLayout({
   // SEQUENTIAL ID SYSTEM: Permanent Allotment Protocol
  useEffect(() => {
   const syncIdentities = async () => {
-   if (!firestore || !user || !userProfile) return;
+    if (!firestore || !user) return;
 
    const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-   const currentAccNum = userProfile.accountNumber || '';
+   const currentAccNum = userProfile?.accountNumber || '';
    const needsUserSync = !currentAccNum || currentAccNum.length !== 4 || isNaN(parseInt(currentAccNum)) || (user.uid === CREATOR_ID && currentAccNum !== '0000');
 
    try {
@@ -110,8 +110,8 @@ export function AppLayout({
       // Critical: Ensure we don't downgrade the counter if creator relogs
       const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
       transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
-      transaction.update(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
-      transaction.update(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() });
+      transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
+      transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
      });
      console.log(`✅ Sequential User ID Synced: ${user.uid}`);
     }
@@ -139,7 +139,7 @@ export function AppLayout({
 
        const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
        transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
-       transaction.update(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() });
+       transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
       });
       console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
      }
@@ -149,10 +149,12 @@ export function AppLayout({
     }
    };
  
-   if (isCreator || isOfficial) {
+   try {
      syncIdentities();
+   } catch (e) {
+     console.error("Critical Identity Sync Failure:", e);
    }
-  }, [firestore, user, userProfile, isCreator, isOfficial]);
+  }, [firestore, user, userProfile]);
 
  const handleLogout = async () => {
   if (!auth || !user || !firestore) return;
@@ -234,8 +236,18 @@ export function AppLayout({
   // GLOBAL BAN GUARD: If user is banned, block all content with the Management Message
   if (userProfile?.banStatus?.isBanned) {
     console.log('User is banned:', userProfile.banStatus);
-    const until = userProfile.banStatus.bannedUntil?.toDate?.() || null;
-    if (!until || until > new Date()) {
+    let until = null;
+    try {
+      if (userProfile?.banStatus?.bannedUntil) {
+        until = typeof userProfile.banStatus.bannedUntil.toDate === 'function' 
+          ? userProfile.banStatus.bannedUntil.toDate() 
+          : new Date(userProfile.banStatus.bannedUntil);
+      }
+    } catch (e) {
+      console.error("Ban Date Conversion Failed:", e);
+    }
+    
+    if (!until || isNaN(until.getTime()) || until > new Date()) {
       return (
         <BanDialog 
           isOpen={true} 

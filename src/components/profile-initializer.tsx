@@ -89,13 +89,13 @@ export function ProfileInitializer() {
      }
 
      if (needsReset) {
-      batch.update(userRef, resetData);
-      batch.update(profileRef, resetData);
+      batch.set(userRef, resetData, { merge: true });
+      batch.set(profileRef, resetData, { merge: true });
      }
 
      // Heartbeat Handshake
-     batch.update(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
-     batch.update(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() });
+     batch.set(userRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+     batch.set(profileRef, { isOnline: true, lastSeen: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
      
      await batch.commit();
      hasInitialized.current = profileId;

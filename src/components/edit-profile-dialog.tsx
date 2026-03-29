@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Pen, Loader, Camera, Upload, Globe, Info } from 'lucide-react';
 import {
@@ -105,12 +105,12 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
   if (!isCountryFixed && country) updateData.country = country;
 
   try {
-   updateDocumentNonBlocking(userSummaryRef, {
+   setDocumentNonBlocking(userSummaryRef, {
     username: name,
     updatedAt: serverTimestamp()
-   });
+   }, { merge: true });
 
-   updateDocumentNonBlocking(userProfileRef, updateData);
+   setDocumentNonBlocking(userProfileRef, updateData, { merge: true });
    toast({ title: 'Persona Saved', description: 'Your updates are now live.' });
    setOpen(false);
   } catch (e: any) {

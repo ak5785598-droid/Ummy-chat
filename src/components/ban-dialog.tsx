@@ -25,8 +25,9 @@ export function BanDialog({
 }: BanDialogProps) {
   if (!isOpen) return null;
 
-  const untilDate = bannedUntil?.toDate?.() || (bannedUntil instanceof Date ? bannedUntil : null);
-  const formattedDate = untilDate ? format(untilDate, 'yyyy/MM/dd HH:mm') : 'Permanent Block';
+  const untilDate = bannedUntil?.toDate?.() || (bannedUntil instanceof Date ? bannedUntil : (bannedUntil ? new Date(bannedUntil) : null));
+  const isValidDate = untilDate && !isNaN(untilDate.getTime());
+  const formattedDate = isValidDate ? format(untilDate, 'yyyy/MM/dd HH:mm') : 'Permanent Block';
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
