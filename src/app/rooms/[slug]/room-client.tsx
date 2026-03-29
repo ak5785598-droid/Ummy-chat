@@ -426,6 +426,11 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  const handleAIOpenMusic = () => {
+    setIsRoomPlayOpen(true);
+    toast({ title: 'AI: Opening Music Player 🎵✨' });
+  };
+
   // AI VOICE ENGINE (TTS)
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   useEffect(() => {
@@ -668,27 +673,45 @@ export function RoomClient({ room }: { room: Room }) {
         const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
       
         // COMMAND PARSER: Execute moderation actions detected in AI response
+        const isAdminAction = room.ownerId === msg.senderId || room.moderatorIds?.includes(msg.senderId);
+
         if (aiResponse.includes('[CMD:CLEAN]')) {
-          handleAIClearChat();
+          if (isAdminAction) handleAIClearChat();
         } else if (aiResponse.includes('[CMD:MUTE:')) {
           const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
-          if (username) {
-            // Find participant by username to get UID
+          if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
-            if (target) {
-              handleSilence(target.uid, target.isMuted || false);
-            }
+            if (target) handleSilence(target.uid, false); // Force Mute
+          }
+        } else if (aiResponse.includes('[CMD:UNMUTE:')) {
+          const username = aiResponse.match(/\[CMD:UNMUTE:(.*?)\]/)?.[1];
+          if (username && isAdminAction) {
+            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            if (target) handleSilence(target.uid, true); // Force Unmute
+          }
+        } else if (aiResponse.includes('[CMD:KICK:')) {
+          const username = aiResponse.match(/\[CMD:KICK:(.*?)\]/)?.[1];
+          if (username && isAdminAction) {
+            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            if (target) handleKick(target.uid, 60); // Kick for 60 mins
           }
         } else if (aiResponse.includes('[CMD:LOCK:')) {
           const seatNum = aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1];
-          if (seatNum) {
-            handleAILockSeat(parseInt(seatNum));
+          if (seatNum && isAdminAction) {
+            const index = parseInt(seatNum);
+            if (!room.lockedSeats?.includes(index)) handleAILockSeat(index);
+          }
+        } else if (aiResponse.includes('[CMD:UNLOCK:')) {
+          const seatNum = aiResponse.match(/\[CMD:UNLOCK:(\d+)\]/)?.[1];
+          if (seatNum && isAdminAction) {
+            const index = parseInt(seatNum);
+            if (room.lockedSeats?.includes(index)) handleAILockSeat(index);
           }
         } else if (aiResponse.includes('[CMD:GAME:')) {
           const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
-          if (slug) {
-            handleAIOpenGame(slug);
-          }
+          if (slug) handleAIOpenGame(slug);
+        } else if (aiResponse.includes('[CMD:MUSIC:OPEN]')) {
+          if (isAdminAction) handleAIOpenMusic();
         }
 
         // Post the AI response to Firestore
