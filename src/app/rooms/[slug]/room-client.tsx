@@ -274,6 +274,10 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
   const storage = useStorage();
   
+  // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
+  const welcomedUsersRef = useRef<Set<string>>(new Set());
+  const cleanupWelcomesRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Get voice activity from context
   const { isSpeaking, intensity } = useVoiceActivityContext();
 
@@ -525,17 +529,19 @@ export function RoomClient({ room }: { room: Room }) {
 
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
-    // GLOBAL AI LEADERSHIP ELECTION V4 (ZERO-LAG):
-    // We use the full participantsData list sorted by UID to ensure 100% stability.
-    // If the owner is in the list, they take priority. Otherwise, the veteran participant (Head of Tribe) handles it.
-    if (!participantsData || participantsData.length === 0) return;
-
-    const sortedParticipants = [...participantsData].sort((a, b) => a.uid.localeCompare(b.uid));
-    const ownerOnline = participantsData.some(p => p.uid === room.ownerId);
+    // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
+    // 1. Owner takes priority if online.
+    // 2. Otherwise, oldest Moderator (by UID sort).
+    // 3. Otherwise, oldest Participant (by UID sort).
+    const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a,b) => a.uid.localeCompare(b.uid)) || [];
+    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
     
-    const isAIProcessor = ownerOnline 
-       ? currentUser?.uid === room.ownerId 
-       : currentUser?.uid === sortedParticipants[0]?.uid;
+    let electedLeaderUid = sortedParticipants[0]?.uid;
+    if (ownerOnline) electedLeaderUid = room.ownerId;
+    else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
+
+    const isAIProcessor = currentUser?.uid === electedLeaderUid;
 
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
@@ -660,7 +666,11 @@ export function RoomClient({ room }: { room: Room }) {
         } else if (aiResponse.includes('[CMD:MUTE:')) {
           const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/)?.[1];
           if (username) {
-            handleAIMuteUser(username);
+            // Find participant by username to get UID
+            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            if (target) {
+              handleSilence(target.uid, target.isMuted || false);
+            }
           }
         } else if (aiResponse.includes('[CMD:LOCK:')) {
           const seatNum = aiResponse.match(/\[CMD:LOCK:(\d+)\]/)?.[1];
@@ -670,7 +680,7 @@ export function RoomClient({ room }: { room: Room }) {
         } else if (aiResponse.includes('[CMD:GAME:')) {
           const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/)?.[1];
           if (slug) {
-            handleAIGameOpen(slug);
+            handleAIOpenGame(slug);
           }
         }
 
@@ -697,8 +707,21 @@ export function RoomClient({ room }: { room: Room }) {
   // REMOVED LEGACY LOCAL AUTO-WELCOME (Duplicates Fixed)
 
   const handleAIWelcome = async (newUserName: string) => {
-    if (!firestore || !room.id) return;
+    if (!firestore || !room.id || !newUserName) return;
     
+    // GUARD: Anti-Duplication Shield (10s local cooldown per name)
+    if (welcomedUsersRef.current.has(newUserName)) {
+      console.log(`[AI-Guard] Suppressing duplicate welcome for: ${newUserName}`);
+      return;
+    }
+    
+    welcomedUsersRef.current.add(newUserName);
+    
+    // Auto-clear from memory after 10s to allow welcoming again if they re-join later
+    setTimeout(() => {
+      welcomedUsersRef.current.delete(newUserName);
+    }, 10000);
+
     // AI Greeting Logic: High-Fidelity Welcome System
     const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
     await addDocumentNonBlocking(messagesRef, {
@@ -1121,7 +1144,7 @@ export function RoomClient({ room }: { room: Room }) {
                               INFO
                             </div>
                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
-                               {room.announcement || "Welcome to the tribe!"}
+                                {room.announcement || "Welcome to the tribe!"}
                             </p>
                          </div>
 
