@@ -445,15 +445,35 @@ export function RoomClient({ room }: { room: Room }) {
     setIsAISpeaking(true);
 
     const cleanText = text.replace(/\[CMD:.*?\]/g, '').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
+    
+    // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
+    const hasHindi = /[\u0900-\u097F]/.test(cleanText);
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Pre-set language to guide the voice selection engine
+    utterance.lang = hasHindi ? 'hi-IN' : 'en-US';
+    
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang.includes('hi-IN')) || voices.find(v => v.lang.includes('en-IN')) || voices[0];
+    
+    // NATIVE-SYNC VOICE SELECTION: Prioritize high-quality local voices
+    let preferredVoice;
+    if (hasHindi) {
+      // Priority: Hindi (India) -> English (India) fallback
+      preferredVoice = voices.find(v => v.lang === 'hi-IN') || 
+                       voices.find(v => v.lang.includes('hi')) || 
+                       voices.find(v => v.lang.includes('en-IN')) || 
+                       voices[0];
+    } else {
+      // Priority: English (US) -> English (UK) -> Any English
+      preferredVoice = voices.find(v => v.lang === 'en-US' && v.localService) || 
+                       voices.find(v => v.lang === 'en-US') || 
+                       voices.find(v => v.lang.includes('en-GB')) || 
+                       voices.find(v => v.lang.startsWith('en')) || 
+                       voices[0];
+    }
     
     if (preferredVoice) {
       utterance.voice = preferredVoice;
-      utterance.lang = preferredVoice.lang;
-    } else {
-      utterance.lang = 'hi-IN';
     }
     
     utterance.pitch = 1.05;
@@ -461,12 +481,15 @@ export function RoomClient({ room }: { room: Room }) {
     utterance.volume = 1.0;
 
     utterance.onend = () => setIsAISpeaking(false);
-    utterance.onerror = () => setIsAISpeaking(false);
+    utterance.onerror = (e) => {
+      console.warn('[AI-Voice] Utterance Error:', e);
+      setIsAISpeaking(false);
+    };
 
-    // Some browsers require a small timeout for the engine to reset
+    // BROWSER HANDSHAKE: Small delay ensures the engine is ready after cancel()
     setTimeout(() => {
       window.speechSynthesis.speak(utterance);
-    }, 50);
+    }, 100);
   };
 
   // AI VOICE INTERACTION (STT)

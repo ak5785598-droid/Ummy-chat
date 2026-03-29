@@ -184,21 +184,48 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
    };
   }, [firestore, activeRoom?.id, user?.uid, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
 
-  // EFFECT 2: SEPARATE PROFILE METADATA SYNC
+  const lastSyncMetadata = useRef<string>('');
+
+  // EFFECT 2: SEPARATE PROFILE METADATA SYNC (Guarded & Debounced)
   useEffect(() => {
-    if (!firestore || !activeRoom?.id || !user || !hasJoinedRef.current) return;
+    if (!firestore || !activeRoom?.id || !user || !hasJoinedRef.current || !userProfile) return;
     
-    const participantRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
-    updateDocumentNonBlocking(participantRef, {
-      name: userMetadata.username || 'Guest',
-      avatarUrl: userMetadata.avatarUrl || null,
-      activeFrame: userMetadata.activeFrame || 'None',
-      activeWave: userMetadata.activeWave || 'Default',
-      activeBubble: userMetadata.activeBubble || 'None',
-      accountNumber: userMetadata.accountNumber || null,
-      lastSeen: serverTimestamp(),
+    // Create a stable string representation for comparison (excluding lastSeen)
+    const currentMetaString = JSON.stringify({
+      n: userMetadata.username,
+      a: userMetadata.avatarUrl,
+      f: userMetadata.activeFrame,
+      w: userMetadata.activeWave,
+      b: userMetadata.activeBubble,
+      acc: userMetadata.accountNumber
     });
-  }, [userMetadata, firestore, activeRoom?.id, user?.uid]);
+
+    // GUARD: Only sync if metadata actually changed to prevent 403/Quota issues
+    if (currentMetaString === lastSyncMetadata.current) return;
+
+    const syncMetadata = async () => {
+      try {
+        const participantRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
+        await updateDocumentNonBlocking(participantRef, {
+          name: userMetadata.username || 'Guest',
+          avatarUrl: userMetadata.avatarUrl || null,
+          activeFrame: userMetadata.activeFrame || 'None',
+          activeWave: userMetadata.activeWave || 'Default',
+          activeBubble: userMetadata.activeBubble || 'None',
+          accountNumber: userMetadata.accountNumber || null,
+          lastSeen: serverTimestamp(),
+        });
+        lastSyncMetadata.current = currentMetaString;
+      } catch (err) {
+        // Silent catch for transient permission issues during room entry
+        console.warn('[Presence] Metadata sync suppressed (Transient):', err);
+      }
+    };
+
+    // DEBOUNCE: Allow profile state to stabilize before hitting Firestore
+    const timer = setTimeout(syncMetadata, 800);
+    return () => clearTimeout(timer);
+  }, [userMetadata, firestore, activeRoom?.id, user?.uid, userProfile]);
 
   return null;
 }
