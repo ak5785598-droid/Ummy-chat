@@ -184,7 +184,7 @@ export default function RoomsPage() {
       </div>
 
         <div className="px-3 mb-3">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[30px]">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[60px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                <div className="flex items-center gap-1">
