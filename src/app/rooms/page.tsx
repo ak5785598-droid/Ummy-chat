@@ -155,7 +155,7 @@ export default function RoomsPage() {
            const Icon = ICON_MAP[slide.iconName] || Sparkles;
             return (
              <CarouselItem key={idx}>
-              <div className={cn("h-[140px] w-full rounded-[1.5rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+              <div className={cn("h-[120px] w-full rounded-[1.5rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
                 {slide.imageUrl && (
                  <Image 
                   src={slide.imageUrl} 
