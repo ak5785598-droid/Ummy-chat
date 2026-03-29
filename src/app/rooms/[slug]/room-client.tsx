@@ -1167,12 +1167,12 @@ export function RoomClient({ room }: { room: Room }) {
 
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1 min-w-0">
-              <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,1)] truncate max-w-[260px]">{room.title}</h1>
+              <h1 className="font-semibold text-[16px] uppercase tracking-tighter text-white leading-none truncate max-w-[260px]">{room.title}</h1>
               <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                 {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
               </button>
             </div>
-            <p className="text-[9px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
+            <p className="text-[9px] font-medium text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
