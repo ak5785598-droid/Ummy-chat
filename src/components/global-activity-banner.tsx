@@ -58,7 +58,7 @@ export function GlobalActivityBanner() {
         className="fixed top-0 left-0 right-0 z-[600] pointer-events-none"
       >
         <div className="w-full max-w-[500px] mx-auto px-4 mt-2">
-           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-10 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
+           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-6 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
               {/* Animated Shine */}
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full skew-x-[45deg]"
