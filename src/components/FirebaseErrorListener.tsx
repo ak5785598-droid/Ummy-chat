@@ -6,30 +6,49 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
- * An invisible component that listens for globally emitted 'permission-error' events.
- * High-Fidelity Sync: Instead of throwing (which crashes the app), it triggers a system Toast.
+ * AIPerformanceShield - A global monitoring system handled by Ummy AI.
+ * It listens for sync errors and network health to keep the app running smoothly.
  */
 export function FirebaseErrorListener() {
- const { toast } = useToast();
+  const { toast } = useToast();
 
- useEffect(() => {
-  const handleError = (error: FirestorePermissionError) => {
-   console.error("[Identity Sync] Permission Exception Captured:", error);
-   
-   // Instead of crashing the React tree, we notify the user gracefully.
-   toast({
-    variant: 'destructive',
-    title: 'Frequency Sync Error',
-    description: 'You do not have permission to access this node. Please ensure your identity is verified.',
-   });
-  };
+  useEffect(() => {
+    // 1. FIRESTORE ERROR MONITOR
+    const handleError = (error: FirestorePermissionError) => {
+      console.error("[Performance Shield] Sync Exception:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Ummy AI Shield',
+        description: 'Sync me thoda issue hai, but don\'t worry! Main sab handle kar rahi hoon. 🛡️',
+      });
+    };
 
-  errorEmitter.on('permission-error', handleError);
+    // 2. NETWORK CONNECTIVITY MONITOR
+    const handleOnline = () => {
+      toast({
+        title: 'Ummy AI Online',
+        description: 'Aapka internet wapas aa gaya hai! Happy chatting! ✨',
+      });
+    };
 
-  return () => {
-   errorEmitter.off('permission-error', handleError);
-  };
- }, [toast]);
+    const handleOffline = () => {
+      toast({
+        variant: 'destructive',
+        title: 'Ummy AI Alert',
+        description: 'Connection slow hai ya toot gaya hai. Please check karein! 📶',
+      });
+    };
 
- return null;
+    errorEmitter.on('permission-error', handleError);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      errorEmitter.off('permission-error', handleError);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
+
+  return null;
 }

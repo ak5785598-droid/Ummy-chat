@@ -241,6 +241,12 @@ export function RoomClient({ room }: { room: Room }) {
   
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ummy_ai_voice_enabled') === 'true';
+    }
+    return false;
+  });
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // SYNC: Initialize standard user hook
@@ -384,6 +390,40 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
+  // AI VOICE ENGINE (TTS)
+  const speakAIText = (text: string) => {
+    if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    // Clean text of emojis for cleaner speech
+    const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
+    
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Attempt to find a natural Hinglish/Hindi/Indian voice
+    const preferredVoice = voices.find(v => v.lang.includes('hi-IN') || v.lang.includes('en-IN')) || voices[0];
+    if (preferredVoice) utterance.voice = preferredVoice;
+    
+    utterance.pitch = 1.1;
+    utterance.rate = 1.0;
+    
+    window.speechSynthesis.cancel(); // Stop any current speech
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleAIVoice = () => {
+    const nextValue = !isAIVoiceEnabled;
+    setIsAIVoiceEnabled(nextValue);
+    localStorage.setItem('ummy_ai_voice_enabled', String(nextValue));
+    
+    if (nextValue) {
+      speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
+    } else {
+      window.speechSynthesis.cancel();
+      toast({ title: 'AI Voice Disabled' });
+    }
+  };
+
   // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
     // CRITICAL: Filter for duplicates - Only the Room Owner handles the AI automation logic
@@ -413,6 +453,11 @@ export function RoomClient({ room }: { room: Room }) {
       } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isLocalOwner) {
         // UMmy AI GUARD & GUIDE ENGINE: Only owner client handles conversational triggers
         handleAIEngine(msg);
+      }
+
+      // VOICE SYNC: Trigger local TTS if it's an AI message
+      if (msg.senderId === 'SYSTEM_BOT') {
+        speakAIText(msg.content);
       }
     });
 
@@ -506,19 +551,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // LOCAL AUTO-WELCOME TRIGGER: Ensure user is greeted reliably upon entry
-  const hasAutoWelcomed = useRef(false);
-  useEffect(() => {
-    if (!userProfile?.username || hasAutoWelcomed.current) return;
-    
-    // Slight delay for premium onboarding feel
-    const timer = setTimeout(() => {
-      handleAIWelcome(userProfile.username || 'Tribe Member');
-      hasAutoWelcomed.current = true;
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [userProfile?.username]);
+  // REMOVED LEGACY LOCAL AUTO-WELCOME (Duplicates Fixed)
 
   const handleAIWelcome = async (newUserName: string) => {
     if (!firestore || !room.id) return;
@@ -885,6 +918,15 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <button 
+            onClick={toggleAIVoice} 
+            className={cn(
+              "p-1.5 rounded-full active:scale-95 transition-transform border border-white/5",
+              isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/30" : "bg-white/10 text-white/40"
+            )}
+          >
+            {isAIVoiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
           <button onClick={() => setIsUserListOpen(true)} className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[10px] font-black">{onlineCount}</span></button>
           {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4" /></button>
