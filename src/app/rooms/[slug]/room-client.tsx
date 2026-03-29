@@ -1200,7 +1200,13 @@ export function RoomClient({ room }: { room: Room }) {
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
         {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
-           <div className="w-full grid grid-cols-5 gap-y-6 gap-x-1 px-2 mb-4">
+           <div className="w-full flex justify-center px-6 mb-1">
+              <div className="w-1/4 max-w-[90px]">
+                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              </div>
+           </div>
+           
+           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
               {extraSeats.map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
