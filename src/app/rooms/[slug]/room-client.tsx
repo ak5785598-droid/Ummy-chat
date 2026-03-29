@@ -1113,17 +1113,26 @@ export function RoomClient({ room }: { room: Room }) {
       {/* LIVE BACKGROUND OVERLAY */}
       <LiveBackground themeId={activeLiveTheme} />
 
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* BASE BACKGROUND - CLEAR & VIBRANT */}
         <Image 
           key={`${room.roomThemeId}`} 
           src={bgUrl} 
           alt="Background" 
           fill 
           unoptimized
-          className="object-cover opacity-60 animate-in fade-in duration-1000" 
+          className="object-cover opacity-90 animate-in fade-in duration-1000" 
           priority 
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
+        
+        {/* PREMIUM WAFA-STYLE SUNBEAMS (Light Rays) */}
+        <div className="absolute inset-0 z-10 pointer-events-none opacity-40">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.4)_0%,transparent_60%)]" />
+           <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_40px,rgba(255,255,255,0.05)_45px,rgba(255,255,255,0.05)_50px)]" />
+        </div>
+
+        {/* BOTTOM VIGNETTE FOR CHAT CLARITY */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-20" />
       </div>
 
       {/* SOUNDBOARD OVERLAY */}
@@ -1191,13 +1200,7 @@ export function RoomClient({ room }: { room: Room }) {
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
         {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
-           <div className="w-full flex justify-center px-6 mb-1">
-              <div className="w-1/4 max-w-[90px]">
-                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
-              </div>
-           </div>
-           
-           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
+           <div className="w-full grid grid-cols-5 gap-y-6 gap-x-1 px-2 mb-4">
               {extraSeats.map(idx => (
                 <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
               ))}
@@ -1498,6 +1501,17 @@ export function RoomClient({ room }: { room: Room }) {
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
+        onSelectGame={(slug) => {
+          if (['ludo', 'carrom', 'chess'].includes(slug)) {
+            // Standalone Games: Navigate to full page with roomId and minimize room
+            setMinimizedRoom(room);
+            setActiveRoom(null);
+            router.push(`/games/${slug}?roomId=${room.id}`);
+          } else {
+            // Overlay Games: Show in-room overlay
+            setActiveGameSlug(slug);
+          }
+        }}
         onPlayLocalMusic={handlePlayLocalMusic}
       />
       <RoomGamesDialog 
