@@ -184,7 +184,7 @@ export default function RoomsPage() {
       </div>
 
         <div className="px-3 mb-3">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[80]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function RoomsPage() {
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative">
-                       <Avatar className="h-16 w-16 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
+                       <Avatar className="h-10 w-10 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
                           <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
                        </Avatar>
