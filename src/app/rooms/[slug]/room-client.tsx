@@ -59,26 +59,26 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  useUser, 
-  useFirestore, 
-  useCollection, 
-  useMemoFirebase, 
+import {
+  useUser,
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
   useDoc,
-  addDocumentNonBlocking, 
-  updateDocumentNonBlocking, 
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking,
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
   useStorage
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { 
-  collection, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
-  limitToLast, 
-  doc, 
+import {
+  collection,
+  serverTimestamp,
+  query,
+  orderBy,
+  limitToLast,
+  doc,
   increment,
   arrayUnion,
   arrayRemove,
@@ -117,24 +117,24 @@ import { useActivityTracker } from '@/hooks/use-activity-tracker';
 
 // RemoteAudio shifted to ActiveRoomManager
 
-const Seat = ({ 
-  index, 
-  occupant, 
-  onClick, 
-  label, 
-  isLocked, 
-  roomOwnerId, 
-  roomModeratorIds = [], 
-  theme 
-}: { 
-  index: number; 
-  occupant?: RoomParticipant; 
-  onClick: (index: number, occupant?: RoomParticipant) => void; 
-  label: string; 
-  isLocked?: boolean; 
-  roomOwnerId: string; 
-  roomModeratorIds: string[]; 
-  theme: any; 
+const Seat = ({
+  index,
+  occupant,
+  onClick,
+  label,
+  isLocked,
+  roomOwnerId,
+  roomModeratorIds = [],
+  theme
+}: {
+  index: number;
+  occupant?: RoomParticipant;
+  onClick: (index: number, occupant?: RoomParticipant) => void;
+  label: string;
+  isLocked?: boolean;
+  roomOwnerId: string;
+  roomModeratorIds: string[];
+  theme: any;
 }) => {
   const { user } = useUser();
   const { isSpeaking, intensity } = useVoiceActivityContext();
@@ -147,23 +147,23 @@ const Seat = ({
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
       <div className="relative">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
-        
+
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
-          <VoiceWaveIndicator 
-            isSpeaking={isSpeaking} 
+          <VoiceWaveIndicator
+            isSpeaking={isSpeaking}
             intensity={intensity}
             accentColor={theme.accentColor}
           />
         )}
-        
-        <AvatarFrame 
-          frameId={occupant?.activeFrame} 
-          size="md" 
+
+        <AvatarFrame
+          frameId={occupant?.activeFrame}
+          size="md"
           badgeType={null}
         >
           <div className="relative p-1 rounded-full overflow-visible">
-            <button 
-              onClick={() => onClick(index, occupant)} 
+            <button
+              onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-12 w-12 rounded-full flex items-center justify-center border active:scale-90 transition-all relative z-10",
                 "shadow-[0_2px_10px_rgba(0,0,0,0.3)]",
@@ -174,10 +174,10 @@ const Seat = ({
               {occupant ? (
                 <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
                   <Avatar className="h-full w-full p-0.5">
-                    <AvatarImage 
-                      src={occupant.avatarUrl || undefined} 
+                    <AvatarImage
+                      src={occupant.avatarUrl || undefined}
                       className="image-render-crisp brightness-110 contrast-110 saturate-110"
-                      style={{ imageRendering: 'auto' }} 
+                      style={{ imageRendering: 'auto' }}
                     />
                     <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -194,12 +194,12 @@ const Seat = ({
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
-      
+
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
       <div className="mt-1.5 w-full flex flex-col items-center overflow-visible">
         <div className="flex items-center gap-1 max-w-full justify-center">
           {occupant && (
-            <div 
+            <div
               className={cn(
                 "h-3.5 w-3.5 rounded-full flex items-center justify-center shrink-0 border border-white/20 shadow-sm",
                 index % 2 === 0 ? "bg-pink-500" : "bg-blue-500"
@@ -237,7 +237,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
-  
+
   const [sessionJoinTime] = useState(() => new Date());
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [mountEntries, setMountEntries] = useState<MountEntry[]>([]);
@@ -246,7 +246,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
-  
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(() => {
@@ -264,12 +264,12 @@ export function RoomClient({ room }: { room: Room }) {
   // DYNAMIC LEVELING SYNC
   useActivityTracker(room.id, currentUser?.uid || null);
 
-  const { 
-    setActiveRoom, 
-    setIsMinimized, 
-    setMinimizedRoom, 
-    musicStream, 
-    setMusicStream 
+  const {
+    setActiveRoom,
+    setIsMinimized,
+    setMinimizedRoom,
+    musicStream,
+    setMusicStream
   } = useRoomContext();
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -281,11 +281,11 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const storage = useStorage();
-  
+
   // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
   const welcomedUsersRef = useRef<Set<string>>(new Set());
   const cleanupWelcomesRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Get voice activity from context
   const { isSpeaking, intensity } = useVoiceActivityContext();
 
@@ -345,7 +345,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, [firestore, room.id]);
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
-  
+
   const participants = useMemo(() => {
     if (!participantsData) return [];
     if (now === null) return participantsData;
@@ -354,7 +354,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
       if (!lastSeen) return true;
-      
+
       // SYNC: Seated users stay visible for 5m (300s) to match background grace periods.
       // Standing users stay visible for 65s (standard idle).
       const threshold = (p.seatIndex > 0) ? 300000 : 65000;
@@ -365,15 +365,15 @@ export function RoomClient({ room }: { room: Room }) {
   const onlineCount = participants.length;
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
-  
+
   // Audio connection handled by ActiveRoomManager
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(
-      collection(firestore, 'chatRooms', room.id, 'messages'), 
+      collection(firestore, 'chatRooms', room.id, 'messages'),
       where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
-      orderBy('timestamp', 'asc'), 
+      orderBy('timestamp', 'asc'),
       limitToLast(50)
     );
   }, [firestore, room.id, sessionJoinTime]);
@@ -457,37 +457,37 @@ export function RoomClient({ room }: { room: Room }) {
     setIsAISpeaking(true);
 
     const cleanText = text.replace(/\[CMD:.*?\]/g, '').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
-    
+
     // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
     const hasHindi = /[\u0900-\u097F]/.test(cleanText);
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    
+
     // Pre-set language to guide the voice selection engine
     utterance.lang = hasHindi ? 'hi-IN' : 'en-US';
-    
+
     const voices = window.speechSynthesis.getVoices();
-    
+
     // NATIVE-SYNC VOICE SELECTION: Prioritize high-quality local voices
     let preferredVoice;
     if (hasHindi) {
       // Priority: Hindi (India) -> English (India) fallback
-      preferredVoice = voices.find(v => v.lang === 'hi-IN') || 
-                       voices.find(v => v.lang.includes('hi')) || 
-                       voices.find(v => v.lang.includes('en-IN')) || 
-                       voices[0];
+      preferredVoice = voices.find(v => v.lang === 'hi-IN') ||
+        voices.find(v => v.lang.includes('hi')) ||
+        voices.find(v => v.lang.includes('en-IN')) ||
+        voices[0];
     } else {
       // Priority: English (US) -> English (UK) -> Any English
-      preferredVoice = voices.find(v => v.lang === 'en-US' && v.localService) || 
-                       voices.find(v => v.lang === 'en-US') || 
-                       voices.find(v => v.lang.includes('en-GB')) || 
-                       voices.find(v => v.lang.startsWith('en')) || 
-                       voices[0];
+      preferredVoice = voices.find(v => v.lang === 'en-US' && v.localService) ||
+        voices.find(v => v.lang === 'en-US') ||
+        voices.find(v => v.lang.includes('en-GB')) ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0];
     }
-    
+
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
-    
+
     utterance.pitch = 1.05;
     utterance.rate = 1.0;
     utterance.volume = 1.0;
@@ -541,8 +541,8 @@ export function RoomClient({ room }: { room: Room }) {
     };
 
     recognition.onerror = (err: any) => {
-       console.error('[AI-STT] Recognition Error:', err);
-       setIsAIListening(false);
+      console.error('[AI-STT] Recognition Error:', err);
+      setIsAIListening(false);
     };
 
     recognition.onend = () => {
@@ -557,7 +557,7 @@ export function RoomClient({ room }: { room: Room }) {
     const nextValue = !isAIVoiceEnabled;
     setIsAIVoiceEnabled(nextValue);
     localStorage.setItem('ummy_ai_voice_enabled', String(nextValue));
-    
+
     // BROWSER HANDSHAKE: Prime the engine on first interaction
     if (nextValue) {
       const warmUp = new SpeechSynthesisUtterance("");
@@ -575,10 +575,10 @@ export function RoomClient({ room }: { room: Room }) {
     // 1. Owner takes priority if online.
     // 2. Otherwise, oldest Moderator (by UID sort).
     // 3. Otherwise, oldest Participant (by UID sort).
-    const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a,b) => a.uid.localeCompare(b.uid)) || [];
+    const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
     const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
     const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-    
+
     let electedLeaderUid = sortedParticipants[0]?.uid;
     if (ownerOnline) electedLeaderUid = room.ownerId;
     else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
@@ -588,12 +588,12 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
     // Identify the starting point for the new delta
-    const startIndex = lastProcessedId.current 
+    const startIndex = lastProcessedId.current
       ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
       : 0;
 
     const newBatch = firestoreMessages.slice(startIndex);
-    
+
     newBatch.forEach(msg => {
       if (msg.type === 'gift' && msg.giftId) {
         console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
@@ -631,11 +631,11 @@ export function RoomClient({ room }: { room: Room }) {
   const handleAIEngine = async (msg: any) => {
     if (!firestore || !room.id || !msg.content) return;
     const content = msg.content.toLowerCase();
-    
+
     // 1. PROFANITY SHIELD (Moderation)
     const slurs = ['abuse1', 'slur2', 'badword3']; // Placeholder for a real slur list
     const isBad = slurs.some(s => content.includes(s));
-    
+
     if (isBad) {
       const currentStrikes = (warningCounts.current[msg.senderId] || 0) + 1;
       warningCounts.current[msg.senderId] = currentStrikes;
@@ -654,12 +654,12 @@ export function RoomClient({ room }: { room: Room }) {
         // STRIKE 3 - EXECUTE KICK (Only if I am Owner/Mod)
         if (canManageRoom) {
           await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-           content: `${msg.senderName} ko 3 warnings mil chuki hain. Room se bahar nikala jaa raha hai! 🚫`,
-           senderId: 'SYSTEM_BOT',
-           senderName: 'Ummy AI Shield',
-           senderAvatar: 'https://img.icons8.com/isometric/512/shield.png',
-           type: 'text',
-           timestamp: serverTimestamp()
+            content: `${msg.senderName} ko 3 warnings mil chuki hain. Room se bahar nikala jaa raha hai! 🚫`,
+            senderId: 'SYSTEM_BOT',
+            senderName: 'Ummy AI Shield',
+            senderAvatar: 'https://img.icons8.com/isometric/512/shield.png',
+            type: 'text',
+            timestamp: serverTimestamp()
           });
           handleKick(msg.senderId, 60); // Kick for 60 mins
         }
@@ -670,16 +670,16 @@ export function RoomClient({ room }: { room: Room }) {
     // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - Master Brain Override)
     const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
     const isTriggered = triggerWords.some(t => content.includes(t));
-    
+
     if (isTriggered) {
       // PROCESSING LOCK: Add flag to firestore message to signal processing has started
       try {
         const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
         await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
-        
+
         const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
         const upperResponse = aiResponse.toUpperCase();
-      
+
         // COMMAND PARSER: Execute moderation actions detected in AI response
         const isAdminAction = room.ownerId === msg.senderId || room.moderatorIds?.includes(msg.senderId);
 
@@ -693,7 +693,7 @@ export function RoomClient({ room }: { room: Room }) {
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
-              handleSilence(target.uid, false); 
+              handleSilence(target.uid, false);
               toast({ title: 'Sovereign Master', description: `Silence enforced on ${username}.` });
             }
           }
@@ -702,7 +702,7 @@ export function RoomClient({ room }: { room: Room }) {
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
-              handleSilence(target.uid, true); 
+              handleSilence(target.uid, true);
               toast({ title: 'Sovereign Master', description: `Voice restored to ${username}.` });
             }
           }
@@ -711,7 +711,7 @@ export function RoomClient({ room }: { room: Room }) {
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
-              handleKick(target.uid, 60); 
+              handleKick(target.uid, 60);
               toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
             }
           }
@@ -784,7 +784,7 @@ export function RoomClient({ room }: { room: Room }) {
         type: 'text',
         timestamp: serverTimestamp()
       });
-      return; 
+      return;
     }
   };
 
@@ -792,15 +792,15 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleAIWelcome = async (newUserName: string) => {
     if (!firestore || !room.id || !newUserName) return;
-    
+
     // GUARD: Anti-Duplication Shield (10s local cooldown per name)
     if (welcomedUsersRef.current.has(newUserName)) {
       console.log(`[AI-Guard] Suppressing duplicate welcome for: ${newUserName}`);
       return;
     }
-    
+
     welcomedUsersRef.current.add(newUserName);
-    
+
     // Auto-clear from memory after 10s to allow welcoming again if they re-join later
     setTimeout(() => {
       welcomedUsersRef.current.delete(newUserName);
@@ -820,7 +820,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleSfxTrigger = async (sfxId: string) => {
     if (!firestore || !room.id || !currentUser || !userProfile) return;
-    
+
     // Broadcast SFX to all participants
     const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
     await addDocumentNonBlocking(messagesRef, {
@@ -874,12 +874,12 @@ export function RoomClient({ room }: { room: Room }) {
 
   const currentTheme = useMemo(() => {
     if (room.backgroundUrl) {
-      return { 
-        id: 'custom', 
-        url: room.backgroundUrl, 
-        accentColor: '#FFCC00', 
-        seatColor: 'rgba(255, 255, 255, 0.1)', 
-        name: 'Custom' 
+      return {
+        id: 'custom',
+        url: room.backgroundUrl,
+        accentColor: '#FFCC00',
+        seatColor: 'rgba(255, 255, 255, 0.1)',
+        name: 'Custom'
       };
     }
 
@@ -907,21 +907,21 @@ export function RoomClient({ room }: { room: Room }) {
     if (e) e.preventDefault();
     const content = transcription || messageText;
     if ((!content.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
-    
+
     if (isChatMuted && !canManageRoom) {
       toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
       return;
     }
 
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: content, 
+      content: content,
       imageUrl: imageUrl || null,
-      senderId: currentUser.uid, 
-      senderName: userProfile.username || 'User', 
-      senderAvatar: userProfile.avatarUrl || null, 
+      senderId: currentUser.uid,
+      senderName: userProfile.username || 'User',
+      senderAvatar: userProfile.avatarUrl || null,
       senderBubble: userProfile.inventory?.activeBubble || null,
-      chatRoomId: room.id, 
-      timestamp: serverTimestamp(), 
+      chatRoomId: room.id,
+      timestamp: serverTimestamp(),
       type: 'text'
     });
     setMessageText('');
@@ -949,36 +949,36 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  const handleMicToggle = () => { 
+  const handleMicToggle = () => {
     if (!isInSeat || !firestore || !currentUser || !room.id) return;
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted }); 
+    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid), { isMuted: !currentUserParticipant?.isMuted });
   };
 
-  const handleMinimize = () => { 
+  const handleMinimize = () => {
     setMinimizedRoom(room);
     setActiveRoom(null);
-    router.push('/rooms'); 
+    router.push('/rooms');
   };
-  
-  const handleExit = () => { 
+
+  const handleExit = () => {
     if (firestore && currentUser) {
       const roomDocRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomDocRef, { 
+      updateDocumentNonBlocking(roomDocRef, {
         participantCount: increment(-1),
-        updatedAt: serverTimestamp() 
+        updatedAt: serverTimestamp()
       });
 
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
-      
+
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
-    setActiveRoom(null); 
+    setActiveRoom(null);
     setMinimizedRoom(null);
-    router.push('/rooms'); 
+    router.push('/rooms');
   };
 
   const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
@@ -1024,10 +1024,10 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleInputClick = () => {
     if (isChatMuted && !canManageRoom) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Chat Restricted', 
-        description: 'Room authority has closed public messaging.' 
+      toast({
+        variant: 'destructive',
+        title: 'Chat Restricted',
+        description: 'Room authority has closed public messaging.'
       });
       return;
     }
@@ -1056,7 +1056,7 @@ export function RoomClient({ room }: { room: Room }) {
     if (musicAudioRef.current) {
       const url = URL.createObjectURL(file);
       musicAudioRef.current.src = url;
-      
+
       // Important: captureStream works best on an active, non-suspended element
       const playPromise = musicAudioRef.current.play();
       if (playPromise !== undefined) {
@@ -1098,24 +1098,24 @@ export function RoomClient({ room }: { room: Room }) {
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-black overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5">
       <DailyRewardDialog />
-      <ExitRoomDialog 
+      <ExitRoomDialog
         isOpen={showExitDialog}
         onClose={() => setShowExitDialog(false)}
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-      <GiftAnimationOverlay 
-        giftId={activeGiftSync?.id || null} 
+      <GiftAnimationOverlay
+        giftId={activeGiftSync?.id || null}
         senderName={activeGiftSync?.senderName}
-        onComplete={() => setActiveGiftSync(null)} 
+        onComplete={() => setActiveGiftSync(null)}
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
-      
-       <audio 
-        ref={musicAudioRef} 
-        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }} 
-        crossOrigin="anonymous" 
-       />
+
+      <audio
+        ref={musicAudioRef}
+        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
+        crossOrigin="anonymous"
+      />
 
       {/* LIVE BACKGROUND OVERLAY */}
       <LiveBackground themeId={activeLiveTheme} />
@@ -1123,16 +1123,16 @@ export function RoomClient({ room }: { room: Room }) {
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* BASE BACKGROUND - CLEAR & VIBRANT */}
         <div className="absolute inset-0 bg-[#0A0A0A] z-[-1]" />
-        <Image 
-          key={`${room.roomThemeId}`} 
-          src={bgUrl} 
-          alt="Background" 
-          fill 
+        <Image
+          key={`${room.roomThemeId}`}
+          src={bgUrl}
+          alt="Background"
+          fill
           unoptimized
-          className="object-cover object-top opacity-95 animate-in fade-in duration-1000 contrast-[1.05] saturate-[1.1] brightness-[0.9]" 
-          priority 
+          className="object-cover object-top opacity-95 animate-in fade-in duration-1000 contrast-[1.05] saturate-[1.1] brightness-[0.9]"
+          priority
         />
-        
+
         {/* PREMIUM UI CLARITY OVERLAYS (Vignettes) */}
         <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
@@ -1141,13 +1141,13 @@ export function RoomClient({ room }: { room: Room }) {
       {/* SOUNDBOARD OVERLAY */}
       {showSoundboard && (
         <div className="fixed inset-x-0 bottom-24 px-6 z-50 animate-in slide-in-from-bottom-10 duration-300">
-           <RoomSoundboard onTrigger={handleSfxTrigger} />
+          <RoomSoundboard onTrigger={handleSfxTrigger} />
         </div>
       )}
 
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <div 
+          <div
             onClick={() => setIsRoomInfoOpen(true)}
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
@@ -1156,29 +1156,29 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarFallback className="text-[10px]">UM</AvatarFallback>
             </Avatar>
             <Trophy className="h-4 w-4 text-yellow-500 absolute top-6 -left-5 z-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-reaction-float" />
-            
+
             <div className="absolute -bottom-1 -left-3.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg scale-75">
-               <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
-               <span className="text-[7px] font-black text-yellow-400 leading-none">
-                 {room.stats?.totalGifts?.toLocaleString() || 0}
-               </span>
+              <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
+              <span className="text-[7px] font-black text-yellow-400 leading-none">
+                {room.stats?.totalGifts?.toLocaleString() || 0}
+              </span>
             </div>
           </div>
 
           <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1 min-w-0">
-                <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,1)] truncate max-w-[260px]">{room.title}</h1>
-                <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
-                   {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
-                </button>
-             </div>
-             <p className="text-[9px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
+            <div className="flex items-center gap-1 min-w-0">
+              <h1 className="font-black text-[16px] uppercase tracking-tighter text-white leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,1)] truncate max-w-[260px]">{room.title}</h1>
+              <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
+                {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
+              </button>
+            </div>
+            <p className="text-[9px] font-bold text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <div className="relative">
-            <button 
-              onClick={toggleAIVoice} 
+            <button
+              onClick={toggleAIVoice}
               className={cn(
                 "p-1 rounded-full active:scale-95 transition-all border border-white/5 relative z-10",
                 isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/40" : "bg-white/5 text-white/30",
@@ -1205,218 +1205,218 @@ export function RoomClient({ room }: { room: Room }) {
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
         {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
-           <div className="w-full flex justify-center px-6 mb-1">
-              <div className="w-1/4 max-w-[90px]">
-                 <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
-              </div>
-           </div>
-           
-           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
-              {extraSeats.map(idx => (
-                <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
-              ))}
-           </div>
+          <div className="w-full flex justify-center px-6 mb-1">
+            <div className="w-1/4 max-w-[90px]">
+              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+            </div>
+          </div>
+
+          <div className="w-full grid grid-cols-4 gap-1.5 px-4">
+            {extraSeats.map(idx => (
+              <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+            ))}
+          </div>
         </div>
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
         <div className="flex-1 w-full overflow-hidden mt-4 relative flex flex-col">
-           <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
-              <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
-                 {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
-                 {(globalConfig?.globalAnnouncement || room.announcement) && 
-                  (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
-                   <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
-                     <div className="relative overflow-hidden bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
-                       <div className="space-y-4">
-                         {globalConfig?.globalAnnouncement && (
-                           <div className="flex items-start gap-2.5">
-                             <div className="mt-1 bg-red-500 text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
-                               <Zap className="h-2 w-2 fill-current" />
-                               OFFICIAL
-                             </div>
-                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
-                               {globalConfig.globalAnnouncement}
-                             </p>
-                           </div>
-                         )}
-                         
-                         <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
-                            <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
-                               INFO
+          <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
+            <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
+              {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
+              {(globalConfig?.globalAnnouncement || room.announcement) &&
+                (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
+                  <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
+                    <div className="relative overflow-hidden bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+                      <div className="space-y-4">
+                        {globalConfig?.globalAnnouncement && (
+                          <div className="flex items-start gap-2.5">
+                            <div className="mt-1 bg-red-500 text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
+                              <Zap className="h-2 w-2 fill-current" />
+                              OFFICIAL
                             </div>
                             <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
-                                {room.announcement || "Welcome to the tribe!"}
+                              {globalConfig.globalAnnouncement}
                             </p>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* SYSTEM MESSAGES AT THE TOP (Wafa-style, e.g., "Cleared chat") */}
-                 {firestoreMessages?.filter(m => m.type === 'system').map((msg: any) => (
-                   <div key={msg.id} className="flex justify-center w-full px-4 mb-2 animate-in fade-in slide-in-from-top-1 duration-500">
-                     <div className="bg-black/40 px-4 py-1.5 rounded-full border border-white/5">
-                        <p className="text-[10px] font-normal text-white/50 text-center tracking-tight leading-none">
-                          {msg.content}
-                        </p>
-                     </div>
-                   </div>
-                 ))}
-
-                 {/* NORMAL CHAT MESSAGES - REAL-TIME SYNC WITH Clean Chat */}
-                 {firestoreMessages?.filter(m => {
-                    if (m.type === 'system') return false;
-                    const clearedAt = (room as any).chatClearedAt?.toDate?.() || new Date(0);
-                    const msgTime = (m as any).timestamp?.toDate?.() || new Date();
-                    return msgTime > clearedAt;
-                  }).map((msg: any) => {
-                    const isMe = msg.senderId === currentUser?.uid;
-                    return (
-                      <div 
-                        key={msg.id || Math.random().toString()} 
-                        onClick={() => {
-                          if (msg.senderId) {
-                            setSelectedParticipantUid(msg.senderId);
-                            setIsUserProfileCardOpen(true);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full"
+                          </div>
                         )}
-                      >
-                        <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
-                          <AvatarImage src={msg.senderAvatar || undefined} />
-                          <AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex flex-col items-start min-w-0">
-                           <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]", isMe ? "text-primary" : "text-white/60")}>
-                             {msg.senderName || 'Tribe Member'}
-                           </span>
-                           
-                           <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-[11px] leading-snug py-1">
-                             {msg.imageUrl && (
-                               <div 
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   setPreviewImage(msg.imageUrl);
-                                 }}
-                                 className="mt-1 mb-1 relative aspect-square w-40 rounded-lg overflow-hidden border border-white/10 group-hover:scale-[1.02] transition-transform"
-                               >
-                                 <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
-                               </div>
-                             )}
-                             {msg.content && <p className="break-words py-0.5">{msg.content}</p>}
-                           </ChatMessageBubble>
+
+                        <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
+                          <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
+                            INFO
+                          </div>
+                          <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
+                            {room.announcement || "Welcome to the tribe!"}
+                          </p>
                         </div>
                       </div>
-                    );
-                 })}
-                 <div ref={messagesEndRef} className="h-0 w-0" />
-              </div>
-           </ScrollArea>
+                    </div>
+                  </div>
+                )}
+
+              {/* SYSTEM MESSAGES AT THE TOP (Wafa-style, e.g., "Cleared chat") */}
+              {firestoreMessages?.filter(m => m.type === 'system').map((msg: any) => (
+                <div key={msg.id} className="flex justify-center w-full px-4 mb-2 animate-in fade-in slide-in-from-top-1 duration-500">
+                  <div className="bg-black/40 px-4 py-1.5 rounded-full border border-white/5">
+                    <p className="text-[10px] font-normal text-white/50 text-center tracking-tight leading-none">
+                      {msg.content}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* NORMAL CHAT MESSAGES - REAL-TIME SYNC WITH Clean Chat */}
+              {firestoreMessages?.filter(m => {
+                if (m.type === 'system') return false;
+                const clearedAt = (room as any).chatClearedAt?.toDate?.() || new Date(0);
+                const msgTime = (m as any).timestamp?.toDate?.() || new Date();
+                return msgTime > clearedAt;
+              }).map((msg: any) => {
+                const isMe = msg.senderId === currentUser?.uid;
+                return (
+                  <div
+                    key={msg.id || Math.random().toString()}
+                    onClick={() => {
+                      if (msg.senderId) {
+                        setSelectedParticipantUid(msg.senderId);
+                        setIsUserProfileCardOpen(true);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full"
+                    )}
+                  >
+                    <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
+                      <AvatarImage src={msg.senderAvatar || undefined} />
+                      <AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex flex-col items-start min-w-0">
+                      <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]", isMe ? "text-primary" : "text-white/60")}>
+                        {msg.senderName || 'Tribe Member'}
+                      </span>
+
+                      <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-[11px] leading-snug py-1">
+                        {msg.imageUrl && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(msg.imageUrl);
+                            }}
+                            className="mt-1 mb-1 relative aspect-square w-40 rounded-lg overflow-hidden border border-white/10 group-hover:scale-[1.02] transition-transform"
+                          >
+                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                          </div>
+                        )}
+                        {msg.content && <p className="break-words py-0.5">{msg.content}</p>}
+                      </ChatMessageBubble>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} className="h-0 w-0" />
+            </div>
+          </ScrollArea>
         </div>
       </main>
 
       <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
         <div className="flex items-center">
-           <button 
-             onClick={handleInputClick} 
-             className={cn(
-               "rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
-               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
-             )}
-           >
-              <MessageSquare className="h-[18px] w-[18px]" />
-           </button>
-           
-           {/* REPOSITIONED AI MIC - PERSISTENT ACCESS */}
-           <button 
-             onClick={toggleAIListening}
-             className={cn(
-               "ml-2 h-12 w-12 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
-               isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
-             )}
-           >
-              <Sparkles className="h-[18px] w-[18px]" />
-           </button>
+          <button
+            onClick={handleInputClick}
+            className={cn(
+              "rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
+              isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
+            )}
+          >
+            <MessageSquare className="h-[18px] w-[18px]" />
+          </button>
+
+          {/* REPOSITIONED AI MIC - PERSISTENT ACCESS */}
+          <button
+            onClick={toggleAIListening}
+            className={cn(
+              "ml-2 h-12 w-12 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
+              isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
+            )}
+          >
+            <Sparkles className="h-[18px] w-[18px]" />
+          </button>
         </div>
 
         <div className="absolute left-[42%] -translate-x-1/2 -translate-y-1">
-           <button 
-             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
-             className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_15px_rgba(0,176,255,0.4)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
-           >
-              <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
-              
-              <img 
-                src="https://img.icons8.com/color/96/gift--v1.png" 
-                className="h-7 w-7 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
-                alt="Gift"
-              />
-           </button>
+          <button
+            onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }}
+            className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_15px_rgba(0,176,255,0.4)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
+          >
+            <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
+
+            <img
+              src="https://img.icons8.com/color/96/gift--v1.png"
+              className="h-7 w-7 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10"
+              alt="Gift"
+            />
+          </button>
         </div>
 
         <div className="flex items-center gap-1.5">
-           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
-              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-[18px] w-[18px]" /> : <MicOff className="h-[18px] w-[18px]" />}
-           </button>
-           
-           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-             <SmilePlus className="h-[18px] w-[18px] text-white" />
-           </button>
+          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+            {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-[18px] w-[18px]" /> : <MicOff className="h-[18px] w-[18px]" />}
+          </button>
 
-           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-              <Mail className="h-[18px] w-[18px] text-white" />
-           </button>
+          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+            <SmilePlus className="h-[18px] w-[18px] text-white" />
+          </button>
 
-            <button 
-              onClick={() => setIsRoomPlayOpen(true)} 
-              className="group relative p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full active:scale-90 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)] border border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400"
-            >
-              <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-              <LayoutGrid className="h-[18px] w-[18px] text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-            </button>
+          <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+            <Mail className="h-[18px] w-[18px] text-white" />
+          </button>
+
+          <button
+            onClick={() => setIsRoomPlayOpen(true)}
+            className="group relative p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full active:scale-90 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)] border border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400"
+          >
+            <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+            <LayoutGrid className="h-[18px] w-[18px] text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+          </button>
         </div>
       </footer>
 
       {showInput && (
         <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-12 font-headline pointer-events-none">
-           <div 
-             className="absolute inset-0 bg-black/5 pointer-events-auto" 
-             onClick={() => setShowInput(false)} 
-           />
-           <div className="relative z-10 bg-slate-900/60 rounded-full p-2.5 px-3 flex items-center gap-3 animate-in slide-in-from-bottom-5 border border-white/10 pointer-events-auto shadow-2xl mx-2">
-              <input 
-                type="file" 
-                ref={imageInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleImageUpload} 
+          <div
+            className="absolute inset-0 bg-black/5 pointer-events-auto"
+            onClick={() => setShowInput(false)}
+          />
+          <div className="relative z-10 bg-slate-900/60 rounded-full p-2.5 px-3 flex items-center gap-3 animate-in slide-in-from-bottom-5 border border-white/10 pointer-events-auto shadow-2xl mx-2">
+            <input
+              type="file"
+              ref={imageInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <button
+              type="button"
+              disabled={isUploadingImage}
+              onClick={() => imageInputRef.current?.click()}
+              className="bg-white/10 text-white h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 border border-white/5"
+            >
+              {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5 opacity-70" />}
+            </button>
+            <form className="flex-1 flex items-center gap-2" onSubmit={(e: React.FormEvent) => { handleSendMessage(e); setShowInput(false); }}>
+              <input
+                autoFocus
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                className="flex-1 bg-transparent border-none focus:ring-0 px-1 text-white text-[13px] placeholder:text-white/30"
+                placeholder="Type a message..."
               />
-              <button 
-                type="button"
-                disabled={isUploadingImage}
-                onClick={() => imageInputRef.current?.click()}
-                className="bg-white/10 text-white h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 border border-white/5"
-              >
-                 {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5 opacity-70" />}
+              <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
+                <Mail className="h-5 w-5" />
               </button>
-              <form className="flex-1 flex items-center gap-2" onSubmit={(e: React.FormEvent) => { handleSendMessage(e); setShowInput(false); }}>
-                 <input 
-                   autoFocus 
-                   value={messageText} 
-                   onChange={(e) => setMessageText(e.target.value)} 
-                   className="flex-1 bg-transparent border-none focus:ring-0 px-1 text-white text-[13px] placeholder:text-white/30" 
-                   placeholder="Type a message..." 
-                 />
-                 <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
-                    <Mail className="h-5 w-5" />
-                 </button>
-              </form>
-           </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -1426,16 +1426,16 @@ export function RoomClient({ room }: { room: Room }) {
             <DialogTitle>Image Preview</DialogTitle>
             <DialogDescription>Full screen view</DialogDescription>
           </DialogHeader>
-          <button 
+          <button
             onClick={() => setPreviewImage(null)}
             className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
           >
             <X className="h-[18px] w-[18px]" />
           </button>
-          
+
           {/* Toolbar inside preview */}
           <div className="absolute bottom-12 flex items-center gap-4 z-[410]">
-            <button 
+            <button
               onClick={() => setIsGiftPickerOpen(true)}
               className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:scale-90 transition-transform"
             >
@@ -1444,7 +1444,7 @@ export function RoomClient({ room }: { room: Room }) {
 
             {/* SOUNDBOARD TRIGGER */}
             {currentUserParticipant?.seatIndex !== undefined && (
-              <button 
+              <button
                 onClick={() => setShowSoundboard(!showSoundboard)}
                 className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-primary active:scale-90 transition-transform"
               >
@@ -1454,7 +1454,7 @@ export function RoomClient({ room }: { room: Room }) {
 
             {/* LIVE THEME SELECTOR (PREMIUM) */}
             {userProfile?.isAdmin && (
-              <button 
+              <button
                 onClick={() => {
                   const themes: any[] = ['galaxy', 'stars', 'love', 'rain', 'none'];
                   const next = themes[(themes.indexOf(activeLiveTheme) + 1) % themes.length];
@@ -1469,12 +1469,12 @@ export function RoomClient({ room }: { room: Room }) {
 
           {previewImage && (
             <div className="relative w-full h-full flex items-center justify-center p-4">
-              <Image 
-                src={previewImage} 
-                alt="Full screen preview" 
-                fill 
-                className="object-contain" 
-                unoptimized 
+              <Image
+                src={previewImage}
+                alt="Full screen preview"
+                fill
+                className="object-contain"
+                unoptimized
               />
             </div>
           )}
@@ -1483,21 +1483,21 @@ export function RoomClient({ room }: { room: Room }) {
 
 
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
-      <RoomInfoDialog 
-        open={isRoomInfoOpen} 
-        onOpenChange={setIsRoomInfoOpen} 
-        room={room} 
-        isOwner={isOwner} 
-        isAdmin={canManageRoom} 
+      <RoomInfoDialog
+        open={isRoomInfoOpen}
+        onOpenChange={setIsRoomInfoOpen}
+        room={room}
+        isOwner={isOwner}
+        isAdmin={canManageRoom}
       />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
-      <RoomPlayDialog 
-        open={isRoomPlayOpen} 
-        onOpenChange={setIsRoomPlayOpen} 
-        participants={participants} 
-        roomId={room.id} 
-        room={room} 
+      <RoomPlayDialog
+        open={isRoomPlayOpen}
+        onOpenChange={setIsRoomPlayOpen}
+        participants={participants}
+        roomId={room.id}
+        room={room}
         isMutedLocal={isMutedLocal}
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
@@ -1514,9 +1514,9 @@ export function RoomClient({ room }: { room: Room }) {
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
       />
-      <RoomGamesDialog 
-        open={isRoomGamesOpen} 
-        onOpenChange={setIsRoomGamesOpen} 
+      <RoomGamesDialog
+        open={isRoomGamesOpen}
+        onOpenChange={setIsRoomGamesOpen}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
             // Standalone Games: Navigate to full page with roomId and minimize room
@@ -1530,23 +1530,23 @@ export function RoomClient({ room }: { room: Room }) {
           setIsRoomGamesOpen(false);
         }}
       />
-      <RoomGameOverlay 
-        activeGame={activeGameSlug} 
-        onClose={() => setActiveGameSlug(null)} 
+      <RoomGameOverlay
+        activeGame={activeGameSlug}
+        onClose={() => setActiveGameSlug(null)}
       />
-      <RoomMessagesDialog 
-        open={isMessagesOpen} 
+      <RoomMessagesDialog
+        open={isMessagesOpen}
         onOpenChange={(val) => {
           setIsMessagesOpen(val);
           if (!val) setInitialChatRecipient(null);
-        }} 
+        }}
         initialRecipient={initialChatRecipient}
       />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
-      
-      <RoomSeatMenuDialog 
-        open={isSeatMenuOpen} 
+
+      <RoomSeatMenuDialog
+        open={isSeatMenuOpen}
         onOpenChange={setIsSeatMenuOpen}
         seatIndex={selectedSeatIdx}
         roomId={room.id}
@@ -1563,7 +1563,7 @@ export function RoomClient({ room }: { room: Room }) {
         onSendGift={handleOpenGiftPickerFromMenu}
       />
 
-      <RoomUserProfileDialog 
+      <RoomUserProfileDialog
         userId={selectedParticipantUid}
         open={isUserProfileCardOpen}
         onOpenChange={setIsUserProfileCardOpen}
