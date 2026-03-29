@@ -58,7 +58,7 @@ export function GlobalActivityBanner() {
         className="fixed top-0 left-0 right-0 z-[600] pointer-events-none"
       >
         <div className="w-full max-w-[500px] mx-auto px-4 mt-2">
-           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-6 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
+           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-4 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
               {/* Animated Shine */}
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full skew-x-[45deg]"
@@ -67,7 +67,7 @@ export function GlobalActivityBanner() {
               />
               
               <div className="shrink-0 px-3 flex items-center gap-1.5 z-10 border-r border-white/10">
-                 <Trophy className="h-3 w-4 text-yellow-400 animate-pulse" />
+                 <Trophy className="h-3 w-3 text-yellow-400 animate-pulse" />
                  <span className="text-[10px] font-black uppercase text-yellow-400 tracking-tighter">System</span>
               </div>
 
@@ -78,10 +78,10 @@ export function GlobalActivityBanner() {
                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                  >
                     <Sparkles className="h-3 w-3 text-white/40" />
-                    <p className="text-[11px] font-bold text-white tracking-tight">
+                    <p className="text-[10px] font-bold text-white tracking-tight">
                        WOW! <span className="text-yellow-400">{activeEvent.userName}</span> sent a <span className="text-primary uppercase tracking-tighter">{activeEvent.giftName}</span> in Room <span className="text-emerald-400">#{activeEvent.roomNumber}</span>
                     </p>
-                    <Sparkles className="h-3 w-3 text-white/40" />
+                    <Sparkles className="h-2 w-2 text-white/40" />
                  </motion.div>
               </div>
            </div>
