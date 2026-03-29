@@ -394,17 +394,11 @@ export function RoomClient({ room }: { room: Room }) {
   const handleAIClearChat = async () => {
     if (!firestore || !room.id || !canManageRoom) return;
     try {
-      const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
-      // In a real app, you'd use a batch or cloud function. Here we do it in chunks.
-      // For immediate effect, we'll notify users.
-      await addDocumentNonBlocking(messagesRef, {
-        content: "Chat history ko Ummy AI ne saaf kar diya hai! ✨🧹",
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        type: 'text',
-        timestamp: serverTimestamp()
+      // PERSISTENT CLEAN: Update room document to hide historical messages
+      await updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        chatClearedAt: serverTimestamp()
       });
-      toast({ title: 'Chat Cleared by AI' });
+      toast({ title: 'AI: Chat Cleared ✨🧹' });
     } catch (e) { console.error(e); }
   };
 
@@ -1126,8 +1120,13 @@ export function RoomClient({ room }: { room: Room }) {
                    </div>
                  ))}
 
-                 {/* NORMAL CHAT MESSAGES */}
-                 {firestoreMessages?.filter(m => m.type !== 'system').map((msg: any) => {
+                 {/* NORMAL CHAT MESSAGES - REAL-TIME SYNC WITH Clean Chat */}
+                 {firestoreMessages?.filter(m => {
+                    if (m.type === 'system') return false;
+                    const clearedAt = (room as any).chatClearedAt?.toDate?.() || new Date(0);
+                    const msgTime = (m as any).timestamp?.toDate?.() || new Date();
+                    return msgTime > clearedAt;
+                  }).map((msg: any) => {
                     const isMe = msg.senderId === currentUser?.uid;
                     return (
                       <div 
