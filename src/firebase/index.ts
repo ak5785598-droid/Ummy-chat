@@ -7,53 +7,51 @@ import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore
 import { getStorage } from 'firebase/storage';
 
 /**
- * Global instance variable to ensure Firestore is only initialized once with the correct settings.
+ * Global instance variables to ensure Firebase services are only initialized once.
  */
+let appInstance: FirebaseApp | null = null;
 let firestoreInstance: Firestore | null = null;
 
 /**
  * PRODUCTION FIREBASE INITIALIZATION
- * Re-engineered to simplify service retrieval and ensure absolute storage bucket stability.
- * Utilizes the default bucket from the app config for maximum reliability.
+ * Re-engineered to simplify service retrieval and ensure absolute stability.
  */
 export function initializeFirebase() {
- let app: FirebaseApp;
- if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
- } else {
-  app = getApp();
- }
+  if (!appInstance) {
+    if (!getApps().length) {
+      appInstance = initializeApp(firebaseConfig);
+    } else {
+      appInstance = getApp();
+    }
+  }
 
- return getSdks(app);
+  if (!firestoreInstance) {
+    try {
+      // Initialize with Force Long Polling for resilience in proxy/slow networks.
+      firestoreInstance = initializeFirestore(appInstance, {
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: true,
+      });
+      console.log(`[Firebase Init] Firestore Initialized (Project: ${firebaseConfig.projectId})`);
+    } catch (error) {
+      // This catches 'already-initialized' errors gracefully from the SDK level.
+      firestoreInstance = getFirestore(appInstance);
+    }
+  }
+
+  return {
+    firebaseApp: appInstance,
+    auth: getAuth(appInstance),
+    firestore: firestoreInstance,
+    storage: getStorage(appInstance)
+  };
 }
 
+/**
+ * Deprecated: Kept for backward compatibility but calls initializeFirebase.
+ */
 export function getSdks(firebaseApp: FirebaseApp) {
- console.log(`[Firebase Init] Synchronizing services for project: ${firebaseConfig.projectId}`);
- 
- if (!firestoreInstance) {
-  try {
-   // CRITICAL: Switched to Force Long Polling for extreme network resilience.
-   // This resolves the "Could not reach Cloud Firestore backend" timeout errors by ensuring
-   // consistent connectivity in proxy or cloud-based development environments.
-   // experimentalAutoDetectLongPolling is added for additional fallback capability.
-   firestoreInstance = initializeFirestore(firebaseApp, {
-    experimentalForceLongPolling: true,
-    experimentalAutoDetectLongPolling: true,
-   });
-   console.log('[Firebase Init] Firestore synchronized with Long-Polling protocol.');
-  } catch (error) {
-   console.warn('[Firebase Init] Firestore already established, retrieving existing instance.');
-   firestoreInstance = getFirestore(firebaseApp);
-  }
- }
-
- return {
-  firebaseApp,
-  auth: getAuth(firebaseApp),
-  firestore: firestoreInstance,
-  // Using the default bucket from the initialized app is the most stable protocol.
-  storage: getStorage(firebaseApp)
- };
+  return initializeFirebase();
 }
 
 export * from './provider';
