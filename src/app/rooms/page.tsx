@@ -189,19 +189,19 @@ export default function RoomsPage() {
             <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                <div className="flex items-center gap-1">
                   <div className="bg-gradient-to-br from-yellow-300 to-yellow-600 p-1 rounded-lg shadow-lg">
-                     <Trophy className="h-3 w-3 text-red-700 fill-current" />
+                     <Trophy className="h-2 w-2 text-red-700 fill-current" />
                   </div>
-                  <span className="font-black uppercase text-[7px] tracking-tight text-yellow-300 italic drop-shadow-md">TOP ROOMS GRID</span>
+                  <span className="font-black uppercase text-[4px] tracking-tight text-yellow-300 italic drop-shadow-md">TOP ROOMS GRID</span>
                </div>
                <div className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
                   <ArrowRight className="h-2 w-2 text-white/50" />
                </div>
             </div>
-            <div className="h-[60px] flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
+            <div className="h-[90px] flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative -mt-6">
-                       <Avatar className="h-8 w-8 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
+                       <Avatar className="h-9 w-9 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
                           <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
                        </Avatar>
