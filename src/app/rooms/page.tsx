@@ -201,7 +201,7 @@ export default function RoomsPage() {
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative -mt-6">
-                       <Avatar className="h-9 w-9 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
+                       <Avatar className="h-3 w-5 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
                           <AvatarFallback className="bg-red-900/40 text-white/40 font-black">U</AvatarFallback>
                        </Avatar>
