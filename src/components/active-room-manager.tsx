@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useAgora } from '@/hooks/use-agora';
@@ -27,7 +27,6 @@ export function ActiveRoomManager() {
   const { user } = useUser();
   const firestore = useFirestore();
   
-  // The "Session Room" is either the one the user is physically in, or the one minimized in background
   const sessionRoom = activeRoom || minimizedRoom;
   const roomId = sessionRoom?.id;
 
@@ -50,13 +49,18 @@ export function ActiveRoomManager() {
   // Voice Activity Bridge (Agora -> UI Waves)
   const { setVoiceActivity } = useVoiceActivityContext();
 
+  const volumeEnabledForClient = useRef<any>(null);
+
   useEffect(() => {
     if (!client || !user?.uid) return;
 
     const numericUid = hashUidToNumber(user.uid);
 
-    // Enable Agora volume monitoring
-    client.enableAudioVolumeIndicator();
+    // GUARD: Only enable volume indicator ONCE per client instance to prevent console warnings
+    if (volumeEnabledForClient.current !== client) {
+      client.enableAudioVolumeIndicator();
+      volumeEnabledForClient.current = client;
+    }
     
     const handleVolume = (volumes: { uid: string | number, level: number }[]) => {
       // Find local user volume (can be 0 or the numeric hash)

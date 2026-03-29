@@ -247,6 +247,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     initializeGame,
     selectMode,
     joinArena,
+    startMatch,
     updateStriker,
     strike,
     endMatch

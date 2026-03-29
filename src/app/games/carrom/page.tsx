@@ -61,7 +61,7 @@ function CarromGameContent() {
           className="relative w-64 h-64 mb-12"
         >
           <img 
-            src="file:///C:/Users/HP/.gemini/antigravity/brain/c5b87f75-d5b9-4f21-bb57-7a31664c39b3/carrom_loading_logo_1774734575628.png" 
+            src="/images/games/carrom/loading_logo.png" 
             className="w-full h-full object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
             alt="Carrom Master"
           />
@@ -206,7 +206,7 @@ function CarromGameContent() {
           <div className="relative w-full max-w-[400px] aspect-square rounded-[2rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] border-[14px] border-[#3D2616] p-4 bg-[#F5D4B2]">
              {/* Board Texture */}
              <img 
-               src="file:///C:/Users/HP/.gemini/antigravity/brain/c5b87f75-d5b9-4f21-bb57-7a31664c39b3/carrom_board_texture_1774734551904.png" 
+               src="/images/games/carrom/board_texture.png" 
                className="absolute inset-0 w-full h-full object-cover opacity-90"
                alt="Board"
              />

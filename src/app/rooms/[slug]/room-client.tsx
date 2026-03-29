@@ -655,7 +655,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     // 3. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy')
-    const triggerWords = ['ai', 'ummy', 'ummi'];
+    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
     const isTriggered = triggerWords.some(t => content.includes(t));
     
     if (isTriggered) {
