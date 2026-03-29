@@ -1155,6 +1155,8 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback className="text-[10px]">UM</AvatarFallback>
             </Avatar>
+            <Trophy className="h-4 w-4 text-yellow-500 absolute top-6 -left-5 z-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-reaction-float" />
+            
             <div className="absolute -bottom-1 -left-3.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg scale-75">
                <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
                <span className="text-[7px] font-black text-yellow-400 leading-none">

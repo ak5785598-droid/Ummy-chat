@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight } from 'lucide-react';
+import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight, LayoutGrid } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
@@ -183,21 +183,17 @@ export default function RoomsPage() {
        </Carousel>
       </div>
 
-         <div className="px-3 mb-4">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.5rem] p-3 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[100px]">
+         <div className="px-3 mb-2">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[80px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center justify-between mb-3 relative z-10 px-1">
+            <div className="flex items-center justify-between mb-1 relative z-10 px-1">
                <div className="flex items-center gap-1">
-                  <div className="bg-gradient-to-br from-yellow-300 to-yellow-600 p-1 rounded-lg shadow-lg">
-                     <Trophy className="h-2 w-2 text-red-700 fill-current" />
-                  </div>
-                  <span className="font-black uppercase text-[4px] tracking-tight text-yellow-300 italic drop-shadow-md">TOP ROOMS GRID</span>
+                  <Trophy className="h-2.5 w-2.5 text-yellow-400 animate-bounce" />
+                  <h2 className="text-[8px] font-black uppercase text-white/90 tracking-widest">Live Frequency</h2>
                </div>
-               <div className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
-                  <ArrowRight className="h-2 w-2 text-white/50" />
-               </div>
+               <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
             </div>
-            <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-2 pb-2 relative z-10">
+            <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10">
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative">
