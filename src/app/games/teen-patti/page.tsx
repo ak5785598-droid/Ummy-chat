@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { 
  ChevronLeft, 
- ChevronRight,
  Volume2, 
  VolumeX, 
  HelpCircle, 
@@ -60,6 +59,18 @@ export default function TeenPattiGamePage() {
  const [winners, setWinners] = useState<GameWinner[]>([]);
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
+ const winnersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'globalGameWins'),
+      where('gameId', '==', 'teen-patti'),
+      orderBy('timestamp', 'desc'),
+      limit(5)
+    );
+  }, [firestore]);
+
+  const { data: liveWins } = useCollection(winnersQuery);
+
  useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
 
  useEffect(() => {
@@ -99,21 +110,28 @@ export default function TeenPattiGamePage() {
   const winAmount = (myBets[winId] || 0) * 1.95;
   setTotalWinAmount(winAmount);
 
-  const sessionWinners: GameWinner[] = [];
-  if (winAmount > 0 && userProfile) {
-   sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl });
-  }
-  // High-fidelity mocks
-  sessionWinners.push({ name: 'ZAYN_KING', win: 150000000, avatar: 'https://picsum.photos/seed/z/100' });
-  sessionWinners.push({ name: 'T_ANU_OP', win: 20000000, avatar: 'https://picsum.photos/seed/a/100' });
+  // Sync real-time winners from platform
+  setWinners(liveWins?.map(w => ({
+    name: w.username,
+    win: w.amount,
+    avatar: w.avatarUrl,
+    isMe: w.userId === currentUser?.uid
+  })) || []);
 
-  setWinners(sessionWinners);
-
-  if (winAmount > 0 && currentUser && firestore) {
-   const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
+  if (winAmount > 0 && currentUser && firestore && userProfile) {
+   const updateData = { 
+     'wallet.coins': increment(Math.floor(winAmount)), 
+     'stats.dailyGameWins': increment(Math.floor(winAmount)), 
+     updatedAt: serverTimestamp() 
+   };
    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+
+   // Update Daily Quest progress
+   const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
+   updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
   }
+
   setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
  };
 

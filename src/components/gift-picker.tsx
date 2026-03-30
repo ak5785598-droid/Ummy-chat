@@ -288,31 +288,35 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    });
 
    selectedUids.forEach(recipientUid => {
-    const diamondYield = Math.floor(costPerRecipient * 0.4);
-    const recipientRef = doc(firestore, 'users', recipientUid);
-    const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
-    const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
-    
-    const recUpdate = {
-     'wallet.diamonds': increment(diamondYield),
-     'stats.dailyGiftsReceived': increment(costPerRecipient),
-     'stats.weeklyGiftsReceived': increment(costPerRecipient),
-     'stats.monthlyGiftsReceived': increment(costPerRecipient),
-     updatedAt: serverTimestamp()
-    };
-    batch.update(recipientRef, recUpdate);
-    batch.update(recipientProfileRef, recUpdate);
-    batch.update(pRef, { sessionGifts: increment(costPerRecipient) });
+     const diamondYield = Math.floor(costPerRecipient * 0.4);
+     const recipientRef = doc(firestore, 'users', recipientUid);
+     const recipientProfileRef = doc(firestore, 'users', recipientUid, 'profile', recipientUid);
+     const pRef = doc(firestore, 'chatRooms', roomId, 'participants', recipientUid);
+     
+     const recUpdate = {
+      'wallet.diamonds': increment(diamondYield),
+      'stats.dailyGiftsReceived': increment(costPerRecipient),
+      'stats.weeklyGiftsReceived': increment(costPerRecipient),
+      'stats.monthlyGiftsReceived': increment(costPerRecipient),
+      updatedAt: serverTimestamp()
+     };
+     batch.update(recipientRef, recUpdate);
+     batch.update(recipientProfileRef, recUpdate);
+     batch.update(pRef, { sessionGifts: increment(costPerRecipient) });
 
-    const contribRef = doc(firestore, 'users', recipientUid, 'topContributors', user.uid);
-    batch.set(contribRef, {
-     uid: user.uid,
-     username: userProfile.username,
-     avatarUrl: userProfile.avatarUrl || '',
-     amount: increment(costPerRecipient),
-     updatedAt: serverTimestamp()
-    }, { merge: true });
+     const contribRef = doc(firestore, 'users', recipientUid, 'topContributors', user.uid);
+     batch.set(contribRef, {
+      uid: user.uid,
+      username: userProfile.username,
+      avatarUrl: userProfile.avatarUrl || '',
+      amount: increment(costPerRecipient),
+      updatedAt: serverTimestamp()
+     }, { merge: true });
    });
+
+   // Update Daily Quest progress
+   const questRef = doc(firestore, 'users', user.uid, 'quests', 'send_gift');
+   batch.set(questRef, { current: increment(1), updatedAt: serverTimestamp() }, { merge: true });
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
    const recNames = selectedUids.length === seatedParticipants.length 

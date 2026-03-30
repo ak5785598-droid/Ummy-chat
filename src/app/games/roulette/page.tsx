@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { 
  ChevronLeft, 
  Volume2, 
@@ -76,6 +76,18 @@ export default function RoulettePage() {
 
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'roulette'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
+
+ const winnersQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'globalGameWins'),
+      where('gameId', '==', 'roulette'),
+      orderBy('timestamp', 'desc'),
+      limit(5)
+    );
+  }, [firestore]);
+
+  const { data: liveWins } = useCollection(winnersQuery);
 
  const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -170,15 +182,14 @@ export default function RoulettePage() {
 
   setTotalWinAmount(winAmount);
 
-  const sessionWinners = [];
-  if (winAmount > 0 && userProfile) {
-   sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-  }
-  // High-fidelity mock winners
-  if (Math.random() > 0.5) sessionWinners.push({ name: 'ZAYN_OP', win: 200000000, avatar: 'https://picsum.photos/seed/z/100', isMe: false });
-  if (Math.random() > 0.3) sessionWinners.push({ name: 'LUCKY_GIRL', win: 50000000, avatar: 'https://picsum.photos/seed/girl/100', isMe: false });
+  // Sync real-time winners
+  setWinners(liveWins?.map(w => ({
+    name: w.username,
+    win: w.amount,
+    avatar: w.avatarUrl,
+    isMe: w.userId === currentUser?.uid
+  })) || []);
 
-  setWinners(sessionWinners);
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -200,6 +211,10 @@ export default function RoulettePage() {
     amount: winAmount,
     timestamp: serverTimestamp()
    });
+
+   // Update Daily Quest progress
+   const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
+   updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
   }
 
   setTimeout(() => {

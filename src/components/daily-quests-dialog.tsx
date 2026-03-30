@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -12,29 +12,24 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   Trophy, 
-  Star, 
   Zap, 
-  Target, 
   Gift, 
   Gamepad2, 
   CheckCircle2,
-  Lock,
   Loader
 } from 'lucide-react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   doc, 
-  getDoc, 
-  setDoc, 
   updateDoc, 
-  increment, 
-  serverTimestamp 
+  increment,
+  collection
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Quest {
   id: string;
@@ -52,33 +47,35 @@ interface DailyQuestsDialogProps {
   onClose: () => void;
 }
 
+const QUEST_METADATA: Record<string, any> = {
+  stay_15: { title: 'Loyal Resident', description: 'Stay in any room for 15 mins', reward: 500, icon: Zap },
+  send_gift: { title: 'Generous Soul', description: 'Send at least 1 gift', reward: 1000, icon: Gift },
+  win_game: { title: 'Game Master', description: 'Win 1 Match (Roulette/TP)', reward: 2000, icon: Gamepad2 },
+};
+
 /**
  * DailyQuestsDialog - The gamification hub for Ummy Chat.
- * Tracks daily milestones and rewards users with Gold Coins.
+ * Now synchronized with real-time Firestore data.
  */
 export function DailyQuestsDialog({ isOpen, onClose }: DailyQuestsDialogProps) {
   const { user } = useUser();
-  const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const questsQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'quests');
+  }, [firestore, user]);
 
-  // Mock data for now, in a real app this comes from 'userQuests' collection
-  useEffect(() => {
-    if (!isOpen || !userProfile) return;
-    
-    // Simulate fetching daily progress
-    const mockQuests: Quest[] = [
-      { id: 'stay_15', title: 'Loyal Resident', description: 'Stay in any room for 15 mins', reward: 500, icon: Zap, target: 15, current: Math.min(userProfile.activityPoints || 0, 15), isClaimed: false },
-      { id: 'send_gift', title: 'Generous Soul', description: 'Send at least 1 gift', reward: 1000, icon: Gift, target: 1, current: (userProfile.stats?.dailyGifts || 0) > 0 ? 1 : 0, isClaimed: false },
-      { id: 'win_ludo', title: 'Ludo Master', description: 'Win 1 Ludo match', reward: 2000, icon: Gamepad2, target: 1, current: (userProfile.stats?.dailyGameWins || 0) >= 1 ? 1 : 0, isClaimed: false },
-    ];
-    
-    setQuests(mockQuests);
-    setIsLoading(false);
-  }, [isOpen, userProfile]);
+  const { data: questDocs, isLoading } = useCollection(questsQuery);
+
+  const quests = useMemo(() => {
+    if (!questDocs) return [];
+    return questDocs.map(doc => ({
+      ...doc,
+      ...(QUEST_METADATA[doc.id] || { title: doc.id, description: 'Daily task', reward: 100, icon: Trophy })
+    })) as Quest[];
+  }, [questDocs]);
 
   const handleClaim = async (questId: string, reward: number) => {
     if (!user || !firestore) return;
@@ -86,11 +83,11 @@ export function DailyQuestsDialog({ isOpen, onClose }: DailyQuestsDialogProps) {
     try {
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const questRef = doc(firestore, 'users', user.uid, 'quests', questId);
       
       await updateDoc(userRef, { 'wallet.coins': increment(reward) });
       await updateDoc(profileRef, { 'wallet.coins': increment(reward) });
-
-      setQuests(prev => prev.map(q => q.id === questId ? { ...q, isClaimed: true } : q));
+      await updateDoc(questRef, { isClaimed: true });
       
       toast({
         title: 'Reward Claimed!',
@@ -118,13 +115,15 @@ export function DailyQuestsDialog({ isOpen, onClose }: DailyQuestsDialogProps) {
               </div>
               <div>
                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Quest Center</h2>
-                 <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Resetting in 14h 22m</p>
+                 <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">LIVE PROGRESS SYNC</p>
               </div>
            </header>
 
            <div className="space-y-4">
               {isLoading ? (
                 <div className="flex justify-center py-10"><Loader className="animate-spin text-primary h-8 w-8" /></div>
+              ) : quests.length === 0 ? (
+                <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">Initializing Today's Tasks...</div>
               ) : quests.map((quest) => {
                 const isCompleted = quest.current >= quest.target;
                 return (
@@ -154,7 +153,7 @@ export function DailyQuestsDialog({ isOpen, onClose }: DailyQuestsDialogProps) {
                            <p className="text-[10px] font-bold text-white/30 uppercase tracking-tight">{quest.description}</p>
                            
                            <div className="pt-2 flex items-center gap-3">
-                              <Progress value={(quest.current / quest.target) * 100} className="h-1.5 flex-1 bg-white/5" />
+                              <Progress value={Math.min((quest.current / quest.target) * 100, 100)} className="h-1.5 flex-1 bg-white/5" />
                               <span className="text-[10px] font-black text-white/60 tracking-widest">{quest.current}/{quest.target}</span>
                            </div>
                         </div>

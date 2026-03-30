@@ -29,6 +29,7 @@ import { doc, getDoc, writeBatch, serverTimestamp, increment } from "firebase/fi
 import { useTranslation } from "@/hooks/use-translation";
 import { UnreadBadge } from "@/components/unread-badge";
 import { DailyQuestsDialog } from "@/components/daily-quests-dialog";
+import { QuestTracker } from "@/components/quest-tracker";
 
 export function AppLayout({ 
  children, 
@@ -59,30 +60,30 @@ export function AppLayout({
 
  useEffect(() => { setMounted(true); }, []);
 
-   const handleLogout = useCallback(async () => {
-  if (!auth || !user || !firestore) return;
-  try {
-   const userRef = doc(firestore, 'users', user.uid);
-   const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-   const userSnap = await getDoc(userRef);
-   const currentRoomId = userSnap.data()?.currentRoomId;
-   const batch = writeBatch(firestore);
-   batch.update(userRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
-   batch.update(profileRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
-   if (currentRoomId) {
-    const roomRef = doc(firestore, 'chatRooms', currentRoomId);
-    const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
-    batch.delete(participantRef);
-    batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
-   }
-   await batch.commit();
-   await signOut(auth);
-   window.location.href = '/login';
-  } catch (error: any) {
-   await signOut(auth);
-   window.location.href = '/login';
-  }
- };
+ const handleLogout = useCallback(async () => {
+    if (!auth || !user || !firestore) return;
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const userSnap = await getDoc(userRef);
+      const currentRoomId = userSnap.data()?.currentRoomId;
+      const batch = writeBatch(firestore);
+      batch.update(userRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
+      batch.update(profileRef, { isOnline: false, currentRoomId: null, updatedAt: serverTimestamp() });
+      if (currentRoomId) {
+        const roomRef = doc(firestore, 'chatRooms', currentRoomId);
+        const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
+        batch.delete(participantRef);
+        batch.update(roomRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+      }
+      await batch.commit();
+      await signOut(auth);
+      window.location.href = '/login';
+    } catch (error: any) {
+      await signOut(auth);
+      window.location.href = '/login';
+    }
+  }, [auth, user, firestore]);
 
  // Handle Loading States
  const isInitialLoading = isUserLoading || (isProfileLoading && !userProfile);
@@ -206,6 +207,7 @@ export function AppLayout({
     {memoizedSidebar}
     <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-screen overflow-hidden">
      <main className={cn("flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain", "touch-auto", shouldShowBottomNav && "pb-32")} style={{ WebkitOverflowScrolling: 'touch' }}>
+      <QuestTracker />
       <div className="min-h-full w-full">
        {isInitialLoading ? (
          <div className="flex flex-col items-center justify-center h-[500px] gap-4 opacity-50">
