@@ -3412,11 +3412,12 @@ export default function AdminPage() {
                               className="h-12 rounded-xl"
                             />
                             <Input
-                              value={slide.subtitle}
+                              placeholder="Redirect Link (e.g., /store or /rooms/abc)"
+                              value={slide.link || ""}
                               onChange={(e) =>
                                 handleUpdateBannerMeta(
                                   idx,
-                                  "subtitle",
+                                  "link",
                                   e.target.value,
                                 )
                               }
