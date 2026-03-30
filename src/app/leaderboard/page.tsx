@@ -4,47 +4,61 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users, Clock } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { Crown, ChevronLeft, HelpCircle, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import {
- Dialog,
- DialogContent,
- DialogDescription,
- DialogHeader,
- DialogTitle,
- DialogTrigger,
-} from '@/components/ui/dialog';
-import Image from 'next/image';
 
-const ICON_MAP: Record<string, any> = { Sparkles, Trophy, Gamepad2, Zap, Star, Users, Heart };
+// --- Countdown Timer Component (GMT +5:30) ---
+const ResetTimer = () => {
+  const [timeLeft, setTimeLeft] = useState("");
 
-// --- CSS Hexagon Clip Path (No Config Required) ---
-const HEX_CLIP = "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)";
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      // Calculate IST end of day (24:00:00)
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+      
+      const endOfDay = new Date(istNow);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const diff = endOfDay.getTime() - istNow.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+      const mins = Math.floor((diff / (1000 * 60)) % 60).toString().padStart(2, '0');
+      const secs = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+      
+      setTimeLeft(`${hours}:${mins}:${secs}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-const HexagonAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?: string, fallback: string, size?: "sm" | "md" | "lg", glowColor?: string }) => {
-  const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
-  const glows: Record<string, string> = {
-    cyan: "shadow-[0_0_15px_rgba(34,211,238,0.5)] border-cyan-400",
-    purple: "shadow-[0_0_15px_rgba(168,85,247,0.5)] border-purple-500",
-    yellow: "shadow-[0_0_20px_rgba(234,179,8,0.6)] border-yellow-400"
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="text-[#d4af37] italic font-serif text-lg">Timing</span>
+      <span className="text-white font-bold tracking-widest text-lg uppercase">Global Rankings</span>
+      <span className="ml-4 text-xs bg-black/40 px-2 py-0.5 rounded border border-yellow-600/30 text-yellow-500">IST {timeLeft}</span>
+    </div>
+  );
+};
+
+const CircularAvatar = ({ src, fallback, size = "md", border = "gold" }: { src?: string, fallback: string, size?: "sm" | "md" | "lg", border?: string }) => {
+  const sizes = { sm: "h-12 w-12", md: "h-20 w-20", lg: "h-28 w-28" };
+  const borderStyles: Record<string, string> = {
+    gold: "border-2 border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.4)]",
+    silver: "border-2 border-slate-300 shadow-[0_0_10px_rgba(200,200,200,0.3)]",
+    bronze: "border-2 border-[#cd7f32] shadow-[0_0_10px_rgba(205,127,50,0.3)]"
   };
 
   return (
-    <div className={cn("relative flex items-center justify-center p-0.5", sizes[size])}>
-      <div 
-        style={{ clipPath: HEX_CLIP }}
-        className={cn("relative w-full h-full border-2 flex items-center justify-center overflow-hidden bg-[#0a0a0a]", glows[glowColor])}
-      >
-        <Avatar className="h-full w-full rounded-none">
-          <AvatarImage src={src} className="object-cover" />
-          <AvatarFallback className="bg-slate-900 text-white font-black">{fallback}</AvatarFallback>
-        </Avatar>
-      </div>
+    <div className={cn("relative rounded-full overflow-hidden bg-black flex items-center justify-center", sizes[size], borderStyles[border])}>
+      <Avatar className="h-full w-full rounded-full">
+        <AvatarImage src={src} className="object-cover" />
+        <AvatarFallback className="bg-[#1a1a1a] text-yellow-500 font-bold">{fallback}</AvatarFallback>
+      </Avatar>
     </div>
   );
 };
@@ -52,224 +66,165 @@ const HexagonAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src
 const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, type: string, period: 'daily' | 'weekly' | 'monthly', isLoading: boolean }) => {
  if (isLoading) return (
   <div className="flex flex-col items-center py-40 gap-4">
-   <Loader className="animate-spin text-cyan-500 h-10 w-10" />
-   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/60 animate-pulse">Syncing Global Data...</p>
+   <Loader className="animate-spin text-yellow-500 h-10 w-10" />
   </div>
  );
 
- if (!items || items.length === 0) return (
-  <div className="text-center py-40 opacity-40">
-   <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
-   <p className="font-bold uppercase text-sm text-white/40">No Legends Found.</p>
-  </div>
- );
+ if (!items || items.length === 0) return <div className="text-center py-40 text-yellow-600/40 uppercase font-bold">No Legends Recorded.</div>;
 
- const top1 = items[0];
- const top2 = items[1];
- const top3 = items[2];
+ const top1 = items[0]; const top2 = items[1]; const top3 = items[2];
  const others = items.slice(3);
 
  const getValue = (item: any) => {
-  const fieldPrefix = period === 'daily' ? 'daily' : period === 'weekly' ? 'weekly' : 'monthly';
-  const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-  if (type === 'rich') return item.wallet?.[`${fieldPrefix}${fieldSuffix}`] || 0;
-  return item.stats?.[`${fieldPrefix}${fieldSuffix}`] || 0;
+    const fieldPrefix = period === 'daily' ? 'daily' : period === 'weekly' ? 'weekly' : 'monthly';
+    const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
+    return type === 'rich' ? (item.wallet?.[`${fieldPrefix}${fieldSuffix}`] || 0) : (item.stats?.[`${fieldPrefix}${fieldSuffix}`] || 0);
  };
 
  const formatValue = (val: number) => {
-  if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
   if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
   return val.toLocaleString();
  };
 
  return (
-  <div className="space-y-6 animate-in fade-in duration-700 pb-32">
-    {/* Podium Section (Rank 1, 2, 3) */}
-    <div className="flex items-end justify-center gap-2 pt-10 px-2">
+  <div className="pb-32">
+    {/* Podium Area */}
+    <div className="relative flex items-end justify-center gap-1 pt-16 px-4 mb-10">
+      
+      {/* Rank 2 */}
       {top2 && (
-        <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
+        <div className="flex-1 flex flex-col items-center animate-in slide-in-from-bottom duration-700">
            <div className="relative mb-2">
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-slate-400 font-black text-2xl italic opacity-50">2</div>
-             <HexagonAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" glowColor="cyan" />
+             <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-300 font-black text-3xl italic opacity-40">2</div>
+             <CircularAvatar src={top2.avatarUrl} fallback="2" border="silver" />
            </div>
-           <div className="w-full bg-gradient-to-b from-cyan-950/40 to-transparent border-t-2 border-cyan-500/50 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
-             <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top2.username || top2.name || 'User'}</span>
-             <span className="text-cyan-400 font-bold text-xs">{formatValue(getValue(top2))} Coins</span>
+           <div className="w-full bg-[#1a140a] border-t-2 border-slate-400 p-2 text-center rounded-t-xl">
+             <p className="text-[10px] font-black uppercase text-white truncate">{top2.username || 'User'}</p>
+             <p className="text-slate-300 font-bold text-xs">{formatValue(getValue(top2))} XP</p>
            </div>
-        </Link>
+        </div>
       )}
 
+      {/* Rank 1 */}
       {top1 && (
-        <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex-1 flex flex-col items-center z-10 -translate-y-4 scale-110">
-           <div className="relative mb-2">
-             <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 h-8 w-8 text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.8)] animate-bounce" />
-             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 bg-yellow-500 text-black text-[10px] font-black px-2 rounded-full">1</div>
-             <HexagonAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" glowColor="yellow" />
+        <div className="flex-1 flex flex-col items-center z-10 -translate-y-6 scale-110 animate-in zoom-in duration-500">
+           <div className="relative mb-3">
+             <Crown className="absolute -top-10 left-1/2 -translate-x-1/2 h-10 w-10 text-yellow-400 drop-shadow-[0_0_15px_gold] animate-pulse" />
+             <CircularAvatar src={top1.avatarUrl} fallback="1" size="lg" border="gold" />
            </div>
-           <div className="w-full bg-gradient-to-b from-yellow-500/20 to-transparent border-t-2 border-yellow-500 pt-6 pb-2 flex flex-col items-center rounded-t-lg shadow-[0_-10px_20px_rgba(234,179,8,0.2)]">
-             <span className="text-[11px] font-black uppercase text-white truncate w-24 text-center">{top1.username || top1.name || 'User'}</span>
-             <span className="text-yellow-400 font-black text-sm">{formatValue(getValue(top1))} Coins</span>
+           <div className="w-full bg-gradient-to-b from-[#3d2b0a] to-[#0a0a0a] border-t-4 border-[#d4af37] py-4 px-2 text-center rounded-t-2xl shadow-[0_-10px_30px_rgba(212,175,55,0.3)]">
+             <p className="text-[11px] font-black uppercase text-white truncate">{top1.username || 'King'}</p>
+             <p className="text-yellow-400 font-black text-sm">{formatValue(getValue(top1))} XP</p>
            </div>
-        </Link>
+        </div>
       )}
 
+      {/* Rank 3 */}
       {top3 && (
-        <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center group">
+        <div className="flex-1 flex flex-col items-center animate-in slide-in-from-bottom duration-700">
            <div className="relative mb-2">
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-purple-400 font-black text-2xl italic opacity-50">3</div>
-             <HexagonAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" glowColor="purple" />
+             <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-[#cd7f32] font-black text-3xl italic opacity-40">3</div>
+             <CircularAvatar src={top3.avatarUrl} fallback="3" border="bronze" />
            </div>
-           <div className="w-full bg-gradient-to-b from-purple-950/40 to-transparent border-t-2 border-purple-500/50 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
-             <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top3.username || top3.name || 'User'}</span>
-             <span className="text-purple-400 font-bold text-xs">{formatValue(getValue(top3))} Coins</span>
+           <div className="w-full bg-[#140e0a] border-t-2 border-[#cd7f32] p-2 text-center rounded-t-xl">
+             <p className="text-[10px] font-black uppercase text-white truncate">{top3.username || 'User'}</p>
+             <p className="text-[#cd7f32] font-bold text-xs">{formatValue(getValue(top3))} XP</p>
            </div>
-        </Link>
+        </div>
       )}
     </div>
 
-    {/* Scrollable List for 4th Rank and Below */}
-    <div className="px-4 space-y-3">
+    {/* List View */}
+    <div className="px-4 space-y-4">
       {others.map((item, index) => (
-        <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} 
-          className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-purple-500 opacity-40" />
-          <span className="text-lg font-black italic text-white/20 w-6">{index + 4}</span>
-          <HexagonAvatar src={item.avatarUrl || item.coverUrl} fallback={(index+4).toString()} size="sm" glowColor="purple" />
+        <div key={item.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-[#1a1a1a] to-transparent border border-yellow-900/30 rounded-2xl relative">
+          <span className="text-xl font-black italic text-yellow-700/50 w-6">{index + 4}</span>
+          <CircularAvatar src={item.avatarUrl} fallback="U" size="sm" border="gold" />
           <div className="flex-1">
-            <p className="text-xs font-black uppercase text-white tracking-wide">{item.username || item.name || 'User'}</p>
-            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Global Player</p>
+            <p className="text-sm font-black uppercase text-white">{item.username || 'Legend'}</p>
+            <p className="text-[10px] text-yellow-600/60 font-bold tracking-widest">LVL {item.stats?.level || 1}</p>
           </div>
-          <div className="text-right flex items-center gap-2">
-            <span className="text-cyan-400 font-black text-sm">{formatValue(getValue(item))}</span>
-            <GoldCoinIcon className="h-3 w-3" />
+          <div className="text-right flex flex-col items-end">
+            <span className="text-yellow-500 font-black text-sm">{formatValue(getValue(item))}</span>
+            <span className="text-[8px] text-white/40 uppercase">Global XP</span>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   </div>
  );
 };
 
-function LeaderboardContent() {
- const searchParams = useSearchParams();
- const initialType = (searchParams.get('type') as any) || 'rich';
+export default function LeaderboardPage() {
  const { user } = useUser();
  const firestore = useFirestore();
  const { userProfile: me } = useUserProfile(user?.uid);
- 
- const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'banner' | 'games'>(initialType);
- const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
- const [mounted, setMounted] = useState(false);
+ const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'games' | 'rooms'>('rich');
 
- useEffect(() => { setMounted(true); }, []);
- 
- // Queries
- const richQuery = useMemoFirebase(() => {
+ const currentQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    const field = timePeriod === 'daily' ? 'wallet.dailySpent' : timePeriod === 'weekly' ? 'wallet.weeklySpent' : 'wallet.monthlySpent';
-    return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
- }, [firestore, timePeriod]);
+    let field = 'wallet.weeklySpent'; // Default
+    if (rankingType === 'rich') field = 'wallet.dailySpent';
+    if (rankingType === 'charm') field = 'stats.dailyGiftsReceived';
+    if (rankingType === 'games') field = 'stats.dailyGameWins';
+    if (rankingType === 'rooms') field = 'stats.dailyGifts';
+    return query(collection(firestore, rankingType === 'rooms' ? 'chatRooms' : 'users'), orderBy(field, 'desc'), limit(50));
+ }, [firestore, rankingType]);
 
- const charmQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  const field = timePeriod === 'daily' ? 'stats.dailyGiftsReceived' : timePeriod === 'weekly' ? 'stats.weeklyGiftsReceived' : 'stats.monthlyGiftsReceived';
-  return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
- }, [firestore, timePeriod]);
-
- const roomsQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  const field = timePeriod === 'daily' ? 'stats.dailyGifts' : timePeriod === 'weekly' ? 'stats.weeklyGifts' : 'stats.monthlyGifts';
-  return query(collection(firestore, 'chatRooms'), orderBy(field, 'desc'), limit(50));
- }, [firestore, timePeriod]);
-
- const gamesQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  const field = timePeriod === 'daily' ? 'stats.dailyGameWins' : timePeriod === 'weekly' ? 'stats.weeklyGameWins' : 'stats.monthlyGameWins';
-  return query(collection(firestore, 'users'), orderBy(field, 'desc'), limit(50));
- }, [firestore, timePeriod]);
-
- const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
- const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
- const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
- const { data: gameUsers, isLoading: isLoadingGames } = useCollection(gamesQuery);
-
- const activeItems = useMemo(() => {
-  if (rankingType === 'rich') return richUsers;
-  if (rankingType === 'charm') return charmUsers;
-  if (rankingType === 'rooms') return rankedRooms;
-  if (rankingType === 'games') return gameUsers;
-  return null;
- }, [rankingType, richUsers, charmUsers, rankedRooms, gameUsers]);
-
- const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'rooms' ? isLoadingRooms : isLoadingGames;
-
- const myValue = useMemo(() => {
-  if (!me) return 0;
-  const field = timePeriod === 'daily' ? 'daily' : timePeriod === 'weekly' ? 'weekly' : 'monthly';
-  if (rankingType === 'rich') return me.wallet?.[`${field}Spent`] || 0;
-  if (rankingType === 'charm') return me.stats?.[`${field}GiftsReceived`] || 0;
-  return 0;
- }, [me, rankingType, timePeriod]);
-
- if (!mounted) return null;
+ const { data: activeItems, isLoading } = useCollection(currentQuery);
 
  return (
-  <div className="min-h-screen bg-[#05070a] text-white relative font-sans flex flex-col">
-    {/* Header Section */}
+  <AppLayout>
+   <div className="min-h-screen bg-[#050505] text-white relative overflow-hidden">
+     {/* Background Decor */}
+     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-30 pointer-events-none" />
+     <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-[#3d2b0a]/20 to-transparent pointer-events-none" />
+
     <header className="relative z-50 p-6 pt-10">
      <div className="flex items-center justify-between mb-8">
-       <Link href="/rooms"><ChevronLeft className="h-6 w-6 text-cyan-400" /></Link>
-       <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Hall of Fame</h1>
+       <Link href="/rooms"><ChevronLeft className="h-6 w-6 text-yellow-500" /></Link>
+       <ResetTimer />
        <HelpCircle className="h-5 w-5 text-white/20" />
      </div>
 
-     {/* Filter Tabs */}
-     <div className="flex items-center justify-around border-b border-white/10 pb-2 mb-6">
-       {[
-        { id: 'rich', label: 'Honor' },
-        { id: 'charm', label: 'Charm' },
-        { id: 'games', label: 'Game' },
-        { id: 'rooms', label: 'Room' }
-       ].map((tab) => (
-        <button key={tab.id} onClick={() => setRankingMode(tab.id as any)} 
-          className={cn("text-[10px] font-black uppercase tracking-widest transition-all", rankingType === tab.id ? "text-cyan-400 border-b-2 border-cyan-400 pb-2" : "text-white/30")}>
-          {tab.label}
+     {/* Gold Navigation Tabs */}
+     <div className="flex items-center justify-between bg-black/60 border border-yellow-600/30 rounded-full p-1 shadow-inner">
+       {['rich', 'charm', 'games', 'rooms'].map((tab) => (
+        <button key={tab} onClick={() => setRankingMode(tab as any)} 
+          className={cn("flex-1 py-2 text-[10px] font-black uppercase tracking-tighter transition-all rounded-full", 
+          rankingType === tab ? "bg-gradient-to-b from-[#d4af37] to-[#8a6d3b] text-black shadow-lg" : "text-yellow-600/60")}>
+          {tab}
         </button>
        ))}
      </div>
     </header>
 
-    <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
-       <RankingList items={activeItems} type={rankingType} period={timePeriod} isLoading={isActiveLoading} />
+    <main className="relative z-10 flex-1 overflow-y-auto max-h-[80vh] no-scrollbar">
+       <RankingList items={activeItems} type={rankingType} period="daily" isLoading={isLoading} />
     </main>
 
-    {/* Fixed Footer for My Rank */}
-    <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/95 backdrop-blur-lg border-t border-cyan-500/20 p-4 h-20 flex items-center">
-      <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
-       <span className="text-xs font-black text-cyan-500 italic">ME</span>
-       <HexagonAvatar src={me?.avatarUrl} fallback="U" size="sm" glowColor="cyan" />
+    {/* Royal Footer */}
+    <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-black/90 backdrop-blur-xl border-t-2 border-[#d4af37]/30 p-4 h-24 flex items-center">
+      <div className="max-w-4xl mx-auto flex items-center gap-4 w-full px-4">
+       <div className="relative">
+         <CircularAvatar src={me?.avatarUrl} fallback="ME" size="sm" border="gold" />
+         <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black text-[8px] font-black px-1 rounded">YOU</div>
+       </div>
        <div className="flex-1">
-        <p className="font-black text-xs uppercase text-white truncate">{me?.username || 'Tribe Member'}</p>
-        <div className="flex items-center gap-2">
+        <p className="font-black text-xs uppercase text-white">{me?.username || 'Gamer'}</p>
+        <div className="flex items-center gap-1">
            <GoldCoinIcon className="h-3 w-3" />
-           <span className="text-sm font-black text-cyan-400">{myValue.toLocaleString()}</span>
+           <span className="text-sm font-black text-yellow-500">
+             {rankingType === 'rich' ? (me?.wallet?.dailySpent || 0).toLocaleString() : (me?.stats?.dailyGiftsReceived || 0).toLocaleString()}
+           </span>
         </div>
        </div>
-       <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">
-         <span className="text-[10px] font-black text-cyan-400">SYNCED</span>
+       <div className="border-2 border-yellow-600/50 px-4 py-2 rounded-lg bg-[#d4af37]/10">
+         <p className="text-[10px] font-black text-yellow-500 italic uppercase">Ranking...</p>
        </div>
       </div>
     </footer>
    </div>
- );
-}
-
-export default function LeaderboardPage() {
- return (
-  <AppLayout>
-   <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#05070a]"><Loader className="animate-spin text-cyan-500" /></div>}>
-    <LeaderboardContent />
-   </Suspense>
   </AppLayout>
  );
 }
