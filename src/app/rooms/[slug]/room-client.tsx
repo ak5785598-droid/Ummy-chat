@@ -261,7 +261,16 @@ export function RoomClient({ room }: { room: Room }) {
   const { user: currentUser } = useUser();
 
   // DYNAMIC LEVELING SYNC
-  useActivityTracker(room.id, currentUser?.uid || null);
+  useActivityTracker(room?.id, currentUser?.uid || null);
+
+  // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
+  if (!room || !room.id) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
+        <Loader className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   const {
     setActiveRoom,
@@ -298,6 +307,9 @@ export function RoomClient({ room }: { room: Room }) {
     return doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
   }, [firestore, currentUser, room.id]);
   const { data: followData } = useDoc(followRef);
+
+  // Prevent crash on missing maxActiveMics
+  const maxMics = room?.maxActiveMics || 9;
 
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -1123,7 +1135,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* BASE BACKGROUND - CLEAR & VIBRANT */}
         <div className="absolute inset-0 bg-[#0A0A0A] z-[-1]" />
         <Image
-          key={`${room.roomThemeId}`}
+          key={`${room?.roomThemeId || 'default'}`}
           src={bgUrl}
           alt="Background"
           fill
