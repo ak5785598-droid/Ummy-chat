@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 /**
  * PRODUCTION WEBRTC HOOK
  * Re-engineered for absolute stability and high-fidelity social voice sync.
- * GRACEFUL PERMISSION SYNC: Prevents runtime crashes on hardware access denial.
+ * Fixed: 'InvalidAccessError' due to m-line order mismatch during renegotiation.
  */
 export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, musicStream: MediaStream | null = null) {
   const { user } = useUser();
@@ -25,7 +25,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const senders = useRef<Map<string, Map<string, RTCRtpSender>>>(new Map()); 
   const makingOffer = useRef<Map<string, boolean>>(new Map());
   const ignoreOffer = useRef<Map<string, boolean>>(new Map());
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -53,7 +52,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const startLocalStream = async () => {
       try {
-        console.log('[WebRTC] Requesting local mic frequency sync...');
         const rawStream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
@@ -79,8 +77,6 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
         
         setLocalStream(destination.stream);
       } catch (err: any) {
-        // GRACEFUL SYNC ERROR HANDLING: Prevents Next.js runtime overlay for permission issues
-        console.warn('[WebRTC] Hardware Sync Denied:', err.message);
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           toast({ 
             variant: 'destructive', 
@@ -106,45 +102,25 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
     }
   }, [isMuted, localStream]);
 
+  // STABLE TRACK SYNC EFFECT
   useEffect(() => {
     const updateTracks = async () => {
       for (const [peerId, pc] of peerConnections.current.entries()) {
-        const peerSenders = senders.current.get(peerId) || new Map();
-        const audioTrack = localStream?.getAudioTracks()[0];
-        
-        if (audioTrack) {
-          if (peerSenders.has('mic')) {
-            const sender = peerSenders.get('mic');
-            if (sender?.track !== audioTrack) sender?.replaceTrack(audioTrack);
-          } else {
-            const sender = pc.addTrack(audioTrack, localStream!);
-            peerSenders.set('mic', sender);
-          }
-        } else {
-          const sender = peerSenders.get('mic');
-          if (sender) {
-            try { pc.removeTrack(sender); } catch (e) {}
-            peerSenders.delete('mic');
-          }
-        }
+        const transceivers = pc.getTransceivers();
+        // Ensure we have at least 2 audio transceivers (Mic and Music)
+        // If they don't exist yet, negotiation will handle it via onnegotiationneeded
+        const micSender = transceivers[0]?.sender;
+        const musicSender = transceivers[1]?.sender;
 
-        const musicTrack = musicStream?.getAudioTracks()[0];
-        if (musicTrack) {
-          if (peerSenders.has('music')) {
-            const sender = peerSenders.get('music');
-            if (sender?.track !== musicTrack) sender?.replaceTrack(musicTrack);
-          } else {
-            const sender = pc.addTrack(musicTrack, musicStream!);
-            peerSenders.set('music', sender);
-          }
-        } else {
-          const sender = peerSenders.get('music');
-          if (sender) {
-            try { pc.removeTrack(sender); } catch (e) {}
-            peerSenders.delete('music');
-          }
+        const micTrack = localStream?.getAudioTracks()[0] || null;
+        const musicTrack = musicStream?.getAudioTracks()[0] || null;
+
+        if (micSender && micSender.track !== micTrack) {
+          try { await micSender.replaceTrack(micTrack); } catch (e) {}
         }
-        senders.current.set(peerId, peerSenders);
+        if (musicSender && musicSender.track !== musicTrack) {
+          try { await musicSender.replaceTrack(musicTrack); } catch (e) {}
+        }
       }
     };
     updateTracks();
@@ -155,15 +131,15 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
 
     const initiateConnection = (peerId: string) => {
       if (peerConnections.current.has(peerId)) return;
+      
       const pc = new RTCPeerConnection(iceConfig);
       peerConnections.current.set(peerId, pc);
 
-      const peerSenders = new Map();
-      const micTrack = localStream?.getAudioTracks()[0];
-      if (micTrack) peerSenders.set('mic', pc.addTrack(micTrack, localStream!));
-      const musTrack = musicStream?.getAudioTracks()[0];
-      if (musTrack) peerSenders.set('music', pc.addTrack(musTrack, musicStream!));
-      senders.current.set(peerId, peerSenders);
+      // CRITICAL: Pre-allocate transceivers in a fixed order to prevent m-line mismatch
+      // Index 0: Voice Microphone
+      // Index 1: Background Music
+      pc.addTransceiver('audio', { direction: 'sendrecv' });
+      pc.addTransceiver('audio', { direction: 'sendrecv' });
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
@@ -172,11 +148,14 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
       };
 
       pc.ontrack = (event) => {
-        setRemoteStreams(prev => {
-          const next = new Map(prev);
-          next.set(peerId, event.streams[0]);
-          return next;
-        });
+        // Associate the track with the peer's unique stream
+        if (event.streams && event.streams[0]) {
+          setRemoteStreams(prev => {
+            const next = new Map(prev);
+            next.set(peerId, event.streams[0]);
+            return next;
+          });
+        }
       };
 
       pc.onnegotiationneeded = async () => {
@@ -190,11 +169,19 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           makingOffer.current.set(peerId, false);
         }
       };
+
+      // Apply initial tracks if available
+      const micTrack = localStream?.getAudioTracks()[0];
+      const musTrack = musicStream?.getAudioTracks()[0];
+      const transceivers = pc.getTransceivers();
+      if (micTrack) transceivers[0].sender.replaceTrack(micTrack);
+      if (musTrack) transceivers[1].sender.replaceTrack(musTrack);
     };
 
     const handleSignal = async (signal: any) => {
       const peerId = signal.from;
       let pc = peerConnections.current.get(peerId);
+      
       if (!pc) {
         if (signal.type === 'offer') {
           initiateConnection(peerId);
@@ -207,7 +194,8 @@ export function useWebRTC(roomId: string | undefined, isInSeat: boolean, isMuted
           const polite = user.uid > peerId;
           const offerCollision = (makingOffer.current.get(peerId) || pc.signalingState !== 'stable');
           ignoreOffer.current.set(peerId, !polite && offerCollision);
-          if (ignoreOffer.current.get(peerId)) return;
+          if (ignoreOffer.current.set(peerId)) return;
+          
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
           await pc.setLocalDescription();
           sendSignal(peerId, { type: 'answer', sdp: pc.localDescription?.sdp, from: user.uid });
