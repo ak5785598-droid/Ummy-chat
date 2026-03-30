@@ -5,7 +5,7 @@ import { Settings, ShoppingBag, Mail, Crown, Gamepad2, Power, ShieldAlert, Castl
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 import {
  Sidebar,
@@ -59,7 +59,7 @@ export function AppLayout({
 
  useEffect(() => { setMounted(true); }, []);
 
- const handleLogout = async () => {
+   const handleLogout = useCallback(async () => {
   if (!auth || !user || !firestore) return;
   try {
    const userRef = doc(firestore, 'users', user.uid);
@@ -122,7 +122,7 @@ export function AppLayout({
      </SidebarMenuItem>
      <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/store'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/store" className="flex items-center gap-4"><ShoppingBag className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.boutique}</span></Link></SidebarMenuButton></SidebarMenuItem>
      <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/leaderboard'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/leaderboard" className="flex items-center gap-4"><Crown className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.rankings}</span></Link></SidebarMenuButton></SidebarMenuItem>
-      <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.games}</span></Link></SidebarMenuItem>
+      <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname === '/games'} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/games" className="flex items-center gap-4"><Gamepad2 className="h-6 w-6" /><span className="text-base font-bold uppercase ">{t.nav.games}</span></Link></SidebarMenuButton></SidebarMenuItem>
       <SidebarMenuItem><SidebarMenuButton asChild isActive={pathname?.startsWith('/families')} className="h-14 rounded-xl px-4 text-white hover:bg-white/5 active:text-primary"><Link href="/families" className="flex items-center gap-4"><Users className="h-6 w-6" /><span className="text-base font-bold uppercase ">Families</span></Link></SidebarMenuButton></SidebarMenuItem>
      {isOfficial && (
       <SidebarMenuItem>

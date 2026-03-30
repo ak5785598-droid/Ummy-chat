@@ -27,7 +27,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  const router = useRouter();
  const firestore = useFirestore();
  const { user: currentUser, isUserLoading } = useUser();
- const { setActiveRoom, setIsMinimized } = useRoomContext();
+ const { activeRoom: currentActiveRoom, setActiveRoom, setIsMinimized } = useRoomContext();
  const { toast } = useToast();
  
  const [isUnlocked, setIsUnlocked] = useState(false);
@@ -101,10 +101,12 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
  useEffect(() => {
   if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
-   setActiveRoom(activeRoom);
+   if (activeRoom.id !== currentActiveRoom?.id) {
+    setActiveRoom(activeRoom);
+   }
    setIsMinimized(false);
   }
- }, [activeRoom, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
+ }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
 
  const handleVerifyPassword = () => {
   if (passwordInput === activeRoom?.password) {
