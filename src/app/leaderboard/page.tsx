@@ -33,7 +33,7 @@ const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?
   );
 };
 
-// --- Live GMT+5:30 Timer Component ---
+// --- Live GMT+5:30 Timer Component (Single Tab) ---
 const LiveTimer = () => {
   const [time, setTime] = useState('');
 
@@ -53,9 +53,11 @@ const LiveTimer = () => {
   }, []);
 
   return (
-    <div className="flex items-center gap-1 mt-2 bg-black/40 px-2 py-0.5 rounded-full border border-white/10">
-      <Clock className="h-2.5 w-2.5 text-cyan-400" />
-      <span className="text-[9px] font-mono text-white/70">GMT+5:30 {time}</span>
+    <div className="flex items-center justify-center gap-2 py-2 bg-black/20 border-y border-white/5 my-4">
+      <Clock className="h-3 w-3 text-cyan-400" />
+      <span className="text-[10px] font-mono text-white/60 tracking-widest uppercase">
+        Next Refresh: GMT+5:30 <span className="text-cyan-400">{time}</span>
+      </span>
     </div>
   );
 };
@@ -94,8 +96,8 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
  };
 
  return (
-  <div className="space-y-6 animate-in fade-in duration-700 pb-32">
-    {/* Podium Section */}
+  <div className="animate-in fade-in duration-700 pb-32">
+    {/* Podium Section (Rank 1, 2, 3) */}
     <div className="flex items-end justify-center gap-2 pt-10 px-2">
       {top2 && (
         <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
@@ -106,7 +108,6 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
            <div className="w-full bg-gradient-to-b from-cyan-950/40 to-transparent border-t-2 border-cyan-500/50 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top2.username || top2.name || 'User'}</span>
              <span className="text-cyan-400 font-bold text-xs">{formatValue(getValue(top2))}</span>
-             <LiveTimer />
            </div>
         </Link>
       )}
@@ -121,7 +122,6 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
            <div className="w-full bg-gradient-to-b from-yellow-500/20 to-transparent border-t-2 border-yellow-500 pt-6 pb-2 flex flex-col items-center rounded-t-lg shadow-[0_-10px_20px_rgba(234,179,8,0.2)]">
              <span className="text-[11px] font-black uppercase text-white truncate w-24 text-center">{top1.username || top1.name || 'User'}</span>
              <span className="text-yellow-400 font-black text-sm">{formatValue(getValue(top1))}</span>
-             <LiveTimer />
            </div>
         </Link>
       )}
@@ -135,13 +135,15 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
            <div className="w-full bg-gradient-to-b from-purple-950/40 to-transparent border-t-2 border-purple-500/50 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top3.username || top3.name || 'User'}</span>
              <span className="text-purple-400 font-bold text-xs">{formatValue(getValue(top3))}</span>
-             <LiveTimer />
            </div>
         </Link>
       )}
     </div>
 
-    {/* Scrollable List */}
+    {/* Single Timing Tab between Podium and List */}
+    <LiveTimer />
+
+    {/* Scrollable List for 4th Rank and Below */}
     <div className="px-4 space-y-3">
       {others.map((item, index) => (
         <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} 
@@ -203,6 +205,7 @@ export default function LeaderboardPage() {
  return (
   <AppLayout>
   <div className="min-h-screen bg-[#05070a] text-white relative font-sans flex flex-col">
+    {/* Header */}
     <header className="relative z-50 p-6 pt-10">
      <div className="flex items-center justify-between mb-8">
        <Link href="/rooms"><ChevronLeft className="h-6 w-6 text-cyan-400" /></Link>
@@ -210,7 +213,6 @@ export default function LeaderboardPage() {
        <HelpCircle className="h-5 w-5 text-white/20" />
      </div>
 
-     {/* Filter Tabs with Daily Subtitle */}
      <div className="flex flex-col items-center">
         <div className="flex items-center justify-around w-full border-b border-white/10 pb-2">
         {[
@@ -231,10 +233,12 @@ export default function LeaderboardPage() {
      </div>
     </header>
 
+    {/* Content Area */}
     <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
        <RankingList items={activeItems} type={rankingType} period="daily" isLoading={isLoading} />
     </main>
 
+    {/* Footer */}
     <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/95 backdrop-blur-lg border-t border-cyan-500/20 p-4 h-20 flex items-center">
       <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
        <span className="text-xs font-black text-cyan-500 italic">ME</span>
