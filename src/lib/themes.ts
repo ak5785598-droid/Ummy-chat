@@ -61,5 +61,47 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'dreamy_hearts_v2_new', name: 'Dreamy Hearts V2', url: '/themes/dreamy_hearts_v2.png', seatColor: 'rgba(232, 121, 249, 0.2)', accentColor: '#ec4899', category: 'entertainment' },
   { id: 'heartbeat_arcade_scenic_new', name: 'Heartbeat Arcade Scenic', url: '/themes/heartbeat_arcade_scenic.png', seatColor: 'rgba(255, 255, 255, 0.2)', accentColor: '#ffffff', category: 'entertainment' },
   { id: 'official_gold_v2_new', name: 'Official Ummy Gold V2', url: '/themes/official_ummy_v2.png', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'general' },
-  { id: 'spring_path_scenic_new', name: 'Sakura Garden Path', url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=100&w=2000 ', seatColor: 'rgba(253, 164, 186, 0.2)', accentColor: '#fda4ba', category: 'general' }
+  { id: 'spring_path_scenic_new', name: 'Sakura Garden Path', url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=100&w=2000 ', seatColor: 'rgba(253, 164, 186, 0.2)', accentColor: '#fda4ba', category: 'general' },
+  {
+    id: 'user_desert_tent_local',
+    name: 'Desert Sunset Tent',
+    url: '/themes/user_desert_tent.jpg',
+    seatColor: 'rgba(251, 146, 60, 0.2)',
+    accentColor: '#fb923c',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_pink_bubbles_local',
+    name: 'Pink Heart Bubbles',
+    url: '/themes/user_pink_bubbles.jpg',
+    seatColor: 'rgba(236, 72, 153, 0.2)',
+    accentColor: '#ec4899',
+    category: 'user_choice',
+    animationId: 'love'
+  },
+  {
+    id: 'user_sakura_bridge_local',
+    name: 'Cherry Blossom Bridge',
+    url: '/themes/user_sakura_bridge.jpg',
+    seatColor: 'rgba(167, 139, 250, 0.2)',
+    accentColor: '#a78bfa',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_beach_sunset_local',
+    name: 'Beach Dinner Sunset',
+    url: '/themes/user_beach_sunset.jpg',
+    seatColor: 'rgba(251, 191, 36, 0.2)',
+    accentColor: '#fbbf24',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_shiva_divine_local',
+    name: 'Divine Shiva Meditation',
+    url: '/themes/user_shiva_divine.jpg',
+    seatColor: 'rgba(255, 170, 0, 0.15)',
+    accentColor: '#ffaa00',
+    category: 'user_choice',
+    animationId: 'stars'
+  }
 ];
