@@ -77,84 +77,7 @@ export function AppLayout({
   });
  }, [chatsForUnread, user]);
 
-  // SEQUENTIAL ID SYSTEM: Permanent Allotment Protocol
- useEffect(() => {
-  const syncIdentities = async () => {
-    if (!firestore || !user) return;
 
-   const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-   const currentAccNum = userProfile?.accountNumber || '';
-   const needsUserSync = !currentAccNum || currentAccNum.length !== 4 || isNaN(parseInt(currentAccNum)) || (user.uid === CREATOR_ID && currentAccNum !== '0000');
-
-   try {
-    // 1. User ID Handshake
-    if (needsUserSync) {
-     const userRef = doc(firestore, 'users', user.uid);
-     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-     const counterRef = doc(firestore, 'appConfig', 'counters');
-
-     await runTransaction(firestore, async (transaction) => {
-      const counterDoc = await transaction.get(counterRef);
-      let nextUserId = 1;
-
-      if (user.uid === CREATOR_ID) {
-       nextUserId = 0;
-      } else {
-       const lastId = counterDoc.data()?.lastUserId;
-       // Only reset to 1 if it's way out of range (legacy 100001 format)
-       if (lastId === undefined || lastId > 5000) nextUserId = 1;
-       else nextUserId = lastId + 1;
-      }
-
-      const paddedId = nextUserId.toString().padStart(4, '0');
-      // Critical: Ensure we don't downgrade the counter if creator relogs
-      const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
-      transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
-      transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
-      transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
-     });
-     console.log(`✅ Sequential User ID Synced: ${user.uid}`);
-    }
-
-    // 2. Room ID Handshake
-    const roomRef = doc(firestore, 'chatRooms', user.uid);
-    const roomSnap = await getDoc(roomRef);
-    if (roomSnap.exists()) {
-     const currentRoomNum = roomSnap.data().roomNumber;
-     const needsRoomSync = !currentRoomNum || parseInt(currentRoomNum) < 100 || currentRoomNum.length > 4 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
-     
-     if (needsRoomSync) {
-      const counterRef = doc(firestore, 'appConfig', 'counters');
-      await runTransaction(firestore, async (transaction) => {
-       const counterDoc = await transaction.get(counterRef);
-       let nextRoomId = 101;
-
-       if (user.uid === CREATOR_ID) {
-        nextRoomId = 100;
-       } else {
-        const lastId = counterDoc.data()?.lastRoomId;
-        if (lastId === undefined || lastId < 100 || lastId > 10000) nextRoomId = 101;
-        else nextRoomId = lastId + 1;
-       }
-
-       const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
-       transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
-       transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
-      });
-      console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
-     }
-    }
-   } catch (err) {
-    console.error("[Identity Sync] Handshake failed:", err);
-    }
-   };
- 
-   try {
-     syncIdentities();
-   } catch (e) {
-     console.error("Critical Identity Sync Failure:", e);
-   }
-  }, [firestore, user, userProfile]);
 
  const handleLogout = async () => {
   if (!auth || !user || !firestore) return;
@@ -184,21 +107,18 @@ export function AppLayout({
   if (!mounted) return null;
 
   // Handle Loading States - but check for ban first
-  if (isUserLoading || isProfileLoading) {
-    // Check if we have ban error during loading
-    if ((profileError as any)?.code === 'permission-denied') {
-      return (
-        <BanDialog 
-          isOpen={true} 
-          onClose={handleLogout}
-          bannedUntil={null} // Fallback to permanent if we can't read the date
-          accountNumber="Restricted"
-        />
-      );
-    }
-    // If we're loading, don't show children yet to prevent flashing/errors
-    // We could return a SplashScreen here if needed
-    return null; 
+   const isInitialLoading = isUserLoading || (isProfileLoading && !userProfile);
+
+  // Profile-blocking loading guard: If profile failed due to permission, show Ban Dialog immediately
+  if ((profileError as any)?.code === 'permission-denied') {
+    return (
+      <BanDialog 
+        isOpen={true} 
+        onClose={handleLogout}
+        bannedUntil={null}
+        accountNumber="Restricted"
+      />
+    );
   }
 
   // Handle Case where profile read fails due to permission (likely ban)
@@ -213,55 +133,9 @@ export function AppLayout({
       />
     );
   }
-  if (
-    fullScreen || 
-    pathname?.startsWith('/login') || 
-    pathname === '/' ||
-    pathname === '/terms' ||
-    pathname === '/privacy-policy' ||
-    pathname === '/refund-policy' ||
-    pathname === '/contact' ||
-    pathname === '/help-center'
-  ) {
-    return <main className="h-full w-full relative">{children}</main>;
-  }
 
- const isMainNav = pathname === '/rooms' || 
-           pathname === '/discover' || 
-           pathname === '/messages' || 
-           pathname === '/profile';
-
-  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
-
-  // GLOBAL BAN GUARD: If user is banned, block all content with the Management Message
-  if (userProfile?.banStatus?.isBanned) {
-    console.log('User is banned:', userProfile.banStatus);
-    let until = null;
-    try {
-      if (userProfile?.banStatus?.bannedUntil) {
-        until = typeof userProfile.banStatus.bannedUntil.toDate === 'function' 
-          ? userProfile.banStatus.bannedUntil.toDate() 
-          : new Date(userProfile.banStatus.bannedUntil);
-      }
-    } catch (e) {
-      console.error("Ban Date Conversion Failed:", e);
-    }
-    
-    if (!until || isNaN(until.getTime()) || until > new Date()) {
-      return (
-        <BanDialog 
-          isOpen={true} 
-          onClose={handleLogout}
-          bannedUntil={userProfile.banStatus.bannedUntil}
-          accountNumber={userProfile.accountNumber}
-        />
-      );
-    }
-  }
-
-  return (
-   <SidebarProvider defaultOpen={false}>
-    <GlobalActivityBanner />
+   // Memoized Sidebar to prevent re-renders on page change
+   const memoizedSidebar = React.useMemo(() => (
     <Sidebar className="bg-[#140028] border-none text-white">
      <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
       <div className="flex items-center gap-3">
@@ -314,21 +188,12 @@ export function AppLayout({
       </button>
      </SidebarFooter>
     </Sidebar>
+   ), [pathname, hasUnread, isOfficial, handleLogout, t]);
 
-     <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-screen overflow-hidden">
-      <main className={cn(
-       "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
-      "touch-auto", // Ensure touch events are handled correctly
-      shouldShowBottomNav && "pb-32"
-     )}
-     style={{ WebkitOverflowScrolling: 'touch' }}
-     >
-      <div className="min-h-full w-full">
-       {children}
-      </div>
-     </main>
-     
-     {shouldShowBottomNav && (
+   // Memoized Bottom Navigation
+   const memoizedBottomNav = React.useMemo(() => {
+     if (!shouldShowBottomNav) return null;
+     return (
       <nav 
        style={{ 
         position: 'fixed', 
@@ -369,14 +234,86 @@ export function AppLayout({
         <span className="text-[9px] font-bold uppercase tracking-tight">{t.nav.me}</span>
        </Link>
       </nav>
+     );
+   }, [pathname, shouldShowBottomNav, hasUnread, t]);
+
+  if (
+    fullScreen || 
+    pathname?.startsWith('/login') || 
+    pathname === '/' ||
+    pathname === '/terms' ||
+    pathname === '/privacy-policy' ||
+    pathname === '/refund-policy' ||
+    pathname === '/contact' ||
+    pathname === '/help-center'
+  ) {
+    return <main className="h-full w-full relative">{children}</main>;
+  }
+
+ const isMainNav = pathname === '/rooms' || 
+           pathname === '/discover' || 
+           pathname === '/messages' || 
+           pathname === '/profile';
+
+  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
+
+  // GLOBAL BAN GUARD: If user is banned, block all content with the Management Message
+  if (userProfile?.banStatus?.isBanned) {
+    console.log('User is banned:', userProfile.banStatus);
+    let until = null;
+    try {
+      if (userProfile?.banStatus?.bannedUntil) {
+        until = typeof userProfile.banStatus.bannedUntil.toDate === 'function' 
+          ? userProfile.banStatus.bannedUntil.toDate() 
+          : new Date(userProfile.banStatus.bannedUntil);
+      }
+    } catch (e) {
+      console.error("Ban Date Conversion Failed:", e);
+    }
+    
+    if (!until || isNaN(until.getTime()) || until > new Date()) {
+      return (
+        <BanDialog 
+          isOpen={true} 
+          onClose={handleLogout}
+          bannedUntil={userProfile.banStatus.bannedUntil}
+          accountNumber={userProfile.accountNumber}
+        />
+      );
+    }
+  }
+
+  return (
+     {memoizedSidebar}
+
+     <SidebarInset className="bg-background flex-1 flex flex-col p-0 w-full max-w-full h-screen overflow-hidden">
+      <main className={cn(
+       "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain",
+      "touch-auto", 
+      shouldShowBottomNav && "pb-32"
      )}
+     style={{ WebkitOverflowScrolling: 'touch' }}
+     >
+      <div className="min-h-full w-full">
+       {isInitialLoading ? (
+         <div className="flex flex-col items-center justify-center h-[500px] gap-4 opacity-50">
+           <Loader className="h-10 w-10 animate-spin text-primary" />
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
+         </div>
+       ) : children}
+      </div>
+     </main>
+     
+     {memoizedBottomNav}
      <FloatingRoomBar />
      <RoomMiniPlayer />
     </SidebarInset>
-    <DailyQuestsDialog 
-       isOpen={showQuests} 
-       onClose={() => setShowQuests(false)} 
-     />
+    {showQuests && (
+      <DailyQuestsDialog 
+        isOpen={showQuests} 
+        onClose={() => setShowQuests(false)} 
+      />
+    )}
    </SidebarProvider>
   );
 }
