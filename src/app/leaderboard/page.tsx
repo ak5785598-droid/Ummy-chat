@@ -119,7 +119,9 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
   };
 
   const formatValue = (val: number) => {
-    return val.toLocaleString() + ' XP';
+    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+    return val.toLocaleString();
   };
 
   const getDisplayName = (item: any) => {
