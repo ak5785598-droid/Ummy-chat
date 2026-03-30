@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
+import Image from 'next/image';
 import { 
   Plus, 
   Users, 
@@ -62,7 +63,7 @@ export default function CreateFamilyPage() {
       return;
     }
 
-    if ((userProfile.coins || 0) < CREATE_COST) {
+    if ((userProfile.wallet?.coins || 0) < CREATE_COST) {
       toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${CREATE_COST.toLocaleString()} coins to create a family.` });
       return;
     }
@@ -79,12 +80,12 @@ export default function CreateFamilyPage() {
 
         // Deduct Coins
         transaction.update(userRef, { 
-          coins: increment(-CREATE_COST),
+          'wallet.coins': increment(-CREATE_COST),
           familyId: familyId,
           updatedAt: serverTimestamp() 
         });
         transaction.update(profileRef, { 
-          coins: increment(-CREATE_COST),
+          'wallet.coins': increment(-CREATE_COST),
           familyId: familyId,
           updatedAt: serverTimestamp() 
         });
@@ -190,7 +191,7 @@ export default function CreateFamilyPage() {
 
                        <Button 
                          type="submit"
-                         disabled={isSubmitting || (userProfile?.coins || 0) < CREATE_COST}
+                         disabled={isSubmitting || (userProfile?.wallet?.coins || 0) < CREATE_COST}
                          className="w-full h-16 rounded-[2rem] bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95 disabled:opacity-50"
                        >
                           {isSubmitting ? <Loader className="animate-spin h-6 w-6" /> : 'Protocolized Creation'}
