@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
 import { 
   useFirestore, 
   useCollection,
-  useMemoFirebase 
+  useMemoFirebase
 } from '@/firebase';
 import { 
   collection, 
@@ -13,169 +11,114 @@ import {
   orderBy, 
   limit 
 } from 'firebase/firestore';
-import { Crown, Loader, TrendingUp, Clock, Trophy } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Sparkles, Trophy, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- MAIN LEADERBOARD PAGE ---
-export default function LeaderboardPage() {
-  const [type, setType] = useState<'rich' | 'charm'>('rich');
+/**
+ * GlobalActivityBanner - Modernized UI Design
+ * System-wide announcement for premium events with a sleek, 3D gaming look.
+ */
+export function GlobalActivityBanner() {
   const firestore = useFirestore();
 
-  // Logic: Rich = dailySpent, Charm = dailyGiftsReceived
-  const rankingQuery = useMemoFirebase(() => {
+  const activityQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    const field = type === 'rich' ? 'wallet.dailySpent' : 'stats.dailyGiftsReceived';
     return query(
-      collection(firestore, 'users'),
-      orderBy(field, 'desc'),
-      limit(20)
+      collection(firestore, 'globalActivity'),
+      orderBy('timestamp', 'desc'),
+      limit(1)
     );
-  }, [firestore, type]);
+  }, [firestore]);
 
-  const { data: items, isLoading } = useCollection<any>(rankingQuery);
+  const { data: activities } = useCollection<any>(activityQuery, { silent: true });
+  const activeEvent = activities?.[0];
+
+  if (!activeEvent) return null;
+
+  // Defensive check for timestamp
+  let isRecent = false;
+  try {
+    const timestamp = activeEvent.timestamp;
+    if (timestamp) {
+      const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+      isRecent = date.getTime() > (Date.now() - 60000); // 60 seconds threshold
+    }
+  } catch (err) {
+    console.warn("GlobalActivityBanner: Date conversion failed", err);
+  }
+
+  if (!isRecent) return null;
 
   return (
-    <div className="min-h-screen bg-[#0f0f12] text-white font-sans pb-20">
-      {/* Header Tabs: Sirf Rich aur Charm (Baki removed as per your request) */}
-      <div className="pt-6 px-4">
-        <div className="flex justify-center gap-4 bg-white/5 p-1.5 rounded-2xl backdrop-blur-md border border-white/5">
-          <button 
-            onClick={() => setType('rich')}
-            className={`flex-1 py-2 rounded-xl text-xs font-black uppercase transition-all ${type === 'rich' ? 'bg-blue-600 shadow-lg shadow-blue-600/20 text-white' : 'text-white/40'}`}
-          >
-            Rich
-          </button>
-          <button 
-            onClick={() => setType('charm')}
-            className={`flex-1 py-2 rounded-xl text-xs font-black uppercase transition-all ${type === 'charm' ? 'bg-pink-600 shadow-lg shadow-pink-600/20 text-white' : 'text-white/40'}`}
-          >
-            Charm
-          </button>
+    <AnimatePresence>
+      <motion.div 
+        initial={{ y: -80, opacity: 0, scale: 0.9 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: -80, opacity: 0, scale: 0.9 }}
+        className="fixed top-2 left-0 right-0 z-[1000] pointer-events-none px-4"
+      >
+        <div className="w-full max-w-[450px] mx-auto">
+           {/* Modern Container with Neon Border and Glassmorphism */}
+           <div className="relative h-12 flex items-center bg-[#0a0a0c]/80 backdrop-blur-xl rounded-2xl border-b-2 border-yellow-500/50 shadow-[0_10px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(234,179,8,0.2)] overflow-hidden">
+              
+              {/* Left Side Icon Area (Gaming Style) */}
+              <div className="h-full px-3 flex items-center bg-gradient-to-br from-yellow-500 to-orange-600 relative overflow-hidden shrink-0">
+                 <motion.div 
+                   animate={{ rotate: [0, 15, -15, 0] }}
+                   transition={{ duration: 2, repeat: Infinity }}
+                   className="z-10"
+                 >
+                    <Trophy className="h-5 w-5 text-black fill-current" />
+                 </motion.div>
+                 {/* Shine Effect on Icon */}
+                 <div className="absolute inset-0 bg-white/20 blur-sm mix-blend-overlay" />
+              </div>
+
+              {/* Scrolling Text Content */}
+              <div className="flex-1 h-full flex items-center overflow-hidden relative">
+                 <motion.div 
+                   className="whitespace-nowrap flex items-center gap-4 px-4"
+                   animate={{ x: [400, -1000] }}
+                   transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+                 >
+                    {/* Announcement 1 */}
+                    <div className="flex items-center gap-2">
+                       <Zap className="h-3 w-3 text-yellow-400 fill-current" />
+                       <span className="text-[12px] font-black text-white/40 uppercase tracking-tighter">System Alert:</span>
+                       <p className="text-[13px] font-bold text-white tracking-tight flex items-center gap-1.5">
+                          <span className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">{activeEvent.userName}</span> 
+                          <span className="text-white/60 font-medium">sent</span> 
+                          <span className="bg-white/10 px-2 py-0.5 rounded-md border border-white/5 text-blue-400 uppercase text-[11px] font-black italic">
+                            {activeEvent.giftName}
+                          </span>
+                          <span className="text-white/60 font-medium text-[11px]">in Room</span> 
+                          <span className="text-emerald-400 font-black">#{activeEvent.roomNumber}</span>
+                       </p>
+                       <Star className="h-3 w-3 text-yellow-500 animate-pulse" />
+                    </div>
+
+                    {/* Duplicate for smooth loop */}
+                    <div className="w-20 h-px bg-white/10 mx-2" />
+
+                    <div className="flex items-center gap-2 opacity-60">
+                       <Sparkles className="h-3 w-3 text-white/40" />
+                       <p className="text-[11px] font-bold text-white/80 uppercase">Legendary Action taking place!</p>
+                    </div>
+                 </motion.div>
+
+                 {/* Edge Fade Effect */}
+                 <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0a0a0c] to-transparent z-10" />
+                 <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#0a0a0c] to-transparent z-10" />
+              </div>
+
+              {/* Background Animated Particles (Subtle) */}
+              <div className="absolute inset-0 pointer-events-none opacity-20">
+                 <div className="absolute top-0 left-1/4 w-1 h-1 bg-white rounded-full animate-ping" />
+                 <div className="absolute bottom-1 right-1/3 w-1 h-1 bg-yellow-400 rounded-full animate-bounce" />
+              </div>
+           </div>
         </div>
-      </div>
-
-      <div className="text-center mt-6">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 italic">Daily Rankings</span>
-      </div>
-
-      <RankingList items={items} type={type} isLoading={isLoading} />
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
-
-// --- RANKING LIST COMPONENT ---
-const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
-  
-  if (isLoading) return (
-    <div className="flex flex-col items-center py-40 gap-4">
-      <Loader className="animate-spin text-yellow-500 h-8 w-8" />
-      <p className="text-[10px] font-bold uppercase text-white/20">Syncing Coins...</p>
-    </div>
-  );
-
-  // Filter: Reset rule - Agar coins 0 hain toh user show nahi hoga
-  const activeParticipants = items?.filter(item => {
-    const val = type === 'rich' ? (item.wallet?.dailySpent || 0) : (item.stats?.dailyGiftsReceived || 0);
-    return val > 0;
-  }) || [];
-
-  const top1 = activeParticipants[0] || null;
-  const top2 = activeParticipants[1] || null;
-  const top3 = activeParticipants[2] || null;
-  const others = activeParticipants.slice(3);
-
-  const formatCoins = (val: number) => {
-    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
-    return val.toLocaleString();
-  };
-
-  // Empty Seat Placeholder
-  const EmptySeat = ({ rank }: { rank: number }) => (
-    <div className={`flex flex-col items-center opacity-20 ${rank === 1 ? 'w-32 scale-110' : 'w-24'}`}>
-      <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/40 flex items-center justify-center mb-2">
-        <span className="text-xs font-bold">{rank}</span>
-      </div>
-      <div className="w-full bg-white/5 h-16 rounded-t-xl border-t border-white/10" />
-    </div>
-  );
-
-  return (
-    <div className="px-2">
-      {/* PODIUM SECTION */}
-      <div className="flex items-end justify-center gap-2 pt-20 mb-10 h-[280px] relative">
-        {/* Rank 2 */}
-        {top2 ? (
-          <Link href={`/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
-            <div className="relative mb-2">
-               <Avatar className="h-20 w-20 border-2 border-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.4)]">
-                 <AvatarImage src={top2.avatarUrl} className="object-cover" />
-                 <AvatarFallback>2</AvatarFallback>
-               </Avatar>
-               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-[10px] font-black px-2 rounded">2</div>
-            </div>
-            <div className="w-full bg-gradient-to-b from-blue-900/20 to-transparent h-20 rounded-t-xl border-t border-blue-500/50 flex flex-col items-center justify-center">
-               <p className="text-[10px] font-bold text-white truncate w-16">{top2.username}</p>
-               <p className="text-[10px] text-blue-400 font-black">{formatCoins(top2.wallet?.dailySpent || top2.stats?.dailyGiftsReceived)}</p>
-            </div>
-          </Link>
-        ) : <EmptySeat rank={2} />}
-
-        {/* Rank 1 */}
-        {top1 ? (
-          <Link href={`/profile/${top1.id}`} className="flex-1 flex flex-col items-center z-10 scale-110 -translate-y-6">
-            <div className="relative mb-2">
-               <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 h-7 w-7 text-yellow-400 fill-current drop-shadow-glow" />
-               <Avatar className="h-24 w-24 border-4 border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.5)]">
-                 <AvatarImage src={top1.avatarUrl} className="object-cover" />
-                 <AvatarFallback>1</AvatarFallback>
-               </Avatar>
-            </div>
-            <div className="w-full bg-gradient-to-b from-yellow-500/20 to-transparent h-28 rounded-t-xl border-t-2 border-yellow-500 flex flex-col items-center justify-center">
-               <p className="text-[11px] font-black text-yellow-500 truncate w-20">{top1.username}</p>
-               <p className="text-[12px] text-white font-black">{formatCoins(top1.wallet?.dailySpent || top1.stats?.dailyGiftsReceived)}</p>
-            </div>
-          </Link>
-        ) : <EmptySeat rank={1} />}
-
-        {/* Rank 3 */}
-        {top3 ? (
-          <Link href={`/profile/${top3.id}`} className="flex-1 flex flex-col items-center">
-            <div className="relative mb-2">
-               <Avatar className="h-20 w-20 border-2 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]">
-                 <AvatarImage src={top3.avatarUrl} className="object-cover" />
-                 <AvatarFallback>3</AvatarFallback>
-               </Avatar>
-               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-[10px] font-black px-2 rounded">3</div>
-            </div>
-            <div className="w-full bg-gradient-to-b from-orange-900/20 to-transparent h-16 rounded-t-xl border-t border-orange-500/50 flex flex-col items-center justify-center">
-               <p className="text-[10px] font-bold text-white truncate w-16">{top3.username}</p>
-               <p className="text-[10px] text-orange-400 font-black">{formatCoins(top3.wallet?.dailySpent || top3.stats?.dailyGiftsReceived)}</p>
-            </div>
-          </Link>
-        ) : <EmptySeat rank={3} />}
-      </div>
-
-      {/* LIST SECTION */}
-      <div className="mt-4 space-y-2 pb-10">
-        {others.map((item, index) => (
-          <Link key={item.id} href={`/profile/${item.id}`} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
-             <span className="text-xs font-black text-white/20 w-4">{index + 4}</span>
-             <Avatar className="h-10 w-10 border border-white/10">
-                <AvatarImage src={item.avatarUrl} />
-             </Avatar>
-             <div className="flex-1">
-                <p className="text-xs font-bold truncate">{item.username}</p>
-                <p className="text-[9px] text-white/40 uppercase">Lv.{item.level || 1}</p>
-             </div>
-             <div className="text-right">
-                <p className="text-xs font-black text-blue-400">{formatCoins(type === 'rich' ? item.wallet?.dailySpent : item.stats?.dailyGiftsReceived)}</p>
-                <p className="text-[8px] uppercase text-white/20">Coins</p>
-             </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};
