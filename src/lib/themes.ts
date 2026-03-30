@@ -46,146 +46,37 @@ export const ROOM_THEMES: RoomTheme[] = [
   // --- PREMIUM SCENIC & SEASONAL COLLECTION ---
   { id: 'scenic_neon_night_v2_new', name: 'Neon Night Scenic', url: '/themes/neon_night_scenic.png', seatColor: 'rgba(124, 58, 237, 0.2)', accentColor: '#8b5cf6', category: 'general' },
   { id: 'celestial_love_v2_new', name: 'Celestial Love V2', url: '/themes/celestial_love_v2.png', seatColor: 'rgba(99, 102, 241, 0.2)', accentColor: '#6366f1', category: 'general' },
-  { id: 'ummy_galaxy_v2_new', name: 'Ummy Galaxy V2', url: '/themes/ummy_galaxy_v2.png', seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'general' },
+  { id: 'ummy_galaxy_v2_new', name: 'Ummy Galaxy V2', url: '/themes/ummy_galaxy_v2.png', seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'general', animationId: 'galaxy' },
   { id: 'halloween_2025_v2_new', name: 'Halloween 2025 V2', url: '/themes/halloween_2025_v2.png', seatColor: 'rgba(249, 115, 22, 0.2)', accentColor: '#f97316', category: 'general' },
   { id: 'friendly_guide_scenic_new', name: 'Friendly Guide Scenic', url: '/themes/friendly_guide_scenic.png', seatColor: 'rgba(34, 197, 94, 0.2)', accentColor: '#22c55e', category: 'help' },
   { id: 'birthday_special_scenic_v3', name: 'Birthday Party', url: '/themes/user_pink_bubbles.jpg', seatColor: 'rgba(236, 72, 153, 0.2)', accentColor: '#ec4899', category: 'entertainment' },
   { id: 'holiday_village_premium', name: 'Holiday Village Alpine', url: '/themes/user_winter_village.jpg', seatColor: 'rgba(239, 68, 68, 0.2)', accentColor: '#ef4444', category: 'seasonal' },
-  { id: 'beach_luxury_scenic_premium', name: 'Beach Luxury Lounge', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000', seatColor: 'rgba(14, 165, 233, 0.2)', accentColor: '#0ea5e9', category: 'entertainment' },
-  { id: 'eid_special_scenic_v3', name: 'Eid Special Night', url: 'https://images.unsplash.com/photo-1564507004663-b6dfb3c824d5?auto=format&fit=crop&q=80&w=2000', seatColor: 'rgba(34, 197, 94, 0.2)', accentColor: '#22c55e', category: 'entertainment' },
-  { id: 'lights_festival_scenic_new', name: 'Lights Festival Scenic', url: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=100&w=2000', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'entertainment' },
+  { id: 'beach_luxury_scenic_premium', name: 'Beach Luxury Lounge', url: '/themes/user_beach_sunset.jpg', seatColor: 'rgba(14, 165, 233, 0.2)', accentColor: '#0ea5e9', category: 'entertainment' },
+  { id: 'eid_special_scenic_v3', name: 'Eid Special Night', url: '/themes/user_ramadan_lantern.jpg', seatColor: 'rgba(30, 58, 138, 0.2)', accentColor: '#1e3a8a', category: 'entertainment' },
   { id: 'christmas_cozy_scenic_new', name: 'Christmas Cozy Scenic', url: '/themes/user_winter_snow.jpg', seatColor: 'rgba(239, 68, 68, 0.2)', accentColor: '#ef4444', category: 'entertainment' },
   { id: 'holi_scenic_new', name: 'Holi Festival Scenic', url: '/themes/user_holi_festival.jpg', seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'entertainment' },
   { id: 'coding_hacker_v2_new', name: 'Hacker Room V2', url: '/themes/coding_hacker_v2.png', seatColor: 'rgba(34, 197, 94, 0.2)', accentColor: '#22c55e', category: 'entertainment' },
   { id: 'gaming_arcade_v2_new', name: 'Gaming Arcade V2', url: '/themes/gaming_arcade_v2.png', seatColor: 'rgba(59, 130, 246, 0.2)', accentColor: '#3b82f6', category: 'entertainment' },
-  { id: 'dreamy_hearts_v2_new', name: 'Dreamy Hearts V2', url: '/themes/dreamy_hearts_v2.png', seatColor: 'rgba(232, 121, 249, 0.2)', accentColor: '#ec4899', category: 'entertainment' },
-  { id: 'heartbeat_arcade_scenic_new', name: 'Heartbeat Arcade Scenic', url: '/themes/heartbeat_arcade_scenic.png', seatColor: 'rgba(255, 255, 255, 0.2)', accentColor: '#ffffff', category: 'entertainment' },
-  { id: 'official_gold_v2_new', name: 'Official Ummy Gold V2', url: '/themes/official_ummy_v2.png', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'general' },
-  { id: 'spring_path_scenic_new', name: 'Sakura Garden Path', url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=100&w=2000 ', seatColor: 'rgba(253, 164, 186, 0.2)', accentColor: '#fda4ba', category: 'general' },
-  {
-    id: 'user_desert_tent_local',
-    name: 'Desert Sunset Tent',
-    url: '/themes/user_desert_tent.jpg',
-    seatColor: 'rgba(251, 146, 60, 0.2)',
-    accentColor: '#fb923c',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_pink_bubbles_local',
-    name: 'Pink Heart Bubbles',
-    url: '/themes/user_pink_bubbles.jpg',
-    seatColor: 'rgba(236, 72, 153, 0.2)',
-    accentColor: '#ec4899',
-    category: 'user_choice',
-    animationId: 'love'
-  },
-  {
-    id: 'user_sakura_bridge_local',
-    name: 'Cherry Blossom Bridge',
-    url: '/themes/user_sakura_bridge.jpg',
-    seatColor: 'rgba(167, 139, 250, 0.2)',
-    accentColor: '#a78bfa',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_beach_sunset_local',
-    name: 'Beach Dinner Sunset',
-    url: '/themes/user_beach_sunset.jpg',
-    seatColor: 'rgba(251, 191, 36, 0.2)',
-    accentColor: '#fbbf24',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_shiva_divine_local',
-    name: 'Divine Shiva Meditation',
-    url: '/themes/user_shiva_divine.jpg',
-    seatColor: 'rgba(255, 170, 0, 0.15)',
-    accentColor: '#ffaa00',
-    category: 'user_choice',
-    animationId: 'stars'
-  },
-  {
-    id: 'user_buddha_gold_local',
-    name: 'Golden Buddha',
-    url: '/themes/user_buddha_gold.jpg',
-    seatColor: 'rgba(251, 191, 36, 0.2)',
-    accentColor: '#fbbf24',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_golden_temple_local',
-    name: 'Golden Temple',
-    url: '/themes/user_golden_temple.jpg',
-    seatColor: 'rgba(59, 130, 246, 0.2)',
-    accentColor: '#60a5fa',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_shiva_cave_local',
-    name: 'Shiva Cave Waterfall',
-    url: '/themes/user_shiva_cave.jpg',
-    seatColor: 'rgba(34, 197, 94, 0.15)',
-    accentColor: '#22c55e',
-    category: 'user_choice',
-    animationId: 'rain'
-  },
-  {
-    id: 'user_shiva_cosmic_local',
-    name: 'Cosmic Shiva',
-    url: '/themes/user_shiva_cosmic.jpg',
-    seatColor: 'rgba(168, 85, 247, 0.2)',
-    accentColor: '#a855f7',
-    category: 'user_choice',
-    animationId: 'stars'
-  },
-  {
-    id: 'user_desert_prayer_local',
-    name: 'Desert Prayer',
-    url: '/themes/user_desert_prayer.jpg',
-    seatColor: 'rgba(251, 146, 60, 0.2)',
-    accentColor: '#fb923c',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_ramadan_lantern_local',
-    name: 'Ramadan lantern Night',
-    url: '/themes/user_ramadan_lantern.jpg',
-    seatColor: 'rgba(30, 58, 138, 0.2)',
-    accentColor: '#1e3a8a',
-    category: 'user_choice',
-    animationId: 'stars'
-  },
-  {
-    id: 'user_evening_prayer_local',
-    name: 'Evening Prayer Sunset',
-    url: '/themes/user_evening_prayer.jpg',
-    seatColor: 'rgba(251, 146, 60, 0.2)',
-    accentColor: '#fb923c',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_diwali_diyas_local',
-    name: 'Diwali Golden Diyas',
-    url: '/themes/user_diwali_diyas.jpg',
-    seatColor: 'rgba(251, 191, 36, 0.2)',
-    accentColor: '#fbbf24',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_shiva_glow_local',
-    name: 'Golden Shiva Glow',
-    url: '/themes/user_shiva_glow.jpg',
-    seatColor: 'rgba(251, 146, 60, 0.2)',
-    accentColor: '#fb923c',
-    category: 'user_choice',
-    animationId: 'stars'
-  },
-  {
-    id: 'user_divine_ascension_local',
-    name: 'Divine Ascension',
-    url: '/themes/user_divine_ascension.jpg',
-    seatColor: 'rgba(255, 255, 255, 0.2)',
-    accentColor: '#ffffff',
-    category: 'user_choice'
-  }
+  { id: 'dreamy_hearts_v2_new', name: 'Dreamy Hearts V2', url: '/themes/dreamy_hearts_v2.png', seatColor: 'rgba(232, 121, 249, 0.2)', accentColor: '#ec4899', category: 'entertainment', animationId: 'love' },
+
+  // --- NEW USER-PROVIDED 9:16 COLLECTION ---
+  { id: 'user_desert_tent', name: 'Desert Sunset Tent', url: '/themes/user_desert_tent.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice' },
+  { id: 'user_sakura_bridge', name: 'Cherry Blossom Bridge', url: '/themes/user_sakura_bridge.jpg', seatColor: 'rgba(167, 139, 250, 0.2)', accentColor: '#a78bfa', category: 'user_choice' },
+  { id: 'user_shiva_divine', name: 'Divine Shiva Meditation', url: '/themes/user_shiva_divine.jpg', seatColor: 'rgba(255, 170, 0, 0.15)', accentColor: '#ffaa00', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_holi_group', name: 'Holi Colors Celebration', url: '/themes/user_holi_group.jpg', seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'user_choice' },
+  { id: 'user_starry_campfire', name: 'Starry Night Campfire', url: '/themes/user_starry_campfire.jpg', seatColor: 'rgba(147, 51, 234, 0.2)', accentColor: '#8b5cf6', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_crescent_moon', name: 'Crescent Moon Night', url: '/themes/user_crescent_moon.jpg', seatColor: 'rgba(30, 58, 138, 0.2)', accentColor: '#1e3a8a', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_krishna_divine', name: 'Divine Krishna Glow', url: '/themes/user_krishna_divine.jpg', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'user_choice' },
+  { id: 'user_beach_dinner_2', name: 'Beach Candlelight Dinner', url: '/themes/user_beach_dinner_2.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice' },
+  { id: 'user_shiva_meditation_2', name: 'Shiva Mountain Glow', url: '/themes/user_shiva_meditation_2.jpg', seatColor: 'rgba(255, 170, 0, 0.15)', accentColor: '#ffaa00', category: 'user_choice' },
+  { id: 'user_starry_night', name: 'Clear Starry Night', url: '/themes/user_starry_night.jpg', seatColor: 'rgba(30, 58, 138, 0.2)', accentColor: '#1e3a8a', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_buddha_gold', name: 'Golden Buddha Spirit', url: '/themes/user_buddha_gold.jpg', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'user_choice' },
+  { id: 'user_golden_temple', name: 'Golden Temple Divine', url: '/themes/user_golden_temple.jpg', seatColor: 'rgba(59, 130, 246, 0.2)', accentColor: '#60a5fa', category: 'user_choice' },
+  { id: 'user_shiva_cave', name: 'Shiva Cave Waterfall', url: '/themes/user_shiva_cave.jpg', seatColor: 'rgba(34, 197, 94, 0.15)', accentColor: '#22c55e', category: 'user_choice', animationId: 'rain' },
+  { id: 'user_shiva_cosmic', name: 'Cosmic Shiva Spirit', url: '/themes/user_shiva_cosmic.jpg', seatColor: 'rgba(168, 85, 247, 0.2)', accentColor: '#a855f7', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_desert_prayer', name: 'Desert Night Prayer', url: '/themes/user_desert_prayer.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice' },
+  { id: 'user_evening_prayer', name: 'Evening Prayer Sunset', url: '/themes/user_evening_prayer.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice' },
+  { id: 'user_diwali_diyas', name: 'Diwali Golden Diyas', url: '/themes/user_diwali_diyas.jpg', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'user_choice' },
+  { id: 'user_shiva_glow', name: 'Golden Shiva Glow', url: '/themes/user_shiva_glow.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice', animationId: 'stars' },
+  { id: 'user_divine_ascension', name: 'Divine Spirit Ascension', url: '/themes/user_divine_ascension.jpg', seatColor: 'rgba(255, 255, 255, 0.2)', accentColor: '#ffffff', category: 'user_choice' }
 ];
