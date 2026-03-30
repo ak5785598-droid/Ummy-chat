@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { 
   useFirestore, 
   useCollection,
@@ -11,15 +12,20 @@ import {
   orderBy, 
   limit 
 } from 'firebase/firestore';
-import { Sparkles, Trophy, Zap, Star } from 'lucide-react';
+import { Sparkles, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * GlobalActivityBanner - Modernized UI Design
- * System-wide announcement for premium events with a sleek, 3D gaming look.
+ * GlobalActivityBanner - Fixed & Optimized
  */
 export function GlobalActivityBanner() {
   const firestore = useFirestore();
+  const [isClient, setIsClient] = useState(false);
+
+  // Fix for Hydration Error
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const activityQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -30,21 +36,31 @@ export function GlobalActivityBanner() {
     );
   }, [firestore]);
 
-  const { data: activities } = useCollection<any>(activityQuery, { silent: true });
-  const activeEvent = activities?.[0];
+  const { data: activities, loading } = useCollection<any>(activityQuery, { silent: true });
+  
+  // Basic Checks
+  if (!isClient || loading || !activities || activities.length === 0) return null;
 
-  if (!activeEvent) return null;
+  const activeEvent = activities[0];
 
-  // Defensive check for timestamp
+  // Safety check for required fields to prevent "undefined" crashes
+  if (!activeEvent.userName || !activeEvent.giftName || !activeEvent.timestamp) {
+    return null;
+  }
+
+  // Defensive Timestamp Check
   let isRecent = false;
   try {
-    const timestamp = activeEvent.timestamp;
-    if (timestamp) {
-      const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
-      isRecent = date.getTime() > (Date.now() - 60000); // 60 seconds threshold
+    const ts = activeEvent.timestamp;
+    // Handle both Firebase object and regular Date
+    const date = ts?.toDate ? ts.toDate() : new Date(ts?.seconds ? ts.seconds * 1000 : ts);
+    
+    if (!isNaN(date.getTime())) {
+      isRecent = date.getTime() > (Date.now() - 60000); // Only show if from last 60 seconds
     }
   } catch (err) {
     console.warn("GlobalActivityBanner: Date conversion failed", err);
+    return null; 
   }
 
   if (!isRecent) return null;
@@ -52,69 +68,37 @@ export function GlobalActivityBanner() {
   return (
     <AnimatePresence>
       <motion.div 
-        initial={{ y: -80, opacity: 0, scale: 0.9 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: -80, opacity: 0, scale: 0.9 }}
-        className="fixed top-2 left-0 right-0 z-[1000] pointer-events-none px-4"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -100, opacity: 0 }}
+        className="fixed top-0 left-0 right-0 z-[600] pointer-events-none"
       >
-        <div className="w-full max-w-[450px] mx-auto">
-           {/* Modern Container with Neon Border and Glassmorphism */}
-           <div className="relative h-12 flex items-center bg-[#0a0a0c]/80 backdrop-blur-xl rounded-2xl border-b-2 border-yellow-500/50 shadow-[0_10px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(234,179,8,0.2)] overflow-hidden">
+        <div className="w-full max-w-[500px] mx-auto px-4 mt-2">
+           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-10 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
+              {/* Animated Shine */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full skew-x-[45deg]"
+                animate={{ x: ['-200%', '200%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
               
-              {/* Left Side Icon Area (Gaming Style) */}
-              <div className="h-full px-3 flex items-center bg-gradient-to-br from-yellow-500 to-orange-600 relative overflow-hidden shrink-0">
-                 <motion.div 
-                   animate={{ rotate: [0, 15, -15, 0] }}
-                   transition={{ duration: 2, repeat: Infinity }}
-                   className="z-10"
-                 >
-                    <Trophy className="h-5 w-5 text-black fill-current" />
-                 </motion.div>
-                 {/* Shine Effect on Icon */}
-                 <div className="absolute inset-0 bg-white/20 blur-sm mix-blend-overlay" />
+              <div className="shrink-0 px-3 flex items-center gap-1.5 z-10 border-r border-white/10">
+                 <Trophy className="h-4 w-4 text-yellow-400 animate-pulse" />
+                 <span className="text-[10px] font-black uppercase text-yellow-400 tracking-tighter">System</span>
               </div>
 
-              {/* Scrolling Text Content */}
-              <div className="flex-1 h-full flex items-center overflow-hidden relative">
+              <div className="flex-1 px-4 overflow-hidden relative z-10">
                  <motion.div 
-                   className="whitespace-nowrap flex items-center gap-4 px-4"
-                   animate={{ x: [400, -1000] }}
-                   transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+                   className="whitespace-nowrap flex items-center gap-2"
+                   animate={{ x: [400, -800] }}
+                   transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                  >
-                    {/* Announcement 1 */}
-                    <div className="flex items-center gap-2">
-                       <Zap className="h-3 w-3 text-yellow-400 fill-current" />
-                       <span className="text-[12px] font-black text-white/40 uppercase tracking-tighter">System Alert:</span>
-                       <p className="text-[13px] font-bold text-white tracking-tight flex items-center gap-1.5">
-                          <span className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">{activeEvent.userName}</span> 
-                          <span className="text-white/60 font-medium">sent</span> 
-                          <span className="bg-white/10 px-2 py-0.5 rounded-md border border-white/5 text-blue-400 uppercase text-[11px] font-black italic">
-                            {activeEvent.giftName}
-                          </span>
-                          <span className="text-white/60 font-medium text-[11px]">in Room</span> 
-                          <span className="text-emerald-400 font-black">#{activeEvent.roomNumber}</span>
-                       </p>
-                       <Star className="h-3 w-3 text-yellow-500 animate-pulse" />
-                    </div>
-
-                    {/* Duplicate for smooth loop */}
-                    <div className="w-20 h-px bg-white/10 mx-2" />
-
-                    <div className="flex items-center gap-2 opacity-60">
-                       <Sparkles className="h-3 w-3 text-white/40" />
-                       <p className="text-[11px] font-bold text-white/80 uppercase">Legendary Action taking place!</p>
-                    </div>
+                    <Sparkles className="h-3 w-3 text-white/40" />
+                    <p className="text-[11px] font-bold text-white tracking-tight">
+                       WOW! <span className="text-yellow-400">{activeEvent.userName}</span> sent a <span className="text-primary uppercase tracking-tighter">{activeEvent.giftName}</span> in Room <span className="text-emerald-400">#{activeEvent.roomNumber || '0'}</span>
+                    </p>
+                    <Sparkles className="h-3 w-3 text-white/40" />
                  </motion.div>
-
-                 {/* Edge Fade Effect */}
-                 <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0a0a0c] to-transparent z-10" />
-                 <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#0a0a0c] to-transparent z-10" />
-              </div>
-
-              {/* Background Animated Particles (Subtle) */}
-              <div className="absolute inset-0 pointer-events-none opacity-20">
-                 <div className="absolute top-0 left-1/4 w-1 h-1 bg-white rounded-full animate-ping" />
-                 <div className="absolute bottom-1 right-1/3 w-1 h-1 bg-yellow-400 rounded-full animate-bounce" />
               </div>
            </div>
         </div>
