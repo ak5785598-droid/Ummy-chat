@@ -820,7 +820,7 @@ export function RoomClient({ room }: { room: Room }) {
     // AI Greeting Logic: High-Fidelity Welcome System
     const messagesRef = collection(firestore, 'chatRooms', room.id, 'messages');
     await addDocumentNonBlocking(messagesRef, {
-      content: `Welcome to Ummy, ${newUserName}! Ummy mein aapka swagat hai, main Ummy AI hoon, aapki kya sahayta karoon? 💖✨`,
+      content: `नमस्ते ${newUserName} जी! 🙏 उम्मी चैट पर आपका तहे-दिल से स्वागत है। आपके आने से रूम की रौनक बढ़ गई है। मैं उम्मी एआई हूँ, मैं आपकी क्या सहायता कर सकती हूँ? ✨😊`,
       senderId: 'SYSTEM_BOT',
       senderName: 'Ummy AI',
       senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
