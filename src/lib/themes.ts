@@ -1,5 +1,5 @@
 /**
- * @fileOverview Centralized Room Theme Ledger - Premium User Choice Version.
+ * @fileOverview Centralized Room Theme Ledger - Grand Premium Collection.
  */
 
 export interface RoomTheme {
@@ -9,7 +9,7 @@ export interface RoomTheme {
   isOfficial?: boolean;
   seatColor?: string;
   accentColor?: string;
-  category?: 'help' | 'entertainment' | 'general' | 'user_choice';
+  category?: 'help' | 'entertainment' | 'general' | 'user_choice' | 'seasonal';
   price?: number;
   durationDays?: number;
   animationId?: 'galaxy' | 'stars' | 'love' | 'rain';
@@ -62,7 +62,7 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'official_gold_v2_new', name: 'Official Ummy Gold V2', url: '/themes/official_ummy_v2.png', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'general' },
   { id: 'spring_path_scenic_new', name: 'Sakura Garden Path', url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=100&w=2000', seatColor: 'rgba(253, 164, 186, 0.2)', accentColor: '#fda4ba', category: 'general' },
 
-  // --- USER SPECIALS (Added based on your new images) ---
+  // --- USER SPECIALS (WATERMARK FREE) ---
   {
     id: 'user_romantic_bubbles',
     name: 'Romantic Pink Bubbles',
@@ -101,6 +101,40 @@ export const ROOM_THEMES: RoomTheme[] = [
     url: 'https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?auto=format&fit=crop&q=80&w=1080&h=1920',
     seatColor: 'rgba(255, 255, 255, 0.2)',
     accentColor: '#ffffff',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_galaxy_campfire',
+    name: 'Galaxy Campfire 9:16',
+    url: 'https://images.unsplash.com/photo-1542332213-31f87348057f?auto=format&fit=crop&q=80&w=1080&h=1920',
+    seatColor: 'rgba(124, 58, 237, 0.2)',
+    accentColor: '#8b5cf6',
+    category: 'user_choice',
+    animationId: 'stars'
+  },
+  {
+    id: 'user_romantic_silhouette',
+    name: 'Romantic Silhouette',
+    url: 'https://images.unsplash.com/photo-1526491109672-7474065d496d?auto=format&fit=crop&q=80&w=1080&h=1920',
+    seatColor: 'rgba(239, 68, 68, 0.2)',
+    accentColor: '#ef4444',
+    category: 'user_choice',
+    animationId: 'love'
+  },
+  {
+    id: 'user_desert_majlis',
+    name: 'Desert Luxury Majlis',
+    url: 'https://images.unsplash.com/photo-1544984243-ea5bade11da5?auto=format&fit=crop&q=80&w=1080&h=1920',
+    seatColor: 'rgba(251, 191, 36, 0.2)',
+    accentColor: '#fbbf24',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_grand_fireworks',
+    name: 'Grand Fireworks Night',
+    url: 'https://images.unsplash.com/photo-1467810563316-b54765259020?auto=format&fit=crop&q=80&w=1080&h=1920',
+    seatColor: 'rgba(249, 115, 22, 0.2)',
+    accentColor: '#f97316',
     category: 'user_choice'
   }
 ];
