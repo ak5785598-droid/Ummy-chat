@@ -173,15 +173,17 @@ export default function RoomsPage() {
                  />
                 )}
                 <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative z-10 px-2">
-                 <div className="flex items-center gap-2 mb-2">
-                   <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
-                     <Icon className="h-5 w-5 text-white animate-pulse" />
-                   </div>
-                   <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
-                 </div>
-                 <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
-                </div>
+                {!slide.imageUrl && (
+                  <div className="relative z-10 px-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                        <Icon className="h-5 w-5 text-white animate-pulse" />
+                      </div>
+                      <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                    </div>
+                    <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
+                  </div>
+                )}
               </div>
              </CarouselItem>
             );

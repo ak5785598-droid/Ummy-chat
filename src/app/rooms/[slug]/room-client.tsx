@@ -533,21 +533,32 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN'; // NATIVE SYNC: Switch to Hindi-India for better Hinglish recognition
-    recognition.interimResults = false;
-    recognition.continuous = true; // Stay listening for more interaction
+    recognition.lang = 'hi-IN';
+    recognition.interimResults = true; // QUICK RESPONSE: Provide live feedback
+    recognition.continuous = false; // ONE-SHOT: respond as soon as speaking stops
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsAIListening(true);
-      toast({ title: 'AI is listening...', description: 'Aap bol sakte hain! 🎙️' });
+      // HAPTIC SYNC: Subtle vibration for tactile feedback
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      toast({ title: 'AI Sun rahi hai...', description: 'Aap bol sakte hain! 🎙️' });
     };
 
     recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) {
-        toast({ title: `You said: ${transcript}`, description: 'Sending to AI...' });
-        await handleSendMessage(undefined, undefined, transcript); // Pass transcription as content
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        toast({ title: `You said: ${finalTranscript}`, description: 'Sending to AI...' });
+        await handleSendMessage(undefined, undefined, finalTranscript);
+        recognition.stop(); // FORCE RESET: prevent hanging states
       }
     };
 

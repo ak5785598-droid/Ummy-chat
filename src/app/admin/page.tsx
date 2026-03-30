@@ -950,6 +950,12 @@ export default function AdminPage() {
         }
       }
       if (foundUser) {
+        // DEPTH SYNC: Fetch profile data to ensure isAdmin/isBudgetId are captured
+        const profileRef = doc(firestore, "users", foundUser.id, "profile", foundUser.id);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          foundUser = { ...foundUser, ...profileSnap.data() };
+        }
         setter(foundUser);
       } else {
         toast({ variant: "destructive", title: "Identity Not Found" });
@@ -4068,10 +4074,10 @@ export default function AdminPage() {
                             <Button
                               size="sm"
                               variant={isSovereignAdmin ? "default" : "outline"}
-                              onClick={() => setIsSovereignAdmin(!isSovereignAdmin)}
+                              onClick={() => setIsSovereignAdmin((prev) => !prev)}
                               className={cn(
                                 "h-10 px-6 rounded-xl font-bold uppercase text-[9px]",
-                                isSovereignAdmin ? "bg-indigo-600" : "text-slate-400",
+                                isSovereignAdmin ? "bg-indigo-600 text-white shadow-md border-none" : "text-slate-400 bg-white",
                               )}
                             >
                               {isSovereignAdmin ? "Active" : "Disabled"}
@@ -4089,10 +4095,10 @@ export default function AdminPage() {
                             <Button
                               size="sm"
                               variant={isSovereignBudget ? "default" : "outline"}
-                              onClick={() => setIsSovereignBudget(!isSovereignBudget)}
+                              onClick={() => setIsSovereignBudget((prev) => !prev)}
                               className={cn(
-                                "h-10 px-6 rounded-xl font-bold uppercase text-[9px]",
-                                isSovereignBudget ? "bg-amber-500 border-none text-white" : "text-slate-400",
+                                "h-10 px-6 rounded-xl font-bold uppercase text-[9px] transition-all",
+                                isSovereignBudget ? "bg-amber-500 hover:bg-amber-600 border-none text-white shadow-lg" : "text-slate-400 bg-white",
                               )}
                             >
                               {isSovereignBudget ? "Active" : "Disabled"}

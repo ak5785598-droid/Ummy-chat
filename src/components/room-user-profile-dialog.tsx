@@ -49,6 +49,7 @@ import { useRouter } from 'next/navigation';
 import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { CPProposeDialog } from '@/components/cp-propose-dialog';
+import { BudgetTag } from '@/components/budget-tag';
 
 interface RoomUserProfileDialogProps {
  userId: string | null;
@@ -148,6 +149,7 @@ export function RoomUserProfileDialog({
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
  const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
+ const isBudget = profile?.isBudgetId;
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,6 +197,7 @@ export function RoomUserProfileDialog({
          {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
          {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
          {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
+         {isBudget && <BudgetTag size="sm" className="scale-75 origin-center ml-1" />}
          
          {profile.relationship && profile.relationship.type !== 'None' && (
            <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
