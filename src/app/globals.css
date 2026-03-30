@@ -79,6 +79,9 @@
   .glass-card {
     @apply bg-white/80 backdrop-blur-[20px] border border-white/40;
   }
+  .glass-card-dark {
+    @apply bg-[#1a1f2e]/80 backdrop-blur-md border border-white/5 shadow-2xl;
+  }
   .logo-glow {
     filter: drop-shadow(0 0 45px rgba(156, 39, 176, 0.4));
   }
@@ -90,6 +93,22 @@
   .rotate-y-180 { transform: rotateY(180deg); }
   .preserve-3d { transform-style: preserve-3d; }
   .backface-hidden { backface-visibility: hidden; }
+
+  /* Hexagon Geometry */
+  .hexagon-path {
+    clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+  }
+
+  /* Neon Syncs */
+  .glow-cyan {
+    filter: drop-shadow(0 0 10px #00E5FF);
+  }
+  .glow-magenta {
+    filter: drop-shadow(0 0 10px #d946ef);
+  }
+  .glow-purple {
+    filter: drop-shadow(0 0 10px #7c3aed);
+  }
 }
 
 @keyframes voice-wave {
