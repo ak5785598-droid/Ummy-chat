@@ -166,7 +166,6 @@ const Seat = ({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-12 w-12 rounded-full flex items-center justify-center border active:scale-90 transition-all relative z-10",
-                "shadow-[0_2px_10px_rgba(0,0,0,0.3)]",
                 isLocked ? "border-red-500/60" : "border-white/20"
               )}
               style={{ backgroundColor: theme.seatColor || 'rgba(255, 255, 255, 0.1)' }}
@@ -201,7 +200,7 @@ const Seat = ({
           {occupant && (
             <div
               className={cn(
-                "h-3.5 w-3.5 rounded-full flex items-center justify-center shrink-0 border border-white/20 shadow-sm",
+                "h-3.5 w-3.5 rounded-full flex items-center justify-center shrink-0 border border-white/20",
                 index % 2 === 0 ? "bg-pink-500" : "bg-blue-500"
               )}
             >
@@ -1151,15 +1150,15 @@ export function RoomClient({ room }: { room: Room }) {
             onClick={() => setIsRoomInfoOpen(true)}
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
-            <Avatar className="h-9 w-9 rounded-lg border-2 border-white/20 shadow-xl">
+            <Avatar className="h-9 w-9 rounded-lg border-2 border-white/20">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback className="text-[10px]">UM</AvatarFallback>
             </Avatar>
-            <Trophy className="h-4 w-4 text-yellow-500 absolute top-6 -left-5 z-20 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-reaction-float" />
+            <Trophy className="h-4 w-4 text-yellow-500 absolute top-6 -left-5 z-20 animate-reaction-float" />
 
-            <div className="absolute -bottom-1 -left-3.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg scale-75">
+            <div className="absolute -bottom-1 -left-3.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 scale-75">
               <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
-              <span className="text-[7px] font-black text-yellow-400 leading-none">
+              <span className="text-[7px] font-semibold text-yellow-400 leading-none">
                 {room.stats?.totalGifts?.toLocaleString() || 0}
               </span>
             </div>
@@ -1168,7 +1167,7 @@ export function RoomClient({ room }: { room: Room }) {
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1 min-w-0">
               <h1 className="font-semibold text-[16px] uppercase tracking-tighter text-white leading-none truncate max-w-[260px]">{room.title}</h1>
-              <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
+              <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
                 {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
               </button>
             </div>
@@ -1188,14 +1187,14 @@ export function RoomClient({ room }: { room: Room }) {
               {isAIVoiceEnabled ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4 text-white/40" />}
             </button>
             <span className={cn(
-              "absolute -top-1 -right-0.5 text-[6px] font-black px-0.5 rounded-sm z-20 pointer-events-none transition-colors",
+              "absolute -top-1 -right-0.5 text-[6px] font-semibold px-0.5 rounded-sm z-20 pointer-events-none transition-colors",
               isAIVoiceEnabled ? "bg-primary text-white" : "bg-white/20 text-white/60"
             )}>AI</span>
             {isAISpeaking && (
               <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 z-0" />
             )}
           </div>
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/60 px-1.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[9px] font-black">{onlineCount}</span></button>
+          <button onClick={() => setIsUserListOpen(true)} className="bg-black/60 px-1.5 py-1 rounded-full border border-white/10 flex items-center gap-1"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[9px] font-semibold">{onlineCount}</span></button>
           {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4 text-white/60" /></button>} />}
           <button onClick={() => setIsShareOpen(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4 text-white/60" /></button>
           <button onClick={() => setShowExitDialog(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4 text-white/60" /></button>
@@ -1226,11 +1225,11 @@ export function RoomClient({ room }: { room: Room }) {
               {(globalConfig?.globalAnnouncement || room.announcement) &&
                 (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
                   <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
-                    <div className="relative overflow-hidden bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+                    <div className="relative overflow-hidden bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
                       <div className="space-y-4">
                         {globalConfig?.globalAnnouncement && (
                           <div className="flex items-start gap-2.5">
-                            <div className="mt-1 bg-red-500 text-white text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
+                            <div className="mt-1 bg-red-500 text-white text-[7px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
                               <Zap className="h-2 w-2 fill-current" />
                               OFFICIAL
                             </div>
@@ -1241,7 +1240,7 @@ export function RoomClient({ room }: { room: Room }) {
                         )}
 
                         <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
-                          <div className="mt-1 bg-yellow-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter shrink-0">
+                          <div className="mt-1 bg-yellow-500 text-black text-[7px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0">
                             INFO
                           </div>
                           <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
@@ -1291,7 +1290,7 @@ export function RoomClient({ room }: { room: Room }) {
                     </Avatar>
 
                     <div className="flex flex-col items-start min-w-0">
-                      <span className={cn("text-[9px] font-black uppercase tracking-tighter leading-none mb-1 px-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]", isMe ? "text-primary" : "text-white/60")}>
+                      <span className={cn("text-[9px] font-semibold uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/60")}>
                         {msg.senderName || 'Tribe Member'}
                       </span>
 

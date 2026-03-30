@@ -1,5 +1,6 @@
 /**
- * @fileOverview Centralized Room Theme Ledger - Grand Premium Collection.
+ * @fileOverview Centralized Room Theme Ledger - Grand Mega Collection.
+ * Total Themes: 66+ (Originals + Scenic + User Choices)
  */
 
 export interface RoomTheme {
@@ -9,14 +10,14 @@ export interface RoomTheme {
   isOfficial?: boolean;
   seatColor?: string;
   accentColor?: string;
-  category?: 'help' | 'entertainment' | 'general' | 'user_choice' | 'seasonal';
+  category?: 'help' | 'entertainment' | 'general' | 'user_choice' | 'seasonal' | 'islamic';
   price?: number;
   durationDays?: number;
   animationId?: 'galaxy' | 'stars' | 'love' | 'rain';
 }
 
 export const ROOM_THEMES: RoomTheme[] = [
-  // --- ORIGINAL COLLECTION (Protected) ---
+  // --- ORIGINAL 25 COLLECTION ---
   { id: 'neon_universe', name: 'Neon Universe', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2000', seatColor: 'rgba(147, 51, 234, 0.2)', accentColor: '#d946ef', category: 'entertainment' },
   { id: 'emoji_party', name: 'Emoji Party', url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=2000', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'entertainment' },
   { id: 'hacker_room', name: 'Hacker Room', url: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000', seatColor: 'rgba(34, 197, 94, 0.15)', accentColor: '#22c55e', category: 'entertainment' },
@@ -43,7 +44,7 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'ummy_help_desk', name: 'Ummy Help Desk', url: '/themes/ummy_help_desk.png', isOfficial: true, seatColor: 'rgba(20, 184, 166, 0.25)', accentColor: '#14b8a6', category: 'help' },
   { id: 'ummy_help_guide', name: 'Ummy Help Guide', url: '/themes/ummy_help_guide.png', isOfficial: true, seatColor: 'rgba(167, 139, 250, 0.25)', accentColor: '#a78bfa', category: 'help' },
 
-  // --- PREMIUM SELECTED COLLECTION ---
+  // --- PREMIUM SCENIC & SEASONAL COLLECTION ---
   { id: 'scenic_neon_night_v2_new', name: 'Neon Night Scenic', url: '/themes/neon_night_scenic.png', seatColor: 'rgba(124, 58, 237, 0.2)', accentColor: '#8b5cf6', category: 'general' },
   { id: 'celestial_love_v2_new', name: 'Celestial Love V2', url: '/themes/celestial_love_v2.png', seatColor: 'rgba(99, 102, 241, 0.2)', accentColor: '#6366f1', category: 'general' },
   { id: 'ummy_galaxy_v2_new', name: 'Ummy Galaxy V2', url: '/themes/ummy_galaxy_v2.png', seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'general' },
@@ -62,79 +63,85 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'official_gold_v2_new', name: 'Official Ummy Gold V2', url: '/themes/official_ummy_v2.png', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'general' },
   { id: 'spring_path_scenic_new', name: 'Sakura Garden Path', url: 'https://images.unsplash.com/photo-1493962853295-0fd70327578a?auto=format&fit=crop&q=100&w=2000', seatColor: 'rgba(253, 164, 186, 0.2)', accentColor: '#fda4ba', category: 'general' },
 
-  // --- USER SPECIALS (WATERMARK FREE) ---
+  // --- USER'S FINAL 9 COLLECTION (LOCAL - WATERMARK FREE) ---
   {
-    id: 'user_romantic_bubbles',
-    name: 'Romantic Pink Bubbles',
-    url: 'https://images.unsplash.com/photo-1518131394553-85e8b8423bb1?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(236, 72, 153, 0.2)',
-    accentColor: '#ec4899',
+    id: 'user_mosque_moon_local',
+    name: 'Majestic Moonlit Mosque',
+    url: '/themes/user_mosque_moon.jpg',
+    seatColor: 'rgba(59, 130, 246, 0.2)',
+    accentColor: '#60a5fa',
     category: 'user_choice'
   },
   {
-    id: 'user_magic_winter',
-    name: 'Magic Winter Forest',
-    url: 'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(14, 165, 233, 0.2)',
-    accentColor: '#0ea5e9',
+    id: 'user_mosque_lights_local',
+    name: 'Festive Mosque Lights',
+    url: '/themes/user_mosque_lights.jpg',
+    seatColor: 'rgba(251, 191, 36, 0.2)',
+    accentColor: '#fbbf24',
     category: 'user_choice'
   },
   {
-    id: 'user_sunset_dinner',
-    name: 'Gold Sunset Dinner',
-    url: 'https://images.unsplash.com/photo-1515362778563-6a8d0e44bc0b?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(251, 146, 60, 0.2)',
-    accentColor: '#fb923c',
+    id: 'user_mosque_cyber_local',
+    name: 'Cyber Neon Mosque',
+    url: '/themes/user_mosque_cyber.jpg',
+    seatColor: 'rgba(217, 70, 239, 0.2)',
+    accentColor: '#d946ef',
     category: 'user_choice'
   },
   {
-    id: 'user_sakura_night',
-    name: 'Sakura Night Lantern',
-    url: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(167, 139, 250, 0.2)',
-    accentColor: '#a78bfa',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_campfire_vibes',
-    name: 'Night Campfire Vibes',
-    url: 'https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(255, 255, 255, 0.2)',
-    accentColor: '#ffffff',
-    category: 'user_choice'
-  },
-  {
-    id: 'user_galaxy_campfire',
-    name: 'Galaxy Campfire 9:16',
-    url: 'https://images.unsplash.com/photo-1542332213-31f87348057f?auto=format&fit=crop&q=80&w=1080&h=1920',
+    id: 'user_galaxy_campfire_local',
+    name: 'Galaxy Campfire Night',
+    url: '/themes/user_galaxy_campfire.jpg',
     seatColor: 'rgba(124, 58, 237, 0.2)',
     accentColor: '#8b5cf6',
     category: 'user_choice',
     animationId: 'stars'
   },
   {
-    id: 'user_romantic_silhouette',
-    name: 'Romantic Silhouette',
-    url: 'https://images.unsplash.com/photo-1526491109672-7474065d496d?auto=format&fit=crop&q=80&w=1080&h=1920',
+    id: 'user_romantic_kiss_local',
+    name: 'Romantic Kiss Silhouette',
+    url: '/themes/user_romantic_kiss.jpg',
     seatColor: 'rgba(239, 68, 68, 0.2)',
     accentColor: '#ef4444',
     category: 'user_choice',
     animationId: 'love'
   },
   {
-    id: 'user_desert_majlis',
-    name: 'Desert Luxury Majlis',
-    url: 'https://images.unsplash.com/photo-1544984243-ea5bade11da5?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(251, 191, 36, 0.2)',
-    accentColor: '#fbbf24',
+    id: 'user_christmas_village_local',
+    name: 'Christmas Village Snowy',
+    url: '/themes/user_christmas_village.jpg',
+    seatColor: 'rgba(239, 68, 68, 0.2)',
+    accentColor: '#ef4444',
     category: 'user_choice'
   },
   {
-    id: 'user_grand_fireworks',
-    name: 'Grand Fireworks Night',
-    url: 'https://images.unsplash.com/photo-1467810563316-b54765259020?auto=format&fit=crop&q=80&w=1080&h=1920',
-    seatColor: 'rgba(249, 115, 22, 0.2)',
-    accentColor: '#f97316',
+    id: 'user_beach_dinner_local',
+    name: 'Beach Dinner Tent',
+    url: '/themes/user_beach_dinner.jpg',
+    seatColor: 'rgba(251, 146, 60, 0.2)',
+    accentColor: '#fb923c',
     category: 'user_choice'
-  }
+  },
+  {
+    id: 'user_snowy_forest_local',
+    name: 'Snowy Forest Glow',
+    url: '/themes/user_snowy_forest.jpg',
+    seatColor: 'rgba(14, 165, 233, 0.2)',
+    accentColor: '#0ea5e9',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_group_campfire_local',
+    name: 'Group Campfire Forest',
+    url: '/themes/user_group_campfire.jpg',
+    seatColor: 'rgba(255, 255, 255, 0.2)',
+    accentColor: '#ffffff',
+    category: 'user_choice'
+  },
+
+  // --- ADDITIONAL SPECIALS (RETAINED) ---
+  { id: 'user_romantic_bubbles', name: 'Romantic Pink Bubbles', url: 'https://images.unsplash.com/photo-1518131394553-85e8b8423bb1?auto=format&fit=crop&q=80&w=1080&h=1920', seatColor: 'rgba(236, 72, 153, 0.2)', accentColor: '#ec4899', category: 'user_choice' },
+  { id: 'user_magic_winter', name: 'Magic Winter Forest', url: 'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&q=80&w=1080&h=1920', seatColor: 'rgba(14, 165, 233, 0.2)', accentColor: '#0ea5e9', category: 'user_choice' },
+  { id: 'user_sunset_dinner', name: 'Gold Sunset Dinner', url: 'https://images.unsplash.com/photo-1515362778563-6a8d0e44bc0b?auto=format&fit=crop&q=80&w=1080&h=1920', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice' },
+  { id: 'user_sakura_night', name: 'Sakura Night Lantern', url: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=1080&h=1920', seatColor: 'rgba(167, 139, 250, 0.2)', accentColor: '#a78bfa', category: 'user_choice' }
 ];
