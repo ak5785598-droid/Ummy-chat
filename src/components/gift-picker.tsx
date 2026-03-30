@@ -19,6 +19,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
  Select, 
  SelectContent, 
@@ -347,120 +348,173 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[400px] bg-[#12161f]/95 backdrop-blur-3xl border border-white/5 p-0 rounded-t-[40px] sm:rounded-[40px] overflow-hidden text-white font-sans shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-full duration-500">
+   <DialogContent className="sm:max-w-[420px] bg-[#1a1a1a] backdrop-blur-3xl border-none p-0 rounded-t-[3.5rem] sm:rounded-[3rem] overflow-hidden text-white font-sans shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in slide-in-from-bottom-full duration-700">
     <DialogHeader className="sr-only">
      <DialogTitle>Gift Vault</DialogTitle>
      <DialogDescription>Dispatch tribal assets to seated members.</DialogDescription>
     </DialogHeader>
 
-    <div className="p-4 space-y-4">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-       <button 
-        key="all-selection-btn"
-        onClick={selectAll}
-        className={cn(
-         "h-10 px-4 rounded-full font-bold uppercase text-[10px] transition-all shrink-0 border-2",
-         selectedUids.length === seatedParticipants.length ? "bg-white text-black border-white" : "bg-[#1f2430] text-white/40 border-transparent hover:bg-white/10"
-        )}
-       >
-        All
-       </button>
-       {seatedParticipants.map((p, idx) => (
-        <button 
-         key={p.uid || `participant-${idx}`}
-         onClick={() => toggleRecipient(p.uid)}
-         className="relative shrink-0 active:scale-90 transition-transform"
-        >
-          <Avatar className={cn(
-           "h-10 w-10 border-2 transition-all",
-           selectedUids.includes(p.uid) ? "border-[#00E676] scale-110 shadow-[0_0_15px_rgba(0,230,118,0.5)]" : "border-white/10"
-          )}>
-           <AvatarImage src={p.avatarUrl} />
-           <AvatarFallback>{(p.name || 'U').charAt(0)}</AvatarFallback>
-          </Avatar>
-          {selectedUids.includes(p.uid) && (
-           <div className="absolute -top-1 -right-1 bg-[#00E676] rounded-full p-0.5">
-            <Check className="h-2 w-2 text-black" strokeWidth={4} />
-           </div>
-          )}
-        </button>
-       ))}
+    <div className="p-6 pb-4 space-y-6">
+      {/* Recipient Selection Header */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Select Recipients</span>
+          <button 
+            onClick={selectAll}
+            className={cn(
+              "text-[9px] font-black uppercase tracking-tighter px-3 py-1 rounded-full transition-all border",
+              selectedUids.length === seatedParticipants.length ? "bg-white text-black border-white" : "text-white/40 border-white/10 hover:border-white/30"
+            )}
+          >
+            {selectedUids.length === seatedParticipants.length ? 'Deselect All' : 'Select All'}
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-2 px-1">
+         {seatedParticipants.map((p, idx) => (
+          <button 
+           key={p.uid || `participant-${idx}`}
+           onClick={() => toggleRecipient(p.uid)}
+           className="relative shrink-0 active:scale-90 transition-transform group"
+          >
+            <motion.div 
+              animate={selectedUids.includes(p.uid) ? { scale: 1.1 } : { scale: 1 }}
+              className="relative"
+            >
+              {selectedUids.includes(p.uid) && (
+                <div className="absolute inset-[-4px] bg-[#00E676]/30 blur-md rounded-full animate-pulse" />
+              )}
+              <Avatar className={cn(
+               "h-12 w-12 border-2 transition-all duration-300",
+               selectedUids.includes(p.uid) ? "border-[#00E676] shadow-[0_0_20px_rgba(0,230,118,0.4)]" : "border-white/5 grayscale-[0.5] group-hover:grayscale-0"
+              )}>
+               <AvatarImage src={p.avatarUrl} />
+               <AvatarFallback className="bg-[#2a2a2a] text-white/40 text-xs">{(p.name || 'U').charAt(0)}</AvatarFallback>
+              </Avatar>
+              {selectedUids.includes(p.uid) && (
+               <div className="absolute -top-1 -right-1 bg-[#00E676] rounded-full p-0.5 border-2 border-[#1a1a1a] shadow-lg">
+                <Check className="h-2 w-2 text-black" strokeWidth={4} />
+               </div>
+              )}
+            </motion.div>
+          </button>
+         ))}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col">
        <Tabs defaultValue="Hot" className="w-full">
-         <TabsList className="bg-transparent p-0 gap-5 h-8 border-none justify-start mb-2 overflow-x-auto no-scrollbar w-full">
-          {['Hot', 'Lucky', 'Luxury', 'SVIP', 'Events'].map(tab => (
-           <TabsTrigger key={`tab-trigger-${tab}`} value={tab} className="p-0 text-[13px] font-bold text-white/40 data-[state=active]:text-[#00E676] data-[state=active]:bg-transparent relative after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-[#00E676] after:opacity-0 data-[state=active]:after:opacity-100 transition-all shrink-0">
-            {tab}
-           </TabsTrigger>
-          ))}
-         </TabsList>
+         <div className="relative px-1 mb-4">
+           <TabsList className="bg-transparent p-0 gap-6 h-8 border-none justify-start overflow-x-auto no-scrollbar w-full">
+            {['Hot', 'Lucky', 'Luxury', 'SVIP', 'Events'].map(tab => (
+             <TabsTrigger 
+              key={`tab-trigger-${tab}`} 
+              value={tab} 
+              className="p-0 text-[14px] font-black text-white/20 data-[state=active]:text-white data-[state=active]:bg-transparent relative group transition-all shrink-0 uppercase tracking-tighter"
+             >
+              {tab}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyan-400 opacity-0 group-data-[state=active]:opacity-100 transition-all shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+             </TabsTrigger>
+            ))}
+           </TabsList>
+         </div>
 
-         <div className="h-[260px] overflow-y-auto no-scrollbar pb-4 pt-1">
-          {Object.entries(GIFTS).map(([category, items]) => (
-           <TabsContent key={`tab-content-${category}`} value={category} className="mt-0 animate-in fade-in duration-500">
-            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
-              {items.map(gift => (
-               <button 
-                key={`gift-item-${gift.id}`} 
-                onClick={() => setSelectedGift(gift)}
-                className={cn(
-                 "flex flex-col items-center gap-1 group relative py-3 rounded-2xl transition-all border",
-                 selectedGift?.id === gift.id ? "bg-[#1f2430] border-[#00E676] shadow-[0_4px_20px_rgba(0,230,118,0.15)] scale-[1.02]" : "bg-transparent border-transparent hover:bg-white/5",
-                 gift.isPremium && "bg-gradient-to-b from-white/5 to-transparent border-white/5"
-                )}
+         <div className="h-[300px] overflow-y-auto no-scrollbar pb-6 pt-1 px-1">
+          {Object.entries(GIFTS).map(([category, items]) => {
+            const categoryStyle = {
+              'Hot': "group-hover:bg-orange-500/10 group-hover:border-orange-500/20",
+              'Lucky': "group-hover:bg-cyan-500/10 group-hover:border-cyan-500/20",
+              'Luxury': "group-hover:bg-amber-500/10 group-hover:border-amber-500/20",
+              'SVIP': "group-hover:bg-purple-500/10 group-hover:border-purple-500/20",
+              'Events': "group-hover:bg-rose-500/10 group-hover:border-rose-500/20"
+            }[category] || "group-hover:bg-white/5 transition-all";
+
+            return (
+              <TabsContent key={`tab-content-${category}`} value={category} className="mt-0 outline-none">
+               <motion.div 
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className="grid grid-cols-4 gap-y-5 gap-x-3"
                >
-                {gift.isPremium && (
-                 <div className="absolute -top-1 -right-1 bg-pink-500 rounded-full p-0.5 shadow-[0_0_10px_rgba(236,72,153,0.8)] z-10">
-                  <Sparkles className="h-2.5 w-2.5 text-white" />
-                 </div>
-                )}
-                <div className="text-[40px] drop-shadow-2xl mb-1 group-hover:scale-110 transition-transform duration-300 transform-gpu">{gift.icon}</div>
-                <span className="text-[10px] font-medium text-white/90 text-center leading-tight truncate w-full px-1">{gift.name}</span>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <GoldCoinIcon className="h-3 w-3" />
-                  <span className="text-[10px] font-bold text-yellow-400">{gift.price}</span>
-                </div>
-               </button>
-              ))}
-            </div>
-           </TabsContent>
-          ))}
+                 {items.map(gift => (
+                  <button 
+                   key={`gift-item-${gift.id}`} 
+                   onClick={() => setSelectedGift(gift)}
+                   className={cn(
+                    "flex flex-col items-center gap-1.5 group relative py-4 rounded-3xl transition-all border border-transparent active:scale-[0.85] transform-gpu",
+                    selectedGift?.id === gift.id ? "bg-white/5 border-white/20 shadow-[0_8px_25px_rgba(0,0,0,0.5)]" : "hover:bg-white/5",
+                    gift.isPremium && "bg-gradient-to-b from-white/[0.03] to-transparent"
+                   )}
+                  >
+                   {gift.isPremium && (
+                    <div className="absolute top-2 right-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-0.5 shadow-lg z-10 scale-75">
+                     <Sparkles className="h-3 w-3 text-white fill-white" />
+                    </div>
+                   )}
+                   <motion.div 
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    className="text-[42px] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] mb-1 transform-gpu"
+                   >
+                    {gift.icon}
+                   </motion.div>
+                   <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[10px] font-black text-white/80 text-center leading-none truncate w-full px-2 uppercase tracking-tighter">{gift.name}</span>
+                    <div className="flex items-center gap-1 mt-1 bg-black/40 px-2 py-0.5 rounded-full border border-white/5">
+                      <GoldCoinIcon className="h-2.5 w-2.5" />
+                      <span className="text-[10px] font-black text-amber-400 italic">{(gift.price).toLocaleString()}</span>
+                    </div>
+                   </div>
+                   
+                   {selectedGift?.id === gift.id && (
+                     <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-3xl animate-pulse" />
+                   )}
+                  </button>
+                 ))}
+               </motion.div>
+              </TabsContent>
+            );
+          })}
          </div>
        </Tabs>
       </div>
     </div>
 
-    <div className="p-4 bg-[#0a0c10] border-t border-white/5 flex items-center justify-between gap-3 rounded-b-[40px] sm:rounded-b-[40px]">
-      <div className="flex items-center gap-1.5 bg-[#1f2430] px-3 py-1.5 rounded-full border border-white/5 active:scale-95 transition-transform cursor-pointer">
-       <GoldCoinIcon className="h-4 w-4" />
-       <span className="text-xs font-bold text-white tracking-wide">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-       <ChevronRight className="h-3 w-3 text-white/40 ml-1" />
+    <div className="p-6 bg-black/40 backdrop-blur-2xl border-t border-white/5 flex items-center justify-between gap-4 relative z-10">
+      <div className="flex flex-col gap-1">
+        <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">My Balance</span>
+        <div className="flex items-center gap-2 bg-white/[0.03] px-4 py-2 rounded-2xl border border-white/5 backdrop-blur-md active:scale-95 transition-transform cursor-pointer hover:bg-white/10">
+         <GoldCoinIcon className="h-5 w-5 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+         <span className="text-sm font-black text-white italic tracking-tighter">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+         <ChevronRight className="h-3 w-3 text-white/20 ml-1" />
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-9 rounded-full bg-[#1f2430] border-white/5 text-white font-bold text-[11px] px-3 shadow-inner">
+         <SelectTrigger className="w-20 h-10 rounded-2xl bg-white/[0.03] border-white/10 text-white font-black text-[12px] px-4 shadow-xl focus:ring-0">
           <SelectValue />
          </SelectTrigger>
-         <SelectContent className="bg-[#1f2430] border-white/10 text-white rounded-xl shadow-2xl">
+         <SelectContent className="bg-[#1f2430] border-white/10 text-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
           {['1', '9', '49', '99', '499'].map(q => (
-           <SelectItem key={`qty-${q}`} value={q} className="font-bold text-xs hover:bg-white/5 focus:bg-white/5">{q}</SelectItem>
+           <SelectItem key={`qty-${q}`} value={q} className="font-black text-[12px] italic transition-colors hover:bg-white/10 focus:bg-white/10">{q}</SelectItem>
           ))}
          </SelectContent>
        </Select>
 
-       <button 
+       <motion.button 
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.9 }}
         onClick={handleSend}
         disabled={!selectedGift || isSending || selectedUids.length === 0}
         className={cn(
-         "h-9 px-7 rounded-full font-bold uppercase text-[12px] shadow-[0_0_20px_rgba(0,230,118,0.4)] transition-all flex items-center justify-center min-w-[80px]",
-         !selectedGift || selectedUids.length === 0 ? "bg-[#1f2430] text-white/30 shadow-none pointer-events-none" : "bg-[#00E676] text-black hover:bg-[#00c853] active:scale-95"
+         "h-12 px-9 rounded-2xl font-black uppercase text-[14px] tracking-tighter transition-all flex items-center justify-center min-w-[120px] shadow-2xl",
+         !selectedGift || selectedUids.length === 0 
+          ? "bg-white/10 text-white/20 opacity-50 pointer-events-none" 
+          : "bg-gradient-to-r from-emerald-400 to-green-600 text-[#1a1a1a] shadow-[0_8px_30px_rgba(16,185,129,0.4)]"
         )}
        >
-         {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'Send'}
-       </button>
+         {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'Dispatch'}
+       </motion.button>
       </div>
     </div>
    </DialogContent>
