@@ -103,5 +103,47 @@ export const ROOM_THEMES: RoomTheme[] = [
     accentColor: '#ffaa00',
     category: 'user_choice',
     animationId: 'stars'
+  },
+  {
+    id: 'user_buddha_gold_local',
+    name: 'Golden Buddha',
+    url: '/themes/user_buddha_gold.jpg',
+    seatColor: 'rgba(251, 191, 36, 0.2)',
+    accentColor: '#fbbf24',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_golden_temple_local',
+    name: 'Golden Temple',
+    url: '/themes/user_golden_temple.jpg',
+    seatColor: 'rgba(59, 130, 246, 0.2)',
+    accentColor: '#60a5fa',
+    category: 'user_choice'
+  },
+  {
+    id: 'user_shiva_cave_local',
+    name: 'Shiva Cave Waterfall',
+    url: '/themes/user_shiva_cave.jpg',
+    seatColor: 'rgba(34, 197, 94, 0.15)',
+    accentColor: '#22c55e',
+    category: 'user_choice',
+    animationId: 'rain'
+  },
+  {
+    id: 'user_shiva_cosmic_local',
+    name: 'Cosmic Shiva',
+    url: '/themes/user_shiva_cosmic.jpg',
+    seatColor: 'rgba(168, 85, 247, 0.2)',
+    accentColor: '#a855f7',
+    category: 'user_choice',
+    animationId: 'stars'
+  },
+  {
+    id: 'user_desert_prayer_local',
+    name: 'Desert Prayer',
+    url: '/themes/user_desert_prayer.jpg',
+    seatColor: 'rgba(251, 146, 60, 0.2)',
+    accentColor: '#fb923c',
+    category: 'user_choice'
   }
 ];
