@@ -368,21 +368,20 @@ export function RoomClient({ room }: { room: Room }) {
 
   const participants = useMemo(() => {
     if (!participantsData) return [];
-    if (now === null) return participantsData;
-
+    
+    // Show all participants without aggressive filtering
+    // Only filter out users who haven't been seen for a very long time (10 minutes)
     return participantsData.filter(p => {
       if (p.uid === currentUser?.uid) return true;
       const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-      if (!lastSeen) return true;
-
-      // SYNC: Seated users stay visible for 5m (300s) to match background grace periods.
-      // Standing users stay visible for 65s (standard idle).
-      const threshold = (p.seatIndex > 0) ? 300000 : 65000;
-      return (now - lastSeen) < threshold;
+      if (!lastSeen) return true; // If no lastSeen, assume they're online
+      
+      // Keep users visible for 10 minutes regardless of seat status
+      return now ? (now - lastSeen) < 600000 : true; // 10 minutes in ms
     });
   }, [participantsData, now, currentUser?.uid]);
 
-  const onlineCount = participants.length;
+  const onlineCount = participantsData?.length || 0;
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
@@ -1046,6 +1045,14 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
+    
+    // If muting this user, also stop their music
+    if (!current && uid === currentUser?.uid && musicAudioRef.current) {
+      musicAudioRef.current.pause();
+      musicAudioRef.current.currentTime = 0;
+      setIsMusicPlaying(false);
+      toast({ title: 'Music Stopped', description: 'Admin has muted you' });
+    }
   };
 
   const handleKick = (uid: string, duration: number) => {
@@ -1190,21 +1197,18 @@ export function RoomClient({ room }: { room: Room }) {
               musicAudioRef.current.onloadeddata = () => {
                 console.log('[Music] Audio loaded, currentTime:', roomCurrentTime);
                 
-                // Only auto-play if user has interacted with the page
-                if (userInteracted) {
-                  musicAudioRef.current?.play().then(() => {
-                    setIsMusicPlaying(true);
-                    console.log('[Music] Playing from position:', roomCurrentTime);
-                  }).catch(e => {
-                    console.warn('[Music] Play failed:', e.name, e.message);
-                    if (e.name === 'NotAllowedError') {
-                      toast({ title: 'Music Ready', description: 'Click music button to play' });
-                    }
-                  });
-                } else {
-                  console.log('[Music] Waiting for user interaction...');
-                  toast({ title: 'Music Ready', description: 'Click music button to play' });
-                }
+                // Auto-play for all users when music is synced from room
+                // This ensures everyone hears the same music
+                musicAudioRef.current?.play().then(() => {
+                  setIsMusicPlaying(true);
+                  console.log('[Music] Playing from position:', roomCurrentTime);
+                }).catch(e => {
+                  console.warn('[Music] Play failed:', e.name, e.message);
+                  // If auto-play failed, show toast to prompt user interaction
+                  if (e.name === 'NotAllowedError') {
+                    toast({ title: 'Music Ready', description: 'Tap music button to play' });
+                  }
+                });
               };
               
               musicAudioRef.current.onerror = (e) => {
@@ -1242,20 +1246,15 @@ export function RoomClient({ room }: { room: Room }) {
       musicAudioRef.current.onloadeddata = () => {
         console.log('[Music] Audio loaded (direct), currentTime:', roomCurrentTime);
         
-        // Only auto-play if user has interacted
-        if (userInteracted) {
-          musicAudioRef.current?.play().then(() => {
-            setIsMusicPlaying(true);
-          }).catch(e => {
-            console.warn('[Music] Play failed:', e.name, e.message);
-            if (e.name === 'NotAllowedError') {
-              toast({ title: 'Music Ready', description: 'Click music button to play' });
-            }
-          });
-        } else {
-          console.log('[Music] Waiting for user interaction...');
-          toast({ title: 'Music Ready', description: 'Click music button to play' });
-        }
+        // Auto-play for all users
+        musicAudioRef.current?.play().then(() => {
+          setIsMusicPlaying(true);
+        }).catch(e => {
+          console.warn('[Music] Play failed:', e.name, e.message);
+          if (e.name === 'NotAllowedError') {
+            toast({ title: 'Music Ready', description: 'Tap music button to play' });
+          }
+        });
       };
       
       musicAudioRef.current.onerror = (e) => {
