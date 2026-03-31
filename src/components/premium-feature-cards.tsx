@@ -75,9 +75,17 @@ export function RankingCard() {
 // 2. FAMILY CARD (FEATURED GROUPS)
 export function FamilyCard() {
   const router = useRouter();
+  const firestore = useFirestore();
+  const familiesQuery = useMemoFirebase(() => !firestore ? null : query(
+    collection(firestore, 'families'), 
+    orderBy('totalWealth', 'desc'), 
+    limit(2)
+  ), [firestore]);
+  const { data: topFamilies } = useCollection(familiesQuery);
+
   return (
     <button 
-      onClick={() => router.push('/rooms')}
+      onClick={() => router.push('/families')}
       className="group relative flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-gradient-to-br from-[#00c6ff] to-[#0072ff] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
     >
       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
@@ -88,11 +96,13 @@ export function FamilyCard() {
       
       <div className="relative flex items-center justify-center h-full w-full pb-1">
          <div className="relative">
-            <Avatar className="h-8 w-8 border border-white/20 shadow-xl transform -rotate-12 translate-x-2">
-              <AvatarImage src="https://picsum.photos/seed/family/100" />
+            <Avatar className="h-8 w-8 border border-white/20 shadow-xl transform -rotate-12 translate-x-2 bg-blue-900/40">
+              <AvatarImage src={topFamilies?.[1]?.bannerUrl || ""} />
+              <AvatarFallback className="text-[10px] text-white">F2</AvatarFallback>
             </Avatar>
-            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl absolute top-0 left-0">
-              <AvatarImage src="https://picsum.photos/seed/tribe/100" />
+            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl absolute top-0 left-0 bg-blue-900">
+              <AvatarImage src={topFamilies?.[0]?.bannerUrl || ""} />
+              <AvatarFallback className="text-[10px] text-white font-bold">F1</AvatarFallback>
             </Avatar>
          </div>
       </div>
@@ -103,6 +113,14 @@ export function FamilyCard() {
 // 3. CP CARD (COUPLE PAIR)
 export function CpCard() {
   const router = useRouter();
+  const firestore = useFirestore();
+  const cpQuery = useMemoFirebase(() => !firestore ? null : query(
+    collection(firestore, 'cpPairs'), 
+    orderBy('cpValue', 'desc'), 
+    limit(1)
+  ), [firestore]);
+  const { data: topCp } = useCollection(cpQuery);
+
   return (
     <button 
       onClick={() => router.push('/cp-challenge')}
@@ -117,13 +135,15 @@ export function CpCard() {
       <div className="relative flex items-center justify-center h-full w-full pb-1">
          <div className="flex -space-x-3">
             <div className="relative p-0.5 bg-white rounded-full shadow-lg">
-               <Avatar className="h-8 w-8 border border-pink-500">
-                 <AvatarImage src="https://picsum.photos/seed/m/100" />
+               <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20">
+                 <AvatarImage src={topCp?.[0]?.user1Avatar || ""} />
+                 <AvatarFallback className="text-[10px] text-pink-700">P1</AvatarFallback>
                </Avatar>
             </div>
             <div className="relative z-10 p-0.5 bg-white rounded-full shadow-lg">
-               <Avatar className="h-8 w-8 border border-red-500">
-                 <AvatarImage src="https://picsum.photos/seed/f/100" />
+               <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20">
+                 <AvatarImage src={topCp?.[0]?.user2Avatar || ""} />
+                 <AvatarFallback className="text-[10px] text-red-700">P2</AvatarFallback>
                </Avatar>
             </div>
          </div>

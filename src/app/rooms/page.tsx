@@ -41,6 +41,16 @@ const ICON_MAP: Record<string, any> = {
  * High-Fidelity Rooms Hub.
  * Re-engineered to support Sovereign Room Info Sync.
  */
+const RoomSkeleton = () => (
+  <div className="flex flex-col gap-3 min-w-[280px] snap-center">
+   <Skeleton className="aspect-square w-full rounded-2xl" />
+   <div className="space-y-1.5 px-1">
+    <Skeleton className="h-3.5 w-3/4 rounded-md" />
+    <Skeleton className="h-2.5 w-1/2 rounded-md" />
+   </div>
+  </div>
+ );
+
 export default function RoomsPage() {
  const { user } = useUser();
  const firestore = useFirestore();
@@ -115,15 +125,7 @@ export default function RoomsPage() {
   });
  }, [roomsData, activeCategory]);
 
- const RoomSkeleton = () => (
-  <div className="space-y-2">
-   <Skeleton className="aspect-square w-full rounded-2xl" />
-   <div className="space-y-1.5 px-1">
-    <Skeleton className="h-3.5 w-3/4 rounded-md" />
-    <Skeleton className="h-2.5 w-1/2 rounded-md" />
-   </div>
-  </div>
- );
+
 
  return (
   <AppLayout>
