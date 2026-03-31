@@ -134,6 +134,10 @@ export type Room = {
  isChatMuted?: boolean;
  isCalculatorActive?: boolean; // 🔥 CALCULATOR TOGGLE
  currentMusicUrl?: string | null;
+ currentMusicTitle?: string | null;
+ currentMusicType?: 'youtube' | 'upload' | null;
+ musicUpdatedAt?: any;
+ musicUpdatedBy?: string | null;
  maxActiveMics?: number;
  isSuperMic?: boolean;
  stats?: {

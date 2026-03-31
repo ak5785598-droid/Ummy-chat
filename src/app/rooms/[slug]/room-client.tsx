@@ -1129,23 +1129,62 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Listen for shared music changes from Firestore
   useEffect(() => {
-    if (!room?.currentMusicUrl || !musicAudioRef.current) return;
+    if (!room?.currentMusicUrl || !musicAudioRef.current) {
+      console.log('[Music] No URL or ref:', { url: room?.currentMusicUrl, hasRef: !!musicAudioRef.current });
+      return;
+    }
     
     // Only play if music is enabled
-    if (!isMusicEnabled) return;
+    if (!isMusicEnabled) {
+      console.log('[Music] Music disabled, skipping');
+      return;
+    }
     
     // Check if the URL has changed
     const currentSrc = musicAudioRef.current.src;
     const newUrl = room.currentMusicUrl;
     
+    console.log('[Music] Checking sync:', { currentSrc, newUrl, isMusicEnabled });
+    
     if (currentSrc !== newUrl) {
-      console.log('[Music] Syncing shared music:', room.currentMusicTitle || 'Unknown');
+      console.log('[Music] Syncing shared music:', room.currentMusicTitle || 'Unknown', 'URL:', newUrl);
+      
+      // Reset audio element
+      musicAudioRef.current.pause();
+      musicAudioRef.current.currentTime = 0;
+      
+      // Set new source
       musicAudioRef.current.src = newUrl;
-      musicAudioRef.current.play().catch(e => {
-        console.warn('[Music] Auto-play failed (user interaction needed):', e);
-      });
+      
+      // Add load event to play after loading
+      musicAudioRef.current.onloadeddata = () => {
+        console.log('[Music] Audio loaded, playing...');
+        musicAudioRef.current?.play().catch(e => {
+          console.warn('[Music] Play failed:', e.name, e.message);
+          if (e.name === 'NotAllowedError') {
+            toast({ 
+              variant: 'default', 
+              title: 'Music Ready', 
+              description: 'Click anywhere to enable music' 
+            });
+          }
+        });
+      };
+      
+      // Add error handling for audio loading
+      musicAudioRef.current.onerror = (e) => {
+        console.error('[Music] Audio load error:', e, musicAudioRef.current?.error);
+        toast({ 
+          variant: 'destructive', 
+          title: 'Music Error', 
+          description: 'Failed to load audio. Check CORS or format.' 
+        });
+      };
+      
+      // Load the audio
+      musicAudioRef.current.load();
     }
-  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled]);
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled, toast]);
 
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
@@ -1179,6 +1218,7 @@ export function RoomClient({ room }: { room: Room }) {
         ref={musicAudioRef}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
         crossOrigin="anonymous"
+        preload="auto"
       />
 
       {/* LIVE BACKGROUND OVERLAY */}
