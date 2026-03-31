@@ -1436,19 +1436,7 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {/* Music Control Button */}
-          {room.currentMusicUrl && (
-            <button
-              onClick={handleToggleMusic}
-              className={cn(
-                "p-1 rounded-full active:scale-95 transition-all border border-white/5 relative",
-                isMusicPlaying ? "bg-cyan-500/30 text-cyan-400 border-cyan-500/50" : "bg-white/10 text-white/60"
-              )}
-              title={isMusicPlaying ? "Pause Music" : "Play Music"}
-            >
-              {isMusicPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </button>
-          )}
+          {/* AI Voice Button */}
           <div className="relative">
             <button
               onClick={toggleAIVoice}
@@ -1626,8 +1614,26 @@ export function RoomClient({ room }: { room: Room }) {
               />
             </div>
 
+            {/* Volume Slider */}
+            <div className="flex items-center gap-2 px-2 mt-2">
+              <Volume2 className="h-3.5 w-3.5 text-white/50" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicAudioRef.current?.volume || 1}
+                onChange={(e) => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.volume = parseFloat(e.target.value);
+                  }
+                }}
+                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full"
+              />
+            </div>
+
             {/* Controls */}
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center justify-center gap-6 mt-3">
               {/* Playlist - Opens full dialog */}
               <button
                 onClick={() => setIsRoomPlayOpen(true)}
@@ -1687,25 +1693,20 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      {/* RIGHT SIDE FLOATING MUSIC BUTTON */}
-      <button
-        onClick={() => setShowMiniPlayer(!showMiniPlayer)}
-        className={cn(
-          "fixed right-4 top-[60%] z-30 p-3 rounded-2xl transition-all active:scale-95 shadow-lg border-2",
-          room.currentMusicUrl 
-            ? (showMiniPlayer 
-                ? "bg-cyan-500/30 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20" 
-                : "bg-black/60 border-white/20 text-white hover:bg-white/10")
-            : "bg-black/40 border-white/10 text-white/30"
-        )}
-      >
-        <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center",
-          showMiniPlayer ? "bg-cyan-500/20" : "bg-white/5"
-        )}>
-          <Music className="h-6 w-6" />
-        </div>
-      </button>
+      {/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
+      {room.currentMusicUrl && isMusicPlaying && !showMiniPlayer && (
+        <button
+          onClick={() => setShowMiniPlayer(true)}
+          className={cn(
+            "fixed right-4 top-[60%] z-30 p-3 rounded-2xl transition-all active:scale-95 shadow-lg border-2",
+            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+          )}
+        >
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20">
+            <Music className="h-6 w-6" />
+          </div>
+        </button>
+      )}
 
       <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
         <div className="flex items-center">
