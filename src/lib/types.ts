@@ -138,6 +138,7 @@ export type Room = {
  currentMusicType?: 'youtube' | 'upload' | null;
  musicUpdatedAt?: any;
  musicUpdatedBy?: string | null;
+ musicCurrentTime?: number;
  maxActiveMics?: number;
  isSuperMic?: boolean;
  stats?: {

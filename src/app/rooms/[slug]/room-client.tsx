@@ -85,7 +85,7 @@ import {
   Timestamp,
   where
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
@@ -246,6 +246,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -1134,7 +1136,7 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
     
-    // Only play if music is enabled
+    // Only play if music is enabled and user has interacted
     if (!isMusicEnabled) {
       console.log('[Music] Music disabled, skipping');
       return;
@@ -1144,7 +1146,7 @@ export function RoomClient({ room }: { room: Room }) {
     const currentSrc = musicAudioRef.current.src;
     const newUrl = room.currentMusicUrl;
     
-    console.log('[Music] Checking sync:', { currentSrc, newUrl, isMusicEnabled });
+    console.log('[Music] Checking sync:', { currentSrc, newUrl, isMusicEnabled, userInteracted });
     
     if (currentSrc !== newUrl) {
       console.log('[Music] Syncing shared music:', room.currentMusicTitle || 'Unknown', 'URL:', newUrl);
@@ -1155,7 +1157,7 @@ export function RoomClient({ room }: { room: Room }) {
       
       // For Firebase Storage URLs, fetch via SDK to bypass CORS
       if (newUrl.includes('firebasestorage.googleapis.com') && storage) {
-        console.log('[Music] Fetching via Firebase SDK to bypass CORS...');
+        console.log('[Music] Fetching via Firebase SDK getBytes...');
         
         // Extract path from URL
         const urlObj = new URL(newUrl);
@@ -1164,29 +1166,40 @@ export function RoomClient({ room }: { room: Room }) {
           const filePath = decodeURIComponent(pathMatch[1]);
           console.log('[Music] Extracted path:', filePath);
           
-          // Fetch using Firebase SDK
+          // Fetch bytes using Firebase SDK (bypasses CORS)
           const fileRef = ref(storage, filePath);
-          getDownloadURL(fileRef).then(freshUrl => {
-            console.log('[Music] Got fresh URL, fetching as blob...');
-            return fetch(freshUrl);
-          }).then(response => {
-            if (!response.ok) throw new Error('Failed to fetch audio');
-            return response.blob();
-          }).then(blob => {
+          getBytes(fileRef).then(bytes => {
+            const uint8Bytes = new Uint8Array(bytes);
+            console.log('[Music] Got bytes:', uint8Bytes.length);
+            const blob = new Blob([bytes], { type: 'audio/mpeg' });
             const blobUrl = URL.createObjectURL(blob);
             console.log('[Music] Blob URL created:', blobUrl);
             
             if (musicAudioRef.current) {
               musicAudioRef.current.src = blobUrl;
               
+              // Sync to room's current time if available
+              const roomCurrentTime = room.musicCurrentTime || 0;
+              musicAudioRef.current.currentTime = roomCurrentTime;
+              
               musicAudioRef.current.onloadeddata = () => {
-                console.log('[Music] Audio loaded, playing...');
-                musicAudioRef.current?.play().catch(e => {
-                  console.warn('[Music] Play failed:', e.name, e.message);
-                  if (e.name === 'NotAllowedError') {
-                    toast({ title: 'Music Ready', description: 'Click anywhere to enable music' });
-                  }
-                });
+                console.log('[Music] Audio loaded, currentTime:', roomCurrentTime);
+                
+                // Only auto-play if user has interacted with the page
+                if (userInteracted) {
+                  musicAudioRef.current?.play().then(() => {
+                    setIsMusicPlaying(true);
+                    console.log('[Music] Playing from position:', roomCurrentTime);
+                  }).catch(e => {
+                    console.warn('[Music] Play failed:', e.name, e.message);
+                    if (e.name === 'NotAllowedError') {
+                      toast({ title: 'Music Ready', description: 'Click music button to play' });
+                    }
+                  });
+                } else {
+                  console.log('[Music] Waiting for user interaction...');
+                  toast({ title: 'Music Ready', description: 'Click music button to play' });
+                }
               };
               
               musicAudioRef.current.onerror = (e) => {
@@ -1197,16 +1210,17 @@ export function RoomClient({ room }: { room: Room }) {
               musicAudioRef.current.load();
             }
           }).catch(error => {
-            console.error('[Music] Fetch error:', error);
-            // Fallback to direct URL
-            playDirectUrl(newUrl);
+            console.error('[Music] getBytes error:', error);
+            // Fallback to direct URL with fresh token
+            getDownloadURL(fileRef).then(freshUrl => {
+              console.log('[Music] Fallback to fresh URL');
+              playDirectUrl(freshUrl);
+            }).catch(() => playDirectUrl(newUrl));
           });
         } else {
-          // Fallback for non-storage URLs
           playDirectUrl(newUrl);
         }
       } else {
-        // For non-Firebase URLs (like YouTube), use direct URL
         playDirectUrl(newUrl);
       }
     }
@@ -1216,14 +1230,27 @@ export function RoomClient({ room }: { room: Room }) {
       
       musicAudioRef.current.src = url;
       
+      // Sync to room's current time
+      const roomCurrentTime = room.musicCurrentTime || 0;
+      musicAudioRef.current.currentTime = roomCurrentTime;
+      
       musicAudioRef.current.onloadeddata = () => {
-        console.log('[Music] Audio loaded (direct), playing...');
-        musicAudioRef.current?.play().catch(e => {
-          console.warn('[Music] Play failed:', e.name, e.message);
-          if (e.name === 'NotAllowedError') {
-            toast({ title: 'Music Ready', description: 'Click anywhere to enable music' });
-          }
-        });
+        console.log('[Music] Audio loaded (direct), currentTime:', roomCurrentTime);
+        
+        // Only auto-play if user has interacted
+        if (userInteracted) {
+          musicAudioRef.current?.play().then(() => {
+            setIsMusicPlaying(true);
+          }).catch(e => {
+            console.warn('[Music] Play failed:', e.name, e.message);
+            if (e.name === 'NotAllowedError') {
+              toast({ title: 'Music Ready', description: 'Click music button to play' });
+            }
+          });
+        } else {
+          console.log('[Music] Waiting for user interaction...');
+          toast({ title: 'Music Ready', description: 'Click music button to play' });
+        }
       };
       
       musicAudioRef.current.onerror = (e) => {
@@ -1233,7 +1260,59 @@ export function RoomClient({ room }: { room: Room }) {
       
       musicAudioRef.current.load();
     }
-  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled, toast, storage]);
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, room?.musicCurrentTime, isMusicEnabled, toast, storage, userInteracted]);
+
+  // Handle user interaction for music
+  const handleUserInteraction = () => {
+    if (!userInteracted) {
+      setUserInteracted(true);
+      console.log('[Music] User interacted, enabling audio playback');
+    }
+  };
+
+  // Music control functions
+  const handleToggleMusic = () => {
+    handleUserInteraction();
+    if (!musicAudioRef.current) return;
+    
+    if (isMusicPlaying) {
+      musicAudioRef.current.pause();
+      setIsMusicPlaying(false);
+      toast({ title: 'Music Paused' });
+    } else {
+      musicAudioRef.current.play().then(() => {
+        setIsMusicPlaying(true);
+        toast({ title: 'Music Playing' });
+      }).catch(e => {
+        console.warn('[Music] Play failed:', e);
+        toast({ title: 'Cannot play', description: 'Try interacting with page first' });
+      });
+    }
+  };
+
+  const handleStopMusic = () => {
+    if (!musicAudioRef.current) return;
+    musicAudioRef.current.pause();
+    musicAudioRef.current.currentTime = 0;
+    setIsMusicPlaying(false);
+    toast({ title: 'Music Stopped' });
+  };
+
+  // Periodic sync of music position to Firestore (for owner/moderator)
+  useEffect(() => {
+    if (!firestore || !room.id || !canManageRoom) return;
+    if (!room.currentMusicUrl || !musicAudioRef.current) return;
+    
+    const interval = setInterval(() => {
+      if (musicAudioRef.current && isMusicPlaying) {
+        const currentTime = musicAudioRef.current.currentTime;
+        const roomRef = doc(firestore, 'chatRooms', room.id);
+        updateDocumentNonBlocking(roomRef, { musicCurrentTime: currentTime });
+      }
+    }, 5000); // Sync every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [firestore, room.id, canManageRoom, room.currentMusicUrl, isMusicPlaying]);
 
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
@@ -1329,6 +1408,19 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {/* Music Control Button */}
+          {room.currentMusicUrl && (
+            <button
+              onClick={handleToggleMusic}
+              className={cn(
+                "p-1 rounded-full active:scale-95 transition-all border border-white/5 relative",
+                isMusicPlaying ? "bg-cyan-500/30 text-cyan-400 border-cyan-500/50" : "bg-white/10 text-white/60"
+              )}
+              title={isMusicPlaying ? "Pause Music" : "Play Music"}
+            >
+              {isMusicPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+          )}
           <div className="relative">
             <button
               onClick={toggleAIVoice}
