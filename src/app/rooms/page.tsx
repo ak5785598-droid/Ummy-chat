@@ -1,31 +1,28 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight, LayoutGrid, Shield } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
  Carousel,
  CarouselContent,
  CarouselItem,
 } from "@/components/ui/carousel";
-import { UmmyLogoIcon, GoldCoinIcon } from '@/components/icons';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { Button } from '@/components/ui/button';
 import { CreateRoomDialog } from '@/components/create-room-dialog';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 import { RankingCard, FamilyCard, CpCard } from '@/components/premium-feature-cards';
 import { VipBadge } from '@/components/vip-badge';
-import { Shield, ShieldCheck } from 'lucide-react';
+import { GoldCoinIcon } from '@/components/icons';
 
 const ICON_MAP: Record<string, any> = {
  Sparkles,
@@ -37,10 +34,6 @@ const ICON_MAP: Record<string, any> = {
  Heart
 };
 
-/**
- * High-Fidelity Rooms Hub.
- * Re-engineered to support Sovereign Room Info Sync.
- */
 const RoomSkeleton = () => (
   <div className="flex flex-col gap-3 min-w-[280px] snap-center">
    <Skeleton className="aspect-square w-full rounded-2xl" />
@@ -58,9 +51,12 @@ export default function RoomsPage() {
  const { t } = useTranslation();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+ const [mounted, setMounted] = useState(false);
+
+ useEffect(() => { setMounted(true); }, []);
 
  const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
- const { data: userProfile } = useDoc(userRef);
+ const { data: userDoc } = useDoc(userRef);
 
  const CATEGORIES = [
   { id: "All", label: t.home.categories.all },
@@ -81,7 +77,6 @@ export default function RoomsPage() {
 
  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
- // SOVEREIGN SYNC: Query by ownerId to find the user's room instead of doc ID
  const myRoomQuery = useMemoFirebase(() => {
   if (!firestore || !user) return null;
   return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
@@ -108,13 +103,9 @@ export default function RoomsPage() {
   let filtered = roomsData.filter(room => {
    const cat = room.category || 'Chat';
    const matchesCategory = activeCategory === "All" || cat === activeCategory;
-   
    const hasUsers = (room.participantCount || 0) > 0;
    const isPinned = room.isPinned === true;
-
-   const isDecommissioned = room.id === 'ummy-help-center' || 
-                (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
-
+   const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
    return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
   });
 
@@ -125,7 +116,7 @@ export default function RoomsPage() {
   });
  }, [roomsData, activeCategory]);
 
-
+ if (!mounted) return null;
 
  return (
   <AppLayout>
@@ -280,19 +271,19 @@ export default function RoomsPage() {
           <div className="flex items-center gap-4 relative z-10">
             <div className="relative">
               <Avatar className="h-20 w-20 border-2 border-white shadow-2xl">
-                <AvatarImage src={userProfile?.avatarUrl} />
+                <AvatarImage src={userDoc?.avatarUrl} />
                 <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-1 -right-1">
-                <VipBadge level={userProfile?.level?.rich || 1} />
+                <VipBadge level={userDoc?.level?.rich || 1} />
               </div>
             </div>
             <div className="flex flex-col gap-0.5">
-              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight">{userProfile?.username || 'Tribe Member'}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tribal ID: {userProfile?.accountNumber || '---'}</p>
+              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight">{userDoc?.username || 'Tribe Member'}</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tribal ID: {userDoc?.accountNumber || '---'}</p>
               <div className="flex items-center gap-1.5 mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 w-fit">
                 <GoldCoinIcon className="h-3 w-3" />
-                <span className="text-xs font-black text-slate-700">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+                <span className="text-xs font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
               </div>
             </div>
           </div>

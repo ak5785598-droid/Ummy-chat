@@ -31,8 +31,8 @@ service cloud.firestore {
 
     // Root Users Collection
     match /users/{userId} {
-      // allow read for own document always (to detect ban status), but restricted for others
-      allow read: if isOwner\(userId\) || isAdmin() || isNotBanned();
+      // allow read for own document and others for discovery
+      allow read: if (isSignedIn() && isNotBanned()) || isAdmin();
       allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       
       match /profile/{profileId} {
@@ -56,7 +56,7 @@ service cloud.firestore {
     }
 
     match /{path=**}/profile/{profileId} {
-      allow read: if (isSignedIn() && (request.auth.uid == profileId)) || (isSignedIn() && isNotBanned());
+      allow read: if (isSignedIn() && (request.auth.uid == profileId)) || (isSignedIn() && isNotBanned()) || isAdmin();
     }
 
     match /privateChats/{chatId} {
