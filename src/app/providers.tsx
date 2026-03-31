@@ -10,35 +10,31 @@ import { LanguageProvider } from '@/components/language-provider';
 import { AdBlockWarning } from '@/components/ad-block-warning';
 import { ActiveRoomManager } from '@/components/active-room-manager';
 import { VoiceActivityProvider } from '@/components/voice-activity-provider';
-import { HydrationBoundary } from '@/components/hydration-boundary';
 import type { ReactNode } from 'react';
 
 /**
- * High-Integrity Providers Stack.
- * Re-engineered for React 18 "Late Mount" Stability.
+ * THE ULTIMATE STABLE PROVIDER STACK.
+ * Simplified for maximum React 18 compatibility.
  * 
- * Uses a root-level HydrationBoundary to defer ALL Firebase & logic hooks 
- * until the client is fully stable, eliminating Error #310.
+ * Removed experimental boundaries to prioritize flat, stable hook ordering.
  */
 export function Providers({ children }: { children: ReactNode }) {
  return (
-  <HydrationBoundary>
-    <FirebaseClientProvider>
-     <LanguageProvider>
-      <AdBlockWarning />
-      <ProfileInitializer />
-      <GlobalPresenceManager />
-      <GlobalBanGuard>
-       <VoiceActivityProvider>
-        <RoomProvider>
-         <ActiveRoomManager />
-         <RoomPresenceManager />
-         {children}
-        </RoomProvider>
-       </VoiceActivityProvider>
-      </GlobalBanGuard>
-     </LanguageProvider>
-    </FirebaseClientProvider>
-  </HydrationBoundary>
+  <FirebaseClientProvider>
+   <LanguageProvider>
+    <AdBlockWarning />
+    <ProfileInitializer />
+    <GlobalPresenceManager />
+    <GlobalBanGuard>
+     <VoiceActivityProvider>
+      <RoomProvider>
+       <ActiveRoomManager />
+       <RoomPresenceManager />
+       {children}
+      </RoomProvider>
+     </VoiceActivityProvider>
+    </GlobalBanGuard>
+   </LanguageProvider>
+  </FirebaseClientProvider>
  );
 }

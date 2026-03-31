@@ -2,54 +2,63 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 /**
- * Global instance variables to ensure Firebase services are only initialized once.
+ * ABSOLUTE SINGLETON PATTERN.
+ * Ensures that Firebase service references NEVER change during the React hydration phase.
  */
 let appInstance: FirebaseApp | null = null;
 let firestoreInstance: Firestore | null = null;
+let authInstance: Auth | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
-/**
- * PRODUCTION FIREBASE INITIALIZATION
- * Re-engineered to simplify service retrieval and ensure absolute stability.
- */
 export function initializeFirebase() {
+  if (typeof window === 'undefined') {
+    // Basic initialization for SSR
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    return {
+      firebaseApp: app,
+      auth: getAuth(app),
+      firestore: getFirestore(app),
+      storage: getStorage(app)
+    };
+  }
+
+  // BROWSER / CLIENT SIDE: Absolute Singleton Persistence
   if (!appInstance) {
-    if (!getApps().length) {
-      appInstance = initializeApp(firebaseConfig);
-    } else {
-      appInstance = getApp();
-    }
+    appInstance = getApps().length ? getApp() : initializeApp(firebaseConfig);
   }
 
   if (!firestoreInstance) {
     try {
-      // Initialize with Force Long Polling for resilience in proxy/slow networks.
       firestoreInstance = initializeFirestore(appInstance, {
         experimentalForceLongPolling: true,
         experimentalAutoDetectLongPolling: true,
       });
-      console.log(`[Firebase Init] Firestore Initialized (Project: ${firebaseConfig.projectId})`);
-    } catch (error) {
-      // This catches 'already-initialized' errors gracefully from the SDK level.
+    } catch (e) {
       firestoreInstance = getFirestore(appInstance);
     }
   }
 
+  if (!authInstance) {
+    authInstance = getAuth(appInstance);
+  }
+
+  if (!storageInstance) {
+    storageInstance = getStorage(appInstance);
+  }
+
   return {
     firebaseApp: appInstance,
-    auth: getAuth(appInstance),
+    auth: authInstance,
     firestore: firestoreInstance,
-    storage: getStorage(appInstance)
+    storage: storageInstance
   };
 }
 
-/**
- * Deprecated: Kept for backward compatibility but calls initializeFirebase.
- */
 export function getSdks(firebaseApp: FirebaseApp) {
   return initializeFirebase();
 }
@@ -61,4 +70,5 @@ export * from './firestore/use-doc';
 export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
+export * from './error-emitter';
 export * from './error-emitter';

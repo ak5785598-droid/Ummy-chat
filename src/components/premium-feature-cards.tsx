@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   useCollection, 
   useFirestore, 
-  useUser, 
   useMemoFirebase 
 } from '@/firebase';
 import { 
@@ -15,16 +14,26 @@ import {
   limit 
 } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { Heart, Crown, Users, Sparkles } from 'lucide-react';
+import { Crown, Users, Heart, Loader } from 'lucide-react';
 
 /**
- * Premium Feature Cards for Home Screen.
- * Displays real-time data from Firestore (Ranking, Family, CP).
+ * Premium Feature Cards (Hook-Stable Version).
+ * Uses internal hydration guards to keep hook counts consistent (#310).
  */
 
-// 1. RANKING CARD (TOP 3 GIVERS)
+function CardPlaceholder() {
+  return (
+    <div className="flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-white/5 border border-white/10 animate-pulse flex items-center justify-center">
+       <Loader className="h-4 w-4 text-white/20 animate-spin" />
+    </div>
+  );
+}
+
+// 1. RANKING CARD
 export function RankingCard() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const router = useRouter();
   const firestore = useFirestore();
   const richQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -32,7 +41,10 @@ export function RankingCard() {
     orderBy('wallet.dailySpent', 'desc'), 
     limit(3)
   ), [firestore]);
+  
   const { data: topUsers } = useCollection(richQuery);
+
+  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 
@@ -44,36 +56,20 @@ export function RankingCard() {
          <Crown className="h-2.5 w-2.5 text-white fill-current" />
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">Ranking</span>
       </div>
-      
-      {/* Avatar Stack (The Podium) */}
       <div className="relative flex items-end justify-center h-full w-full pb-1">
-         {topUsers?.[1] && (
-           <Avatar className="h-6 w-6 border border-blue-200 -mr-2 shadow-lg scale-90">
-             <AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback>
-           </Avatar>
-         )}
-         {topUsers?.[0] && (
-           <div className="relative z-10">
-              <Avatar className="h-10 w-10 border-2 border-yellow-200 shadow-xl ring-2 ring-yellow-500/10">
-                <AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback>
-              </Avatar>
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full shadow-lg border border-white">
-                 <Crown className="h-2 w-2 text-white fill-current" />
-              </div>
-           </div>
-         )}
-         {topUsers?.[2] && (
-           <Avatar className="h-6 w-6 border border-amber-500 -ml-2 shadow-lg scale-90">
-             <AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback>
-           </Avatar>
-         )}
+         {topUsers?.[1] && <Avatar className="h-6 w-6 border border-blue-200 -mr-2 shadow-lg scale-90"><AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
+         {topUsers?.[0] && <div className="relative z-10"><Avatar className="h-10 w-10 border-2 border-yellow-200 shadow-xl"><AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback></Avatar><div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full border border-white"><Crown className="h-1.5 w-1.5 text-white fill-current" /></div></div>}
+         {topUsers?.[2] && <Avatar className="h-6 w-6 border border-amber-500 -ml-2 shadow-lg scale-90"><AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
       </div>
     </button>
   );
 }
 
-// 2. FAMILY CARD (FEATURED GROUPS)
+// 2. FAMILY CARD
 export function FamilyCard() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const router = useRouter();
   const firestore = useFirestore();
   const familiesQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -81,7 +77,10 @@ export function FamilyCard() {
     orderBy('totalWealth', 'desc'), 
     limit(2)
   ), [firestore]);
+  
   const { data: topFamilies } = useCollection(familiesQuery);
+
+  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 
@@ -93,25 +92,21 @@ export function FamilyCard() {
          <Users className="h-2.5 w-2.5 text-white fill-current" />
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">Family</span>
       </div>
-      
       <div className="relative flex items-center justify-center h-full w-full pb-1">
-         <div className="relative">
-            <Avatar className="h-8 w-8 border border-white/20 shadow-xl transform -rotate-12 translate-x-2 bg-blue-900/40">
-              <AvatarImage src={topFamilies?.[1]?.bannerUrl || ""} />
-              <AvatarFallback className="text-[10px] text-white">F2</AvatarFallback>
-            </Avatar>
-            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl absolute top-0 left-0 bg-blue-900">
-              <AvatarImage src={topFamilies?.[0]?.bannerUrl || ""} />
-              <AvatarFallback className="text-[10px] text-white font-bold">F1</AvatarFallback>
-            </Avatar>
+         <div className="relative flex -space-x-4">
+            <Avatar className="h-8 w-8 border border-white/20 shadow-xl bg-blue-900/40"><AvatarImage src={topFamilies?.[1]?.bannerUrl || ""} /><AvatarFallback className="text-[5px]">F2</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl bg-blue-900"><AvatarImage src={topFamilies?.[0]?.bannerUrl || ""} /><AvatarFallback className="text-[5px]">F1</AvatarFallback></Avatar>
          </div>
       </div>
     </button>
   );
 }
 
-// 3. CP CARD (COUPLE PAIR)
+// 3. CP CARD
 export function CpCard() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const router = useRouter();
   const firestore = useFirestore();
   const cpQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -119,7 +114,10 @@ export function CpCard() {
     orderBy('cpValue', 'desc'), 
     limit(1)
   ), [firestore]);
+  
   const { data: topCp } = useCollection(cpQuery);
+
+  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 
@@ -131,21 +129,10 @@ export function CpCard() {
          <Heart className="h-2.5 w-2.5 text-white fill-current animate-pulse" />
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">CP Pair</span>
       </div>
-      
       <div className="relative flex items-center justify-center h-full w-full pb-1">
          <div className="flex -space-x-3">
-            <div className="relative p-0.5 bg-white rounded-full shadow-lg">
-               <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20">
-                 <AvatarImage src={topCp?.[0]?.user1Avatar || ""} />
-                 <AvatarFallback className="text-[10px] text-pink-700">P1</AvatarFallback>
-               </Avatar>
-            </div>
-            <div className="relative z-10 p-0.5 bg-white rounded-full shadow-lg">
-               <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20">
-                 <AvatarImage src={topCp?.[0]?.user2Avatar || ""} />
-                 <AvatarFallback className="text-[10px] text-red-700">P2</AvatarFallback>
-               </Avatar>
-            </div>
+            <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20"><AvatarImage src={topCp?.[0]?.user1Avatar || ""} /><AvatarFallback>P1</AvatarFallback></Avatar>
+            <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20"><AvatarImage src={topCp?.[0]?.user2Avatar || ""} /><AvatarFallback>P2</AvatarFallback></Avatar>
          </div>
       </div>
     </button>

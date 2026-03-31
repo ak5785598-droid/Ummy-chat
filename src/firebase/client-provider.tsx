@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 
@@ -8,20 +8,25 @@ interface FirebaseClientProviderProps {
  children: ReactNode;
 }
 
+/**
+ * HIGH-STABILITY CLIENT PROVIDER.
+ * Simplified for maximum React 18 compatibility.
+ * 
+ * Uses the Absolute Singleton Pattern from the index, ensuring no 
+ * hook-order changes during the hydration Phase (#310).
+ */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
- const firebaseServices = useMemo(() => {
-  // Initialize Firebase on the client side, once per component mount.
-  return initializeFirebase();
- }, []); // Empty dependency array ensures this runs only once on mount
+  // Directly retrieve stable singleton instances
+  const { firebaseApp, auth, firestore, storage } = initializeFirebase();
 
- return (
-  <FirebaseProvider
-   firebaseApp={firebaseServices.firebaseApp}
-   auth={firebaseServices.auth}
-   firestore={firebaseServices.firestore}
-   storage={firebaseServices.storage}
-  >
-   {children}
-  </FirebaseProvider>
- );
+  return (
+   <FirebaseProvider
+    firebaseApp={firebaseApp}
+    auth={auth || {} as any}
+    firestore={firestore || {} as any}
+    storage={storage || {} as any}
+   >
+    {children}
+   </FirebaseProvider>
+  );
 }
