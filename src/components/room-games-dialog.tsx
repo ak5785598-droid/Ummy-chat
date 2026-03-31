@@ -36,26 +36,11 @@ const QUICK_ACTIONS = [
   { id: 'gift-effects', title: 'Gift Effects', icon: Gift, color: 'bg-pink-500/20 text-pink-400', badge: true },
 ];
 
-// Working games only
+// Working games only - NO FAKE ICONS
 const WORKING_GAMES = [
   { id: 'music', title: 'Music', icon: Music, color: 'bg-red-500/20 text-red-400', hasMusic: true },
   { id: 'carrom', title: 'Carrom', icon: Dices, color: 'bg-orange-500/20 text-orange-400' },
   { id: 'ludo', title: 'Ludo', icon: Dice5, color: 'bg-green-500/20 text-green-400' },
-];
-
-// Placeholder games (for prototype only)
-const PROTOTYPE_GAMES = [
-  { id: 'magic-slot', title: 'Magic Slot', icon: Flame, color: 'bg-purple-500/20 text-purple-400' },
-  { id: 'candy-slot', title: 'Candy Slot', icon: Heart, color: 'bg-pink-400/20 text-pink-300' },
-  { id: 'xmas-slot', title: 'Xmas Slot', icon: TreePine, color: 'bg-green-600/20 text-green-500' },
-  { id: 'jungle', title: 'Jungle', icon: Leaf, color: 'bg-emerald-500/20 text-emerald-400' },
-  { id: 'halloween', title: 'Halloween', icon: Flame, color: 'bg-orange-600/20 text-orange-500' },
-  { id: 'lucky-wheel', title: 'Lucky Wheel', icon: CircleDollarSign, color: 'bg-yellow-500/20 text-yellow-400' },
-  { id: 'coins', title: 'Coins', icon: Coins, color: 'bg-yellow-600/20 text-yellow-500' },
-  { id: 'khazana', title: 'Khazana', icon: Diamond, color: 'bg-cyan-500/20 text-cyan-400' },
-  { id: 'krazy-kards', title: 'Krazy Kards', icon: ImageIcon, color: 'bg-indigo-500/20 text-indigo-400' },
-  { id: 'royal-battle', title: 'Royal Battle', icon: Sword, color: 'bg-red-600/20 text-red-500' },
-  { id: 'krazy-jungle', title: 'Krazy Jungle', icon: TreePine, color: 'bg-green-500/20 text-green-400' },
 ];
 
 /**
@@ -86,7 +71,16 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full h-[85vh] max-w-none m-0 rounded-t-3xl bg-[#1a1a2e] border-none p-0 flex flex-col text-white overflow-hidden">
+      <DialogContent 
+        className="w-full h-[85vh] max-w-none m-0 rounded-t-3xl bg-[#1a1a2e] border-none p-0 flex flex-col text-white overflow-hidden"
+        style={{ 
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
+        }}
+        // Override default dialog overlay to not blur
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
+        {/* Transparent overlay that doesn't blur background */}
+        <div className="fixed inset-0 bg-black/40 z-[-1]" onClick={() => onOpenChange(false)} />
         {/* Handle bar like Wafa */}
         <div className="w-full flex justify-center pt-3 pb-1">
           <div className="w-12 h-1.5 bg-white/20 rounded-full" />
@@ -114,8 +108,8 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
         <ScrollArea className="flex-1">
           <div className="p-4">
             <div className="grid grid-cols-4 gap-3">
-              {/* Working Games First */}
-              {WORKING_GAMES.map((game) => (
+              {/* Working Games Only - NO FAKE/PLACEHOLDER GAMES */}
+              {WORKING_GAMES.map((game: any) => (
                 <button
                   key={game.id}
                   onClick={() => handleGameClick(game.id)}
@@ -130,20 +124,6 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
                     <game.icon className="h-6 w-6" />
                   </div>
                   <span className="text-[10px] text-white/70 font-medium text-center leading-tight">{game.title}</span>
-                </button>
-              ))}
-              
-              {/* Prototype Games */}
-              {PROTOTYPE_GAMES.map((game) => (
-                <button
-                  key={game.id}
-                  className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 opacity-50"
-                  disabled
-                >
-                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", game.color)}>
-                    <game.icon className="h-6 w-6" />
-                  </div>
-                  <span className="text-[10px] text-white/40 font-medium text-center leading-tight">{game.title}</span>
                 </button>
               ))}
             </div>

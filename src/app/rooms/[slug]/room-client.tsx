@@ -1142,129 +1142,34 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   // Listen for shared music changes from Firestore
+  // NOTE: Music does NOT auto-play when entering room. User must manually click play.
   useEffect(() => {
     if (!room?.currentMusicUrl || !musicAudioRef.current) {
       console.log('[Music] No URL or ref:', { url: room?.currentMusicUrl, hasRef: !!musicAudioRef.current });
       return;
     }
     
-    // Only play if music is enabled and user has interacted
-    if (!isMusicEnabled) {
-      console.log('[Music] Music disabled, skipping');
-      return;
-    }
-    
-    // Check if the URL has changed
+    // Only sync the audio source, DON'T auto-play
+    // User must manually click play button to start music
     const currentSrc = musicAudioRef.current.src;
     const newUrl = room.currentMusicUrl;
     
-    console.log('[Music] Checking sync:', { currentSrc, newUrl, isMusicEnabled, userInteracted });
+    console.log('[Music] Checking sync:', { currentSrc, newUrl });
     
     if (currentSrc !== newUrl) {
-      console.log('[Music] Syncing shared music:', room.currentMusicTitle || 'Unknown', 'URL:', newUrl);
+      console.log('[Music] New music available:', room.currentMusicTitle || 'Unknown');
       
-      // Reset audio element
+      // Set the source but DON'T auto-play
+      // Just prepare the audio element
       musicAudioRef.current.pause();
-      musicAudioRef.current.currentTime = 0;
-      
-      // For Firebase Storage URLs, fetch via SDK to bypass CORS
-      if (newUrl.includes('firebasestorage.googleapis.com') && storage) {
-        console.log('[Music] Fetching via Firebase SDK getBytes...');
-        
-        // Extract path from URL
-        const urlObj = new URL(newUrl);
-        const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
-        if (pathMatch) {
-          const filePath = decodeURIComponent(pathMatch[1]);
-          console.log('[Music] Extracted path:', filePath);
-          
-          // Fetch bytes using Firebase SDK (bypasses CORS)
-          const fileRef = ref(storage, filePath);
-          getBytes(fileRef).then(bytes => {
-            const uint8Bytes = new Uint8Array(bytes);
-            console.log('[Music] Got bytes:', uint8Bytes.length);
-            const blob = new Blob([bytes], { type: 'audio/mpeg' });
-            const blobUrl = URL.createObjectURL(blob);
-            console.log('[Music] Blob URL created:', blobUrl);
-            
-            if (musicAudioRef.current) {
-              musicAudioRef.current.src = blobUrl;
-              
-              // Sync to room's current time if available
-              const roomCurrentTime = room.musicCurrentTime || 0;
-              musicAudioRef.current.currentTime = roomCurrentTime;
-              
-              musicAudioRef.current.onloadeddata = () => {
-                console.log('[Music] Audio loaded, currentTime:', roomCurrentTime);
-                
-                // Auto-play for all users when music is synced from room
-                // This ensures everyone hears the same music
-                musicAudioRef.current?.play().then(() => {
-                  setIsMusicPlaying(true);
-                  console.log('[Music] Playing from position:', roomCurrentTime);
-                }).catch(e => {
-                  console.warn('[Music] Play failed:', e.name, e.message);
-                  // If auto-play failed, show toast to prompt user interaction
-                  if (e.name === 'NotAllowedError') {
-                    toast({ title: 'Music Ready', description: 'Tap music button to play' });
-                  }
-                });
-              };
-              
-              musicAudioRef.current.onerror = (e) => {
-                console.error('[Music] Blob audio error:', e);
-                toast({ variant: 'destructive', title: 'Music Error', description: 'Failed to load audio blob.' });
-              };
-              
-              musicAudioRef.current.load();
-            }
-          }).catch(error => {
-            console.error('[Music] getBytes error:', error);
-            // Fallback to direct URL with fresh token
-            getDownloadURL(fileRef).then(freshUrl => {
-              console.log('[Music] Fallback to fresh URL');
-              playDirectUrl(freshUrl);
-            }).catch(() => playDirectUrl(newUrl));
-          });
-        } else {
-          playDirectUrl(newUrl);
-        }
-      } else {
-        playDirectUrl(newUrl);
-      }
-    }
-    
-    function playDirectUrl(url: string) {
-      if (!musicAudioRef.current) return;
-      
-      musicAudioRef.current.src = url;
-      
-      // Sync to room's current time
-      const roomCurrentTime = room.musicCurrentTime || 0;
-      musicAudioRef.current.currentTime = roomCurrentTime;
-      
-      musicAudioRef.current.onloadeddata = () => {
-        console.log('[Music] Audio loaded (direct), currentTime:', roomCurrentTime);
-        
-        // Auto-play for all users
-        musicAudioRef.current?.play().then(() => {
-          setIsMusicPlaying(true);
-        }).catch(e => {
-          console.warn('[Music] Play failed:', e.name, e.message);
-          if (e.name === 'NotAllowedError') {
-            toast({ title: 'Music Ready', description: 'Tap music button to play' });
-          }
-        });
-      };
-      
-      musicAudioRef.current.onerror = (e) => {
-        console.error('[Music] Audio load error:', e, musicAudioRef.current?.error);
-        toast({ variant: 'destructive', title: 'Music Error', description: 'Failed to load audio. Check CORS or format.' });
-      };
-      
+      musicAudioRef.current.src = newUrl;
+      musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
       musicAudioRef.current.load();
+      
+      // Show toast that music is ready
+      toast({ title: 'Music Ready', description: `${room.currentMusicTitle || 'Song'} - Tap play to start` });
     }
-  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, room?.musicCurrentTime, isMusicEnabled, toast, storage, userInteracted]);
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, toast]);
 
   // Handle user interaction for music
   const handleUserInteraction = () => {
@@ -1284,6 +1189,13 @@ export function RoomClient({ room }: { room: Room }) {
       setIsMusicPlaying(false);
       toast({ title: 'Music Paused' });
     } else {
+      // Sync to room's current time before playing
+      // This ensures all users hear the same position
+      const roomCurrentTime = room.musicCurrentTime || 0;
+      if (musicAudioRef.current.currentTime < roomCurrentTime) {
+        musicAudioRef.current.currentTime = roomCurrentTime;
+      }
+      
       musicAudioRef.current.play().then(() => {
         setIsMusicPlaying(true);
         toast({ title: 'Music Playing' });
