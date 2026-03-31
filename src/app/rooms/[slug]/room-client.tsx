@@ -1459,23 +1459,13 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
 
-      {/* AUDIO UNLOCK OVERLAY - Shows when music is playing but audio is locked */}
+      {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
       {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => {
-            console.log('[AudioUnlock] Overlay clicked');
-          }}
-        >
-          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl p-6 mx-4 text-center shadow-2xl animate-in zoom-in duration-300">
-            <Music className="h-12 w-12 text-white mx-auto mb-4 animate-bounce" />
-            <h3 className="text-lg font-bold text-white mb-2">Music is Playing!</h3>
-            <p className="text-sm text-white/80 mb-4">Tap anywhere to enable audio and join the music</p>
-            <button className="bg-white text-cyan-600 px-6 py-2 rounded-full font-semibold text-sm active:scale-95 transition-transform">
-              Tap to Listen
-            </button>
-          </div>
-        </div>
+          className="fixed inset-0 z-[1]"
+          style={{ pointerEvents: 'none' }}
+          aria-hidden="true"
+        />
       )}
 
       <audio
@@ -1742,21 +1732,39 @@ export function RoomClient({ room }: { room: Room }) {
                 </svg>
               </button>
 
-              {/* Play/Pause */}
-              <button
-                onClick={handleToggleMusic}
-                className="p-3 rounded-full bg-white text-black active:scale-95 transition-all shadow-lg"
-              >
-                {isMusicPlaying ? (
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                  </svg>
-                ) : (
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                )}
-              </button>
+              {/* Play/Pause - Only Owner/Admin can control */}
+              {canManageRoom && (
+                <button
+                  onClick={handleToggleMusic}
+                  className="p-3 rounded-full bg-white text-black active:scale-95 transition-all shadow-lg"
+                >
+                  {isMusicPlaying ? (
+                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
+                </button>
+              )}
+              {!canManageRoom && (
+                <div className="flex items-center gap-2 text-white/60">
+                  {isMusicPlaying ? (
+                    <>
+                      <div className="flex gap-1">
+                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-xs font-medium">Now Playing</span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-medium">Music Paused</span>
+                  )}
+                </div>
+              )}
 
               {/* Next */}
               <button
