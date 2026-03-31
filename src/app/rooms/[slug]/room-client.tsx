@@ -1126,6 +1126,26 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  // Listen for shared music changes from Firestore
+  useEffect(() => {
+    if (!room?.currentMusicUrl || !musicAudioRef.current) return;
+    
+    // Only play if music is enabled
+    if (!isMusicEnabled) return;
+    
+    // Check if the URL has changed
+    const currentSrc = musicAudioRef.current.src;
+    const newUrl = room.currentMusicUrl;
+    
+    if (currentSrc !== newUrl) {
+      console.log('[Music] Syncing shared music:', room.currentMusicTitle || 'Unknown');
+      musicAudioRef.current.src = newUrl;
+      musicAudioRef.current.play().catch(e => {
+        console.warn('[Music] Auto-play failed (user interaction needed):', e);
+      });
+    }
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled]);
+
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
@@ -1546,16 +1566,23 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
-            // Standalone Games: Navigate to full page with roomId and minimize room
             setMinimizedRoom(room);
             setActiveRoom(null);
             router.push(`/games/${slug}?roomId=${room.id}`);
           } else {
-            // Overlay Games: Show in-room overlay
             setActiveGameSlug(slug);
           }
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
+        onSyncSharedMusic={(track) => {
+          // When music is synced from dialog, play it locally
+          if (musicAudioRef.current && track?.url) {
+            musicAudioRef.current.src = track.url;
+            musicAudioRef.current.play().catch(e => {
+              console.warn('[Music] Auto-play failed:', e);
+            });
+          }
+        }}
       />
       <RoomGamesDialog
         open={isRoomGamesOpen}
