@@ -71,6 +71,8 @@ export interface UserProfile {
   isBudgetId?: boolean;
   isOnline?: boolean;
   svip?: number;
+  familyId?: string;
+  familyRole?: string;
 }
 
 /**

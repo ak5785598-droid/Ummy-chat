@@ -99,6 +99,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
 
 export const useAuth = () => useFirebase().auth;
 export const useFirestore = () => useFirebase().firestore;
+export const useStorage = () => useFirebase().storage;
 export const useUser = () => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };

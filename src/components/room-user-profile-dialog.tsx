@@ -134,8 +134,8 @@ export function RoomUserProfileDialog({
 
  const handleRemoveFrame = async () => {
   try {
-    const { updateDocumentNonBlocking } = await import('@/lib/firebase/firestore-utils');
-    await updateDocumentNonBlocking('users', userId, {
+    const { doc, getFirestore, updateDoc } = await import('firebase/firestore');
+    await updateDoc(doc(getFirestore(), 'users', userId), {
       'inventory.activeFrame': 'None'
     });
     toast({ title: 'Frame Removed' });
