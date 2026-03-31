@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { X, Gamepad2, Sparkles, Camera, Loader, Music } from 'lucide-react';
+import { X, Gamepad2, Sparkles, Camera, Loader, Music, Brush, MessageSquare, Gift, Sword, Shield, Calculator, Image as ImageIcon, Hand, Dices, Leaf, Flame, Heart, CircleDollarSign, Diamond, TreePine, Dice5, Coins, Car, Tent } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
@@ -29,16 +29,37 @@ interface RoomGamesDialogProps {
   showMiniPlayer?: boolean;
 }
 
-const FALLBACK_GAMES = [
-  { id: 'roulette', title: 'Roulette', iconId: 'game-roulette', isNew: false, slug: 'roulette' },
-  { id: 'fruit-party', title: 'Fruit Party', iconId: 'game-fruit-party', isNew: false, slug: 'fruit-party' },
-  { id: 'ludo', title: 'Ludo', iconId: 'game-ludo', isNew: true, slug: 'ludo' },
-  { id: 'carrom', title: 'Carrom', iconId: 'game-carrom', isNew: true, slug: 'carrom' },
-  { id: 'chess', title: 'Chess', iconId: 'game-chess', isNew: true, slug: 'chess' },
+// Quick actions like Wafa app
+const QUICK_ACTIONS = [
+  { id: 'clean', title: 'Clean', icon: Brush, color: 'bg-blue-500/20 text-blue-400' },
+  { id: 'public-msg', title: 'Public Msg', icon: MessageSquare, color: 'bg-cyan-500/20 text-cyan-400', badge: true },
+  { id: 'gift-effects', title: 'Gift Effects', icon: Gift, color: 'bg-pink-500/20 text-pink-400', badge: true },
+];
+
+// Working games only
+const WORKING_GAMES = [
+  { id: 'music', title: 'Music', icon: Music, color: 'bg-red-500/20 text-red-400', hasMusic: true },
+  { id: 'carrom', title: 'Carrom', icon: Dices, color: 'bg-orange-500/20 text-orange-400' },
+  { id: 'ludo', title: 'Ludo', icon: Dice5, color: 'bg-green-500/20 text-green-400' },
+];
+
+// Placeholder games (for prototype only)
+const PROTOTYPE_GAMES = [
+  { id: 'magic-slot', title: 'Magic Slot', icon: Flame, color: 'bg-purple-500/20 text-purple-400' },
+  { id: 'candy-slot', title: 'Candy Slot', icon: Heart, color: 'bg-pink-400/20 text-pink-300' },
+  { id: 'xmas-slot', title: 'Xmas Slot', icon: TreePine, color: 'bg-green-600/20 text-green-500' },
+  { id: 'jungle', title: 'Jungle', icon: Leaf, color: 'bg-emerald-500/20 text-emerald-400' },
+  { id: 'halloween', title: 'Halloween', icon: Flame, color: 'bg-orange-600/20 text-orange-500' },
+  { id: 'lucky-wheel', title: 'Lucky Wheel', icon: CircleDollarSign, color: 'bg-yellow-500/20 text-yellow-400' },
+  { id: 'coins', title: 'Coins', icon: Coins, color: 'bg-yellow-600/20 text-yellow-500' },
+  { id: 'khazana', title: 'Khazana', icon: Diamond, color: 'bg-cyan-500/20 text-cyan-400' },
+  { id: 'krazy-kards', title: 'Krazy Kards', icon: ImageIcon, color: 'bg-indigo-500/20 text-indigo-400' },
+  { id: 'royal-battle', title: 'Royal Battle', icon: Sword, color: 'bg-red-600/20 text-red-500' },
+  { id: 'krazy-jungle', title: 'Krazy Jungle', icon: TreePine, color: 'bg-green-500/20 text-green-400' },
 ];
 
 /**
- * High-Fidelity Room Games Portal.
+ * Wafa-Style Room Games Portal - Bottom Sheet with no blur
  */
 export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMiniPlayer, roomHasMusic, showMiniPlayer }: RoomGamesDialogProps) {
   const router = useRouter();
@@ -50,21 +71,11 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
 
   const isSovereign = user?.uid === CREATOR_ID;
 
-  const gamesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'games'));
-  }, [firestore, user]);
-
-  const { data: firestoreGames } = useCollection(gamesQuery);
-
-  const activeGames = useMemo(() => {
-    return FALLBACK_GAMES.map(fb => {
-      const match = firestoreGames?.find(g => g.slug === fb.slug);
-      return match ? { ...fb, ...match } : fb;
-    });
-  }, [firestoreGames]);
-
   const handleGameClick = (slug: string) => {
+    if (slug === 'music') {
+      onToggleMiniPlayer?.();
+      return;
+    }
     if (onSelectGame) {
       onSelectGame(slug);
     } else {
@@ -73,165 +84,81 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
     }
   };
 
-  const handleLogoChangeClick = (e: React.MouseEvent, slug: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedGameSlug(slug);
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && selectedGameSlug) {
-      const game = activeGames.find(g => g.slug === selectedGameSlug);
-      if (game) {
-        uploadGameLogo(game as any, file);
-      }
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-none m-0 rounded-none bg-black/95 backdrop-blur-3xl border-none p-0 flex flex-col text-white font-headline shadow-2xl animate-in slide-in-from-bottom duration-500">
-        
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+      <DialogContent className="w-full h-[85vh] max-w-none m-0 rounded-t-3xl bg-[#1a1a2e] border-none p-0 flex flex-col text-white overflow-hidden">
+        {/* Handle bar like Wafa */}
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <div className="w-12 h-1.5 bg-white/20 rounded-full" />
+        </div>
 
-        <DialogHeader className="p-6 pt-12 border-b border-white/5 flex flex-row items-center justify-between shrink-0 bg-black/40">
-          <div className="flex items-center gap-4">
-             <div className="bg-primary p-2.5 rounded-2xl shadow-xl shadow-primary/20 animate-pulse">
-                <Gamepad2 className="h-7 w-7 text-black" />
-             </div>
-             <div>
-                <DialogTitle className="text-3xl font-black uppercase italic tracking-tighter">Game Dimension</DialogTitle>
-                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronize Your Reality</DialogDescription>
-             </div>
-          </div>
-          <button 
-            onClick={() => onOpenChange(false)}
-            className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 active:scale-90"
-          >
-             <X className="h-7 w-7 text-white/60" />
-          </button>
-        </DialogHeader>
+        {/* Quick Actions Row */}
+        <div className="flex justify-center gap-6 px-4 py-4 border-b border-white/5">
+          {QUICK_ACTIONS.map((action) => (
+            <button
+              key={action.id}
+              className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center relative", action.color)}>
+                <action.icon className="h-7 w-7" />
+                {action.badge && (
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1a2e]" />
+                )}
+              </div>
+              <span className="text-[10px] text-white/70 font-medium">{action.title}</span>
+            </button>
+          ))}
+        </div>
 
+        {/* Games Grid */}
         <ScrollArea className="flex-1">
-           <div className="max-w-5xl mx-auto px-8 py-16">
-              
-              {/* Quick Actions Grid - Music Button */}
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-4 mb-12 px-2">
-                {/* Music Button */}
+          <div className="p-4">
+            <div className="grid grid-cols-4 gap-3">
+              {/* Working Games First */}
+              {WORKING_GAMES.map((game) => (
                 <button
-                  onClick={() => {
-                    onToggleMiniPlayer?.();
-                  }}
+                  key={game.id}
+                  onClick={() => handleGameClick(game.id)}
                   className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-2xl transition-all active:scale-95 border-2",
-                    showMiniPlayer 
-                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400" 
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20"
+                    "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all active:scale-95",
+                    game.id === 'music' && showMiniPlayer
+                      ? "bg-cyan-500/20 border border-cyan-500/50" 
+                      : "bg-white/5 border border-white/10 hover:bg-white/10"
                   )}
                 >
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center",
-                    showMiniPlayer ? "bg-cyan-500/30" : "bg-black/40"
-                  )}>
-                    <Music className="h-6 w-6" />
+                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", game.color)}>
+                    <game.icon className="h-6 w-6" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Music</span>
+                  <span className="text-[10px] text-white/70 font-medium text-center leading-tight">{game.title}</span>
                 </button>
-              </div>
-
-              <div className="flex items-center gap-3 mb-12 px-2">
-                 <Sparkles className="h-5 w-5 text-primary animate-reaction-pulse" />
-                 <h3 className="text-xl font-black uppercase italic tracking-widest text-white/60">Active Frequencies</h3>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10">
-                 {activeGames.map((game) => {
-                   const assetId = (game as any).iconId || `game-${game.slug}`;
-                   const asset = PlaceHolderImages.find(img => img.id === assetId);
-                   const displayUrl = (game as any).coverUrl || asset?.imageUrl || 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000';
-
-                   return (
-                     <div 
-                       key={game.slug} 
-                       className="flex flex-col items-center gap-6 group relative"
-                     >
-                        <div className="relative w-full aspect-square">
-                           <div className="absolute inset-0 bg-primary/10 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                           
-                           <button 
-                             onClick={() => handleGameClick(game.slug)}
-                             className="relative w-full h-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl group-hover:border-primary transition-all group-hover:shadow-[0_0_40px_rgba(255,204,0,0.2)] bg-white/5 active:scale-95 transform-gpu"
-                           >
-                              {displayUrl ? (
-                                <Image 
-                                  key={displayUrl}
-                                  src={displayUrl} 
-                                  alt={game.title} 
-                                  fill
-                                  className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                  unoptimized 
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center h-full w-full">
-                                   <Gamepad2 className="h-12 w-12 text-white/20" />
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                           </button>
-
-                           {isSovereign && (
-                             <button 
-                               onClick={(e) => handleLogoChangeClick(e, game.slug)}
-                               className="absolute top-2 right-2 bg-primary text-black p-2 rounded-full z-30 shadow-xl border border-white hover:scale-110 transition-all active:scale-90"
-                             >
-                                {isUploading && selectedGameSlug === game.slug ? <Loader className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                             </button>
-                           )}
-
-                           {(game as any).isNew && (
-                             <div className="absolute -top-3 -right-3 bg-gradient-to-r from-orange-400 to-red-600 px-4 py-1 rounded-full shadow-xl border-2 border-white/20 z-10 animate-reaction-pulse">
-                                <span className="text-[10px] font-black text-white uppercase italic tracking-widest">New</span>
-                             </div>
-                           )}
-                        </div>
-
-                        <div className="text-center space-y-2">
-                           <span className="text-sm font-black text-white uppercase tracking-[0.2em] group-hover:text-primary transition-colors block">
-                              {game.title}
-                           </span>
-                           <div className="flex items-center justify-center gap-2">
-                              <div className="h-0.5 w-4 rounded-full bg-primary/40 group-hover:w-8 transition-all duration-500" />
-                              <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">3D Reality</span>
-                           </div>
-                        </div>
-                     </div>
-                   );
-                 })}
-              </div>
-           </div>
+              ))}
+              
+              {/* Prototype Games */}
+              {PROTOTYPE_GAMES.map((game) => (
+                <button
+                  key={game.id}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 opacity-50"
+                  disabled
+                >
+                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", game.color)}>
+                    <game.icon className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] text-white/40 font-medium text-center leading-tight">{game.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </ScrollArea>
-        
-        <footer className="p-10 text-center border-t border-white/5 bg-black/60 shrink-0">
-           <div className="flex flex-col items-center gap-2">
-              <p className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20">Ummy 3D Graphics Engine Synchronized</p>
-              <div className="h-1 w-24 bg-white/5 rounded-full overflow-hidden">
-                 <div className="h-full bg-primary/20 w-1/2 animate-loading-bar" />
-              </div>
-           </div>
-        </footer>
 
-        <style jsx>{`
-          @keyframes loading-bar {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(200%); }
-          }
-          .animate-loading-bar {
-            animation: loading-bar 2s infinite linear;
-          }
-        `}</style>
+        {/* Close button at bottom */}
+        <div className="p-4 border-t border-white/5">
+          <button 
+            onClick={() => onOpenChange(false)}
+            className="w-full py-3 bg-white/10 rounded-xl text-white/70 font-medium text-sm active:scale-95 transition-transform"
+          >
+            Close
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
