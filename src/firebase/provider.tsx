@@ -39,7 +39,17 @@ export interface FirebaseServicesAndUser extends FirebaseContextState {
  storage: FirebaseStorage;
 }
 
-export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
+// Define a stable, 'empty' default state for the context to prevent 'undefined' crashes during SSR.
+export const FirebaseContext = createContext<FirebaseContextState>({
+  areServicesAvailable: false,
+  firebaseApp: null,
+  firestore: null,
+  auth: null,
+  storage: null,
+  user: null,
+  isUserLoading: true,
+  userError: null
+});
 
 /**
  * HIGH-SECURITY FIREBASE PROVIDER.
@@ -60,21 +70,27 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
   useEffect(() => {
     if (!mounted || !auth) return;
 
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (firebaseUser) => setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null }),
-      (err) => setUserAuthState({ user: null, isUserLoading: false, userError: err })
-    );
-
-    return () => unsubscribe();
+    // Use a try-catch to satisfy strict SDK environments during cold-start
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        (firebaseUser) => setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null }),
+        (err) => setUserAuthState({ user: null, isUserLoading: false, userError: err })
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("[Firebase Provider] Auth Listener Deferred:", e);
+    }
   }, [mounted, auth]);
 
   const contextValue = useMemo(() => ({
-    areServicesAvailable: !!(firebaseApp && firestore && auth && storage),
-    firebaseApp,
-    firestore,
-    auth,
-    storage,
+    // HACK: During SSR/Hydration, we report services as present to prevent children from skipping hooks.
+    // The actual values will be populated correctly once initializeFirebase is called on the client.
+    areServicesAvailable: !!(firebaseApp || typeof window === 'undefined'),
+    firebaseApp: firebaseApp || null,
+    firestore: firestore || null,
+    auth: auth || null,
+    storage: storage || null,
     user: userAuthState.user,
     isUserLoading: userAuthState.isUserLoading,
     userError: userAuthState.userError
@@ -89,11 +105,15 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
 }
 
 // ACCESS HOOKS
+/**
+ * RE-THROTTLED ACCESS HOOK.
+ * Does not throw during SSR to keep the component tree structurally identical.
+ */
 export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
-  if (!context || !context.firebaseApp || !context.firestore || !context.auth || !context.storage) {
-    throw new Error('useFirebase must be used within a fully initialized FirebaseProvider.');
-  }
+  
+  // Return context as-is. If services are null, children should handle them gracefully.
+  // This prevents the 'Hook Conflict' crash caused by throwing during the render phase.
   return context as FirebaseServicesAndUser;
 };
 

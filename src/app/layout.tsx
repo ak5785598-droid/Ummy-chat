@@ -3,14 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Outfit, Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
-
-// NUCLEAR HYDRATION ISOLATION: 
-// Disabling SSR for the entire Provider stack ensures a single, stable client mount.
-// This is the definitive fix for React Error #310 hook mismatches.
-const Providers = dynamic(() => import('./providers').then(mod => mod.Providers), {
- ssr: false,
-});
+import { Providers } from './providers';
 
 const fontHeadline = Outfit({
  subsets: ['latin'],
