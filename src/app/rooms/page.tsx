@@ -51,9 +51,9 @@ export default function RoomsPage() {
  const { t } = useTranslation();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
- const [mounted, setMounted] = useState(false);
 
- useEffect(() => { setMounted(true); }, []);
+
+
 
  const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
  const { data: userDoc } = useDoc(userRef);
@@ -116,7 +116,7 @@ export default function RoomsPage() {
   });
  }, [roomsData, activeCategory]);
 
- if (!mounted) return null;
+
 
  return (
   <AppLayout>

@@ -21,19 +21,9 @@ import { Crown, Users, Heart, Loader } from 'lucide-react';
  * Uses internal hydration guards to keep hook counts consistent (#310).
  */
 
-function CardPlaceholder() {
-  return (
-    <div className="flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-white/5 border border-white/10 animate-pulse flex items-center justify-center">
-       <Loader className="h-4 w-4 text-white/20 animate-spin" />
-    </div>
-  );
-}
 
 // 1. RANKING CARD
 export function RankingCard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
   const router = useRouter();
   const firestore = useFirestore();
   const richQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -43,8 +33,6 @@ export function RankingCard() {
   ), [firestore]);
   
   const { data: topUsers } = useCollection(richQuery);
-
-  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 
@@ -67,9 +55,6 @@ export function RankingCard() {
 
 // 2. FAMILY CARD
 export function FamilyCard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
   const router = useRouter();
   const firestore = useFirestore();
   const familiesQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -79,8 +64,6 @@ export function FamilyCard() {
   ), [firestore]);
   
   const { data: topFamilies } = useCollection(familiesQuery);
-
-  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 
@@ -104,9 +87,6 @@ export function FamilyCard() {
 
 // 3. CP CARD
 export function CpCard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
   const router = useRouter();
   const firestore = useFirestore();
   const cpQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -116,8 +96,6 @@ export function CpCard() {
   ), [firestore]);
   
   const { data: topCp } = useCollection(cpQuery);
-
-  if (!mounted) return <CardPlaceholder />;
 
   return (
     <button 

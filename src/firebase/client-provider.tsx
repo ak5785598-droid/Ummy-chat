@@ -16,19 +16,8 @@ interface FirebaseClientProviderProps {
  * hook-order changes during the hydration Phase (#310).
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // STRICT HYDRATION LOCK: Prevents Vercel static generation from crashing on missing Firebase env variables,
-  // and completely eliminates React Error #310 hook mismatch by forcing a clean client-side mount.
-  const [mounted, setMounted] = React.useState(false);
-  
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null; // Keep SSR clean
-  }
-
-  // Safe to initialize now that we are exclusively on the client
+  // Directly retrieve stable singleton instances.
+  // SSR isolation is now handled by the parent layout via next/dynamic.
   const { firebaseApp, auth, firestore, storage } = initializeFirebase();
 
   return (
