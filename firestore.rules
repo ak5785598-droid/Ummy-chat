@@ -88,6 +88,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /cpPairs/{cpId} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isAdmin();
+    }
+
+    match /families/{familyId} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isAdmin();
+    }
+
     match /appConfig/{configId} {
       allow read: if true;
       allow write: if isAdmin();
