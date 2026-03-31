@@ -390,23 +390,22 @@ export function RoomClient({ room }: { room: Room }) {
   const participants = useMemo(() => {
     if (!participantsData) return [];
     
-    // Show all participants without aggressive filtering
-    // Only filter out users who haven't been seen for a very long time (10 minutes)
-    return participantsData.filter(p => {
-      if (p.uid === currentUser?.uid) return true;
-      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-      if (!lastSeen) return true; // If no lastSeen, assume they're online
-      
-      // Keep users visible for 10 minutes regardless of seat status
-      return now ? (now - lastSeen) < 600000 : true; // 10 minutes in ms
-    });
-  }, [participantsData, now, currentUser?.uid]);
+    // Show ALL participants from Firestore - no filtering
+    // This ensures everyone in the room is visible
+    return participantsData;
+  }, [participantsData]);
 
-  // DEBUG: Log participants data changes
+  // DEBUG: Log participants data changes with full details
   useEffect(() => {
-    console.log('[OnlineCount] participantsData:', participantsData?.length || 0, 'participants:', participants.length);
+    console.log('[OnlineCount] Raw participantsData:', participantsData?.length || 0);
+    console.log('[OnlineCount] Filtered participants:', participants.length);
     if (participantsData) {
-      console.log('[OnlineCount] Users:', participantsData.map(p => ({ uid: p.uid, name: p.name, seat: p.seatIndex })));
+      console.log('[OnlineCount] All users:', participantsData.map(p => ({ 
+        uid: p.uid, 
+        name: p.name, 
+        seat: p.seatIndex,
+        lastSeen: (p as any).lastSeen ? 'yes' : 'no'
+      })));
     }
   }, [participantsData, participants]);
 
