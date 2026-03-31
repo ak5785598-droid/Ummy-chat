@@ -345,6 +345,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
 
+  // AUTO-SCROLL SYNC
   useEffect(() => {
     if (messagesEndRef.current) {
       const timer = setTimeout(() => {
@@ -354,19 +355,26 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
 
+  // GIFT & EVENT SYNC ENGINE
   useEffect(() => {
     if (!firestoreMessages || firestoreMessages.length === 0) return;
+
+    // Identify the starting point for the new delta
     const startIndex = lastProcessedId.current 
       ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
       : 0;
+
     const newBatch = firestoreMessages.slice(startIndex);
+    
     newBatch.forEach(msg => {
       if (msg.type === 'gift' && msg.giftId) {
+        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
         setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
       } else if (msg.type === 'lucky-rain') {
         setIsLuckyRainActive(true);
       }
     });
+
     if (newBatch.length > 0) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
@@ -388,10 +396,13 @@ export function RoomClient({ room }: { room: Room }) {
         name: 'Custom' 
       };
     }
+
     const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
     if (staticTheme) return staticTheme;
+
     const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
     if (dbTheme) return dbTheme;
+
     return ROOM_THEMES[0];
   }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
 
@@ -400,19 +411,21 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string) => {
     if (e) e.preventDefault();
     if ((!messageText.trim() && !imageUrl) || !currentUser || !firestore || !userProfile) return;
+    
     if (isChatMuted && !canManageRoom) {
       toast({ variant: 'destructive', title: 'Chat Restricted', description: 'The room authority has disabled public messages.' });
       return;
     }
+
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-      content: messageText, 
+      content: messageText || '', 
       imageUrl: imageUrl || null,
       senderId: currentUser.uid, 
       senderName: userProfile.username || 'User', 
       senderAvatar: userProfile.avatarUrl || null, 
       chatRoomId: room.id, 
       timestamp: serverTimestamp(), 
-      type: 'text'
+      type: imageUrl ? 'image' : 'text'
     });
     setMessageText('');
   };
@@ -420,6 +433,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage || !currentUser || !room.id) return;
+
     setIsUploadingImage(true);
     try {
       const timestamp = Date.now();
@@ -448,9 +462,14 @@ export function RoomClient({ room }: { room: Room }) {
   const handleExit = () => { 
     if (firestore && currentUser) {
       const roomDocRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomDocRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+      updateDocumentNonBlocking(roomDocRef, { 
+        participantCount: increment(-1),
+        updatedAt: serverTimestamp() 
+      });
+
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       deleteDocumentNonBlocking(pRef);
+      
       const uRef = doc(firestore, 'users', currentUser.uid);
       const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
@@ -503,7 +522,11 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleInputClick = () => {
     if (isChatMuted && !canManageRoom) {
-      toast({ variant: 'destructive', title: 'Chat Restricted', description: 'Room authority has closed public messaging.' });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Chat Restricted', 
+        description: 'Room authority has closed public messaging.' 
+      });
       return;
     }
     setShowInput(true);
@@ -535,9 +558,12 @@ export function RoomClient({ room }: { room: Room }) {
         console.warn('[Music Sync] Play failed:', e);
         toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
       });
+      
       // @ts-ignore
       const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
-      if (stream) setMusicStream(stream);
+      if (stream) {
+        setMusicStream(stream);
+      }
     }
   };
 
@@ -550,34 +576,55 @@ export function RoomClient({ room }: { room: Room }) {
     const mics = room.maxActiveMics || 9;
     if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
     if (mics === 13) return { height: 'h-48', padding: 'pb-48' };
-    return { height: 'h-64', padding: 'pb-64' }; 
+    return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
   }, [room.maxActiveMics]);
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full bg-black overflow-hidden text-white font-headline">
       <DailyRewardDialog />
-      <GiftAnimationOverlay giftId={activeGiftSync?.id || null} senderName={activeGiftSync?.senderName} onComplete={() => setActiveGiftSync(null)} />
+      <GiftAnimationOverlay 
+        giftId={activeGiftSync?.id || null} 
+        senderName={activeGiftSync?.senderName}
+        onComplete={() => setActiveGiftSync(null)} 
+      />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
       {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
         <RemoteAudio key={peerId} stream={stream} muted={isMutedLocal} />
       ))}
+      
       <audio ref={musicAudioRef} className="hidden" crossOrigin="anonymous" />
+
       <div className="absolute inset-0 z-0">
-        <Image key={`${room.roomThemeId}`} src={bgUrl} alt="Background" fill unoptimized className="object-cover opacity-60 animate-in fade-in duration-1000" priority />
+        <Image 
+          key={`${room.roomThemeId}`} 
+          src={bgUrl} 
+          alt="Background" 
+          fill 
+          unoptimized
+          className="object-cover opacity-60 animate-in fade-in duration-1000" 
+          priority 
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90 z-10" />
       </div>
+
       <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <div onClick={() => setIsFollowersOpen(true)} className="relative shrink-0 cursor-pointer active:scale-95 transition-transform">
+          <div 
+            onClick={() => setIsFollowersOpen(true)}
+            className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+          >
             <Avatar className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-xl">
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>UM</AvatarFallback>
             </Avatar>
             <div className="absolute -bottom-1.5 -left-1 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1 py-0.5 rounded-full border border-white/10 z-20 shadow-lg">
                <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
-               <span className="text-[7px] font-black text-yellow-400 leading-none">{room.stats?.totalGifts?.toLocaleString() || 0}</span>
+               <span className="text-[7px] font-black text-yellow-400 leading-none">
+                 {room.stats?.totalGifts?.toLocaleString() || 0}
+               </span>
             </div>
           </div>
+
           <div className="flex flex-col min-w-0">
              <div className="flex items-center gap-1 min-w-0">
                 <h1 className="font-black text-[13px] uppercase tracking-tighter text-white leading-none drop-shadow-lg truncate max-w-[90px]">{room.title}</h1>
@@ -595,6 +642,7 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={() => setIsExitPortalOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4" /></button>
         </div>
       </header>
+
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
         <div className={cn("flex-1 flex flex-col items-center justify-start gap-3 pt-2 overflow-y-auto no-scrollbar w-full", chatConfig.padding)}>
            <div className="w-full flex justify-center px-6 mb-1">
@@ -624,15 +672,35 @@ export function RoomClient({ room }: { room: Room }) {
               </div>
            </div>
         </div>
+
         <div className={cn("absolute bottom-0 left-0 w-full z-20 pointer-events-none p-3 pb-0 transition-all duration-500", chatConfig.height)}>
            <ScrollArea className="h-full pr-3 pointer-events-auto">
               <div className="flex flex-col gap-1 justify-end min-h-full">
                  {firestoreMessages?.map((msg: any) => (
-                   <div key={msg.id || Math.random().toString()} onClick={() => { if (msg.senderId) { setSelectedParticipantUid(msg.senderId); setIsUserProfileCardOpen(true); } }} className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto">
+                   <div 
+                    key={msg.id || Math.random().toString()} 
+                    onClick={() => {
+                      if (msg.senderId) {
+                        setSelectedParticipantUid(msg.senderId);
+                        setIsUserProfileCardOpen(true);
+                      }
+                    }}
+                    className="flex items-start gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-1 border border-white/5 w-fit max-w-[85%] animate-in fade-in slide-in-from-left-2 shadow-xl mb-0.5 cursor-pointer active:scale-[0.98] transition-transform pointer-events-auto"
+                   >
                       <Avatar className="h-5 w-5 shrink-0 border border-white/10"><AvatarImage src={msg.senderAvatar || undefined} /><AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col">
                         <span className={cn("text-[7px] font-black uppercase tracking-tighter leading-none mb-0.5", msg.senderId === currentUser?.uid ? "text-primary" : "text-white/40")}>{msg.senderName || 'Tribe Member'}</span>
-                        {msg.imageUrl && <div onClick={(e) => { e.stopPropagation(); setPreviewImage(msg.imageUrl); }} className="mt-1 relative aspect-square w-32 rounded-lg overflow-hidden border border-white/10"><Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized /></div>}
+                        {msg.imageUrl && (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(msg.imageUrl);
+                            }}
+                            className="mt-1 relative aspect-square w-48 max-w-full rounded-lg overflow-hidden border border-white/10"
+                          >
+                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
+                          </div>
+                        )}
                         {msg.content && <p className="text-[9px] font-bold text-white leading-tight break-all">{msg.content}</p>}
                       </div>
                    </div>
@@ -642,35 +710,189 @@ export function RoomClient({ room }: { room: Room }) {
            </ScrollArea>
         </div>
       </main>
+
       <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
-        <div className="flex items-center"><button onClick={handleInputClick} className={cn("backdrop-blur-xl rounded-full h-10 w-10 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg", isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white")}><MessageSquare className="h-5 w-5" /></button></div>
-        <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1"><button onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"><div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} /><div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" /><img src="https://img.icons8.com/color/96/gift--v1.png" className="h-11 w-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" alt="Gift" /></button></div>
-        <div className="flex items-center gap-1.5"><button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>{isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}</button><button onClick={() => setIsEmojiPickerOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5"><SmilePlus className="h-4 w-4 text-white" /></button><button onClick={() => setIsMessagesOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5"><Mail className="h-4 w-4 text-white" /></button><button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5"><LayoutGrid className="h-4 w-4 text-white" /></button></div>
+        <div className="flex items-center">
+           <button 
+             onClick={handleInputClick} 
+             className={cn(
+               "backdrop-blur-xl rounded-full h-10 w-10 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
+               isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
+             )}
+           >
+              <MessageSquare className="h-5 w-5" />
+           </button>
+        </div>
+
+        <div className="absolute left-[48%] -translate-x-1/2 -translate-y-1">
+           <button 
+             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }} 
+             className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_25px_rgba(0,176,255,0.6)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
+           >
+              <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
+              
+              <img 
+                src="https://img.icons8.com/color/96/gift--v1.png" 
+                className="h-11 w-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10" 
+                alt="Gift"
+              />
+           </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1.5 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
+              {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+           </button>
+           
+           <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+             <SmilePlus className="h-4 w-4 text-white" />
+           </button>
+
+           <button onClick={() => setIsMessagesOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <Mail className="h-4 w-4 text-white" />
+           </button>
+
+           <button onClick={() => setIsRoomPlayOpen(true)} className="p-1.5 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
+              <LayoutGrid className="h-4 w-4 text-white" />
+           </button>
+        </div>
       </footer>
+
       {showInput && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col justify-end p-4 font-headline">
            <div className="bg-slate-900 rounded-[2rem] p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-10">
               <div className="flex justify-between items-center px-4"><h3 className="font-black uppercase tracking-widest text-[9px] text-white/40">Broadcasting to Tribe</h3><button onClick={() => setShowInput(false)} className="text-white/40"><X className="h-4 w-4" /></button></div>
               <div className="flex gap-2">
-                 <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-                 <button type="button" disabled={isUploadingImage} onClick={() => imageInputRef.current?.click()} className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50">{isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}</button>
-                 <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}><Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." /><button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button></form>
+                 <input 
+                   type="file" 
+                   ref={imageInputRef} 
+                   className="hidden" 
+                   accept="image/*" 
+                   onChange={handleImageUpload} 
+                 />
+                 <button 
+                   type="button"
+                   disabled={isUploadingImage}
+                   onClick={() => imageInputRef.current?.click()}
+                   className="bg-white/10 text-white h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                 >
+                    {isUploadingImage ? <Loader className="h-6 w-6 animate-spin" /> : <ImageIcon className="h-6 w-6" />}
+                 </button>
+                 <form className="flex-1 flex gap-2" onSubmit={(e) => { handleSendMessage(e); setShowInput(false); }}>
+                    <Input autoFocus value={messageText} onChange={(e) => setMessageText(e.target.value)} className="h-12 bg-white/5 border-white/10 rounded-full px-5 text-white text-sm" placeholder="Type a message..." />
+                    <button type="submit" className="bg-primary text-black h-12 w-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"><Mail className="h-5 w-5" /></button>
+                 </form>
               </div>
            </div>
         </div>
       )}
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}><DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]"><DialogHeader className="sr-only"><DialogTitle>Image Preview</DialogTitle><DialogDescription>Full screen view</DialogDescription></DialogHeader><button onClick={() => setPreviewImage(null)} className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"><X className="h-6 w-6" /></button>{previewImage && <div className="relative w-full h-full flex items-center justify-center p-4"><Image src={previewImage} alt="Full screen preview" fill className="object-contain" unoptimized /></div>}</DialogContent></Dialog>
-      <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}><DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline"><DialogHeader className="sr-only"><DialogTitle>Exit Frequency</DialogTitle><DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription></DialogHeader><div className="p-12 flex items-center justify-around gap-8"><button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span></button><button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform"><div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div><span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span></button></div></DialogContent></Dialog>
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[300]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Image Preview</DialogTitle>
+            <DialogDescription>Full screen view</DialogDescription>
+          </DialogHeader>
+          <button 
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          {previewImage && (
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <Image 
+                src={previewImage} 
+                alt="Full screen preview" 
+                fill 
+                className="object-contain" 
+                unoptimized 
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isExitPortalOpen} onOpenChange={setIsExitPortalOpen}>
+        <DialogContent className="sm:max-w-md bg-black/90 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden font-headline">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Exit Frequency</DialogTitle>
+            <DialogDescription>Choose to minimize or exit the current tribal frequency.</DialogDescription>
+          </DialogHeader>
+          <div className="p-12 flex items-center justify-around gap-8">
+            <button onClick={handleMinimize} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><Minimize2 className="h-8 w-8 text-black" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Minimize</span>
+            </button>
+            <button onClick={handleExit} className="flex flex-col items-center gap-4 active:scale-90 transition-transform">
+              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-2xl"><LogOut className="h-8 w-8 text-pink-500" /></div>
+              <span className="text-white font-black uppercase text-xs tracking-widest">Exit Room</span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
       <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
-      <RoomPlayDialog open={isRoomPlayOpen} onOpenChange={setIsRoomPlayOpen} participants={participants} roomId={room.id} room={room} isMutedLocal={isMutedLocal} setIsMutedLocal={setIsMutedLocal} onOpenGames={() => setIsRoomGamesOpen(true)} onPlayLocalMusic={handlePlayLocalMusic} />
+      <RoomPlayDialog 
+        open={isRoomPlayOpen} 
+        onOpenChange={setIsRoomPlayOpen} 
+        participants={participants} 
+        roomId={room.id} 
+        room={room} 
+        isMutedLocal={isMutedLocal}
+        setIsMutedLocal={setIsMutedLocal}
+        onOpenGames={() => setIsRoomGamesOpen(true)}
+        onPlayLocalMusic={handlePlayLocalMusic}
+      />
       <RoomGamesDialog open={isRoomGamesOpen} onOpenChange={setIsRoomGamesOpen} />
-      <RoomMessagesDialog open={isMessagesOpen} onOpenChange={(val) => { setIsMessagesOpen(val); if (!val) setInitialChatRecipient(null); }} initialRecipient={initialChatRecipient} />
+      <RoomMessagesDialog 
+        open={isMessagesOpen} 
+        onOpenChange={(val) => {
+          setIsMessagesOpen(val);
+          if (!val) setInitialChatRecipient(null);
+        }} 
+        initialRecipient={initialChatRecipient}
+      />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
       <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
-      <RoomSeatMenuDialog open={isSeatMenuOpen} onOpenChange={setIsSeatMenuOpen} seatIndex={selectedSeatIdx} roomId={room.id} isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false} occupantUid={selectedParticipantUid} occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name} occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl} canManage={canManageRoom} currentUserId={currentUser?.uid} onLeaveSeat={handleLeaveSeat} onKick={handleKick} onSendGift={handleOpenGiftPickerFromMenu} />
-      <RoomUserProfileDialog userId={selectedParticipantUid} open={isUserProfileCardOpen} onOpenChange={setIsUserProfileCardOpen} canManage={canManageRoom} isOwner={isOwner} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} onSilence={handleSilence} onKick={handleKick} onLeaveSeat={handleLeaveSeat} onToggleMod={handleToggleMod} onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }} onOpenChat={handleOpenChatFromProfile} onMention={handleMention} isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false} isMe={selectedParticipantUid === currentUser?.uid} />
+      
+      <RoomSeatMenuDialog 
+        open={isSeatMenuOpen} 
+        onOpenChange={setIsSeatMenuOpen}
+        seatIndex={selectedSeatIdx}
+        roomId={room.id}
+        isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
+        occupantUid={selectedParticipantUid}
+        occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
+        occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
+        canManage={canManageRoom}
+        currentUserId={currentUser?.uid}
+        onLeaveSeat={handleLeaveSeat}
+        onKick={handleKick}
+        onSendGift={handleOpenGiftPickerFromMenu}
+      />
+
+      <RoomUserProfileDialog 
+        userId={selectedParticipantUid}
+        open={isUserProfileCardOpen}
+        onOpenChange={setIsUserProfileCardOpen}
+        canManage={canManageRoom}
+        isOwner={isOwner}
+        roomOwnerId={room.ownerId}
+        roomModeratorIds={room.moderatorIds || []}
+        onSilence={handleSilence}
+        onKick={handleKick}
+        onLeaveSeat={handleLeaveSeat}
+        onToggleMod={handleToggleMod}
+        onOpenGiftPicker={(recipient) => { setGiftRecipient(recipient); setIsGiftPickerOpen(true); }}
+        onOpenChat={handleOpenChatFromProfile}
+        onMention={handleMention}
+        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isSilenced || false}
+        isMe={selectedParticipantUid === currentUser?.uid}
+      />
     </div>
   );
 }
