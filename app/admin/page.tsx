@@ -210,6 +210,11 @@ export default function AdminPage() {
   const [isSearchingRoomPin, setIsSearchingRoomPin] = useState(false);
   const [isPinningRoom, setIsPinningRoom] = useState(false);
 
+  // Game Oracle State
+  const [oracleGame, setOracleGame] = useState('fruit-party');
+  const [oracleResult, setOracleResult] = useState('');
+  const [isUpdatingOracle, setIsUpdatingOracle] = useState(false);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, 'games'));
@@ -221,6 +226,12 @@ export default function AdminPage() {
     return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
   }, [firestore, isCreator]);
   const { data: customThemes } = useCollection(themesQuery);
+
+  const recentWinsQuery = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return query(collection(firestore, 'globalGameWins'), orderBy('timestamp', 'desc'), limit(15));
+  }, [firestore, isCreator]);
+  const { data: recentWins } = useCollection(recentWinsQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -689,6 +700,42 @@ export default function AdminPage() {
   const handleGameDPFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameLogo(selectedGameForSync, file); setSelectedGameForSync(null); } };
   const handleGameBGFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && selectedGameForSync) { await uploadGameBackground(selectedGameForSync, file); setSelectedGameForSync(null); } };
 
+  const getOracleOptions = (game: string) => {
+    switch (game) {
+      case 'fruit-party':
+        return [
+          { id: 'strawberry', label: '🍓 Strawberry' }, { id: 'bananas', label: '🍌 Bananas' },
+          { id: 'oranges', label: '🍊 Oranges' }, { id: 'watermelon', label: '🍉 Watermelon' },
+          { id: 'pizza', label: '🍕 Pizza' }, { id: 'burrito', label: '🌯 Burrito' },
+          { id: 'skewers', label: '🍢 Skewers' }, { id: 'chicken', label: '🍗 Chicken' },
+        ];
+      case 'wild-party':
+        return [
+          { id: 'turtle', label: '🐢 Turtle' }, { id: 'rabbit', label: '🐰 Rabbit' },
+          { id: 'sheep', label: '🐑 Sheep' }, { id: 'fox', label: '🦊 Fox' },
+          { id: 'rhino', label: '🦏 Rhino' }, { id: 'elephant', label: '🐘 Elephant' },
+          { id: 'lion', label: '🦁 Lion' }, { id: 'tiger', label: '🐯 Tiger' },
+        ];
+      case 'roulette':
+        return Array.from({ length: 37 }, (_, i) => ({ id: i.toString(), label: String(i) }));
+      case 'teen-patti':
+        return [{ id: 'WOLF', label: 'Wolf' }, { id: 'LION', label: 'Lion' }, { id: 'FISH', label: 'Fish' }];
+      default: return [];
+    }
+  };
+
+  const handleUpdateOracle = async () => {
+    if (!firestore || !oracleGame || !oracleResult || !isCreator) return;
+    setIsUpdatingOracle(true);
+    const oracleRef = doc(firestore, 'gameOracle', oracleGame);
+    const resultValue = oracleGame === 'roulette' ? parseInt(oracleResult) : oracleResult;
+    try {
+      await setDoc(oracleRef, { forcedResult: resultValue, isActive: true, updatedAt: serverTimestamp(), setBy: user?.uid });
+      toast({ title: 'Fate Synchronized', description: `The next ${oracleGame} round will result in: ${oracleResult}` });
+      setOracleResult('');
+    } finally { setIsUpdatingOracle(false); }
+  };
+
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
 
   return (
@@ -707,6 +754,7 @@ export default function AdminPage() {
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-[2.5rem] border border-slate-100 p-3 gap-2 overflow-visible">
                 <TabsTrigger value="app-data" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Database className="h-4 w-4" /> App Ledger</TabsTrigger>
+                <TabsTrigger value="game-oracle" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Wand2 className="h-4 w-4" /> Game Oracle</TabsTrigger>
                 <TabsTrigger value="app-branding" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Palette className="h-4 w-4" /> App Branding</TabsTrigger>
                 <TabsTrigger value="pin-control" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Pin className="h-4 w-4" /> Pin Control</TabsTrigger>
                 <TabsTrigger value="authority" className="w-full justify-start h-14 rounded-2xl px-6 font-black uppercase italic text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"><Zap className="h-4 w-4" /> Authority Hub</TabsTrigger>
@@ -731,6 +779,72 @@ export default function AdminPage() {
           </div>
 
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="game-oracle" className="m-0 space-y-6">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
+                  <CardHeader className="px-0">
+                     <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-purple-600"><Wand2 className="h-6 w-6" /> Sovereign Game Oracle</CardTitle>
+                     <CardDescription>Determine the future frequencies of the Tribe Arena. Force the next winning result for specific games.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-6">
+                           <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Select Arena Dimension</Label>
+                              <Select value={oracleGame} onValueChange={setOracleGame}>
+                                 <SelectTrigger className="h-14 rounded-2xl border-2"><SelectValue /></SelectTrigger>
+                                 <SelectContent>
+                                    <SelectItem value="fruit-party">Fruit Party</SelectItem>
+                                    <SelectItem value="wild-party">Wild Party (Forest)</SelectItem>
+                                    <SelectItem value="roulette">Roulette</SelectItem>
+                                    <SelectItem value="teen-patti">Teen Patti</SelectItem>
+                                 </SelectContent>
+                              </Select>
+                           </div>
+                           <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Force Next Outcome</Label>
+                              <Select value={oracleResult} onValueChange={setOracleResult}>
+                                 <SelectTrigger className="h-14 rounded-2xl border-2"><SelectValue placeholder="Select Outcome" /></SelectTrigger>
+                                 <SelectContent>
+                                    {getOracleOptions(oracleGame).map(opt => (
+                                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                           </div>
+                           <Button onClick={handleUpdateOracle} disabled={isUpdatingOracle || !oracleResult} className="w-full h-16 rounded-[1.5rem] bg-purple-600 text-white font-black uppercase italic text-xl shadow-xl shadow-purple-500/20 active:scale-95 transition-all">
+                              {isUpdatingOracle ? <Loader className="animate-spin mr-2" /> : <Zap className="mr-2 h-6 w-6" />} Synchronize Fate
+                           </Button>
+                        </div>
+                        <div className="space-y-4">
+                           <div className="flex items-center gap-2 mb-4">
+                              <History className="h-5 w-5 text-purple-600" />
+                              <h4 className="font-black uppercase italic text-sm">Recent Arena Victories (Real Time)</h4>
+                           </div>
+                           <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">
+                              {recentWins?.map((win: any) => (
+                                <div key={win.id} className="p-4 flex items-center justify-between hover:bg-slate-100/50 transition-colors">
+                                   <div className="flex items-center gap-3">
+                                      <Avatar className="h-8 w-8 border border-white shadow-sm"><AvatarImage src={win.avatarUrl || undefined} /></Avatar>
+                                      <div>
+                                         <p className="text-[10px] font-black uppercase text-slate-900 truncate w-24">{win.username}</p>
+                                         <p className="text-[8px] font-bold text-purple-400 uppercase tracking-widest">{win.gameId}</p>
+                                      </div>
+                                   </div>
+                                   <div className="text-right">
+                                      <div className="flex items-center gap-1 justify-end text-green-600 font-black italic text-sm">
+                                         <GoldCoinIcon className="h-3 w-3" />+{win.amount.toLocaleString()}
+                                      </div>
+                                      <p className="text-[6px] font-bold text-slate-400 uppercase">{win.timestamp ? format(win.timestamp.toDate(), 'HH:mm:ss') : '...'}</p>
+                                   </div>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
             <TabsContent value="app-data" className="m-0 space-y-6">
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0 flex flex-row items-center justify-between">
@@ -1019,7 +1133,6 @@ export default function AdminPage() {
                      <CardDescription>Manage the app's first visual frequency and global brand signature.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 space-y-10">
-                     {/* Global Logo Sync Section */}
                      <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4">
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
