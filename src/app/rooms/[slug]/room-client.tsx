@@ -248,6 +248,9 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMutedLocal, setIsMutedLocal] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicProgress, setMusicProgress] = useState(0);
+  const [musicDuration, setMusicDuration] = useState(0);
+  const [musicCurrentTime, setMusicCurrentTime] = useState(0);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -1314,6 +1317,30 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearInterval(interval);
   }, [firestore, room.id, canManageRoom, room.currentMusicUrl, isMusicPlaying]);
 
+  // Track music progress
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio) return;
+
+    const updateProgress = () => {
+      setMusicCurrentTime(audio.currentTime);
+      setMusicDuration(audio.duration || 0);
+      setMusicProgress((audio.currentTime / (audio.duration || 1)) * 100);
+    };
+
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', updateProgress);
+    audio.addEventListener('play', () => setIsMusicPlaying(true));
+    audio.addEventListener('pause', () => setIsMusicPlaying(false));
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', updateProgress);
+      audio.removeEventListener('play', () => setIsMusicPlaying(true));
+      audio.removeEventListener('pause', () => setIsMusicPlaying(false));
+    };
+  }, [room?.currentMusicUrl]);
+
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
@@ -1563,6 +1590,101 @@ export function RoomClient({ room }: { room: Room }) {
           </ScrollArea>
         </div>
       </main>
+
+      {/* MINI MUSIC PLAYER - Wafa Style */}
+      {room.currentMusicUrl && (
+        <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4">
+          <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
+            {/* Song Title */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                <Music className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-medium text-white truncate">
+                  {room.currentMusicTitle || 'Unknown Song'}
+                </p>
+                <p className="text-[9px] text-white/50">
+                  {formatTime(musicCurrentTime)} / {formatTime(musicDuration)}
+                </p>
+              </div>
+              {/* Close/Stop Button */}
+              <button
+                onClick={handleStopMusic}
+                className="p-1.5 rounded-full bg-white/10 text-white/60 hover:bg-white/20 active:scale-95 transition-all"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full h-1 bg-white/20 rounded-full mb-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
+                style={{ width: `${musicProgress}%` }}
+              />
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-6">
+              {/* Playlist */}
+              <button
+                onClick={() => setIsRoomPlayOpen(true)}
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </button>
+
+              {/* Previous */}
+              <button
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                </svg>
+              </button>
+
+              {/* Play/Pause */}
+              <button
+                onClick={handleToggleMusic}
+                className="p-3 rounded-full bg-white text-black active:scale-95 transition-all shadow-lg"
+              >
+                {isMusicPlaying ? (
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                )}
+              </button>
+
+              {/* Next */}
+              <button
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+              </button>
+
+              {/* Volume/Mute */}
+              <button
+                onClick={() => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.muted = !musicAudioRef.current.muted;
+                    toast({ title: musicAudioRef.current.muted ? 'Muted' : 'Unmuted' });
+                  }
+                }}
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <Volume2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
         <div className="flex items-center">
@@ -1857,4 +1979,12 @@ export function RoomClient({ room }: { room: Room }) {
       <MountOverlay entries={mountEntries} />
     </div>
   );
+}
+
+// Helper function to format time
+function formatTime(seconds: number): string {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
