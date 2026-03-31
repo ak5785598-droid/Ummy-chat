@@ -1153,38 +1153,87 @@ export function RoomClient({ room }: { room: Room }) {
       musicAudioRef.current.pause();
       musicAudioRef.current.currentTime = 0;
       
-      // Set new source
-      musicAudioRef.current.src = newUrl;
+      // For Firebase Storage URLs, fetch via SDK to bypass CORS
+      if (newUrl.includes('firebasestorage.googleapis.com') && storage) {
+        console.log('[Music] Fetching via Firebase SDK to bypass CORS...');
+        
+        // Extract path from URL
+        const urlObj = new URL(newUrl);
+        const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
+        if (pathMatch) {
+          const filePath = decodeURIComponent(pathMatch[1]);
+          console.log('[Music] Extracted path:', filePath);
+          
+          // Fetch using Firebase SDK
+          const fileRef = ref(storage, filePath);
+          getDownloadURL(fileRef).then(freshUrl => {
+            console.log('[Music] Got fresh URL, fetching as blob...');
+            return fetch(freshUrl);
+          }).then(response => {
+            if (!response.ok) throw new Error('Failed to fetch audio');
+            return response.blob();
+          }).then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            console.log('[Music] Blob URL created:', blobUrl);
+            
+            if (musicAudioRef.current) {
+              musicAudioRef.current.src = blobUrl;
+              
+              musicAudioRef.current.onloadeddata = () => {
+                console.log('[Music] Audio loaded, playing...');
+                musicAudioRef.current?.play().catch(e => {
+                  console.warn('[Music] Play failed:', e.name, e.message);
+                  if (e.name === 'NotAllowedError') {
+                    toast({ title: 'Music Ready', description: 'Click anywhere to enable music' });
+                  }
+                });
+              };
+              
+              musicAudioRef.current.onerror = (e) => {
+                console.error('[Music] Blob audio error:', e);
+                toast({ variant: 'destructive', title: 'Music Error', description: 'Failed to load audio blob.' });
+              };
+              
+              musicAudioRef.current.load();
+            }
+          }).catch(error => {
+            console.error('[Music] Fetch error:', error);
+            // Fallback to direct URL
+            playDirectUrl(newUrl);
+          });
+        } else {
+          // Fallback for non-storage URLs
+          playDirectUrl(newUrl);
+        }
+      } else {
+        // For non-Firebase URLs (like YouTube), use direct URL
+        playDirectUrl(newUrl);
+      }
+    }
+    
+    function playDirectUrl(url: string) {
+      if (!musicAudioRef.current) return;
       
-      // Add load event to play after loading
+      musicAudioRef.current.src = url;
+      
       musicAudioRef.current.onloadeddata = () => {
-        console.log('[Music] Audio loaded, playing...');
+        console.log('[Music] Audio loaded (direct), playing...');
         musicAudioRef.current?.play().catch(e => {
           console.warn('[Music] Play failed:', e.name, e.message);
           if (e.name === 'NotAllowedError') {
-            toast({ 
-              variant: 'default', 
-              title: 'Music Ready', 
-              description: 'Click anywhere to enable music' 
-            });
+            toast({ title: 'Music Ready', description: 'Click anywhere to enable music' });
           }
         });
       };
       
-      // Add error handling for audio loading
       musicAudioRef.current.onerror = (e) => {
         console.error('[Music] Audio load error:', e, musicAudioRef.current?.error);
-        toast({ 
-          variant: 'destructive', 
-          title: 'Music Error', 
-          description: 'Failed to load audio. Check CORS or format.' 
-        });
+        toast({ variant: 'destructive', title: 'Music Error', description: 'Failed to load audio. Check CORS or format.' });
       };
       
-      // Load the audio
       musicAudioRef.current.load();
     }
-  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled, toast]);
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.musicUpdatedAt, isMusicEnabled, toast, storage]);
 
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
