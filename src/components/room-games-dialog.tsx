@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { X, Gamepad2, Sparkles, Camera, Loader } from 'lucide-react';
+import { X, Gamepad2, Sparkles, Camera, Loader, Music } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
@@ -24,6 +24,9 @@ interface RoomGamesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectGame?: (slug: string) => void;
+  onToggleMiniPlayer?: () => void;
+  roomHasMusic?: boolean;
+  showMiniPlayer?: boolean;
 }
 
 const FALLBACK_GAMES = [
@@ -37,7 +40,7 @@ const FALLBACK_GAMES = [
 /**
  * High-Fidelity Room Games Portal.
  */
-export function RoomGamesDialog({ open, onOpenChange, onSelectGame }: RoomGamesDialogProps) {
+export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMiniPlayer, roomHasMusic, showMiniPlayer }: RoomGamesDialogProps) {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -113,6 +116,31 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame }: RoomGamesD
 
         <ScrollArea className="flex-1">
            <div className="max-w-5xl mx-auto px-8 py-16">
+              
+              {/* Quick Actions Grid - Music Button */}
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-4 mb-12 px-2">
+                {/* Music Button */}
+                <button
+                  onClick={() => {
+                    onToggleMiniPlayer?.();
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-4 rounded-2xl transition-all active:scale-95 border-2",
+                    showMiniPlayer 
+                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400" 
+                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20"
+                  )}
+                >
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                    showMiniPlayer ? "bg-cyan-500/30" : "bg-black/40"
+                  )}>
+                    <Music className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Music</span>
+                </button>
+              </div>
+
               <div className="flex items-center gap-3 mb-12 px-2">
                  <Sparkles className="h-5 w-5 text-primary animate-reaction-pulse" />
                  <h3 className="text-xl font-black uppercase italic tracking-widest text-white/60">Active Frequencies</h3>

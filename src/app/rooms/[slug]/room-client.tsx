@@ -1740,7 +1740,7 @@ export function RoomClient({ room }: { room: Room }) {
             <Mail className="h-[18px] w-[18px] text-white" />
           </button>
 
-          {/* Music Button - Toggle Mini Player */}
+          {/* Music Button - Right side above Room Play button */}
           <button
             onClick={() => setShowMiniPlayer(!showMiniPlayer)}
             className={cn(
@@ -1903,6 +1903,9 @@ export function RoomClient({ room }: { room: Room }) {
       <RoomGamesDialog
         open={isRoomGamesOpen}
         onOpenChange={setIsRoomGamesOpen}
+        onToggleMiniPlayer={() => setShowMiniPlayer(!showMiniPlayer)}
+        roomHasMusic={!!room.currentMusicUrl}
+        showMiniPlayer={showMiniPlayer}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
             // Standalone Games: Navigate to full page with roomId and minimize room
