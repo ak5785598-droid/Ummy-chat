@@ -1459,6 +1459,25 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
 
+      {/* AUDIO UNLOCK OVERLAY - Shows when music is playing but audio is locked */}
+      {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            console.log('[AudioUnlock] Overlay clicked');
+          }}
+        >
+          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl p-6 mx-4 text-center shadow-2xl animate-in zoom-in duration-300">
+            <Music className="h-12 w-12 text-white mx-auto mb-4 animate-bounce" />
+            <h3 className="text-lg font-bold text-white mb-2">Music is Playing!</h3>
+            <p className="text-sm text-white/80 mb-4">Tap anywhere to enable audio and join the music</p>
+            <button className="bg-white text-cyan-600 px-6 py-2 rounded-full font-semibold text-sm active:scale-95 transition-transform">
+              Tap to Listen
+            </button>
+          </div>
+        </div>
+      )}
+
       <audio
         ref={musicAudioRef}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
