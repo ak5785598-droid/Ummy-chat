@@ -10,6 +10,7 @@ import { LanguageProvider } from '@/components/language-provider';
 import { AdBlockWarning } from '@/components/ad-block-warning';
 import { ActiveRoomManager } from '@/components/active-room-manager';
 import { VoiceActivityProvider } from '@/components/voice-activity-provider';
+import { HydrationBoundary } from '@/components/hydration-boundary';
 import type { ReactNode } from 'react';
 
 /**
@@ -23,15 +24,17 @@ export function Providers({ children }: { children: ReactNode }) {
     <AdBlockWarning />
     <ProfileInitializer />
     <GlobalPresenceManager />
-    <GlobalBanGuard>
-     <VoiceActivityProvider>
-      <RoomProvider>
-       <ActiveRoomManager />
-       <RoomPresenceManager />
-       {children}
-      </RoomProvider>
-     </VoiceActivityProvider>
-    </GlobalBanGuard>
+    <HydrationBoundary>
+      <GlobalBanGuard>
+       <VoiceActivityProvider>
+        <RoomProvider>
+         <ActiveRoomManager />
+         <RoomPresenceManager />
+         {children}
+        </RoomProvider>
+       </VoiceActivityProvider>
+      </GlobalBanGuard>
+    </HydrationBoundary>
    </LanguageProvider>
   </FirebaseClientProvider>
  );

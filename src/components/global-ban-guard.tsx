@@ -8,12 +8,15 @@ import { useRouter, usePathname } from 'next/navigation';
 /**
  * Supreme Identity Enforcement Guard.
  * Monitors the social graph for active ban signatures and redirects restricted frequencies.
+ * 
+ * Re-certified for structural stability: 
+ * Always renders children to ensure React hook consistency (#310).
  */
 export function GlobalBanGuard({ children }: { children: React.ReactNode }) {
- const { user, isUserLoading } = useUser();
- const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
- const router = useRouter();
- const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading || !userProfile) return;
@@ -30,7 +33,7 @@ export function GlobalBanGuard({ children }: { children: React.ReactNode }) {
        }
 
       // Enforcement redirect
-      if (pathname !== '/login') {
+      if (pathname !== '/login' && pathname !== '/banned') {
         console.warn(`[Ban Guard] Redirecting restricted frequency: ${user?.uid}`);
         router.replace('/login');
       }
@@ -42,18 +45,6 @@ export function GlobalBanGuard({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile, isUserLoading, isProfileLoading, router, pathname, user?.uid]);
 
-  // CRITICAL: Block children if user is banned or still loading to prevent permission errors
-  if (isUserLoading || isProfileLoading) {
-    return null; // Or a high-level loading state
-  }
-
-  const isBanned = userProfile?.banStatus?.isBanned === true;
-  const until = userProfile?.banStatus?.bannedUntil?.toDate?.() || null;
-  const isActiveBan = isBanned && (!until || until > new Date());
-
-  if (isActiveBan && pathname !== '/login') {
-    return null; // Stop children (RoomProvider, etc) from rendering
-  }
-
+  // Always return children to prevent structural 'Hook Count' mismatches during hydration.
   return <>{children}</>;
 }
