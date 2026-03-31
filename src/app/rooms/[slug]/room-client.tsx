@@ -1145,31 +1145,68 @@ export function RoomClient({ room }: { room: Room }) {
   // NOTE: Music does NOT auto-play when entering room. User must manually click play.
   useEffect(() => {
     if (!room?.currentMusicUrl || !musicAudioRef.current) {
-      console.log('[Music] No URL or ref:', { url: room?.currentMusicUrl, hasRef: !!musicAudioRef.current });
       return;
     }
     
-    // Only sync the audio source, DON'T auto-play
-    // User must manually click play button to start music
+    // Only sync the audio source, DON'T auto-play on URL change
     const currentSrc = musicAudioRef.current.src;
     const newUrl = room.currentMusicUrl;
-    
-    console.log('[Music] Checking sync:', { currentSrc, newUrl });
     
     if (currentSrc !== newUrl) {
       console.log('[Music] New music available:', room.currentMusicTitle || 'Unknown');
       
       // Set the source but DON'T auto-play
-      // Just prepare the audio element
       musicAudioRef.current.pause();
       musicAudioRef.current.src = newUrl;
       musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
       musicAudioRef.current.load();
+      setIsMusicPlaying(false); // Reset local state
       
       // Show toast that music is ready
       toast({ title: 'Music Ready', description: `${room.currentMusicTitle || 'Song'} - Tap play to start` });
     }
   }, [room?.currentMusicUrl, room?.currentMusicTitle, toast]);
+
+  // Listen for room's isMusicPlaying state - SYNC ACROSS ALL USERS
+  useEffect(() => {
+    if (!musicAudioRef.current || !room?.currentMusicUrl) return;
+    
+    const roomIsPlaying = room.isMusicPlaying || false;
+    const roomCurrentTime = room.musicCurrentTime || 0;
+    
+    // Only sync if room state is different from local state
+    if (roomIsPlaying !== isMusicPlaying) {
+      if (roomIsPlaying) {
+        // Room says play - sync position and play
+        console.log('[Music] Room says PLAY at position:', roomCurrentTime);
+        
+        // Sync position first
+        if (Math.abs(musicAudioRef.current.currentTime - roomCurrentTime) > 2) {
+          musicAudioRef.current.currentTime = roomCurrentTime;
+        }
+        
+        // Try to play (might fail if no user interaction yet)
+        musicAudioRef.current.play().then(() => {
+          setIsMusicPlaying(true);
+        }).catch(e => {
+          console.warn('[Music] Auto-play blocked - needs user interaction:', e.name);
+          // Don't show toast on every sync attempt
+        });
+      } else {
+        // Room says pause
+        console.log('[Music] Room says PAUSE');
+        musicAudioRef.current.pause();
+        setIsMusicPlaying(false);
+      }
+    } else if (roomIsPlaying) {
+      // Both playing - sync position if drifted more than 5 seconds
+      const drift = Math.abs(musicAudioRef.current.currentTime - roomCurrentTime);
+      if (drift > 5) {
+        console.log('[Music] Syncing position - drift:', drift);
+        musicAudioRef.current.currentTime = roomCurrentTime;
+      }
+    }
+  }, [room?.isMusicPlaying, room?.musicCurrentTime, room?.currentMusicUrl]);
 
   // Handle user interaction for music
   const handleUserInteraction = () => {
@@ -1180,29 +1217,44 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   // Music control functions
-  const handleToggleMusic = () => {
+  const handleToggleMusic = async () => {
     handleUserInteraction();
-    if (!musicAudioRef.current) return;
+    if (!musicAudioRef.current || !firestore || !room.id) return;
     
     if (isMusicPlaying) {
+      // Pause music
       musicAudioRef.current.pause();
       setIsMusicPlaying(false);
+      
+      // Sync to room - music is paused
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, { 
+        isMusicPlaying: false,
+        musicCurrentTime: musicAudioRef.current.currentTime,
+        updatedAt: serverTimestamp()
+      });
+      
       toast({ title: 'Music Paused' });
     } else {
       // Sync to room's current time before playing
-      // This ensures all users hear the same position
       const roomCurrentTime = room.musicCurrentTime || 0;
       if (musicAudioRef.current.currentTime < roomCurrentTime) {
         musicAudioRef.current.currentTime = roomCurrentTime;
       }
       
-      musicAudioRef.current.play().then(() => {
-        setIsMusicPlaying(true);
-        toast({ title: 'Music Playing' });
-      }).catch(e => {
-        console.warn('[Music] Play failed:', e);
-        toast({ title: 'Cannot play', description: 'Try interacting with page first' });
+      // Play music
+      await musicAudioRef.current.play();
+      setIsMusicPlaying(true);
+      
+      // Sync to room - music is playing
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, { 
+        isMusicPlaying: true,
+        musicCurrentTime: musicAudioRef.current.currentTime,
+        updatedAt: serverTimestamp()
       });
+      
+      toast({ title: 'Music Playing' });
     }
   };
 

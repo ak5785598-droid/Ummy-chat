@@ -139,6 +139,7 @@ export type Room = {
  musicUpdatedAt?: any;
  musicUpdatedBy?: string | null;
  musicCurrentTime?: number;
+ isMusicPlaying?: boolean; // Music play/pause state for sync
  maxActiveMics?: number;
  isSuperMic?: boolean;
  stats?: {
