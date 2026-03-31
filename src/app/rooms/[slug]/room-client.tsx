@@ -359,6 +359,27 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearInterval(timer);
   }, []);
 
+  // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
+  useEffect(() => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    
+    const updateHeartbeat = () => {
+      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+      updateDocumentNonBlocking(pRef, { 
+        lastSeen: serverTimestamp(),
+        name: userProfile?.username || currentUser.displayName || 'User',
+        avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
+      });
+    };
+    
+    // Update immediately on mount
+    updateHeartbeat();
+    
+    // Then every 30 seconds
+    const heartbeat = setInterval(updateHeartbeat, 30000);
+    return () => clearInterval(heartbeat);
+  }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
+
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
@@ -381,7 +402,19 @@ export function RoomClient({ room }: { room: Room }) {
     });
   }, [participantsData, now, currentUser?.uid]);
 
-  const onlineCount = participantsData?.length || 0;
+  // DEBUG: Log participants data changes
+  useEffect(() => {
+    console.log('[OnlineCount] participantsData:', participantsData?.length || 0, 'participants:', participants.length);
+    if (participantsData) {
+      console.log('[OnlineCount] Users:', participantsData.map(p => ({ uid: p.uid, name: p.name, seat: p.seatIndex })));
+    }
+  }, [participantsData, participants]);
+
+  const onlineCount = useMemo(() => {
+    // Use filtered participants count (not raw participantsData)
+    // This ensures only active users are counted
+    return participants.length || 0;
+  }, [participants]);
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
