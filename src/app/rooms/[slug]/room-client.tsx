@@ -278,7 +278,8 @@ export function RoomClient({ room }: { room: Room }) {
     setIsMinimized,
     setMinimizedRoom,
     musicStream,
-    setMusicStream
+    setMusicStream,
+    isMusicEnabled
   } = useRoomContext();
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
