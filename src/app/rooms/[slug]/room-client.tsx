@@ -1687,6 +1687,26 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
+      {/* RIGHT SIDE FLOATING MUSIC BUTTON */}
+      <button
+        onClick={() => setShowMiniPlayer(!showMiniPlayer)}
+        className={cn(
+          "fixed right-4 top-[60%] z-30 p-3 rounded-2xl transition-all active:scale-95 shadow-lg border-2",
+          room.currentMusicUrl 
+            ? (showMiniPlayer 
+                ? "bg-cyan-500/30 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20" 
+                : "bg-black/60 border-white/20 text-white hover:bg-white/10")
+            : "bg-black/40 border-white/10 text-white/30"
+        )}
+      >
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center",
+          showMiniPlayer ? "bg-cyan-500/20" : "bg-white/5"
+        )}>
+          <Music className="h-6 w-6" />
+        </div>
+      </button>
+
       <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
         <div className="flex items-center">
           <button
@@ -1738,17 +1758,6 @@ export function RoomClient({ room }: { room: Room }) {
 
           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
             <Mail className="h-[18px] w-[18px] text-white" />
-          </button>
-
-          {/* Music Button - Right side above Room Play button */}
-          <button
-            onClick={() => setShowMiniPlayer(!showMiniPlayer)}
-            className={cn(
-              "p-2 rounded-full active:scale-90 transition-transform shadow-md border border-white/5",
-              room.currentMusicUrl ? (showMiniPlayer ? "bg-cyan-500/30 text-cyan-400 border-cyan-500/50" : "bg-white/10 text-white") : "bg-white/5 text-white/30"
-            )}
-          >
-            <Music className="h-[18px] w-[18px]" />
           </button>
 
           <button
