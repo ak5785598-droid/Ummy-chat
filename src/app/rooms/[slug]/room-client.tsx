@@ -114,10 +114,11 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
 
-const Seat = ({
+const Seat = memo(({
   index,
   occupant,
   onClick,
@@ -214,7 +215,7 @@ const Seat = ({
       </div>
     </div>
   );
-};
+});
 
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
@@ -591,59 +592,79 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // GIFT & EVENT SYNC ENGINE
+  // Throttle ref for message processing
+  const messageProcessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // GIFT & EVENT SYNC ENGINE - OPTIMIZED with throttling
   useEffect(() => {
-    // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-    // 1. Owner takes priority if online.
-    // 2. Otherwise, oldest Moderator (by UID sort).
-    // 3. Otherwise, oldest Participant (by UID sort).
-    const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
-    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
-    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-
-    let electedLeaderUid = sortedParticipants[0]?.uid;
-    if (ownerOnline) electedLeaderUid = room.ownerId;
-    else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
-
-    const isAIProcessor = currentUser?.uid === electedLeaderUid;
-
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
-    // Identify the starting point for the new delta
-    const startIndex = lastProcessedId.current
-      ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
-      : 0;
-
-    const newBatch = firestoreMessages.slice(startIndex);
-
-    newBatch.forEach(msg => {
-      if (msg.type === 'gift' && msg.giftId) {
-        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
-        setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
-      } else if (msg.type === 'lucky-rain') {
-        setIsLuckyRainActive(true);
-      } else if (msg.type === 'entrance') {
-        // AI WELCOME BOT LOGIC: Welcome everyone
-        // Guard: Only designated AI Processor speaks
-        if (isAIProcessor) handleAIWelcome(msg.senderName);
-      } else if (msg.type === 'emoji' && (msg as any).isSfx) {
-        // SOUNDBOARD SFX SYNC
-        playLocalSfx((msg as any).sfxId);
-      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-        // UMmy AI GUARD & GUIDE ENGINE: Only designated AI Processor handles conversational triggers
-        handleAIEngine(msg);
-      }
-
-      // VOICE SYNC: Trigger local TTS if it's an AI message
-      if (msg.senderId === 'SYSTEM_BOT') {
-        speakAIText(msg.content);
-      }
-    });
-
-    if (newBatch.length > 0) {
-      lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+    // Clear existing timeout to throttle processing
+    if (messageProcessTimeoutRef.current) {
+      clearTimeout(messageProcessTimeoutRef.current);
     }
-  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participants]); // Added participants for election sync
+
+    messageProcessTimeoutRef.current = setTimeout(() => {
+      // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
+      const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
+      const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+
+      let electedLeaderUid = sortedParticipants[0]?.uid;
+      if (ownerOnline) electedLeaderUid = room.ownerId;
+      else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
+
+      const isAIProcessor = currentUser?.uid === electedLeaderUid;
+
+      // Identify the starting point for the new delta
+      const startIndex = lastProcessedId.current
+        ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
+        : 0;
+
+      const newBatch = firestoreMessages.slice(startIndex);
+
+      // Process in smaller chunks to prevent blocking
+      const processChunk = (batch: any[], chunkSize = 5) => {
+        for (let i = 0; i < batch.length; i += chunkSize) {
+          const chunk = batch.slice(i, i + chunkSize);
+          requestAnimationFrame(() => {
+            chunk.forEach(msg => {
+              if (msg.type === 'gift' && msg.giftId) {
+                setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
+              } else if (msg.type === 'lucky-rain') {
+                setIsLuckyRainActive(true);
+              } else if (msg.type === 'entrance' && isAIProcessor) {
+                // Defer welcome to not block UI
+                requestIdleCallback?.(() => handleAIWelcome(msg.senderName)) || setTimeout(() => handleAIWelcome(msg.senderName), 0);
+              } else if (msg.type === 'emoji' && (msg as any).isSfx) {
+                playLocalSfx((msg as any).sfxId);
+              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
+                // Defer AI processing to not block UI
+                requestIdleCallback?.(() => handleAIEngine(msg)) || setTimeout(() => handleAIEngine(msg), 0);
+              }
+
+              // VOICE SYNC: Trigger local TTS if it's an AI message
+              if (msg.senderId === 'SYSTEM_BOT') {
+                speakAIText(msg.content);
+              }
+            });
+          });
+        }
+      };
+
+      processChunk(newBatch);
+
+      if (newBatch.length > 0) {
+        lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+      }
+    }, 100); // 100ms throttle
+
+    return () => {
+      if (messageProcessTimeoutRef.current) {
+        clearTimeout(messageProcessTimeoutRef.current);
+      }
+    };
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participantsData]);
 
   // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
 
@@ -1003,7 +1024,7 @@ export function RoomClient({ room }: { room: Room }) {
     router.push('/rooms');
   };
 
-  const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
+  const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
       setSelectedParticipantUid(occupant.uid);
@@ -1012,7 +1033,7 @@ export function RoomClient({ room }: { room: Room }) {
       setSelectedParticipantUid(null);
       setIsSeatMenuOpen(true);
     }
-  };
+  }, []);
 
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
@@ -1614,6 +1635,14 @@ export function RoomClient({ room }: { room: Room }) {
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
           background-size: 200% 100%;
           animation: shine 2s infinite linear;
+        }
+        /* Touch responsiveness optimization */
+        .touch-responsive {
+          will-change: transform;
+          touch-action: manipulation;
+        }
+        .touch-responsive:active {
+          transform: scale(0.95);
         }
       `}</style>
       <MountOverlay entries={mountEntries} />
