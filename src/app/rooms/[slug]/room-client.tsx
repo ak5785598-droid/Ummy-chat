@@ -251,6 +251,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicProgress, setMusicProgress] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(false);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -1592,7 +1593,7 @@ export function RoomClient({ room }: { room: Room }) {
       </main>
 
       {/* MINI MUSIC PLAYER - Wafa Style */}
-      {room.currentMusicUrl && (
+      {room.currentMusicUrl && showMiniPlayer && (
         <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4">
           <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
             {/* Song Title */}
@@ -1608,9 +1609,9 @@ export function RoomClient({ room }: { room: Room }) {
                   {formatTime(musicCurrentTime)} / {formatTime(musicDuration)}
                 </p>
               </div>
-              {/* Close/Stop Button */}
+              {/* Close Button - Only hides player, music continues */}
               <button
-                onClick={handleStopMusic}
+                onClick={() => setShowMiniPlayer(false)}
                 className="p-1.5 rounded-full bg-white/10 text-white/60 hover:bg-white/20 active:scale-95 transition-all"
               >
                 <X className="h-3.5 w-3.5" />
@@ -1627,7 +1628,7 @@ export function RoomClient({ room }: { room: Room }) {
 
             {/* Controls */}
             <div className="flex items-center justify-center gap-6">
-              {/* Playlist */}
+              {/* Playlist - Opens full dialog */}
               <button
                 onClick={() => setIsRoomPlayOpen(true)}
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
@@ -1737,6 +1738,17 @@ export function RoomClient({ room }: { room: Room }) {
 
           <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
             <Mail className="h-[18px] w-[18px] text-white" />
+          </button>
+
+          {/* Music Button - Toggle Mini Player */}
+          <button
+            onClick={() => setShowMiniPlayer(!showMiniPlayer)}
+            className={cn(
+              "p-2 rounded-full active:scale-90 transition-transform shadow-md border border-white/5",
+              room.currentMusicUrl ? (showMiniPlayer ? "bg-cyan-500/30 text-cyan-400 border-cyan-500/50" : "bg-white/10 text-white") : "bg-white/5 text-white/30"
+            )}
+          >
+            <Music className="h-[18px] w-[18px]" />
           </button>
 
           <button
