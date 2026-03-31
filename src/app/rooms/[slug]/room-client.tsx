@@ -1250,40 +1250,89 @@ export function RoomClient({ room }: { room: Room }) {
 
   // AUDIO UNLOCK: Global click handler to enable audio context
   useEffect(() => {
-    const unlockAudio = () => {
+    const unlockAudio = async () => {
+      console.log('[AudioUnlock] Attempting to unlock audio...');
+      
       if (musicAudioRef.current) {
-        // Try to resume audio context
+        // Create a silent buffer to unlock AudioContext
         const audioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (audioCtx) {
-          const ctx = new audioCtx();
-          if (ctx.state === 'suspended') {
-            ctx.resume();
+          try {
+            const ctx = new audioCtx();
+            if (ctx.state === 'suspended') {
+              await ctx.resume();
+              console.log('[AudioUnlock] AudioContext resumed');
+            }
+            
+            // Create and play silent buffer to fully unlock
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            console.log('[AudioUnlock] Silent buffer played');
+          } catch (e) {
+            console.warn('[AudioUnlock] AudioContext error:', e);
           }
         }
         
-        // If music is playing in room, try to play locally
-        if (room?.isMusicPlaying && musicAudioRef.current.paused) {
-          musicAudioRef.current.play().catch(() => {
-            // Ignore errors - we'll retry
-          });
+        // Mark audio as ready
+        if (!userInteracted) {
+          setUserInteracted(true);
+          console.log('[AudioUnlock] User interaction recorded');
         }
-      }
-      
-      // Mark user as interacted
-      if (!userInteracted) {
-        setUserInteracted(true);
+        
+        // If music is playing in room, try to play locally with retry
+        if (room?.isMusicPlaying && room?.currentMusicUrl) {
+          console.log('[AudioUnlock] Room music is playing, attempting sync...');
+          
+          // Ensure source is set
+          if (musicAudioRef.current.src !== room.currentMusicUrl) {
+            musicAudioRef.current.src = room.currentMusicUrl;
+            musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
+            musicAudioRef.current.load();
+          }
+          
+          // Try to play with multiple attempts
+          let attempts = 0;
+          const maxAttempts = 3;
+          
+          const tryPlay = async () => {
+            if (!musicAudioRef.current || attempts >= maxAttempts) return;
+            attempts++;
+            
+            try {
+              await musicAudioRef.current.play();
+              console.log('[AudioUnlock] Music playback started successfully');
+              setIsMusicPlaying(true);
+            } catch (err: any) {
+              console.warn(`[AudioUnlock] Play attempt ${attempts} failed:`, err.name);
+              if (attempts < maxAttempts) {
+                setTimeout(tryPlay, 300);
+              }
+            }
+          };
+          
+          setTimeout(tryPlay, 100);
+        }
       }
     };
 
-    // Add click listener to entire document
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
+    // Add multiple interaction listeners
+    const addListeners = () => {
+      document.addEventListener('click', unlockAudio, { once: true });
+      document.addEventListener('touchstart', unlockAudio, { once: true });
+      document.addEventListener('keydown', unlockAudio, { once: true });
+    };
+    
+    addListeners();
     
     return () => {
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
     };
-  }, [room?.isMusicPlaying, userInteracted]);
+  }, [room?.isMusicPlaying, room?.currentMusicUrl, room?.musicCurrentTime, userInteracted]);
 
   // Handle user interaction for music
   const handleUserInteraction = () => {
@@ -1416,6 +1465,7 @@ export function RoomClient({ room }: { room: Room }) {
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
         crossOrigin="anonymous"
         preload="auto"
+        playsInline
       />
 
       {/* LIVE BACKGROUND OVERLAY */}
