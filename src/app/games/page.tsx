@@ -16,6 +16,7 @@ import { useGameLogoUpload } from '@/hooks/use-game-logo-upload';
 import { GameModal } from '@/components/game-modal';
 import { useSearchParams } from 'next/navigation';
 import type { Game } from '@/lib/types';
+import { Suspense } from 'react';
 
 const FALLBACK_GAMES: Game[] = [
   { id: 'fallback-ludo', title: 'Ludo Masters', slug: 'ludo', coverUrl: '', cost: 0, imageHint: '3d ludo board' },
@@ -245,6 +246,8 @@ function GamesPageContent() {
 
 export default function GamesPage() {
   return (
-    <GamesPageContent />
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0514] flex items-center justify-center"><Loader className="animate-spin text-purple-500 h-10 w-10" /></div>}>
+      <GamesPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -49,7 +49,7 @@ const LiveTimer = () => {
   );
 };
 
-export default function LeaderboardPage() {
+function LeaderboardContent() {
   const searchParams = useSearchParams();
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>((searchParams.get('type') as any) || 'rich');
   const { user } = useUser();
@@ -168,5 +168,13 @@ export default function LeaderboardPage() {
         </footer>
       </div>
     </AppLayout>
+  );
+}
+
+export default function LeaderboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#02040a] flex items-center justify-center"><Loader className="animate-spin text-cyan-500 h-10 w-10" /></div>}>
+      <LeaderboardContent />
+    </Suspense>
   );
 }
