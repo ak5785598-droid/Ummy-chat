@@ -14,17 +14,20 @@ import { HydrationBoundary } from '@/components/hydration-boundary';
 import type { ReactNode } from 'react';
 
 /**
- * The main providers component for the application.
- * Synchronized with the Global Linguistic Protocol.
+ * High-Integrity Providers Stack.
+ * Re-engineered for React 18 "Late Mount" Stability.
+ * 
+ * Uses a root-level HydrationBoundary to defer ALL Firebase & logic hooks 
+ * until the client is fully stable, eliminating Error #310.
  */
 export function Providers({ children }: { children: ReactNode }) {
  return (
-  <FirebaseClientProvider>
-   <LanguageProvider>
-    <AdBlockWarning />
-    <ProfileInitializer />
-    <GlobalPresenceManager />
-    <HydrationBoundary>
+  <HydrationBoundary>
+    <FirebaseClientProvider>
+     <LanguageProvider>
+      <AdBlockWarning />
+      <ProfileInitializer />
+      <GlobalPresenceManager />
       <GlobalBanGuard>
        <VoiceActivityProvider>
         <RoomProvider>
@@ -34,8 +37,8 @@ export function Providers({ children }: { children: ReactNode }) {
         </RoomProvider>
        </VoiceActivityProvider>
       </GlobalBanGuard>
-    </HydrationBoundary>
-   </LanguageProvider>
-  </FirebaseClientProvider>
+     </LanguageProvider>
+    </FirebaseClientProvider>
+  </HydrationBoundary>
  );
 }
