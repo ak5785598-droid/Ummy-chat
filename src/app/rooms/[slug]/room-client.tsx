@@ -1248,6 +1248,43 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [room?.isMusicPlaying, room?.musicCurrentTime, room?.currentMusicUrl]);
 
+  // AUDIO UNLOCK: Global click handler to enable audio context
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (musicAudioRef.current) {
+        // Try to resume audio context
+        const audioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (audioCtx) {
+          const ctx = new audioCtx();
+          if (ctx.state === 'suspended') {
+            ctx.resume();
+          }
+        }
+        
+        // If music is playing in room, try to play locally
+        if (room?.isMusicPlaying && musicAudioRef.current.paused) {
+          musicAudioRef.current.play().catch(() => {
+            // Ignore errors - we'll retry
+          });
+        }
+      }
+      
+      // Mark user as interacted
+      if (!userInteracted) {
+        setUserInteracted(true);
+      }
+    };
+
+    // Add click listener to entire document
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+  }, [room?.isMusicPlaying, userInteracted]);
+
   // Handle user interaction for music
   const handleUserInteraction = () => {
     if (!userInteracted) {
@@ -1893,7 +1930,7 @@ export function RoomClient({ room }: { room: Room }) {
       </Dialog>
 
 
-      <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
+      <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} participants={participants} />
       <RoomInfoDialog
         open={isRoomInfoOpen}
         onOpenChange={setIsRoomInfoOpen}
