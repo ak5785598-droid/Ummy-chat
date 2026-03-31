@@ -252,6 +252,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicDuration, setMusicDuration] = useState(0);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [showVolumePopup, setShowVolumePopup] = useState(false);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -1582,7 +1583,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       {/* MINI MUSIC PLAYER - Wafa Style */}
       {room.currentMusicUrl && showMiniPlayer && (
-        <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4">
+        <div className="fixed bottom-[140px] left-0 right-0 z-40 px-4">
           <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
             {/* Song Title */}
             <div className="flex items-center gap-2 mb-2">
@@ -1611,24 +1612,6 @@ export function RoomClient({ room }: { room: Room }) {
               <div
                 className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
                 style={{ width: `${musicProgress}%` }}
-              />
-            </div>
-
-            {/* Volume Slider */}
-            <div className="flex items-center gap-2 px-2 mt-2">
-              <Volume2 className="h-3.5 w-3.5 text-white/50" />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={musicAudioRef.current?.volume || 1}
-                onChange={(e) => {
-                  if (musicAudioRef.current) {
-                    musicAudioRef.current.volume = parseFloat(e.target.value);
-                  }
-                }}
-                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full"
               />
             </div>
 
@@ -1676,18 +1659,54 @@ export function RoomClient({ room }: { room: Room }) {
                 </svg>
               </button>
 
-              {/* Volume/Mute */}
+              {/* Volume - Opens popup */}
               <button
-                onClick={() => {
-                  if (musicAudioRef.current) {
-                    musicAudioRef.current.muted = !musicAudioRef.current.muted;
-                    toast({ title: musicAudioRef.current.muted ? 'Muted' : 'Unmuted' });
-                  }
-                }}
+                onClick={() => setShowVolumePopup(true)}
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
               >
                 <Volume2 className="h-5 w-5" />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VOLUME POPUP */}
+      {showVolumePopup && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center pb-24 pointer-events-none">
+          <div 
+            className="absolute inset-0 bg-black/20 pointer-events-auto"
+            onClick={() => setShowVolumePopup(false)}
+          />
+          <div className="relative z-10 bg-black/90 backdrop-blur-xl rounded-2xl p-4 mx-4 w-full max-w-sm border border-white/10 shadow-2xl pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.muted = !musicAudioRef.current.muted;
+                  }
+                }}
+                className="p-2 rounded-full bg-white/10 text-white"
+              >
+                {musicAudioRef.current?.muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicAudioRef.current?.volume || 1}
+                onChange={(e) => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.volume = parseFloat(e.target.value);
+                    musicAudioRef.current.muted = false;
+                  }
+                }}
+                className="flex-1 h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full"
+              />
+              <span className="text-[11px] text-white/60 w-8 text-right">
+                {Math.round((musicAudioRef.current?.volume || 1) * 100)}%
+              </span>
             </div>
           </div>
         </div>
@@ -1698,12 +1717,12 @@ export function RoomClient({ room }: { room: Room }) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 top-[60%] z-30 p-3 rounded-2xl transition-all active:scale-95 shadow-lg border-2",
+            "fixed right-2 top-[65%] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
             "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20">
-            <Music className="h-6 w-6" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20">
+            <Music className="h-5 w-5" />
           </div>
         </button>
       )}
