@@ -70,6 +70,7 @@ const ACTIVE_GAME_FREQUENCIES = [
   { id: 'ludo', title: 'Ludo Masters', slug: 'ludo', imageHint: '3d ludo board' },
   { id: 'fruit-party', title: 'Fruit Party', slug: 'fruit-party', imageHint: '3d fruit icons' },
   { id: 'forest-party', title: 'Wild Party', slug: 'forest-party', imageHint: '3d lion head' },
+  { id: 'donkey-whack', title: 'Donkey Whack', slug: 'donkey-whack', imageHint: 'donkey whack mole' },
 ];
 
 const SpecialIdBadge = ({ id }: { id: string }) => {
@@ -232,6 +233,13 @@ export default function AdminPage() {
     return query(collection(firestore, 'globalGameWins'), orderBy('timestamp', 'desc'), limit(15));
   }, [firestore, isCreator]);
   const { data: recentWins } = useCollection(recentWinsQuery);
+
+  // Live Pool Monitor Query
+  const gameStatesQuery = useMemoFirebase(() => {
+    if (!firestore || !isCreator) return null;
+    return query(collection(firestore, 'gameStates'));
+  }, [firestore, isCreator]);
+  const { data: gameStates } = useCollection(gameStatesQuery);
 
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map(base => {
@@ -709,7 +717,7 @@ export default function AdminPage() {
           { id: 'pizza', label: '🍕 Pizza' }, { id: 'burrito', label: '🌯 Burrito' },
           { id: 'skewers', label: '🍢 Skewers' }, { id: 'chicken', label: '🍗 Chicken' },
         ];
-      case 'wild-party':
+      case 'forest-party':
         return [
           { id: 'turtle', label: '🐢 Turtle' }, { id: 'rabbit', label: '🐰 Rabbit' },
           { id: 'sheep', label: '🐑 Sheep' }, { id: 'fox', label: '🦊 Fox' },
@@ -720,20 +728,27 @@ export default function AdminPage() {
         return Array.from({ length: 37 }, (_, i) => ({ id: i.toString(), label: String(i) }));
       case 'teen-patti':
         return [{ id: 'WOLF', label: 'Wolf' }, { id: 'LION', label: 'Lion' }, { id: 'FISH', label: 'Fish' }];
+      case 'donkey-whack':
+        return Array.from({ length: 12 }, (_, i) => ({ id: i.toString(), label: `Hole ${i + 1}` }));
       default: return [];
     }
   };
 
-  const handleUpdateOracle = async () => {
-    if (!firestore || !oracleGame || !oracleResult || !isCreator) return;
+  const handleUpdateOracle = async (resultId: string) => {
+    if (!firestore || !oracleGame || !isCreator) return;
     setIsUpdatingOracle(true);
     const oracleRef = doc(firestore, 'gameOracle', oracleGame);
-    const resultValue = oracleGame === 'roulette' ? parseInt(oracleResult) : oracleResult;
+    const resultValue = (oracleGame === 'roulette' || oracleGame === 'donkey-whack') ? parseInt(resultId) : resultId;
     try {
       await setDoc(oracleRef, { forcedResult: resultValue, isActive: true, updatedAt: serverTimestamp(), setBy: user?.uid });
-      toast({ title: 'Fate Synchronized', description: `The next ${oracleGame} round will result in: ${oracleResult}` });
-      setOracleResult('');
+      toast({ title: 'Fate Synchronized', description: `The next ${oracleGame} round will result in: ${resultId}` });
+      setOracleResult(resultId);
     } finally { setIsUpdatingOracle(false); }
+  };
+
+  const getLivePool = (gameSlug: string) => {
+    const state = gameStates?.find(s => s.id === gameSlug);
+    return state?.totalPool || 0;
   };
 
   if (!isCreator) return <AppLayout><div className="flex h-[50vh] items-center justify-center text-destructive font-headline"><Shield className="h-12 w-12 mr-2" /> Portal Access Restricted</div></AppLayout>;
@@ -783,42 +798,63 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0">
                      <CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-emerald-600"><Wand2 className="h-6 w-6" /> Sovereign Game Oracle</CardTitle>
-                     <CardDescription>Determine the future frequencies of the Tribe Arena. Force the next winning result for specific games.</CardDescription>
+                     <CardDescription>Determine future frequencies. Force winning results and monitor live bet pools.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0 space-y-8">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-6">
-                           <div className="space-y-2">
-                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Select Arena Dimension</Label>
+                        <div className="space-y-8">
+                           <div className="space-y-4">
+                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Live Arena dimension</Label>
                               <Select value={oracleGame} onValueChange={setOracleGame}>
-                                 <SelectTrigger className="h-14 rounded-2xl border-2 border-emerald-100"><SelectValue /></SelectTrigger>
-                                 <SelectContent>
-                                    <SelectItem value="fruit-party">Fruit Party</SelectItem>
-                                    <SelectItem value="wild-party">Wild Party (Forest)</SelectItem>
-                                    <SelectItem value="roulette">Roulette</SelectItem>
-                                    <SelectItem value="teen-patti">Teen Patti</SelectItem>
+                                 <SelectTrigger className="h-14 rounded-2xl border-2 border-emerald-100 font-black italic"><SelectValue /></SelectTrigger>
+                                 <SelectContent className="rounded-xl border-2">
+                                    <SelectItem value="fruit-party" className="font-black italic">Fruit Party</SelectItem>
+                                    <SelectItem value="forest-party" className="font-black italic">Wild Party (Forest)</SelectItem>
+                                    <SelectItem value="roulette" className="font-black italic">Roulette</SelectItem>
+                                    <SelectItem value="teen-patti" className="font-black italic">Teen Patti</SelectItem>
+                                    <SelectItem value="donkey-whack" className="font-black italic">Donkey Whack</SelectItem>
                                  </SelectContent>
                               </Select>
                            </div>
-                           <div className="space-y-2">
-                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Force Next Outcome</Label>
-                              <Select value={oracleResult} onValueChange={setOracleResult}>
-                                 <SelectTrigger className="h-14 rounded-2xl border-2 border-emerald-100"><SelectValue placeholder="Select Outcome" /></SelectTrigger>
-                                 <SelectContent>
-                                    {getOracleOptions(oracleGame).map(opt => (
-                                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
-                                    ))}
-                                 </SelectContent>
-                              </Select>
+
+                           <div className="p-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-100 flex items-center justify-between shadow-inner">
+                              <div>
+                                 <p className="text-[8px] font-black uppercase text-emerald-600 tracking-widest">Active Bet Pool</p>
+                                 <div className="flex items-center gap-2 text-2xl font-black text-emerald-900 italic mt-1">
+                                    <GoldCoinIcon className="h-6 w-6" />
+                                    {getLivePool(oracleGame).toLocaleString()}
+                                 </div>
+                              </div>
+                              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm"><RefreshCcw className="h-5 w-5" /></div>
                            </div>
-                           <Button onClick={handleUpdateOracle} disabled={isUpdatingOracle || !oracleResult} className="w-full h-16 rounded-[1.5rem] bg-emerald-600 text-white font-black uppercase italic text-xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-                              {isUpdatingOracle ? <Loader className="animate-spin mr-2" /> : <Zap className="mr-2 h-6 w-6" />} Synchronize Fate
-                           </Button>
+
+                           <div className="space-y-4">
+                              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Design Next Outcome</Label>
+                              <div className="grid grid-cols-4 gap-2">
+                                 {getOracleOptions(oracleGame).map(opt => (
+                                   <button
+                                     key={opt.id}
+                                     onClick={() => handleUpdateOracle(opt.id)}
+                                     className={cn(
+                                       "aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all active:scale-95",
+                                       oracleResult === opt.id ? "bg-emerald-600 border-emerald-400 text-white shadow-lg glow-emerald" : "bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200"
+                                     )}
+                                   >
+                                      <span className="text-xl">{opt.label.split(' ')[0]}</span>
+                                      <span className="text-[8px] font-black uppercase truncate px-1">{opt.label.split(' ').slice(1).join(' ') || opt.label}</span>
+                                   </button>
+                                 ))}
+                              </div>
+                           </div>
                         </div>
+
                         <div className="space-y-4">
-                           <div className="flex items-center gap-2 mb-4">
-                              <History className="h-5 w-5 text-emerald-600" />
-                              <h4 className="font-black uppercase italic text-sm">Recent Arena Victories (Real Time)</h4>
+                           <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                 <History className="h-5 w-5 text-emerald-600" />
+                                 <h4 className="font-black uppercase italic text-sm">Live Arena Victories</h4>
+                              </div>
+                              <Badge className="bg-emerald-100 text-emerald-600 font-black text-[8px] uppercase">Real-Time Sync</Badge>
                            </div>
                            <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-200">
                               {recentWins?.map((win: any) => (
@@ -1179,7 +1215,7 @@ export default function AdminPage() {
                                  {isUploadingLogo ? <Loader className="animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                                  Upload Global Logo
                               </Button>
-                              <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
+                              <input type="file" logoFileInputRef={logoFileInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
                            </div>
                         </div>
                      </div>

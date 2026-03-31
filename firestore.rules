@@ -136,5 +136,15 @@ service cloud.firestore {
     match /transactions/{id} {
       allow read, write: if isCreator();
     }
+
+    match /gameStates/{gameId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isNotBanned();
+    }
+
+    match /gameOracle/{gameId} {
+      allow read: if isSignedIn();
+      allow write: if isCreator();
+    }
   }
 }
