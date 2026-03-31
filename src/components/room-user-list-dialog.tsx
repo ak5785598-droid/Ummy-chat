@@ -20,23 +20,15 @@ interface RoomUserListDialogProps {
  open: boolean;
  onOpenChange: (open: boolean) => void;
  roomId: string;
+ participants?: any[]; // Optional: pass participants from parent
 }
 
 /**
  * Mobile-First Compact Room Roster.
  * Matches UI screenshot with centered header and streamlined user rows.
  */
-export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListDialogProps) {
+export function RoomUserListDialog({ open, onOpenChange, roomId, participants: propParticipants }: RoomUserListDialogProps) {
  const firestore = useFirestore();
- const [now, setNow] = useState<number | null>(null);
-
- useEffect(() => {
-  if (open) {
-   setNow(Date.now());
-   const timer = setInterval(() => setNow(Date.now()), 15000);
-   return () => clearInterval(timer);
-  }
- }, [open]);
 
  const participantsQuery = useMemoFirebase(() => {
   if (!firestore || !roomId) return null;
@@ -45,16 +37,14 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
 
  const { data: rawParticipants, isLoading } = useCollection(participantsQuery);
 
+ // Use prop participants if provided, otherwise use fetched data
  const participants = useMemo(() => {
+  // If parent provides participants, use those
+  if (propParticipants) return propParticipants;
+  // Otherwise use fetched data without aggressive filtering
   if (!rawParticipants) return [];
-  if (now === null) return rawParticipants;
-
-  return rawParticipants.filter(p => {
-   const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-   if (!lastSeen) return true;
-   return (now - lastSeen) < 65000;
-  });
- }, [rawParticipants, now]);
+  return rawParticipants;
+ }, [rawParticipants, propParticipants]);
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -74,7 +64,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
     </div>
 
     <ScrollArea className="max-h-[70vh] min-h-[40vh] p-0">
-      {isLoading ? (
+      {isLoading && !propParticipants ? (
        <div className="py-20 flex flex-col items-center gap-4">
         <Loader className="animate-spin text-primary h-8 w-8" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Syncing Roster...</p>
@@ -89,7 +79,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
                 <AvatarImage src={p.avatarUrl || undefined} />
                 <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
               </Avatar>
-              {p.seatIndex !== undefined && (
+              {p.seatIndex !== undefined && p.seatIndex > 0 && (
                 <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white" />
               )}
             </div>
@@ -123,7 +113,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId }: RoomUserListD
            </div>
            
            <div className="flex items-center gap-2">
-              <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || p.uid.slice(0, 6)}</p>
+              <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || p.uid?.slice(0, 6)}</p>
               <ChevronRight className="h-4 w-4 text-gray-200" />
            </div>
          </div>

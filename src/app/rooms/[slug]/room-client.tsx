@@ -1223,7 +1223,14 @@ export function RoomClient({ room }: { room: Room }) {
           setIsMusicPlaying(true);
         }).catch(e => {
           console.warn('[Music] Auto-play blocked - needs user interaction:', e.name);
-          // Don't show toast on every sync attempt
+          // Show toast to prompt user to interact
+          if (e.name === 'NotAllowedError') {
+            toast({ 
+              title: '🎵 Tap to Join Music', 
+              description: 'Click anywhere to enable audio and hear the music!',
+              duration: 5000
+            });
+          }
         });
       } else {
         // Room says pause
