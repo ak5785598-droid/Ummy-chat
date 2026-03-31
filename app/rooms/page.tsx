@@ -93,8 +93,8 @@ export default function RoomsPage() {
       return bannerConfig.slides;
     }
     return [
-      { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
-      { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
+      { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', link: "", iconName: 'Sparkles' },
+      { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', link: "", iconName: 'Trophy' }
     ];
   }, [bannerConfig]);
 
@@ -130,6 +130,15 @@ export default function RoomsPage() {
       </div>
     </div>
   );
+
+  const handleBannerClick = (link: string | undefined) => {
+    if (!link) return;
+    if (link.startsWith('http')) {
+      window.open(link, '_blank');
+    } else {
+      router.push(link);
+    }
+  };
 
   return (
     <AppLayout>
@@ -180,7 +189,14 @@ export default function RoomsPage() {
                     const Icon = ICON_MAP[slide.iconName] || Sparkles;
                     return (
                       <CarouselItem key={idx}>
-                        <div className={cn("h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 active:scale-[0.98] transition-all group", slide.color || 'from-purple-600 to-indigo-600')}>
+                        <div 
+                          onClick={() => handleBannerClick(slide.link)}
+                          className={cn(
+                            "h-16 w-full rounded-[1.25rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-md border-2 border-white/20 transition-all group",
+                            slide.link ? "cursor-pointer active:scale-[0.98]" : "",
+                            slide.color || 'from-purple-600 to-indigo-600'
+                          )}
+                        >
                            {slide.imageUrl && (
                              <Image 
                                src={slide.imageUrl} 

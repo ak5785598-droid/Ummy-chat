@@ -10,7 +10,7 @@ import { useFirestore, useDoc, useUser, useCollection, useMemoFirebase, updateDo
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection, query, orderBy, limit, serverTimestamp, addDoc, getDocs, where, writeBatch, arrayUnion, arrayRemove, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag, ShieldAlert } from 'lucide-react';
+import { Shield, Loader, Gift, UserCheck, Star, Zap, Heart, MessageSquare, BadgeCheck, Upload, Type, Image as ImageIcon, Gamepad2, Camera, Trash2, ShieldCheck, Store, Check, Mic2, Send, Megaphone, MessageSquareText, Palette, UserX, Gavel, History, Clock, Dices, Sparkles, Wand2, Database, BarChart3, Eye, Search, RefreshCcw, Users, CheckCircle2, Activity, Wallet, UserSearch, ClipboardList, ListTodo, Plus, Monitor, Trophy, Crown, Home, X, Copy, Pin, PinOff, ShoppingBag, ShieldAlert, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -60,9 +60,9 @@ const DISPATCH_ASSETS = {
 };
 
 const DEFAULT_SLIDES = [
-  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: "" },
-  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: "" },
-  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: "" }
+  { id: 0, title: "Tribe Events", subtitle: "Global Frequency Sync", link: "", iconName: "Sparkles", color: "from-orange-500/40", imageUrl: "" },
+  { id: 1, title: "Elite Rewards", subtitle: "Claim Your Daily Throne", link: "", iconName: "Trophy", color: "from-yellow-500/40", imageUrl: "" },
+  { id: 2, title: "Game Zone", subtitle: "Enter the 3D Arena", link: "", iconName: "Gamepad2", color: "from-purple-500/40", imageUrl: "" }
 ];
 
 const ACTIVE_GAME_FREQUENCIES = [
@@ -586,7 +586,7 @@ export default function AdminPage() {
   const handleAddBanner = () => {
     if (!firestore || !isCreator) return;
     const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
-    const newSlide = { title: "New Tribe Event", subtitle: "Join the Frequency", iconName: "Sparkles", color: "from-blue-500/40", imageUrl: "" };
+    const newSlide = { title: "New Tribe Event", subtitle: "Join the Frequency", link: "", iconName: "Sparkles", color: "from-blue-500/40", imageUrl: "" };
     const newSlides = [...currentSlides, newSlide];
     setDoc(bannerConfigRef!, { slides: newSlides }, { merge: true }).catch(err => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: bannerConfigRef!.path, operation: 'write' })); });
   };
@@ -943,7 +943,21 @@ export default function AdminPage() {
                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8">
                   <CardHeader className="px-0 flex flex-row items-center justify-between"><div><CardTitle className="text-2xl uppercase italic flex items-center gap-2 text-blue-600"><ImageIcon className="h-6 w-6" /> Banners</CardTitle></div><Button onClick={handleAddBanner} className="bg-primary text-black h-12 rounded-xl">+ Add Slot</Button></CardHeader>
                   <CardContent className="px-0 space-y-8"><div className="grid grid-cols-1 gap-8">{(bannerConfig?.slides || DEFAULT_SLIDES).map((slide: any, idx: number) => (
-                    <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8"><div className="w-72 h-40 relative rounded-2xl overflow-hidden bg-slate-200">{slide.imageUrl && (<Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />)}<button onClick={() => bannerFileInputRefs.current[idx]?.click()} className="absolute bottom-3 right-3 bg-white p-2 rounded-full"><Camera className="h-4 w-4" /></button><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /></div><div className="flex-1 space-y-4"><Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl" /><Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl" /><Button variant="destructive" onClick={() => handleRemoveBanner(idx)} className="w-full">Purge</Button></div></div>
+                    <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 flex flex-col md:flex-row gap-8"><div className="w-72 h-40 relative rounded-2xl overflow-hidden bg-slate-200">{slide.imageUrl && (<Image src={slide.imageUrl} alt="Banner" fill className="object-cover" unoptimized />)}<button onClick={() => bannerFileInputRefs.current[idx]?.click()} className="absolute bottom-3 right-3 bg-white p-2 rounded-full"><Camera className="h-4 w-4" /></button><input type="file" ref={el => { bannerFileInputRefs.current[idx] = el; }} className="hidden" onChange={(e) => e.target.files?.[0] && handleBannerImageUpload(idx, e.target.files[0])} /></div><div className="flex-1 space-y-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Title</Label>
+                        <Input value={slide.title} onChange={(e) => handleUpdateBannerMeta(idx, 'title', e.target.value)} className="h-12 rounded-xl" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Subtitle</Label>
+                        <Input value={slide.subtitle} onChange={(e) => handleUpdateBannerMeta(idx, 'subtitle', e.target.value)} className="h-12 rounded-xl" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Link (URL)</Label>
+                        <Input placeholder="https://..." value={slide.link || ''} onChange={(e) => handleUpdateBannerMeta(idx, 'link', e.target.value)} className="h-12 rounded-xl" />
+                      </div>
+                      <Button variant="destructive" onClick={() => handleRemoveBanner(idx)} className="w-full">Purge Slot</Button>
+                    </div></div>
                   ))}</div></CardContent>
                </Card>
             </TabsContent>
