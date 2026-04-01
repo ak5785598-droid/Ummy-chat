@@ -1222,30 +1222,39 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   // Listen for shared music changes from Firestore
-  // NOTE: Music does NOT auto-play when entering room. User must manually click play.
+  // AUTO-PLAY: When music is playing in room, all users should hear it
   useEffect(() => {
     if (!room?.currentMusicUrl || !musicAudioRef.current) {
       return;
     }
     
-    // Only sync the audio source, DON'T auto-play on URL change
     const currentSrc = musicAudioRef.current.src;
     const newUrl = room.currentMusicUrl;
     
+    // Always set the source when URL changes or on first load
     if (currentSrc !== newUrl) {
-      console.log('[Music] New music available:', room.currentMusicTitle || 'Unknown');
+      console.log('[Music] Setting music source:', room.currentMusicTitle || 'Unknown');
       
-      // Set the source but DON'T auto-play
       musicAudioRef.current.pause();
       musicAudioRef.current.src = newUrl;
       musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
       musicAudioRef.current.load();
-      setIsMusicPlaying(false); // Reset local state
       
-      // Show toast that music is ready
-      toast({ title: 'Music Ready', description: `${room.currentMusicTitle || 'Song'} - Tap play to start` });
+      // If room says music is playing, try to auto-play
+      if (room.isMusicPlaying) {
+        console.log('[Music] Auto-playing on source set...');
+        musicAudioRef.current.play().then(() => {
+          setIsMusicPlaying(true);
+          console.log('[Music] Auto-play successful');
+        }).catch(e => {
+          console.warn('[Music] Auto-play blocked:', e.name);
+          setIsMusicPlaying(false);
+        });
+      } else {
+        setIsMusicPlaying(false);
+      }
     }
-  }, [room?.currentMusicUrl, room?.currentMusicTitle, toast]);
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.isMusicPlaying, room?.musicCurrentTime]);
 
   // Listen for room's isMusicPlaying state - SYNC ACROSS ALL USERS
   useEffect(() => {
@@ -1781,12 +1790,12 @@ export function RoomClient({ room }: { room: Room }) {
               </button>
 
               {/* Play/Pause - Only Owner/Admin can control */}
-              {canManageRoom && (
+              {canManageRoom ? (
                 <button
                   onClick={handleToggleMusic}
                   className="p-3 rounded-full bg-white text-black active:scale-95 transition-all shadow-lg"
                 >
-                  {isMusicPlaying ? (
+                  {room.isMusicPlaying ? (
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                     </svg>
@@ -1796,20 +1805,20 @@ export function RoomClient({ room }: { room: Room }) {
                     </svg>
                   )}
                 </button>
-              )}
-              {!canManageRoom && (
-                <div className="flex items-center gap-2 text-white/60">
-                  {isMusicPlaying ? (
+              ) : (
+                <div className="flex items-center gap-2 text-white/60 px-3 py-2">
+                  {room.isMusicPlaying ? (
                     <>
-                      <div className="flex gap-1">
-                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-1 h-4 bg-cyan-400 rounded animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="flex gap-1 items-end h-5">
+                        <div className="w-1.5 h-3 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms', animationDuration: '0.6s' }} />
+                        <div className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s', animationDuration: '0.7s' }} />
+                        <div className="w-1.5 h-4 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.5s' }} />
+                        <div className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '0.6s' }} />
                       </div>
-                      <span className="text-xs font-medium">Now Playing</span>
+                      <span className="text-xs font-medium ml-1">Playing</span>
                     </>
                   ) : (
-                    <span className="text-xs font-medium">Music Paused</span>
+                    <span className="text-xs font-medium">Paused</span>
                   )}
                 </div>
               )}
