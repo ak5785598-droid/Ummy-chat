@@ -254,6 +254,54 @@ export function RoomClient({ room }: { room: Room }) {
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
 
+  // Silent audio ref for unlocking browser autoplay policy
+  const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // AUTO-UNLOCK: Play silent audio on mount to unlock browser audio context
+  // This allows subsequent music to auto-play without user interaction
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Create a silent audio element
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAA==');
+    silentAudioRef.current = silentAudio;
+    
+    // Try to play immediately (will likely fail due to autoplay policy)
+    const attemptSilentPlay = async () => {
+      try {
+        await silentAudio.play();
+        console.log('[AutoUnlock] Silent audio played - audio context unlocked');
+        setUserInteracted(true);
+      } catch (e) {
+        console.log('[AutoUnlock] Silent play blocked, will retry on interaction');
+      }
+    };
+    
+    attemptSilentPlay();
+    
+    // Also set up interaction listeners as fallback
+    const unlockOnInteraction = async () => {
+      if (!silentAudioRef.current) return;
+      try {
+        await silentAudioRef.current.play();
+        console.log('[AutoUnlock] Audio unlocked via user interaction');
+        setUserInteracted(true);
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+    
+    document.addEventListener('click', unlockOnInteraction, { once: true });
+    document.addEventListener('touchstart', unlockOnInteraction, { once: true });
+    document.addEventListener('keydown', unlockOnInteraction, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', unlockOnInteraction);
+      document.removeEventListener('touchstart', unlockOnInteraction);
+      document.removeEventListener('keydown', unlockOnInteraction);
+    };
+  }, []);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(() => {
