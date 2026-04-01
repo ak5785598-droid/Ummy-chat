@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X } from 'lucide-react';
+import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X, Power } from 'lucide-react';
 
 interface RoomSeatMenuDialogProps {
  open: boolean;
@@ -114,15 +114,16 @@ export function RoomSeatMenuDialog({
   onOpenChange(false);
  };
 
- const MenuItem = ({ label, icon: Icon, onClick, className }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string }) => (
+ const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
   <button
    onClick={onClick}
+   disabled={disabled}
    className={cn(
-    "flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all",
+    "flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none",
     className
    )}
   >
-   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+   <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
     <Icon className="w-4 h-4 text-gray-700" />
    </div>
    <span className="text-[9px] font-medium text-gray-600 whitespace-nowrap">{label}</span>
@@ -131,14 +132,15 @@ export function RoomSeatMenuDialog({
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[260px] bg-white text-black p-3 rounded-2xl border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
+   <DialogContent className="sm:max-w-[220px] bg-white text-black p-2 rounded-lg border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
     </DialogHeader>
 
-    {/* Wafa-style compact horizontal grid */}
-    <div className="grid grid-cols-4 gap-1.5">
+    {/* Wafa-style compact rectangular grid - always 4 buttons */}
+    <div className="grid grid-cols-4 gap-1">
+     {/* Always show Take mic for empty seat or Leave for occupied */}
      {(!occupantUid && (!isLocked || canManage)) && (
       <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
      )}
@@ -155,10 +157,29 @@ export function RoomSeatMenuDialog({
       />
      )}
 
+     {/* Show Mute for occupied seat, or Close button for empty seat to make 4 buttons */}
+     {canManage && (
+      occupantUid ? (
+       <MenuItem 
+        label={isMuted ? "Unmute" : "Mute"} 
+        icon={isMuted ? Mic : MicOff}
+        onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
+        className={isMuted ? "text-green-600" : "text-red-500"}
+       />
+      ) : (
+       <MenuItem 
+        label="Close" 
+        icon={X}
+        onClick={() => onOpenChange(false)}
+        className="text-gray-400"
+       />
+      )
+     )}
+
      {(canManage && occupantUid && occupantUid !== currentUserId) && (
       <MenuItem 
        label="Kick" 
-       icon={X}
+       icon={LogOut}
        onClick={() => onKick(occupantUid, 5)} 
        className="text-red-500" 
       />
@@ -170,15 +191,6 @@ export function RoomSeatMenuDialog({
        icon={LogOut}
        onClick={() => onLeaveSeat(occupantUid)} 
        className="text-orange-600" 
-      />
-     )}
-
-     {(canManage && occupantUid) && (
-      <MenuItem 
-       label={isMuted ? "Unmute" : "Mute"} 
-       icon={isMuted ? Mic : MicOff}
-       onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
-       className={isMuted ? "text-green-600" : "text-red-500"}
       />
      )}
 
