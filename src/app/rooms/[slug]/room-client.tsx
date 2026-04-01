@@ -798,8 +798,13 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - Master Brain Override)
-    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
-    const isTriggered = triggerWords.some(t => content.includes(t));
+    // Use word boundaries to prevent false positives (e.g., "hai" contains "ai" but shouldn't trigger)
+    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai', 'help', 'madad', 'हेल्प', 'मदद', 'उम्मी', 'umm'];
+    const isTriggered = triggerWords.some(t => {
+      // Check for word boundaries - word should be standalone or at start/end of message
+      const wordBoundaryPattern = new RegExp(`(^|\\s)${t}($|\\s|[.,!?])`, 'i');
+      return wordBoundaryPattern.test(content) || content.startsWith(t + ' ') || content.endsWith(' ' + t) || content === t;
+    });
 
     if (isTriggered) {
       // PROCESSING LOCK: Add flag to firestore message to signal processing has started
