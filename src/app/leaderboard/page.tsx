@@ -5,21 +5,20 @@ import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, Star, Sparkles, Trophy, Gamepad2, Zap, Heart, Users, Clock } from 'lucide-react';
+import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { Crown, TrendingUp, Loader, ChevronLeft, HelpCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
 
-// --- Countdown Component for GMT+5:30 ---
+// --- Daily Countdown Component ---
 const DailyCountdown = () => {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      // Calculate IST (GMT+5:30)
       const istOffset = 5.5 * 60 * 60 * 1000;
       const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
       
@@ -45,7 +44,6 @@ const DailyCountdown = () => {
   );
 };
 
-// --- Updated to Circle Avatar ---
 const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?: string, fallback: string, size?: "sm" | "md" | "lg", glowColor?: string }) => {
   const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
   const glows: Record<string, string> = {
@@ -64,32 +62,34 @@ const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?
   );
 };
 
-const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, type: string, period: 'daily' | 'weekly' | 'monthly', isLoading: boolean }) => {
+const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
  if (isLoading) return (
   <div className="flex flex-col items-center py-40 gap-4">
    <Loader className="animate-spin text-cyan-500 h-10 w-10" />
-   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/60 animate-pulse">Syncing Global Data...</p>
+   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/60 animate-pulse">Syncing Daily Data...</p>
   </div>
  );
-
- if (!items || items.length === 0) return (
-  <div className="text-center py-40 opacity-40">
-   <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
-   <p className="font-bold uppercase text-sm text-white/40">No Legends Found.</p>
-  </div>
- );
-
- const top1 = items[0];
- const top2 = items[1];
- const top3 = items[2];
- const others = items.slice(3);
 
  const getValue = (item: any) => {
-  const fieldPrefix = 'daily'; // Forced to daily as per request
   const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-  if (type === 'rich') return item.wallet?.[`${fieldPrefix}${fieldSuffix}`] || 0;
-  return item.stats?.[`${fieldPrefix}${fieldSuffix}`] || 0;
+  if (type === 'rich') return item.wallet?.[`daily${fieldSuffix}`] || 0;
+  return item.stats?.[`daily${fieldSuffix}`] || 0;
  };
+
+ // Filter out players with 0 coins
+ const activePlayers = (items || []).filter(item => getValue(item) > 0);
+
+ if (activePlayers.length === 0) return (
+  <div className="text-center py-40 opacity-40">
+   <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
+   <p className="font-bold uppercase text-sm text-white/40">No Daily Legends Yet.</p>
+  </div>
+ );
+
+ const top1 = activePlayers[0];
+ const top2 = activePlayers[1];
+ const top3 = activePlayers[2];
+ const others = activePlayers.slice(3);
 
  const formatValue = (val: number) => {
   if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -99,7 +99,6 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
 
  return (
   <div className="space-y-2 animate-in fade-in duration-700 pb-32">
-    {/* Podium Section */}
     <div className="flex items-end justify-center gap-2 pt-10 px-2">
       {top2 && (
         <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
@@ -117,7 +116,6 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
       {top1 && (
         <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex-1 flex flex-col items-center z-10 -translate-y-4 scale-110">
            <div className="relative mb-2">
-             <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 h-8 w-8 text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.8)] animate-bounce" />
              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 bg-yellow-500 text-black text-[10px] font-black px-2 rounded-full">1</div>
              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" glowColor="yellow" />
            </div>
@@ -129,7 +127,7 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
       )}
 
       {top3 && (
-        <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center group">
+        <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center">
            <div className="relative mb-2">
              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-purple-400 font-black text-2xl italic opacity-50">3</div>
              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" glowColor="purple" />
@@ -142,10 +140,8 @@ const RankingList = ({ items, type, period, isLoading }: { items: any[] | null, 
       )}
     </div>
 
-    {/* Countdown between Top 3 and List */}
     <DailyCountdown />
 
-    {/* Scrollable List */}
     <div className="px-4 space-y-3">
       {others.map((item, index) => (
         <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} 
@@ -175,29 +171,29 @@ function LeaderboardContent() {
  const firestore = useFirestore();
  const { userProfile: me } = useUserProfile(user?.uid);
  
- const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'banner' | 'games'>(initialType);
+ const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
  const [mounted, setMounted] = useState(false);
 
  useEffect(() => { setMounted(true); }, []);
  
  const richQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(50));
+    return query(collection(firestore, 'users'), where('wallet.dailySpent', '>', 0), orderBy('wallet.dailySpent', 'desc'), limit(50));
  }, [firestore]);
 
  const charmQuery = useMemoFirebase(() => {
   if (!firestore) return null;
-  return query(collection(firestore, 'users'), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50));
+  return query(collection(firestore, 'users'), where('stats.dailyGiftsReceived', '>', 0), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50));
  }, [firestore]);
 
  const roomsQuery = useMemoFirebase(() => {
   if (!firestore) return null;
-  return query(collection(firestore, 'chatRooms'), orderBy('stats.dailyGifts', 'desc'), limit(50));
+  return query(collection(firestore, 'chatRooms'), where('stats.dailyGifts', '>', 0), orderBy('stats.dailyGifts', 'desc'), limit(50));
  }, [firestore]);
 
  const gamesQuery = useMemoFirebase(() => {
   if (!firestore) return null;
-  return query(collection(firestore, 'users'), orderBy('stats.dailyGameWins', 'desc'), limit(50));
+  return query(collection(firestore, 'users'), where('stats.dailyGameWins', '>', 0), orderBy('stats.dailyGameWins', 'desc'), limit(50));
  }, [firestore]);
 
  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
@@ -219,6 +215,7 @@ function LeaderboardContent() {
   if (!me) return 0;
   if (rankingType === 'rich') return me.wallet?.dailySpent || 0;
   if (rankingType === 'charm') return me.stats?.dailyGiftsReceived || 0;
+  if (rankingType === 'games') return me.stats?.dailyGameWins || 0;
   return 0;
  }, [me, rankingType]);
 
@@ -252,7 +249,7 @@ function LeaderboardContent() {
     </header>
 
     <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
-       <RankingList items={activeItems} type={rankingType} period="daily" isLoading={isActiveLoading} />
+       <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
     </main>
 
     <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/95 backdrop-blur-lg border-t border-cyan-500/20 p-4 h-20 flex items-center">
