@@ -157,23 +157,23 @@ export function RoomSeatMenuDialog({
       />
      )}
 
-     {/* Show Mute for occupied seat, or Close button for empty seat to make 4 buttons */}
-     {canManage && (
-      occupantUid ? (
-       <MenuItem 
-        label={isMuted ? "Unmute" : "Mute"} 
-        icon={isMuted ? Mic : MicOff}
-        onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
-        className={isMuted ? "text-green-600" : "text-red-500"}
-       />
-      ) : (
-       <MenuItem 
-        label="Close" 
-        icon={X}
-        onClick={() => onOpenChange(false)}
-        className="text-gray-400"
-       />
-      )
+     {/* 4th button: Mute/Unmute toggle - shows Mute when mic open, Unmute when mic muted */}
+     {canManage && occupantUid && (
+      <MenuItem 
+       label={isMuted ? "Unmute" : "Mute"} 
+       icon={isMuted ? Mic : MicOff}
+       onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
+       className={isMuted ? "text-green-600" : "text-red-500"}
+      />
+     )}
+     {/* Empty placeholder for 4th position when no occupant - maintains grid layout */}
+     {canManage && !occupantUid && (
+      <div className="flex flex-col items-center gap-1 p-1.5">
+       <div className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center">
+        <Mic className="w-4 h-4 text-gray-300" />
+       </div>
+       <span className="text-[9px] font-medium text-gray-300 whitespace-nowrap">Mute</span>
+      </div>
      )}
 
      {(canManage && occupantUid && occupantUid !== currentUserId) && (
