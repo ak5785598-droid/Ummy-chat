@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X } from 'lucide-react';
 
 interface RoomSeatMenuDialogProps {
  open: boolean;
@@ -107,45 +108,51 @@ export function RoomSeatMenuDialog({
   onOpenChange(false);
  };
 
- const MenuItem = ({ label, onClick, className }: { label: string; onClick?: () => void; className?: string }) => (
+ const MenuItem = ({ label, icon: Icon, onClick, className }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string }) => (
   <button
    onClick={onClick}
    className={cn(
-    "w-full py-5 text-center text-[17px] font-bold tracking-tight text-gray-800 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-100 last:border-0",
+    "flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all",
     className
    )}
   >
-   {label}
+   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+    <Icon className="w-5 h-5 text-gray-700" />
+   </div>
+   <span className="text-[10px] font-medium text-gray-600 whitespace-nowrap">{label}</span>
   </button>
  );
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[400px] bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom-full duration-500">
+   <DialogContent className="sm:max-w-[280px] bg-white text-black p-4 rounded-2xl border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
     </DialogHeader>
 
-    <div className="flex flex-col items-center">
+    {/* Wafa-style compact horizontal grid */}
+    <div className="grid grid-cols-4 gap-2">
      {(!occupantUid && (!isLocked || canManage)) && (
-      <MenuItem label="Take mic" onClick={handleTakeSeat} />
+      <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
      )}
 
      {canManage && (
-      <MenuItem label="Invite to mic" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+      <MenuItem label="Invite" icon={UserPlus} onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
      )}
 
      {canManage && (
       <MenuItem 
-       label={isLocked ? "Unlock mic" : "Lock mic"} 
+       label={isLocked ? "Unlock" : "Lock"} 
+       icon={isLocked ? Unlock : Lock}
        onClick={handleToggleLock}
       />
      )}
 
      {(canManage && occupantUid && occupantUid !== currentUserId) && (
       <MenuItem 
-       label="Kick out" 
+       label="Kick" 
+       icon={X}
        onClick={() => onKick(occupantUid, 5)} 
        className="text-red-500" 
       />
@@ -153,19 +160,21 @@ export function RoomSeatMenuDialog({
 
      {(occupantUid && (occupantUid === currentUserId || canManage)) && (
       <MenuItem 
-       label="Seat leave" 
+       label="Leave" 
+       icon={LogOut}
        onClick={() => onLeaveSeat(occupantUid)} 
        className="text-orange-600" 
       />
      )}
 
      {canManage && (
-      <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
+      <MenuItem label="Mute" icon={MicOff} onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
      )}
 
      {(occupantUid && onSendGift) && (
       <MenuItem 
-       label="Send gift" 
+       label="Gift" 
+       icon={Gift}
        className="text-pink-600"
        onClick={() => {
         onSendGift({
@@ -180,8 +189,9 @@ export function RoomSeatMenuDialog({
 
      <MenuItem 
       label="Cancel" 
+      icon={X}
       onClick={() => onOpenChange(false)} 
-      className="text-gray-400 font-bold border-t-[6px] border-gray-50 mt-1" 
+      className="text-gray-400" 
      />
     </div>
    </DialogContent>
