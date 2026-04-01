@@ -895,27 +895,7 @@ export function RoomClient({ room }: { room: Room }) {
       }
     }
 
-    // 3. SMART GUIDE (Q&A Keywords - Secondary Fallback)
-    const keywords = {
-      seat: "Khali bubble par click karke seat join karein!",
-      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
-      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
-      level: "Gifts aur Daily login se aapka level badhega!",
-      coin: "Coins store se purchase karein ya events join karein!"
-    };
-
-    const match = Object.entries(keywords).find(([k]) => content.includes(k));
-    if (match) {
-      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `@${msg.senderName}, ${match[1]} 💖✨`,
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
-        type: 'text',
-        timestamp: serverTimestamp()
-      });
-      return;
-    }
+    // SMART GUIDE removed - AI now only responds to trigger words
   };
 
   // REMOVED LEGACY LOCAL AUTO-WELCOME (Duplicates Fixed)
