@@ -375,23 +375,26 @@ export function RoomPlayDialog({
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             onClick={() => onOpenChange(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
+            className="absolute inset-0 bg-black/40 pointer-events-auto"
           />
           <motion.div 
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative w-full max-w-[500px] bg-[#121212] rounded-t-[3rem] border-t border-white/10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col"
-            style={{ height: view === 'grid' ? 'auto' : '85vh' }}
+            className="relative w-full max-w-[500px] bg-[#121212] rounded-t-[2rem] border-t border-white/10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col mb-0"
+            style={{ 
+              height: view === 'grid' ? 'auto' : '75vh',
+              maxHeight: view === 'grid' ? '65vh' : '75vh'
+            }}
           >
             {/* Wafa-style Pull Bar */}
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
             {view === 'grid' && (
-              <div className="p-4 pt-4 pb-12 space-y-10 overflow-y-auto no-scrollbar">
+              <div className="p-4 pt-2 space-y-6 overflow-y-auto no-scrollbar">
                 {/* Top Row: Quick Toggles (Glossy Circles) */}
-                <div className="flex items-center justify-around px-4 shrink-0">
+                <div className="flex items-center justify-around px-4 shrink-0 pb-2">
                   {toggleOptions.map(opt => (
                     <div key={opt.id} className="flex flex-col items-center gap-2">
                       <button 
@@ -412,8 +415,8 @@ export function RoomPlayDialog({
                   ))}
                 </div>
 
-                {/* Feature/Game Grid (Wafa Organized Style) */}
-                <div className="grid grid-cols-4 gap-y-10 gap-x-2 px-2">
+                {/* Feature/Game Grid - Compact like Wafa */}
+                <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
                   {gameGrid.map(item => (
                     <button 
                       key={item.id} 
