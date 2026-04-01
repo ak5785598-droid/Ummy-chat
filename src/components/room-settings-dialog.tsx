@@ -300,8 +300,24 @@ export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
          <h3 className="font-bold uppercase text-lg tracking-tight">Privacy Code</h3>
          <button onClick={handleSavePassword} className="text-primary font-bold uppercase text-sm tracking-wider px-2">Save</button>
         </header>
-        <div className="p-8">
+        <div className="p-8 flex flex-col gap-4">
          <Input type="password" inputMode="numeric" maxLength={4} placeholder="0000" value={newPassword} onChange={(e) => setNewPassword(e.target.value.replace(/\D/g, ''))} className="h-20 rounded-xl border-2 text-4xl font-bold tracking-[1em] text-center focus:border-primary transition-all" autoFocus />
+         
+         {/* Remove Password Button */}
+         {room.password && (
+           <button
+             onClick={() => {
+               setNewPassword('');
+               handleUpdate('password', null);
+               setIsEditingPassword(false);
+               toast({ title: 'Password Removed', description: 'Room is now open to everyone.' });
+             }}
+             className="mt-4 flex items-center justify-center gap-2 text-red-500 font-bold uppercase text-sm tracking-wider py-3 border-2 border-red-200 rounded-xl hover:bg-red-50 active:scale-95 transition-all"
+           >
+             <Trash2 className="h-4 w-4" />
+             Remove Password
+           </button>
+         )}
         </div>
       </div>
      )}
