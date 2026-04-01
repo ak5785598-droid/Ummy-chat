@@ -797,18 +797,22 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
-    // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - Master Brain Override)
-    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
+    // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - ONLY replies when triggered)
+    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai', 'help', 'madad', 'हेल्प', 'मदद'];
     const isTriggered = triggerWords.some(t => content.includes(t));
 
-    if (isTriggered) {
-      // PROCESSING LOCK: Add flag to firestore message to signal processing has started
-      try {
-        const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
-        await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
+    // Only respond if triggered by user - no unsolicited messages
+    if (!isTriggered) {
+      return; // Silent mode: Don't reply unless asked
+    }
 
-        const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
-        const upperResponse = aiResponse.toUpperCase();
+    // PROCESSING LOCK: Add flag to firestore message to signal processing has started
+    try {
+      const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
+      await updateDocumentNonBlocking(msgRef, { _processing_ai: true });
+
+      const aiResponse = await getUmmyAIResponse(msg.content, msg.senderName);
+      const upperResponse = aiResponse.toUpperCase();
 
         // COMMAND PARSER: Execute moderation actions detected in AI response
         const isAdminAction = room.ownerId === msg.senderId || room.moderatorIds?.includes(msg.senderId);
@@ -893,28 +897,6 @@ export function RoomClient({ room }: { room: Room }) {
         const msgRef = doc(firestore, 'chatRooms', room.id, 'messages', msg.id);
         await updateDocumentNonBlocking(msgRef, { _processing_ai: false });
       }
-    }
-
-    // 3. SMART GUIDE (Q&A Keywords - Secondary Fallback)
-    const keywords = {
-      seat: "Khali bubble par click karke seat join karein!",
-      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
-      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
-      level: "Gifts aur Daily login se aapka level badhega!",
-      coin: "Coins store se purchase karein ya events join karein!"
-    };
-
-    const match = Object.entries(keywords).find(([k]) => content.includes(k));
-    if (match) {
-      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `@${msg.senderName}, ${match[1]} 💖✨`,
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
-        type: 'text',
-        timestamp: serverTimestamp()
-      });
-      return;
     }
   };
 
