@@ -30,6 +30,7 @@ interface RoomSeatMenuDialogProps {
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
+ onOpenAudienceInvite?: () => void;
 }
 
 /**
@@ -51,7 +52,8 @@ export function RoomSeatMenuDialog({
  currentUserAvatarUrl,
  onLeaveSeat,
  onKick,
- onSendGift
+ onSendGift,
+ onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
  const firestore = useFirestore();
  const { toast } = useToast();
@@ -138,7 +140,7 @@ export function RoomSeatMenuDialog({
      )}
 
      {canManage && (
-      <MenuItem label="Invite" icon={UserPlus} onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+      <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
      )}
 
      {canManage && (

@@ -103,6 +103,7 @@ import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
+import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
 import { ROOM_THEMES } from '@/lib/themes';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
@@ -233,6 +234,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
+  const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
@@ -728,6 +730,17 @@ export function RoomClient({ room }: { room: Room }) {
               } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
                 // Defer AI processing to not block UI
                 requestIdleCallback?.(() => handleAIEngine(msg)) || setTimeout(() => handleAIEngine(msg), 0);
+              } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
+                // Show invitation notification to the invited user
+                toast({ 
+                  title: 'Mic Invitation 🎙️', 
+                  description: `${msg.inviterName} invited you to join mic on seat #${msg.targetSeatIndex}`,
+                  duration: 5000
+                });
+                // Haptic feedback
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  navigator.vibrate([50, 100, 50]);
+                }
               }
 
               // VOICE SYNC: Trigger local TTS if it's an AI message
@@ -2137,6 +2150,17 @@ export function RoomClient({ room }: { room: Room }) {
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
         onSendGift={handleOpenGiftPickerFromMenu}
+        onOpenAudienceInvite={() => setIsAudienceInviteOpen(true)}
+      />
+
+      <RoomAudienceInviteDialog
+        open={isAudienceInviteOpen}
+        onOpenChange={setIsAudienceInviteOpen}
+        seatIndex={selectedSeatIdx}
+        roomId={room.id}
+        participants={participants}
+        inviterName={userProfile?.username || currentUser?.displayName || 'User'}
+        inviterId={currentUser?.uid || ''}
       />
 
       <RoomUserProfileDialog
