@@ -1561,7 +1561,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
+      <header className="relative z-50 flex items-center justify-between p-3 pt-2 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
           <div
             onClick={() => setIsRoomInfoOpen(true)}
@@ -1900,7 +1900,7 @@ export function RoomClient({ room }: { room: Room }) {
         </button>
       )}
 
-      <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
+      <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
         <div className="flex items-center">
           <button
             onClick={handleInputClick}
