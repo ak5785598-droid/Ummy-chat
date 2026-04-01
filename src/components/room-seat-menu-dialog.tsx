@@ -20,6 +20,7 @@ interface RoomSeatMenuDialogProps {
  seatIndex: number | null;
  roomId: string;
  isLocked: boolean;
+ isSeatMuted?: boolean;
  occupantUid?: string | null;
  occupantName?: string | null;
  occupantAvatarUrl?: string | null;
@@ -31,6 +32,7 @@ interface RoomSeatMenuDialogProps {
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
  onToggleMute?: (uid: string, isMuted: boolean) => void;
+ onToggleSeatMute?: (seatIndex: number, isMuted: boolean) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
  onOpenAudienceInvite?: () => void;
 }
@@ -45,6 +47,7 @@ export function RoomSeatMenuDialog({
  seatIndex,
  roomId,
  isLocked,
+ isSeatMuted,
  occupantUid,
  occupantName,
  occupantAvatarUrl,
@@ -56,6 +59,7 @@ export function RoomSeatMenuDialog({
  onLeaveSeat,
  onKick,
  onToggleMute,
+ onToggleSeatMute,
  onSendGift,
  onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
@@ -132,7 +136,7 @@ export function RoomSeatMenuDialog({
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="w-[200px] max-w-[200px] bg-white text-black p-1.5 rounded-md border-none shadow-2xl overflow-hidden font-sans">
+   <DialogContent className="sm:max-w-[320px] bg-white text-black p-2 rounded-lg border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
@@ -157,25 +161,14 @@ export function RoomSeatMenuDialog({
       />
      )}
 
-     {/* 4th button: Mute/Unmute toggle - shows Mute when mic open, Unmute when mic muted */}
-     {canManage && occupantUid && (
+     {canManage && (
       <MenuItem 
-       label={isMuted ? "Unmute" : "Mute"} 
-       icon={isMuted ? Mic : MicOff}
-       onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
-       className={isMuted ? "text-green-600" : "text-red-500"}
+       label={isSeatMuted ? "Unmute" : "Mute"} 
+       icon={isSeatMuted ? Mic : MicOff}
+       onClick={() => { onToggleSeatMute?.(seatIndex, !!isSeatMuted); onOpenChange(false); }}
+       className={isSeatMuted ? "text-green-600" : "text-red-500"}
       />
      )}
-     {/* Empty placeholder for 4th position when no occupant - maintains grid layout */}
-     {canManage && !occupantUid && (
-      <div className="flex flex-col items-center gap-1 p-1.5">
-       <div className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center">
-        <Mic className="w-4 h-4 text-gray-300" />
-       </div>
-       <span className="text-[9px] font-medium text-gray-300 whitespace-nowrap">Mute</span>
-      </div>
-     )}
-
      {(canManage && occupantUid && occupantUid !== currentUserId) && (
       <MenuItem 
        label="Kick" 

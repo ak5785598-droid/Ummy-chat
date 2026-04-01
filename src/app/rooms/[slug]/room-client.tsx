@@ -1170,6 +1170,18 @@ export function RoomClient({ room }: { room: Room }) {
     toast({ title: 'Seat Taken', description: `You are now on mic at seat #${seatIndex}` });
   };
 
+  const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
+    if (!firestore || !room.id) return;
+    
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    setDocumentNonBlocking(roomRef, {
+      mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
+  };
+
   const handleToggleMod = (uid: string) => {
     if (!firestore || !room.id) return;
     const isCurrentlyMod = room.moderatorIds?.includes(uid);
@@ -2160,6 +2172,7 @@ export function RoomClient({ room }: { room: Room }) {
         seatIndex={selectedSeatIdx}
         roomId={room.id}
         isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
+        isSeatMuted={room.mutedSeats?.includes(selectedSeatIdx || 0) || false}
         occupantUid={selectedParticipantUid}
         occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
         occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
@@ -2171,6 +2184,7 @@ export function RoomClient({ room }: { room: Room }) {
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
         onToggleMute={handleSilence}
+        onToggleSeatMute={handleToggleSeatMute}
         onSendGift={handleOpenGiftPickerFromMenu}
         onOpenAudienceInvite={() => setIsAudienceInviteOpen(true)}
       />
