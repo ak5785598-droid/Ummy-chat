@@ -2143,12 +2143,14 @@ export function RoomClient({ room }: { room: Room }) {
         occupantUid={selectedParticipantUid}
         occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
         occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
+        isMuted={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
         currentUserName={userProfile?.username}
         currentUserAvatarUrl={userProfile?.avatarUrl}
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
+        onToggleMute={handleSilence}
         onSendGift={handleOpenGiftPickerFromMenu}
         onOpenAudienceInvite={() => setIsAudienceInviteOpen(true)}
       />

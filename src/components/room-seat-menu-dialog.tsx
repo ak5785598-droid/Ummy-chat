@@ -23,12 +23,14 @@ interface RoomSeatMenuDialogProps {
  occupantUid?: string | null;
  occupantName?: string | null;
  occupantAvatarUrl?: string | null;
+ isMuted?: boolean;
  canManage: boolean;
  currentUserId?: string;
  currentUserName?: string | null;
  currentUserAvatarUrl?: string | null;
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
+ onToggleMute?: (uid: string, isMuted: boolean) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
  onOpenAudienceInvite?: () => void;
 }
@@ -46,12 +48,14 @@ export function RoomSeatMenuDialog({
  occupantUid,
  occupantName,
  occupantAvatarUrl,
+ isMuted,
  canManage,
  currentUserId,
  currentUserName,
  currentUserAvatarUrl,
  onLeaveSeat,
  onKick,
+ onToggleMute,
  onSendGift,
  onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
@@ -114,27 +118,27 @@ export function RoomSeatMenuDialog({
   <button
    onClick={onClick}
    className={cn(
-    "flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all",
+    "flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all",
     className
    )}
   >
-   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-    <Icon className="w-5 h-5 text-gray-700" />
+   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+    <Icon className="w-4 h-4 text-gray-700" />
    </div>
-   <span className="text-[10px] font-medium text-gray-600 whitespace-nowrap">{label}</span>
+   <span className="text-[9px] font-medium text-gray-600 whitespace-nowrap">{label}</span>
   </button>
  );
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[280px] bg-white text-black p-4 rounded-2xl border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
+   <DialogContent className="sm:max-w-[260px] bg-white text-black p-3 rounded-2xl border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
     </DialogHeader>
 
     {/* Wafa-style compact horizontal grid */}
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-1.5">
      {(!occupantUid && (!isLocked || canManage)) && (
       <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
      )}
@@ -169,8 +173,13 @@ export function RoomSeatMenuDialog({
       />
      )}
 
-     {canManage && (
-      <MenuItem label="Mute" icon={MicOff} onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
+     {(canManage && occupantUid) && (
+      <MenuItem 
+       label={isMuted ? "Unmute" : "Mute"} 
+       icon={isMuted ? Mic : MicOff}
+       onClick={() => { onToggleMute?.(occupantUid, !isMuted); onOpenChange(false); }}
+       className={isMuted ? "text-green-600" : "text-red-500"}
+      />
      )}
 
      {(occupantUid && onSendGift) && (
@@ -188,13 +197,6 @@ export function RoomSeatMenuDialog({
        }} 
       />
      )}
-
-     <MenuItem 
-      label="Cancel" 
-      icon={X}
-      onClick={() => onOpenChange(false)} 
-      className="text-gray-400" 
-     />
     </div>
    </DialogContent>
   </Dialog>
