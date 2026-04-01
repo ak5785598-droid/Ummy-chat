@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
  Dialog, 
  DialogContent, 
@@ -32,8 +32,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { RoomParticipant } from '@/lib/types';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { collection, getDocs, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useStorage, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, getDocs, writeBatch, doc, serverTimestamp, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { GameControllerIcon } from '@/components/icons';
@@ -52,6 +53,7 @@ interface RoomPlayDialogProps {
   onSelectGame?: (slug: string) => void;
   onPlayLocalMusic?: (file: File) => void;
   onClearChat?: () => void;
+  onSyncSharedMusic?: (track: any) => void;
 }
 
 /**
@@ -69,12 +71,15 @@ export function RoomPlayDialog({
   onOpenGames,
   onSelectGame,
   onPlayLocalMusic,
-  onClearChat
+  onClearChat,
+  onSyncSharedMusic
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
  const [view, setView] = useState<'grid' | 'selection' | 'rules' | 'music'>('grid');
  const [musicTab, setMusicTab] = useState<'online' | 'device'>('online');
  const [isClearingChat, setIsClearingChat] = useState(false);
+ const [isUploading, setIsUploading] = useState(false);
+ const [roomMusicLibrary, setRoomMusicLibrary] = useState<any[]>([]);
  
  const [musicSearch, setMusicSearch] = useState('');
  const [isSearchingMusic, setIsSearchingMusic] = useState(false);
@@ -84,12 +89,31 @@ export function RoomPlayDialog({
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid || undefined);
  const firestore = useFirestore();
+ const storage = useStorage();
  const { toast } = useToast();
 
  const isOwner = user?.uid === room?.ownerId;
  const isMod = room?.moderatorIds?.includes(user?.uid || '');
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
+
+ // Load room music library from Firestore
+ useEffect(() => {
+  if (!firestore || !roomId) return;
+  
+  const musicRef = collection(firestore, 'chatRooms', roomId, 'music');
+  const q = query(musicRef, orderBy('createdAt', 'desc'));
+  
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+   const tracks = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+   }));
+   setRoomMusicLibrary(tracks);
+  });
+  
+  return () => unsubscribe();
+ }, [firestore, roomId]);
 
  const handleClearChat = async () => {
   if (!firestore || !roomId || !user) return;
@@ -163,10 +187,106 @@ export function RoomPlayDialog({
   const roomRef = doc(firestore, 'chatRooms', roomId);
   updateDocumentNonBlocking(roomRef, {
    currentMusicUrl: `https://www.youtube.com/watch?v=${video.videoId}`,
+   currentMusicTitle: video.title,
+   currentMusicThumbnail: video.thumbnailUrl,
+   currentMusicType: 'youtube',
+   musicUpdatedAt: serverTimestamp(),
+   musicUpdatedBy: user?.uid,
    updatedAt: serverTimestamp()
   });
-  toast({ title: 'Music Synchronized', description: `${video.title} is now playing.` });
+  toast({ title: 'Music Synchronized', description: `${video.title} is now playing for everyone.` });
   onOpenChange(false);
+ };
+
+ // Upload file to Firebase Storage and save to room music library
+ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file || !storage || !firestore || !roomId || !user) return;
+  
+  if (!file.type.startsWith('audio/')) {
+   toast({ variant: 'destructive', title: 'Invalid File', description: 'Please select a valid audio file.' });
+   return;
+  }
+  
+  setIsUploading(true);
+  try {
+   // Upload to Firebase Storage
+   const timestamp = Date.now();
+   const storagePath = `rooms/${roomId}/music/${timestamp}_${file.name}`;
+   const storageRef = ref(storage, storagePath);
+   const uploadResult = await uploadBytes(storageRef, file);
+   const downloadUrl = await getDownloadURL(uploadResult.ref);
+   
+   // Save to room music library in Firestore
+   const musicData = {
+    name: file.name,
+    url: downloadUrl,
+    storagePath: storagePath,
+    type: 'upload',
+    size: file.size,
+    uploadedBy: user.uid,
+    uploaderName: userProfile?.username || user.displayName || 'User',
+    createdAt: serverTimestamp()
+   };
+   
+   await addDocumentNonBlocking(collection(firestore, 'chatRooms', roomId, 'music'), musicData);
+   toast({ title: 'Track Uploaded', description: `${file.name} added to room library permanently.` });
+  } catch (error: any) {
+   console.error('Upload failed:', error);
+   toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+  } finally {
+   setIsUploading(false);
+   if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+ };
+
+ // Sync uploaded/shared music to room for everyone to hear
+ const handleSyncSharedMusic = async (track: any) => {
+  if (!firestore || !roomId) return;
+  
+  // Update room document with current music info
+  const roomRef = doc(firestore, 'chatRooms', roomId);
+  await updateDocumentNonBlocking(roomRef, {
+   currentMusicUrl: track.url,
+   currentMusicTitle: track.name,
+   currentMusicType: track.type || 'upload',
+   currentMusicId: track.id,
+   musicUpdatedAt: serverTimestamp(),
+   musicUpdatedBy: user?.uid,
+   updatedAt: serverTimestamp()
+  });
+  
+  setIsMusicEnabled(true);
+  toast({ title: 'Music Broadcasting', description: `${track.name} is now playing for everyone.` });
+  
+  if (onSyncSharedMusic) {
+   onSyncSharedMusic(track);
+  }
+  onOpenChange(false);
+ };
+
+ // Delete track from room library (owner/mod only)
+ const handleDeleteTrack = async (track: any) => {
+  if (!canManage) {
+   toast({ variant: 'destructive', title: 'Unauthorized', description: 'Only room authorities can delete tracks.' });
+   return;
+  }
+  if (!firestore || !storage || !roomId) return;
+  
+  try {
+   // Delete from Storage
+   if (track.storagePath) {
+    const storageRef = ref(storage, track.storagePath);
+    await deleteObject(storageRef).catch(() => {}); // Ignore if not found
+   }
+   
+   // Delete from Firestore
+   await deleteDocumentNonBlocking(doc(firestore, 'chatRooms', roomId, 'music', track.id));
+   toast({ title: 'Track Deleted', description: `${track.name} removed from library.` });
+  } catch (error: any) {
+   console.error('Delete failed:', error);
+   toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+  }
  };
 
  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,24 +348,10 @@ export function RoomPlayDialog({
   };
 
   const gameGrid = [
-    { id: 'pk', label: 'Room PK', icon: 'https://img.icons8.com/color/96/sword.png', color: 'from-pink-500/20 to-rose-600/20', onClick: () => handleGameSelect('pk') },
-    { id: 'battle', label: 'Battle', icon: 'https://img.icons8.com/color/96/shield.png', color: 'from-blue-500/20 to-indigo-600/20', onClick: () => handleGameSelect('battle') },
-    { id: 'calculator', label: 'Calculator', icon: 'https://img.icons8.com/color/96/calculator.png', color: 'from-orange-500/20 to-yellow-600/20', onClick: () => handleGameSelect('calculator') },
-    { id: 'game-selector', label: 'Games', icon: 'https://img.icons8.com/color/96/video-game.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
+    { id: 'game-selector', label: '🎮 Games',icon: 'https://img.icons8.com/color/96/video-game.png',color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); setgameopen(true); } },
     { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => setView('music') },
-    { id: 'magic-slot', label: 'Magic Slot', icon: 'https://img.icons8.com/color/96/slot-machine.png', color: 'from-purple-500/20 to-fuchsia-600/20', onClick: () => handleGameSelect('magic-slot') },
-    { id: 'candy-slot', label: 'Candy Slot', icon: 'https://img.icons8.com/color/96/candy.png', color: 'from-pink-400/20 to-rose-500/20', onClick: () => handleGameSelect('candy-slot') },
-    { id: 'christmas-slot', label: 'Xmas Slot', icon: 'https://img.icons8.com/color/96/christmas-tree.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => handleGameSelect('christmas-slot') },
-    { id: 'jungle', label: 'Jungle', icon: 'https://img.icons8.com/color/96/lion.png', color: 'from-emerald-500/20 to-teal-600/20', onClick: () => handleGameSelect('jungle') },
-    { id: 'halloween', label: 'Halloween', icon: 'https://img.icons8.com/color/96/pumpkin.png', color: 'from-orange-500/20 to-red-600/20', onClick: () => handleGameSelect('halloween') },
-    { id: 'lucky-wheel', label: 'Lucky Wheel', icon: 'https://img.icons8.com/color/96/fortune-wheel.png', color: 'from-blue-500/20 to-cyan-600/20', onClick: () => handleGameSelect('lucky-wheel') },
-    { id: 'lucky-coins', label: 'Coins', icon: 'https://img.icons8.com/color/96/coins.png', color: 'from-amber-400/20 to-yellow-600/20', onClick: () => handleGameSelect('lucky-coins') },
-    { id: 'khazana', label: 'Khazana', icon: 'https://img.icons8.com/color/96/diamond.png', color: 'from-yellow-400/20 to-amber-600/20', onClick: () => handleGameSelect('fruit-party') },
-    { id: 'krazy-kards', label: 'Kards', icon: 'https://img.icons8.com/color/96/cards.png', color: 'from-blue-600/20 to-indigo-700/20', onClick: () => handleGameSelect('krazy-kards') },
-    { id: 'carrom', label: 'Carrom', icon: 'https://img.icons8.com/color/96/white-circle.png', color: 'from-stone-400/20 to-stone-600/20', onClick: () => handleGameSelect('carrom') },
-    { id: 'ludo', label: 'Ludo', icon: 'https://img.icons8.com/color/96/dice.png', color: 'from-red-500/20 to-red-700/20', onClick: () => handleGameSelect('ludo') },
-  ];
-
+    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: () => handleToggleVoice }, 
+  ] ;
   return (
     <AnimatePresence>
       {open && (
@@ -255,23 +361,26 @@ export function RoomPlayDialog({
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             onClick={() => onOpenChange(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
+            className="absolute inset-0 bg-black/40 pointer-events-auto"
           />
           <motion.div 
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative w-full max-w-[500px] bg-[#121212] rounded-t-[3rem] border-t border-white/10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col"
-            style={{ height: view === 'grid' ? 'auto' : '85vh' }}
+            className="relative w-full max-w-[500px] bg-[#121212] rounded-t-[2rem] border-t border-white/10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col mb-0"
+            style={{ 
+              height: view === 'grid' ? 'auto' : '75vh',
+              maxHeight: view === 'grid' ? '65vh' : '75vh'
+            }}
           >
             {/* Wafa-style Pull Bar */}
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
             {view === 'grid' && (
-              <div className="p-4 pt-4 pb-12 space-y-10 overflow-y-auto no-scrollbar">
+              <div className="p-4 pt-2 space-y-6 overflow-y-auto no-scrollbar">
                 {/* Top Row: Quick Toggles (Glossy Circles) */}
-                <div className="flex items-center justify-around px-4 shrink-0">
+                <div className="flex items-center justify-around px-4 shrink-0 pb-2">
                   {toggleOptions.map(opt => (
                     <div key={opt.id} className="flex flex-col items-center gap-2">
                       <button 
@@ -292,8 +401,8 @@ export function RoomPlayDialog({
                   ))}
                 </div>
 
-                {/* Feature/Game Grid (Wafa Organized Style) */}
-                <div className="grid grid-cols-4 gap-y-10 gap-x-2 px-2">
+                {/* Feature/Game Grid - Compact like Wafa */}
+                <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
                   {gameGrid.map(item => (
                     <button 
                       key={item.id} 
@@ -322,6 +431,13 @@ export function RoomPlayDialog({
 
             {view === 'music' && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-full bg-slate-900/60 backdrop-blur-xl overflow-hidden">
+                 <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                />
                  <header className="p-6 pb-2 flex items-center justify-between shrink-0 border-b border-white/5">
                     <div className="flex items-center gap-3">
                     <button onClick={() => setView('grid')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-6 w-6 text-white/60" /></button>
@@ -360,7 +476,7 @@ export function RoomPlayDialog({
                     musicTab === 'device' ? "bg-white/10 text-white shadow-lg" : "text-white/40"
                     )}
                     >
-                    Playlist ({roomPlaylist.length})
+                    Room Library ({roomMusicLibrary.length})
                     </button>
                     </div>
                 </div>
@@ -399,24 +515,47 @@ export function RoomPlayDialog({
                     ) : (
                     <div className="space-y-3">
                         <button 
-                        onClick={() => { setIsMusicEnabled(false); fileInputRef.current?.click(); }}
-                        className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-bold uppercase text-sm active:scale-95 transition-all mb-4"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-bold uppercase text-sm active:scale-95 transition-all mb-4 disabled:opacity-50"
                         >
-                        <Upload className="h-5 w-5" />
-                        Add from Device
+                        {isUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                        {isUploading ? 'Uploading...' : 'Upload to Room Library'}
                         </button>
-                        {roomPlaylist.map((file, idx) => (
-                        <button 
-                        key={idx} 
-                        onClick={() => handlePlayDeviceTrack(file)}
-                        className="w-full flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all text-left border border-white/5"
+                        {roomMusicLibrary.length === 0 && (
+                        <div className="text-center py-8 text-white/40">
+                            <Music className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p className="text-sm">No tracks yet</p>
+                            <p className="text-xs mt-1">Upload songs for everyone to enjoy!</p>
+                        </div>
+                        )}
+                        {roomMusicLibrary.map((track) => (
+                        <div 
+                        key={track.id} 
+                        className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5 group"
                         >
-                        <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <button
+                            onClick={() => handleSyncSharedMusic(track)}
+                            className="flex-1 flex items-center gap-3 text-left"
+                        >
+                        <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
                             <FileAudio className="h-5 w-5" />
                         </div>
-                        <p className="flex-1 text-xs font-bold uppercase text-white truncate">{file.name}</p>
-                        <Play className="h-4 w-4 text-white/40" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold uppercase text-white truncate">{track.name}</p>
+                            <p className="text-[9px] text-white/40 truncate">by {track.uploaderName}</p>
+                        </div>
+                        <Play className="h-4 w-4 text-white/40 group-hover:text-white/70" />
                         </button>
+                        {canManage && (
+                        <button
+                            onClick={() => handleDeleteTrack(track)}
+                            className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                        )}
+                        </div>
                         ))}
                     </div>
                     )}

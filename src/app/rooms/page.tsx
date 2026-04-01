@@ -130,7 +130,7 @@ export default function RoomsPage() {
          </div>
          <div className="flex items-center gap-1.5 text-slate-800">
             <UserSearchDialog />
-            <button onClick={() => user?.uid ? router.push(`/rooms/${user.uid}`) : null} className="p-1 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all"><Home className="h-4.5 w-4.5" /></button>
+            <button onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} className="p-1 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all"><Home className="h-4.5 w-4.5" /></button>
          </div>
       </div>
     </header>

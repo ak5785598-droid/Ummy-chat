@@ -18,9 +18,9 @@ export function ExitRoomDialog({ isOpen, onClose, onConfirmExit, onMinimize }: E
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/40 animate-in fade-in duration-200">
       
-      {/* Background tap to close */}
+      {/* Background tap to close - lighter overlay */}
       <div className="absolute inset-0" onClick={onClose} />
 
       <div className="relative z-10 flex flex-col items-center gap-16">
@@ -49,12 +49,12 @@ export function ExitRoomDialog({ isOpen, onClose, onConfirmExit, onMinimize }: E
 
       </div>
 
-      {/* Close indicator/shortcut */}
+      {/* Close indicator/shortcut - smaller and more compact */}
       <button 
         onClick={onClose}
-        className="absolute bottom-12 p-4 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-90"
+        className="absolute bottom-8 p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-90"
       >
-        <X className="h-6 w-6 text-white/70" />
+        <X className="h-5 w-5 text-white/70" />
       </button>
 
     </div>

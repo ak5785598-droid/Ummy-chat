@@ -85,7 +85,7 @@ import {
   Timestamp,
   where
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
@@ -103,6 +103,8 @@ import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
+import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
+import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
 import { ROOM_THEMES } from '@/lib/themes';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
@@ -115,15 +117,17 @@ import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { RoomRocketBar } from '@/components/room-rocket-bar';
+import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
 
-const Seat = ({
+const Seat = memo(({
   index,
   occupant,
   onClick,
   label,
   isLocked,
+  isSeatMuted,
   roomOwnerId,
   roomModeratorIds = [],
   theme
@@ -133,6 +137,7 @@ const Seat = ({
   onClick: (index: number, occupant?: RoomParticipant) => void;
   label: string;
   isLocked?: boolean;
+  isSeatMuted?: boolean;
   roomOwnerId: string;
   roomModeratorIds: string[];
   theme: any;
@@ -193,6 +198,7 @@ const Seat = ({
           </div>
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
+        {isSeatMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
@@ -215,7 +221,7 @@ const Seat = ({
       </div>
     </div>
   );
-};
+});
 
 export function RoomClient({ room }: { room: Room }) {
   const [messageText, setMessageText] = useState('');
@@ -233,8 +239,11 @@ export function RoomClient({ room }: { room: Room }) {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
+  const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
+  const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
 
@@ -246,6 +255,61 @@ export function RoomClient({ room }: { room: Room }) {
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [isMutedLocal, setIsMutedLocal] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicProgress, setMusicProgress] = useState(0);
+  const [musicDuration, setMusicDuration] = useState(0);
+  const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [showVolumePopup, setShowVolumePopup] = useState(false);
+
+  // Silent audio ref for unlocking browser autoplay policy
+  const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // AUTO-UNLOCK: Play silent audio on mount to unlock browser audio context
+  // This allows subsequent music to auto-play without user interaction
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Create a silent audio element
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAA==');
+    silentAudioRef.current = silentAudio;
+    
+    // Try to play immediately (will likely fail due to autoplay policy)
+    const attemptSilentPlay = async () => {
+      try {
+        await silentAudio.play();
+        console.log('[AutoUnlock] Silent audio played - audio context unlocked');
+        setUserInteracted(true);
+      } catch (e) {
+        console.log('[AutoUnlock] Silent play blocked, will retry on interaction');
+      }
+    };
+    
+    attemptSilentPlay();
+    
+    // Also set up interaction listeners as fallback
+    const unlockOnInteraction = async () => {
+      if (!silentAudioRef.current) return;
+      try {
+        await silentAudioRef.current.play();
+        console.log('[AutoUnlock] Audio unlocked via user interaction');
+        setUserInteracted(true);
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+    
+    document.addEventListener('click', unlockOnInteraction, { once: true });
+    document.addEventListener('touchstart', unlockOnInteraction, { once: true });
+    document.addEventListener('keydown', unlockOnInteraction, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', unlockOnInteraction);
+      document.removeEventListener('touchstart', unlockOnInteraction);
+      document.removeEventListener('keydown', unlockOnInteraction);
+    };
+  }, []);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -278,7 +342,8 @@ export function RoomClient({ room }: { room: Room }) {
     setIsMinimized,
     setMinimizedRoom,
     musicStream,
-    setMusicStream
+    setMusicStream,
+    isMusicEnabled
   } = useRoomContext();
   const musicAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -351,6 +416,27 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearInterval(timer);
   }, []);
 
+  // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
+  useEffect(() => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    
+    const updateHeartbeat = () => {
+      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+      updateDocumentNonBlocking(pRef, { 
+        lastSeen: serverTimestamp(),
+        name: userProfile?.username || currentUser.displayName || 'User',
+        avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
+      });
+    };
+    
+    // Update immediately on mount
+    updateHeartbeat();
+    
+    // Then every 30 seconds
+    const heartbeat = setInterval(updateHeartbeat, 30000);
+    return () => clearInterval(heartbeat);
+  }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
+
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
     return query(collection(firestore, 'chatRooms', room.id, 'participants'));
@@ -360,21 +446,31 @@ export function RoomClient({ room }: { room: Room }) {
 
   const participants = useMemo(() => {
     if (!participantsData) return [];
-    if (now === null) return participantsData;
+    
+    // Show ALL participants from Firestore - no filtering
+    // This ensures everyone in the room is visible
+    return participantsData;
+  }, [participantsData]);
 
-    return participantsData.filter(p => {
-      if (p.uid === currentUser?.uid) return true;
-      const lastSeen = (p as any).lastSeen?.toDate?.()?.getTime?.() || 0;
-      if (!lastSeen) return true;
+  // DEBUG: Log participants data changes with full details
+  useEffect(() => {
+    console.log('[OnlineCount] Raw participantsData:', participantsData?.length || 0);
+    console.log('[OnlineCount] Filtered participants:', participants.length);
+    if (participantsData) {
+      console.log('[OnlineCount] All users:', participantsData.map(p => ({ 
+        uid: p.uid, 
+        name: p.name, 
+        seat: p.seatIndex,
+        lastSeen: (p as any).lastSeen ? 'yes' : 'no'
+      })));
+    }
+  }, [participantsData, participants]);
 
-      // SYNC: Seated users stay visible for 5m (300s) to match background grace periods.
-      // Standing users stay visible for 65s (standard idle).
-      const threshold = (p.seatIndex > 0) ? 300000 : 65000;
-      return (now - lastSeen) < threshold;
-    });
-  }, [participantsData, now, currentUser?.uid]);
-
-  const onlineCount = participants.length;
+  const onlineCount = useMemo(() => {
+    // Use filtered participants count (not raw participantsData)
+    // This ensures only active users are counted
+    return participants.length || 0;
+  }, [participants]);
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
@@ -592,59 +688,91 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // GIFT & EVENT SYNC ENGINE
+  // Throttle ref for message processing
+  const messageProcessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // GIFT & EVENT SYNC ENGINE - OPTIMIZED with throttling
   useEffect(() => {
-    // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-    // 1. Owner takes priority if online.
-    // 2. Otherwise, oldest Moderator (by UID sort).
-    // 3. Otherwise, oldest Participant (by UID sort).
-    const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
-    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
-    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-
-    let electedLeaderUid = sortedParticipants[0]?.uid;
-    if (ownerOnline) electedLeaderUid = room.ownerId;
-    else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
-
-    const isAIProcessor = currentUser?.uid === electedLeaderUid;
-
     if (!firestoreMessages || firestoreMessages.length === 0) return;
 
-    // Identify the starting point for the new delta
-    const startIndex = lastProcessedId.current
-      ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
-      : 0;
-
-    const newBatch = firestoreMessages.slice(startIndex);
-
-    newBatch.forEach(msg => {
-      if (msg.type === 'gift' && msg.giftId) {
-        console.log(`[Animation Sync] Triggering gift: ${msg.giftId}`);
-        setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
-      } else if (msg.type === 'lucky-rain') {
-        setIsLuckyRainActive(true);
-      } else if (msg.type === 'entrance') {
-        // AI WELCOME BOT LOGIC: Welcome everyone
-        // Guard: Only designated AI Processor speaks
-        if (isAIProcessor) handleAIWelcome(msg.senderName);
-      } else if (msg.type === 'emoji' && (msg as any).isSfx) {
-        // SOUNDBOARD SFX SYNC
-        playLocalSfx((msg as any).sfxId);
-      } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-        // UMmy AI GUARD & GUIDE ENGINE: Only designated AI Processor handles conversational triggers
-        handleAIEngine(msg);
-      }
-
-      // VOICE SYNC: Trigger local TTS if it's an AI message
-      if (msg.senderId === 'SYSTEM_BOT') {
-        speakAIText(msg.content);
-      }
-    });
-
-    if (newBatch.length > 0) {
-      lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+    // Clear existing timeout to throttle processing
+    if (messageProcessTimeoutRef.current) {
+      clearTimeout(messageProcessTimeoutRef.current);
     }
-  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participants]); // Added participants for election sync
+
+    messageProcessTimeoutRef.current = setTimeout(() => {
+      // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
+      const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
+      const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+
+      let electedLeaderUid = sortedParticipants[0]?.uid;
+      if (ownerOnline) electedLeaderUid = room.ownerId;
+      else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
+
+      const isAIProcessor = currentUser?.uid === electedLeaderUid;
+
+      // Identify the starting point for the new delta
+      const startIndex = lastProcessedId.current
+        ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
+        : 0;
+
+      const newBatch = firestoreMessages.slice(startIndex);
+
+      // Process in smaller chunks to prevent blocking
+      const processChunk = (batch: any[], chunkSize = 5) => {
+        for (let i = 0; i < batch.length; i += chunkSize) {
+          const chunk = batch.slice(i, i + chunkSize);
+          requestAnimationFrame(() => {
+            chunk.forEach(msg => {
+              if (msg.type === 'gift' && msg.giftId) {
+                setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
+              } else if (msg.type === 'lucky-rain') {
+                setIsLuckyRainActive(true);
+              } else if (msg.type === 'entrance' && isAIProcessor) {
+                // Defer welcome to not block UI
+                requestIdleCallback?.(() => handleAIWelcome(msg.senderName)) || setTimeout(() => handleAIWelcome(msg.senderName), 0);
+              } else if (msg.type === 'emoji' && (msg as any).isSfx) {
+                playLocalSfx((msg as any).sfxId);
+              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
+                // Defer AI processing to not block UI
+                requestIdleCallback?.(() => handleAIEngine(msg)) || setTimeout(() => handleAIEngine(msg), 0);
+              } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
+                // Show invitation dialog to the invited user
+                setMicInviteData({
+                  inviterName: msg.inviterName,
+                  inviterAvatar: msg.inviterAvatar,
+                  targetSeatIndex: msg.targetSeatIndex
+                });
+                setShowMicInviteDialog(true);
+                // Haptic feedback
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  navigator.vibrate([50, 100, 50]);
+                }
+              }
+
+              // VOICE SYNC: Trigger local TTS if it's an AI message
+              if (msg.senderId === 'SYSTEM_BOT') {
+                speakAIText(msg.content);
+              }
+            });
+          });
+        }
+      };
+
+      processChunk(newBatch);
+
+      if (newBatch.length > 0) {
+        lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+      }
+    }, 100); // 100ms throttle
+
+    return () => {
+      if (messageProcessTimeoutRef.current) {
+        clearTimeout(messageProcessTimeoutRef.current);
+      }
+    };
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participantsData]);
 
   // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
   useEffect(() => {
@@ -742,8 +870,13 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     // 2. CONVERSATIONAL AI (LLM Trigger: 'AI' or 'Ummy' - Master Brain Override)
-    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai'];
-    const isTriggered = triggerWords.some(t => content.includes(t));
+    // Use word boundaries to prevent false positives (e.g., "hai" contains "ai" but shouldn't trigger)
+    const triggerWords = ['ai', 'ummy', 'ummi', 'आई', 'अई', 'एआई', 'ummy ai', 'help', 'madad', 'हेल्प', 'मदद', 'उम्मी', 'umm'];
+    const isTriggered = triggerWords.some(t => {
+      // Check for word boundaries - word should be standalone or at start/end of message
+      const wordBoundaryPattern = new RegExp(`(^|\\s)${t}($|\\s|[.,!?])`, 'i');
+      return wordBoundaryPattern.test(content) || content.startsWith(t + ' ') || content.endsWith(' ' + t) || content === t;
+    });
 
     if (isTriggered) {
       // PROCESSING LOCK: Add flag to firestore message to signal processing has started
@@ -839,27 +972,7 @@ export function RoomClient({ room }: { room: Room }) {
       }
     }
 
-    // 3. SMART GUIDE (Q&A Keywords - Secondary Fallback)
-    const keywords = {
-      seat: "Khali bubble par click karke seat join karein!",
-      gift: "Niche box icon se gifts bhej sakte hain doston ko!",
-      game: "Ludo aur Carrom games niche 'Games' tab me milenge!",
-      level: "Gifts aur Daily login se aapka level badhega!",
-      coin: "Coins store se purchase karein ya events join karein!"
-    };
-
-    const match = Object.entries(keywords).find(([k]) => content.includes(k));
-    if (match) {
-      await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-        content: `@${msg.senderName}, ${match[1]} 💖✨`,
-        senderId: 'SYSTEM_BOT',
-        senderName: 'Ummy AI',
-        senderAvatar: 'https://img.icons8.com/isometric/512/bot.png',
-        type: 'text',
-        timestamp: serverTimestamp()
-      });
-      return;
-    }
+    // SMART GUIDE removed - AI now only responds to trigger words
   };
 
   // REMOVED LEGACY LOCAL AUTO-WELCOME (Duplicates Fixed)
@@ -1055,7 +1168,7 @@ export function RoomClient({ room }: { room: Room }) {
     router.push('/rooms');
   };
 
-  const handleSeatClick = (index: number, occupant?: RoomParticipant) => {
+  const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
     setSelectedSeatIdx(index);
     if (occupant) {
       setSelectedParticipantUid(occupant.uid);
@@ -1064,11 +1177,19 @@ export function RoomClient({ room }: { room: Room }) {
       setSelectedParticipantUid(null);
       setIsSeatMenuOpen(true);
     }
-  };
+  }, []);
 
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
+    
+    // If muting this user, also stop their music
+    if (!current && uid === currentUser?.uid && musicAudioRef.current) {
+      musicAudioRef.current.pause();
+      musicAudioRef.current.currentTime = 0;
+      setIsMusicPlaying(false);
+      toast({ title: 'Music Stopped', description: 'Admin has muted you' });
+    }
   };
 
   const handleKick = (uid: string, duration: number) => {
@@ -1086,6 +1207,38 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true });
     setIsSeatMenuOpen(false);
     setIsUserProfileCardOpen(false);
+  };
+
+  const handleTakeSeat = (seatIndex: number) => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    
+    const isSeatMuted = room.mutedSeats?.includes(seatIndex) || false;
+    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+    setDocumentNonBlocking(participantRef, {
+      seatIndex: seatIndex,
+      isMuted: isSeatMuted, // Auto-mute if seat is muted
+      name: userProfile?.username || currentUser.displayName || 'Tribe Member',
+      avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || null,
+      uid: currentUser.uid,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    toast({ 
+      title: 'Seat Taken', 
+      description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}` 
+    });
+  };
+
+  const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
+    if (!firestore || !room.id) return;
+    
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    setDocumentNonBlocking(roomRef, {
+      mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
   };
 
   const handleToggleMod = (uid: string) => {
@@ -1157,6 +1310,273 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  // Listen for shared music changes from Firestore
+  // AUTO-PLAY: When music is playing in room, all users should hear it
+  useEffect(() => {
+    if (!room?.currentMusicUrl || !musicAudioRef.current) {
+      return;
+    }
+    
+    const currentSrc = musicAudioRef.current.src;
+    const newUrl = room.currentMusicUrl;
+    
+    // Always set the source when URL changes or on first load
+    if (currentSrc !== newUrl) {
+      console.log('[Music] Setting music source:', room.currentMusicTitle || 'Unknown');
+      
+      musicAudioRef.current.pause();
+      musicAudioRef.current.src = newUrl;
+      musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
+      musicAudioRef.current.load();
+      
+      // If room says music is playing, try to auto-play
+      if (room.isMusicPlaying) {
+        console.log('[Music] Auto-playing on source set...');
+        musicAudioRef.current.play().then(() => {
+          setIsMusicPlaying(true);
+          console.log('[Music] Auto-play successful');
+        }).catch(e => {
+          console.warn('[Music] Auto-play blocked:', e.name);
+          setIsMusicPlaying(false);
+        });
+      } else {
+        setIsMusicPlaying(false);
+      }
+    }
+  }, [room?.currentMusicUrl, room?.currentMusicTitle, room?.isMusicPlaying, room?.musicCurrentTime]);
+
+  // Listen for room's isMusicPlaying state - SYNC ACROSS ALL USERS
+  useEffect(() => {
+    if (!musicAudioRef.current || !room?.currentMusicUrl) return;
+    
+    const roomIsPlaying = room.isMusicPlaying || false;
+    const roomCurrentTime = room.musicCurrentTime || 0;
+    
+    // Only sync if room state is different from local state
+    if (roomIsPlaying !== isMusicPlaying) {
+      if (roomIsPlaying) {
+        // Room says play - sync position and play
+        console.log('[Music] Room says PLAY at position:', roomCurrentTime);
+        
+        // Sync position first
+        if (Math.abs(musicAudioRef.current.currentTime - roomCurrentTime) > 2) {
+          musicAudioRef.current.currentTime = roomCurrentTime;
+        }
+        
+        // Try to play (might fail if no user interaction yet)
+        musicAudioRef.current.play().then(() => {
+          setIsMusicPlaying(true);
+        }).catch(e => {
+          console.warn('[Music] Auto-play blocked - needs user interaction:', e.name);
+          // Show toast to prompt user to interact
+          if (e.name === 'NotAllowedError') {
+            toast({ 
+              title: '🎵 Tap to Join Music', 
+              description: 'Click anywhere to enable audio and hear the music!',
+              duration: 5000
+            });
+          }
+        });
+      } else {
+        // Room says pause
+        console.log('[Music] Room says PAUSE');
+        musicAudioRef.current.pause();
+        setIsMusicPlaying(false);
+      }
+    } else if (roomIsPlaying) {
+      // Both playing - sync position if drifted more than 5 seconds
+      const drift = Math.abs(musicAudioRef.current.currentTime - roomCurrentTime);
+      if (drift > 5) {
+        console.log('[Music] Syncing position - drift:', drift);
+        musicAudioRef.current.currentTime = roomCurrentTime;
+      }
+    }
+  }, [room?.isMusicPlaying, room?.musicCurrentTime, room?.currentMusicUrl]);
+
+  // AUDIO UNLOCK: Global click handler to enable audio context
+  useEffect(() => {
+    const unlockAudio = async () => {
+      console.log('[AudioUnlock] Attempting to unlock audio...');
+      
+      if (musicAudioRef.current) {
+        // Create a silent buffer to unlock AudioContext
+        const audioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (audioCtx) {
+          try {
+            const ctx = new audioCtx();
+            if (ctx.state === 'suspended') {
+              await ctx.resume();
+              console.log('[AudioUnlock] AudioContext resumed');
+            }
+            
+            // Create and play silent buffer to fully unlock
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            console.log('[AudioUnlock] Silent buffer played');
+          } catch (e) {
+            console.warn('[AudioUnlock] AudioContext error:', e);
+          }
+        }
+        
+        // Mark audio as ready
+        if (!userInteracted) {
+          setUserInteracted(true);
+          console.log('[AudioUnlock] User interaction recorded');
+        }
+        
+        // If music is playing in room, try to play locally with retry
+        if (room?.isMusicPlaying && room?.currentMusicUrl) {
+          console.log('[AudioUnlock] Room music is playing, attempting sync...');
+          
+          // Ensure source is set
+          if (musicAudioRef.current.src !== room.currentMusicUrl) {
+            musicAudioRef.current.src = room.currentMusicUrl;
+            musicAudioRef.current.currentTime = room.musicCurrentTime || 0;
+            musicAudioRef.current.load();
+          }
+          
+          // Try to play with multiple attempts
+          let attempts = 0;
+          const maxAttempts = 3;
+          
+          const tryPlay = async () => {
+            if (!musicAudioRef.current || attempts >= maxAttempts) return;
+            attempts++;
+            
+            try {
+              await musicAudioRef.current.play();
+              console.log('[AudioUnlock] Music playback started successfully');
+              setIsMusicPlaying(true);
+            } catch (err: any) {
+              console.warn(`[AudioUnlock] Play attempt ${attempts} failed:`, err.name);
+              if (attempts < maxAttempts) {
+                setTimeout(tryPlay, 300);
+              }
+            }
+          };
+          
+          setTimeout(tryPlay, 100);
+        }
+      }
+    };
+
+    // Add multiple interaction listeners
+    const addListeners = () => {
+      document.addEventListener('click', unlockAudio, { once: true });
+      document.addEventListener('touchstart', unlockAudio, { once: true });
+      document.addEventListener('keydown', unlockAudio, { once: true });
+    };
+    
+    addListeners();
+    
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, [room?.isMusicPlaying, room?.currentMusicUrl, room?.musicCurrentTime, userInteracted]);
+
+  // Handle user interaction for music
+  const handleUserInteraction = () => {
+    if (!userInteracted) {
+      setUserInteracted(true);
+      console.log('[Music] User interacted, enabling audio playback');
+    }
+  };
+
+  // Music control functions
+  const handleToggleMusic = async () => {
+    handleUserInteraction();
+    if (!musicAudioRef.current || !firestore || !room.id) return;
+    
+    if (isMusicPlaying) {
+      // Pause music
+      musicAudioRef.current.pause();
+      setIsMusicPlaying(false);
+      
+      // Sync to room - music is paused
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, { 
+        isMusicPlaying: false,
+        musicCurrentTime: musicAudioRef.current.currentTime,
+        updatedAt: serverTimestamp()
+      });
+      
+      toast({ title: 'Music Paused' });
+    } else {
+      // Sync to room's current time before playing
+      const roomCurrentTime = room.musicCurrentTime || 0;
+      if (musicAudioRef.current.currentTime < roomCurrentTime) {
+        musicAudioRef.current.currentTime = roomCurrentTime;
+      }
+      
+      // Play music
+      await musicAudioRef.current.play();
+      setIsMusicPlaying(true);
+      
+      // Sync to room - music is playing
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, { 
+        isMusicPlaying: true,
+        musicCurrentTime: musicAudioRef.current.currentTime,
+        updatedAt: serverTimestamp()
+      });
+      
+      toast({ title: 'Music Playing' });
+    }
+  };
+
+  const handleStopMusic = () => {
+    if (!musicAudioRef.current) return;
+    musicAudioRef.current.pause();
+    musicAudioRef.current.currentTime = 0;
+    setIsMusicPlaying(false);
+    toast({ title: 'Music Stopped' });
+  };
+
+  // Periodic sync of music position to Firestore (for owner/moderator)
+  useEffect(() => {
+    if (!firestore || !room.id || !canManageRoom) return;
+    if (!room.currentMusicUrl || !musicAudioRef.current) return;
+    
+    const interval = setInterval(() => {
+      if (musicAudioRef.current && isMusicPlaying) {
+        const currentTime = musicAudioRef.current.currentTime;
+        const roomRef = doc(firestore, 'chatRooms', room.id);
+        updateDocumentNonBlocking(roomRef, { musicCurrentTime: currentTime });
+      }
+    }, 5000); // Sync every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [firestore, room.id, canManageRoom, room.currentMusicUrl, isMusicPlaying]);
+
+  // Track music progress
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio) return;
+
+    const updateProgress = () => {
+      setMusicCurrentTime(audio.currentTime);
+      setMusicDuration(audio.duration || 0);
+      setMusicProgress((audio.currentTime / (audio.duration || 1)) * 100);
+    };
+
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', updateProgress);
+    audio.addEventListener('play', () => setIsMusicPlaying(true));
+    audio.addEventListener('pause', () => setIsMusicPlaying(false));
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', updateProgress);
+      audio.removeEventListener('play', () => setIsMusicPlaying(true));
+      audio.removeEventListener('pause', () => setIsMusicPlaying(false));
+    };
+  }, [room?.currentMusicUrl]);
+
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
@@ -1185,10 +1605,21 @@ export function RoomClient({ room }: { room: Room }) {
       />
       <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
 
+      {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
+      {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
+        <div 
+          className="fixed inset-0 z-[1]"
+          style={{ pointerEvents: 'none' }}
+          aria-hidden="true"
+        />
+      )}
+
       <audio
         ref={musicAudioRef}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
         crossOrigin="anonymous"
+        preload="auto"
+        playsInline
       />
 
       {/* LIVE BACKGROUND OVERLAY */}
@@ -1219,7 +1650,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      <header className="relative z-50 flex items-center justify-between p-3 pt-10 px-4 shrink-0 w-full">
+      <header className="relative z-50 flex items-center justify-between p-3 pt-2 px-4 shrink-0 w-full">
         <div className="flex items-center gap-2 max-w-[70%] min-w-0">
           <div
             onClick={() => setIsRoomInfoOpen(true)}
@@ -1250,6 +1681,7 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {/* AI Voice Button */}
           <div className="relative">
             <button
               onClick={toggleAIVoice}
@@ -1286,13 +1718,13 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
           <div className="w-full flex justify-center px-6 mb-1">
             <div className="w-1/4 max-w-[90px]">
-              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             </div>
           </div>
 
           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
             {extraSeats.map(idx => (
-              <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
           </div>
         </div>
@@ -1398,7 +1830,171 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      <footer className="relative z-50 px-6 pb-12 flex items-center justify-between pt-6">
+      {/* MINI MUSIC PLAYER - Wafa Style */}
+      {room.currentMusicUrl && showMiniPlayer && (
+        <div className="fixed bottom-[140px] left-0 right-0 z-40 px-4">
+          <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
+            {/* Song Title */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                <Music className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-medium text-white truncate">
+                  {room.currentMusicTitle || 'Unknown Song'}
+                </p>
+                <p className="text-[9px] text-white/50">
+                  {formatTime(musicCurrentTime)} / {formatTime(musicDuration)}
+                </p>
+              </div>
+              {/* Close Button - Only hides player, music continues */}
+              <button
+                onClick={() => setShowMiniPlayer(false)}
+                className="p-1.5 rounded-full bg-white/10 text-white/60 hover:bg-white/20 active:scale-95 transition-all"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full h-1 bg-white/20 rounded-full mb-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
+                style={{ width: `${musicProgress}%` }}
+              />
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-6 mt-3">
+              {/* Playlist - Opens full dialog */}
+              <button
+                onClick={() => setIsRoomPlayOpen(true)}
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </button>
+
+              {/* Previous */}
+              <button
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                </svg>
+              </button>
+
+              {/* Play/Pause - Only Owner/Admin can control */}
+              {canManageRoom ? (
+                <button
+                  onClick={handleToggleMusic}
+                  className="p-3 rounded-full bg-white text-black active:scale-95 transition-all shadow-lg"
+                >
+                  {room.isMusicPlaying ? (
+                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 text-white/60 px-3 py-2">
+                  {room.isMusicPlaying ? (
+                    <>
+                      <div className="flex gap-1 items-end h-5">
+                        <div className="w-1.5 h-3 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms', animationDuration: '0.6s' }} />
+                        <div className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s', animationDuration: '0.7s' }} />
+                        <div className="w-1.5 h-4 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.5s' }} />
+                        <div className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '0.6s' }} />
+                      </div>
+                      <span className="text-xs font-medium ml-1">Playing</span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-medium">Paused</span>
+                  )}
+                </div>
+              )}
+
+              {/* Next */}
+              <button
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+              </button>
+
+              {/* Volume - Opens popup */}
+              <button
+                onClick={() => setShowVolumePopup(true)}
+                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+              >
+                <Volume2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VOLUME POPUP */}
+      {showVolumePopup && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center pb-24 pointer-events-none">
+          <div 
+            className="absolute inset-0 bg-black/20 pointer-events-auto"
+            onClick={() => setShowVolumePopup(false)}
+          />
+          <div className="relative z-10 bg-black/90 backdrop-blur-xl rounded-2xl p-4 mx-4 w-full max-w-sm border border-white/10 shadow-2xl pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.muted = !musicAudioRef.current.muted;
+                  }
+                }}
+                className="p-2 rounded-full bg-white/10 text-white"
+              >
+                {musicAudioRef.current?.muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicAudioRef.current?.volume || 1}
+                onChange={(e) => {
+                  if (musicAudioRef.current) {
+                    musicAudioRef.current.volume = parseFloat(e.target.value);
+                    musicAudioRef.current.muted = false;
+                  }
+                }}
+                className="flex-1 h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full"
+              />
+              <span className="text-[11px] text-white/60 w-8 text-right">
+                {Math.round((musicAudioRef.current?.volume || 1) * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
+      {room.currentMusicUrl && isMusicPlaying && !showMiniPlayer && (
+        <button
+          onClick={() => setShowMiniPlayer(true)}
+          className={cn(
+            "fixed right-2 top-[65%] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
+            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+          )}
+        >
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20">
+            <Music className="h-5 w-5" />
+          </div>
+        </button>
+      )}
+
+      <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
         <div className="flex items-center">
           <button
             onClick={handleInputClick}
@@ -1561,7 +2157,7 @@ export function RoomClient({ room }: { room: Room }) {
       </Dialog>
 
 
-      <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} />
+      <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} participants={participants} />
       <RoomInfoDialog
         open={isRoomInfoOpen}
         onOpenChange={setIsRoomInfoOpen}
@@ -1582,20 +2178,30 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
-            // Standalone Games: Navigate to full page with roomId and minimize room
             setMinimizedRoom(room);
             setActiveRoom(null);
             router.push(`/games/${slug}?roomId=${room.id}`);
           } else {
-            // Overlay Games: Show in-room overlay
             setActiveGameSlug(slug);
           }
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
+        onSyncSharedMusic={(track) => {
+          // When music is synced from dialog, play it locally
+          if (musicAudioRef.current && track?.url) {
+            musicAudioRef.current.src = track.url;
+            musicAudioRef.current.play().catch(e => {
+              console.warn('[Music] Auto-play failed:', e);
+            });
+          }
+        }}
       />
       <RoomGamesDialog
         open={isRoomGamesOpen}
         onOpenChange={setIsRoomGamesOpen}
+        onToggleMiniPlayer={() => setShowMiniPlayer(!showMiniPlayer)}
+        roomHasMusic={!!room.currentMusicUrl}
+        showMiniPlayer={showMiniPlayer}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess'].includes(slug)) {
             // Standalone Games: Navigate to full page with roomId and minimize room
@@ -1630,16 +2236,49 @@ export function RoomClient({ room }: { room: Room }) {
         seatIndex={selectedSeatIdx}
         roomId={room.id}
         isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
+        isSeatMuted={room.mutedSeats?.includes(selectedSeatIdx || 0) || false}
         occupantUid={selectedParticipantUid}
         occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
         occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
+        isMuted={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
         currentUserName={userProfile?.username}
         currentUserAvatarUrl={userProfile?.avatarUrl}
         onLeaveSeat={handleLeaveSeat}
         onKick={handleKick}
+        onToggleMute={handleSilence}
+        onToggleSeatMute={handleToggleSeatMute}
         onSendGift={handleOpenGiftPickerFromMenu}
+        onOpenAudienceInvite={() => setIsAudienceInviteOpen(true)}
+      />
+
+      <RoomAudienceInviteDialog
+        open={isAudienceInviteOpen}
+        onOpenChange={setIsAudienceInviteOpen}
+        seatIndex={selectedSeatIdx}
+        roomId={room.id}
+        participants={participants}
+        inviterName={userProfile?.username || currentUser?.displayName || 'User'}
+        inviterAvatar={userProfile?.avatarUrl}
+        inviterId={currentUser?.uid || ''}
+      />
+
+      <RoomMicInviteDialog
+        open={showMicInviteDialog}
+        onOpenChange={setShowMicInviteDialog}
+        inviterName={micInviteData?.inviterName || 'User'}
+        inviterAvatar={micInviteData?.inviterAvatar}
+        targetSeatIndex={micInviteData?.targetSeatIndex || 0}
+        roomId={room.id}
+        onAccept={(seatIndex) => {
+          // Accept invitation and take the seat
+          handleTakeSeat(seatIndex);
+        }}
+        onReject={() => {
+          // Just close the dialog - user declined
+          console.log('User rejected mic invitation');
+        }}
       />
 
       <RoomUserProfileDialog
@@ -1672,8 +2311,24 @@ export function RoomClient({ room }: { room: Room }) {
           background-size: 200% 100%;
           animation: shine 2s infinite linear;
         }
+        /* Touch responsiveness optimization */
+        .touch-responsive {
+          will-change: transform;
+          touch-action: manipulation;
+        }
+        .touch-responsive:active {
+          transform: scale(0.95);
+        }
       `}</style>
       <MountOverlay entries={mountEntries} />
     </div>
   );
+}
+
+// Helper function to format time
+function formatTime(seconds: number): string {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }

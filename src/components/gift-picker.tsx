@@ -10,11 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
-import { Home, ChevronRight, Send, Loader, Info, Sparkles, Check } from 'lucide-react';
-import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { ChevronRight, Loader, Sparkles, Check } from 'lucide-react';
+import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -26,12 +25,6 @@ import {
  SelectTrigger, 
  SelectValue 
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import {
- Popover,
- PopoverContent,
- PopoverTrigger,
-} from "@/components/ui/popover";
 import type { RoomParticipant } from '@/lib/types';
 
 export interface GiftItem {
@@ -67,10 +60,10 @@ const GIFTS: Record<string, GiftItem[]> = {
   { id: 'controller', name: 'Controller', price: 1500, icon: '🎮', animationId: 'controller' },
   { id: 'vinyl', name: 'Vinyl', price: 600, icon: '📀', animationId: 'vinyl' },
   { id: 'bubble_tea', name: 'Bubble Tea', price: 180, icon: '🧋', animationId: 'bubble-tea' },
-  { id: 'doughnut', name: 'Doughnut', price: 500, icon: '🍩', animationId: 'doughnut' },
+  { id: 'doughnut_2', name: 'Doughnut', price: 500, icon: '🍩', animationId: 'doughnut' },
   { id: 'candy', name: 'Candy', price: 300, icon: '🍬', animationId: 'candy' },
   { id: 'ice_cream', name: 'Ice Cream', price: 150, icon: '🍦', animationId: 'ice-cream' },
-  { id: 'pizza', name: 'Pizza', price: 400, icon: '🍕', animationId: 'pizza' },
+  { id: 'pizza_2', name: 'Pizza', price: 400, icon: '🍕', animationId: 'pizza' },
   { id: 'burger', name: 'Burger', price: 350, icon: '🍔', animationId: 'burger' },
   { id: 'taco', name: 'Taco', price: 200, icon: '🌮', animationId: 'taco' },
   { id: 'cocktail', name: 'Cocktail', price: 900, icon: '🍸', animationId: 'cocktail' },
@@ -261,22 +254,23 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    let winAmount = 0;
 
    if (selectedGift.type === 'lucky') {
-     const rand = Math.random();
-     if (rand < 0.001) { // 0.1% for 100x
-       luckyWin = { multiplier: 100, winAmount: selectedGift.price * 100 };
-       winAmount = luckyWin.winAmount;
-     } else if (rand < 0.01) { // 1% for 10x
-       luckyWin = { multiplier: 10, winAmount: selectedGift.price * 10 };
-       winAmount = luckyWin.winAmount;
-     } else if (rand < 0.05) { // 5% for 3x
-       luckyWin = { multiplier: 3, winAmount: selectedGift.price * 3 };
-       winAmount = luckyWin.winAmount;
-     }
-   }
+     const rand = Math.random() * 1000;
+     let multiplier = 0;
 
-   if (winAmount > 0) {
-     batch.update(senderRef, { 'wallet.coins': increment(winAmount) });
-     batch.update(senderProfileRef, { 'wallet.coins': increment(winAmount) });
+     if (rand <= 1) multiplier = 100;
+     else if (rand <= 10) multiplier = 50;
+     else if (rand <= 50) multiplier = 10;
+     else if (rand <= 150) multiplier = 5;
+     else if (rand <= 400) multiplier = 2;
+     else if (rand <= 700) multiplier = 1;
+
+     if (multiplier > 0) {
+       winAmount = costPerRecipient * multiplier;
+       luckyWin = { multiplier, winAmount };
+       
+       batch.update(senderRef, { 'wallet.coins': increment(winAmount) });
+       batch.update(senderProfileRef, { 'wallet.coins': increment(winAmount) });
+     }
    }
 
    batch.update(roomRef, {
@@ -314,7 +308,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      }, { merge: true });
    });
 
-   // Update Daily Quest progress
    const questRef = doc(firestore, 'users', user.uid, 'quests', 'send_gift');
    batch.set(questRef, { current: increment(1), updatedAt: serverTimestamp() }, { merge: true });
 
@@ -339,7 +332,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
    
-   toast({ title: 'Gifts Dispatched!' });
+   if (luckyWin) {
+     toast({ title: `🎰 JACKPOT! You won ${winAmount} coins!` });
+   } else {
+     toast({ title: 'Gifts Dispatched!' });
+   }
+   
    onOpenChange(false);
    setSelectedGift(null);
   } catch (e: any) {
@@ -471,3 +469,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   </Dialog>
  );
 }
+

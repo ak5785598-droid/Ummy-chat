@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X, Power } from 'lucide-react';
 
 interface RoomSeatMenuDialogProps {
  open: boolean;
@@ -19,16 +20,21 @@ interface RoomSeatMenuDialogProps {
  seatIndex: number | null;
  roomId: string;
  isLocked: boolean;
+ isSeatMuted?: boolean;
  occupantUid?: string | null;
  occupantName?: string | null;
  occupantAvatarUrl?: string | null;
+ isMuted?: boolean;
  canManage: boolean;
  currentUserId?: string;
  currentUserName?: string | null;
  currentUserAvatarUrl?: string | null;
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
+ onToggleMute?: (uid: string, isMuted: boolean) => void;
+ onToggleSeatMute?: (seatIndex: number, isMuted: boolean) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
+ onOpenAudienceInvite?: () => void;
 }
 
 /**
@@ -41,16 +47,21 @@ export function RoomSeatMenuDialog({
  seatIndex,
  roomId,
  isLocked,
+ isSeatMuted,
  occupantUid,
  occupantName,
  occupantAvatarUrl,
+ isMuted,
  canManage,
  currentUserId,
  currentUserName,
  currentUserAvatarUrl,
  onLeaveSeat,
  onKick,
- onSendGift
+ onToggleMute,
+ onToggleSeatMute,
+ onSendGift,
+ onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
  const firestore = useFirestore();
  const { toast } = useToast();
@@ -107,45 +118,61 @@ export function RoomSeatMenuDialog({
   onOpenChange(false);
  };
 
- const MenuItem = ({ label, onClick, className }: { label: string; onClick?: () => void; className?: string }) => (
+ const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
   <button
    onClick={onClick}
+   disabled={disabled}
    className={cn(
-    "w-full py-5 text-center text-[17px] font-bold tracking-tight text-gray-800 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-100 last:border-0",
+    "flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none",
     className
    )}
   >
-   {label}
+   <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+    <Icon className="w-4 h-4 text-gray-700" />
+   </div>
+   <span className="text-[9px] font-medium text-gray-600 whitespace-nowrap">{label}</span>
   </button>
  );
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[400px] bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom-full duration-500">
+   <DialogContent className="sm:max-w-[320px] bg-white text-black p-2 rounded-lg border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
     </DialogHeader>
 
-    <div className="flex flex-col items-center">
+    {/* Wafa-style compact rectangular grid - always 4 buttons */}
+    <div className="grid grid-cols-4 gap-1">
+     {/* Always show Take mic for empty seat or Leave for occupied */}
      {(!occupantUid && (!isLocked || canManage)) && (
-      <MenuItem label="Take mic" onClick={handleTakeSeat} />
+      <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
      )}
 
      {canManage && (
-      <MenuItem label="Invite to mic" onClick={() => { toast({ title: 'Invite Sent' }); onOpenChange(false); }} />
+      <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
      )}
 
      {canManage && (
       <MenuItem 
-       label={isLocked ? "Unlock mic" : "Lock mic"} 
+       label={isLocked ? "Unlock" : "Lock"} 
+       icon={isLocked ? Unlock : Lock}
        onClick={handleToggleLock}
       />
      )}
 
+     {canManage && (
+      <MenuItem 
+       label={isSeatMuted ? "Unmute" : "Mute"} 
+       icon={isSeatMuted ? Mic : MicOff}
+       onClick={() => { onToggleSeatMute?.(seatIndex, !!isSeatMuted); onOpenChange(false); }}
+       className={isSeatMuted ? "text-green-600" : "text-red-500"}
+      />
+     )}
      {(canManage && occupantUid && occupantUid !== currentUserId) && (
       <MenuItem 
-       label="Kick out" 
+       label="Kick" 
+       icon={LogOut}
        onClick={() => onKick(occupantUid, 5)} 
        className="text-red-500" 
       />
@@ -153,19 +180,17 @@ export function RoomSeatMenuDialog({
 
      {(occupantUid && (occupantUid === currentUserId || canManage)) && (
       <MenuItem 
-       label="Seat leave" 
+       label="Leave" 
+       icon={LogOut}
        onClick={() => onLeaveSeat(occupantUid)} 
        className="text-orange-600" 
       />
      )}
 
-     {canManage && (
-      <MenuItem label="Mute" onClick={() => { toast({ title: 'Mute Frequency' }); onOpenChange(false); }} />
-     )}
-
      {(occupantUid && onSendGift) && (
       <MenuItem 
-       label="Send gift" 
+       label="Gift" 
+       icon={Gift}
        className="text-pink-600"
        onClick={() => {
         onSendGift({
@@ -177,12 +202,6 @@ export function RoomSeatMenuDialog({
        }} 
       />
      )}
-
-     <MenuItem 
-      label="Cancel" 
-      onClick={() => onOpenChange(false)} 
-      className="text-gray-400 font-bold border-t-[6px] border-gray-50 mt-1" 
-     />
     </div>
    </DialogContent>
   </Dialog>
