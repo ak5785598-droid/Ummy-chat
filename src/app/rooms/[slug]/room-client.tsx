@@ -114,6 +114,7 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { RoomRocketBar } from '@/components/room-rocket-bar';
 
 // RemoteAudio shifted to ActiveRoomManager
 
@@ -644,6 +645,57 @@ export function RoomClient({ room }: { room: Room }) {
       lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
     }
   }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participants]); // Added participants for election sync
+
+  // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    
+    // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
+    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+    let electedLeaderUid = sortedParticipants[0]?.uid;
+    if (ownerOnline) electedLeaderUid = room.ownerId;
+    const isAIProcessor = currentUser?.uid === electedLeaderUid;
+
+    if (!isAIProcessor) return;
+
+    const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
+    const now = Date.now();
+
+    // TRIGGER 1: Start Countdown when goal reached
+    if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
+      console.log('[Rocket] Goal reached! Starting 60s countdown...');
+      const launchTime = new Date(now + 60000);
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        'rocket.countdownUntil': Timestamp.fromDate(launchTime)
+      });
+    }
+
+    // TRIGGER 2: Launch Rocket when countdown finishes
+    if (rocket.countdownUntil) {
+      const launchTime = rocket.countdownUntil.toDate().getTime();
+      if (now >= launchTime) {
+        console.log('[Rocket] Launching! Firing Lucky Rain...');
+        
+        // Dispatch Lucky Rain Message
+        const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
+        setDocumentNonBlocking(msgRef, {
+          type: 'lucky-rain',
+          content: '🚀 ROOM ROCKET LAUNCHED! COLLECT YOUR REWARDS! 💰✨',
+          senderId: 'SYSTEM_BOT',
+          senderName: 'Ummy AI',
+          senderAvatar: 'https://img.icons8.com/isometric/512/rocket.png',
+          timestamp: serverTimestamp()
+        }, { merge: true });
+
+        // Reset Rocket State
+        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+          'rocket.progress': 0,
+          'rocket.countdownUntil': null
+        });
+      }
+    }
+  }, [room.rocket, participantsData, currentUser?.uid, room.ownerId, firestore, room.id]);
 
   // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
 
@@ -1225,6 +1277,11 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
+        <RoomRocketBar 
+          progress={room.rocket?.progress || 0} 
+          target={room.rocket?.target || 10000} 
+          countdownUntil={room.rocket?.countdownUntil} 
+        />
         {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
           <div className="w-full flex justify-center px-6 mb-1">

@@ -143,6 +143,11 @@ export type Room = {
   monthlyGifts: number;
  };
  levelPoints?: number; // Total room EXP from activity/gifting
+ rocket?: {
+  progress: number;
+  target: number;
+  countdownUntil: any | null; // Timestamp for event launch
+ };
  language?: string;
  tags?: string[];
 };
