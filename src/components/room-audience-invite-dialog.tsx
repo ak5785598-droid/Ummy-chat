@@ -23,6 +23,7 @@ interface RoomAudienceInviteDialogProps {
   roomId: string;
   participants: RoomParticipant[];
   inviterName: string;
+  inviterAvatar?: string;
   inviterId: string;
 }
 
@@ -37,6 +38,7 @@ export function RoomAudienceInviteDialog({
   roomId,
   participants,
   inviterName,
+  inviterAvatar,
   inviterId
 }: RoomAudienceInviteDialogProps) {
   const firestore = useFirestore();
@@ -62,6 +64,7 @@ export function RoomAudienceInviteDialog({
       targetSeatIndex: seatIndex,
       inviterId: inviterId,
       inviterName: inviterName,
+      inviterAvatar: inviterAvatar,
       processed: false
     });
 

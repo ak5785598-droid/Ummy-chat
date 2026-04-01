@@ -104,6 +104,7 @@ import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
+import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
 import { ROOM_THEMES } from '@/lib/themes';
 import { EmojiReactionOverlay } from '@/components/emoji-reaction-overlay';
 import { RoomGamesDialog } from '@/components/room-games-dialog';
@@ -237,6 +238,8 @@ export function RoomClient({ room }: { room: Room }) {
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
+  const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
 
@@ -731,12 +734,13 @@ export function RoomClient({ room }: { room: Room }) {
                 // Defer AI processing to not block UI
                 requestIdleCallback?.(() => handleAIEngine(msg)) || setTimeout(() => handleAIEngine(msg), 0);
               } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
-                // Show invitation notification to the invited user
-                toast({ 
-                  title: 'Mic Invitation 🎙️', 
-                  description: `${msg.inviterName} invited you to join mic on seat #${msg.targetSeatIndex}`,
-                  duration: 5000
+                // Show invitation dialog to the invited user
+                setMicInviteData({
+                  inviterName: msg.inviterName,
+                  inviterAvatar: msg.inviterAvatar,
+                  targetSeatIndex: msg.targetSeatIndex
                 });
+                setShowMicInviteDialog(true);
                 // Haptic feedback
                 if (typeof navigator !== 'undefined' && navigator.vibrate) {
                   navigator.vibrate([50, 100, 50]);
@@ -1148,6 +1152,22 @@ export function RoomClient({ room }: { room: Room }) {
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true });
     setIsSeatMenuOpen(false);
     setIsUserProfileCardOpen(false);
+  };
+
+  const handleTakeSeat = (seatIndex: number) => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    
+    const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
+    setDocumentNonBlocking(participantRef, {
+      seatIndex: seatIndex,
+      isMuted: false,
+      name: userProfile?.username || currentUser.displayName || 'Tribe Member',
+      avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || null,
+      uid: currentUser.uid,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    toast({ title: 'Seat Taken', description: `You are now on mic at seat #${seatIndex}` });
   };
 
   const handleToggleMod = (uid: string) => {
@@ -2162,7 +2182,25 @@ export function RoomClient({ room }: { room: Room }) {
         roomId={room.id}
         participants={participants}
         inviterName={userProfile?.username || currentUser?.displayName || 'User'}
+        inviterAvatar={userProfile?.avatarUrl}
         inviterId={currentUser?.uid || ''}
+      />
+
+      <RoomMicInviteDialog
+        open={showMicInviteDialog}
+        onOpenChange={setShowMicInviteDialog}
+        inviterName={micInviteData?.inviterName || 'User'}
+        inviterAvatar={micInviteData?.inviterAvatar}
+        targetSeatIndex={micInviteData?.targetSeatIndex || 0}
+        roomId={room.id}
+        onAccept={(seatIndex) => {
+          // Accept invitation and take the seat
+          handleTakeSeat(seatIndex);
+        }}
+        onReject={() => {
+          // Just close the dialog - user declined
+          console.log('User rejected mic invitation');
+        }}
       />
 
       <RoomUserProfileDialog
