@@ -126,6 +126,7 @@ const Seat = memo(({
   onClick,
   label,
   isLocked,
+  isSeatMuted,
   roomOwnerId,
   roomModeratorIds = [],
   theme
@@ -135,6 +136,7 @@ const Seat = memo(({
   onClick: (index: number, occupant?: RoomParticipant) => void;
   label: string;
   isLocked?: boolean;
+  isSeatMuted?: boolean;
   roomOwnerId: string;
   roomModeratorIds: string[];
   theme: any;
@@ -195,6 +197,7 @@ const Seat = memo(({
           </div>
         </AvatarFrame>
         {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
+        {isSeatMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
@@ -1157,17 +1160,21 @@ export function RoomClient({ room }: { room: Room }) {
   const handleTakeSeat = (seatIndex: number) => {
     if (!firestore || !room.id || !currentUser?.uid) return;
     
+    const isSeatMuted = room.mutedSeats?.includes(seatIndex) || false;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     setDocumentNonBlocking(participantRef, {
       seatIndex: seatIndex,
-      isMuted: false,
+      isMuted: isSeatMuted, // Auto-mute if seat is muted
       name: userProfile?.username || currentUser.displayName || 'Tribe Member',
       avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || null,
       uid: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });
     
-    toast({ title: 'Seat Taken', description: `You are now on mic at seat #${seatIndex}` });
+    toast({ 
+      title: 'Seat Taken', 
+      description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}` 
+    });
   };
 
   const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
@@ -1654,13 +1661,13 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
           <div className="w-full flex justify-center px-6 mb-1">
             <div className="w-1/4 max-w-[90px]">
-              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             </div>
           </div>
 
           <div className="w-full grid grid-cols-4 gap-1.5 px-4">
             {extraSeats.map(idx => (
-              <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
           </div>
         </div>
