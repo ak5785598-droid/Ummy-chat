@@ -348,7 +348,7 @@ export function RoomPlayDialog({
   };
 
   const gameGrid = [
-    { id: 'game-selector', label: 'Games', icon: '🎮', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
+    { id: 'game-selector', label: '🎮 Games',icon: 'https://img.icons8.com/color/96/video-game.png',color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); setgameopen(true); } },
     { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => setView('music') },
     { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: () => handleToggleVoice }, 
   ] ;
