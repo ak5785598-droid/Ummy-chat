@@ -348,24 +348,10 @@ export function RoomPlayDialog({
   };
 
   const gameGrid = [
-    { id: 'pk', label: 'Room PK', icon: 'https://img.icons8.com/color/96/sword.png', color: 'from-pink-500/20 to-rose-600/20', onClick: () => handleGameSelect('pk') },
-    { id: 'battle', label: 'Battle', icon: 'https://img.icons8.com/color/96/shield.png', color: 'from-blue-500/20 to-indigo-600/20', onClick: () => handleGameSelect('battle') },
-    { id: 'calculator', label: 'Calculator', icon: 'https://img.icons8.com/color/96/calculator.png', color: 'from-orange-500/20 to-yellow-600/20', onClick: () => handleGameSelect('calculator') },
-    { id: 'game-selector', label: 'Games', icon: 'https://img.icons8.com/color/96/video-game.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
+    { id: 'game-selector', label: 'Games', icon: '🎮', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
     { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => setView('music') },
-    { id: 'magic-slot', label: 'Magic Slot', icon: 'https://img.icons8.com/color/96/slot-machine.png', color: 'from-purple-500/20 to-fuchsia-600/20', onClick: () => handleGameSelect('magic-slot') },
-    { id: 'candy-slot', label: 'Candy Slot', icon: 'https://img.icons8.com/color/96/candy.png', color: 'from-pink-400/20 to-rose-500/20', onClick: () => handleGameSelect('candy-slot') },
-    { id: 'christmas-slot', label: 'Xmas Slot', icon: 'https://img.icons8.com/color/96/christmas-tree.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => handleGameSelect('christmas-slot') },
-    { id: 'jungle', label: 'Jungle', icon: 'https://img.icons8.com/color/96/lion.png', color: 'from-emerald-500/20 to-teal-600/20', onClick: () => handleGameSelect('jungle') },
-    { id: 'halloween', label: 'Halloween', icon: 'https://img.icons8.com/color/96/pumpkin.png', color: 'from-orange-500/20 to-red-600/20', onClick: () => handleGameSelect('halloween') },
-    { id: 'lucky-wheel', label: 'Lucky Wheel', icon: 'https://img.icons8.com/color/96/fortune-wheel.png', color: 'from-blue-500/20 to-cyan-600/20', onClick: () => handleGameSelect('lucky-wheel') },
-    { id: 'lucky-coins', label: 'Coins', icon: 'https://img.icons8.com/color/96/coins.png', color: 'from-amber-400/20 to-yellow-600/20', onClick: () => handleGameSelect('lucky-coins') },
-    { id: 'khazana', label: 'Khazana', icon: 'https://img.icons8.com/color/96/diamond.png', color: 'from-yellow-400/20 to-amber-600/20', onClick: () => handleGameSelect('fruit-party') },
-    { id: 'krazy-kards', label: 'Kards', icon: 'https://img.icons8.com/color/96/cards.png', color: 'from-blue-600/20 to-indigo-700/20', onClick: () => handleGameSelect('krazy-kards') },
-    { id: 'carrom', label: 'Carrom', icon: 'https://img.icons8.com/color/96/white-circle.png', color: 'from-stone-400/20 to-stone-600/20', onClick: () => handleGameSelect('carrom') },
-    { id: 'ludo', label: 'Ludo', icon: 'https://img.icons8.com/color/96/dice.png', color: 'from-red-500/20 to-red-700/20', onClick: () => handleGameSelect('ludo') },
-  ];
-
+    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: () => handleToggleVoice }, 
+  ] ;
   return (
     <AnimatePresence>
       {open && (
