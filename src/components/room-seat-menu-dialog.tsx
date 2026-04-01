@@ -132,7 +132,7 @@ export function RoomSeatMenuDialog({
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[220px] bg-white text-black p-2 rounded-lg border-none shadow-2xl overflow-hidden font-sans animate-in zoom-in-95 duration-200">
+   <DialogContent className="w-[200px] max-w-[200px] bg-white text-black p-1.5 rounded-md border-none shadow-2xl overflow-hidden font-sans">
     <DialogHeader className="sr-only">
      <DialogTitle>Seat Options</DialogTitle>
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
