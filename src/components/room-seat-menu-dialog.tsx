@@ -177,7 +177,7 @@ export function RoomSeatMenuDialog({
       <MenuItem 
        label={isMuted ? "Unmute" : "Mute"} 
        icon={isMuted ? Mic : MicOff}
-       onClick={() => { onToggleMute?.(occupantUid, !isMuted); onOpenChange(false); }}
+       onClick={() => { onToggleMute?.(occupantUid, !!isMuted); onOpenChange(false); }}
        className={isMuted ? "text-green-600" : "text-red-500"}
       />
      )}
