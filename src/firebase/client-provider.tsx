@@ -12,12 +12,11 @@ interface FirebaseClientProviderProps {
  * HIGH-STABILITY CLIENT PROVIDER.
  * Simplified for maximum React 18 compatibility.
  * 
- * Uses the Absolute Singleton Pattern from the index, ensuring no 
+ * Uses the Absolute Singleton Pattern from the core module, ensuring no 
  * hook-order changes during the hydration Phase (#310).
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // Directly retrieve stable singleton instances.
-  // SSR isolation is now handled by the parent layout via next/dynamic.
+  // Directly retrieve stable singleton instances from the core initializer.
   const { firebaseApp, auth, firestore, storage } = initializeFirebase();
 
   return (

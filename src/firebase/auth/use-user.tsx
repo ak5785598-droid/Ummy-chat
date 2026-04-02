@@ -24,8 +24,6 @@ export function useUser(): UserHookResult {
  useEffect(() => {
   if (!auth) {
    setIsLoading(false);
-   // Optional: Set an error if auth service is not available
-   // setError(new Error("Firebase Auth service not available."));
    return;
   }
 
