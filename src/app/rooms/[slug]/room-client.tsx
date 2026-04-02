@@ -798,6 +798,20 @@ export function RoomClient({ room }: { room: Room }) {
     const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
     const now = Date.now();
 
+    // 0. DAILY RESET: Check if 24 hours have passed since last reset
+    const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
+    const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceReset >= 24) {
+      console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        'rocket.progress': 0,
+        'rocket.countdownUntil': null,
+        'rocket.lastReset': Timestamp.fromDate(new Date())
+      });
+      return; // Exit early, reset will trigger re-render
+    }
+
     // TRIGGER 1: Start Countdown when goal reached
     if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
       console.log('[Rocket] Goal reached! Starting 60s countdown...');

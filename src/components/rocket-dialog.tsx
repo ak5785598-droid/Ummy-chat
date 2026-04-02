@@ -94,7 +94,7 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[380px] bg-[#0a0c10] border border-blue-500/30 p-0 overflow-hidden text-white shadow-[0_0_50px_rgba(0,100,255,0.3)]">
+      <DialogContent className="sm:max-w-[320px] bg-[#0a0c10] border border-blue-500/30 p-0 overflow-hidden text-white shadow-[0_0_50px_rgba(0,100,255,0.3)]">
         <DialogHeader className="sr-only">
           <DialogTitle>Rocket System</DialogTitle>
           <DialogDescription>Unlock powerful rockets by sending gifts</DialogDescription>
