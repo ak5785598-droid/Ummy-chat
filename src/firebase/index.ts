@@ -37,8 +37,11 @@ export function initializeFirebase() {
       firestoreInstance = initializeFirestore(appInstance, {
         experimentalForceLongPolling: true,
         experimentalAutoDetectLongPolling: true,
+        cacheSizeBytes: 10485760, // 10MB cache
       });
+      console.log('[Firebase] Firestore initialized with long polling');
     } catch (e) {
+      console.warn('[Firebase] Long polling failed, using default:', e);
       firestoreInstance = getFirestore(appInstance);
     }
   }

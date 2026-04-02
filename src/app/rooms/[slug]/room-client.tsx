@@ -447,7 +447,12 @@ export function RoomClient({ room }: { room: Room }) {
 
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
-    return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+    try {
+      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+    } catch (e) {
+      console.error('[Room] Failed to create participants query:', e);
+      return null;
+    }
   }, [firestore, room.id]);
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
@@ -486,12 +491,17 @@ export function RoomClient({ room }: { room: Room }) {
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id) return null;
-    return query(
-      collection(firestore, 'chatRooms', room.id, 'messages'),
-      where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
-      orderBy('timestamp', 'asc'),
-      limitToLast(50)
-    );
+    try {
+      return query(
+        collection(firestore, 'chatRooms', room.id, 'messages'),
+        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
+        orderBy('timestamp', 'asc'),
+        limitToLast(50)
+      );
+    } catch (e) {
+      console.error('[Room] Failed to create messages query:', e);
+      return null;
+    }
   }, [firestore, room.id, sessionJoinTime]);
 
   const { data: firestoreMessages } = useCollection(messagesQuery);
