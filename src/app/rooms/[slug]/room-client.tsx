@@ -353,6 +353,7 @@ export function RoomClient({ room }: { room: Room }) {
     isMusicEnabled
   } = useRoomContext();
   const musicAudioRef = useRef<HTMLAudioElement>(null);
+  const pendingSeekTime = useRef<number | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastProcessedId = useRef<string | null>(null);
@@ -1376,31 +1377,30 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicUpdatedBy, currentUser?.uid]);
 
   // ADVANCED SYNC: Listen for music changes and apply Virtual Clock
-  useEffect(() => {
+
     if (!room?.currentMusicUrl || !musicAudioRef.current) return;
     const audio = musicAudioRef.current;
+    const roomIsPlaying = room.isMusicPlaying || false;
+    const targetUrl = room.currentMusicUrl;
     
-    const syncMusic = async () => {
-      const roomIsPlaying = room.isMusicPlaying || false;
-      const targetUrl = room.currentMusicUrl;
-      
-      // 1. URL Change Handling
-      if (audio.src !== targetUrl) {
-        console.warn('[Sync] New Track detected:', room.currentMusicTitle);
-        audio.pause();
-        audio.src = targetUrl || '';
-        audio.load();
-      }
+    // Calculate target position using Virtual Clock
+    let targetTime = room.musicStartOffset || 0;
+    if (roomIsPlaying && room.musicStartedAt) {
+      const now = Date.now();
+      const startedAt = room.musicStartedAt.toMillis?.() || (room.musicStartedAt.seconds * 1000) || now;
+      targetTime += (now - startedAt) / 1000;
+    }
 
-      // 2. Calculate target position using Virtual Clock
-      let targetTime = room.musicStartOffset || 0;
-      if (roomIsPlaying && room.musicStartedAt) {
-        const now = Date.now();
-        const startedAt = room.musicStartedAt.toMillis?.() || (room.musicStartedAt.seconds * 1000) || now;
-        targetTime += (now - startedAt) / 1000;
-      }
-
-      // 3. Apply Sync (Play/Pause + Seek)
+    // 1. URL Change Handling
+    if (audio.src !== targetUrl) {
+      console.warn('[Sync] New Track detected:', room.currentMusicTitle);
+      audio.pause();
+      audio.src = targetUrl || '';
+      audio.load();
+      // Wait for metadata before seeking
+      pendingSeekTime.current = targetTime;
+    } else {
+      // Track already loaded, calculate target time
       const drift = Math.abs(audio.currentTime - targetTime);
       
       if (roomIsPlaying) {
@@ -1408,8 +1408,10 @@ export function RoomClient({ room }: { room: Room }) {
           console.warn('[Sync] Correcting drift/state:', drift.toFixed(2), 'Playing:', roomIsPlaying);
           audio.currentTime = targetTime;
           try {
-            await audio.play();
-            setIsMusicPlaying(true);
+            audio.play().then(() => setIsMusicPlaying(true)).catch(e => {
+              console.warn('[Sync] Auto-play blocked:', e.name);
+              setIsMusicPlaying(false);
+            });
           } catch (e: any) {
             console.warn('[Sync] Auto-play blocked:', e.name);
             setIsMusicPlaying(false);
@@ -1423,9 +1425,7 @@ export function RoomClient({ room }: { room: Room }) {
           setIsMusicPlaying(false);
         }
       }
-    };
-
-    syncMusic();
+    }
   }, [room?.currentMusicUrl, room?.isMusicPlaying, (room as any)?.musicStartedAt, (room as any)?.musicStartOffset, userInteracted]);
 
   // AUDIO UNLOCK: Global click handler to enable audio context
@@ -1458,18 +1458,20 @@ export function RoomClient({ room }: { room: Room }) {
         // Sync check on unlock
         if (room?.isMusicPlaying && room?.currentMusicUrl) {
           const audio = musicAudioRef.current;
-          if (audio.src !== room.currentMusicUrl) {
-            audio.src = room.currentMusicUrl || '';
-            audio.load();
-          }
-
           let targetTime = room.musicStartOffset || 0;
           if (room.isMusicPlaying && room.musicStartedAt) {
             const now = Date.now();
             const startedAt = room.musicStartedAt.toMillis?.() || (room.musicStartedAt.seconds * 1000) || now;
             targetTime += (now - startedAt) / 1000;
           }
-          audio.currentTime = targetTime;
+
+          if (audio.src !== room.currentMusicUrl) {
+            audio.src = room.currentMusicUrl || '';
+            audio.load();
+            pendingSeekTime.current = targetTime;
+          } else {
+            audio.currentTime = targetTime;
+          }
 
           try {
             await audio.play();
@@ -1626,6 +1628,12 @@ export function RoomClient({ room }: { room: Room }) {
 
       <audio
         ref={musicAudioRef}
+        onLoadedMetadata={() => {
+          if (pendingSeekTime.current !== null && musicAudioRef.current) {
+            musicAudioRef.current.currentTime = pendingSeekTime.current;
+            pendingSeekTime.current = null;
+          }
+        }}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
         crossOrigin="anonymous"
         preload="auto"
