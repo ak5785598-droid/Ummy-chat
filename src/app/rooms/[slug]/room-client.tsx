@@ -90,7 +90,7 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse } from '@/actions/ai-actions';
-import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { RocketDialog } from '@/components/rocket-dialog';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -240,7 +240,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
-  const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -1603,7 +1603,12 @@ export function RoomClient({ room }: { room: Room }) {
         senderName={activeGiftSync?.senderName}
         onComplete={() => setActiveGiftSync(null)}
       />
-      <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
+      <RocketDialog
+        open={isRocketOpen}
+        onOpenChange={setIsRocketOpen}
+        totalGifts={room.stats?.totalGifts || 0}
+        roomName={room.title}
+      />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
       {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
@@ -1974,20 +1979,18 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      {/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
-      {room.currentMusicUrl && isMusicPlaying && !showMiniPlayer && (
-        <button
-          onClick={() => setShowMiniPlayer(true)}
-          className={cn(
-            "fixed right-2 top-[65%] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
-            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
-          )}
-        >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20">
-            <Music className="h-5 w-5" />
-          </div>
-        </button>
-      )}
+      {/* ROCKET BUTTON - Floating at bottom right */}
+      <button
+        onClick={() => setIsRocketOpen(true)}
+        className={cn(
+          "fixed right-2 bottom-[100px] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
+          "bg-green-500/20 border-green-500/50 text-green-400 shadow-green-500/20 hover:bg-green-500/30"
+        )}
+      >
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-500/20 text-2xl">
+          🚀
+        </div>
+      </button>
 
       <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
         <div className="flex items-center">
