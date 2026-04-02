@@ -80,7 +80,7 @@ export function VipBadge({ level = 0, tier, className, showText = true }: VipBad
       )}
       <Sparkles className={cn("h-2.5 w-2.5 absolute -top-1 -right-1 opacity-50 animate-pulse", config.text)} />
       
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes shimmer-gold {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
@@ -89,7 +89,7 @@ export function VipBadge({ level = 0, tier, className, showText = true }: VipBad
           background-size: 200% 100%;
           animation: shimmer-gold 2s linear infinite;
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }
