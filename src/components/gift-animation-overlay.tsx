@@ -15,19 +15,15 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
  const [isVisible, setIsVisible] = useState(false);
  const [triggerKey, setTriggerKey] = useState(0);
 
- // 1. Full Premium List (Same as your original)
+ // 1. COMPLETE PREMIUM LIST (High-End Gifts)
  const premiumTier = [
   'library', 'fountain', 'diamond', 'lipstick', 'trophy', 'golden-phone', 
   'gem-knife', 'scepter', 'dressing-table', 'star-rain', 'coronation', 
-  'rose-vow', 'glory', 'neon-car', 'ferrari', 'sword-of-ocean', 'new-year', 
-  'eid-mubarak', 'yacht', 'mansion', 'private-island', 'helicopter', 
-  'submarine', 'limo', 'private-jet', 'diamond-necklace', 'gold-watch', 
-  'designer-bag', 'stiletto', 'ring', 'crystal-chandelier', 'sports-car', 
-  'grand-piano', 'stradivarius', 'arabian-horse', 'purebred-dog', 'exotic-bird', 
-  'silver-platter', 'space-station', 'moon-base', 'mars-rover', 'cyber-city', 
-  'floating-island', 'dragon', 'phoenix', 'unicorn', 'pegasus', 'kraken', 
-  'leviathan', 'world-tree', 'excalibur', 'holy-grail', 'christmas-tree', 
-  'santa-sleigh'
+  'rose-vow', 'glory', 'neon-car', 'ferrari', 'sword-of-ocean', 'yacht', 
+  'mansion', 'private-island', 'helicopter', 'submarine', 'limo', 'private-jet', 
+  'diamond-necklace', 'gold-watch', 'designer-bag', 'sports-car', 'grand-piano', 
+  'space-station', 'moon-base', 'mars-rover', 'dragon', 'phoenix', 'unicorn', 
+  'pegasus', 'kraken', 'world-tree', 'excalibur', 'holy-grail'
  ];
 
  const isPremium = giftId ? premiumTier.includes(giftId) : false;
@@ -37,8 +33,7 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
    setIsVisible(true);
    setTriggerKey(prev => prev + 1);
    
-   // Premium gifts stay longer for better impact
-   const duration = isPremium ? 6500 : 4000;
+   const duration = isPremium ? 6000 : 4000;
 
    const timer = setTimeout(() => {
     setIsVisible(false);
@@ -50,149 +45,145 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
 
  if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
- // 2. Full Emoji Map (All your emojis restored)
+ // 2. FULL EMOJI MAP (Covering All IDs)
  const getEmoji = () => {
   const map: Record<string, string> = {
-   'choco-pops': '🍭', 'chai': '☕', 'rose': '🌹', 'applaud': '👏',
-   'love-bomb': '💣', 'kiss': '💋', 'chocolate-box': '🍫',
-   'money-gun': '🔫', 'watch': '⌚', 'birthday-cake': '🎂',
-   'lucky-clover': '🍀', 'magic-wand': '🪄', 'jackpot': '🎰',
-   'treasure': '🪙', 'soaring': '🎆', 'golden-football': '⚽',
-   'chupa-chups': '🍬', 'library': '📚', 'fountain': '⛲',
-   'diamond': '💎', 'lipstick': '💄', 'trophy': '🏆',
-   'golden-phone': '📱', 'gem-knife': '🗡️', 'scepter': '🦯',
-   'dressing-table': '🪞', 'star-rain': '🌠', 'coronation': '👑',
-   'rose-vow': '💑', 'glory': '🕊️', 'neon-car': '🚘',
-   'ferrari': '🏎️', 'sword-of-ocean': '⚔️', 'new-year': '🎊',
-   'eid-lantern': '🏮', 'eid-cannon': '💣', 'eid-feast': '🥘',
-   'eid-mubarak': '🕌', 'microphone': '🎤', 'headphones': '🎧', 
-   'perfume': '🧴', 'soccer-ball': '⚽', 'ticket': '🎟️', 'popcorn': '🍿',
-   'controller': '🎮', 'vinyl': '📀', 'bubble-tea': '🧋',
-   'doughnut': '🍩', 'candy': '🍬', 'ice-cream': '🍦',
-   'pizza': '🍕', 'burger': '🍔', 'taco': '🌮',
-   'cocktail': '🍸', 'beer': '🍺', 'champagne': '🥂',
-   'coffee': '☕', 'tea': '🍵', 'milk': '🥛',
-   'cookie': '🍪', 'apple': '🍎', 'banana': '🍌',
-   'cherry': '🍒', 'peach': '🍑', 'strawberry': '🍓',
-   'watermelon': '🍉', 'lemon': '🍋', 'pineapple': '🍍',
-   'dice': '🎲', 'horseshoe': '🧲', 'crystal-ball': '🔮',
-   'tarot': '🃏', 'shooting-star': '🌠', 'rainbow': '🌈',
-   'pot-of-gold': '🍯', 'eight-ball': '🎱', 'fortune-cookie': '🥠',
-   'red-envelope': '🧧', 'wishbone': '🦴', 'piggy-bank': '🐷',
-   'amulet': '🧿', 'leprechaun-hat': '🎩', 'magic-potion': '🧪',
-   'dreamcatcher': '🕸️', 'wishing-well': '⛲', 'gold-ingot': '🧈',
-   'yacht': '🛥️', 'mansion': '🏡', 'private-island': '🏝️',
-   'helicopter': '🚁', 'submarine': '🛳️', 'limo': '🚘',
-   'private-jet': '🛩️', 'diamond-necklace': '💎', 'gold-watch': '⌚',
-   'designer-bag': '👜', 'stiletto': '👠', 'ring': '💍',
-   'crystal-chandelier': '✨', 'sports-car': '🏎️', 'grand-piano': '🎹',
-   'stradivarius': '🎻', 'arabian-horse': '🐎', 'purebred-dog': '🐩',
-   'exotic-bird': '🦚', 'silver-platter': '🍽️', 'space-station': '🛰️',
-   'moon-base': '🌖', 'mars-rover': '🛸', 'cyber-city': '🏙️',
-   'floating-island': '☁️', 'dragon': '🐉', 'phoenix': '🐦',
-   'unicorn': '🦄', 'pegasus': '🐎', 'kraken': '🐙',
-   'leviathan': '🐳', 'world-tree': '🌳', 'excalibur': '🗡️',
-   'holy-grail': '🏆', 'fireworks': '🎆', 'confetti': '🎊',
-   'birthday-hat': '🥳', 'christmas-tree': '🎄', 'santa-sleigh': '🎅',
-   'snowman': '⛄', 'jack-o-lantern': '🎃', 'easter-egg': '🥚',
-   'valentine-heart': '💖', 'thanksgiving-turkey': '🦃'
+   // Basic & Fun
+   'choco-pops': '🍭', 'chai': '☕', 'rose': '🌹', 'applaud': '👏', 'love-bomb': '💣', 
+   'kiss': '💋', 'chocolate-box': '🍫', 'money-gun': '🔫', 'watch': '⌚', 'birthday-cake': '🎂',
+   'lucky-clover': '🍀', 'magic-wand': '🪄', 'jackpot': '🎰', 'treasure': '🪙', 'soaring': '🎆',
+   'golden-football': '⚽', 'chupa-chups': '🍬', 'microphone': '🎤', 'headphones': '🎧', 
+   'perfume': '🧴', 'ticket': '🎟️', 'popcorn': '🍿', 'controller': '🎮', 'vinyl': '📀',
+
+   // Food & Drinks
+   'pizza': '🍕', 'burger': '🍔', 'taco': '🌮', 'doughnut': '🍩', 'ice-cream': '🍦',
+   'bubble-tea': '🧋', 'cocktail': '🍸', 'beer': '🍺', 'champagne': '🥂', 'coffee': '☕',
+
+   // Luxury & Premium
+   'library': '📚', 'fountain': '⛲', 'diamond': '💎', 'lipstick': '💄', 'trophy': '🏆',
+   'golden-phone': '📱', 'gem-knife': '🗡️', 'scepter': '🦯', 'dressing-table': '🪞', 
+   'star-rain': '🌠', 'coronation': '👑', 'rose-vow': '💑', 'glory': '🕊️', 'neon-car': '🚘',
+   'ferrari': '🏎️', 'sword-of-ocean': '⚔️', 'yacht': '🛥️', 'mansion': '🏡', 'private-island': '🏝️',
+   'helicopter': '🚁', 'submarine': '🛳️', 'limo': '🚘', 'private-jet': '🛩️', 
+   'diamond-necklace': '💎', 'gold-watch': '⌚', 'designer-bag': '👜', 'sports-car': '🏎️', 
+   'grand-piano': '🎹', 'space-station': '🛰️', 'moon-base': '🌖', 'mars-rover': '🛸',
+
+   // Fantasy & Mythical
+   'dragon': '🐉', 'phoenix': '🐦', 'unicorn': '🦄', 'pegasus': '🐎', 'kraken': '🐙', 
+   'world-tree': '🌳', 'excalibur': '🗡️', 'holy-grail': '🏆',
+
+   // Seasonal & Special
+   'new-year': '🎊', 'eid-mubarak': '🕌', 'fireworks': '🎆', 'christmas-tree': '🎄', 
+   'santa-sleigh': '🎅', 'valentine-heart': '💖',
+
+   // Flags
+   'flag-india': '🇮🇳', 'flag-pakistan': '🇵🇰', 'flag-canada': '🇨🇦', 'flag-america': '🇺🇸'
   };
   return map[giftId] || '🎁';
  };
 
+ // 3. SPECIAL PARTICLE EFFECTS (Popcorn, Money, Hearts)
+ const renderExtraParticles = () => {
+    const particles = [];
+    if (giftId === 'popcorn') {
+      for (let i = 0; i < 20; i++) {
+        particles.push(
+          <motion.div key={i} className="absolute text-2xl"
+            initial={{ x: 0, y: 0, scale: 0 }}
+            animate={{ x: (Math.random() - 0.5) * 400, y: [0, -150, 450], scale: [0, 1, 0.7], rotate: Math.random() * 360 }}
+            transition={{ duration: 2.5, delay: 0.5 + Math.random() * 1.2, ease: "easeOut" }}
+          >🍿</motion.div>
+        );
+      }
+    }
+    if (giftId === 'money-gun') {
+      for (let i = 0; i < 25; i++) {
+        particles.push(
+          <motion.div key={i} className="absolute text-3xl text-green-500"
+            initial={{ x: 40, y: 0, scale: 0 }}
+            animate={{ x: [40, 350], y: [0, -120, 350], scale: [0, 1.2, 1], rotate: [0, 360] }}
+            transition={{ duration: 1.8, delay: 0.2 + (i * 0.08) }}
+          >💸</motion.div>
+        );
+      }
+    }
+    if (['love-bomb', 'valentine-heart', 'kiss'].includes(giftId)) {
+      for (let i = 0; i < 15; i++) {
+        particles.push(
+          <motion.div key={i} className="absolute text-red-500"
+            initial={{ x: 0, y: 0, scale: 0 }}
+            animate={{ x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 500, scale: [0, 1.5, 0] }}
+            transition={{ duration: 2, delay: 0.8 }}
+          >❤️</motion.div>
+        );
+      }
+    }
+    return particles;
+ };
+
+ // 4. DYNAMIC ANIMATION LOGIC
+ const getAnimationParams = () => {
+  const isClap = giftId === 'applaud';
+  const isFlag = giftId?.startsWith('flag-');
+  const isActionItem = ['popcorn', 'money-gun', 'love-bomb'].includes(giftId);
+
+  const times = [0, 0.2, 0.5, 0.8, 1];
+  const exitPos = { y: 600, x: -180, scale: 0.15 }; // Seat position logic
+
+  if (isClap) {
+   return { scale: [0, 1.5, 1.5, 1.5, exitPos.scale], y: [500, -50, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -25, 25, -25, 0], opacity: [0, 1, 1, 1, 0], times };
+  }
+  if (isFlag) {
+   return { scale: [0, 1.8, 1.8, 1.8, exitPos.scale], y: [500, -30, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], skewX: [0, 15, -15, 10, 0], opacity: [0, 1, 1, 1, 0], times };
+  }
+  if (isActionItem) {
+   return { scale: [0, 1.5, 1.6, 1.5, exitPos.scale], y: [500, 0, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -8, 8, -8, 0], opacity: [0, 1, 1, 1, 0], times };
+  }
+
+  // DEFAULT (3D Spin for normal & premium)
+  return { scale: [0, 1.4, 1.2, 1.2, exitPos.scale], y: [500, -30, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateY: [0, 180, 360, 360, 360], opacity: [0, 1, 1, 1, 0], times };
+ };
+
+ const anim = getAnimationParams();
+
  return (
-  <AnimatePresence mode='wait'>
+  <AnimatePresence>
    {isVisible && (
     <motion.div 
      key={triggerKey} 
-     className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden"
-     initial={{ opacity: 0 }}
-     animate={{ opacity: 1 }}
-     exit={{ opacity: 0 }}
+     className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden [perspective:1200px]"
+     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
     >
-     {/* 3. Realistic Glassmorphic Announcement (Premium Only) */}
+     {/* Premium Banner */}
      {isPremium && (
-      <>
-        <motion.div 
-          className="absolute inset-0 bg-white/10 backdrop-blur-[2px] z-[301]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 0] }}
-          transition={{ duration: 1.5 }}
-        />
-        <motion.div 
-          className="absolute top-[10%] z-[310]"
-          initial={{ y: -100, opacity: 0, scale: 0.5 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-        >
-          <div className="bg-black/40 backdrop-blur-xl px-12 py-5 rounded-full border-2 border-[#00E676] shadow-[0_0_50px_rgba(0,230,118,0.5)] flex items-center gap-5">
-            <Sparkles className="h-7 w-7 text-[#00E676] animate-pulse" />
-            <span className="text-white font-black text-2xl italic tracking-tighter uppercase drop-shadow-lg">
-              {senderName || 'VIP'} SENT {getEmoji()}
-            </span>
-            <Sparkles className="h-7 w-7 text-[#00E676] animate-pulse" />
-          </div>
-        </motion.div>
-      </>
+      <motion.div className="absolute top-[10%] z-[310]" initial={{ y: -100 }} animate={{ y: 0 }}>
+        <div className="bg-black/70 backdrop-blur-3xl px-12 py-5 rounded-full border-2 border-cyan-400 shadow-[0_0_50px_rgba(34,211,238,0.4)] flex items-center gap-6">
+          <Sparkles className="h-8 w-8 text-cyan-400 animate-pulse" />
+          <span className="text-white font-black text-2xl italic tracking-tighter uppercase">{senderName || 'VIP'} SENT {getEmoji()}</span>
+          <Sparkles className="h-8 w-8 text-cyan-400 animate-pulse" />
+        </div>
+      </motion.div>
      )}
 
-     {/* 4. Realistic 3D Gift Animation */}
-     <motion.div
-       className="relative z-[305] flex items-center justify-center transform-gpu"
-       initial={{ scale: 0, y: 500, rotateX: 60, rotateZ: -30, opacity: 0, filter: 'blur(20px)' }}
-       animate={{ 
-        scale: [0, 1.4, 1.1, 1.1, 5], 
-        y: [500, -30, 0, 0, -1000], 
-        rotateX: [60, 0, 0, 0, -60],
-        rotateZ: [-30, 15, 0, 0, 30],
-        opacity: [0, 1, 1, 1, 0],
-        filter: ['blur(15px)', 'blur(0px)', 'blur(0px)', 'blur(0px)', 'blur(30px)']
-       }}
-       transition={{ 
-        duration: isPremium ? 6 : 3.8, 
-        times: [0, 0.15, 0.3, 0.8, 1], 
-        ease: [0.34, 1.56, 0.64, 1] // Custom Realistic Spring Ease
-       }}
-      >
-       {/* High-End Dynamic Glow */}
-       <div className={cn(
-         "absolute inset-0 blur-[120px] opacity-40 rounded-full scale-[2.5] animate-pulse",
-         isPremium ? "bg-[#00E676]" : "bg-yellow-400"
-       )} />
-       
-       <span className="text-[14rem] md:text-[22rem] drop-shadow-[0_40px_70px_rgba(0,0,0,0.6)] z-10 select-none">
-        {getEmoji()}
-       </span>
-      </motion.div>
+     {/* Main Icon & Particles */}
+     <div className="relative flex items-center justify-center">
+        {renderExtraParticles()}
 
-     {/* 5. Realistic Particle Explosion */}
-     <div className="absolute inset-0 z-[302] pointer-events-none">
-       {Array.from({ length: isPremium ? 60 : 20 }).map((_, i) => (
-         <motion.div
-          key={i}
-          className="absolute text-4xl"
-          initial={{ 
-           left: `${50}%`, 
-           top: "60%", 
-           opacity: 0,
-           scale: 0
-          }}
-          animate={{ 
-           top: `${Math.random() * 100}%`,
-           left: `${Math.random() * 100}%`,
-           rotate: Math.random() * 1000,
-           opacity: [0, 1, 1, 0],
-           scale: [0, 1, 0.5, 0]
-          }}
-          transition={{ 
-           duration: 2 + Math.random() * 2, 
-           delay: isPremium ? 0.5 + Math.random() * 2 : Math.random() * 1,
-           ease: "easeOut" 
-          }}
-         >
-          {Math.random() > 0.5 ? '✨' : '⭐'}
-         </motion.div>
-       ))}
+        <motion.div
+         className="relative z-[305] transform-gpu"
+         initial={{ scale: 0, y: 500, opacity: 0 }}
+         animate={{ 
+           scale: anim.scale, y: anim.y, x: anim.x,
+           rotateY: anim.rotateY || 0, rotateZ: anim.rotateZ || 0,
+           skewX: anim.skewX || 0, opacity: anim.opacity 
+         }}
+         transition={{ duration: isPremium ? 5.5 : 3.8, times: anim.times, ease: "easeInOut" }}
+        >
+         <div className={cn("absolute inset-0 blur-[130px] opacity-40 rounded-full scale-[2.8]", isPremium ? "bg-cyan-500" : "bg-yellow-500")} />
+         <span className="text-[12rem] md:text-[18rem] drop-shadow-[0_40px_60px_rgba(0,0,0,0.6)] select-none">
+          {getEmoji()}
+         </span>
+        </motion.div>
      </div>
     </motion.div>
    )}
