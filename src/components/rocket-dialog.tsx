@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Rocket, Lock, Trophy, Gift, Users } from 'lucide-react';
+import { Rocket, Lock, Trophy, Gift, Users, X } from 'lucide-react';
 
 interface RocketDialogProps {
   open: boolean;
@@ -102,6 +102,14 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
 
         {/* Header with current rocket */}
         <div className="relative bg-gradient-to-b from-blue-900/40 to-transparent p-4">
+          {/* Close Button */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 backdrop-blur-md text-white/60 hover:text-white hover:bg-white/20 transition-all z-10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          
           <div className="absolute inset-0 bg-[url('https://img.icons8.com/color/96/space.png')] opacity-10 bg-center bg-no-repeat" />
           
           <div className="relative z-10 flex flex-col items-center">

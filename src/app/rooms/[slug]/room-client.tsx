@@ -2038,7 +2038,7 @@ export function RoomClient({ room }: { room: Room }) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-64 z-40 p-2.5 rounded-2xl transition-all active:scale-90 shadow-2xl border-2 animate-bounce-slow",
+            "fixed right-4 bottom-32 z-40 p-2.5 rounded-2xl transition-all active:scale-90 shadow-2xl border-2 animate-bounce-slow",
             "bg-cyan-500/20 border-cyan-400/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
@@ -2052,7 +2052,7 @@ export function RoomClient({ room }: { room: Room }) {
       <button
         onClick={() => setIsRocketOpen(true)}
         className={cn(
-          "fixed right-4 bottom-48 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
+          "fixed right-4 bottom-16 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
           "bg-green-500/20 border-green-500/50 text-green-400 shadow-green-500/20 hover:bg-green-500/30"
         )}
       >
