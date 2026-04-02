@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- FULL GIFTS DATA ---
 const GIFTS: Record<string, any[]> = {
  'Hot': [
   { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
@@ -74,7 +73,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  const [notifications, setNotifications] = useState<any[]>([]);
 
- // Combo States
  const [showCombo, setShowCombo] = useState(false);
  const [comboCount, setComboCount] = useState(0);
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -148,10 +146,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     <AnimatePresence>
      {notifications.map((notif) => (
       <motion.div key={notif.id} initial={{ x: -200, opacity: 0 }} animate={{ x: 20, opacity: 1 }} exit={{ x: -200, opacity: 0 }}
-       className="flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-lg">
+       className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-blue-500 p-2 pr-8 rounded-full border border-white/20 shadow-xl">
        <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={notif.avatar} /></Avatar>
        <div className="flex flex-col text-white">
-        <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">Gift Sent</span>
+        <span className="text-[10px] font-bold opacity-70 uppercase">Gift Sent</span>
         <span className="text-sm font-black truncate max-w-[90px]">{notif.name}</span>
        </div>
        <div className="ml-2 text-2xl font-black italic text-yellow-400">x{notif.qty}</div>
@@ -164,7 +162,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    <AnimatePresence>
     {showCombo && (
      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="fixed bottom-40 right-6 z-[500]">
-      <button onClick={() => handleSend(true)} className="h-20 w-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full border-4 border-white/30 shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-all">
+      <button onClick={() => handleSend(true)} className="h-20 w-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full border-4 border-white shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-all">
        <Zap className="h-6 w-6 text-white fill-white animate-bounce" />
        <span className="text-xl font-black text-white italic">{comboCount}x</span>
        <span className="text-[8px] font-black text-white/80 uppercase">Combo</span>
@@ -174,13 +172,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
 
    <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-md w-[95%] bg-[#0b0e14]/98 border border-white/10 p-0 rounded-[24px] overflow-hidden text-white shadow-2xl">
+    <DialogContent className="max-w-md w-[95%] bg-[#12161f] border border-white/10 p-0 rounded-[28px] overflow-hidden text-white shadow-2xl">
+     
      {/* Recipient Selection */}
-     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5">
-      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-bold shrink-0", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10")}>ALL</button>
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-black/20">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-bold shrink-0", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10 bg-white/5")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105 shadow-md shadow-cyan-500/30" : "border-transparent opacity-60")}><AvatarImage src={p.avatarUrl} /></Avatar>
         {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 text-black rounded-full p-0.5" />}
        </button>
       ))}
@@ -188,19 +187,29 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
      {/* Tabs & Grid */}
      <Tabs defaultValue="Hot" className="w-full mt-2">
-      <TabsList className="mx-4 bg-white/5 p-1 rounded-full flex justify-between">
+      <TabsList className="mx-4 bg-white/5 p-1 rounded-full flex justify-between border border-white/5">
        {['Hot', 'Lucky', 'Luxury', 'Flag', 'Events'].map(id => (
         <TabsTrigger key={id} value={id} className="text-[10px] font-black px-4 py-1.5 rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 transition-all">{id}</TabsTrigger>
        ))}
       </TabsList>
       
-      <div className="h-[280px] overflow-y-auto no-scrollbar p-4">
+      <div className="h-[320px] overflow-y-auto no-scrollbar p-4">
        {Object.entries(GIFTS).map(([cat, items]) => (
-        <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0">
+        <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0 focus-visible:outline-none">
          {items.map(gift => (
-          <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center p-2 rounded-2xl border transition-all", selectedGift?.id === gift.id ? "bg-white/10 border-cyan-400/50 shadow-inner" : "border-transparent")}>
-           <div className="text-4xl mb-1">{gift.icon}</div>
-           <span className="text-[9px] font-bold opacity-80 truncate w-full text-center">{gift.name}</span>
+          <button 
+           key={gift.id} 
+           onClick={() => setSelectedGift(gift)} 
+           // --- COLOR FIX: Yahan solid background add kiya hai ---
+           className={cn(
+            "flex flex-col items-center p-2 rounded-2xl border transition-all duration-200", 
+            selectedGift?.id === gift.id 
+             ? "bg-[#1e2533] border-cyan-400/80 shadow-lg scale-105 ring-1 ring-cyan-400/20" 
+             : "bg-[#181d29] border-white/5 hover:bg-[#1e2533]"
+           )}
+          >
+           <div className="text-4xl mb-1 filter drop-shadow-md">{gift.icon}</div>
+           <span className="text-[9px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
            <div className="flex items-center gap-1 mt-1">
             <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
             <span className="text-[10px] text-yellow-400 font-black">{gift.price.toLocaleString()}</span>
@@ -213,17 +222,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </Tabs>
 
      {/* Footer */}
-     <div className="p-4 bg-black/40 flex items-center justify-between border-t border-white/5">
-      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+     <div className="p-4 bg-black/40 flex items-center justify-between border-t border-white/5 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
        <GoldCoinIcon className="h-4 w-4" /><span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <div className="flex items-center gap-2">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-10 bg-white/5 border-none rounded-xl text-cyan-400 font-bold"><SelectValue /></SelectTrigger>
-         <SelectContent className="bg-[#151921] text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+         <SelectTrigger className="w-16 h-10 bg-white/10 border-white/10 rounded-xl text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
+         <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
        <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className="h-10 px-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-20 transition-all uppercase">
+         className="h-10 px-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 disabled:grayscale transition-all uppercase tracking-wider border-b-2 border-black/20">
          {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
