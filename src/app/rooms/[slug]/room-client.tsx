@@ -117,7 +117,6 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
-import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
@@ -198,8 +197,15 @@ const Seat = memo(({
             </button>
           </div>
         </AvatarFrame>
-        {occupant?.isMuted && <div className="absolute -bottom-1 -right-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
-        {isSeatMuted && !occupant?.isMuted && <div className="absolute -bottom-1 -left-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg animate-pulse"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
+        {/* Seat Mute / User Mute Badge - Small Red Button Style */}
+        {(occupant?.isMuted || isSeatMuted) && (
+          <div className={cn(
+            "absolute -bottom-1 -right-1 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-xl",
+            isSeatMuted ? "bg-red-600 animate-pulse" : "bg-red-500"
+          )}>
+            <MicOff className="h-2.5 w-2.5 text-white" />
+          </div>
+        )}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
@@ -263,6 +269,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
+  const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
 
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1311,6 +1318,47 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  // --- AUDIO BROADCAST SYNC ---
+  // When this user is the one who played the music, capture the audio stream
+  // and send it to the Agora music context so everyone in the room hears it.
+  useEffect(() => {
+    if (!musicAudioRef.current || !room?.currentMusicUrl || !room.isMusicPlaying) {
+      setMusicStream(null);
+      return;
+    }
+
+    // Only the user who "owns" the music session should broadcast the stream
+    // to avoid multiple users broadcasting the same audio (echo)
+    const isMusicOwner = room.musicUpdatedBy === currentUser?.uid;
+    
+    if (isMusicOwner) {
+      const captureAndSendStream = () => {
+        if (!musicAudioRef.current) return;
+        
+        try {
+          // @ts-ignore
+          const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+          
+          if (stream && stream.getAudioTracks().length > 0) {
+            console.log('[MusicBroadcast] Captured audio stream, sending to Agora...');
+            setMusicStream(stream);
+          } else {
+            console.warn('[MusicBroadcast] Stream captured but no audio tracks found');
+          }
+        } catch (err) {
+          console.error('[MusicBroadcast] Failed to capture stream:', err);
+        }
+      };
+
+      // Slight delay to ensure the audio source is loaded and playing
+      const timer = setTimeout(captureAndSendStream, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // If not the owner, ensure we aren't trying to broadcast
+      setMusicStream(null);
+    }
+  }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicUpdatedBy, currentUser?.uid]);
+
   // Listen for shared music changes from Firestore
   // AUTO-PLAY: When music is playing in room, all users should hear it
   useEffect(() => {
@@ -1985,17 +2033,17 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      {/* MUSIC INDICATOR - Floating when music is playing but mini player is hidden */}
-      {room.currentMusicUrl && room.isMusicPlaying && !showMiniPlayer && (
+{/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
+      {room.isMusicPlaying && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed left-2 bottom-[100px] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
-            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+            "fixed right-4 bottom-64 z-40 p-2.5 rounded-2xl transition-all active:scale-90 shadow-2xl border-2 animate-bounce-slow",
+            "bg-cyan-500/20 border-cyan-400/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-cyan-500/20">
-            <Music className="h-5 w-5 text-cyan-400" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-400/20">
+            <Music className="h-6 w-6" />
           </div>
         </button>
       )}
@@ -2004,7 +2052,7 @@ export function RoomClient({ room }: { room: Room }) {
       <button
         onClick={() => setIsRocketOpen(true)}
         className={cn(
-          "fixed right-2 bottom-[100px] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
+          "fixed right-4 bottom-48 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
           "bg-green-500/20 border-green-500/50 text-green-400 shadow-green-500/20 hover:bg-green-500/30"
         )}
       >
@@ -2214,6 +2262,7 @@ export function RoomClient({ room }: { room: Room }) {
             });
           }
         }}
+        onToggleMiniPlayer={() => setShowMiniPlayer(true)}
       />
       <RoomGamesDialog
         open={isRoomGamesOpen}
@@ -2340,10 +2389,9 @@ export function RoomClient({ room }: { room: Room }) {
         }
       `}</style>
       <MountOverlay entries={mountEntries} />
-      <RoomRocketBar 
-        progress={room.rocket?.progress || 0} 
-        target={room.rocket?.target || 10000} 
-        countdownUntil={room.rocket?.countdownUntil} 
+      <LuckyRainOverlay 
+        active={isLuckyRainActive} 
+        onComplete={() => setIsLuckyRainActive(false)} 
       />
     </div>
   );

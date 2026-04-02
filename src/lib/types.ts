@@ -156,6 +156,8 @@ export type Room = {
  };
  language?: string;
  tags?: string[];
+ isVoiceMuted?: boolean;
+ mutedSeats?: number[];
 };
 
 export type Game = {
