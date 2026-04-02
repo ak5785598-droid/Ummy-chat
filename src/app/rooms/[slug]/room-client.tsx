@@ -1709,11 +1709,6 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <RoomRocketBar 
-          progress={room.rocket?.progress || 0} 
-          target={room.rocket?.target || 10000} 
-          countdownUntil={room.rocket?.countdownUntil} 
-        />
         {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
         <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
           <div className="w-full flex justify-center px-6 mb-1">
@@ -2321,6 +2316,11 @@ export function RoomClient({ room }: { room: Room }) {
         }
       `}</style>
       <MountOverlay entries={mountEntries} />
+      <RoomRocketBar 
+        progress={room.rocket?.progress || 0} 
+        target={room.rocket?.target || 10000} 
+        countdownUntil={room.rocket?.countdownUntil} 
+      />
     </div>
   );
 }

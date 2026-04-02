@@ -13,6 +13,7 @@ interface RoomRocketBarProps {
 
 export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil }: RoomRocketBarProps) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [showFlight, setShowFlight] = useState(false);
 
   const progressPercent = Math.min(100, Math.max(0, (progress / target) * 100));
   const isCountdownActive = !!countdownUntil;
@@ -28,88 +29,163 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil }: 
       const end = typeof countdownUntil.toDate === 'function' ? countdownUntil.toDate().getTime() : new Date(countdownUntil).getTime();
       const diff = Math.max(0, Math.floor((end - now) / 1000));
       setTimeLeft(diff);
-      if (diff === 0) clearInterval(timer);
+      
+      // TRIGGER FLIGHT: Start flight animation 2 seconds before launch completes
+      if (diff === 2 && !showFlight) {
+        setShowFlight(true);
+      }
+
+      if (diff === 0) {
+        clearInterval(timer);
+        setTimeout(() => setShowFlight(false), 3000); // Reset flight after it finishes
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isCountdownActive, countdownUntil]);
-
-  const barColor = useMemo(() => {
-    if (progressPercent < 30) return 'from-blue-500 to-cyan-400';
-    if (progressPercent < 70) return 'from-yellow-400 to-orange-500';
-    return 'from-orange-500 to-red-600';
-  }, [progressPercent]);
+  }, [isCountdownActive, countdownUntil, showFlight]);
 
   return (
-    <div className="w-full px-4 py-2 animate-in fade-in slide-in-from-top-2 duration-700">
-      <div className="relative h-10 w-full bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 p-1 overflow-hidden shadow-2xl group">
+    <>
+      {/* 1. COMPACT ROCKET WIDGET (Bottom Right Positioned) */}
+      <div className="fixed bottom-28 right-4 z-[60] flex flex-col items-center gap-1.5 animate-in fade-in slide-in-from-right-4 duration-700">
         
-        {/* Progress Fill */}
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${progressPercent}%` }}
-          className={cn("absolute inset-y-1 left-1 rounded-xl bg-gradient-to-r shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all duration-500", barColor)}
-        >
-          {/* Animated Shine for progress fill */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full skew-x-[-45deg] animate-shine" style={{ animationDuration: '2s' }} />
-        </motion.div>
+        {/* Countdown Bubble if active */}
+        <AnimatePresence>
+          {isCountdownActive && timeLeft !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.8 }}
+              className="bg-red-500/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-full border border-white/20 shadow-[0_0_15px_rgba(239,68,68,0.5)] flex items-center gap-1"
+            >
+              <Timer className="h-2.5 w-2.5 animate-spin duration-1000" />
+              <span>{timeLeft}S</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Content Overlay */}
-        <div className="absolute inset-0 flex items-center justify-between px-4">
-          <div className="flex items-center gap-2 z-10">
+        {/* The Rocket Icon Circle */}
+        <div className="relative group cursor-pointer active:scale-95 transition-all">
+          {/* Progress Ring (SVG) */}
+          <svg className="w-12 h-12 -rotate-90">
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="rgba(0,0,0,0.4)"
+              className="stroke-white/10"
+              strokeWidth="3"
+            />
+            <motion.circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="transparent"
+              className={cn(
+                "transition-all duration-500",
+                progressPercent >= 100 ? "stroke-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "stroke-cyan-500"
+              )}
+              strokeWidth="3"
+              strokeDasharray={125.6}
+              animate={{ strokeDashoffset: 125.6 - (125.6 * progressPercent) / 100 }}
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Central Rocket Icon */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className={cn(
-              "h-7 w-7 rounded-full flex items-center justify-center transition-all",
-              progressPercent >= 100 ? "bg-yellow-400 animate-bounce" : "bg-white/10"
+               "h-8 w-8 rounded-full flex items-center justify-center transition-all",
+               progressPercent >= 100 ? "bg-red-500 shadow-inner" : "bg-white/5"
             )}>
               <Rocket className={cn(
                 "h-4 w-4 transition-all",
-                progressPercent >= 100 ? "text-red-600 scale-110" : "text-white/40",
-                progressPercent > 80 && progressPercent < 100 && "animate-reaction-float"
+                progressPercent >= 100 ? "text-white animate-bounce" : "text-white/40",
+                progressPercent > 80 && progressPercent < 100 && "animate-vibrate"
               )} />
             </div>
-            
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black uppercase text-white/40 tracking-widest leading-none mb-0.5">
-                Room Rocket Goal
-              </span>
-              <span className="text-[11px] font-bold text-white leading-none">
-                {progress.toLocaleString()} / {target.toLocaleString()}
+          </div>
+
+          {/* % Label */}
+          {!isCountdownActive && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-black/80 px-1 py-0.5 rounded-md border border-white/10">
+              <span className="text-[7px] font-black text-white leading-none whitespace-nowrap">
+                {Math.round(progressPercent)}%
               </span>
             </div>
-          </div>
-
-          <div className="z-10 flex items-center gap-2">
-            <AnimatePresence mode="wait">
-              {isCountdownActive ? (
-                <motion.div 
-                  key="countdown"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-                >
-                  <Timer className="h-3 w-3 animate-spin duration-1000" />
-                  <span className="text-[10px] font-black uppercase tracking-tighter">
-                    Launching in {timeLeft}s
-                  </span>
-                </motion.div>
-              ) : (
-                <div className="bg-white/5 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
-                  <Zap className={cn("h-3 w-3", progressPercent >= 100 ? "text-yellow-400 fill-current" : "text-white/20")} />
-                  <span className="text-[10px] font-black text-white/60 tracking-tighter uppercase italic">
-                    {Math.round(progressPercent)}% Full
-                  </span>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
+          )}
         </div>
-
-        {/* Glow effect for high progress */}
-        {progressPercent > 90 && (
-          <div className="absolute inset-0 bg-yellow-400/5 animate-pulse pointer-events-none" />
-        )}
       </div>
-    </div>
+
+      {/* 2. ROCKET FLIGHT ANIMATION OVERLAY */}
+      <AnimatePresence>
+        {showFlight && (
+          <motion.div 
+             className="fixed inset-0 z-[100] pointer-events-none"
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+          >
+            {/* The Big Flying Rocket */}
+            <motion.div
+              initial={{ x: "80vw", y: "80vh", rotate: -45, scale: 0.5 }}
+              animate={{ 
+                x: ["80vw", "40vw", "10vw", "-20vw"],
+                y: ["80vh", "30vh", "10vh", "-20vh"],
+                scale: [0.5, 1.5, 1, 0.5],
+                rotate: [-45, -45, -60, -90]
+              }}
+              transition={{ duration: 3, ease: "easeIn" }}
+              className="absolute pointer-events-auto"
+            >
+              <div className="relative">
+                <Rocket className="h-24 w-24 text-red-500 filter drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" />
+                {/* Fire Exhaust */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  <div className="w-4 h-12 bg-gradient-to-t from-transparent via-yellow-400 to-red-500 rounded-full animate-pulse" />
+                  <div className="w-2 h-8 bg-white/40 rounded-full blur-sm -mt-6 animate-pulse" />
+                </div>
+                {/* Particles */}
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute bg-yellow-400 rounded-full"
+                    initial={{ opacity: 1, scale: 1 }}
+                    animate={{ 
+                      opacity: 0, 
+                      scale: 0,
+                      x: (Math.random() - 0.5) * 50,
+                      y: 50 + Math.random() * 50
+                    }}
+                    transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                    style={{ width: 4, height: 4, left: '50%' }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Launch Glow */}
+            <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: [0, 0.4, 0] }}
+               transition={{ duration: 1 }}
+               className="absolute inset-0 bg-white"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx global>{`
+        @keyframes vibrate {
+          0%, 100% { transform: translate(0,0); }
+          25% { transform: translate(1px, 1px); }
+          50% { transform: translate(-1px, -1px); }
+          75% { transform: translate(1px, -1px); }
+        }
+        .animate-vibrate {
+          animation: vibrate 0.1s infinite;
+        }
+      `}</style>
+    </>
   );
 }
