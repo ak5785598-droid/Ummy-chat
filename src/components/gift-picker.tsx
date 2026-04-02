@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// GIFTS Data remains the same...
 const GIFTS: Record<string, any[]> = {
  'Hot': [
   { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
@@ -89,46 +88,25 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   }
  }, [open, initialRecipient, seatedParticipants]);
 
- // --- IMPROVED HANDLE SEND LOGIC ---
  const handleSend = async (isComboTrigger = false) => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
 
   const qty = isComboTrigger ? 1 : parseInt(quantity);
-  const costPerPerson = selectedGift.price * qty;
-  const totalCost = costPerPerson * selectedUids.length;
+  const totalCost = selectedGift.price * qty * selectedUids.length;
   
-  // Wallet check
-  const currentCoins = userProfile.wallet?.coins || 0;
-  if (currentCoins < totalCost) {
-    alert("Go,to recharge!");
-    return;
-  }
-
+  if ((userProfile.wallet?.coins || 0) < totalCost) return;
   if (!isComboTrigger) setIsSending(true);
 
   try {
    const batch = writeBatch(firestore);
-   
-   // 1. SENDER: Deduct Coins from wallet.coins
    const senderRef = doc(firestore, 'users', user.uid);
-   batch.update(senderRef, { 
-     'wallet.coins': increment(-totalCost), 
-     updatedAt: serverTimestamp() 
-   });
+   batch.update(senderRef, { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() });
 
-   // 2. RECIPIENTS: Add 40% Diamonds to wallet.diamonds
-   // 100 coins = 40 diamonds
-   const diamondGainPerPerson = Math.floor(costPerPerson * 0.4);
-   
    selectedUids.forEach(uid => {
      const recRef = doc(firestore, 'users', uid);
-     batch.update(recRef, { 
-       'wallet.diamonds': increment(diamondGainPerPerson), 
-       updatedAt: serverTimestamp() 
-     });
+     batch.update(recRef, { 'wallet.diamonds': increment(Math.floor(totalCost * 0.4)), updatedAt: serverTimestamp() });
    });
 
-   // 3. LOG MESSAGE
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
    batch.set(msgRef, {
     type: 'gift',
@@ -141,7 +119,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
 
-   // UI Updates (Notifications/Combo)
    const newId = Date.now();
    const newNotif = {
      id: newId,
@@ -159,12 +136,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    comboTimerRef.current = setTimeout(() => { setShowCombo(false); setComboCount(0); }, 3000);
 
    if (!isComboTrigger) onOpenChange(false);
-  } catch (e: any) { 
-    console.error("FIREBASE ERROR:", e);
-    alert("Error: " + e.message);
-  } finally { 
-    setIsSending(false); 
-  }
+  } catch (e) { console.error(e); } finally { setIsSending(false); }
  };
 
  return (
@@ -228,6 +200,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
           <button 
            key={gift.id} 
            onClick={() => setSelectedGift(gift)} 
+           // --- COLOR FIX: Yahan solid background add kiya hai ---
            className={cn(
             "flex flex-col items-center p-2 rounded-2xl border transition-all duration-200", 
             selectedGift?.id === gift.id 
@@ -268,4 +241,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Dialog>
   </>
  );
-}
+                               }
