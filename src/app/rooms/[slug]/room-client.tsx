@@ -90,7 +90,7 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse } from '@/actions/ai-actions';
-import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { RocketDialog } from '@/components/rocket-dialog';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -102,6 +102,7 @@ import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
+import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
 import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
@@ -197,8 +198,8 @@ const Seat = memo(({
             </button>
           </div>
         </AvatarFrame>
-        {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
-        {isSeatMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
+        {occupant?.isMuted && <div className="absolute -bottom-1 -right-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
+        {isSeatMuted && !occupant?.isMuted && <div className="absolute -bottom-1 -left-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg animate-pulse"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
@@ -240,7 +241,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
-  const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -262,6 +263,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
+  const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
 
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1644,7 +1646,12 @@ export function RoomClient({ room }: { room: Room }) {
         senderName={activeGiftSync?.senderName}
         onComplete={() => setActiveGiftSync(null)}
       />
-      <LuckyRainOverlay active={isLuckyRainActive} onComplete={() => setIsLuckyRainActive(false)} />
+      <RocketDialog
+        open={isRocketOpen}
+        onOpenChange={setIsRocketOpen}
+        totalGifts={room.stats?.totalGifts || 0}
+        roomName={room.title}
+      />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
       {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
@@ -2020,7 +2027,7 @@ export function RoomClient({ room }: { room: Room }) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-48 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
+            "fixed right-4 bottom-64 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
             "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
@@ -2029,6 +2036,19 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
         </button>
       )}
+
+      {/* ROCKET BUTTON - Floating at bottom right */}
+      <button
+        onClick={() => setIsRocketOpen(true)}
+        className={cn(
+          "fixed right-4 bottom-48 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
+          "bg-green-500/20 border-green-500/50 text-green-400 shadow-green-500/20 hover:bg-green-500/30"
+        )}
+      >
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-500/20 text-2xl">
+          🚀
+        </div>
+      </button>
 
       <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
         <div className="flex items-center">
@@ -2362,6 +2382,10 @@ export function RoomClient({ room }: { room: Room }) {
         progress={room.rocket?.progress || 0} 
         target={room.rocket?.target || 10000} 
         countdownUntil={room.rocket?.countdownUntil} 
+      />
+      <LuckyRainOverlay 
+        active={isLuckyRainActive} 
+        onComplete={() => setIsLuckyRainActive(false)} 
       />
     </div>
   );

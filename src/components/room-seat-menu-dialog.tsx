@@ -118,6 +118,26 @@ export function RoomSeatMenuDialog({
   onOpenChange(false);
  };
 
+ const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
+  if (!firestore || !roomId) {
+    console.error('[handleToggleSeatMute] Missing firestore or room.id');
+    return;
+  }
+  
+  console.log('[handleToggleSeatMute] Toggling seat mute:', { seatIdx, currentMuted, roomId });
+  
+  const roomRef = doc(firestore, 'chatRooms', roomId);
+  setDocumentNonBlocking(roomRef, {
+    mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  
+  toast({ 
+    title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', 
+    description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` 
+  });
+ };
+
  const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
   <button
    onClick={onClick}
@@ -142,65 +162,80 @@ export function RoomSeatMenuDialog({
      <DialogDescription>Manage seat frequency for slot {seatIndex}</DialogDescription>
     </DialogHeader>
 
-    {/* Wafa-style compact rectangular grid - always 4 buttons */}
-    <div className="grid grid-cols-4 gap-1">
-     {/* Always show Take mic for empty seat or Leave for occupied */}
-     {(!occupantUid && (!isLocked || canManage)) && (
-      <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
-     )}
+    {/* Wafa-style compact rectangular grid - max 4 buttons per row */}
+    <div className="flex flex-col gap-1">
+     {/* Row 1: Primary actions */}
+     <div className="grid grid-cols-4 gap-1">
+      {/* Take mic / Leave seat */}
+      {(!occupantUid && (!isLocked || canManage)) ? (
+       <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
+      ) : (occupantUid && (occupantUid === currentUserId || canManage)) ? (
+       <MenuItem label="Leave" icon={LogOut} onClick={() => onLeaveSeat(occupantUid)} className="text-orange-600" />
+      ) : (
+       <div /> // Empty placeholder
+      )}
 
+      {/* Gift - only if occupant */}
+      {(occupantUid && onSendGift) ? (
+       <MenuItem 
+        label="Gift" 
+        icon={Gift}
+        className="text-pink-600"
+        onClick={() => {
+         onSendGift({ uid: occupantUid, name: occupantName || 'Tribe Member', avatarUrl: occupantAvatarUrl || '' });
+         onOpenChange(false);
+        }} 
+       />
+      ) : (
+       <div />
+      )}
+
+      {/* Invite */}
+      {canManage ? (
+       <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
+      ) : (
+       <div />
+      )}
+
+      {/* Lock/Unlock */}
+      {canManage ? (
+       <MenuItem 
+        label={isLocked ? "Unlock" : "Lock"} 
+        icon={isLocked ? Unlock : Lock}
+        onClick={handleToggleLock}
+       />
+      ) : (
+       <div />
+      )}
+     </div>
+
+     {/* Row 2: Management actions (only for canManage) */}
      {canManage && (
-      <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
-     )}
+      <div className="grid grid-cols-4 gap-1">
+       {/* Mute/Unmute Seat */}
+       <MenuItem 
+        label={isSeatMuted ? "Unmute" : "Mute"} 
+        icon={isSeatMuted ? Mic : MicOff}
+        onClick={() => handleToggleSeatMute(seatIndex, !!isSeatMuted)}
+        className={isSeatMuted ? "text-green-600" : "text-red-500"}
+       />
 
-     {canManage && (
-      <MenuItem 
-       label={isLocked ? "Unlock" : "Lock"} 
-       icon={isLocked ? Unlock : Lock}
-       onClick={handleToggleLock}
-      />
-     )}
+       {/* Kick */}
+       {(occupantUid && occupantUid !== currentUserId) ? (
+        <MenuItem 
+         label="Kick" 
+         icon={LogOut}
+         onClick={() => onKick(occupantUid, 5)} 
+         className="text-red-500" 
+        />
+       ) : (
+        <div />
+       )}
 
-     {canManage && (
-      <MenuItem 
-       label={isSeatMuted ? "Unmute" : "Mute"} 
-       icon={isSeatMuted ? Mic : MicOff}
-       onClick={() => { onToggleSeatMute?.(seatIndex, !!isSeatMuted); onOpenChange(false); }}
-       className={isSeatMuted ? "text-green-600" : "text-red-500"}
-      />
-     )}
-     {(canManage && occupantUid && occupantUid !== currentUserId) && (
-      <MenuItem 
-       label="Kick" 
-       icon={LogOut}
-       onClick={() => onKick(occupantUid, 5)} 
-       className="text-red-500" 
-      />
-     )}
-
-     {(occupantUid && (occupantUid === currentUserId || canManage)) && (
-      <MenuItem 
-       label="Leave" 
-       icon={LogOut}
-       onClick={() => onLeaveSeat(occupantUid)} 
-       className="text-orange-600" 
-      />
-     )}
-
-     {(occupantUid && onSendGift) && (
-      <MenuItem 
-       label="Gift" 
-       icon={Gift}
-       className="text-pink-600"
-       onClick={() => {
-        onSendGift({
-         uid: occupantUid,
-         name: occupantName || 'Tribe Member',
-         avatarUrl: occupantAvatarUrl || ''
-        });
-        onOpenChange(false);
-       }} 
-      />
+       {/* Empty slots for balance */}
+       <div />
+       <div />
+      </div>
      )}
     </div>
    </DialogContent>
