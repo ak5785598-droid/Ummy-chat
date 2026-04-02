@@ -118,6 +118,26 @@ export function RoomSeatMenuDialog({
   onOpenChange(false);
  };
 
+ const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
+  if (!firestore || !roomId) {
+    console.error('[handleToggleSeatMute] Missing firestore or room.id');
+    return;
+  }
+  
+  console.log('[handleToggleSeatMute] Toggling seat mute:', { seatIdx, currentMuted, roomId });
+  
+  const roomRef = doc(firestore, 'chatRooms', roomId);
+  setDocumentNonBlocking(roomRef, {
+    mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  
+  toast({ 
+    title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', 
+    description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` 
+  });
+ };
+
  const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
   <button
    onClick={onClick}
@@ -165,7 +185,7 @@ export function RoomSeatMenuDialog({
       <MenuItem 
        label={isSeatMuted ? "Unmute" : "Mute"} 
        icon={isSeatMuted ? Mic : MicOff}
-       onClick={() => { onToggleSeatMute?.(seatIndex, !!isSeatMuted); onOpenChange(false); }}
+       onClick={() => handleToggleSeatMute(seatIndex, !!isSeatMuted)}
        className={isSeatMuted ? "text-green-600" : "text-red-500"}
       />
      )}
