@@ -190,3 +190,5 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
   </AnimatePresence>
  );
 }
+
+export default GiftAnimationOverlay;

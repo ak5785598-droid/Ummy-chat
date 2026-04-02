@@ -102,7 +102,7 @@ import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
-// import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
 import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
@@ -116,7 +116,6 @@ import { RoomGameOverlay } from '@/components/room-game-overlay';
 import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
-import { MountOverlay, MountEntry } from '@/components/mount-overlay';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { memo, useCallback } from 'react';
 
@@ -1667,11 +1666,11 @@ export function RoomClient({ room }: { room: Room }) {
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-      {/* <GiftAnimationOverlay
+      <GiftAnimationOverlay
         giftId={activeGiftSync?.id || null}
         senderName={activeGiftSync?.senderName}
         onComplete={() => setActiveGiftSync(null)}
-      /> */}
+      />
       <RocketDialog
         open={isRocketOpen}
         onOpenChange={setIsRocketOpen}
