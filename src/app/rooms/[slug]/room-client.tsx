@@ -2165,7 +2165,7 @@ export function RoomClient({ room }: { room: Room }) {
         setIsMutedLocal={setIsMutedLocal}
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
-          if (['ludo', 'carrom', 'chess'].includes(slug)) {
+          if (['ludo', 'carrom', 'chess', 'fruit-party', 'forest-party'].includes(slug)) {
             setMinimizedRoom(room);
             setActiveRoom(null);
             router.push(`/games/${slug}?roomId=${room.id}`);

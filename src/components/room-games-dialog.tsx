@@ -41,6 +41,9 @@ const WORKING_GAMES = [
   { id: 'music', title: 'Music', icon: Music, color: 'bg-red-500/20 text-red-400', hasMusic: true },
   { id: 'carrom', title: 'Carrom', icon: Dices, color: 'bg-orange-500/20 text-orange-400' },
   { id: 'ludo', title: 'Ludo', icon: Dice5, color: 'bg-green-500/20 text-green-400' },
+  { id: 'chess', title: 'Chess', icon: Shield, color: 'bg-purple-500/20 text-purple-400' },
+  { id: 'fruit-party', title: 'Fruit Party', icon: Heart, color: 'bg-pink-500/20 text-pink-400' },
+  { id: 'forest-party', title: 'Forest Party', icon: Flame, color: 'bg-yellow-500/20 text-yellow-400' },
 ];
 
 /**
