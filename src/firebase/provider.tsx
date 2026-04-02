@@ -117,6 +117,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   return context as FirebaseServicesAndUser;
 };
 
+// 3. SERVICE ACCESS HOOKS
 export const useAuth = () => useFirebase().auth;
 export const useFirestore = () => useFirebase().firestore;
 export const useStorage = () => useFirebase().storage;
@@ -124,77 +125,6 @@ export const useUser = () => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };
 };
-
-// Basic useCollection hook for Firestore queries
-export function useCollection<T = any>(query: any) {
-  const [data, setData] = useState<T[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!query) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = query.onSnapshot(
-      (snapshot: any) => {
-        const docs = snapshot.docs.map((doc: any) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setData(docs as T[]);
-        setLoading(false);
-        setError(null);
-      },
-      (err: Error) => {
-        console.error('[Firebase] Collection query error:', err);
-        setError(err);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [query]);
-
-  return { data, loading, error };
-}
-
-export function useDoc(query: any) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!query) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = query.onSnapshot(
-      (snapshot: any) => {
-        if (snapshot.exists) {
-          setData({ id: snapshot.id, ...snapshot.data() });
-        } else {
-          setData(null);
-        }
-        setLoading(false);
-        setError(null);
-      },
-      (err: Error) => {
-        console.error('[Firebase] Document query error:', err);
-        setError(err);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [query]);
-
-  return { data, loading, error };
-}
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   return useMemo(factory, deps);
