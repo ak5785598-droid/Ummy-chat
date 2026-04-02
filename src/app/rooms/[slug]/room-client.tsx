@@ -1435,62 +1435,65 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // Music control functions
+  // Music control functions - Owner only
   const handleToggleMusic = async () => {
     handleUserInteraction();
-    if (!musicAudioRef.current || !firestore || !room.id) return;
+    if (!firestore || !room.id || !room.currentMusicUrl) return;
     const audio = musicAudioRef.current;
-    
     const roomRef = doc(firestore, 'chatRooms', room.id);
     
     if (isMusicPlaying) {
-      // Pause music
-      audio.pause();
-      setIsMusicPlaying(false);
-      
-      // Update Firestore: music is paused, store current position as the new offset
+      // 1. Update Firestore first so all clients pause
       await updateDocumentNonBlocking(roomRef, { 
         isMusicPlaying: false,
-        musicStartOffset: audio.currentTime,
-        musicStartedAt: null, // Critical: clear start time when paused
+        musicStartOffset: audio?.currentTime || 0,
+        musicStartedAt: null,
         updatedAt: serverTimestamp()
       });
-      
+      // 2. Pause locally
+      audio?.pause();
+      setIsMusicPlaying(false);
       toast({ title: 'Music Paused' });
     } else {
-      // Play music
-      try {
-        await audio.play();
-        setIsMusicPlaying(true);
-        setShowMiniPlayer(true); 
-        
-        // Update Firestore: music is starting now
-        await updateDocumentNonBlocking(roomRef, { 
-          isMusicPlaying: true,
-          musicStartedAt: serverTimestamp(),
-          musicStartOffset: audio.currentTime,
-          updatedAt: serverTimestamp()
-        });
-        
-        toast({ title: 'Music Playing' });
-      } catch (err) {
-        toast({ variant: 'destructive', title: 'Playback Failed', description: 'Enable audio on your device.' });
-      }
+      // 1. Update Firestore first so all clients start playing from current position
+      const currentOffset = audio?.currentTime || 0;
+      await updateDocumentNonBlocking(roomRef, { 
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: currentOffset,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: 'Music Playing' });
     }
   };
 
-  const handleStopMusic = () => {
-    if (!musicAudioRef.current) return;
-    musicAudioRef.current.pause();
-    musicAudioRef.current.currentTime = 0;
+  const handleStopMusic = async () => {
+    const audio = musicAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = '';
+    }
     setIsMusicPlaying(false);
+    setShowMiniPlayer(false);
+    // Update Firestore so all other users also stop
+    if (firestore && room.id) {
+      await updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        isMusicPlaying: false,
+        currentMusicUrl: null,
+        currentMusicTitle: null,
+        musicStartedAt: null,
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+    }
     toast({ title: 'Music Stopped' });
   };
 
   // Periodic sync of music position removed in favor of Virtual Clock (Zero-Write Sync)
   // This saves Firestore costs and provides better accuracy.
 
-  // Track music progress
+  // Track music progress locally
   useEffect(() => {
     const audio = musicAudioRef.current;
     if (!audio) return;
@@ -1500,22 +1503,21 @@ export function RoomClient({ room }: { room: Room }) {
       setMusicDuration(audio.duration || 0);
       setMusicProgress((audio.currentTime / (audio.duration || 1)) * 100);
     };
+    const onPlay = () => { setIsMusicPlaying(true); setShowMiniPlayer(true); };
+    const onPause = () => setIsMusicPlaying(false);
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('loadedmetadata', updateProgress);
-    audio.addEventListener('play', () => {
-      setIsMusicPlaying(true);
-      setShowMiniPlayer(true); // Auto-show mini player when music plays
-    });
-    audio.addEventListener('pause', () => setIsMusicPlaying(false));
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
 
     return () => {
       audio.removeEventListener('timeupdate', updateProgress);
       audio.removeEventListener('loadedmetadata', updateProgress);
-      audio.removeEventListener('play', () => setIsMusicPlaying(true));
-      audio.removeEventListener('pause', () => setIsMusicPlaying(false));
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
     };
-  }, [room?.currentMusicUrl]);
+  }, []);
 
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
