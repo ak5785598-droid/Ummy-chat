@@ -45,7 +45,8 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   let isMounted = true;
 
   const init = async () => {
-   if (!clientRef.current) {
+    if (isMounted) setIsReady(false);
+    if (!clientRef.current) {
     clientRef.current = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
    }
 
@@ -129,23 +130,27 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     // Guard against double-publish
     if (localAudioTrack || isPublishingRef.current) return;
     
-    // Double-check client is actually joined
-    if (client.connectionState !== 'CONNECTED') {
-      console.warn('[Agora] Mic: Client not connected yet, skipping publish');
-      return;
-    }
+     // DEEP GUARD: Ensure UID is assigned and state is CONNECTED
+     if (!client.uid || client.connectionState !== 'CONNECTED') {
+       console.warn('[Agora] Mic: Not fully joined yet, waiting for connection...');
+       // Small recursive retry if we are still connecting
+       if (client.connectionState === 'CONNECTING') {
+         setTimeout(handleMic, 500);
+       }
+       return;
+     }
 
-    isPublishingRef.current = true;
-    try {
-     const track = await AgoraRTC.createMicrophoneAudioTrack({
-      AEC: true,
-      AGC: true,
-      ANS: true,
-      encoderConfig: 'high_quality_stereo'
-     });
-     await client.publish(track);
-     setLocalAudioTrack(track);
-     console.warn('[Agora] Mic PUBLISHED');
+     isPublishingRef.current = true;
+     try {
+      const track = await AgoraRTC.createMicrophoneAudioTrack({
+       AEC: true,
+       AGC: true,
+       ANS: true,
+       encoderConfig: 'high_quality_stereo'
+      });
+      await client.publish(track);
+      setLocalAudioTrack(track);
+      console.warn('[Agora] Mic PUBLISHED (UID:', client.uid, ')');
     } catch (err) {
      console.error('[Agora] Mic PUBLISH FAILED:', err);
     } finally {
