@@ -1347,17 +1347,22 @@ export function RoomClient({ room }: { room: Room }) {
         if (!musicAudioRef.current) return;
         
         try {
-          // @ts-ignore
-          const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+          // Create a new stream from the audio element
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const source = audioContext.createMediaElementSource(musicAudioRef.current);
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(destination);
+          
+          const stream = destination.stream;
           
           if (stream && stream.getAudioTracks().length > 0) {
-            console.log('[MusicBroadcast] Captured audio stream, sending to Agora...');
+            console.log('[MusicBroadcast] Created audio stream from audio element, sending to Agora...');
             setMusicStream(stream);
           } else {
-            console.warn('[MusicBroadcast] Stream captured but no audio tracks found');
+            console.warn('[MusicBroadcast] Failed to create audio stream');
           }
         } catch (err) {
-          console.error('[MusicBroadcast] Failed to capture stream:', err);
+          console.error('[MusicBroadcast] Failed to create stream:', err);
         }
       };
 
