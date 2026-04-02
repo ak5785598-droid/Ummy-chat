@@ -1377,17 +1377,18 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicUpdatedBy, currentUser?.uid]);
 
   // ADVANCED SYNC: Listen for music changes and apply Virtual Clock
-
+  useEffect(() => {
     if (!room?.currentMusicUrl || !musicAudioRef.current) return;
     const audio = musicAudioRef.current;
     const roomIsPlaying = room.isMusicPlaying || false;
     const targetUrl = room.currentMusicUrl;
     
     // Calculate target position using Virtual Clock
-    let targetTime = room.musicStartOffset || 0;
-    if (roomIsPlaying && room.musicStartedAt) {
+    let targetTime = (room as any).musicStartOffset || 0;
+    if (roomIsPlaying && (room as any).musicStartedAt) {
       const now = Date.now();
-      const startedAt = room.musicStartedAt.toMillis?.() || (room.musicStartedAt.seconds * 1000) || now;
+      const started = (room as any).musicStartedAt;
+      const startedAt = started?.toMillis?.() || (started?.seconds ? started.seconds * 1000 : now);
       targetTime += (now - startedAt) / 1000;
     }
 
@@ -1400,22 +1401,17 @@ export function RoomClient({ room }: { room: Room }) {
       // Wait for metadata before seeking
       pendingSeekTime.current = targetTime;
     } else {
-      // Track already loaded, calculate target time
+      // Track already loaded, apply drift correction
       const drift = Math.abs(audio.currentTime - targetTime);
       
       if (roomIsPlaying) {
         if (drift > 1.5 || audio.paused) {
-          console.warn('[Sync] Correcting drift/state:', drift.toFixed(2), 'Playing:', roomIsPlaying);
+          console.warn('[Sync] Correcting drift/state:', drift.toFixed(2));
           audio.currentTime = targetTime;
-          try {
-            audio.play().then(() => setIsMusicPlaying(true)).catch(e => {
-              console.warn('[Sync] Auto-play blocked:', e.name);
-              setIsMusicPlaying(false);
-            });
-          } catch (e: any) {
+          audio.play().then(() => setIsMusicPlaying(true)).catch(e => {
             console.warn('[Sync] Auto-play blocked:', e.name);
             setIsMusicPlaying(false);
-          }
+          });
         }
       } else {
         if (!audio.paused) {
