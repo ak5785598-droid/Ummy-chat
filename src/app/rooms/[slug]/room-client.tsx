@@ -1963,7 +1963,9 @@ export function RoomClient({ room }: { room: Room }) {
                         <div className="w-1.5 h-4 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.5s' }} />
                         <div className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '0.6s' }} />
                       </div>
-                      <span className="text-xs font-medium ml-1">Playing</span>
+                      <span className="text-xs font-medium ml-1">
+                        {currentUserParticipant?.isMuted ? 'Playing (Muted)' : 'Playing'}
+                      </span>
                     </>
                   ) : (
                     <span className="text-xs font-medium">Paused</span>
@@ -2042,19 +2044,13 @@ export function RoomClient({ room }: { room: Room }) {
             "bg-cyan-500/20 border-cyan-400/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-400/20">
-            <Music className="h-6 w-6" />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-cyan-400/20">
+            <Music className="h-4 w-4" />
           </div>
         </button>
       )}
 
-      {/* DEBUG: Always show music indicator when room has music */}
-      {room.currentMusicUrl && (
-        <div className="fixed top-20 left-4 bg-red-500 text-white p-2 rounded text-xs z-50">
-          🎵 MUSIC: {room.isMusicPlaying ? 'PLAYING' : 'PAUSED'} | Mini: {showMiniPlayer ? 'SHOW' : 'HIDDEN'}
-        </div>
-      )}
-
+      
       {/* ROCKET BUTTON - Floating at bottom right */}
       <button
         onClick={() => setIsRocketOpen(true)}
