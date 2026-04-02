@@ -1340,11 +1340,9 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
-    // Only the user who "owns" the music session should broadcast the stream
-    // to avoid multiple users broadcasting the same audio (echo)
-    const isMusicOwner = room.musicUpdatedBy === currentUser?.uid;
-    
-    if (isMusicOwner) {
+    // All users should broadcast music to ensure everyone hears it
+    // Multiple users broadcasting is fine - Agora will handle it
+    if (room.isMusicPlaying) {
       const captureAndSendStream = () => {
         if (!musicAudioRef.current) return;
         
