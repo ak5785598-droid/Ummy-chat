@@ -252,6 +252,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
+  const hasResetRocketRef = useRef(false);
 
   const [sessionJoinTime] = useState(() => new Date());
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -819,7 +820,8 @@ export function RoomClient({ room }: { room: Room }) {
     const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
     const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
     
-    if (hoursSinceReset >= 24) {
+    if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
+      hasResetRocketRef.current = true;
       console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.progress': 0,
@@ -1588,6 +1590,12 @@ export function RoomClient({ room }: { room: Room }) {
     return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
   }, [room.maxActiveMics]);
 
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-black overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5">
       <DailyRewardDialog />
@@ -1597,7 +1605,7 @@ export function RoomClient({ room }: { room: Room }) {
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-            <RocketDialog
+      <RocketDialog
         open={isRocketOpen}
         onOpenChange={setIsRocketOpen}
         totalGifts={room.stats?.totalGifts || 0}
