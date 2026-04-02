@@ -27,8 +27,8 @@ const GIFTS: Record<string, any[]> = {
   { id: 'chocolate_box', name: 'Choco Box', price: 30000, icon: '🍫', animationId: 'chocolate-box' },
   { id: 'money_gun', name: 'Money Gun', price: 70000, icon: '🔫', animationId: 'money-gun' },
   { id: 'watch', name: 'Watch', price: 999999, icon: '⌚', animationId: 'watch' },
-  { id: 'birthday_cake', name: 'Birthday Cake', price: 109000, icon: '🎂', animationId: 'birthday-cake' },
-  { id: 'microphone', name: 'Microphone', price: 100, icon: '🎤', animationId: 'microphone' },
+  { id: 'birthday_cake', name: 'Cake', price: 109000, icon: '🎂', animationId: 'birthday-cake' },
+  { id: 'microphone', name: 'Mic', price: 100, icon: '🎤', animationId: 'microphone' },
   { id: 'popcorn', name: 'Popcorn', price: 120, icon: '🍿', animationId: 'popcorn' },
  ],
  'Lucky': [
@@ -45,13 +45,16 @@ const GIFTS: Record<string, any[]> = {
   { id: 'trophy', name: 'Trophy', price: 90000, icon: '🏆', animationId: 'trophy', isPremium: true },
   { id: 'yacht', name: 'Yacht', price: 250000, icon: '🛥️', animationId: 'yacht', isPremium: true },
   { id: 'mansion', name: 'Mansion', price: 350000, icon: '🏡', animationId: 'mansion', isPremium: true },
-  { id: 'helicopter', name: 'Helicopter', price: 220000, icon: '🚁', animationId: 'helicopter', isPremium: true },
+  { id: 'helicopter', name: 'Heli', price: 220000, icon: '🚁', animationId: 'helicopter', isPremium: true },
  ],
  'Flag': [
   { id: 'flag_india', name: 'India', price: 50000, icon: '🇮🇳', animationId: 'flag-india' },
   { id: 'flag_pakistan', name: 'Pakistan', price: 50000, icon: '🇵🇰', animationId: 'flag-pakistan' },
-  { id: 'dragon', name: 'Dragon', price: 4500000, icon: '🐉', animationId: 'dragon' },
-  { id: 'unicorn', name: 'Unicorn', price: 5500000, icon: '🦄', animationId: 'unicorn' },
+  { id: 'flag_bangladesh', name: 'Bangladesh', price: 50000, icon: '🇧🇩', animationId: 'flag-bangladesh' },
+  { id: 'flag_america', name: 'USA', price: 50000, icon: '🇺🇸', animationId: 'flag-america' },
+  { id: 'flag_canada', name: 'Canada', price: 50000, icon: '🇨🇦', animationId: 'flag-canada' },
+  { id: 'flag_china', name: 'China', price: 50000, icon: '🇨🇳', animationId: 'flag-china' },
+  { id: 'flag_philippines', name: 'Philippines', price: 50000, icon: '🇵🇭', animationId: 'flag-philippines' },
  ],
  'Events': [
   { id: 'eid_mubarak', name: 'Eid Mubarak', price: 150000, icon: '🕌', animationId: 'eid-mubarak' },
@@ -69,10 +72,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [quantity, setQuantity] = useState('1');
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
- const [showGiftCard, setShowGiftCard] = useState(false);
- const [lastSentData, setLastSentData] = useState<any>(null);
+ const [notifications, setNotifications] = useState<any[]>([]);
 
- // --- COMBO STATES ---
+ // Combo States
  const [showCombo, setShowCombo] = useState(false);
  const [comboCount, setComboCount] = useState(0);
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,23 +97,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   const totalCost = selectedGift.price * qty * selectedUids.length;
   
   if ((userProfile.wallet?.coins || 0) < totalCost) return;
-
   if (!isComboTrigger) setIsSending(true);
 
   try {
    const batch = writeBatch(firestore);
    const senderRef = doc(firestore, 'users', user.uid);
-   const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-
-   batch.update(senderRef, { 'wallet.coins': increment(-totalCost), 'wallet.totalSpent': increment(totalCost), updatedAt: serverTimestamp() });
-   batch.update(senderProfileRef, { 'wallet.coins': increment(-totalCost), 'wallet.totalSpent': increment(totalCost), updatedAt: serverTimestamp() });
+   batch.update(senderRef, { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() });
 
    selectedUids.forEach(uid => {
-     const diamondYield = Math.floor(selectedGift.price * qty * 0.4);
      const recRef = doc(firestore, 'users', uid);
-     const recProfRef = doc(firestore, 'users', uid, 'profile', uid);
-     batch.update(recRef, { 'wallet.diamonds': increment(diamondYield), updatedAt: serverTimestamp() });
-     batch.update(recProfRef, { 'wallet.diamonds': increment(diamondYield), updatedAt: serverTimestamp() });
+     batch.update(recRef, { 'wallet.diamonds': increment(Math.floor(totalCost * 0.4)), updatedAt: serverTimestamp() });
    });
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
@@ -120,103 +115,92 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     senderId: user.uid,
     senderName: userProfile.username,
     giftId: selectedGift.animationId,
-    text: `sent ${selectedGift.name} x${qty}`,
+    text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty}`,
     timestamp: serverTimestamp()
    });
 
    await batch.commit();
 
-   // --- SHOW NOTIFICATION CARD ---
-   setLastSentData({ name: userProfile.username, avatar: userProfile.avatarUrl, icon: selectedGift.icon, qty: isComboTrigger ? (comboCount + 1) : qty });
-   setShowGiftCard(true);
-   setTimeout(() => setShowGiftCard(false), 3000);
+   const newId = Date.now();
+   const newNotif = {
+     id: newId,
+     name: userProfile.username,
+     avatar: userProfile.avatarUrl,
+     icon: selectedGift.icon,
+     qty: isComboTrigger ? (comboCount + 1) : qty
+   };
+   setNotifications(prev => [newNotif, ...prev].slice(0, 4));
+   setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== newId)), 3000);
 
-   // --- HANDLE COMBO LOGIC ---
    setComboCount(prev => prev + 1);
    setShowCombo(true);
-   
    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-   comboTimerRef.current = setTimeout(() => {
-     setShowCombo(false);
-     setComboCount(0);
-   }, 3000); // Combo expires in 3s
+   comboTimerRef.current = setTimeout(() => { setShowCombo(false); setComboCount(0); }, 3000);
 
    if (!isComboTrigger) onOpenChange(false);
-  } catch (e) {
-   console.error(e);
-  } finally {
-   setIsSending(false);
-  }
+  } catch (e) { console.error(e); } finally { setIsSending(false); }
  };
 
  return (
   <>
-   {/* --- SIDE GIFT SHINING CARD --- */}
-   <AnimatePresence>
-    {showGiftCard && lastSentData && (
-     <motion.div initial={{ x: -200, opacity: 0 }} animate={{ x: 20, opacity: 1 }} exit={{ x: -200, opacity: 0 }}
-      className="fixed left-4 top-1/4 z-[100] flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-[0_0_30px_rgba(59,130,246,0.6)]">
-      <Avatar className="h-11 w-11 border-2 border-white/80 shadow-md"><AvatarImage src={lastSentData.avatar} /></Avatar>
-      <div className="flex flex-col">
-       <span className="text-[10px] text-blue-100 font-bold uppercase tracking-wider">Gift Sent</span>
-       <span className="text-sm font-black text-white truncate max-w-[90px] drop-shadow-sm">{lastSentData.name}</span>
-      </div>
-      <div className="ml-2 text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
-       x{lastSentData.qty}
-      </div>
-     </motion.div>
-    )}
-   </AnimatePresence>
-
-   {/* --- COMBO BUTTON (Right Side Bottom) --- */}
-   <AnimatePresence>
-    {showCombo && selectedGift && (
-     <motion.div 
-      initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
-      className="fixed bottom-[120px] right-6 z-[500]"
-     >
-      <button 
-       onClick={() => handleSend(true)}
-       className="relative group flex items-center justify-center h-20 w-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full border-4 border-white/30 shadow-[0_0_40px_rgba(34,211,238,0.6)] active:scale-90 transition-all"
-      >
-       <div className="absolute -inset-2 bg-cyan-400/20 rounded-full animate-ping" />
-       <div className="flex flex-col items-center">
-        <Zap className="h-6 w-6 text-white fill-white animate-bounce" />
-        <span className="text-xl font-black text-white italic drop-shadow-md">{comboCount}x</span>
+   {/* Side Notification Stack */}
+   <div className="fixed left-4 top-1/4 z-[500] flex flex-col gap-3 pointer-events-none">
+    <AnimatePresence>
+     {notifications.map((notif) => (
+      <motion.div key={notif.id} initial={{ x: -200, opacity: 0 }} animate={{ x: 20, opacity: 1 }} exit={{ x: -200, opacity: 0 }}
+       className="flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-lg">
+       <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={notif.avatar} /></Avatar>
+       <div className="flex flex-col text-white">
+        <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">Gift Sent</span>
+        <span className="text-sm font-black truncate max-w-[90px]">{notif.name}</span>
        </div>
-       <span className="absolute -bottom-6 text-[10px] font-black text-cyan-400 tracking-widest uppercase">Combo</span>
+       <div className="ml-2 text-2xl font-black italic text-yellow-400">x{notif.qty}</div>
+      </motion.div>
+     ))}
+    </AnimatePresence>
+   </div>
+
+   {/* Combo Button */}
+   <AnimatePresence>
+    {showCombo && (
+     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="fixed bottom-40 right-6 z-[500]">
+      <button onClick={() => handleSend(true)} className="h-20 w-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full border-4 border-white/30 shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-all">
+       <Zap className="h-6 w-6 text-white fill-white animate-bounce" />
+       <span className="text-xl font-black text-white italic">{comboCount}x</span>
+       <span className="text-[8px] font-black text-white/80 uppercase">Combo</span>
       </button>
      </motion.div>
     )}
    </AnimatePresence>
 
    <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="sm:max-w-[420px] bg-[#0b0e14]/98 backdrop-blur-3xl border-t border-white/10 p-0 rounded-t-[40px] overflow-hidden text-white shadow-2xl">
-     
-     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar pt-6">
-      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any) => p.uid))} className={cn("h-12 w-12 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10")}>ALL</button>
+    <DialogContent className="max-w-md w-[95%] bg-[#0b0e14]/98 border border-white/10 p-0 rounded-[24px] overflow-hidden text-white shadow-2xl">
+     {/* Recipient Selection */}
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-bold shrink-0", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
         {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 text-black rounded-full p-0.5" />}
        </button>
       ))}
      </div>
 
-     <Tabs defaultValue="Hot" className="w-full">
-      <TabsList className="mx-4 bg-white/5 p-1 rounded-full border border-white/5 flex justify-between">
+     {/* Tabs & Grid */}
+     <Tabs defaultValue="Hot" className="w-full mt-2">
+      <TabsList className="mx-4 bg-white/5 p-1 rounded-full flex justify-between">
        {['Hot', 'Lucky', 'Luxury', 'Flag', 'Events'].map(id => (
-        <TabsTrigger key={id} value={id} className="text-[10px] font-black px-4 py-1.5 rounded-full text-white/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white transition-all">{id}</TabsTrigger>
+        <TabsTrigger key={id} value={id} className="text-[10px] font-black px-4 py-1.5 rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 transition-all">{id}</TabsTrigger>
        ))}
       </TabsList>
-
-      <div className="h-[320px] overflow-y-auto no-scrollbar p-4 mt-2">
+      
+      <div className="h-[280px] overflow-y-auto no-scrollbar p-4">
        {Object.entries(GIFTS).map(([cat, items]) => (
         <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0">
          {items.map(gift => (
           <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center p-2 rounded-2xl border transition-all", selectedGift?.id === gift.id ? "bg-white/10 border-cyan-400/50 shadow-inner" : "border-transparent")}>
-           <div className="text-4xl mb-1 drop-shadow-md">{gift.icon}</div>
-           <span className="text-[9px] font-bold text-white/80 truncate w-full text-center">{gift.name}</span>
+           <div className="text-4xl mb-1">{gift.icon}</div>
+           <span className="text-[9px] font-bold opacity-80 truncate w-full text-center">{gift.name}</span>
            <div className="flex items-center gap-1 mt-1">
             <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
             <span className="text-[10px] text-yellow-400 font-black">{gift.price.toLocaleString()}</span>
@@ -228,18 +212,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       </div>
      </Tabs>
 
+     {/* Footer */}
      <div className="p-4 bg-black/40 flex items-center justify-between border-t border-white/5">
       <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
        <GoldCoinIcon className="h-4 w-4" /><span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <div className="flex items-center gap-2">
        <Select value={quantity} onValueChange={setQuantity}>
-        <SelectTrigger className="w-16 h-10 bg-white/5 border-none rounded-xl font-bold text-cyan-400"><SelectValue /></SelectTrigger>
-        <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1', '10', '99', '520', '1314'].map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+         <SelectTrigger className="w-16 h-10 bg-white/5 border-none rounded-xl text-cyan-400 font-bold"><SelectValue /></SelectTrigger>
+         <SelectContent className="bg-[#151921] text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
        <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
-        className={cn("h-10 px-8 rounded-full font-black text-xs transition-all uppercase tracking-tighter", !selectedGift ? "bg-white/5 text-white/20" : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/30 active:scale-95")}>
-        {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
+         className="h-10 px-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-20 transition-all uppercase">
+         {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
      </div>
@@ -248,4 +233,3 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   </>
  );
 }
-   }
