@@ -940,8 +940,19 @@ export function RoomClient({ room }: { room: Room }) {
           if (username && isAdminAction) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
-              handleKick(target.uid, 60);
-              toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
+              // Check if AI command can kick this user (follow same hierarchy)
+              const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+              const targetIsRoomOwner = target.uid === room.ownerId;
+              const targetIsAppCreator = target.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+              
+              if (targetIsAppCreator) {
+                toast({ variant: 'destructive', title: 'Permission Denied', description: 'App Creator cannot be kicked!' });
+              } else if (targetIsRoomOwner && !isAppCreator) {
+                toast({ variant: 'destructive', title: 'Permission Denied', description: 'Room Owner cannot be kicked by Admins!' });
+              } else {
+                handleKick(target.uid, 60);
+                toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
+              }
             }
           }
         } else if (upperResponse.includes('[CMD:LOCK:')) {
@@ -1215,11 +1226,40 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleKick = (uid: string, duration: number) => {
-    if (!firestore || !room.id) return;
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    
+    // PERMISSION HIERARCHY CHECK
+    const targetUser = participants.find(p => p.uid === uid);
+    const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    const isRoomOwner = currentUser?.uid === room.ownerId;
+    const targetIsRoomOwner = uid === room.ownerId;
+    const targetIsAppCreator = uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    
+    // RULES:
+    // 1. App Creator cannot be kicked by anyone
+    // 2. Room Owner cannot be kicked by Admins (only App Creator can kick Room Owner)
+    // 3. Admins can kick normal users
+    // 4. Room Owner can kick normal users and Admins (but not other Room Owners)
+    
+    if (targetIsAppCreator) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'App Creator cannot be kicked!' });
+      return;
+    }
+    
+    if (targetIsRoomOwner && !isAppCreator) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'Room Owner cannot be kicked by Admins!' });
+      return;
+    }
+    
+    if (!isRoomOwner && !isAppCreator && !room.moderatorIds?.includes(currentUser.uid)) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only Admins and Room Owner can kick users!' });
+      return;
+    }
+    
     const expires = new Date(Date.now() + duration * 60000);
     setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'bans', uid), { expiresAt: Timestamp.fromDate(expires) }, { merge: true });
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
-    toast({ title: 'Member Excluded', description: `Restricted for ${duration} minutes.` });
+    toast({ title: 'Member Excluded', description: `${targetUser?.name || 'User'} restricted for ${duration} minutes.` });
     setIsUserProfileCardOpen(false);
     setIsSeatMenuOpen(false);
   };
