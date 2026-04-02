@@ -3,10 +3,46 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
-import { Ghost, Star, Sparkles, Trophy, Zap, Heart, Plus, Crown, Home, Gamepad2, Users, Loader, ArrowRight, LayoutGrid, Shield } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, orderBy, doc, where } from 'firebase/firestore';
+import { 
+  useUser, 
+  useCollection, 
+  useMemoFirebase, 
+  useFirestore, 
+  useDoc,
+  updateDocumentNonBlocking
+} from '@/firebase';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  where, 
+  doc, 
+  limit, 
+  increment 
+} from 'firebase/firestore';
+import { 
+  Search, 
+  MessageSquare, 
+  Plus, 
+  Flame, 
+  Users, 
+  Shield, 
+  Crown, 
+  Trophy, 
+  Settings, 
+  Heart,
+  Ghost,
+  Loader,
+  Sparkles,
+  CheckCircle2,
+  Home,
+  Gamepad2,
+  ArrowRight,
+  LayoutGrid,
+  Zap,
+  Star
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +57,10 @@ import { CreateRoomDialog } from '@/components/create-room-dialog';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 import { RankingCard, FamilyCard, CpCard } from '@/components/premium-feature-cards';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { useQuestInitializer } from '@/hooks/use-quest-initializer';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import { VipBadge } from '@/components/vip-badge';
 import { GoldCoinIcon } from '@/components/icons';
 
@@ -47,16 +87,24 @@ const RoomSkeleton = () => (
 export default function RoomsPage() {
  const { user } = useUser();
  const firestore = useFirestore();
+ const { userProfile: userDoc, isLoading: isUserLoading } = useUserProfile(user?.uid);
+ const { toast } = useToast();
  const router = useRouter();
  const { t } = useTranslation();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
 
+ // ⚡ DAILY QUEST INITIALIZER: High-Fidelity Reset logic
+ useQuestInitializer();
 
+ const questsQuery = useMemoFirebase(() => {
+   if (!firestore || !user?.uid) return null;
+   return collection(firestore, 'users', user.uid, 'quests');
+ }, [firestore, user?.uid]);
 
+ const { data: questsData, isLoading: isQuestsLoading } = useCollection(questsQuery);
 
  const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
- const { data: userDoc } = useDoc(userRef);
 
  const CATEGORIES = [
   { id: "All", label: t.home.categories.all },
@@ -336,38 +384,92 @@ export default function RoomsPage() {
           </div>
         </section>
 
-        {/* Daily Missions */}
+        {/* Daily Missions - Live Dynamic Synergy */}
         <section className="mb-6">
           <div className="flex items-center justify-between mb-4 px-1">
             <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-yellow-500" /> Daily Missions
+              <Trophy className="h-4 w-4 text-primary" /> Daily Missions
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Resets in 8h</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Resets in 24h</span>
           </div>
+          
           <div className="space-y-3">
-            {[
-              { id: '1', title: 'Daily Check-in', sub: 'Claim 5k coins', icon: Shield, progress: 100, color: 'bg-blue-500' },
-              { id: '2', title: 'Gift Master', sub: 'Send 3 Lucky gifts', icon: Sparkles, progress: 33, color: 'bg-pink-500' },
-              { id: '3', title: 'Social Star', sub: 'Stay 20m in voice', icon: Users, progress: 60, color: 'bg-emerald-500' },
-            ].map(task => (
-              <div key={task.id} className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
-                <div className="flex items-center gap-3">
-                  <div className={cn("p-2 rounded-xl text-white shadow-lg", task.color)}>
-                    <task.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-[13px] font-black uppercase text-slate-900 leading-tight">{task.title}</h4>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">{task.sub}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[13px] font-black text-slate-900">{task.progress}%</span>
-                  </div>
-                </div>
-                <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className={cn("h-full transition-all duration-1000", task.color)} style={{ width: `${task.progress}%` }} />
-                </div>
+            {isQuestsLoading ? (
+              <div className="py-10 text-center flex flex-col items-center gap-2">
+                 <Loader className="h-6 w-6 text-primary animate-spin" />
+                 <span className="text-[8px] font-bold uppercase tracking-widest text-slate-300">Syncing Identity...</span>
               </div>
-            ))}
+            ) : questsData?.length === 0 ? (
+              <div className="py-8 text-center text-slate-300 font-bold uppercase text-[9px] tracking-widest bg-slate-50 rounded-3xl border border-dashed">
+                Preparing Daily Frequency...
+              </div>
+            ) : questsData?.map((quest: any) => {
+              const isCompleted = quest.current >= quest.target;
+              const meta: Record<string, any> = {
+                stay_15: { title: 'Loyal Resident', sub: 'Stay 15 mins', icon: Shield, color: 'bg-blue-500', reward: 500 },
+                send_gift: { title: 'Gift Master', sub: 'Send 1 gift', icon: Sparkles, color: 'bg-pink-500', reward: 1000 },
+                win_game: { title: 'Game Master', sub: 'Win 1 game', icon: Trophy, color: 'bg-yellow-500', reward: 2000 }
+              };
+              const currentMeta = meta[quest.id] || { title: quest.id, sub: 'Daily task', icon: Trophy, color: 'bg-slate-500', reward: 100 };
+
+              const handleClaim = async () => {
+                if (!firestore || !user?.uid) return;
+                try {
+                  const questRef = doc(firestore, 'users', user.uid, 'quests', quest.id);
+                  const userRef = doc(firestore, 'users', user.uid);
+                  await updateDocumentNonBlocking(questRef, { isClaimed: true });
+                  await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(currentMeta.reward) });
+                  toast({
+                    title: 'Reward Claimed!',
+                    description: `Received ${currentMeta.reward.toLocaleString()} Gold Coins`,
+                  });
+                } catch (e) {
+                  toast({ variant: 'destructive', title: 'Claim Failed' });
+                }
+              };
+
+              return (
+                <div key={quest.id} className={cn(
+                  "p-4 rounded-[1.8rem] border shadow-sm transition-all duration-300",
+                  isCompleted ? "bg-primary/5 border-primary/20 scale-[0.98]" : "bg-white border-slate-100"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center text-white shadow-md", currentMeta.color)}>
+                      <currentMeta.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-[11px] font-black uppercase text-slate-800 tracking-tight">{currentMeta.title}</h4>
+                        <div className="flex items-center gap-1">
+                          <GoldCoinIcon className="h-2.5 w-2.5" />
+                          <span className="text-[10px] font-black text-slate-700">+{currentMeta.reward}</span>
+                        </div>
+                      </div>
+                      <Progress value={Math.min((quest.current / quest.target) * 100, 100)} className="h-1.5 bg-slate-100" />
+                      <div className="flex justify-between items-center mt-1.5">
+                         <span className="text-[9px] font-bold text-slate-400 uppercase">{currentMeta.sub}</span>
+                         <span className="text-[10px] font-black text-slate-900 tracking-tighter">{quest.current}/{quest.target}</span>
+                      </div>
+                    </div>
+                    
+                    {isCompleted && !quest.isClaimed && (
+                      <button 
+                        onClick={handleClaim}
+                        className="ml-2 px-4 py-2 bg-primary text-black font-black uppercase text-[10px] rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                      >
+                        Claim
+                      </button>
+                    )}
+
+                    {quest.isClaimed && (
+                      <div className="ml-2 h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 

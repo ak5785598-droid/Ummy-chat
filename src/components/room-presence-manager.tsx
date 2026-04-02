@@ -21,6 +21,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
   const hasJoinedRef = useRef<boolean>(false);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const cleanupInterval = useRef<NodeJS.Timeout | null>(null);
+  const stayTimeRef = useRef<number>(0);
+  const hasStayAwarded = useRef<boolean>(false);
 
   const userMetadata = useMemo(() => ({
    username: userProfile?.username,
@@ -102,6 +104,17 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
     heartbeatInterval.current = setInterval(() => {
      setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
+     
+     // ⚡ QUEST TRACKING: Stay 15 Mins
+     if (!hasStayAwarded.current) {
+       stayTimeRef.current += 10;
+       if (stayTimeRef.current >= 900) { // 15 minutes
+         console.log('[Missions] Stay time reached! Awarding progress...');
+         const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
+         updateDocumentNonBlocking(questRef, { current: increment(15) });
+         hasStayAwarded.current = true;
+       }
+     }
     }, 10000);
 
     // CLEANUP: Admin-only task to purge stale sessions

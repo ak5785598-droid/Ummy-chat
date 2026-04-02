@@ -26,8 +26,14 @@ import { FirestorePermissionError } from '@/firebase/errors';
  * Perfectly mirrored from the provided blueprint screenshot.
  * Features full-screen navigation sync and User/Room frequency separation.
  */
-export function UserSearchDialog() {
- const [open, setOpen] = useState(false);
+interface UserSearchDialogProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSelect?: (user: any) => void;
+}
+
+export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialogProps) {
+ const [internalOpen, setInternalOpen] = useState(false);
  const [searchId, setSearchId] = useState('');
  const [isSearching, setIsSearching] = useState(false);
  const [activeTab, setActiveTab] = useState('user');
@@ -35,6 +41,12 @@ export function UserSearchDialog() {
  const router = useRouter();
  const firestore = useFirestore();
  const { toast } = useToast();
+
+ const open = isOpen !== undefined ? isOpen : internalOpen;
+ const setOpen = (val: boolean) => {
+   if (onClose && !val) onClose();
+   setInternalOpen(val);
+ };
 
  // LIVE SEARCH SYNC: Debounced frequency lookup
  useEffect(() => {
@@ -81,32 +93,43 @@ export function UserSearchDialog() {
   return () => clearTimeout(timer);
  }, [searchId, activeTab, firestore]);
 
- const navigateToResult = () => {
-  if (!result) return;
-  if (result.type === 'user') {
-   router.push(`/profile/${result.id}`);
-  } else {
-   router.push(`/rooms/${result.id}`);
-  }
-  setOpen(false);
-  setSearchId('');
-  setResult(null);
- };
+  const navigateToResult = () => {
+   if (!result) return;
+   
+   if (onSelect) {
+     onSelect(result);
+     setOpen(false);
+     setSearchId('');
+     setResult(null);
+     return;
+   }
 
- const handleClose = (val: boolean) => {
-  if (!val) {
+   if (result.type === 'user') {
+    router.push(`/profile/${result.id}`);
+   } else {
+    router.push(`/rooms/${result.id}`);
+   }
+   setOpen(false);
    setSearchId('');
-  }
-  setOpen(val);
- };
+   setResult(null);
+  };
+
+  const handleClose = (val: boolean) => {
+   if (!val) {
+    setSearchId('');
+   }
+   setOpen(val);
+  };
 
  return (
   <Dialog open={open} onOpenChange={handleClose}>
-   <DialogTrigger asChild>
-    <button className="p-1 hover:scale-110 active:scale-90 transition-all">
-     <Search className="h-6 w-6 text-gray-800" />
-    </button>
-   </DialogTrigger>
+    {isOpen === undefined && (
+      <DialogTrigger asChild>
+       <button className="p-1 hover:scale-110 active:scale-90 transition-all">
+        <Search className="h-6 w-6 text-gray-800" />
+       </button>
+      </DialogTrigger>
+    )}
    <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans animate-in slide-in-from-right duration-300">
     <DialogHeader className="sr-only">
      <DialogTitle>Tribe Search</DialogTitle>
