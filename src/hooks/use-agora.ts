@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 
-const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || 'b3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8'; // Fallback App ID
 
 // Dynamic import of Agora to prevent SSR window errors
 let AgoraRTC: any = null;
