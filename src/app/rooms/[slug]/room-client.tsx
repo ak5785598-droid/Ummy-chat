@@ -1898,8 +1898,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </main>
 
-      {/* MINI MUSIC PLAYER - Wafa Style - Only show when music is actually playing */}
-      {room.currentMusicUrl && room.isMusicPlaying && showMiniPlayer && (
+      {/* MINI MUSIC PLAYER - Wafa Style - Show when music is available and mini player is open */}
+      {room.currentMusicUrl && showMiniPlayer && (
         <div className="fixed bottom-[140px] left-0 right-0 z-40 px-4">
           <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
             {/* Song Title */}
