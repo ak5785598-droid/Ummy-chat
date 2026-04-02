@@ -117,7 +117,6 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
-import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
@@ -198,8 +197,15 @@ const Seat = memo(({
             </button>
           </div>
         </AvatarFrame>
-        {occupant?.isMuted && <div className="absolute -bottom-1 -right-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
-        {isSeatMuted && !occupant?.isMuted && <div className="absolute -bottom-1 -left-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg animate-pulse"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
+        {/* Seat Mute / User Mute Badge - Small Red Button Style */}
+        {(occupant?.isMuted || isSeatMuted) && (
+          <div className={cn(
+            "absolute -bottom-1 -right-1 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-xl",
+            isSeatMuted ? "bg-red-600 animate-pulse" : "bg-red-500"
+          )}>
+            <MicOff className="h-2.5 w-2.5 text-white" />
+          </div>
+        )}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
@@ -2023,16 +2029,16 @@ export function RoomClient({ room }: { room: Room }) {
       )}
 
       {/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
-      {room.currentMusicUrl && room.isMusicPlaying && !showMiniPlayer && (
+      {room.isMusicPlaying && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-64 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
-            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+            "fixed right-4 bottom-64 z-40 p-2.5 rounded-2xl transition-all active:scale-90 shadow-2xl border-2 animate-bounce-slow",
+            "bg-cyan-500/20 border-cyan-400/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20">
-            <Music className="h-5 w-5" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-400/20">
+            <Music className="h-6 w-6" />
           </div>
         </button>
       )}
@@ -2378,11 +2384,6 @@ export function RoomClient({ room }: { room: Room }) {
         }
       `}</style>
       <MountOverlay entries={mountEntries} />
-      <RoomRocketBar 
-        progress={room.rocket?.progress || 0} 
-        target={room.rocket?.target || 10000} 
-        countdownUntil={room.rocket?.countdownUntil} 
-      />
       <LuckyRainOverlay 
         active={isLuckyRainActive} 
         onComplete={() => setIsLuckyRainActive(false)} 

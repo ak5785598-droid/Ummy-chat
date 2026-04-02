@@ -207,6 +207,7 @@ export function RoomPlayDialog({
    currentMusicTitle: video.title,
    currentMusicThumbnail: video.thumbnailUrl,
    currentMusicType: 'youtube',
+   isMusicPlaying: true,
    musicUpdatedAt: serverTimestamp(),
    musicUpdatedBy: user?.uid,
    updatedAt: serverTimestamp()
@@ -268,6 +269,7 @@ export function RoomPlayDialog({
    currentMusicTitle: track.name,
    currentMusicType: track.type || 'upload',
    currentMusicId: track.id,
+   isMusicPlaying: true,
    musicUpdatedAt: serverTimestamp(),
    musicUpdatedBy: user?.uid,
    updatedAt: serverTimestamp()
