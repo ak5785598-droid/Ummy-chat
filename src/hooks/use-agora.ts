@@ -114,30 +114,43 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
  }, [roomId, uid]);
 
  // EFFECT 2: Mic Track (PUBLISH / UNPUBLISH)
+ const isPublishingRef = useRef(false);
  useEffect(() => {
   if (!clientRef.current || !isReady || !AgoraRTC) return;
   const client = clientRef.current;
 
   const handleMic = async () => {
    if (isInSeat) {
-    if (!localAudioTrack) {
-     try {
-      const track = await AgoraRTC.createMicrophoneAudioTrack({
-       AEC: true,
-       AGC: true,
-       ANS: true,
-       encoderConfig: 'high_quality_stereo'
-      });
-      setLocalAudioTrack(track);
-      await client.publish(track);
-      console.warn('[Agora] Mic PUBLISHED');
-     } catch (err) {
-      console.error('[Agora] Mic PUBLISH FAILED:', err);
-     }
+    // Guard against double-publish
+    if (localAudioTrack || isPublishingRef.current) return;
+    
+    // Double-check client is actually joined
+    if (client.connectionState !== 'CONNECTED') {
+      console.warn('[Agora] Mic: Client not connected yet, skipping publish');
+      return;
+    }
+
+    isPublishingRef.current = true;
+    try {
+     const track = await AgoraRTC.createMicrophoneAudioTrack({
+      AEC: true,
+      AGC: true,
+      ANS: true,
+      encoderConfig: 'high_quality_stereo'
+     });
+     await client.publish(track);
+     setLocalAudioTrack(track);
+     console.warn('[Agora] Mic PUBLISHED');
+    } catch (err) {
+     console.error('[Agora] Mic PUBLISH FAILED:', err);
+    } finally {
+     isPublishingRef.current = false;
     }
    } else {
     if (localAudioTrack) {
-     await client.unpublish(localAudioTrack);
+     try {
+       await client.unpublish(localAudioTrack);
+     } catch (_) {}
      localAudioTrack.stop();
      localAudioTrack.close();
      setLocalAudioTrack(null);
@@ -147,7 +160,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   };
 
   handleMic();
- }, [isInSeat, isReady, localAudioTrack]);
+ }, [isInSeat, isReady]);
 
  // EFFECT 3: Dual-Stream Music Track (Separate Phantom Client)
  useEffect(() => {
