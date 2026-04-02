@@ -58,28 +58,24 @@ export default function LoginPage() {
   
   const activeBg = loginBg || splashBg || fallbackBg;
 
-  // Initialize Google One Tap
+  // Initialize Google One Tap - run ONCE when user is not logged in
   useEffect(() => {
     if (isUserLoading || user || !auth) return;
+    // Guard: only initialize once
+    if (typeof window === 'undefined') return;
 
     const handleOneTapResponse = async (response: any) => {
-      console.log("📥 One Tap response received");
       setIsSigningIn(true);
       try {
         const credential = GoogleAuthProvider.credential(response.credential);
         const result = await signInWithCredential(auth, credential);
         if (result.user) {
-          console.log("✅ User logged in with One Tap:", result.user);
           await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
           router.replace('/rooms');
         }
       } catch (error: any) {
-        console.error("❌ One Tap Login Error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: 'Native login failed. Please use the button below.',
-        });
+        console.error('One Tap Login Error:', error);
+        toast({ variant: 'destructive', title: 'Sign In Failed', description: 'Native login failed. Please use the button below.' });
       } finally {
         setIsSigningIn(false);
       }
@@ -87,36 +83,29 @@ export default function LoginPage() {
 
     const initializeGIS = () => {
       // @ts-ignore
-      if (window.google?.accounts?.id) {
-        console.log("🚀 Initializing Google One Tap...");
-        // @ts-ignore
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleOneTapResponse,
-          auto_select: true,
-          cancel_on_tap_outside: false,
-          itp_support: true
-        });
-
-        // @ts-ignore
-        window.google.accounts.id.prompt((notification: any) => {
-           console.log("🔔 One Tap Prompt Status:", notification.getMomentType(), notification.isNotDisplayed(), notification.getSkippedReason());
-           if (notification.isNotDisplayed() || notification.isSkipedMoment()) {
-              console.warn("⚠️ One Tap NOT displayed. Reason:", notification.getSkippedReason());
-           }
-        });
-      } else {
-        console.log("⏳ Waiting for Google GIS script...");
-      }
+      const gapi = window.google?.accounts?.id;
+      if (!gapi) return false;
+      gapi.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleOneTapResponse,
+        auto_select: false, // Don't auto-select to reduce FedCM conflicts
+        cancel_on_tap_outside: false,
+        itp_support: true
+      });
+      gapi.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment?.()) {
+          console.warn('[OneTap] Not displayed. Reason:', notification.getSkippedReason?.());
+        }
+      });
+      return true;
     };
 
-    // Try immediate
-    initializeGIS();
-    
-    // Also try after a short delay to ensure script availability
-    const timer = setTimeout(initializeGIS, 1500);
-    return () => clearTimeout(timer);
-  }, [user, isUserLoading, auth, router, toast]);
+    // Try immediately; if script not loaded yet, wait for it
+    if (!initializeGIS()) {
+      const timer = setTimeout(initializeGIS, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isUserLoading, auth]);
 
   // SILENT BAN DETECTION & REDIRECT LOGIC
   useEffect(() => {
@@ -372,25 +361,9 @@ export default function LoginPage() {
         src="https://accounts.google.com/gsi/client" 
         strategy="afterInteractive"
         onLoad={() => {
-          console.log("GIS Script Loaded");
-          // Re-trigger initialize if it loaded late
-          if (auth && !user) {
-             // @ts-ignore
-             window.google?.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: (r: any) => {
-                   const credential = GoogleAuthProvider.credential(r.credential);
-                   signInWithCredential(auth, credential).then(res => {
-                      syncUserIdentity(res.user.uid, res.user.email, res.user.displayName).then(() => {
-                         router.replace('/rooms');
-                      });
-                   });
-                },
-                auto_select: true
-             });
-             // @ts-ignore
-             window.google?.accounts.id.prompt();
-          }
+          // Script loaded - only call prompt() if already initialized via useEffect
+          // @ts-ignore
+          window.google?.accounts?.id?.prompt?.();
         }}
       />
       <div className="absolute inset-0 bg-black/40" />
