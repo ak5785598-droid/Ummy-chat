@@ -172,12 +172,8 @@ export function RoomSeatMenuDialog({
        <div />
       )}
 
-      {/* 2. Invite (Admin Only) */}
-      {canManage ? (
-       <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
-      ) : (
-       <div />
-      )}
+      {/* 2. Invite - Anyone can invite audience */}
+      <MenuItem label="Invite" icon={UserPlus} onClick={() => { onOpenChange(false); onOpenAudienceInvite?.(); }} />
 
       {/* 3. Lock/Unlock (Admin Only) */}
       {canManage ? (
@@ -229,4 +225,4 @@ export function RoomSeatMenuDialog({
    </DialogContent>
   </Dialog>
  );
-}
+}

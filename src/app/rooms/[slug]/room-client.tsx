@@ -2033,8 +2033,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-{/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
-      {room.isMusicPlaying && !showMiniPlayer && (
+{/* RIGHT SIDE FLOATING MUSIC BUTTON - Shows when room has music and mini player is hidden */}
+      {room.currentMusicUrl && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
@@ -2046,6 +2046,13 @@ export function RoomClient({ room }: { room: Room }) {
             <Music className="h-6 w-6" />
           </div>
         </button>
+      )}
+
+      {/* DEBUG: Always show music indicator when room has music */}
+      {room.currentMusicUrl && (
+        <div className="fixed top-20 left-4 bg-red-500 text-white p-2 rounded text-xs z-50">
+          🎵 MUSIC: {room.isMusicPlaying ? 'PLAYING' : 'PAUSED'} | Mini: {showMiniPlayer ? 'SHOW' : 'HIDDEN'}
+        </div>
       )}
 
       {/* ROCKET BUTTON - Floating at bottom right */}
