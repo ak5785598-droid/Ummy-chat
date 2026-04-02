@@ -75,14 +75,14 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const RoomSkeleton = () => (
-  <div className="flex flex-col gap-3 min-w-[280px] snap-center animate-pulse">
-    <div className="aspect-square w-full rounded-[2rem] bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200" />
-    <div className="space-y-2 px-1">
-      <div className="h-4 w-3/4 rounded-full bg-slate-100" />
-      <div className="h-3 w-1/2 rounded-full bg-slate-50" />
-    </div>
+  <div className="flex flex-col gap-3 min-w-[280px] snap-center">
+   <Skeleton className="aspect-square w-full rounded-2xl" />
+   <div className="space-y-1.5 px-1">
+    <Skeleton className="h-3.5 w-3/4 rounded-md" />
+    <Skeleton className="h-2.5 w-1/2 rounded-md" />
+   </div>
   </div>
-);
+ );
 
 export default function RoomsPage() {
  const { user } = useUser();
@@ -170,140 +170,93 @@ export default function RoomsPage() {
   <AppLayout>
    <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700">
     
-    <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-10 pb-3 shrink-0 bg-white/70 backdrop-blur-3xl border-b border-black/5 transition-all duration-300">
-      <div className="flex items-center justify-between w-full">
-         <div className="flex items-center gap-6">
-            <button 
-              onClick={() => setHeaderTab('recommend')} 
-              className={cn(
-                "relative text-2xl font-black uppercase tracking-tighter italic transition-all duration-500", 
-                headerTab === 'recommend' ? "text-slate-900 scale-110" : "text-slate-300 opacity-40 hover:opacity-70"
-              )}
-            >
-              Recommend
-              {headerTab === 'recommend' && <div className="absolute -bottom-1 left-0 right-0 h-1 bg-primary rounded-full animate-in slide-in-from-left duration-300" />}
-            </button>
-            <button 
-              onClick={() => setHeaderTab('me')} 
-              className={cn(
-                "relative text-2xl font-black uppercase tracking-tighter italic transition-all duration-500", 
-                headerTab === 'me' ? "text-slate-900 scale-110" : "text-slate-300 opacity-40 hover:opacity-70"
-              )}
-            >
-              Me
-              {headerTab === 'me' && <div className="absolute -bottom-1 left-0 right-0 h-1 bg-primary rounded-full animate-in slide-in-from-left duration-300" />}
-            </button>
+    <header className="flex items-center justify-between px-3 pt-safe pb-0 shrink-0">
+      <div className="pt-0.5 flex items-center justify-between w-full">
+         <div className="flex items-center gap-3">
+            <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
+            <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
          </div>
-         <div className="flex items-center gap-2">
+         <div className="flex items-center gap-1.5 text-slate-800">
             <UserSearchDialog />
-            <div className="h-8 w-px bg-black/5 mx-1" />
-            <button 
-              onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
-              className="p-2.5 bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white active:scale-90 transition-all hover:bg-white hover:shadow-2xl"
-            >
-              <Home className="h-5 w-5 text-slate-800" />
-            </button>
+            <button onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} className="p-1 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all"><Home className="h-4.5 w-4.5" /></button>
          </div>
       </div>
     </header>
 
      {headerTab === 'recommend' ? (
       <>
-        <div className="px-2.5 mb-2 mt-0">
-          <Carousel 
-            className="w-full" 
-            opts={{ loop: true }}
-            plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
-          >
-            <CarouselContent>
-              {displaySlides.map((slide: any, idx: number) => {
-               const Icon = ICON_MAP[slide.iconName] || Sparkles;
-                return (
-                 <CarouselItem key={idx}>
-                  <div 
-                    onClick={() => slide.link && router.push(slide.link)}
-                    className={cn(
-                      "h-[160px] w-full rounded-[2.5rem] bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 active:scale-[0.98] transition-all group", 
-                      slide.link ? "cursor-pointer" : "",
-                      slide.color || 'from-purple-600 to-indigo-600'
-                    )}
-                  >
-                    {slide.imageUrl && (
-                     <Image 
-                      src={slide.imageUrl} 
-                      alt="" 
-                      fill 
-                      className="object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" 
-                      unoptimized 
-                     />
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
-                    {!slide.imageUrl && (
-                      <div className="relative z-10 px-2 text-center">
-                        <div className="flex flex-col items-center gap-2 mb-2">
-                          <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/30 shadow-xl">
-                            <Icon className="h-6 w-6 text-white animate-pulse" />
-                          </div>
-                          <h3 className="text-4xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] leading-none">{slide.title}</h3>
-                        </div>
-                        <p className="text-[10px] font-black text-white/80 drop-shadow-lg uppercase tracking-[0.6em] leading-none">{slide.subtitle || slide.sub}</p>
+       <div className="px-2.5 mb-1 mt-0">
+       <Carousel 
+        className="w-full" 
+        opts={{ loop: true }}
+        plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+       >
+        <CarouselContent>
+          {displaySlides.map((slide: any, idx: number) => {
+           const Icon = ICON_MAP[slide.iconName] || Sparkles;
+            return (
+             <CarouselItem key={idx}>
+              <div 
+                onClick={() => slide.link && router.push(slide.link)}
+                className={cn(
+                  "h-[140px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", 
+                  slide.link ? "cursor-pointer" : "",
+                  slide.color || 'from-purple-600 to-indigo-600'
+                )}
+              >
+                {slide.imageUrl && (
+                 <Image 
+                  src={slide.imageUrl} 
+                  alt="" 
+                  fill 
+                  className="object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" 
+                  unoptimized 
+                 />
+                )}
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {!slide.imageUrl && (
+                  <div className="relative z-10 px-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                        <Icon className="h-5 w-5 text-white animate-pulse" />
                       </div>
-                    )}
+                      <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                    </div>
+                    <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
                   </div>
-                 </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-          </Carousel>
-        </div>
-
-        {/* Global News Ticker */}
-        <div className="px-3 mb-4">
-          <div className="bg-white/40 backdrop-blur-3xl rounded-2xl h-8 border border-white/20 flex items-center overflow-hidden shadow-sm relative">
-            <div className="absolute left-0 top-0 bottom-0 bg-slate-900 text-white px-3 flex items-center gap-2 z-10 rounded-r-xl shadow-lg">
-              <Zap className="h-3 w-3 text-yellow-400 fill-current" />
-              <span className="text-[8px] font-black uppercase tracking-widest italic">Live News</span>
-            </div>
-            <div className="flex-1 whitespace-nowrap overflow-hidden relative">
-              <div className="inline-block animate-marquee pl-[100%]">
-                <span className="text-[10px] font-bold text-slate-800 uppercase tracking-tight mx-4">Welcome to Ummy Chat! Join your favorite rooms and connect with friends.</span>
-                <span className="text-[10px] font-bold text-slate-800 uppercase tracking-tight mx-4">Don't miss the Elite Rewards event live now!</span>
-                <span className="text-[10px] font-bold text-slate-800 uppercase tracking-tight mx-4">Invite 10 friends and get exclusive 50k coin rewards.</span>
+                )}
               </div>
-            </div>
-          </div>
-        </div>
+             </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+       </Carousel>
+      </div>
 
-         <div className="px-3 mb-4">
-          <div className="bg-gradient-to-r from-[#ff0844] via-[#ffb199] to-[#ff0844] bg-[length:200%_auto] animate-gradient-slow backdrop-blur-3xl rounded-[2.5rem] p-3 border-2 border-white/20 shadow-[0_20px_50px_rgba(255,8,68,0.3)] overflow-hidden relative group h-[95px]">
+         <div className="px-3 mb-2">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[80px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center justify-between mb-2 relative z-10 px-2">
-               <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Trophy className="h-4 w-4 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
-                    <div className="absolute -top-1 -right-1 h-1.5 w-1.5 bg-yellow-400 rounded-full animate-ping" />
-                  </div>
-                  <h2 className="text-[10px] font-black uppercase text-white tracking-[0.2em] drop-shadow-md italic">Live Frequency</h2>
+            <div className="flex items-center justify-between mb-1 relative z-10 px-1">
+               <div className="flex items-center gap-1">
+                  <Trophy className="h-2.5 w-2.5 text-yellow-400 animate-bounce" />
+                  <h2 className="text-[8px] font-black uppercase text-white/90 tracking-widest">Live Frequency</h2>
                </div>
-               <button onClick={() => router.push('/rooms/all')} className="text-[9px] font-black text-white px-3 py-1 bg-white/20 rounded-full border border-white/20 uppercase backdrop-blur-md hover:bg-white/40 transition-all active:scale-95 flex items-center gap-1">
-                 Explore <ArrowRight className="h-2.5 w-2.5" />
-               </button>
+               <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
             </div>
-            <div className="h-full flex items-center gap-5 overflow-x-auto no-scrollbar pt-1 pb-1 relative z-10">
+            <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10">
                {roomsData?.slice(0, 10).map((room: any) => (
                  <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                     <div className="relative">
-                       <div className="absolute inset-0 rounded-full bg-white/20 blur-md group-hover/item:blur-lg transition-all" />
-                       <Avatar className="h-11 w-11 border-2 border-white/40 shadow-2xl relative z-10 group-hover/item:border-white group-hover/item:scale-110 transition-all">
+                       <Avatar className="h-10 w-10 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
                           <AvatarImage src={room.coverUrl} className="object-cover" />
-                          <AvatarFallback className="bg-white/20 text-white font-black text-[12px]">U</AvatarFallback>
+                          <AvatarFallback className="bg-red-900/40 text-white/40 font-black text-[10px]">U</AvatarFallback>
                        </Avatar>
-                       <div className="absolute -bottom-1 -right-1 bg-white px-2 py-0.5 rounded-full border-2 border-[#ff0844] flex items-center gap-1 shadow-lg z-20">
-                          <div className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />
-                          <span className="text-[8px] font-black text-[#ff0844]">{room.participantCount || 0}</span>
+                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 px-1.5 py-0.5 rounded-full border border-white/20 flex items-center gap-0.5 shadow-xl">
+                          <div className="h-1 w-1 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
+                          <span className="text-[7px] font-black text-white">{room.participantCount || 0}</span>
                        </div>
                     </div>
-                    <span className="text-[9px] font-black text-white uppercase tracking-tighter truncate w-16 text-center drop-shadow-xl">{room.title}</span>
+                    <span className="text-[8px] font-bold text-white/90 uppercase tracking-tighter truncate w-14 text-center drop-shadow-sm">{room.title}</span>
                  </div>
                ))}
             </div>
@@ -318,18 +271,18 @@ export default function RoomsPage() {
          </div>
       </div>
 
-      <div className="px-3 sticky top-[100px] z-40 bg-white/70 backdrop-blur-3xl py-3 mb-2 border-b border-black/5">
+      <div className="px-3 sticky top-0 z-40 bg-slate-50/80 backdrop-blur-md py-1 mb-1 border-b border-slate-200/50">
         <div className="w-full overflow-x-auto no-scrollbar pb-1">
-          <div className="flex gap-2.5 pt-0.5">
+          <div className="flex gap-1.5 pt-0.5">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-90",
+                  "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
                   activeCategory === cat.id 
-                    ? "bg-slate-900 text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] shadow-slate-900/40" 
-                    : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100/50"
+                    ? "bg-slate-900 text-white shadow-md shadow-slate-900/20" 
+                    : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
                 )}
               >
                 {cat.label}

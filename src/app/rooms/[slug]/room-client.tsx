@@ -1650,22 +1650,6 @@ export function RoomClient({ room }: { room: Room }) {
         <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
       </div>
 
-      {/* PREMIUM ENTRY OVERLAY */}
-      <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center animate-in fade-out duration-1000 fill-mode-forwards" style={{ animationDelay: '1500ms' }}>
-        <div className="flex flex-col items-center gap-4 animate-in zoom-in-50 duration-700">
-           <div className="relative">
-              <div className="absolute inset-0 bg-primary/40 blur-[40px] rounded-full animate-pulse" />
-              <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_50px_rgba(255,51,102,0.3)] relative z-10">
-                <AvatarImage src={userProfile?.avatarUrl} />
-                <AvatarFallback className="bg-slate-900 text-white font-black text-2xl">U</AvatarFallback>
-              </Avatar>
-           </div>
-           <div className="bg-white/10 backdrop-blur-2xl px-6 py-2 rounded-2xl border border-white/20 shadow-2xl relative z-10">
-             <span className="text-[14px] font-black text-white uppercase tracking-[0.4em] drop-shadow-md">Tribe Member Joined</span>
-           </div>
-        </div>
-      </div>
-
       {/* SOUNDBOARD OVERLAY */}
       {showSoundboard && (
         <div className="fixed inset-x-0 bottom-24 px-6 z-50 animate-in slide-in-from-bottom-10 duration-300">
