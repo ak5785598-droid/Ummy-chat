@@ -216,7 +216,7 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
                       <div key={idx} className="flex items-center gap-1 text-[10px] text-white/70">
                         <Gift className="h-3 w-3" />
                         <span>
-                          {reward.type === 'exp' ? `${formatAmount(reward.amount)} EXP` : `${reward.days}d ${reward.name}`}
+                          {reward.type === 'exp' ? `${formatAmount(reward.amount || 0)} EXP` : `${reward.days}d ${reward.name}`}
                         </span>
                       </div>
                     ))}
