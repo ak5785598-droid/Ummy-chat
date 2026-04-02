@@ -198,8 +198,8 @@ const Seat = memo(({
             </button>
           </div>
         </AvatarFrame>
-        {occupant?.isMuted && <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
-        {isSeatMuted && !occupant?.isMuted && <div className="absolute -bottom-0.5 -left-0.5 bg-red-500 rounded-full p-0.5 border border-black z-20"><MicOff className="h-2 w-2 text-white" /></div>}
+        {occupant?.isMuted && <div className="absolute -bottom-1 -right-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
+        {isSeatMuted && !occupant?.isMuted && <div className="absolute -bottom-1 -left-1 bg-red-600 rounded-full p-1 border-2 border-black z-30 shadow-lg animate-pulse"><MicOff className="h-3.5 w-3.5 text-white" /></div>}
       </div>
 
       {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
