@@ -35,7 +35,7 @@ service cloud.firestore {
     // USERS COLLECTION
     // ============================================
     match /users/{userId} {
-      allow read: if (isSignedIn() && isNotBanned()) || isAdmin();
+      allow read: if true;
       allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
       
       match /profile/{profileId} {
@@ -59,7 +59,7 @@ service cloud.firestore {
     }
 
     match /{path=**}/profile/{profileId} {
-      allow read: if (isSignedIn() && (request.auth.uid == profileId)) || (isSignedIn() && isNotBanned()) || isAdmin();
+      allow read: if true;
     }
 
     // ============================================
@@ -88,7 +88,7 @@ service cloud.firestore {
     // ============================================
     match /chatRooms/{roomId} {
       // Anyone can read room data
-      allow read: if isSignedIn() && isNotBanned();
+      allow read: if true;
       
       // Anyone can create rooms
       allow create: if isSignedIn() && isNotBanned();
@@ -141,7 +141,7 @@ service cloud.firestore {
     // CP PAIRS
     // ============================================
     match /cpPairs/{cpId} {
-      allow read: if isSignedIn() && isNotBanned();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -149,7 +149,7 @@ service cloud.firestore {
     // FAMILIES
     // ============================================
     match /families/{familyId} {
-      allow read: if isSignedIn() && isNotBanned();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
