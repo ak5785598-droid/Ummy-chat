@@ -9,7 +9,7 @@ import {
  DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X, Power } from 'lucide-react';
@@ -124,13 +124,11 @@ export function RoomSeatMenuDialog({
     return;
   }
   
-  console.log('[handleToggleSeatMute] Toggling seat mute:', { seatIdx, currentMuted, roomId });
-  
   const roomRef = doc(firestore, 'chatRooms', roomId);
-  setDocumentNonBlocking(roomRef, {
+  updateDocumentNonBlocking(roomRef, {
     mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
     updatedAt: serverTimestamp()
-  }, { merge: true });
+  });
   
   toast({ 
     title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', 
