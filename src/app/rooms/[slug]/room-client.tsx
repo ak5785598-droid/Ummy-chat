@@ -720,8 +720,13 @@ export function RoomClient({ room }: { room: Room }) {
 
     messageProcessTimeoutRef.current = setTimeout(() => {
       // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-      const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
-      const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+      const onlineMods = (participantsData || [])
+        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+      
+      const sortedParticipants = [...(participantsData || [])]
+        .filter(p => p && p.uid)
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
       const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
 
       let electedLeaderUid = sortedParticipants[0]?.uid;
@@ -797,7 +802,9 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id) return;
     
     // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
-    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+    const sortedParticipants = [...(participantsData || [])]
+      .filter(p => p && p.uid)
+      .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
     const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
     let electedLeaderUid = sortedParticipants[0]?.uid;
     if (ownerOnline) electedLeaderUid = room.ownerId;
