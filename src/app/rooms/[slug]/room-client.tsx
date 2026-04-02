@@ -1451,6 +1451,7 @@ export function RoomClient({ room }: { room: Room }) {
               await musicAudioRef.current.play();
               console.log('[AudioUnlock] Music playback started successfully');
               setIsMusicPlaying(true);
+              setShowMiniPlayer(true); // Auto-show mini player when music starts
             } catch (err: any) {
               console.warn(`[AudioUnlock] Play attempt ${attempts} failed:`, err.name);
               if (attempts < maxAttempts) {
@@ -1517,6 +1518,7 @@ export function RoomClient({ room }: { room: Room }) {
       // Play music
       await musicAudioRef.current.play();
       setIsMusicPlaying(true);
+      setShowMiniPlayer(true); // Auto-show mini player when music starts
       
       // Sync to room - music is playing
       const roomRef = doc(firestore, 'chatRooms', room.id);
@@ -1567,7 +1569,10 @@ export function RoomClient({ room }: { room: Room }) {
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('loadedmetadata', updateProgress);
-    audio.addEventListener('play', () => setIsMusicPlaying(true));
+    audio.addEventListener('play', () => {
+      setIsMusicPlaying(true);
+      setShowMiniPlayer(true); // Auto-show mini player when music plays
+    });
     audio.addEventListener('pause', () => setIsMusicPlaying(false));
 
     return () => {
@@ -1978,6 +1983,21 @@ export function RoomClient({ room }: { room: Room }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MUSIC INDICATOR - Floating when music is playing but mini player is hidden */}
+      {room.currentMusicUrl && room.isMusicPlaying && !showMiniPlayer && (
+        <button
+          onClick={() => setShowMiniPlayer(true)}
+          className={cn(
+            "fixed left-2 bottom-[100px] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
+            "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+          )}
+        >
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-cyan-500/20">
+            <Music className="h-5 w-5 text-cyan-400" />
+          </div>
+        </button>
       )}
 
       {/* ROCKET BUTTON - Floating at bottom right */}
