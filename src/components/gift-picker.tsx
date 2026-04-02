@@ -191,6 +191,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
  const [quantity, setQuantity] = useState('1');
  const [isSending, setIsSending] = useState(false);
+ const [sendProgress, setSendProgress] = useState(0);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
 
  const seatedParticipants = useMemo(() => {
@@ -220,7 +221,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   else setSelectedUids(allUids);
  };
 
- const handleSend = async () => {
+  const handleSend = async () => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
 
   const qtyNum = parseInt(quantity);
@@ -233,6 +234,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   }
 
   setIsSending(true);
+  setSendProgress(10);
   try {
    const batch = writeBatch(firestore);
    const senderRef = doc(firestore, 'users', user.uid);
@@ -249,6 +251,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    };
    batch.update(senderRef, senderUpdate);
    batch.update(senderProfileRef, senderUpdate);
+   setSendProgress(30);
 
    let luckyWin = null;
    let winAmount = 0;
@@ -272,6 +275,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        batch.update(senderProfileRef, { 'wallet.coins': increment(winAmount) });
      }
    }
+   setSendProgress(50);
 
    batch.update(roomRef, {
     'stats.totalGifts': increment(totalCost),
@@ -281,6 +285,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'rocket.progress': increment(totalCost),
     updatedAt: serverTimestamp()
    });
+   setSendProgress(70);
 
    selectedUids.forEach(recipientUid => {
      const diamondYield = Math.floor(costPerRecipient * 0.4);
@@ -308,6 +313,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       updatedAt: serverTimestamp()
      }, { merge: true });
    });
+   setSendProgress(85);
 
    const questRef = doc(firestore, 'users', user.uid, 'quests', 'send_gift');
    batch.set(questRef, { current: increment(1), updatedAt: serverTimestamp() }, { merge: true });
@@ -332,6 +338,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    });
 
    await batch.commit();
+   setSendProgress(100);
    
    if (luckyWin) {
      toast({ title: `ðŸŽ° JACKPOT! You won ${winAmount} coins!` });
@@ -345,6 +352,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    toast({ variant: 'destructive', title: 'Dispatch Failed' });
   } finally {
    setIsSending(false);
+   setSendProgress(0);
   }
  };
 
@@ -357,6 +365,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     </DialogHeader>
 
     <div className="p-4 space-y-4">
+      {/* Progress Bar */}
+      {isSending && (
+        <div className="w-full bg-[#1f2430] rounded-full h-2 overflow-hidden">
+          <div 
+            className="bg-[#00E676] h-full rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${sendProgress}%` }}
+          />
+        </div>
+      )}
+
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
        <button 
         key="all-selection-btn"
