@@ -102,7 +102,6 @@ import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
-import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
 import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
@@ -1666,12 +1665,7 @@ export function RoomClient({ room }: { room: Room }) {
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-      <GiftAnimationOverlay
-        giftId={activeGiftSync?.id || null}
-        senderName={activeGiftSync?.senderName}
-        onComplete={() => setActiveGiftSync(null)}
-      />
-      <RocketDialog
+            <RocketDialog
         open={isRocketOpen}
         onOpenChange={setIsRocketOpen}
         totalGifts={room.stats?.totalGifts || 0}
