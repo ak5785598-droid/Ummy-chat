@@ -2049,8 +2049,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-{/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
-      {room.currentMusicUrl && room.isMusicPlaying && !showMiniPlayer && (
+{/* RIGHT SIDE FLOATING MUSIC BUTTON - Shows when music is available and mini player is hidden */}
+      {room.currentMusicUrl && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
@@ -2059,7 +2059,11 @@ export function RoomClient({ room }: { room: Room }) {
           )}
         >
           <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-cyan-400/20">
-            <Music className="h-4 w-4" />
+            {room.isMusicPlaying ? (
+              <Music className="h-4 w-4 text-cyan-400 animate-pulse" />
+            ) : (
+              <Music className="h-4 w-4 text-cyan-400/60" />
+            )}
           </div>
         </button>
       )}
