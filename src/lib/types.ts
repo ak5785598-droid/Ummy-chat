@@ -139,6 +139,8 @@ export type Room = {
  musicUpdatedAt?: any;
  musicUpdatedBy?: string | null;
  musicCurrentTime?: number;
+ musicStartedAt?: any; // Precise server timestamp for virtual clock
+ musicStartOffset?: number; // Starting offset for playback in seconds
  isMusicPlaying?: boolean; // Music play/pause state for sync
  maxActiveMics?: number;
  isSuperMic?: boolean;
