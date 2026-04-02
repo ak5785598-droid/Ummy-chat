@@ -1332,168 +1332,100 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // --- AUDIO BROADCAST SYNC ---
-  // When this user is the one who played the music, capture the audio stream
-  // and send it to the Agora music context so everyone in the room hears it.
+  // Clear music stream when music is not playing
   useEffect(() => {
-    if (!musicAudioRef.current || !room?.currentMusicUrl || !room.isMusicPlaying) {
+    if (!room?.isMusicPlaying) {
       setMusicStream(null);
+    }
+  }, [room?.isMusicPlaying]);
+
+  // ============================================================
+  // MUSIC SYNC ENGINE - Simple & Reliable
+  // Reads room state from Firestore, plays/pauses/seeks audio.
+  // ============================================================
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio) return;
+
+    const url = room?.currentMusicUrl;
+    const isPlaying = room?.isMusicPlaying || false;
+
+    // No music in room - stop everything
+    if (!url) {
+      audio.pause();
+      audio.src = '';
+      setIsMusicPlaying(false);
       return;
     }
 
-    // All users should broadcast music to ensure everyone hears it
-    // Multiple users broadcasting is fine - Agora will handle it
-    if (room.isMusicPlaying) {
-      const captureAndSendStream = () => {
-        if (!musicAudioRef.current) return;
-        
-        try {
-          // Create a new stream from the audio element
-          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const source = audioContext.createMediaElementSource(musicAudioRef.current);
-          const destination = audioContext.createMediaStreamDestination();
-          source.connect(destination);
-          
-          const stream = destination.stream;
-          
-          if (stream && stream.getAudioTracks().length > 0) {
-            console.log('[MusicBroadcast] Created audio stream from audio element, sending to Agora...');
-            setMusicStream(stream);
-          } else {
-            console.warn('[MusicBroadcast] Failed to create audio stream');
-          }
-        } catch (err) {
-          console.error('[MusicBroadcast] Failed to create stream:', err);
-        }
-      };
+    // Calculate where the song SHOULD be right now (Virtual Clock)
+    const calcTargetTime = () => {
+      let t = (room as any)?.musicStartOffset || 0;
+      const startedAt = (room as any)?.musicStartedAt;
+      if (isPlaying && startedAt) {
+        const startMs = startedAt?.toMillis?.() ?? (startedAt?.seconds ? startedAt.seconds * 1000 : null);
+        if (startMs) t += (Date.now() - startMs) / 1000;
+      }
+      return Math.max(0, t);
+    };
 
-      // Slight delay to ensure the audio source is loaded and playing
-      const timer = setTimeout(captureAndSendStream, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      // If not the owner, ensure we aren't trying to broadcast
-      setMusicStream(null);
-    }
-  }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicUpdatedBy, currentUser?.uid]);
-
-  // ADVANCED SYNC: Listen for music changes and apply Virtual Clock
-  useEffect(() => {
-    if (!room?.currentMusicUrl || !musicAudioRef.current) return;
-    const audio = musicAudioRef.current;
-    const roomIsPlaying = room.isMusicPlaying || false;
-    const targetUrl = room.currentMusicUrl;
-    
-    // Calculate target position using Virtual Clock
-    let targetTime = (room as any).musicStartOffset || 0;
-    if (roomIsPlaying && (room as any).musicStartedAt) {
-      const now = Date.now();
-      const started = (room as any).musicStartedAt;
-      const startedAt = started?.toMillis?.() || (started?.seconds ? started.seconds * 1000 : now);
-      targetTime += (now - startedAt) / 1000;
-    }
-
-    // 1. URL Change Handling
-    if (audio.src !== targetUrl) {
-      console.warn('[Sync] New Track detected:', room.currentMusicTitle);
+    // Change track if different URL
+    if (audio.src !== url) {
       audio.pause();
-      audio.src = targetUrl || '';
+      audio.src = url;
+      pendingSeekTime.current = calcTargetTime();
       audio.load();
-      // Wait for metadata before seeking
-      pendingSeekTime.current = targetTime;
+      // onLoadedMetadata will seek and play
+      return;
+    }
+
+    // Same track - handle play/pause/drift
+    if (isPlaying) {
+      const target = calcTargetTime();
+      const drift = Math.abs(audio.currentTime - target);
+      if (drift > 2) {
+        audio.currentTime = target;
+      }
+      if (audio.paused) {
+        audio.play()
+          .then(() => { setIsMusicPlaying(true); setShowMiniPlayer(true); })
+          .catch(e => console.warn('[Music] Autoplay blocked:', e.name));
+      }
     } else {
-      // Track already loaded, apply drift correction
-      const drift = Math.abs(audio.currentTime - targetTime);
-      
-      if (roomIsPlaying) {
-        if (drift > 1.5 || audio.paused) {
-          console.warn('[Sync] Correcting drift/state:', drift.toFixed(2));
-          audio.currentTime = targetTime;
-          audio.play().then(() => setIsMusicPlaying(true)).catch(e => {
-            console.warn('[Sync] Auto-play blocked:', e.name);
-            setIsMusicPlaying(false);
-          });
-        }
-      } else {
-        if (!audio.paused) {
-          console.warn('[Sync] Room paused, stopping local playback');
-          audio.pause();
-          audio.currentTime = targetTime;
-          setIsMusicPlaying(false);
-        }
+      if (!audio.paused) {
+        audio.pause();
+        setIsMusicPlaying(false);
       }
     }
-  }, [room?.currentMusicUrl, room?.isMusicPlaying, (room as any)?.musicStartedAt, (room as any)?.musicStartOffset, userInteracted]);
+  }, [room?.currentMusicUrl, room?.isMusicPlaying, (room as any)?.musicStartedAt, (room as any)?.musicStartOffset]);
 
-  // AUDIO UNLOCK: Global click handler to enable audio context
+  // One-time click unlock for browsers that block autoplay
   useEffect(() => {
-    const unlockAudio = async () => {
-      console.log('[AudioUnlock] Attempting to unlock audio...');
-      
-      if (musicAudioRef.current) {
-        const audioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (audioCtx) {
-          try {
-            const ctx = new audioCtx();
-            if (ctx.state === 'suspended') await ctx.resume();
-            
-            const buffer = ctx.createBuffer(1, 1, 22050);
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.start(0);
-          } catch (e) {
-            console.warn('[AudioUnlock] AudioContext error:', e);
-          }
-        }
-        
-        if (!userInteracted) {
-          setUserInteracted(true);
-          console.log('[AudioUnlock] User interaction recorded');
-        }
-        
-        // Sync check on unlock
-        if (room?.isMusicPlaying && room?.currentMusicUrl) {
-          const audio = musicAudioRef.current;
-          let targetTime = room.musicStartOffset || 0;
-          if (room.isMusicPlaying && room.musicStartedAt) {
-            const now = Date.now();
-            const startedAt = room.musicStartedAt.toMillis?.() || (room.musicStartedAt.seconds * 1000) || now;
-            targetTime += (now - startedAt) / 1000;
-          }
-
-          if (audio.src !== room.currentMusicUrl) {
-            audio.src = room.currentMusicUrl || '';
-            audio.load();
-            pendingSeekTime.current = targetTime;
-          } else {
-            audio.currentTime = targetTime;
-          }
-
-          try {
-            await audio.play();
-            setIsMusicPlaying(true);
-            setShowMiniPlayer(true);
-          } catch (err: any) {
-            console.warn(`[AudioUnlock] Play failed:`, err.name);
-          }
-        }
+    if (userInteracted) return;
+    const unlock = () => {
+      setUserInteracted(true);
+      // Re-trigger music sync after unlock
+      const audio = musicAudioRef.current;
+      if (!audio || !room?.currentMusicUrl || !room?.isMusicPlaying) return;
+      const startedAt = (room as any)?.musicStartedAt;
+      let t = (room as any)?.musicStartOffset || 0;
+      if (startedAt) {
+        const startMs = startedAt?.toMillis?.() ?? (startedAt?.seconds ? startedAt.seconds * 1000 : null);
+        if (startMs) t += (Date.now() - startMs) / 1000;
       }
+      audio.currentTime = Math.max(0, t);
+      audio.play()
+        .then(() => { setIsMusicPlaying(true); setShowMiniPlayer(true); })
+        .catch(e => console.warn('[Unlock] Play failed:', e.name));
     };
-    // Add multiple interaction listeners
-    const addListeners = () => {
-      document.addEventListener('click', unlockAudio, { once: true });
-      document.addEventListener('touchstart', unlockAudio, { once: true });
-      document.addEventListener('keydown', unlockAudio, { once: true });
-    };
-    
-    addListeners();
-    
+    document.addEventListener('click', unlock, { once: true });
+    document.addEventListener('touchstart', unlock, { once: true });
     return () => {
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('keydown', unlockAudio);
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('touchstart', unlock);
     };
-  }, [room?.isMusicPlaying, room?.currentMusicUrl, (room as any)?.musicStartedAt, (room as any)?.musicStartOffset, userInteracted]);
+  }, [userInteracted, room?.isMusicPlaying, room?.currentMusicUrl]);
+
 
   // Handle user interaction for music
   const handleUserInteraction = () => {
@@ -1625,9 +1557,18 @@ export function RoomClient({ room }: { room: Room }) {
       <audio
         ref={musicAudioRef}
         onLoadedMetadata={() => {
-          if (pendingSeekTime.current !== null && musicAudioRef.current) {
-            musicAudioRef.current.currentTime = pendingSeekTime.current;
+          const audio = musicAudioRef.current;
+          if (!audio) return;
+          // Apply pending seek position from Virtual Clock
+          if (pendingSeekTime.current !== null) {
+            audio.currentTime = pendingSeekTime.current;
             pendingSeekTime.current = null;
+          }
+          // Auto-play if room says music is playing
+          if (room?.isMusicPlaying) {
+            audio.play()
+              .then(() => { setIsMusicPlaying(true); setShowMiniPlayer(true); })
+              .catch(e => console.warn('[Music] Autoplay blocked after load:', e.name));
           }
         }}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
