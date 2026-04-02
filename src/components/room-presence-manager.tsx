@@ -21,6 +21,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
   const hasJoinedRef = useRef<boolean>(false);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const cleanupInterval = useRef<NodeJS.Timeout | null>(null);
+  const stayTimeRef = useRef<number>(0);
+  const hasStayAwarded = useRef<boolean>(false);
 
   const userMetadata = useMemo(() => ({
    username: userProfile?.username,
@@ -102,6 +104,17 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
     heartbeatInterval.current = setInterval(() => {
      setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
+     
+     // ⚡ QUEST TRACKING: Stay 15 Mins
+     if (!hasStayAwarded.current) {
+       stayTimeRef.current += 10;
+       if (stayTimeRef.current >= 900) { // 15 minutes
+         console.log('[Missions] Stay time reached! Awarding progress...');
+         const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
+         updateDocumentNonBlocking(questRef, { current: increment(15) });
+         hasStayAwarded.current = true;
+       }
+     }
     }, 10000);
 
     // CLEANUP: Admin-only task to purge stale sessions
@@ -137,8 +150,9 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       }
 
       // 2. Clear Stale Participants
-      const standingThreshold = new Date(Date.now() - 60000); 
-      const seatedThreshold = new Date(Date.now() - 600000); // 10 minute grace for seated users
+      // IMPORTANT: Seated users are NEVER auto-removed by the system.
+      // They can only leave by explicitly exiting the room.
+      const standingThreshold = new Date(Date.now() - 180000); // 3 min grace for standing users
       
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       
@@ -148,11 +162,18 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        snap.docs.forEach(d => {
         const p = d.data();
         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-        const threshold = (p.seatIndex > 0) ? seatedThreshold : standingThreshold;
         
-        if (lastSeen < threshold && d.id !== uid) {
+        // SEATED USERS: Never auto-purge. Only leave voluntarily.
+        const isSeated = (p.seatIndex || 0) > 0;
+        if (isSeated) {
+          activeCount++;
+          return; // Skip — seated users are protected
+        }
+        
+        // STANDING USERS: Purge only after 3-minute inactivity
+        if (lastSeen < standingThreshold && d.id !== uid) {
           purgeBatch.delete(d.ref);
-          console.warn(`[Presence-Purge] User: ${d.id} (Seat: ${p.seatIndex})`);
+          console.warn(`[Presence-Purge] Stale standing user removed: ${d.id}`);
         } else {
           activeCount++;
         }

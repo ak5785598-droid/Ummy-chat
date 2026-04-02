@@ -200,22 +200,13 @@ export function RoomPlayDialog({
  };
 
  const handleSyncMusic = (video: any) => {
-  if (!firestore || !roomId) return;
-  const roomRef = doc(firestore, 'chatRooms', roomId);
-  updateDocumentNonBlocking(roomRef, {
-   currentMusicUrl: `https://www.youtube.com/watch?v=${video.videoId}`,
-   currentMusicTitle: video.title,
-   currentMusicThumbnail: video.thumbnailUrl,
-   currentMusicType: 'youtube',
-   isMusicPlaying: true,
-   musicStartedAt: serverTimestamp(),
-   musicStartOffset: 0,
-   musicUpdatedAt: serverTimestamp(),
-   musicUpdatedBy: user?.uid,
-   updatedAt: serverTimestamp()
+  // NOTE: YouTube URLs cannot be played by HTML <audio> element.
+  // User must upload actual audio files to Room Library.
+  toast({ 
+    variant: 'destructive',
+    title: 'YouTube Not Supported',
+    description: 'Please upload an MP3/audio file to the Room Library instead.'
   });
-  toast({ title: 'Music Synchronized', description: `${video.title} is now playing for everyone.` });
-  onOpenChange(false);
  };
 
  // Upload file to Firebase Storage and save to room music library
@@ -260,11 +251,10 @@ export function RoomPlayDialog({
   }
  };
 
- // Sync uploaded/shared music to room for everyone to hear
+ // Sync track to room — ALL clients (including owner) will hear it via Firestore listener
  const handleSyncSharedMusic = async (track: any) => {
-  if (!firestore || !roomId) return;
+  if (!firestore || !roomId || !user) return;
   
-  // Update room document with current music info
   const roomRef = doc(firestore, 'chatRooms', roomId);
   await updateDocumentNonBlocking(roomRef, {
    currentMusicUrl: track.url,
@@ -272,19 +262,17 @@ export function RoomPlayDialog({
    currentMusicType: track.type || 'upload',
    currentMusicId: track.id,
    isMusicPlaying: true,
-   musicStartedAt: serverTimestamp(),
-   musicStartOffset: 0,
+   musicStartedAt: serverTimestamp(), // Virtual Clock: starts NOW
+   musicStartOffset: 0,              // from the beginning
    musicUpdatedAt: serverTimestamp(),
-   musicUpdatedBy: user?.uid,
+   musicUpdatedBy: user.uid,
    updatedAt: serverTimestamp()
   });
   
+  // NOTE: Do NOT play locally here. The useEffect sync in room-client.tsx
+  // will fire for ALL clients including the owner when Firestore updates.
   setIsMusicEnabled(true);
-  toast({ title: 'Music Broadcasting', description: `${track.name} is now playing for everyone.` });
-  
-  if (onSyncSharedMusic) {
-   onSyncSharedMusic(track);
-  }
+  toast({ title: '🎵 Music Broadcasting', description: `${track.name} is now playing for everyone.` });
   onOpenChange(false);
  };
 

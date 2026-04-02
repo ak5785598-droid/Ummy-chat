@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { GoldCoinIcon } from '@/components/icons';
 import { Loader, Check, Zap } from 'lucide-react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
@@ -118,6 +118,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    });
 
    await batch.commit();
+
+   // ⚡ QUEST TRACKING: Gift Master
+   try {
+     const questRef = doc(firestore, 'users', user.uid, 'quests', 'send_gift');
+     updateDocumentNonBlocking(questRef, { current: increment(qty) });
+   } catch (e) {
+     console.warn('[Missions] Failed to update gift quest:', e);
+   }
 
    const newId = Date.now();
    const newNotif = {

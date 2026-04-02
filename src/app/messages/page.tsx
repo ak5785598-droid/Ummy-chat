@@ -16,10 +16,24 @@ import {
  MessageSquare,
  Search,
  Image as ImageIcon,
- X
+ X,
+ Heart
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast, arrayUnion } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  where, 
+  serverTimestamp, 
+  doc, 
+  limitToLast, 
+  arrayUnion, 
+  addDoc as addFirestoreDoc,
+  deleteDoc,
+  setDoc,
+  updateDoc
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
 import {
@@ -338,14 +352,131 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
  );
 }
 
+function RelationshipRequestsDialog({ open, onOpenChange }: any) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const requestsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'));
+  }, [firestore, user?.uid]);
+
+  const { data: requests, isLoading } = useCollection(requestsQuery);
+
+  const handleAction = async (request: any, action: 'accept' | 'decline') => {
+    if (!firestore || !user?.uid) return;
+    try {
+      const proposalRef = doc(firestore, 'proposals', request.id);
+      
+      if (action === 'accept') {
+        const pairId = [user.uid, request.fromUid].sort().join('_');
+        const pairRef = doc(firestore, 'cpPairs', pairId);
+        
+        await setDoc(pairRef, {
+          id: pairId,
+          participantIds: [user.uid, request.fromUid],
+          type: request.type,
+          cpValue: 0,
+          level: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        await updateDoc(proposalRef, { status: 'accepted' });
+        toast({ title: 'Relationship Established!', description: `You are now ${request.type} partners.` });
+      } else {
+        await updateDoc(proposalRef, { status: 'declined' });
+        toast({ title: 'Request Declined' });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Action Failed' });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
+        <DialogHeader className="p-8 pb-4 border-b border-gray-100 bg-rose-50/30">
+          <div className="h-12 w-12 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+            <Heart className="h-6 w-6" />
+          </div>
+          <div className="flex-1 text-left">
+            <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Requests</DialogTitle>
+            <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-rose-600/60 mt-1">Special bond proposals.</DialogDescription>
+          </div>
+        </DialogHeader>
+        <ScrollArea className="max-h-[60vh] p-6">
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="py-10 text-center flex flex-col items-center gap-2">
+                 <Loader className="h-6 w-6 text-rose-500 animate-spin" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Searching Hearts...</span>
+              </div>
+            ) : !requests || requests.length === 0 ? (
+              <div className="py-20 text-center space-y-4 opacity-20">
+                 <Heart className="h-12 w-12 mx-auto" />
+                 <p className="font-bold text-xs uppercase tracking-widest">No pending proposals</p>
+              </div>
+            ) : requests.map((req: any) => (
+              <RequestItem key={req.id} request={req} onAction={handleAction} />
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RequestItem({ request, onAction }: any) {
+  const { userProfile: fromUser } = useUserProfile(request.fromUid);
+  
+  return (
+    <div className="p-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm flex items-center gap-4">
+      <Avatar className="h-12 w-12 border-2 border-white shadow-sm shrink-0">
+        <AvatarImage src={fromUser?.avatarUrl} />
+        <AvatarFallback>{fromUser?.username?.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-black text-xs uppercase text-slate-800 truncate">{fromUser?.username || 'Somebody'}</h4>
+        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">Wants to be your {request.type}</p>
+      </div>
+      <div className="flex gap-2">
+        <button 
+          onClick={() => onAction(request, 'accept')}
+          className="h-8 w-8 bg-green-500 text-white rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center active:scale-90"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+        </button>
+        <button 
+          onClick={() => onAction(request, 'decline')}
+          className="h-8 w-8 bg-slate-200 text-slate-500 rounded-xl flex items-center justify-center active:scale-90"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MessagesPage() {
  const { user } = useUser();
  const firestore = useFirestore();
  const { t } = useTranslation();
  const [showOfficial, setShowOfficial] = useState(false);
  const [showSystemDialog, setShowSystemDialog] = useState(false);
+ const [showRequests, setShowRequests] = useState(false);
  const [activeChatId, setActiveChatId] = useState<string | null>(null);
  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+
+ // 🔔 RED DOT SYNC: Check for pending requests
+ const requestsQuery = useMemoFirebase(() => {
+   if (!firestore || !user?.uid) return null;
+   return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'), limitToLast(1));
+ }, [firestore, user?.uid]);
+ const { data: pendingRequests } = useCollection(requestsQuery);
+ const hasPending = (pendingRequests?.length ?? 0) > 0;
 
  const chatsQuery = useMemoFirebase(() => {
   if (!firestore || !user) return null;
@@ -451,6 +582,21 @@ export default function MessagesPage() {
        isVerified
        onClick={() => setShowSystemDialog(true)}
       />
+
+      <CategoryItem 
+       icon={Heart} 
+       label="Bond Requests" 
+       subtext={hasPending ? "You have a new relationship proposal!" : "No new bond requests."}
+       colorClass="bg-gradient-to-br from-rose-500 to-pink-600"
+       onClick={() => setShowRequests(true)}
+       customIcon={
+         <div className="relative">
+           <Heart className="h-6 w-6 text-white" fill="white" />
+           {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full animate-ping" />}
+           {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-rose-300 rounded-full" />}
+         </div>
+       }
+      />
      </Card>
 
      <div className="space-y-2.5">
@@ -554,6 +700,11 @@ export default function MessagesPage() {
       </div>
      </DialogContent>
     </Dialog>
+
+    <RelationshipRequestsDialog 
+      open={showRequests}
+      onOpenChange={setShowRequests}
+     />
 
     <ChatRoomDialog 
      open={!!activeChatId} 
