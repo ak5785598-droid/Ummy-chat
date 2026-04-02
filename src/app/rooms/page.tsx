@@ -501,7 +501,7 @@ export default function RoomsPage() {
     )}
 
    </div>
-   <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+   <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
   </AppLayout>
  );
 }

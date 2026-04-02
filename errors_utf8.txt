@@ -1,0 +1,19 @@
+﻿src/app/rooms/page.tsx(5,30): error TS2307: Cannot find module '@/components/chat-room-card' or its corresponding type declarations.
+src/app/rooms/page.tsx(6,27): error TS2307: Cannot find module '@/components/layout/app-layout' or its corresponding type declarations.
+src/app/rooms/page.tsx(14,8): error TS2307: Cannot find module '@/firebase' or its corresponding type declarations.
+src/app/rooms/page.tsx(46,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+src/app/rooms/page.tsx(47,26): error TS2307: Cannot find module '@/components/ui/skeleton' or its corresponding type declarations.
+src/app/rooms/page.tsx(48,53): error TS2307: Cannot find module '@/components/ui/avatar' or its corresponding type declarations.
+src/app/rooms/page.tsx(53,8): error TS2307: Cannot find module '@/components/ui/carousel' or its corresponding type declarations.
+src/app/rooms/page.tsx(54,34): error TS2307: Cannot find module '@/components/user-search-dialog' or its corresponding type declarations.
+src/app/rooms/page.tsx(55,32): error TS2307: Cannot find module '@/hooks/use-translation' or its corresponding type declarations.
+src/app/rooms/page.tsx(56,34): error TS2307: Cannot find module '@/components/create-room-dialog' or its corresponding type declarations.
+src/app/rooms/page.tsx(59,49): error TS2307: Cannot find module '@/components/premium-feature-cards' or its corresponding type declarations.
+src/app/rooms/page.tsx(60,32): error TS2307: Cannot find module '@/hooks/use-user-profile' or its corresponding type declarations.
+src/app/rooms/page.tsx(61,37): error TS2307: Cannot find module '@/hooks/use-quest-initializer' or its corresponding type declarations.
+src/app/rooms/page.tsx(62,26): error TS2307: Cannot find module '@/components/ui/progress' or its corresponding type declarations.
+src/app/rooms/page.tsx(63,26): error TS2307: Cannot find module '@/hooks/use-toast' or its corresponding type declarations.
+src/app/rooms/page.tsx(64,26): error TS2307: Cannot find module '@/components/vip-badge' or its corresponding type declarations.
+src/app/rooms/page.tsx(65,30): error TS2307: Cannot find module '@/components/icons' or its corresponding type declarations.
+src/app/rooms/page.tsx(504,11): error TS2322: Type '{ children: string; jsx: true; global: true; }' is not assignable to type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.
+  Property 'jsx' does not exist on type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.

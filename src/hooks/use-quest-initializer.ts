@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { collection, doc, getDocs, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const DEFAULT_QUESTS = [
