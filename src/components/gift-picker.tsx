@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- ALL GIFTS DATA ---
+// --- FULL GIFTS DATA (SAB ADD KAR DIYA HAI) ---
 const GIFTS: Record<string, any[]> = {
  'Hot': [
   { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
@@ -27,6 +27,7 @@ const GIFTS: Record<string, any[]> = {
   { id: 'chocolate_box', name: 'Choco Box', price: 30000, icon: '🍫', animationId: 'chocolate-box' },
   { id: 'money_gun', name: 'Money Gun', price: 70000, icon: '🔫', animationId: 'money-gun' },
   { id: 'watch', name: 'Watch', price: 999999, icon: '⌚', animationId: 'watch' },
+  { id: 'birthday_cake', name: 'Cake', price: 109000, icon: '🎂', animationId: 'birthday-cake' },
   { id: 'microphone', name: 'Mic', price: 100, icon: '🎤', animationId: 'microphone' },
   { id: 'popcorn', name: 'Popcorn', price: 120, icon: '🍿', animationId: 'popcorn' },
  ],
@@ -35,9 +36,11 @@ const GIFTS: Record<string, any[]> = {
   { id: 'magic_wand', name: 'Magic Wand', price: 500, icon: '🪄', animationId: 'magic-wand' },
   { id: 'jackpot', name: 'Jackpot', price: 2000, icon: '🎰', animationId: 'jackpot' },
   { id: 'treasure', name: 'Treasure', price: 10000, icon: '🪙', animationId: 'treasure' },
+  { id: 'soaring', name: 'Soaring', price: 20000, icon: '🎆', animationId: 'soaring' },
   { id: 'red_envelope', name: 'Red Envelope', price: 888, icon: '🧧', animationId: 'red-envelope' },
  ],
  'Luxury': [
+  { id: 'library', name: 'Library', price: 50000, icon: '📚', animationId: 'library', isPremium: true },
   { id: 'diamond', name: 'Diamond', price: 70000, icon: '💎', animationId: 'diamond', isPremium: true },
   { id: 'trophy', name: 'Trophy', price: 90000, icon: '🏆', animationId: 'trophy', isPremium: true },
   { id: 'yacht', name: 'Yacht', price: 250000, icon: '🛥️', animationId: 'yacht', isPremium: true },
@@ -56,7 +59,7 @@ const GIFTS: Record<string, any[]> = {
  'Events': [
   { id: 'eid_mubarak', name: 'Eid Mubarak', price: 150000, icon: '🕌', animationId: 'eid-mubarak' },
   { id: 'fireworks', name: 'Fireworks', price: 10000, icon: '🎆', animationId: 'fireworks' },
-  { id: 'birthday_cake', name: 'Cake', price: 109000, icon: '🎂', animationId: 'birthday-cake' },
+  { id: 'valentine_heart', name: 'Heart', price: 20000, icon: '💖', animationId: 'valentine-heart' },
  ]
 };
 
@@ -70,10 +73,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  
- // --- STACKING NOTIFICATIONS STATE ---
+ // --- NOTIFICATION STACK STATE ---
  const [notifications, setNotifications] = useState<any[]>([]);
 
- // --- COMBO STATES ---
+ // Combo States
  const [showCombo, setShowCombo] = useState(false);
  const [comboCount, setComboCount] = useState(0);
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +99,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   const totalCost = selectedGift.price * qty * selectedUids.length;
   
   if ((userProfile.wallet?.coins || 0) < totalCost) return;
-
   if (!isComboTrigger) setIsSending(true);
 
   try {
@@ -121,21 +123,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
 
-   // --- ADD STACKING NOTIFICATION ---
+   // --- ADD NOTIFICATION TO STACK ---
+   const newId = Date.now();
    const newNotif = {
-     id: Date.now(),
+     id: newId,
      name: userProfile.username,
      avatar: userProfile.avatarUrl,
      icon: selectedGift.icon,
      qty: isComboTrigger ? (comboCount + 1) : qty
    };
-
    setNotifications(prev => [newNotif, ...prev].slice(0, 4));
-   setTimeout(() => {
-     setNotifications(prev => prev.filter(n => n.id !== newNotif.id));
-   }, 3000);
+   setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== newId)), 3000);
 
-   // --- COMBO LOGIC ---
+   // Combo Logic
    setComboCount(prev => prev + 1);
    setShowCombo(true);
    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
@@ -147,18 +147,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* --- STACKING SIDE GIFT CARDS (MAX 4) --- */}
-   <div className="fixed left-4 top-1/4 z-[100] flex flex-col gap-3 pointer-events-none">
+   {/* --- SIDE NOTIFICATION STACK (LEFT SIDE) --- */}
+   <div className="fixed left-4 top-1/4 z-[500] flex flex-col gap-3 pointer-events-none">
     <AnimatePresence>
      {notifications.map((notif) => (
-      <motion.div key={notif.id} initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -100, opacity: 0 }}
-       className="flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-lg min-w-[180px]">
+      <motion.div key={notif.id} initial={{ x: -200, opacity: 0 }} animate={{ x: 20, opacity: 1 }} exit={{ x: -200, opacity: 0 }}
+       className="flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-lg">
        <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={notif.avatar} /></Avatar>
        <div className="flex flex-col text-white">
-        <span className="text-[12px] font-black truncate max-w-[80px]">{notif.name}</span>
-        <span className="text-[10px] opacity-70">sent {notif.icon}</span>
+        <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">Gift Sent</span>
+        <span className="text-sm font-black truncate max-w-[90px]">{notif.name}</span>
        </div>
-       <div className="ml-auto text-2xl font-black italic text-yellow-400 drop-shadow-md">x{notif.qty}</div>
+       <div className="ml-2 text-2xl font-black italic text-yellow-400 drop-shadow-md">x{notif.qty}</div>
       </motion.div>
      ))}
     </AnimatePresence>
@@ -178,14 +178,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
 
    <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="fixed inset-x-0 bottom-0 top-auto sm:max-w-full w-full bg-[#0b0e14]/98 border-t border-white/10 p-0 rounded-t-[30px] overflow-hidden text-white shadow-2xl">
+    <DialogContent 
+      // --- BOTTOM SHEET STYLING ---
+      className="fixed inset-x-0 bottom-0 top-auto translate-y-0 sm:max-w-full w-full bg-[#0b0e14]/98 border-t border-white/10 p-0 rounded-t-[30px] overflow-hidden text-white shadow-2xl"
+    >
      <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3" />
 
      <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar">
       <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-bold shrink-0", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105 shadow-lg shadow-cyan-500/20" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
         {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 text-black rounded-full p-0.5" />}
        </button>
       ))}
@@ -203,11 +206,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0">
          {items.map(gift => (
           <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center p-2 rounded-2xl border transition-all", selectedGift?.id === gift.id ? "bg-white/10 border-cyan-400/50 shadow-inner" : "border-transparent")}>
-           <div className="text-4xl mb-1">{gift.icon}</div>
+           <div className="text-4xl mb-1 drop-shadow-md">{gift.icon}</div>
            <span className="text-[9px] font-bold opacity-80 truncate w-full text-center">{gift.name}</span>
-           <div className="flex items-center gap-1 mt-1 text-yellow-400">
-            <GoldCoinIcon className="h-2.5 w-2.5" />
-            <span className="text-[10px] font-black">{gift.price.toLocaleString()}</span>
+           <div className="flex items-center gap-1 mt-1">
+            <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
+            <span className="text-[10px] text-yellow-400 font-black">{gift.price.toLocaleString()}</span>
            </div>
           </button>
          ))}
@@ -225,7 +228,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          <SelectTrigger className="w-16 h-10 bg-white/5 border-none rounded-xl text-cyan-400 font-bold"><SelectValue /></SelectTrigger>
          <SelectContent className="bg-[#151921] text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
-       <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} className="h-10 px-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-20 transition-all">
+       <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
+         className="h-10 px-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-20 transition-all uppercase">
          {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
