@@ -54,6 +54,7 @@ interface RoomPlayDialogProps {
   onPlayLocalMusic?: (file: File) => void;
   onClearChat?: () => void;
   onSyncSharedMusic?: (track: any) => void;
+  onToggleMiniPlayer?: () => void;
 }
 
 /**
@@ -72,7 +73,8 @@ export function RoomPlayDialog({
   onSelectGame,
   onPlayLocalMusic,
   onClearChat,
-  onSyncSharedMusic
+  onSyncSharedMusic,
+  onToggleMiniPlayer
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
  const [view, setView] = useState<'grid' | 'selection' | 'rules' | 'music'>('grid');
@@ -154,6 +156,21 @@ export function RoomPlayDialog({
   } finally {
    setIsClearingChat(false);
   }
+ };
+
+  const handleToggleVoice = () => {
+  if (!firestore || !roomId) return;
+  const roomRef = doc(firestore, 'chatRooms', roomId);
+  const current = room?.isVoiceMuted || false;
+  updateDocumentNonBlocking(roomRef, {
+   isVoiceMuted: !current,
+   updatedAt: serverTimestamp()
+  });
+  toast({ 
+   title: current ? 'Voice Restored' : 'Voice Restricted', 
+   description: current ? 'Tribe members can now take mic.' : 'Only authorities can speak.' 
+  });
+  onOpenChange(false);
  };
 
  const handleToggleChatMute = () => {
@@ -348,9 +365,9 @@ export function RoomPlayDialog({
   };
 
   const gameGrid = [
-    { id: 'game-selector', label: '🎮 Games',icon: 'https://img.icons8.com/color/96/video-game.png',color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); setgameopen(true); } },
-    { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => setView('music') },
-    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: () => handleToggleVoice }, 
+    { id: 'game-selector', label: '🎮 Games',icon: 'https://img.icons8.com/color/96/video-game.png',color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); } },
+    { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => { setView('music'); onToggleMiniPlayer?.(); } },
+    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: handleToggleVoice }, 
   ] ;
   return (
     <AnimatePresence>

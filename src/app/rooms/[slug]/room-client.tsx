@@ -1310,6 +1310,47 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
+  // --- AUDIO BROADCAST SYNC ---
+  // When this user is the one who played the music, capture the audio stream
+  // and send it to the Agora music context so everyone in the room hears it.
+  useEffect(() => {
+    if (!musicAudioRef.current || !room?.currentMusicUrl || !room.isMusicPlaying) {
+      setMusicStream(null);
+      return;
+    }
+
+    // Only the user who "owns" the music session should broadcast the stream
+    // to avoid multiple users broadcasting the same audio (echo)
+    const isMusicOwner = room.musicUpdatedBy === currentUser?.uid;
+    
+    if (isMusicOwner) {
+      const captureAndSendStream = () => {
+        if (!musicAudioRef.current) return;
+        
+        try {
+          // @ts-ignore
+          const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
+          
+          if (stream && stream.getAudioTracks().length > 0) {
+            console.log('[MusicBroadcast] Captured audio stream, sending to Agora...');
+            setMusicStream(stream);
+          } else {
+            console.warn('[MusicBroadcast] Stream captured but no audio tracks found');
+          }
+        } catch (err) {
+          console.error('[MusicBroadcast] Failed to capture stream:', err);
+        }
+      };
+
+      // Slight delay to ensure the audio source is loaded and playing
+      const timer = setTimeout(captureAndSendStream, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // If not the owner, ensure we aren't trying to broadcast
+      setMusicStream(null);
+    }
+  }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicUpdatedBy, currentUser?.uid]);
+
   // Listen for shared music changes from Firestore
   // AUTO-PLAY: When music is playing in room, all users should hear it
   useEffect(() => {
@@ -1975,11 +2016,11 @@ export function RoomClient({ room }: { room: Room }) {
       )}
 
       {/* RIGHT SIDE FLOATING MUSIC BUTTON - Only shows when music is playing and mini player is hidden */}
-      {room.currentMusicUrl && isMusicPlaying && !showMiniPlayer && (
+      {room.currentMusicUrl && room.isMusicPlaying && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-2 top-[65%] z-30 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
+            "fixed right-4 bottom-48 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2",
             "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
           )}
         >
@@ -2190,6 +2231,7 @@ export function RoomClient({ room }: { room: Room }) {
             });
           }
         }}
+        onToggleMiniPlayer={() => setShowMiniPlayer(true)}
       />
       <RoomGamesDialog
         open={isRoomGamesOpen}
