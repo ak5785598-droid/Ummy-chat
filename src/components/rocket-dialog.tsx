@@ -16,7 +16,7 @@ const ROCKET_LEVELS = [
   {
     level: 1,
     name: 'Star Fighter',
-    unlockAmount: 1000000, // 10 Lakh
+    unlockAmount: 100000, // 1 Lakh
     color: 'from-green-400 to-green-600',
     glowColor: 'shadow-green-500/50',
     icon: '🚀',
@@ -29,7 +29,7 @@ const ROCKET_LEVELS = [
   {
     level: 2,
     name: 'Galaxy Destroyer',
-    unlockAmount: 5000000, // 50 Lakh
+    unlockAmount: 500000, // 5 Lakh
     color: 'from-purple-400 to-purple-600',
     glowColor: 'shadow-purple-500/50',
     icon: '🚀',
@@ -42,7 +42,7 @@ const ROCKET_LEVELS = [
   {
     level: 3,
     name: 'Cosmic Emperor',
-    unlockAmount: 20000000, // 2 Crore
+    unlockAmount: 2000000, // 20 Lakh
     color: 'from-red-400 via-orange-400 to-yellow-400',
     glowColor: 'shadow-orange-500/50',
     icon: '🚀',
@@ -77,9 +77,18 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
   }, [totalGifts, nextLevel]);
 
   const formatAmount = (amount: number) => {
-    if (amount >= 10000000) return `${(amount / 10000000).toFixed(1)}Cr`;
-    if (amount >= 100000) return `${(amount / 100000).toFixed(1)}L`;
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
+    if (amount >= 10000000) {
+      const cr = amount / 10000000;
+      return cr % 1 === 0 ? `${cr}Cr` : `${cr.toFixed(1)}Cr`;
+    }
+    if (amount >= 100000) {
+      const lakh = amount / 100000;
+      return lakh % 1 === 0 ? `${lakh}L` : `${lakh.toFixed(1)}L`;
+    }
+    if (amount >= 1000) {
+      const k = amount / 1000;
+      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+    }
     return amount.toString();
   };
 
