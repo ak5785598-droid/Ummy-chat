@@ -2,7 +2,7 @@
   
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged, Auth } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth } from '../provider';
 
 export interface UserHookResult {
  user: User | null;

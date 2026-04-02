@@ -2,7 +2,7 @@
 
 import React, { type ReactNode } from 'react';
 import { FirebaseProvider } from './provider';
-import { initializeFirebase } from './index';
+import { initializeFirebase } from './core';
 
 interface FirebaseClientProviderProps {
  children: ReactNode;
