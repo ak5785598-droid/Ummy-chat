@@ -1,42 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
- Dialog, 
- DialogContent, 
- DialogHeader, 
- DialogTitle,
- DialogDescription
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { GoldCoinIcon } from '@/components/icons';
-import { ChevronRight, Loader, Sparkles, Check } from 'lucide-react';
+import { Loader, Check } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { 
- Select, 
- SelectContent, 
- SelectItem, 
- SelectTrigger, 
- SelectValue 
-} from '@/components/ui/select';
-import type { RoomParticipant } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export interface GiftItem {
- id: string;
- name: string;
- price: number;
- icon: string;
- animationId: string;
- type?: 'standard' | 'lucky';
- isPremium?: boolean;
-}
-
-const GIFTS: Record<string, GiftItem[]> = {
+// --- FULL GIFTS DATA (ALL CATEGORIES) ---
+const GIFTS: Record<string, any[]> = {
  'Hot': [
   { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
   { id: 'pizza', name: 'Pizza', price: 499, icon: '🍕', animationId: 'pizza' }, 
@@ -58,18 +36,6 @@ const GIFTS: Record<string, GiftItem[]> = {
   { id: 'popcorn', name: 'Popcorn', price: 120, icon: '🍿', animationId: 'popcorn' },
   { id: 'controller', name: 'Controller', price: 1500, icon: '🎮', animationId: 'controller' },
   { id: 'vinyl', name: 'Vinyl', price: 600, icon: '📀', animationId: 'vinyl' },
-  { id: 'bubble_tea', name: 'Bubble Tea', price: 180, icon: '🧋', animationId: 'bubble-tea' },
-  { id: 'candy', name: 'Candy', price: 300, icon: '🍬', animationId: 'candy' },
-  { id: 'ice_cream', name: 'Ice Cream', price: 150, icon: '🍦', animationId: 'ice-cream' },
-  { id: 'burger', name: 'Burger', price: 350, icon: '🍔', animationId: 'burger' },
-  { id: 'taco', name: 'Taco', price: 200, icon: '🌮', animationId: 'taco' },
-  { id: 'cocktail', name: 'Cocktail', price: 900, icon: '🍸', animationId: 'cocktail' },
-  { id: 'beer', name: 'Beer', price: 110, icon: '🍺', animationId: 'beer' },
-  { id: 'champagne', name: 'Champagne', price: 2000, icon: '🥂', animationId: 'champagne' },
-  { id: 'coffee', name: 'Coffee', price: 6990, icon: '☕', animationId: 'coffee' },
-  { id: 'tea', name: 'Tea', price: 1550, icon: '🍵', animationId: 'tea' },
-  { id: 'milk', name: 'Milk', price: 40499, icon: '🥛', animationId: 'milk' },
-  { id: 'cookie', name: 'Cookie', price: 4000, icon: '🍪', animationId: 'cookie' },
  ],
  'Lucky': [
   { id: 'lucky_clover', name: 'Clover', price: 100, icon: '🍀', animationId: 'lucky-clover', type: 'lucky'},
@@ -79,102 +45,56 @@ const GIFTS: Record<string, GiftItem[]> = {
   { id: 'soaring', name: 'Soaring', price: 20000, icon: '🎆', animationId: 'soaring', type: 'lucky' },
   { id: 'golden_football', name: 'Gold Football', price: 77777, icon: '⚽', animationId: 'golden-football', type: 'lucky' },
   { id: 'dice', name: 'Dice', price: 150, icon: '🎲', animationId: 'dice', type: 'lucky' },
-  { id: 'horseshoe', name: 'Horseshoe', price: 400, icon: '🧲', animationId: 'horseshoe', type: 'lucky' },
   { id: 'crystal_ball', name: 'Crystal Ball', price: 3000, icon: '🔮', animationId: 'crystal-ball', type: 'lucky' },
-  { id: 'tarot', name: 'Tarot', price: 800, icon: '🃏', animationId: 'tarot', type: 'lucky' },
   { id: 'shooting_star', name: 'Shooting Star', price: 15000, icon: '🌠', animationId: 'shooting-star', type: 'lucky' },
-  { id: 'rainbow', name: 'Rainbow', price: 5000, icon: '🌈', animationId: 'rainbow', type: 'lucky' },
   { id: 'pot_of_gold', name: 'Pot of Gold', price: 40000, icon: '🍯', animationId: 'pot-of-gold', type: 'lucky' },
-  { id: 'eight_ball', name: '8-Ball', price: 250, icon: '🎱', animationId: 'eight-ball', type: 'lucky' },
-  { id: 'fortune_cookie', name: 'Fortune Cookie', price: 75, icon: '🥠', animationId: 'fortune-cookie', type: 'lucky' },
   { id: 'red_envelope', name: 'Red Envelope', price: 888, icon: '🧧', animationId: 'red-envelope', type: 'lucky' },
-  { id: 'wishbone', name: 'Wishbone', price: 350, icon: '🦴', animationId: 'wishbone', type: 'lucky' },
   { id: 'piggy_bank', name: 'Piggy Bank', price: 1200, icon: '🐷', animationId: 'piggy-bank', type: 'lucky' },
-  { id: 'amulet', name: 'Amulet', price: 2500, icon: '🧿', animationId: 'amulet', type: 'lucky' },
-  { id: 'leprechaun_hat', name: 'Hat', price: 6000, icon: '🎩', animationId: 'leprechaun-hat', type: 'lucky' },
-  { id: 'magic_potion', name: 'Magic Potion', price: 4500, icon: '🧪', animationId: 'magic-potion', type: 'lucky' },
-  { id: 'dreamcatcher', name: 'Dreamcatcher', price: 3200, icon: '🕸️', animationId: 'dreamcatcher', type: 'lucky' },
-  { id: 'wishing_well', name: 'Wishing Well', price: 18000, icon: '⛲', animationId: 'wishing-well', type: 'lucky' },
-  { id: 'gold_ingot', name: 'Gold Ingot', price: 25000, icon: '🧈', animationId: 'gold-ingot', type: 'lucky' },
  ],
  'Luxury': [
-  { id: 'chupa_chups', name: 'Chupa Chups', price: 14999, icon: '🍭', animationId: 'chupa-chups' },
   { id: 'library', name: 'Library', price: 50000, icon: '📚', animationId: 'library', isPremium: true },
-  { id: 'fountain', name: 'Fountain', price: 50000, icon: '⛲', animationId: 'fountain', isPremium: true },
   { id: 'diamond', name: 'Diamond', price: 70000, icon: '💎', animationId: 'diamond', isPremium: true },
-  { id: 'lipstick', name: 'Lipstick', price: 70000, icon: '💄', animationId: 'lipstick', isPremium: true },
   { id: 'trophy', name: 'Trophy', price: 90000, icon: '🏆', animationId: 'trophy', isPremium: true },
-  { id: 'golden_phone', name: 'Golden Phone', price: 99999, icon: '📱', animationId: 'golden-phone', isPremium: true },
-  { id: 'gem_knife', name: 'Gem Knife', price: 160000, icon: '🗡️', animationId: 'gem-knife', isPremium: true },
-  { id: 'scepter', name: 'Scepter', price: 200000, icon: '🦯', animationId: 'scepter', isPremium: true },
-  { id: 'dressing_table', name: 'Dressing Table', price: 300000, icon: '🪞', animationId: 'dressing-table', isPremium: true },
   { id: 'yacht', name: 'Yacht', price: 250000, icon: '🛥️', animationId: 'yacht', isPremium: true },
   { id: 'mansion', name: 'Mansion', price: 350000, icon: '🏡', animationId: 'mansion', isPremium: true },
-  { id: 'private_island', name: 'Island', price: 400000, icon: '🏝️', animationId: 'private-island', isPremium: true },
   { id: 'helicopter', name: 'Helicopter', price: 220000, icon: '🚁', animationId: 'helicopter', isPremium: true },
-  { id: 'submarine', name: 'Submarine', price: 280000, icon: '🛳️', animationId: 'submarine', isPremium: true },
-  { id: 'limo', name: 'Limo', price: 120000, icon: '🚘', animationId: 'limo', isPremium: true },
   { id: 'private_jet', name: 'Private Jet', price: 380000, icon: '🛩️', animationId: 'private-jet', isPremium: true },
-  { id: 'diamond_necklace', name: 'Necklace', price: 150000, icon: '💎', animationId: 'diamond-necklace', isPremium: true },
-  { id: 'gold_watch', name: 'Gold Watch', price: 80000, icon: '⌚', animationId: 'gold-watch', isPremium: true },
-  { id: 'designer_bag', name: 'Designer Bag', price: 60000, icon: '👜', animationId: 'designer-bag', isPremium: true },
-  { id: 'stiletto', name: 'Stiletto', price: 50000, icon: '👠', animationId: 'stiletto', isPremium: true },
-  { id: 'ring', name: 'Ring', price: 110000, icon: '💍', animationId: 'ring', isPremium: true },
-  { id: 'crystal_chandelier', name: 'Chandelier', price: 90000, icon: '✨', animationId: 'crystal-chandelier', isPremium: true },
   { id: 'sports_car', name: 'Sports Car', price: 200000, icon: '🏎️', animationId: 'sports-car', isPremium: true },
-  { id: 'grand_piano', name: 'Grand Piano', price: 130000, icon: '🎹', animationId: 'grand-piano', isPremium: true },
-  { id: 'stradivarius', name: 'Stradivarius', price: 170000, icon: '🎻', animationId: 'stradivarius', isPremium: true },
   { id: 'arabian_horse', name: 'Arabian Horse', price: 140000, icon: '🐎', animationId: 'arabian-horse', isPremium: true },
-  { id: 'purebred_dog', name: 'Purebred Dog', price: 60000, icon: '🐩', animationId: 'purebred-dog', isPremium: true },
   { id: 'exotic_bird', name: 'Exotic Bird', price: 75000, icon: '🦚', animationId: 'exotic-bird', isPremium: true },
-  { id: 'silver_platter', name: 'Silver Platter', price: 50000, icon: '🍽️', animationId: 'silver-platter', isPremium: true },
  ],
  'Flag': [
-  { id: 'flag_india', name: 'India', price: 50000, icon: '🇮🇳', animationId: 'flag-india', isPremium: true },
-  { id: 'flag_pakistan', name: 'Pakistan', price: 50000, icon: '🇵🇰', animationId: 'flag-pakistan', isPremium: true },
-  { id: 'flag_canada', name: 'Canada', price: 50000, icon: '🇨🇦', animationId: 'flag-canada', isPremium: true },
-  { id: 'flag_america', name: 'America', price: 50000, icon: '🇺🇸', animationId: 'flag-america', isPremium: true },
-  { id: 'flag_phillip', name: 'Phillip', price: 50000, icon: '🇵🇭', animationId: 'flag-phillip', isPremium: true },
+  { id: 'flag_india', name: 'India', price: 50000, icon: '🇮🇳', animationId: 'flag-india' },
+  { id: 'flag_pakistan', name: 'Pakistan', price: 50000, icon: '🇵🇰', animationId: 'flag-pakistan' },
+  { id: 'flag_canada', name: 'Canada', price: 50000, icon: '🇨🇦', animationId: 'flag-canada' },
+  { id: 'flag_america', name: 'America', price: 50000, icon: '🇺🇸', animationId: 'flag-america' },
+  { id: 'space_station', name: 'Space Station', price: 2000000, icon: '🛰️', animationId: 'space-station' },
+  { id: 'dragon', name: 'Dragon', price: 4500000, icon: '🐉', animationId: 'dragon' },
+  { id: 'phoenix', name: 'Phoenix', price: 5000000, icon: '🐦', animationId: 'phoenix' },
+  { id: 'unicorn', name: 'Unicorn', price: 5500000, icon: '🦄', animationId: 'unicorn' },
  ],
  'Events': [
-  { id: 'eid_lantern', name: 'Eid Lantern', price: 5000, icon: '🏮', animationId: 'eid-lantern' },
-  { id: 'eid_cannon', name: 'Eid Cannon', price: 15000, icon: '💣', animationId: 'eid-cannon' },
-  { id: 'eid_feast', name: 'Eid Feast', price: 50000, icon: '🍲', animationId: 'eid-feast' },
-  { id: 'eid_mubarak', name: 'Eid Mubarak', price: 150000, icon: '🕌', animationId: 'eid-mubarak', isPremium: true },
+  { id: 'eid_mubarak', name: 'Eid Mubarak', price: 150000, icon: '🕌', animationId: 'eid-mubarak' },
   { id: 'fireworks', name: 'Fireworks', price: 10000, icon: '🎆', animationId: 'fireworks' },
-  { id: 'confetti', name: 'Confetti', price: 2000, icon: '🎊', animationId: 'confetti' },
-  { id: 'birthday_hat', name: 'Birthday Hat', price: 500, icon: '🥳', animationId: 'birthday-hat' },
-  { id: 'christmas_tree', name: 'Christmas Tree', price: 25000, icon: '🎄', animationId: 'christmas-tree', isPremium: true },
-  { id: 'santa_sleigh', name: 'Santa Sleigh', price: 50000, icon: '🎅', animationId: 'santa-sleigh', isPremium: true },
-  { id: 'snowman', name: 'Snowman', price: 15000, icon: '⛄', animationId: 'snowman' },
-  { id: 'jack_o_lantern', name: 'Jack-o-Lantern', price: 15000, icon: '🎃', animationId: 'jack-o-lantern' },
-  { id: 'easter_egg', name: 'Easter Egg', price: 5000, icon: '🥚', animationId: 'easter-egg' },
-  { id: 'valentine_heart', name: 'Valentine Heart', price: 20000, icon: '💖', animationId: 'valentine-heart' },
-  { id: 'thanksgiving_turkey', name: 'Turkey', price: 12000, icon: '🦃', animationId: 'thanksgiving-turkey' },
+  { id: 'christmas_tree', name: 'Xmas Tree', price: 25000, icon: '🎄', animationId: 'christmas-tree' },
+  { id: 'valentine_heart', name: 'Heart', price: 20000, icon: '💖', animationId: 'valentine-heart' },
  ]
 };
 
-interface GiftPickerProps {
- open: boolean;
- onOpenChange: (open: boolean) => void;
- roomId: string;
- recipient?: { uid: string; name: string; avatarUrl?: string } | null;
- participants?: RoomParticipant[];
-}
-
-export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: GiftPickerProps) {
+export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
- const { toast } = useToast();
 
- const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
+ const [selectedGift, setSelectedGift] = useState<any>(null);
  const [quantity, setQuantity] = useState('1');
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
+ const [showGiftCard, setShowGiftCard] = useState(false);
+ const [lastSentData, setLastSentData] = useState<any>(null);
 
  const seatedParticipants = useMemo(() => {
-  return participants.filter(p => p.seatIndex > 0).sort((a, b) => a.seatIndex - b.seatIndex);
+  return participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
  }, [participants]);
 
  useEffect(() => {
@@ -182,29 +102,15 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    if (initialRecipient) setSelectedUids([initialRecipient.uid]);
    else if (seatedParticipants.length > 0) setSelectedUids([seatedParticipants[0].uid]);
   }
- }, [open, initialRecipient?.uid, seatedParticipants.length]);
-
- const toggleRecipient = (uid: string) => {
-  setSelectedUids(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]);
- };
-
- const selectAll = () => {
-  const allUids = seatedParticipants.map(p => p.uid);
-  if (selectedUids.length === allUids.length) setSelectedUids([]);
-  else setSelectedUids(allUids);
- };
+ }, [open, initialRecipient, seatedParticipants]);
 
  const handleSend = async () => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
 
-  const qtyNum = parseInt(quantity);
-  const costPerRecipient = selectedGift.price * qtyNum;
-  const totalCost = costPerRecipient * selectedUids.length;
+  const qty = parseInt(quantity);
+  const totalCost = selectedGift.price * qty * selectedUids.length;
   
-  if ((userProfile.wallet?.coins || 0) < totalCost) {
-   toast({ variant: 'destructive', title: 'Insufficient Coins' });
-   return;
-  }
+  if ((userProfile.wallet?.coins || 0) < totalCost) return;
 
   setIsSending(true);
   try {
@@ -215,25 +121,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    batch.update(senderRef, { 'wallet.coins': increment(-totalCost), 'wallet.totalSpent': increment(totalCost), updatedAt: serverTimestamp() });
    batch.update(senderProfileRef, { 'wallet.coins': increment(-totalCost), 'wallet.totalSpent': increment(totalCost), updatedAt: serverTimestamp() });
 
-   let luckyWin = null;
-   if (selectedGift.type === 'lucky') {
-     const rand = Math.random() * 1000;
-     let multiplier = 0;
-     if (rand <= 0.2) multiplier = 100;
-     else if (rand <= 0.8) multiplier = 50;
-     else if (rand <= 4) multiplier = 10;
-     else if (rand <= 50) multiplier = 2;
-     
-     if (multiplier > 0) {
-       const winAmount = costPerRecipient * multiplier;
-       luckyWin = { multiplier, winAmount };
-       batch.update(senderRef, { 'wallet.coins': increment(winAmount) });
-       batch.update(senderProfileRef, { 'wallet.coins': increment(winAmount) });
-     }
-   }
-
    selectedUids.forEach(uid => {
-     const diamondYield = Math.floor(costPerRecipient * 0.4);
+     const diamondYield = Math.floor(selectedGift.price * qty * 0.4);
      const recRef = doc(firestore, 'users', uid);
      const recProfRef = doc(firestore, 'users', uid, 'profile', uid);
      batch.update(recRef, { 'wallet.diamonds': increment(diamondYield), updatedAt: serverTimestamp() });
@@ -246,65 +135,139 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     senderId: user.uid,
     senderName: userProfile.username,
     giftId: selectedGift.animationId,
-    text: `sent ${selectedGift.name} x${quantity}${luckyWin ? ` (WON ${luckyWin.multiplier}x!)` : ''}`,
-    luckyWin,
+    text: `sent ${selectedGift.name} x${quantity}`,
     timestamp: serverTimestamp()
    });
 
    await batch.commit();
-   toast({ title: luckyWin ? `🎰 Jackpot! Won ${luckyWin.winAmount}!` : 'Sent!' });
+
+   // --- SHOW BLUE SHINING CARD ---
+   setLastSentData({
+     name: userProfile.username,
+     avatar: userProfile.avatarUrl,
+     icon: selectedGift.icon,
+     qty: quantity
+   });
+   setShowGiftCard(true);
+   setTimeout(() => setShowGiftCard(false), 3500);
+
    onOpenChange(false);
   } catch (e) {
-   toast({ variant: 'destructive', title: 'Failed' });
+   console.error(e);
   } finally {
    setIsSending(false);
   }
  };
 
  return (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[400px] bg-[#12161f]/95 backdrop-blur-3xl border border-white/5 p-0 rounded-t-[40px] sm:rounded-[40px] overflow-hidden text-white shadow-2xl">
-    <div className="p-4 space-y-4">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-       <button onClick={selectAll} className={cn("h-9 px-4 rounded-full text-[10px] font-bold border", selectedUids.length === seatedParticipants.length ? "bg-white text-black" : "bg-white/5")}>ALL</button>
-       {seatedParticipants.map(p => (
-        <button key={p.uid} onClick={() => toggleRecipient(p.uid)} className="relative">
-          <Avatar className={cn("h-10 w-10 border-2", selectedUids.includes(p.uid) ? "border-[#00E676] scale-110" : "border-transparent")}>
-           <AvatarImage src={p.avatarUrl} />
-          </Avatar>
-          {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-3 w-3 bg-[#00E676] text-black rounded-full p-0.5" />}
-        </button>
+  <>
+   {/* --- SIDE GIFT SHINING CARD (BLUE THEME) --- */}
+   <AnimatePresence>
+    {showGiftCard && lastSentData && (
+     <motion.div 
+      initial={{ x: -200, opacity: 0 }}
+      animate={{ x: 20, opacity: 1 }}
+      exit={{ x: -200, opacity: 0 }}
+      className="fixed left-4 top-1/4 z-[100] flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-cyan-400/80 backdrop-blur-xl p-2 pr-8 rounded-full border border-blue-300/40 shadow-[0_0_30px_rgba(59,130,246,0.6)]"
+     >
+      <div className="relative">
+       <Avatar className="h-11 w-11 border-2 border-white/80 shadow-md">
+        <AvatarImage src={lastSentData.avatar} />
+       </Avatar>
+       <div className="absolute -bottom-1 -right-1 text-2xl drop-shadow-md">{lastSentData.icon}</div>
+      </div>
+      <div className="flex flex-col">
+       <span className="text-[10px] text-blue-100 font-bold uppercase tracking-wider">Gift Sent</span>
+       <span className="text-sm font-black text-white truncate max-w-[90px] drop-shadow-sm">{lastSentData.name}</span>
+      </div>
+      <div className="ml-2 text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+       x{lastSentData.qty}
+      </div>
+     </motion.div>
+    )}
+   </AnimatePresence>
+
+   <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="sm:max-w-[420px] bg-[#0b0e14]/98 backdrop-blur-3xl border-t border-white/10 p-0 rounded-t-[40px] overflow-hidden text-white shadow-2xl">
+     
+     {/* Recipient Selection */}
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar pt-6">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any) => p.uid))} className={cn("h-12 w-12 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10")}>ALL</button>
+      {seatedParticipants.map((p: any) => (
+       <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30" : "border-transparent opacity-50")}>
+         <AvatarImage src={p.avatarUrl} />
+        </Avatar>
+        {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 text-black rounded-full p-0.5" />}
+       </button>
+      ))}
+     </div>
+
+     {/* --- TABS WITH PREMIUM COLORS --- */}
+     <Tabs defaultValue="Hot" className="w-full">
+      <TabsList className="mx-4 bg-white/5 p-1 rounded-full border border-white/5 flex justify-between">
+       {[
+        { id: 'Hot', color: 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-red-500' },
+        { id: 'Lucky', color: 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-500' },
+        { id: 'Luxury', color: 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-700 data-[state=active]:to-indigo-600' },
+        { id: 'Flag', color: 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-700 data-[state=active]:to-cyan-600' },
+        { id: 'Events', color: 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-600 data-[state=active]:to-rose-500' }
+       ].map(tab => (
+        <TabsTrigger key={tab.id} value={tab.id} className={cn("text-[10px] font-black px-4 py-1.5 rounded-full transition-all text-white/50 data-[state=active]:text-white data-[state=active]:shadow-lg", tab.color)}>
+         {tab.id}
+        </TabsTrigger>
+       ))}
+      </TabsList>
+
+      <div className="h-[320px] overflow-y-auto no-scrollbar p-4 mt-2">
+       {Object.entries(GIFTS).map(([cat, items]) => (
+        <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0">
+         {items.map(gift => (
+          <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center p-2 rounded-2xl border transition-all active:scale-90", selectedGift?.id === gift.id ? "bg-white/10 border-cyan-400/50 shadow-inner" : "border-transparent")}>
+           <div className="text-4xl mb-1 drop-shadow-md">{gift.icon}</div>
+           <span className="text-[9px] font-bold text-white/80 truncate w-full text-center">{gift.name}</span>
+           <div className="flex items-center gap-1 mt-1">
+            <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
+            <span className="text-[10px] text-yellow-400 font-black">{gift.price.toLocaleString()}</span>
+           </div>
+          </button>
+         ))}
+        </TabsContent>
        ))}
       </div>
-      <Tabs defaultValue="Hot">
-         <TabsList className="bg-transparent gap-4 mb-4">
-          {['Hot', 'Lucky', 'Luxury', 'Flag', 'Events'].map(t => <TabsTrigger key={t} value={t} className="text-xs data-[state=active]:text-[#00E676]">{t}</TabsTrigger>)}
-         </TabsList>
-         <div className="h-[280px] overflow-y-auto no-scrollbar">
-          {Object.entries(GIFTS).map(([cat, items]) => (
-           <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-3">
-              {items.map(gift => (
-               <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center p-2 rounded-xl border transition-all", selectedGift?.id === gift.id ? "bg-white/10 border-[#00E676]" : "border-transparent")}>
-                <div className="text-3xl mb-1">{gift.icon}</div>
-                <span className="text-[9px] truncate w-full text-center">{gift.name}</span>
-                <span className="text-[10px] text-yellow-400 font-bold">{gift.price}</span>
-               </button>
-              ))}
-           </TabsContent>
-          ))}
-         </div>
-      </Tabs>
-    </div>
-    <div className="p-4 bg-black/40 flex items-center justify-between">
-      <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full"><GoldCoinIcon className="h-4 w-4" /><span className="text-xs font-bold">{userProfile?.wallet?.coins || 0}</span></div>
-      <div className="flex gap-2">
-       <Select value={quantity} onValueChange={setQuantity}><SelectTrigger className="w-16 h-9 bg-white/5 border-none"><SelectValue /></SelectTrigger>
-         <SelectContent>{['1', '9', '99', '499'].map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
-       </Select>
-       <button onClick={handleSend} disabled={!selectedGift || isSending || selectedUids.length === 0} className={cn("h-9 px-6 rounded-full font-bold text-xs", !selectedGift ? "bg-white/10" : "bg-[#00E676] text-black")}>SEND</button>
+     </Tabs>
+
+     {/* --- FOOTER --- */}
+     <div className="p-4 bg-black/40 flex items-center justify-between border-t border-white/5">
+      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+       <GoldCoinIcon className="h-4 w-4" />
+       <span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
-    </div>
-   </DialogContent>
-  </Dialog>
+
+      <div className="flex items-center gap-2">
+       <Select value={quantity} onValueChange={setQuantity}>
+        <SelectTrigger className="w-16 h-10 bg-white/5 border-none rounded-xl font-bold text-cyan-400">
+         <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">
+         {['1', '10', '99', '520', '1314'].map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}
+        </SelectContent>
+       </Select>
+
+       <button 
+        onClick={handleSend} 
+        disabled={!selectedGift || isSending || selectedUids.length === 0} 
+        className={cn(
+         "h-10 px-8 rounded-full font-black text-xs transition-all shadow-xl uppercase tracking-tighter", 
+         !selectedGift ? "bg-white/5 text-white/20" : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/30 active:scale-95"
+        )}
+       >
+        {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
+       </button>
+      </div>
+     </div>
+    </DialogContent>
+   </Dialog>
+  </>
  );
 }
