@@ -21,32 +21,85 @@ const EliteFrameRenderer = ({ frameId }: { frameId: string }) => {
     case 'elite-mythic-gold':
     case 'supreme-king':
       return (
-        <div className="absolute inset-0 w-full h-full rounded-full p-[2px] overflow-visible">
-          {/* Rotating Shine Beam (BEHIND) */}
+        <div className="absolute inset-0 w-full h-full rounded-full p-[2px] overflow-visible" 
+             style={{ transform: 'perspective(1000px) rotateX(15deg)' }}>
+          {/* Real 3D Depth Shadow */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600/20 to-orange-800/40 blur-xl" 
+               style={{ transform: 'translateZ(-20px)' }} />
+          
+          {/* Outer 3D Ring with Real Depth */}
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-[-15%] rounded-full opacity-80"
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-[-20%] rounded-full"
             style={{
-              background: 'conic-gradient(transparent 0%, #FFD700 10%, transparent 20%, #FDB931 40%, transparent 50%, #FFD700 60%, transparent 80%, #FDB931 90%, transparent 100%)',
-              maskImage: 'radial-gradient(circle, transparent 40%, black 45%)',
-              WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 45%)'
+              background: 'conic-gradient(from 0deg, #FFD700, #FFA500, #FFD700, #FFB700, #FFD700)',
+              boxShadow: '0 0 40px #FFD700, 0 0 80px #FFA500, inset 0 0 20px rgba(255,215,0,0.5)',
+              transform: 'translateZ(10px) rotateX(15deg)'
             }}
           />
-          {/* Main Metallic Ring (BEHIND) */}
-          <div className="absolute inset-0 rounded-full border-[4px] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.8)]" 
+          
+          {/* Inner 3D Metallic Ring */}
+          <div className="absolute inset-0 rounded-full border-[6px]" 
                style={{ 
-                 background: 'linear-gradient(135deg, #FFF281 0%, #FFB700 50%, #B8860B 100%)',
-                 maskImage: 'radial-gradient(circle, transparent 46%, black 47%)',
-                 WebkitMaskImage: 'radial-gradient(circle, transparent 46%, black 47%)'
+                 background: 'linear-gradient(145deg, #FFD700, #B8860B, #FFD700, #FFA500)',
+                 borderColor: '#FFD700',
+                 boxShadow: 
+                   '0 0 30px rgba(255,215,0,0.8), ' +
+                   '0 0 60px rgba(255,165,0,0.6), ' +
+                   'inset 0 0 20px rgba(255,215,0,0.3), ' +
+                   'inset 0 0 10px rgba(0,0,0,0.2)',
+                 transform: 'translateZ(5px)'
                }} />
-          {/* Glowing Crown Icon (TOP OVERLAY) */}
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-[40] drop-shadow-[0_0_10px_#FFD700]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#fff" strokeWidth="1">
+          
+          {/* Animated Glow Particles */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                rotate: [0, 360],
+                scale: [1, 1.5, 1],
+                opacity: [0.8, 1, 0.8]
+              }}
+              transition={{ 
+                duration: 3 + i * 0.5, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                delay: i * 0.3
+              }}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, #FFD700, #FFA500)',
+                boxShadow: '0 0 10px #FFD700, 0 0 20px #FFA500',
+                top: '50%',
+                left: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateY(-60px) translateZ(15px)`
+              }}
+            />
+          ))}
+          
+          {/* 3D Crown with Depth */}
+          <motion.div
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-4 left-1/2 -translate-x-1/2 z-[50]"
+            style={{
+              filter: 'drop-shadow(0 0 15px #FFD700) drop-shadow(0 0 30px #FFA500)',
+              transform: 'translateZ(20px)'
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="url(#goldGradient)" stroke="#fff" strokeWidth="1">
+              <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FFD700" />
+                  <stop offset="50%" stopColor="#FFA500" />
+                  <stop offset="100%" stopColor="#FFD700" />
+                </linearGradient>
+              </defs>
               <path d="M5 21L3 18L5 15L7 18M19 21L21 18L19 15L17 18M12 21L14 18L12 15L10 18M5 15L12 5L19 15H5Z" />
               <circle cx="12" cy="4" r="2" fill="#ef4444" />
             </svg>
-          </div>
+          </motion.div>
         </div>
       );
 
@@ -185,6 +238,138 @@ const EliteFrameRenderer = ({ frameId }: { frameId: string }) => {
         <div className="absolute inset-0 w-full h-full rounded-full border-[4px] border-yellow-500 overflow-visible">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-xl drop-shadow-md">🌙</div>
           <div className="absolute inset-0 rounded-full border border-yellow-300 opacity-40 animate-pulse" />
+        </div>
+      );
+
+    case '3d-neon-dragon':
+      return (
+        <div className="absolute inset-0 w-full h-full rounded-full overflow-visible"
+             style={{ transform: 'perspective(1200px) rotateX(10deg) rotateY(5deg)' }}>
+          {/* Dragon Scale Pattern */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-[-15%] rounded-full"
+            style={{
+              background: 'conic-gradient(from 0deg, #FF006E, #8338EC, #3A86FF, #06FFB4, #FFD60A, #FF006E)',
+              boxShadow: '0 0 50px #FF006E, 0 0 100px #8338EC, inset 0 0 30px rgba(255,0,110,0.4)',
+              transform: 'translateZ(8px)'
+            }}
+          />
+          {/* Dragon Eye Effects */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.6, 1, 0.6]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                delay: i * 0.4
+              }}
+              className="absolute w-3 h-3 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, #FF006E, #8338EC)',
+                boxShadow: '0 0 20px #FF006E, 0 0 40px #8338EC',
+                top: '50%',
+                left: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 60}deg) translateY(-70px) translateZ(12px)`
+              }}
+            />
+          ))}
+        </div>
+      );
+
+    case '3d-holographic':
+      return (
+        <div className="absolute inset-0 w-full h-full rounded-full overflow-visible"
+             style={{ transform: 'perspective(1500px) rotateX(20deg)' }}>
+          {/* Holographic Layers */}
+          <motion.div
+            animate={{ rotateY: [0, 180, 360] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-[-10%] rounded-full"
+            style={{
+              background: 'linear-gradient(45deg, #FF00FF, #00FFFF, #FFFF00, #FF00FF)',
+              boxShadow: '0 0 60px rgba(255,0,255,0.8), 0 0 120px rgba(0,255,255,0.6)',
+              transform: 'translateZ(6px)',
+              mixBlendMode: 'screen'
+            }}
+          />
+          {/* Floating Holographic Particles */}
+          {[...Array(12)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                y: [-30, 30, -30],
+                x: [0, 20, 0, -20, 0],
+                opacity: [0.4, 1, 0.4]
+              }}
+              transition={{ 
+                duration: 4 + i * 0.3, 
+                repeat: Infinity
+              }}
+              className="absolute w-1.5 h-1.5 rounded-full"
+              style={{
+                background: `hsl(${i * 30}, 100%, 50%)`,
+                boxShadow: `0 0 15px hsl(${i * 30}, 100%, 50%)`,
+                top: '50%',
+                left: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-65px) translateZ(10px)`
+              }}
+            />
+          ))}
+        </div>
+      );
+
+    case '3d-royal-phoenix':
+      return (
+        <div className="absolute inset-0 w-full h-full rounded-full overflow-visible"
+             style={{ transform: 'perspective(1000px) rotateX(12deg)' }}>
+          {/* Phoenix Fire Ring */}
+          <motion.div
+            animate={{ 
+              rotate: [0, 360],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ 
+              duration: 5, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+            className="absolute inset-[-18%] rounded-full"
+            style={{
+              background: 'conic-gradient(from 0deg, #FF4500, #FF6347, #FFD700, #FF8C00, #FF4500)',
+              boxShadow: '0 0 80px #FF4500, 0 0 160px #FF6347, inset 0 0 40px rgba(255,69,0,0.6)',
+              transform: 'translateZ(12px)'
+            }}
+          />
+          {/* Phoenix Feather Particles */}
+          {[...Array(16)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                y: [-40, 40, -40],
+                rotate: [0, 180, 360],
+                opacity: [0.3, 1, 0.3]
+              }}
+              transition={{ 
+                duration: 3 + i * 0.2, 
+                repeat: Infinity,
+                delay: i * 0.1
+              }}
+              className="absolute w-2 h-3 rounded-full"
+              style={{
+                background: 'linear-gradient(45deg, #FF4500, #FFD700)',
+                boxShadow: '0 0 25px #FF4500, 0 0 50px #FFD700',
+                top: '50%',
+                left: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 22.5}deg) translateY(-75px) translateZ(15px)`
+              }}
+            />
+          ))}
         </div>
       );
 
