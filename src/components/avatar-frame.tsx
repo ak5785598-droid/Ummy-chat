@@ -180,11 +180,11 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={transition}
-        className="absolute inset-[12%] rounded-full z-10 shadow-[box-shadow:inset_0_4px_8px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.5)]"
+        className="absolute inset-[12%] rounded-full z-10 shadow-[inset_0_4px_8px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.5)]"
         style={{
           background: gradient,
           backgroundSize: '200% 200%',
-          padding: '3px', // Even thinner for elite feel
+          padding: '3px',
           maskImage: 'radial-gradient(circle, transparent 47%, black 48%)',
           WebkitMaskImage: 'radial-gradient(circle, transparent 47%, black 48%)',
           boxShadow: `0 0 12px ${glowColor}, inset 0 0 8px rgba(0,0,0,0.6)`
@@ -238,28 +238,6 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
         </div>
       )}
 
-      {/* 6. LAYER: Glossy Shine Overlay */}
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full z-50 pointer-events-none opacity-30 overflow-hidden"
-        style={{
-          maskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
-        }}
-      >
-        <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[conic-gradient(transparent,rgba(255,255,255,0.6),transparent_40%)]" />
-      </motion.div>
-
-      <style jsx>{`
-        @keyframes matrix {
-          from { background-position: 0 0; }
-          to { background-position: 0 100%; }
-        }
-        .preserve-3d {
-          transform-style: preserve-3d;
-        }
-      `}</style>
     </div>
   );
 };

@@ -135,7 +135,7 @@ export function AvatarFramePicker({
                 className={cn(
                   "relative aspect-square rounded-2xl border transition-all flex flex-col items-center justify-center p-2 group overflow-visible",
                   selectedId === frame.id 
-                    ? "bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.3)]Scale-105" 
+                    ? "bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.3)] scale-105" 
                     : "bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-800/60"
                 )}
               >
