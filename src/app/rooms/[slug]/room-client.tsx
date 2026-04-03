@@ -183,7 +183,7 @@ const Seat = memo(({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-white/5 backdrop-blur-md border border-white/20 shadow-inner",
+                "bg-white/10 backdrop-blur-md border-[1.5px] border-white/40 shadow-inner",
                 isLocked ? "border-red-500/60" : "",
                 occupant ? "p-0" : "p-0"
               )}
@@ -1758,7 +1758,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* Floating Top-Right Badge (Tree) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent mix-blend-plus-lighter" />
+            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent mix-blend-screen" />
             {achievedTasks.some(id => !claimedTasks.includes(id)) && (
               <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
             )}
