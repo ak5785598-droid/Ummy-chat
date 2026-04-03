@@ -176,18 +176,18 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
         style={{ backgroundColor: glowColor }}
       />
 
-      {/* 3. LAYER: Main 3D Frame Body (Tight Fit) */}
+      {/* 3. LAYER: Main 3D Frame Body (Super Tight Fit) */}
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={transition}
-        className="absolute inset-[8%] rounded-full z-10 shadow-[box-shadow:inset_0_4px_8px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.5)]"
+        className="absolute inset-[12%] rounded-full z-10 shadow-[box-shadow:inset_0_4px_8px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.5)]"
         style={{
           background: gradient,
           backgroundSize: '200% 200%',
-          padding: '4px', // Reduced padding for better proportion
-          maskImage: 'radial-gradient(circle, transparent 44%, black 45%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 44%, black 45%)',
-          boxShadow: `0 0 15px ${glowColor}, inset 0 0 10px rgba(0,0,0,0.6)`
+          padding: '3px', // Even thinner for elite feel
+          maskImage: 'radial-gradient(circle, transparent 47%, black 48%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 47%, black 48%)',
+          boxShadow: `0 0 12px ${glowColor}, inset 0 0 8px rgba(0,0,0,0.6)`
         }}
       >
         {/* Texture Layer (Lava/Ice/Gold patterns) */}
