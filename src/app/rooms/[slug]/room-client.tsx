@@ -1767,7 +1767,7 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full mt-2">
-        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-4">
+        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-2">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
