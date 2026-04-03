@@ -167,7 +167,7 @@ const Seat = memo(({
         )}
 
         <AvatarFrame
-          frameId={occupant?.activeFrame || (occupant?.uid === currentUser?.uid ? '3d-neon-dragon' : 'None')}
+          frameId={occupant?.activeFrame || '3d-neon-dragon'}
           size="md"
         >
           <div className="relative p-1 rounded-full overflow-visible">
