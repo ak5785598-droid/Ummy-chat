@@ -201,7 +201,7 @@ const Seat = memo(({
               ) : isLocked ? (
                 <Lock className="h-4 w-4 text-red-500/60" />
               ) : (
-                <Armchair className="text-white/60 h-6 w-6" />
+                <Armchair className="text-white/90 h-6 w-6" />
               )}
             </button>
           </div>
