@@ -123,7 +123,18 @@ import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 
 import { memo, useCallback } from 'react';
 
-// RemoteAudio shifted to ActiveRoomManager
+// --- HAZA STYLE COMPONENTS ---
+const RoomTrophyBadge = ({ coins }: { coins: number }) => (
+  <div className="flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
+    <div className="bg-[#FFB300] rounded-full p-0.5">
+       <Trophy className="h-2.5 w-2.5 text-black fill-current" />
+    </div>
+    <span className="text-[10px] font-bold text-[#FFB300] leading-none">
+      {coins >= 1000000 ? `${(coins / 1000000).toFixed(1)}M` : coins.toLocaleString()}
+    </span>
+    <ChevronDown className="h-2.5 w-2.5 text-[#FFB300]/50" />
+  </div>
+);
 
 const Seat = memo(({
   index,
@@ -149,13 +160,10 @@ const Seat = memo(({
   const { user } = useUser();
   const { isSpeaking, intensity } = useVoiceActivityContext();
   const currentUser = user;
-  const isOccupantOwner = occupant?.uid === roomOwnerId;
-  const isOccupantAdmin = roomModeratorIds.includes(occupant?.uid || '');
-  const vipLevel = (occupant as any)?.vipLevel || 0;
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
-      <div className="relative p-4 overflow-visible"> {/* Increased padding to p-4 for large 3D effects */}
+    <div className="flex flex-col items-center gap-2 w-full">
+      <div className="relative overflow-visible"> 
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
@@ -170,65 +178,51 @@ const Seat = memo(({
           frameId={occupant?.activeFrame || 'None'}
           size="md"
         >
-          <div className="relative p-1 rounded-full overflow-visible">
+          <div className="relative p-0.5 rounded-full overflow-visible">
             <button
               onClick={() => onClick(index, occupant)}
               className={cn(
-                "h-12 w-12 rounded-full flex items-center justify-center border active:scale-90 transition-all relative z-10",
-                isLocked ? "border-red-500/60" : "border-white/20"
+                "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
+                "bg-white/10 backdrop-blur-sm border-2",
+                isLocked ? "border-red-500/40" : "border-white/5",
+                occupant ? "p-0" : "p-0"
               )}
-              style={{ backgroundColor: theme.seatColor || 'rgba(255, 255, 255, 0.1)' }}
             >
               {occupant ? (
                 <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
-                  <Avatar className="h-full w-full p-0.5">
+                  <Avatar className="h-full w-full p-0">
                     <AvatarImage
                       src={occupant.avatarUrl || undefined}
                       className="image-render-crisp brightness-110 contrast-110 saturate-110"
-                      style={{ imageRendering: 'auto' }}
                     />
                     <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                 </div>
               ) : isLocked ? (
-                <Lock className="h-3.5 w-3.5 text-red-500/60" />
+                <Lock className="h-4 w-4 text-red-500/60" />
               ) : (
-                <div className="rounded-full h-7 w-7 flex items-center justify-center">
-                  <Armchair className="text-white/30 h-3.5 w-3.5" />
-                </div>
+                 <Armchair className="text-white/20 h-5 w-5" />
               )}
             </button>
           </div>
         </AvatarFrame>
-        {/* Seat Mute / User Mute Badge - Small Red Button Style */}
-        {(occupant?.isMuted || isSeatMuted) && (
-          <div className={cn(
-            "absolute -bottom-1 -right-1 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-xl",
-            isSeatMuted ? "bg-red-600 animate-pulse" : "bg-red-500"
-          )}>
-            <MicOff className="h-2.5 w-2.5 text-white" />
-          </div>
-        )}
-      </div>
 
-      {/* Wafa-style Float Name & Seat Badge (Minimal Zero-Box) */}
-      <div className="mt-1.5 w-full flex flex-col items-center overflow-visible">
-        <div className="flex items-center gap-1 max-w-full justify-center">
-          {occupant && (
-            <div
-              className={cn(
-                "h-3.5 w-3.5 rounded-full flex items-center justify-center shrink-0 border border-white/20",
-                index % 2 === 0 ? "bg-pink-500" : "bg-blue-500"
-              )}
-            >
-              <span className="text-[7px] font-semibold text-white leading-none">{index}</span>
-            </div>
+        {/* Mic Status Badge */}
+        <div className={cn(
+          "absolute bottom-0 right-0 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950",
+          (occupant?.isMuted || isSeatMuted) ? "bg-red-500" : "bg-[#00E676]"
+        )}>
+          {(occupant?.isMuted || isSeatMuted) ? (
+            <MicOff className="h-2.5 w-2.5 text-white" />
+          ) : (
+            <Mic className="h-2.5 w-2.5 text-white fill-current" />
           )}
-          <span className="text-[10px] font-semibold text-white uppercase truncate max-w-[85px] leading-tight text-center tracking-tight">
-            {occupant ? occupant.name : label}
-          </span>
         </div>
       </div>
+
+      <span className="text-[10px] font-bold text-white/70 uppercase tracking-tighter leading-none text-center">
+        {occupant ? occupant.name : label}
+      </span>
     </div>
   );
 });
@@ -1712,105 +1706,65 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      <header className="relative z-50 flex items-center justify-between p-3 pt-2 px-4 shrink-0 w-full">
-        <div className="flex items-center gap-2 max-w-[70%] min-w-0">
-          <div
-            onClick={() => setIsRoomInfoOpen(true)}
-            className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
-          >
-            <Avatar className="h-9 w-9 rounded-lg border-2 border-white/20">
-              <AvatarImage src={room.coverUrl || undefined} />
-              <AvatarFallback className="text-[10px]">UM</AvatarFallback>
-            </Avatar>
-            <Trophy className="h-4 w-4 text-yellow-500 absolute top-6 -left-5 z-20 animate-reaction-float" />
-
-            <div className="absolute -bottom-1 -left-3.5 flex items-center gap-0.5 bg-black/80 px-1 py-0.5 rounded-full border border-white/10 z-20 scale-75">
-              <Trophy className="h-2 w-2 text-yellow-400 fill-current" />
-              <span className="text-[7px] font-semibold text-yellow-400 leading-none">
-                {room.stats?.totalGifts?.toLocaleString() || 0}
-              </span>
-            </div>
+      <header className="relative z-[100] flex flex-col w-full p-4">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3">
+             <Avatar className="h-12 w-12 rounded-xl border border-white/10 shadow-lg">
+                <AvatarImage src={room.coverUrl || undefined} />
+                <AvatarFallback>RM</AvatarFallback>
+             </Avatar>
+             <div className="flex flex-col">
+                <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
+                  {room.title}
+                </h1>
+                <p className="text-[10px] font-medium text-white/50 leading-none">
+                  ID:{room.roomNumber}
+                </p>
+             </div>
           </div>
 
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1 min-w-0">
-              <h1 className="font-semibold text-[16px] uppercase tracking-tighter text-white leading-none truncate max-w-[260px]">{room.title}</h1>
-              <button onClick={handleFollowRoom} className={cn("h-5 w-5 rounded-full flex items-center justify-center transition-all active:scale-90 shrink-0", followData ? "bg-red-50" : "bg-[#00E676]")}>
-                {followData ? <Heart className="h-3 w-3 text-white fill-current" /> : <div className="relative flex items-center justify-center"><Heart className="h-3.5 w-3.5 text-white" strokeWidth={3} /><Plus className="h-2 w-2 text-white absolute mt-0.5" strokeWidth={4} /></div>}
-              </button>
-            </div>
-            <p className="text-[9px] font-medium text-white/60 uppercase mt-0.5 tracking-widest leading-none">ID:{room.roomNumber}</p>
+          <div className="flex items-center gap-2">
+             <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
+                <Users className="h-4 w-4 text-white/80" />
+                <span className="text-[9px] font-bold">{onlineCount}</span>
+             </button>
+             {canManageRoom && (
+               <button onClick={() => setIsRoomInfoOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+                  <Hexagon className="h-5 w-5 text-white/80" />
+               </button>
+             )}
+             <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+                <Share2 className="h-4 w-4 text-white/80" />
+             </button>
+             <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+                <Power className="h-4 w-4 text-white/80" />
+             </button>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {/* AI Voice Button */}
-          <div className="relative">
-            <button
-              onClick={toggleAIVoice}
-              className={cn(
-                "p-1 rounded-full active:scale-95 transition-all border border-white/5 relative z-10",
-                isAIVoiceEnabled ? "bg-primary/20 text-primary border-primary/40" : "bg-white/5 text-white/30",
-                isAISpeaking && "animate-pulse shadow-[0_0_15px_rgba(255,51,102,0.6)] border-primary"
+
+        <RoomTrophyBadge coins={room.stats?.totalGifts || 0} />
+
+        {/* Floating Top-Right Badge (Tree) */}
+        <div className="absolute top-24 right-4 animate-reaction-float z-50">
+           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
+              <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)]" />
+              {achievedTasks.some(id => !claimedTasks.includes(id)) && (
+                <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
               )}
-            >
-              {isAIVoiceEnabled ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4 text-white/40" />}
-            </button>
-            <span className={cn(
-              "absolute -top-1 -right-0.5 text-[6px] font-semibold px-0.5 rounded-sm z-20 pointer-events-none transition-colors",
-              isAIVoiceEnabled ? "bg-primary text-white" : "bg-white/20 text-white/60"
-            )}>AI</span>
-            {isAISpeaking && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 z-0" />
-            )}
-          </div>
-          <button onClick={() => setIsUserListOpen(true)} className="bg-black/60 px-1.5 py-1 rounded-full border border-white/10 flex items-center gap-1"><Users className="h-3.5 w-3.5 text-white/60" /><span className="text-[9px] font-semibold">{onlineCount}</span></button>
-          {isOwner && <RoomSettingsDialog room={room} trigger={<button className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Hexagon className="h-4 w-4 text-white/60" /></button>} />}
-          <button onClick={() => setIsShareOpen(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4 text-white/60" /></button>
-          <button onClick={() => setShowExitDialog(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4 text-white/60" /></button>
+           </div>
         </div>
-
-        {/* TASK JAR ICON - Top Right Below Header (Wafa Style) */}
-        <button
-          onClick={() => setIsRoomTasksOpen(true)}
-          className="absolute top-20 right-4 z-[45] group active:scale-95 transition-transform duration-300"
-        >
-          <div className="relative">
-            {/* Pulsing Glow */}
-            <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full scale-110 animate-pulse" />
-            
-            {/* The Jar Icon (Styled Image) */}
-            <div className="relative h-14 w-14 flex items-center justify-center">
-              <img 
-                src="/images/golden_task_jar.png" 
-                alt="Task Jar" 
-                className="h-12 w-12 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
-              />
-              
-              {/* Progress Ring (Visual Indicator) */}
-              <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/10 animate-spin-slow" />
-            </div>
-
-            {/* Notification Badge - Show count of achieved but UNCLAIMED tasks */}
-            {achievedTasks.filter(id => !claimedTasks.includes(id)).length > 0 && (
-              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-slate-950 flex items-center justify-center shadow-lg animate-bounce">
-                <span className="text-[9px] font-black">{achievedTasks.filter(id => !claimedTasks.includes(id)).length}</span>
-              </div>
-            )}
-          </div>
-        </button>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        {/* SEATS SECTION (Point 4) - Adjusted padding-top (pt-8) as per user request */}
-        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-8 w-full overflow-visible">
-          <div className="w-full flex justify-center px-6 mb-1">
-            <div className="w-1/4 max-w-[90px]">
-              <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
-            </div>
+      <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden w-full">
+        <div className="shrink-0 flex flex-col items-center gap-8 w-full overflow-visible mb-4">
+          {/* Host Seat (Top Centered) */}
+          <div className="w-24">
+            <Seat index={1} label="History" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
           </div>
 
-          <div className="w-full grid grid-cols-4 gap-1.5 px-4">
-            {extraSeats.map(idx => (
+          {/* 2x4 Grid Seats */}
+          <div className="w-full grid grid-cols-4 gap-y-12 px-2">
+            {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
               <Seat key={idx} index={idx} label={`No.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
           </div>
@@ -2101,65 +2055,52 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </button>
 
-      <footer className="relative z-50 px-6 pb-4 flex items-center justify-between pt-2">
-        <div className="flex items-center">
-          <button
-            onClick={handleInputClick}
-            className={cn(
-              "rounded-full h-12 w-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-lg",
-              isChatMuted && !canManageRoom ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-white/10 text-white"
-            )}
-          >
-            <MessageSquare className="h-[18px] w-[18px]" />
+
+      <footer className="relative z-50 px-4 pb-6 flex items-center justify-between pt-2 h-20">
+        {/* Left: Say Hi Input-like Button */}
+        <button
+          onClick={handleInputClick}
+          className={cn(
+            "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium mr-3",
+            isChatMuted && !canManageRoom && "opacity-50 grayscale"
+          )}
+        >
+          Say Hi
+        </button>
+
+        {/* Right: Icon Actions Grouped */}
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1 px-1.5 active:scale-90 transition-transform">
+            <Smile className="h-6 w-6 text-white/80" />
           </button>
 
-          {/* REPOSITIONED AI MIC - PERSISTENT ACCESS */}
-          <button
-            onClick={toggleAIListening}
-            className={cn(
-              "ml-2 h-12 w-12 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/20",
-              isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-primary text-black"
-            )}
-          >
-            <Sparkles className="h-[18px] w-[18px]" />
+          <button onClick={() => setShowSoundboard(!showSoundboard)} className="p-1 px-1.5 active:scale-90 transition-transform">
+            <Volume2 className="h-6 w-6 text-white/80" />
           </button>
-        </div>
 
-        <div className="absolute left-[42%] -translate-x-1/2 -translate-y-1">
+          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1.5 transition-all active:scale-90", !isInSeat && "opacity-30")}>
+            {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/40" />}
+          </button>
+
+          <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1.5 active:scale-90 transition-transform">
+             <Mail className="h-6 w-6 text-white/80" />
+          </button>
+
           <button
             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }}
-            className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00B0FF] via-[#0091EA] to-[#007BB5] flex items-center justify-center shadow-[0_0_15px_rgba(0,176,255,0.4)] active:scale-95 transition-all border-2 border-white/40 overflow-hidden group relative"
+            className="relative h-12 w-12 active:scale-90 transition-all ml-1"
           >
-            <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-transparent pointer-events-none" />
-
-            <img
-              src="https://img.icons8.com/color/96/gift--v1.png"
-              className="h-7 w-7 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)] filter brightness-110 saturate-125 hue-rotate-[280deg] animate-reaction-float relative z-10"
-              alt="Gift"
-            />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-2 rounded-full transition-all active:scale-90 shadow-md", !isInSeat ? "bg-white/5 text-white/20 opacity-50" : (currentUserParticipant?.isMuted ? "bg-white/10 text-white" : "bg-green-500 text-white shadow-lg border border-white/20"))}>
-            {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-[18px] w-[18px]" /> : <MicOff className="h-[18px] w-[18px]" />}
-          </button>
-
-          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-            <SmilePlus className="h-[18px] w-[18px] text-white" />
-          </button>
-
-          <button onClick={() => setIsMessagesOpen(true)} className="p-2 bg-white/10 rounded-full active:scale-90 transition-transform shadow-md border border-white/5">
-            <Mail className="h-[18px] w-[18px] text-white" />
+            <div className="absolute inset-0 bg-[#FF00FF]/20 rounded-full blur-lg animate-pulse" />
+            <div className="relative h-full w-full bg-gradient-to-tr from-[#A020F0] to-[#FF69B4] rounded-2xl flex items-center justify-center border border-white/30 shadow-xl overflow-hidden p-1.5">
+               <Image src="https://img.icons8.com/color/96/gift--v1.png" width={32} height={32} alt="Gift" className="drop-shadow-lg" />
+            </div>
           </button>
 
           <button
             onClick={() => setIsRoomPlayOpen(true)}
-            className="group relative p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full active:scale-90 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)] border border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400"
+            className="p-1 px-1.5 active:scale-90 transition-transform"
           >
-            <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-            <LayoutGrid className="h-[18px] w-[18px] text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+            <LayoutGrid className="h-6 w-6 text-white/80" />
           </button>
         </div>
       </footer>
