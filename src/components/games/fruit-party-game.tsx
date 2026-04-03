@@ -26,14 +26,14 @@ import { GameResultOverlay } from '@/components/game-result-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS = [
-  { id: 'apple', emoji: '🍎', multiplier: 5, label: 'Win 5 times' },
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times' },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: 'Win 5 times' },
-  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: 'Win 5 times' },
-  { id: 'pizza', emoji: '🍕', multiplier: 10, label: 'Win 10 times' },
-  { id: 'skewers', emoji: '🍢', multiplier: 15, label: 'Win 15 times' },
-  { id: 'burrito', emoji: '🌯', multiplier: 25, label: 'Win 25 times' },
-  { id: 'meat', emoji: '🍖', multiplier: 45, label: 'Win 45 times' },
+  { id: 'apple', emoji: '🍎', multiplier: 5, label: '5X' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: '5X' },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: '5X' },
+  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: '5X' },
+  { id: 'pizza', emoji: '🍕', multiplier: 10, label: '10X' },
+  { id: 'skewers', emoji: '🍢', multiplier: 15, label: '15X' },
+  { id: 'burrito', emoji: '🌯', multiplier: 25, label: '25X' },
+  { id: 'meat', emoji: '🍖', multiplier: 45, label: '45X' },
 ];
 
 const CHIPS = [
@@ -44,12 +44,7 @@ const CHIPS = [
   { value: 1000000, label: '1M' },
 ];
 
-interface FruitPartyGameProps {
- onClose?: () => void;
- isOverlay?: boolean;
-}
-
-export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGameProps) {
+export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () => void, isOverlay?: boolean }) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -61,15 +56,13 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
  const [myBets, setMyBets] = useState<Record<string, number>>({});
  const [lastBets, setLastBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
- const [history, setHistory] = useState<string[]>(['watermelon', 'pizza', 'strawberry', 'apple', 'mango', 'meat', 'burrito']);
+ const [history, setHistory] = useState<string[]>(['watermelon', 'pizza', 'strawberry', 'apple', 'mango']);
  const [isMuted, setIsMuted] = useState(false);
  const [isLaunching, setIsLaunching] = useState(true);
  const [winners, setWinners] = useState<any[]>([]);
  const [winningSymbol, setWinningSymbol] = useState<string>('');
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
- const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'fruit-party'), [firestore]);
- const { data: gameData } = useDoc(gameDocRef);
  const audioCtxRef = useRef<AudioContext | null>(null);
 
  const initAudioContext = useCallback(() => {
@@ -133,14 +126,14 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   const targetIdx = ITEMS.findIndex(i => i.id === winningId);
   let currentStep = 0;
   const totalSteps = 32 + targetIdx;
-  let speed = 50;
+  let speed = 60;
 
   const runChase = () => {
    setHighlightIdx(currentStep % ITEMS.length);
    playTickSound();
    currentStep++;
    if (currentStep < totalSteps) {
-    if (totalSteps - currentStep < 10) speed += 30;
+    if (totalSteps - currentStep < 12) speed += 35;
     setTimeout(runChase, speed);
    } else {
     setTimeout(() => showResult(winningId), 800);
@@ -166,8 +159,10 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
-   const updateData = { 'wallet.coins': increment(winAmount), updatedAt: serverTimestamp() };
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
+   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
+    'wallet.coins': increment(winAmount),
+    updatedAt: serverTimestamp() 
+   });
   }
 
   setTimeout(() => {
@@ -187,181 +182,162 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    return;
   }
   playBetSound();
-  const updateData = { 'wallet.coins': increment(-selectedChip) };
-  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
+  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
  };
 
- if (isLaunching) {
-  return (
-   <div className="h-full w-full bg-[#1A0B2E] flex flex-col items-center justify-center">
-    <div className="text-6xl animate-bounce">🍎</div>
-    <h1 className="mt-4 text-2xl font-black text-yellow-400 uppercase italic">Loading Party...</h1>
-   </div>
-  );
- }
+ if (isLaunching) return <div className="h-full w-full bg-[#0F051D] flex items-center justify-center text-yellow-400 font-black italic">FRUIT PARTY LOADING...</div>;
 
  return (
-  <div className={cn(
-   "flex flex-col relative overflow-hidden font-sans text-white",
-   isOverlay ? "h-full w-full" : "h-[100dvh] w-full bg-[#0F051D]"
-  )}>
+  <div className={cn("flex flex-col relative h-[100dvh] w-full bg-[#0F051D] overflow-hidden text-white")}>
    
-   {gameState === 'result' && winners.length > 0 && (
+   {/* Condition updated: Show overlay even if only to show the winning symbol */}
+   {gameState === 'result' && (
     <div className="absolute inset-0 z-[100]">
-     <GameResultOverlay gameId="fruit-party" winningSymbol={winningSymbol} winAmount={totalWinAmount} winners={winners} />
+      <GameResultOverlay 
+        gameId="fruit-party" 
+        winningSymbol={winningSymbol} 
+        winAmount={totalWinAmount} 
+        winners={winners} 
+      />
     </div>
    )}
 
-   {/* --- TOP HEADER & HISTORY --- */}
-   <div className="relative z-50 p-4 pt-6 space-y-4">
+   {/* --- HEADER --- */}
+   <header className="relative z-50 p-4 pt-6 space-y-4">
     <div className="flex items-center justify-between">
       <div className="flex gap-2">
-        <button className="bg-white/5 p-2 rounded-full border border-white/10"><Maximize2 className="h-4 w-4" /></button>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2 rounded-full border border-white/10">
+        <button className="bg-white/5 p-2 rounded-full border border-white/10 active:bg-white/20"><Maximize2 className="h-4 w-4" /></button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2 rounded-full border border-white/10 active:bg-white/20">
           {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </button>
       </div>
-      <div className="text-center">
-        <h1 className="text-xl font-black text-yellow-400 italic uppercase tracking-tighter drop-shadow-lg">Fruit Party</h1>
-      </div>
+      <h1 className="text-xl font-black text-yellow-400 italic uppercase drop-shadow-md">Fruit Party</h1>
       <div className="flex gap-2">
         <button className="bg-white/5 p-2 rounded-full border border-white/10"><HelpCircle className="h-4 w-4" /></button>
-        {onClose && <button onClick={onClose} className="bg-pink-600 p-2 rounded-full border border-white/20"><X className="h-4 w-4" /></button>}
+        {onClose && <button onClick={onClose} className="bg-pink-600 p-2 rounded-full shadow-lg active:bg-pink-700 transition-colors"><X className="h-4 w-4" /></button>}
       </div>
     </div>
 
-    {/* Horizontal Winning History Line */}
-    <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/5 mx-2 overflow-hidden shadow-inner">
-      <span className="text-[8px] font-black text-yellow-400/60 uppercase whitespace-nowrap pl-2 border-r border-white/10 pr-2">History</span>
-      <div className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth">
+    <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 mx-2 overflow-hidden shadow-inner">
+      <span className="text-[8px] font-black text-yellow-400/60 uppercase pl-2 border-r border-white/10 pr-2">History</span>
+      <div className="flex gap-4 overflow-x-auto no-scrollbar">
         {history.map((id, i) => (
-          <span key={i} className={cn("text-lg shrink-0", i === 0 ? "scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-40")}>
+          <span key={i} className={cn("text-xl shrink-0", i === 0 ? "scale-110 drop-shadow-[0_0_8px_gold]" : "opacity-40")}>
             {ITEMS.find(it => it.id === id)?.emoji}
           </span>
         ))}
       </div>
     </div>
-   </div>
+   </header>
 
-    {/* --- MAIN CIRCULAR BOARD --- */}
-    <main className="flex-1 relative z-10 flex items-center justify-center p-4">
+   {/* --- MAIN GAME AREA --- */}
+   <main className="flex-1 relative z-10 flex items-center justify-center">
       <div className="relative w-80 h-80 flex items-center justify-center">
         
-        {/* Glow & Rings */}
-        <div className="absolute inset-0 rounded-full bg-indigo-600/5 blur-[60px]" />
-        <div className="absolute inset-[-10px] rounded-full border-2 border-dashed border-white/5 animate-[spin_20s_linear_infinite]" />
-        <div className="absolute inset-4 rounded-full border border-white/10 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" />
-        
-        {/* CENTER TIMER (30s) */}
-        <div className="relative z-20 w-32 h-32 bg-gradient-to-br from-[#2D1B4E] to-[#1A0B2E] rounded-full shadow-2xl flex flex-col items-center justify-center border-4 border-yellow-400/40">
-          <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Time Left</span>
-          <motion.div 
-            key={timeLeft}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.4)]"
-          >
-            {gameState === 'betting' ? `${timeLeft}s` : (gameState === 'spinning' ? '??' : '00s')}
+        {/* CENTER TIMER */}
+        <div className="relative z-20 w-32 h-32 bg-[#2D1B4E] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-yellow-400/30">
+          <span className="text-[9px] font-black text-white/40 uppercase mb-1">Time Left</span>
+          <motion.div key={timeLeft} className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_10px_gold]">
+            {gameState === 'betting' ? `${timeLeft}s` : '??'}
           </motion.div>
-          <div className="mt-1 h-1 w-12 bg-white/10 rounded-full overflow-hidden">
-             <motion.div 
-              className="h-full bg-yellow-400" 
-              initial={{ width: "100%" }} 
-              animate={{ width: `${(timeLeft/30)*100}%` }}
-             />
-          </div>
         </div>
 
-        {/* Circular Placed Food Items */}
+        {/* CHARACTER CIRCLES & BROWN LINES */}
         {ITEMS.map((item, idx) => {
           const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
-          const radius = 125; // Adjusted radius
+          const radius = 135; 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
 
           return (
-            <button 
-              key={item.id}
-              onClick={() => handlePlaceBet(item.id)}
-              disabled={gameState !== 'betting'}
-              className="absolute transition-all duration-300 group"
-              style={{ transform: `translate(${x}px, ${y}px)` }}
-            >
-              <div className={cn(
-                "h-16 w-16 rounded-full flex flex-col items-center justify-center transition-all border-2 relative",
-                highlightIdx === idx 
-                  ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_30px_rgba(255,255,255,0.6)]" 
-                  : "bg-white/5 border-white/10 hover:bg-white/10"
-              )}>
-                <span className="text-2xl drop-shadow-md">{item.emoji}</span>
-                <span className={cn(
-                  "text-[7px] font-black uppercase", 
-                  highlightIdx === idx ? "text-black" : "text-white/60"
-                )}>
-                  {item.multiplier}X
-                </span>
-              </div>
+            <div key={item.id} className="absolute flex items-center justify-center" style={{ transform: `translate(${x}px, ${y}px)` }}>
+              
+              {/* Brown Connection Line - Math adjusted for gap alignment */}
+              <div 
+                className="absolute bg-[#5D4037] w-1 h-14 origin-bottom" 
+                style={{ 
+                  transform: `rotate(${idx * 45}deg) translateY(-58px)`, 
+                  zIndex: -1 
+                }} 
+              />
 
-              {/* Bet Indicator Bubble */}
-              <AnimatePresence>
-                {myBets[item.id] > 0 && (
-                  <motion.div 
-                    initial={{ scale: 0, y: 10 }}
-                    animate={{ scale: 1, y: 0 }}
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-[8px] px-2 py-0.5 rounded-full font-black border border-white/20 shadow-lg whitespace-nowrap"
-                  >
-                    {myBets[item.id] >= 1000 ? `${(myBets[item.id]/1000).toFixed(1)}K` : myBets[item.id]}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
+              <button 
+                onClick={() => handlePlaceBet(item.id)}
+                disabled={gameState !== 'betting'}
+                className="relative group active:scale-95 transition-transform"
+              >
+                <div className={cn(
+                  "h-20 w-20 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
+                  highlightIdx === idx 
+                    ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_30px_rgba(255,215,0,0.6)]" 
+                    : "bg-[#4E0D25] border-[#D4AF37]" 
+                )}>
+                  <span className="text-4xl mb-0.5 drop-shadow-md">{item.emoji}</span>
+                  <span className={cn("text-[9px] font-black", highlightIdx === idx ? "text-black" : "text-yellow-400/80")}>
+                    {item.label}
+                  </span>
+                </div>
+
+                {/* Bet Tag */}
+                <AnimatePresence>
+                  {myBets[item.id] > 0 && (
+                    <motion.div 
+                      initial={{ scale: 0, y: 5 }} 
+                      animate={{ scale: 1, y: 0 }} 
+                      className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-[9px] px-2 py-0.5 rounded-full font-black border border-white/20 shadow-xl whitespace-nowrap z-[60]"
+                    >
+                      {myBets[item.id] >= 1000 ? `${(myBets[item.id]/1000).toFixed(0)}K` : myBets[item.id]}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
           );
         })}
       </div>
-    </main>
+   </main>
 
-   {/* --- BOTTOM UI & CIRCULAR CHIPS --- */}
-   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/60 backdrop-blur-xl rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+   {/* --- FOOTER & CHIPS --- */}
+   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/70 backdrop-blur-xl rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
     
-    <div className="flex items-center justify-between px-4">
-      <div className="flex items-center gap-3 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 shadow-inner">
+    <div className="flex items-center justify-between px-4 -mt-4 mb-2">
+      <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-full border border-white/10">
         <GoldCoinIcon className="h-4 w-4" />
         <span className="text-sm font-black tracking-tight">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <button 
         onClick={() => setMyBets(lastBets)} 
-        className="bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase border border-yellow-400/20 transition-all active:scale-95"
+        disabled={Object.keys(lastBets).length === 0 || gameState !== 'betting'}
+        className="bg-yellow-400/20 text-yellow-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase border border-yellow-400/30 active:bg-yellow-400/40 disabled:opacity-30 transition-all"
       >
         Repeat
       </button>
     </div>
 
-    {/* Circular Chips Selection */}
-    <div className="flex justify-center items-center gap-3">
+    {/* Chips section lifted higher */}
+    <div className="flex justify-center items-center gap-3 -mt-2">
       {CHIPS.map(chip => (
         <button 
           key={chip.value} 
           onClick={() => setSelectedChip(chip.value)}
           className={cn(
-            "w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all border-4 shadow-xl",
+            "w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-lg",
             selectedChip === chip.value 
-              ? "bg-yellow-400 border-white text-black scale-110 rotate-3 shadow-yellow-400/20" 
-              : "bg-[#2D1B4E] border-white/10 text-white/60 hover:border-white/30"
+              ? "bg-yellow-400 border-white text-black scale-115 shadow-[0_0_15px_rgba(255,255,255,0.3)] z-10" 
+              : "bg-[#2D1B4E] border-white/10 text-white/50 hover:border-white/30"
           )}
         >
-          <GoldCoinIcon className={cn("h-3 w-3 mb-0.5", selectedChip === chip.value ? "text-black" : "text-yellow-400")} />
           <span className="text-[10px] font-black">{chip.label}</span>
         </button>
       ))}
     </div>
-
-    <p className="text-center text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Select amount • Tap food to place bet</p>
+    <p className="text-center text-[8px] font-black text-white/20 uppercase tracking-[0.2em] animate-pulse">Select amount • Tap fruit to bet</p>
    </footer>
 
    <style jsx global>{`
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+     .no-scrollbar::-webkit-scrollbar { display: none; }
+     button { -webkit-tap-highlight-color: transparent; }
    `}</style>
   </div>
  );
