@@ -11,55 +11,55 @@ export interface AvatarFrameConfig {
   animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow';
   
   // High-Fidelity Additions
-  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'dragon-wrap' | 'aurora-wings' | 'constellation' | 'none';
-  particleType?: 'stars' | 'fire' | 'bubbles' | 'matrix' | 'gold-sparkle' | 'sparkle' | 'star' | 'none';
+  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'none';
+  particleType?: 'stars' | 'fire' | 'bubbles' | 'matrix' | 'none';
   textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
   extraColor?: string;
   particleColor?: string;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
-  // --- IDENTITY DIMENSION SUITE (EXACT LOOK MATCH) ---
+  // --- LEGENDARY ---
   'mystic-dragon': {
     id: 'mystic-dragon',
     name: 'Mystic Dragon',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #FF00E4 0%, #B300FF 50%, #FFD700 100%)',
+    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #9A7B4F, #D4AF37)',
     borderColor: '#FFD700',
-    glowColor: 'rgba(179, 0, 255, 0.7)',
+    glowColor: 'rgba(212, 175, 55, 0.7)',
     ornament: '🐉',
     animationType: 'float',
-    extraType: 'dragon-wrap',
-    particleType: 'gold-sparkle',
-    textureType: 'lava',
+    extraType: 'dragon-body',
+    particleType: 'fire',
+    textureType: 'gold',
     extraColor: '#FFD700'
   },
   'aurora-gem': {
     id: 'aurora-gem',
     name: 'Aurora Gem',
-    tier: 'mythic',
-    gradient: 'linear-gradient(135deg, #9D00FF 0%, #FF00A6 50%, #9D00FF 100%)',
-    borderColor: '#9D00FF',
-    glowColor: 'rgba(255, 0, 166, 0.8)',
-    ornament: 'gem-crown',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #A855F7, #E9D5FF, #7E22CE, #A855F7)',
+    borderColor: '#E9D5FF',
+    glowColor: 'rgba(168, 85, 247, 0.8)',
+    ornament: Gem,
     animationType: 'sparkle',
-    extraType: 'aurora-wings',
-    particleType: 'sparkle',
-    textureType: 'ice',
-    extraColor: '#FF00A6'
+    extraType: 'crystals',
+    particleType: 'stars',
+    textureType: 'glass',
+    extraColor: '#E9D5FF'
   },
   'celestial-star': {
     id: 'celestial-star',
     name: 'Celestial Star',
-    tier: 'luxury',
-    gradient: 'linear-gradient(135deg, #FF00D6 0%, #9D00FF 50%, #00C2FF 100%)',
-    borderColor: '#00C2FF',
-    glowColor: 'rgba(0, 194, 255, 0.6)',
-    ornament: 'celestial-star',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFE29F, #FFA91B, #FF9912, #FFE29F)',
+    borderColor: '#FFA91B',
+    glowColor: 'rgba(255, 169, 27, 0.6)',
+    ornament: Stars,
     animationType: 'rotate',
-    extraType: 'constellation',
-    particleType: 'star',
-    extraColor: '#00C2FF'
+    extraType: 'halo',
+    particleType: 'stars',
+    textureType: 'gold'
   },
   'phoenix-blaze': {
     id: 'phoenix-blaze',
