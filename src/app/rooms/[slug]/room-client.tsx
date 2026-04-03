@@ -40,8 +40,10 @@ import {
   Shield,
   Smile,
   Sparkles,
-  UserPlus
+  UserPlus,
+  Trophy as TrophyIcon
 } from 'lucide-react';
+import { ROOM_TASKS } from '@/constants/room-tasks';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -116,6 +118,9 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { useRoomTasks } from '@/hooks/use-room-tasks';
+import { RoomTasksDialog } from '@/components/room-tasks-dialog';
+
 import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
@@ -247,6 +252,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isRocketOpen, setIsRocketOpen] = useState(false);
+  const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -416,6 +422,8 @@ export function RoomClient({ room }: { room: Room }) {
         followedAt: serverTimestamp()
       }, { merge: true });
       toast({ title: 'Frequency Followed' });
+      triggerTask('follow_1');
+      triggerTask('follow_10');
     }
   };
 
@@ -479,6 +487,14 @@ export function RoomClient({ room }: { room: Room }) {
       })));
     }
   }, [participantsData, participants]);
+
+  // Initialize Room Tasks Hook
+  const { taskProgress, completedTasks, triggerTask } = useRoomTasks(
+    room.id, 
+    participants || [], 
+    room.ownerId, 
+    canManageRoom
+  );
 
   const onlineCount = useMemo(() => {
     // Use filtered participants count (not raw participantsData)
@@ -1611,6 +1627,12 @@ export function RoomClient({ room }: { room: Room }) {
         totalGifts={room.rocket?.progress || 0}
         roomName={room.title}
       />
+      <RoomTasksDialog
+        open={isRoomTasksOpen}
+        onOpenChange={setIsRoomTasksOpen}
+        taskProgress={taskProgress}
+        completedTasks={completedTasks}
+      />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
       {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
@@ -1728,6 +1750,36 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={() => setIsShareOpen(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4 text-white/60" /></button>
           <button onClick={() => setShowExitDialog(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4 text-white/60" /></button>
         </div>
+
+        {/* TASK JAR ICON - Top Right Below Header (Wafa Style) */}
+        <button
+          onClick={() => setIsRoomTasksOpen(true)}
+          className="absolute top-20 right-4 z-[45] group active:scale-95 transition-transform duration-300"
+        >
+          <div className="relative">
+            {/* Pulsing Glow */}
+            <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full scale-110 animate-pulse" />
+            
+            {/* The Jar Icon (Styled Image) */}
+            <div className="relative h-14 w-14 flex items-center justify-center">
+              <img 
+                src="https://img.icons8.com/color/96/money-box.png" 
+                alt="Task Jar" 
+                className="h-10 w-10 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
+              />
+              
+              {/* Progress Ring (Visual Indicator) */}
+              <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/10 animate-spin-slow" />
+            </div>
+
+            {/* Notification Badge */}
+            {ROOM_TASKS.length - completedTasks.length > 0 && (
+              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-slate-950 flex items-center justify-center shadow-lg">
+                <span className="text-[9px] font-black">{ROOM_TASKS.length - completedTasks.length}</span>
+              </div>
+            )}
+          </div>
+        </button>
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
@@ -2203,7 +2255,12 @@ export function RoomClient({ room }: { room: Room }) {
         isAdmin={canManageRoom}
       />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
-      <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
+      <RoomShareDialog 
+        open={isShareOpen} 
+        onOpenChange={setIsShareOpen} 
+        room={room} 
+        onShare={() => triggerTask('share_whatsapp')}
+      />
       <RoomPlayDialog
         open={isRoomPlayOpen}
         onOpenChange={setIsRoomPlayOpen}
@@ -2266,7 +2323,14 @@ export function RoomClient({ room }: { room: Room }) {
         initialRecipient={initialChatRecipient}
       />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
-      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
+      <GiftPicker 
+        open={isGiftPickerOpen} 
+        onOpenChange={setIsGiftPickerOpen} 
+        roomId={room.id} 
+        recipient={giftRecipient} 
+        participants={participants} 
+        onSuccess={() => triggerTask('gift_once')}
+      />
 
       <RoomSeatMenuDialog
         open={isSeatMenuOpen}

@@ -404,77 +404,7 @@ export default function RoomsPage() {
           )}
         </section>
 
-        {/* Daily Missions - Global Resilience */}
-        <section className="mb-6">
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
-              <Trophy className="h-3.5 w-3.5 text-yellow-500" /> Daily Missions
-            </h3>
-            <span className="text-[8px] font-bold text-slate-300 uppercase">Resets Daily</span>
-          </div>
-          
-          <div className="space-y-2.5">
-            {isQuestsLoading ? (
-              <div className="py-6 text-center animate-pulse flex flex-col items-center gap-2">
-                 <Loader className="h-5 w-5 text-slate-200 animate-spin" />
-              </div>
-            ) : questsData?.length === 0 ? (
-              <div className="py-6 text-center text-slate-200 font-bold uppercase text-[9px] tracking-widest bg-slate-50 rounded-3xl border border-dashed">
-                Loading...
-              </div>
-            ) : questsData?.map((quest: any) => {
-              const isCompleted = quest.current >= quest.target;
-              const meta: Record<string, any> = {
-                stay_15: { title: 'Resident', sub: 'Stay 15m', icon: Shield, color: 'bg-blue-500', reward: 500 },
-                send_gift: { title: 'Giver', sub: 'Send 1 gift', icon: Sparkles, color: 'bg-pink-500', reward: 1000 },
-                win_game: { title: 'Victor', sub: 'Win 1 game', icon: Trophy, color: 'bg-yellow-500', reward: 2000 }
-              };
-              const currentMeta = meta[quest.id] || { title: quest.id, sub: 'Task', icon: Trophy, color: 'bg-slate-500', reward: 100 };
-
-              const handleClaim = async () => {
-                if (!firestore || !user?.uid) return;
-                try {
-                  const questRef = doc(firestore, 'users', user.uid, 'quests', quest.id);
-                  const userRef = doc(firestore, 'users', user.uid);
-                  await updateDocumentNonBlocking(questRef, { isClaimed: true });
-                  await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(currentMeta.reward) });
-                  toast({ title: 'Reward Claimed!', description: `+${currentMeta.reward} Gold` });
-                } catch (e) {
-                  toast({ variant: 'destructive', title: 'Error' });
-                }
-              };
-
-              return (
-                <div key={quest.id} className={cn(
-                  "p-3.5 rounded-[1.5rem] border shadow-sm transition-all duration-300",
-                  isCompleted ? "bg-primary/5 border-primary/10" : "bg-white border-slate-50"
-                )}>
-                  <div className="flex items-center gap-3">
-                    <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center text-white shadow-sm", currentMeta.color)}>
-                      <currentMeta.icon className="h-4.5 w-4.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-[10px] font-black uppercase text-slate-800 tracking-tight">{currentMeta.title}</h4>
-                        <div className="flex items-center gap-1">
-                          <GoldCoinIcon className="h-2.5 w-2.5" />
-                          <span className="text-[9px] font-black text-slate-600">+{currentMeta.reward}</span>
-                        </div>
-                      </div>
-                      <Progress value={Math.min((quest.current / quest.target) * 100, 100)} className="h-1 bg-slate-100" />
-                    </div>
-                    
-                    {isCompleted && !quest.isClaimed && (
-                      <button onClick={handleClaim} className="ml-2 px-3 py-1.5 bg-primary text-black font-black uppercase text-[9px] rounded-lg shadow-lg">
-                        Claim
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        
       </main>
     )}
 

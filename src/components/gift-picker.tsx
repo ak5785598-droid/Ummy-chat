@@ -62,7 +62,7 @@ const GIFTS: Record<string, any[]> = {
  ]
 };
 
-export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
+export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [], onSuccess }: any) {
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
