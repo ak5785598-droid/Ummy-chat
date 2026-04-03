@@ -1709,7 +1709,10 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-[100] flex flex-col w-full p-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-             <Avatar className="h-12 w-12 rounded-xl border border-white/10 shadow-lg">
+             <Avatar 
+               className="h-12 w-12 rounded-xl border border-white/10 shadow-lg cursor-pointer active:scale-95 transition-transform"
+               onClick={() => setIsRoomInfoOpen(true)}
+             >
                 <AvatarImage src={room.coverUrl || undefined} />
                 <AvatarFallback>RM</AvatarFallback>
              </Avatar>
@@ -1724,13 +1727,22 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
 
           <div className="flex items-center gap-2">
+             <button 
+               onClick={toggleAIVoice} 
+               className={cn(
+                 "h-10 w-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95",
+                 isAIVoiceEnabled ? "bg-cyan-500/40 text-cyan-400 border-cyan-400/50" : "bg-black/40 text-white/80"
+               )}
+             >
+                <Megaphone className={cn("h-4 w-4", isAIVoiceEnabled && "animate-pulse")} />
+             </button>
              <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
                 <Users className="h-4 w-4 text-white/80" />
                 <span className="text-[9px] font-bold">{onlineCount}</span>
              </button>
              {canManageRoom && (
                <button onClick={() => setIsRoomInfoOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
-                  <Hexagon className="h-5 w-5 text-white/80" />
+                  <Settings className="h-5 w-5 text-white/80" />
                </button>
              )}
              <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
@@ -2057,32 +2069,45 @@ export function RoomClient({ room }: { room: Room }) {
 
 
       <footer className="relative z-50 px-4 pb-6 flex items-center justify-between pt-2 h-20">
-        {/* Left: Say Hi Input-like Button */}
-        <button
-          onClick={handleInputClick}
-          className={cn(
-            "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium mr-3",
-            isChatMuted && !canManageRoom && "opacity-50 grayscale"
-          )}
-        >
-          Say Hi
-        </button>
-
-        {/* Right: Icon Actions Grouped */}
-        <div className="flex items-center gap-2.5">
-          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1 px-1.5 active:scale-90 transition-transform">
-            <Smile className="h-6 w-6 text-white/80" />
+        <div className="flex items-center flex-1 mr-2 gap-2">
+          {/* Left: Say Hi Input-like Button */}
+          <button
+            onClick={handleInputClick}
+            className={cn(
+              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium",
+              isChatMuted && !canManageRoom && "opacity-50 grayscale"
+            )}
+          >
+            Say Hi
           </button>
 
-          <button onClick={() => setShowSoundboard(!showSoundboard)} className="p-1 px-1.5 active:scale-90 transition-transform">
+          {/* AI MIC RESTORED */}
+          <button
+            onClick={toggleAIListening}
+            className={cn(
+              "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/10 backdrop-blur-md",
+              isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-white/10 text-white"
+            )}
+          >
+            <Sparkles className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Right: Icon Actions Grouped */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
+            <SmilePlus className="h-6 w-6 text-white/80" />
+          </button>
+
+          <button onClick={() => setShowSoundboard(!showSoundboard)} className="p-1 px-1 active:scale-90 transition-transform">
             <Volume2 className="h-6 w-6 text-white/80" />
           </button>
 
-          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1.5 transition-all active:scale-90", !isInSeat && "opacity-30")}>
+          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1 transition-all active:scale-90", !isInSeat && "opacity-30")}>
             {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/40" />}
           </button>
 
-          <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1.5 active:scale-90 transition-transform">
+          <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
              <Mail className="h-6 w-6 text-white/80" />
           </button>
 
@@ -2098,7 +2123,7 @@ export function RoomClient({ room }: { room: Room }) {
 
           <button
             onClick={() => setIsRoomPlayOpen(true)}
-            className="p-1 px-1.5 active:scale-90 transition-transform"
+            className="p-1 px-1 active:scale-90 transition-transform"
           >
             <LayoutGrid className="h-6 w-6 text-white/80" />
           </button>
