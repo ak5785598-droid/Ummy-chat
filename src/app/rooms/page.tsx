@@ -94,6 +94,13 @@ export default function RoomsPage() {
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
 
+  const followedRoomsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
+  }, [firestore, user?.uid]);
+
+  const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
+
  // ⚡ DAILY QUEST INITIALIZER: High-Fidelity Reset logic
  useQuestInitializer();
 
@@ -170,15 +177,20 @@ export default function RoomsPage() {
   <AppLayout>
    <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700">
     
-    <header className="flex items-center justify-between px-3 pt-safe pb-0 shrink-0">
-      <div className="pt-0.5 flex items-center justify-between w-full">
+    <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
+      <div className="pt-0 flex items-center justify-between w-full">
          <div className="flex items-center gap-3">
             <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
             <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
          </div>
-         <div className="flex items-center gap-1.5 text-slate-800">
+         <div className="flex items-center gap-2 text-slate-800">
             <UserSearchDialog />
-            <button onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} className="p-1 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all"><Home className="h-4.5 w-4.5" /></button>
+            <button 
+              onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
+              className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
+            >
+              <Home className="h-4 w-4" />
+            </button>
          </div>
       </div>
     </header>
@@ -312,13 +324,13 @@ export default function RoomsPage() {
       </main>
      </>
     ) : (
-      <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-20">
+      <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
         {/* Profile Card */}
-        <section className="mb-6 bg-white rounded-[2rem] p-5 shadow-xl border border-slate-100 relative overflow-hidden group">
+        <section className="mb-4 bg-white rounded-[2rem] p-5 shadow-xl border border-slate-100 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
           <div className="flex items-center gap-4 relative z-10">
             <div className="relative">
-              <Avatar className="h-20 w-20 border-2 border-white shadow-2xl">
+              <Avatar className="h-16 w-16 border-2 border-white shadow-2xl">
                 <AvatarImage src={userDoc?.avatarUrl} />
                 <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
               </Avatar>
@@ -337,33 +349,87 @@ export default function RoomsPage() {
           </div>
         </section>
 
-        {/* Daily Missions - Live Dynamic Synergy */}
+        {/* My Frequency Section - Top Priority */}
+        <section className="mb-6 p-1">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 mb-3 px-1 flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 text-primary fill-current" /> My Frequency
+          </h3>
+          {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
+            <div className="flex flex-col gap-3">
+              <div className="max-w-full">
+                <ChatRoomCard room={myRoom} variant="modern" />
+              </div>
+            </div>
+          ) : (
+            <CreateRoomDialog 
+              trigger={
+                <button className="w-full h-24 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-primary hover:border-primary transition-all active:scale-95 group">
+                  <Plus className="h-5 w-5 bg-slate-50 p-1.5 rounded-full" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Open My Room</span>
+                </button>
+              }
+            />
+          )}
+        </section>
+
+        {/* Followed Frequency Section */}
+        <section className="mb-6">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 mb-4 px-1 flex items-center gap-2">
+            <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> Following
+          </h3>
+          {isFollowedLoading ? (
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="shrink-0 w-32 aspect-square rounded-2xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          ) : followedRoomsData && followedRoomsData.length > 0 ? (
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {followedRoomsData.map((roomRef: any) => (
+                <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer">
+                  <div className="relative">
+                    <Avatar className="h-14 w-14 border border-slate-100 shadow-xl">
+                      <AvatarImage src={roomRef.coverUrl} className="object-cover" />
+                      <AvatarFallback className="bg-slate-100 text-slate-400 font-black text-xs">U</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter truncate w-16 text-center">{roomRef.title}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center text-[9px] font-black uppercase tracking-widest text-slate-300 border border-dashed rounded-3xl">
+              Follow rooms to find them here!
+            </div>
+          )}
+        </section>
+
+        {/* Daily Missions - Global Resilience */}
         <section className="mb-6">
           <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-primary" /> Daily Missions
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+              <Trophy className="h-3.5 w-3.5 text-yellow-500" /> Daily Missions
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Resets in 24h</span>
+            <span className="text-[8px] font-bold text-slate-300 uppercase">Resets Daily</span>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {isQuestsLoading ? (
-              <div className="py-10 text-center flex flex-col items-center gap-2">
-                 <Loader className="h-6 w-6 text-primary animate-spin" />
-                 <span className="text-[8px] font-bold uppercase tracking-widest text-slate-300">Syncing Identity...</span>
+              <div className="py-6 text-center animate-pulse flex flex-col items-center gap-2">
+                 <Loader className="h-5 w-5 text-slate-200 animate-spin" />
               </div>
             ) : questsData?.length === 0 ? (
-              <div className="py-8 text-center text-slate-300 font-bold uppercase text-[9px] tracking-widest bg-slate-50 rounded-3xl border border-dashed">
-                Preparing Daily Frequency...
+              <div className="py-6 text-center text-slate-200 font-bold uppercase text-[9px] tracking-widest bg-slate-50 rounded-3xl border border-dashed">
+                Loading...
               </div>
             ) : questsData?.map((quest: any) => {
               const isCompleted = quest.current >= quest.target;
               const meta: Record<string, any> = {
-                stay_15: { title: 'Loyal Resident', sub: 'Stay 15 mins', icon: Shield, color: 'bg-blue-500', reward: 500 },
-                send_gift: { title: 'Gift Master', sub: 'Send 1 gift', icon: Sparkles, color: 'bg-pink-500', reward: 1000 },
-                win_game: { title: 'Game Master', sub: 'Win 1 game', icon: Trophy, color: 'bg-yellow-500', reward: 2000 }
+                stay_15: { title: 'Resident', sub: 'Stay 15m', icon: Shield, color: 'bg-blue-500', reward: 500 },
+                send_gift: { title: 'Giver', sub: 'Send 1 gift', icon: Sparkles, color: 'bg-pink-500', reward: 1000 },
+                win_game: { title: 'Victor', sub: 'Win 1 game', icon: Trophy, color: 'bg-yellow-500', reward: 2000 }
               };
-              const currentMeta = meta[quest.id] || { title: quest.id, sub: 'Daily task', icon: Trophy, color: 'bg-slate-500', reward: 100 };
+              const currentMeta = meta[quest.id] || { title: quest.id, sub: 'Task', icon: Trophy, color: 'bg-slate-500', reward: 100 };
 
               const handleClaim = async () => {
                 if (!firestore || !user?.uid) return;
@@ -372,83 +438,42 @@ export default function RoomsPage() {
                   const userRef = doc(firestore, 'users', user.uid);
                   await updateDocumentNonBlocking(questRef, { isClaimed: true });
                   await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(currentMeta.reward) });
-                  toast({
-                    title: 'Reward Claimed!',
-                    description: `Received ${currentMeta.reward.toLocaleString()} Gold Coins`,
-                  });
+                  toast({ title: 'Reward Claimed!', description: `+${currentMeta.reward} Gold` });
                 } catch (e) {
-                  toast({ variant: 'destructive', title: 'Claim Failed' });
+                  toast({ variant: 'destructive', title: 'Error' });
                 }
               };
 
               return (
                 <div key={quest.id} className={cn(
-                  "p-4 rounded-[1.8rem] border shadow-sm transition-all duration-300",
-                  isCompleted ? "bg-primary/5 border-primary/20 scale-[0.98]" : "bg-white border-slate-100"
+                  "p-3.5 rounded-[1.5rem] border shadow-sm transition-all duration-300",
+                  isCompleted ? "bg-primary/5 border-primary/10" : "bg-white border-slate-50"
                 )}>
                   <div className="flex items-center gap-3">
-                    <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center text-white shadow-md", currentMeta.color)}>
-                      <currentMeta.icon className="h-5 w-5" />
+                    <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center text-white shadow-sm", currentMeta.color)}>
+                      <currentMeta.icon className="h-4.5 w-4.5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-[11px] font-black uppercase text-slate-800 tracking-tight">{currentMeta.title}</h4>
+                        <h4 className="text-[10px] font-black uppercase text-slate-800 tracking-tight">{currentMeta.title}</h4>
                         <div className="flex items-center gap-1">
                           <GoldCoinIcon className="h-2.5 w-2.5" />
-                          <span className="text-[10px] font-black text-slate-700">+{currentMeta.reward}</span>
+                          <span className="text-[9px] font-black text-slate-600">+{currentMeta.reward}</span>
                         </div>
                       </div>
-                      <Progress value={Math.min((quest.current / quest.target) * 100, 100)} className="h-1.5 bg-slate-100" />
-                      <div className="flex justify-between items-center mt-1.5">
-                         <span className="text-[9px] font-bold text-slate-400 uppercase">{currentMeta.sub}</span>
-                         <span className="text-[10px] font-black text-slate-900 tracking-tighter">{quest.current}/{quest.target}</span>
-                      </div>
+                      <Progress value={Math.min((quest.current / quest.target) * 100, 100)} className="h-1 bg-slate-100" />
                     </div>
                     
                     {isCompleted && !quest.isClaimed && (
-                      <button 
-                        onClick={handleClaim}
-                        className="ml-2 px-4 py-2 bg-primary text-black font-black uppercase text-[10px] rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                      >
+                      <button onClick={handleClaim} className="ml-2 px-3 py-1.5 bg-primary text-black font-black uppercase text-[9px] rounded-lg shadow-lg">
                         Claim
                       </button>
-                    )}
-
-                    {quest.isClaimed && (
-                      <div className="ml-2 h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-        </section>
-
-        {/* My Frequency Section */}
-        <section className="mb-8 p-1">
-          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-4 px-1 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary fill-current" /> My Frequency
-          </h3>
-          {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
-            <div className="flex flex-col gap-3">
-              <div className="max-w-[200px]">
-                <ChatRoomCard room={myRoom} variant="modern" />
-              </div>
-            </div>
-          ) : (
-            <CreateRoomDialog 
-              trigger={
-                <button className="w-full h-32 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-primary hover:border-primary transition-all active:scale-95 group">
-                  <div className="bg-slate-50 p-3 rounded-full group-hover:bg-primary/10 group-hover:scale-110 transition-all">
-                    <Plus className="h-6 w-6" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Open My Room</span>
-                </button>
-              }
-            />
-          )}
         </section>
       </main>
     )}

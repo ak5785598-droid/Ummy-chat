@@ -169,7 +169,7 @@ export function AppLayout({
 
      {!isAuthScreen && shouldShowBottomNav && (
        <nav 
-        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom) + 8px)', left: '0', right: '0', width: '100%', zIndex: 999 }}
+        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom) + 12px)', left: '4%', right: '4%', width: '92%', maxWidth: '500px', margin: '0 auto', zIndex: 999 }}
         className="flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-14 shrink-0 px-2 rounded-2xl border-2 border-primary/20 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
        >
         <Link href="/rooms" className={cn("flex flex-col items-center gap-0.5 p-1.5 transition-all active:scale-90 relative", pathname === '/rooms' ? "text-[#00E5FF]" : "text-white/40")}>
