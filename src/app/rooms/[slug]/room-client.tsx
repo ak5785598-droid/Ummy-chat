@@ -125,14 +125,14 @@ import { memo, useCallback } from 'react';
 
 // --- HAZA STYLE COMPONENTS ---
 const RoomTrophyBadge = ({ coins }: { coins: number }) => (
-  <div className="flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
-    <div className="bg-[#FFB300] rounded-full p-0.5">
+  <div className="w-fit flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
+    <div className="bg-[#FFB300] rounded-full p-0.5 shrink-0">
        <Trophy className="h-2.5 w-2.5 text-black fill-current" />
     </div>
-    <span className="text-[10px] font-bold text-[#FFB300] leading-none">
+    <span className="text-[10px] font-black text-[#FFB300] leading-none whitespace-nowrap">
       {coins >= 1000000 ? `${(coins / 1000000).toFixed(1)}M` : coins.toLocaleString()}
     </span>
-    <ChevronDown className="h-2.5 w-2.5 text-[#FFB300]/50" />
+    <ChevronDown className="h-2.5 w-2.5 text-[#FFB300]/50 shrink-0" />
   </div>
 );
 
@@ -207,17 +207,12 @@ const Seat = memo(({
           </div>
         </AvatarFrame>
 
-        {/* Mic Status Badge */}
-        <div className={cn(
-          "absolute bottom-0 right-0 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950",
-          (occupant?.isMuted || isSeatMuted) ? "bg-red-500" : "bg-[#00E676]"
-        )}>
-          {(occupant?.isMuted || isSeatMuted) ? (
+        {/* Mic Status Badge - Only show when muted */}
+        {occupant && (occupant.isMuted || isSeatMuted) && (
+          <div className="absolute bottom-0 right-0 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950 bg-red-500 shadow-lg">
             <MicOff className="h-2.5 w-2.5 text-white" />
-          ) : (
-            <Mic className="h-2.5 w-2.5 text-white fill-current" />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <span className="text-[10px] font-bold text-white/70 uppercase tracking-tighter leading-none text-center">
