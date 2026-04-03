@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
   description: 'Elite real-time social voice chat frequency.',
   start_url: '/',
   display: 'standalone',
-  background_color: '#FFCC00',
-  theme_color: '#FFCC00',
+  background_color: '#ff8ebb',
+  theme_color: '#ff8ebb',
   icons: [
    {
     src: '/images/ummy-logon.png',
