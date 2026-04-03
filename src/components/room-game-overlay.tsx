@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { FruitPartyGame } from './games/fruit-party-game';
+import FruitPartyGame from './games/fruit-party-game';
 import { X } from 'lucide-react';
 
 interface RoomGameOverlayProps {
@@ -21,7 +21,7 @@ export function RoomGameOverlay({ activeGame, onClose }: RoomGameOverlayProps) {
    <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[75vh]">
     <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-2xl border-t border-white/20 bg-[#58319d]">
      {activeGame === 'fruit-party' && (
-      <FruitPartyGame isOverlay onClose={onClose} />
+      <FruitPartyGame onClose={onClose} />
      )}
      
      {activeGame !== 'fruit-party' && (
