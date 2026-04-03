@@ -16,7 +16,7 @@ export default {
         sans: ['var(--font-inter)', 'sans-serif'],
         serif: ['var(--font-inter)', 'sans-serif'],
         body: ['var(--font-inter)', 'sans-serif'],
-        headline: ['var(--font-outfit)', 'sans-serif'],
+        headline: ['var(--font-inter)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
