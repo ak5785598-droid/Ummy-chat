@@ -183,8 +183,8 @@ const Seat = memo(({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-black/20 backdrop-blur-xl border border-white/10",
-                isLocked ? "border-red-500/40" : "",
+                "bg-black/60 backdrop-blur-xl border border-white/25",
+                isLocked ? "border-red-500/60" : "",
                 occupant ? "p-0" : "p-0"
               )}
             >
@@ -1758,7 +1758,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* Floating Top-Right Badge (Tree) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)] bg-transparent" />
+            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent" />
             {achievedTasks.some(id => !claimedTasks.includes(id)) && (
               <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
             )}
@@ -1766,8 +1766,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-12">
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full mt-[-8px]">
+        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-2">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
@@ -2038,7 +2038,7 @@ export function RoomClient({ room }: { room: Room }) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-32 z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
+            "fixed right-4 bottom-38 z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
             "bg-cyan-500/20 text-cyan-400 shadow-cyan-500/10 hover:bg-cyan-500/30"
           )}
         >

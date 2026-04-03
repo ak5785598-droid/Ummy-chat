@@ -189,8 +189,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent overflow-hidden",
-        !isElite && "ring-2 ring-white/10"
+        "relative rounded-full w-full h-full bg-transparent overflow-hidden"
       )}>
         {children}
       </div>
