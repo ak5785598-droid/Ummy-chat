@@ -7,7 +7,6 @@ import { useUser } from '@/firebase';
 
 /**
  * Splash Screen - Initial Landing Page
- * Shows with premium entry animations before redirecting to /login or /rooms
  */
 export default function SplashScreen() {
   const router = useRouter();
@@ -15,25 +14,45 @@ export default function SplashScreen() {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    // Start animation immediately
-    setShowContent(true);
+    // Start animation almost instantly
+    const timer = setTimeout(() => setShowContent(true), 50);
 
     const redirectTimer = setTimeout(() => {
       const destination = user ? '/rooms' : '/login';
       router.push(destination);
-    }, 2800); // Back to original-ish timing
+    }, 2800);
 
-    return () => clearTimeout(redirectTimer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(redirectTimer);
+    };
   }, [user, isUserLoading, router]);
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
-      <AnimatePresence>
+    /* Base background is now themed pink gradient to prevent "Black Flash" (Screenshot 1 fix) */
+    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
+      
+      {/* Attractive Intro Logo - This shows IMMEDIATELY even before JS fully hydrates */}
+      {!showContent && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div 
+            className="w-48 h-48 rounded-3xl shadow-2xl overflow-hidden animate-pulse border-4 border-white/20"
+            style={{
+              backgroundImage: `url('/images/splash_bg.png')`,
+              backgroundSize: '350%', // Zoomed in on characters
+              backgroundPosition: 'center',
+            }}
+          />
+        </div>
+      )}
+
+      <AnimatePresence mode="wait">
         {showContent && (
           <motion.div
-            initial={{ scale: 1.1, opacity: 0 }}
+            key="splash-main"
+            initial={{ scale: 1.15, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
+            transition={{ duration: 1, ease: "easeOut" }}
             className="relative h-full w-full flex flex-col items-center justify-center"
             style={{
               backgroundImage: `url('/images/splash_bg.png')`,
@@ -46,9 +65,9 @@ export default function SplashScreen() {
 
             {/* Splash content text with its own motion */}
             <motion.div 
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              transition={{ delay: 0.4, duration: 0.7 }}
               className="absolute w-full bottom-24 flex flex-col items-center z-10"
             >
               <p className="text-[20px] text-[#222222] font-normal font-sans tracking-normal drop-shadow-sm">
