@@ -1801,8 +1801,8 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
-        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
+        {/* SEATS SECTION (Point 4) - Increased padding-top (pt-14) to prevent Elite Frame clipping */}
+        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-14 w-full overflow-visible">
           <div className="w-full flex justify-center px-6 mb-1">
             <div className="w-1/4 max-w-[90px]">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
