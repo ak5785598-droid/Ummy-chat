@@ -183,7 +183,7 @@ const Seat = memo(({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]",
+                "bg-black/20 backdrop-blur-xl border border-white/10",
                 isLocked ? "border-red-500/40" : "",
                 occupant ? "p-0" : "p-0"
               )}
@@ -215,7 +215,7 @@ const Seat = memo(({
         )}
       </div>
 
-      <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.1em] leading-none text-center mt-1">
+      <span className="text-[9px] font-bold text-white/70 uppercase tracking-[0.1em] leading-none text-center mt-1">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -1726,14 +1726,14 @@ export function RoomClient({ room }: { room: Room }) {
             <button
               onClick={toggleAIVoice}
               className={cn(
-                "relative h-10 w-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95 shadow-lg",
+                "relative h-9 w-9 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95 shadow-lg",
                 isAIVoiceEnabled ? "bg-[#BC5DFF]/40 text-[#BC5DFF] border-[#BC5DFF]/50 shadow-[#BC5DFF]/20" : "bg-black/60 text-white/80"
               )}
             >
-              <div className="absolute -top-1 -right-0.5 h-4 w-4 bg-[#BC5DFF] border border-white/20 rounded-full flex items-center justify-center z-20 shadow-[0_0_8px_rgba(188,93,255,0.4)]">
-                <span className="text-[7px] font-black text-white uppercase italic tracking-tighter leading-none pt-[1px]">AI</span>
+              <div className="absolute -top-1 -right-0.5 h-3.5 w-3.5 bg-[#BC5DFF] border border-white/20 rounded-full flex items-center justify-center z-20 shadow-[0_0_8px_rgba(188,93,255,0.4)]">
+                <span className="text-[6px] font-black text-white uppercase italic tracking-tighter leading-none pt-[1px]">AI</span>
               </div>
-              <Volume2 className={cn("h-4 w-4", isAIVoiceEnabled && "animate-pulse")} />
+              <Volume2 className={cn("h-3.5 w-3.5", isAIVoiceEnabled && "animate-pulse")} />
             </button>
             <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
               <Users className="h-4 w-4 text-white/80" />
@@ -1766,15 +1766,15 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden w-full">
-        <div className="shrink-0 flex flex-col items-center gap-12 w-full overflow-visible mb-6">
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
+        <div className="shrink-0 flex flex-col items-center gap-8 w-full overflow-visible mb-2">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
           </div>
 
           {/* 2x4 Grid Seats */}
-          <div className="w-full grid grid-cols-4 gap-y-16 px-2">
+          <div className="w-full grid grid-cols-4 gap-y-10 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
               <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
@@ -2057,11 +2057,11 @@ export function RoomClient({ room }: { room: Room }) {
       <button
         onClick={() => setIsRocketOpen(true)}
         className={cn(
-          "fixed right-4 bottom-16 z-40 p-2 rounded-xl transition-all active:scale-95 shadow-lg border-2 animate-pulse",
-          "bg-green-500/20 border-green-500/50 text-green-400 shadow-green-500/20 hover:bg-green-500/30"
+          "fixed right-4 bottom-20 z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-green-500/50 animate-pulse",
+          "bg-green-500/20 text-green-400 shadow-green-500/10 hover:bg-green-500/30"
         )}
       >
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-500/20 text-2xl">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-500/10 text-xl overflow-hidden">
           🚀
         </div>
       </button>
@@ -2108,11 +2108,11 @@ export function RoomClient({ room }: { room: Room }) {
 
           <button
             onClick={() => { setGiftRecipient(null); setIsGiftPickerOpen(true); }}
-            className="relative h-12 w-12 active:scale-90 transition-all ml-1"
+            className="relative h-10 w-10 active:scale-90 transition-all ml-1"
           >
             <div className="absolute inset-0 bg-[#FF00FF]/20 rounded-full blur-lg animate-pulse" />
-            <div className="relative h-full w-full bg-gradient-to-tr from-[#A020F0] to-[#FF69B4] rounded-2xl flex items-center justify-center border border-white/30 shadow-xl overflow-hidden p-1.5">
-              <Image src="https://img.icons8.com/color/96/gift--v1.png" width={32} height={32} alt="Gift" className="drop-shadow-lg" />
+            <div className="relative h-full w-full bg-gradient-to-tr from-[#A020F0] to-[#FF69B4] rounded-xl flex items-center justify-center border border-white/20 shadow-xl overflow-hidden p-1">
+              <Image src="https://img.icons8.com/color/96/gift--v1.png" width={24} height={24} alt="Gift" className="drop-shadow-lg" />
             </div>
           </button>
 
