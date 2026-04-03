@@ -53,7 +53,9 @@ import Image from 'next/image';
 
 interface RoomSettingsDialogProps {
  room: any;
- trigger: React.ReactNode;
+ trigger?: React.ReactNode;
+ open?: boolean;
+ onOpenChange?: (open: boolean) => void;
 }
 
 const SettingItem = ({ label, value, extra, onClick, showChevron = true, children, className }: any) => (
@@ -83,8 +85,11 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
  */
-export function RoomSettingsDialog({ room, trigger }: RoomSettingsDialogProps) {
- const [open, setOpen] = useState(false);
+export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: RoomSettingsDialogProps) {
+ const [internalOpen, setInternalOpen] = useState(false);
+
+ const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+ const setOpen = controlledOnOpenChange !== undefined ? controlledOnOpenChange : setInternalOpen;
  const [isEditingName, setIsEditingName] = useState(false);
  const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
  const [isEditingTheme, setIsEditingTheme] = useState(false);

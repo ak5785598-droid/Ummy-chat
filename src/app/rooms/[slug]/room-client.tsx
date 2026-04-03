@@ -234,6 +234,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [showInput, setShowInput] = useState(false);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
   const [isUserProfileCardOpen, setIsUserProfileCardOpen] = useState(false);
+  const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false);
   const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -1741,7 +1742,7 @@ export function RoomClient({ room }: { room: Room }) {
                 <span className="text-[9px] font-bold">{onlineCount}</span>
              </button>
              {canManageRoom && (
-               <button onClick={() => setIsRoomInfoOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+               <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
                   <Settings className="h-5 w-5 text-white/80" />
                </button>
              )}
@@ -2367,7 +2368,7 @@ export function RoomClient({ room }: { room: Room }) {
         }}
       />
 
-      <RoomUserProfileDialog
+       <RoomUserProfileDialog
         userId={selectedParticipantUid}
         open={isUserProfileCardOpen}
         onOpenChange={setIsUserProfileCardOpen}
@@ -2384,6 +2385,20 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenChat={handleOpenChatFromProfile}
         onMention={handleMention}
         isMe={selectedParticipantUid === currentUser?.uid}
+      />
+
+      <RoomInfoDialog
+        open={isRoomInfoOpen}
+        onOpenChange={setIsRoomInfoOpen}
+        room={room}
+        isOwner={isOwner}
+        isAdmin={canManageRoom}
+      />
+
+      <RoomSettingsDialog
+        open={isRoomSettingsOpen}
+        onOpenChange={setIsRoomSettingsOpen}
+        room={room}
       />
 
       <style jsx global>{`
