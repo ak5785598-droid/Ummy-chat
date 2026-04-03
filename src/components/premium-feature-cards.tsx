@@ -37,7 +37,7 @@ export function RankingCard() {
   return (
     <button 
       onClick={() => router.push('/leaderboard?type=rich')}
-      className="group relative flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
+      className="group relative flex-1 aspect-[1/0.55] rounded-[1.2rem] bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
     >
       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine" />
       <div className="absolute top-1.5 left-2 flex items-center gap-1">
@@ -68,7 +68,7 @@ export function FamilyCard() {
   return (
     <button 
       onClick={() => router.push('/families')}
-      className="group relative flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-gradient-to-br from-[#00c6ff] to-[#0072ff] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
+      className="group relative flex-1 aspect-[1/0.55] rounded-[1.2rem] bg-gradient-to-br from-[#00c6ff] to-[#0072ff] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
     >
       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-500" />
       <div className="absolute top-1.5 left-2 flex items-center gap-1">
@@ -100,7 +100,7 @@ export function CpCard() {
   return (
     <button 
       onClick={() => router.push('/cp-challenge')}
-      className="group relative flex-1 aspect-[1/0.88] rounded-[1.2rem] bg-gradient-to-br from-[#ff4e50] to-[#f9d423] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
+      className="group relative flex-1 aspect-[1/0.55] rounded-[1.2rem] bg-gradient-to-br from-[#ff4e50] to-[#f9d423] border-2 border-white/40 shadow-lg overflow-hidden active:scale-95 transition-all flex flex-col items-center justify-end p-1.5"
     >
       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine delay-700" />
       <div className="absolute top-1.5 left-2 flex items-center gap-1">

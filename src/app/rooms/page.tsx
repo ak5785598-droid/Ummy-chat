@@ -228,7 +228,7 @@ export default function RoomsPage() {
               <div 
                 onClick={() => slide.link && router.push(slide.link)}
                 className={cn(
-                  "h-[140px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", 
+                  "h-[110px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", 
                   slide.link ? "cursor-pointer" : "",
                   slide.color || 'from-purple-600 to-indigo-600'
                 )}
@@ -263,7 +263,7 @@ export default function RoomsPage() {
       </div>
 
          <div className="px-3 mb-2">
-          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[80px]">
+          <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[72px]">
             <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-1 relative z-10 px-1">
                <div className="flex items-center gap-1">

@@ -27,7 +27,7 @@ export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
 
  return (
    <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 hover-scale active-press">
-    <div className="relative aspect-[1/1.2] rounded-[1.2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.08)] bg-[#F8F9FE] isolate ring-1 ring-black/5">
+    <div className="relative aspect-[1/0.95] rounded-[1.2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.08)] bg-[#F8F9FE] isolate ring-1 ring-black/5">
      {/* Full Cover Background */}
      {room.coverUrl ? (
       <Image
