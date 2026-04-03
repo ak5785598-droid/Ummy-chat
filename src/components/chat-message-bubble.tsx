@@ -18,7 +18,7 @@ export function ChatMessageBubble({ bubbleId, isMe, children, className }: ChatM
   return (
    <div className={cn(
     "px-3 py-1.5 rounded-2xl text-[13px] font-medium shadow-sm border max-w-full min-w-[50px] relative",
-    isMe ? "bg-[#00E676] text-black border-[#00E676]/20" : "bg-white/15 text-white border-white/5",
+    isMe ? "bg-cyan-500/20 text-cyan-200 border-cyan-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "bg-white/10 text-white border-white/5 backdrop-blur-md",
     className
    )}>
     {children}
