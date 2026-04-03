@@ -105,21 +105,27 @@ export function AvatarFramePicker({
         </div>
 
         {/* Frame Selection Grid */}
-        <ScrollArea className="h-[400px] px-6 py-6 relative z-10 scrollbar-hide">
-          <div className="grid grid-cols-4 gap-4 pb-10">
+        <ScrollArea className="h-[420px] px-6 py-4 relative z-10 scrollbar-hide">
+          <div className="grid grid-cols-4 gap-3 pb-20">
             {/* "None" Option */}
             <div 
               onClick={() => setSelectedId(null)}
               className={cn(
-                "relative aspect-square rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-1",
-                !selectedId ? "bg-white/10 border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-slate-900/40 border-white/5 hover:border-white/20"
+                "relative aspect-square rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 group",
+                !selectedId 
+                  ? "bg-white/10 border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.1)]" 
+                  : "bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-800/60"
               )}
             >
-              <div className="h-10 w-10 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center">
-                <X className="h-5 w-5 text-slate-600" />
+              <div className="h-12 w-12 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center group-hover:border-slate-500 transition-colors">
+                <X className="h-6 w-6 text-slate-600 group-hover:text-slate-400" />
               </div>
-              <span className="text-[8px] font-black uppercase tracking-tighter text-slate-500">None</span>
-              {!selectedId && <Check className="absolute top-1 right-1 h-3 w-3 text-white" />}
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300">Default</span>
+              {!selectedId && (
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-lg">
+                  <Check className="h-3 w-3 text-black stroke-[3]" />
+                </div>
+              )}
             </div>
 
             {frames.map((frame) => (
@@ -127,25 +133,47 @@ export function AvatarFramePicker({
                 key={frame.id}
                 onClick={() => setSelectedId(frame.id)}
                 className={cn(
-                  "relative aspect-square rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center p-2",
+                  "relative aspect-square rounded-2xl border transition-all flex flex-col items-center justify-center p-1 group overflow-visible",
                   selectedId === frame.id 
-                    ? "bg-purple-500/20 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)]" 
-                    : "bg-slate-900/40 border-white/5 hover:border-white/10"
+                    ? "bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-400/50 shadow-[0_0_25px_rgba(168,85,247,0.2)]" 
+                    : "bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-800/60"
                 )}
               >
-                 <div className="scale-75 mb-1">
-                   <AvatarFrame frameId={frame.id} size="sm">
-                     <div className="w-full h-full bg-slate-800" />
-                   </AvatarFrame>
+                 <div className="relative z-10 w-full h-full flex items-center justify-center">
+                   <div className={cn(
+                     "transition-transform duration-300",
+                     selectedId === frame.id ? "scale-90" : "scale-75 group-hover:scale-80"
+                   )}>
+                     <AvatarFrame frameId={frame.id} size="sm">
+                       <div className="w-full h-full bg-slate-800/50 backdrop-blur-sm" />
+                     </AvatarFrame>
+                   </div>
                  </div>
-                 <span className="text-[8px] font-black uppercase tracking-tighter text-center line-clamp-1 text-slate-400">
-                    {frame.name}
-                 </span>
-                 {selectedId === frame.id && <Check className="absolute top-1 right-1 h-3 w-3 text-purple-400" />}
+
+                 <div className="absolute bottom-2 left-0 right-0 px-1 text-center z-20">
+                   <span className={cn(
+                     "text-[8px] font-bold uppercase tracking-tight line-clamp-1 transition-colors",
+                     selectedId === frame.id ? "text-purple-300" : "text-slate-500 group-hover:text-slate-400"
+                   )}>
+                      {frame.name}
+                   </span>
+                 </div>
+
+                 {selectedId === frame.id && (
+                    <div className="absolute -top-1 -right-1 bg-purple-500 rounded-full p-0.5 shadow-lg z-30">
+                      <Check className="h-3 w-3 text-white stroke-[3]" />
+                    </div>
+                 )}
                  
-                 {/* Tier Indicator */}
-                 {frame.tier === 'legendary' && <Sparkles className="absolute bottom-1 left-1 h-2 w-2 text-orange-400" />}
-                 {frame.tier === 'mythic' && <Shield className="absolute bottom-1 left-1 h-2 w-2 text-purple-400" />}
+                 {/* Tier Indicator Dots */}
+                 <div className="absolute top-2 left-2 flex gap-0.5 z-20">
+                    <div className={cn(
+                      "w-1 h-1 rounded-full",
+                      frame.tier === 'legendary' ? "bg-orange-500 shadow-[0_0_4px_#f97316]" :
+                      frame.tier === 'mythic' ? "bg-purple-500 shadow-[0_0_4px_#a855f7]" :
+                      frame.tier === 'luxury' ? "bg-blue-500 shadow-[0_0_4px_#3b82f6]" : "bg-slate-600"
+                    )} />
+                 </div>
               </div>
             ))}
           </div>

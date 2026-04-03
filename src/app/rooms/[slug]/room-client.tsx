@@ -155,7 +155,7 @@ const Seat = memo(({
 
   return (
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
-      <div className="relative">
+      <div className="relative p-4 overflow-visible"> {/* Increased padding to p-4 for large 3D effects */}
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
