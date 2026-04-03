@@ -13,13 +13,13 @@ import {
  Volume2,
  VolumeX,
  HelpCircle,
- Maximize2
+ Maximize2,
+ Coins // GoldCoinIcon की जगह Standard Icon
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { GameResultOverlay } from '@/components/game-result-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Helper function to replace 'cn' utility if it's missing
+const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(' ');
 
 const ITEMS = [
   { id: 'apple', emoji: '🍎', multiplier: 5, label: '5X' },
@@ -44,7 +44,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
- const { toast } = useToast();
 
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(30);
@@ -55,7 +54,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const [history, setHistory] = useState<string[]>(['watermelon', 'pizza', 'strawberry', 'apple', 'mango']);
  const [isMuted, setIsMuted] = useState(false);
  const [isLaunching, setIsLaunching] = useState(true);
- const [winners, setWinners] = useState<any[]>([]);
  const [winningSymbol, setWinningSymbol] = useState<string>('');
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
@@ -145,13 +143,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
   setWinningSymbol(winItem?.emoji || '🏆');
   setTotalWinAmount(winAmount);
-
-  const sessionWinners = [];
-  if (winAmount > 0 && userProfile) {
-   sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-  }
-
-  setWinners(sessionWinners);
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
@@ -164,7 +155,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   setTimeout(() => {
    setLastBets(myBets);
    setMyBets({});
-   setWinners([]);
    setHighlightIdx(null);
    setGameState('betting');
    setTimeLeft(30);
@@ -174,7 +164,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const handlePlaceBet = (id: string) => {
   if (gameState !== 'betting' || !currentUser || !userProfile) return;
   if ((userProfile.wallet?.coins || 0) < selectedChip) {
-   toast({ variant: 'destructive', title: 'Insufficient Coins' });
    return;
   }
   playBetSound();
@@ -185,40 +174,49 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  if (isLaunching) return <div className="h-screen w-full bg-[#0F051D] flex items-center justify-center text-yellow-400 font-black italic">FRUIT PARTY LOADING...</div>;
 
  return (
-  <div className={cn("flex flex-col relative min-h-screen w-full bg-[#0F051D] overflow-hidden text-white")}>
+  <div className="flex flex-col relative min-h-screen w-full bg-[#0F051D] overflow-hidden text-white font-sans">
    
-   {gameState === 'result' && (
-    <div className="absolute inset-0 z-[100]">
-      <GameResultOverlay 
-        gameId="fruit-party" 
-        winningSymbol={winningSymbol} 
-        winAmount={totalWinAmount} 
-        winners={winners} 
-      />
-    </div>
-   )}
+   {/* SIMPLE RESULT OVERLAY (Removed GameResultOverlay dependence) */}
+   <AnimatePresence>
+     {gameState === 'result' && (
+      <motion.div 
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      >
+        <div className="text-center">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-8xl mb-4">{winningSymbol}</motion.div>
+          <h2 className="text-2xl font-black text-yellow-400 uppercase italic">Winning Symbol</h2>
+          {totalWinAmount > 0 && (
+            <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="text-4xl font-black text-green-400 mt-2">
+              +{totalWinAmount.toLocaleString()}
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+     )}
+   </AnimatePresence>
 
    {/* --- HEADER --- */}
    <header className="relative z-50 p-4 pt-8 space-y-4">
     <div className="flex items-center justify-between">
       <div className="flex gap-2">
-        <button className="bg-white/5 p-2 rounded-full border border-white/10 active:bg-white/20"><Maximize2 className="h-4 w-4" /></button>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2 rounded-full border border-white/10 active:bg-white/20">
+        <button className="bg-white/5 p-2 rounded-full border border-white/10"><Maximize2 className="h-4 w-4" /></button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2 rounded-full border border-white/10">
           {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </button>
       </div>
-      <h1 className="text-2xl font-black text-yellow-400 italic uppercase drop-shadow-md tracking-wider">Fruit Party</h1>
+      <h1 className="text-2xl font-black text-yellow-400 italic uppercase tracking-wider">Fruit Party</h1>
       <div className="flex gap-2">
         <button className="bg-white/5 p-2 rounded-full border border-white/10"><HelpCircle className="h-4 w-4" /></button>
-        {onClose && <button onClick={onClose} className="bg-pink-600 p-2 rounded-full shadow-lg active:bg-pink-700 transition-colors"><X className="h-4 w-4" /></button>}
+        {onClose && <button onClick={onClose} className="bg-pink-600 p-2 rounded-full active:bg-pink-700 transition-colors"><X className="h-4 w-4" /></button>}
       </div>
     </div>
 
-    <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 mx-2 overflow-hidden shadow-inner">
+    <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 mx-2 overflow-hidden">
       <span className="text-[10px] font-black text-yellow-400/60 uppercase pl-2 border-r border-white/10 pr-2">History</span>
       <div className="flex gap-4 overflow-x-auto no-scrollbar">
         {history.map((id, i) => (
-          <span key={i} className={cn("text-xl shrink-0", i === 0 ? "scale-125 drop-shadow-[0_0_10px_gold]" : "opacity-40")}>
+          <span key={i} className={cn("text-xl shrink-0", i === 0 && "scale-125 brightness-125")}>
             {ITEMS.find(it => it.id === id)?.emoji}
           </span>
         ))}
@@ -241,18 +239,18 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         {/* FRUIT CIRCLES & JOINING LINES */}
         {ITEMS.map((item, idx) => {
           const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
-          const radius = 135; // Increased radius for better screen coverage
+          const radius = 135; 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
 
           return (
             <div key={item.id} className="absolute flex items-center justify-center" style={{ transform: `translate(${x}px, ${y}px)` }}>
               
-              {/* JOINING LINE: Connecting fruit to center circle */}
+              {/* JOINING LINE: Connecting fruit center to hub center */}
               <div 
-                className="absolute bg-gradient-to-t from-yellow-400/40 to-transparent w-[2px] h-[135px] origin-bottom" 
+                className="absolute bg-gradient-to-t from-yellow-400/30 to-transparent w-[2px] h-[135px] origin-bottom" 
                 style={{ 
-                  transform: `rotate(${idx * 45}deg) translateY(-65px)`, 
+                  transform: `rotate(${idx * 45}deg) translateY(-67px)`, 
                   zIndex: 5 
                 }} 
               />
@@ -260,15 +258,15 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
               <button 
                 onClick={() => handlePlaceBet(item.id)}
                 disabled={gameState !== 'betting'}
-                className="relative z-40 group active:scale-90 transition-all"
+                className="relative z-40 active:scale-90 transition-all"
               >
                 <div className={cn(
-                  "h-18 w-18 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
+                  "h-16 w-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
                   highlightIdx === idx 
-                    ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_40px_rgba(255,215,0,0.7)]" 
+                    ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_40px_gold]" 
                     : "bg-[#4E0D25] border-[#D4AF37]" 
                 )}>
-                  <span className="text-3xl mb-0.5 drop-shadow-md">{item.emoji}</span>
+                  <span className="text-3xl mb-0.5">{item.emoji}</span>
                   <span className={cn("text-[9px] font-black", highlightIdx === idx ? "text-black" : "text-yellow-400/80")}>
                     {item.label}
                   </span>
@@ -278,9 +276,8 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                 <AnimatePresence>
                   {myBets[item.id] > 0 && (
                     <motion.div 
-                      initial={{ scale: 0, y: 10 }} 
-                      animate={{ scale: 1, y: 0 }} 
-                      className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-[10px] px-3 py-1 rounded-full font-black border border-white/30 shadow-2xl whitespace-nowrap z-[60]"
+                      initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} 
+                      className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-[10px] px-3 py-1 rounded-full font-black border border-white/30 shadow-2xl z-[60]"
                     >
                       {myBets[item.id] >= 1000 ? `${(myBets[item.id]/1000).toFixed(0)}K` : myBets[item.id]}
                     </motion.div>
@@ -293,26 +290,25 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       </div>
    </main>
 
-   {/* --- FOOTER & CHIPS --- */}
-   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/90 backdrop-blur-3xl rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+   {/* --- FOOTER --- */}
+   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/90 backdrop-blur-3xl rounded-t-[3.5rem] border-t border-white/10">
     
     <div className="flex items-center justify-between px-4">
-      <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10 shadow-inner">
-        <GoldCoinIcon className="h-5 w-5" />
-        <span className="text-lg font-black tracking-tighter text-yellow-400">
+      <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10">
+        <Coins className="h-5 w-5 text-yellow-400" />
+        <span className="text-lg font-black text-yellow-400">
           {(userProfile?.wallet?.coins || 0).toLocaleString()}
         </span>
       </div>
       <button 
         onClick={() => setMyBets(lastBets)} 
         disabled={Object.keys(lastBets).length === 0 || gameState !== 'betting'}
-        className="bg-yellow-400/10 text-yellow-400 px-6 py-2.5 rounded-full text-[11px] font-black uppercase border border-yellow-400/20 active:bg-yellow-400/30 disabled:opacity-20 transition-all tracking-widest"
+        className="bg-yellow-400/10 text-yellow-400 px-6 py-2.5 rounded-full text-[11px] font-black uppercase border border-yellow-400/20 active:bg-yellow-400/30 disabled:opacity-20 transition-all"
       >
         Repeat
       </button>
     </div>
 
-    {/* CHIPS SECTION */}
     <div className="flex justify-center items-center gap-3 pb-2">
       {CHIPS.map(chip => (
         <button 
@@ -321,7 +317,7 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           className={cn(
             "w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-xl",
             selectedChip === chip.value 
-              ? "bg-yellow-400 border-white text-black scale-115 z-10 shadow-[0_0_20px_rgba(255,255,255,0.3)]" 
+              ? "bg-yellow-400 border-white text-black scale-110 z-10" 
               : "bg-[#2D1B4E] border-white/10 text-white/70 active:scale-95"
           )}
         >
@@ -335,7 +331,6 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    <style jsx global>{`
      .no-scrollbar::-webkit-scrollbar { display: none; }
      button { -webkit-tap-highlight-color: transparent; }
-     body { background-color: #0F051D; }
    `}</style>
   </div>
  );
