@@ -1758,7 +1758,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* Floating Top-Right Badge (Tree) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)]" />
+            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)] bg-transparent" />
             {achievedTasks.some(id => !claimedTasks.includes(id)) && (
               <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
             )}
@@ -1767,14 +1767,14 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        <div className="shrink-0 flex flex-col items-center gap-8 w-full overflow-visible mb-2">
+        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-12">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
           </div>
 
           {/* 2x4 Grid Seats */}
-          <div className="w-full grid grid-cols-4 gap-y-10 px-2">
+          <div className="w-full grid grid-cols-4 gap-y-4 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
               <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
@@ -2033,16 +2033,16 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      {/* RIGHT SIDE FLOATING MUSIC BUTTON - Shows when music is available and mini player is hidden */}
+      {/* RIGHT SIDE FLOATING MUSIC BUTTON */}
       {room.currentMusicUrl && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-32 z-40 p-2.5 rounded-2xl transition-all active:scale-90 shadow-2xl border-2 animate-bounce-slow",
-            "bg-cyan-500/20 border-cyan-400/50 text-cyan-400 shadow-cyan-500/20 hover:bg-cyan-500/30"
+            "fixed right-4 bottom-32 z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
+            "bg-cyan-500/20 text-cyan-400 shadow-cyan-500/10 hover:bg-cyan-500/30"
           )}
         >
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-cyan-400/20">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/10 overflow-hidden">
             {room.isMusicPlaying ? (
               <Music className="h-4 w-4 text-cyan-400 animate-pulse" />
             ) : (
