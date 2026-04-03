@@ -98,12 +98,16 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
         updatedAt: serverTimestamp()
       });
 
+      // Use set with merge to ensure wallet structure exists before incrementing
       const rewardUpdate = {
-        'wallet.coins': increment(task.reward),
+        wallet: {
+          coins: increment(task.reward)
+        },
         updatedAt: serverTimestamp()
       };
-      batch.update(userRef, rewardUpdate);
-      batch.update(profileRef, rewardUpdate);
+      
+      batch.set(userRef, rewardUpdate, { merge: true });
+      batch.set(profileRef, rewardUpdate, { merge: true });
 
       await batch.commit();
       

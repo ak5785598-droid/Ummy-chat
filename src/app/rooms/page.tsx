@@ -91,8 +91,9 @@ export default function RoomsPage() {
  const { toast } = useToast();
  const router = useRouter();
  const { t } = useTranslation();
- const [activeCategory, setActiveCategory] = useState("All");
- const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
 
   const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -100,6 +101,22 @@ export default function RoomsPage() {
   }, [firestore, user?.uid]);
 
   const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
+
+  const recentRoomsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
+  }, [firestore, user?.uid]);
+
+  const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
+
+  const filteredRecentRooms = useMemo(() => {
+    if (!recentRoomsData) return [];
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    return recentRoomsData.filter((visit: any) => {
+      const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
+      return visitTime > oneDayAgo;
+    });
+  }, [recentRoomsData]);
 
  // ⚡ DAILY QUEST INITIALIZER: High-Fidelity Reset logic
  useQuestInitializer();
@@ -180,7 +197,7 @@ export default function RoomsPage() {
     <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
       <div className="pt-0 flex items-center justify-between w-full">
          <div className="flex items-center gap-3">
-            <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
+            <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Popular</button>
             <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
          </div>
          <div className="flex items-center gap-2 text-slate-800">
@@ -325,86 +342,143 @@ export default function RoomsPage() {
      </>
     ) : (
       <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
-        {/* Profile Card */}
-        <section className="mb-4 bg-white rounded-[2rem] p-5 shadow-xl border border-slate-100 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="relative">
-              <Avatar className="h-16 w-16 border-2 border-white shadow-2xl">
-                <AvatarImage src={userDoc?.avatarUrl} />
-                <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 -right-1">
-                <VipBadge level={userDoc?.level?.rich || 1} />
+        {/* Profile Card Redesign: Horizontal with My Room shortcut */}
+        <section className="mb-6 mt-2">
+          <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
+            
+            <div className="flex items-center gap-4 relative z-10 w-full">
+              <div className="relative shrink-0">
+                <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
+                  <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
+                  <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1">
+                  <VipBadge level={userDoc?.level?.rich || 1} />
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight">{userDoc?.username || 'Tribe Member'}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tribal ID: {userDoc?.accountNumber || '---'}</p>
-              <div className="flex items-center gap-1.5 mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 w-fit">
-                <GoldCoinIcon className="h-3 w-3" />
-                <span className="text-xs font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
+              
+              <div className="flex flex-col flex-1 min-w-0 pr-2">
+                <h2 className="text-lg font-black uppercase text-slate-900 tracking-tighter truncate">{userDoc?.username || 'Member'}</h2>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
+                  <GoldCoinIcon className="h-2.5 w-2.5" />
+                  <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
+                </div>
               </div>
+
+              <button 
+                onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
+                className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+              >
+                My Room
+              </button>
             </div>
           </div>
         </section>
 
-        {/* My Frequency Section - Top Priority */}
-        <section className="mb-6 p-1">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 mb-3 px-1 flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5 text-primary fill-current" /> My Frequency
-          </h3>
-          {myRoom && !myRoom.name?.toUpperCase().includes('SYNCHRONIZING') ? (
-            <div className="flex flex-col gap-3">
-              <div className="max-w-full">
-                <ChatRoomCard room={myRoom} variant="modern" />
+        {/* Sub-Tabs: Following / Recent */}
+        <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
+          <button 
+            onClick={() => setMeTab('following')} 
+            className={cn(
+              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all",
+              meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
+            )}
+          >
+            Following
+            {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+          </button>
+          <button 
+            onClick={() => setMeTab('recent')} 
+            className={cn(
+              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all",
+              meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
+            )}
+          >
+            Recent
+            {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+          </button>
+        </div>
+
+        {/* Following Tab Content */}
+        {meTab === 'following' && (
+          <section className="animate-in fade-in slide-in-from-left-4 duration-300">
+            {isFollowedLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                ))}
               </div>
-            </div>
-          ) : (
-            <CreateRoomDialog 
-              trigger={
-                <button className="w-full h-24 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-primary hover:border-primary transition-all active:scale-95 group">
-                  <Plus className="h-5 w-5 bg-slate-50 p-1.5 rounded-full" />
-                  <span className="text-[9px] font-black uppercase tracking-widest">Open My Room</span>
-                </button>
-              }
-            />
-          )}
-        </section>
-
-        {/* Followed Frequency Section */}
-        <section className="mb-6">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 mb-4 px-1 flex items-center gap-2">
-            <Heart className="h-3.5 w-3.5 text-pink-500 fill-current" /> Following
-          </h3>
-          {isFollowedLoading ? (
-            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="shrink-0 w-32 aspect-square rounded-2xl bg-slate-100 animate-pulse" />
-              ))}
-            </div>
-          ) : followedRoomsData && followedRoomsData.length > 0 ? (
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-              {followedRoomsData.map((roomRef: any) => (
-                <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer">
-                  <div className="relative">
-                    <Avatar className="h-14 w-14 border border-slate-100 shadow-xl">
-                      <AvatarImage src={roomRef.coverUrl} className="object-cover" />
-                      <AvatarFallback className="bg-slate-100 text-slate-400 font-black text-xs">U</AvatarFallback>
-                    </Avatar>
+            ) : followedRoomsData && followedRoomsData.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {followedRoomsData.map((roomRef: any) => (
+                  <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                    <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                       <Image 
+                        src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                        alt={roomRef.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        unoptimized
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                       <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
+                       </div>
+                    </div>
                   </div>
-                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter truncate w-16 text-center">{roomRef.title}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-6 text-center text-[9px] font-black uppercase tracking-widest text-slate-300 border border-dashed rounded-3xl">
-              Follow rooms to find them here!
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                No rooms followed yet
+              </div>
+            )}
+          </section>
+        )}
 
-        
+        {/* Recent Tab Content */}
+        {meTab === 'recent' && (
+          <section className="animate-in fade-in slide-in-from-right-4 duration-300">
+            {isRecentLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredRecentRooms.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredRecentRooms.map((visit: any) => (
+                  <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                    <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                       <Image 
+                        src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                        alt={visit.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        unoptimized
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                       <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
+                          <span className="text-[8px] font-black text-white uppercase">Recently</span>
+                       </div>
+                       <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
+                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                No recent visits (last 24h)
+              </div>
+            )}
+          </section>
+        )}
       </main>
     )}
 

@@ -495,12 +495,28 @@ export function RoomClient({ room }: { room: Room }) {
     room.ownerId, 
     canManageRoom
   );
-
   const onlineCount = useMemo(() => {
-    // Use filtered participants count (not raw participantsData)
-    // This ensures only active users are counted
     return participants.length || 0;
   }, [participants]);
+  // RECENT VISIT TRACKING (For "Me" Section)
+  useEffect(() => {
+    if (!firestore || !currentUser?.uid || !room.id) return;
+    
+    const recordVisit = async () => {
+      const recentRef = doc(firestore, 'users', currentUser.uid, 'recentVisits', room.id);
+      await setDocumentNonBlocking(recentRef, {
+        id: room.id,
+        title: room.title || 'Room',
+        coverUrl: room.coverUrl || '',
+        roomNumber: room.roomNumber || '0000',
+        ownerId: room.ownerId || '',
+        participantCount: onlineCount || 1,
+        visitedAt: serverTimestamp()
+      }, { merge: true });
+    };
+
+    recordVisit();
+  }, [firestore, currentUser?.uid, room.id, room.title, room.coverUrl, room.roomNumber, room.ownerId, onlineCount]);
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
@@ -842,7 +858,8 @@ export function RoomClient({ room }: { room: Room }) {
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.progress': 0,
         'rocket.countdownUntil': null,
-        'rocket.lastReset': Timestamp.fromDate(new Date())
+        'rocket.lastReset': Timestamp.fromDate(new Date()),
+        'dailyWealth': 0 // RESET ROOM CUP COINS
       });
       return; // Exit early, reset will trigger re-render
     }
@@ -2430,12 +2447,4 @@ export function RoomClient({ room }: { room: Room }) {
       />
     </div>
   );
-}
-
-// Helper function to format time
-function formatTime(seconds: number): string {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
