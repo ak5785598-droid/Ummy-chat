@@ -1765,9 +1765,9 @@ export function RoomClient({ room }: { room: Room }) {
             {/* The Jar Icon (Styled Image) */}
             <div className="relative h-14 w-14 flex items-center justify-center">
               <img 
-                src="https://img.icons8.com/3d-fluency/188/glass-jar--v1.png" 
+                src="/images/golden_task_jar.png" 
                 alt="Task Jar" 
-                className="h-10 w-10 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
+                className="h-12 w-12 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
               />
               
               {/* Progress Ring (Visual Indicator) */}
