@@ -18,7 +18,8 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
   const { toast } = useToast();
   
   const [taskProgress, setTaskProgress] = useState<Record<string, number>>({});
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [achievedTasks, setAchievedTasks] = useState<string[]>([]);
+  const [claimedTasks, setClaimedTasks] = useState<string[]>([]);
   
   const micTimerRef = useRef<NodeJS.Timeout | null>(null);
   const simMicTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -27,70 +28,97 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
   useEffect(() => {
     if (!firestore || !user?.uid) return;
 
-    const today = new Date().toISOString().split('T')[0]; // simple daily reset key
+    const today = new Date().toISOString().split('T')[0];
     const questsRef = collection(firestore, 'users', user.uid, 'roomQuests');
     
     const unsub = onSnapshot(questsRef, (snap) => {
       const data: Record<string, number> = {};
-      const completed: string[] = [];
+      const achieved: string[] = [];
+      const claimed: string[] = [];
       
       snap.docs.forEach(doc => {
         const d = doc.data();
-        // Check if it's from today (basic implementation)
         const updatedAt = d.updatedAt?.toDate() || new Date();
         const updatedAtKey = updatedAt.toISOString().split('T')[0];
         
         if (updatedAtKey === today) {
           data[doc.id] = d.current || 0;
-          if (d.isCompleted) completed.push(doc.id);
+          if (d.isCompleted) achieved.push(doc.id);
+          if (d.isClaimed) claimed.push(doc.id);
         }
       });
       
       setTaskProgress(data);
-      setCompletedTasks(completed);
+      setAchievedTasks(achieved);
+      setClaimedTasks(claimed);
     });
 
     return () => unsub();
   }, [firestore, user?.uid]);
 
-  // 2. Helper to increment task progress and award coins
+  // 2. Helper to increment task progress (NO AUTO-AWARD)
   const updateTask = async (taskId: string, incrementBy: number = 1) => {
     if (!firestore || !user?.uid) return;
     
     const task = ROOM_TASKS.find(t => t.id === taskId);
-    if (!task || completedTasks.includes(taskId)) return;
+    // Don't update if already claimed
+    if (!task || claimedTasks.includes(taskId)) return;
 
     const currentVal = (taskProgress[taskId] || 0) + incrementBy;
     const isNowComplete = currentVal >= task.target;
 
-    const batch = writeBatch(firestore);
     const taskRef = doc(firestore, 'users', user.uid, 'roomQuests', taskId);
-    const userRef = doc(firestore, 'users', user.uid);
-    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-
-    batch.set(taskRef, {
+    
+    await updateDocumentNonBlocking(taskRef, {
       current: currentVal,
       target: task.target,
       isCompleted: isNowComplete,
       updatedAt: serverTimestamp()
-    }, { merge: true });
+    });
+  };
 
-    if (isNowComplete) {
+  // 3. NEW: Manual Claim Function
+  const claimTask = async (taskId: string) => {
+    if (!firestore || !user?.uid) return;
+
+    const task = ROOM_TASKS.find(t => t.id === taskId);
+    if (!task || claimedTasks.includes(taskId)) return;
+    
+    const isAchieved = achievedTasks.includes(taskId) || (taskProgress[taskId] || 0) >= task.target;
+    if (!isAchieved) return;
+
+    try {
+      const batch = writeBatch(firestore);
+      const taskRef = doc(firestore, 'users', user.uid, 'roomQuests', taskId);
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+
+      batch.update(taskRef, {
+        isClaimed: true,
+        updatedAt: serverTimestamp()
+      });
+
       const rewardUpdate = {
         'wallet.coins': increment(task.reward),
         updatedAt: serverTimestamp()
       };
       batch.update(userRef, rewardUpdate);
       batch.update(profileRef, rewardUpdate);
+
+      await batch.commit();
       
-      // Notify user
       toast({
-        title: 'Task Completed!',
-        description: `Synced +${task.reward.toLocaleString()} Gold Coins to your vault.`,
+        title: 'Reward Claimed!',
+        description: `Successfully claimed ${task.reward.toLocaleString()} Gold Coins!`,
+      });
+    } catch (e) {
+      console.error('[Missions] Claim failed:', e);
+      toast({
+        title: 'Claim Failed',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive'
       });
     }
-
-    await batch.commit();
   };
 
   // 3. Logic for "On Mic" tasks (10, 30, 60 mins)
@@ -181,7 +209,9 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
 
   return {
     taskProgress,
-    completedTasks,
+    achievedTasks,
+    claimedTasks,
+    claimTask,
     triggerTask: updateTask
   };
 }

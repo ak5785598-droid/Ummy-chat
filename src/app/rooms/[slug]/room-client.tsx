@@ -489,7 +489,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, [participantsData, participants]);
 
   // Initialize Room Tasks Hook
-  const { taskProgress, completedTasks, triggerTask } = useRoomTasks(
+  const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
     room.id, 
     participants || [], 
     room.ownerId, 
@@ -1627,11 +1627,13 @@ export function RoomClient({ room }: { room: Room }) {
         totalGifts={room.rocket?.progress || 0}
         roomName={room.title}
       />
-      <RoomTasksDialog
-        open={isRoomTasksOpen}
-        onOpenChange={setIsRoomTasksOpen}
+      <RoomTasksDialog 
+        open={isRoomTasksOpen} 
+        onOpenChange={setIsRoomTasksOpen} 
         taskProgress={taskProgress}
-        completedTasks={completedTasks}
+        achievedTasks={achievedTasks}
+        claimedTasks={claimedTasks}
+        onClaim={claimTask}
       />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
@@ -1763,7 +1765,7 @@ export function RoomClient({ room }: { room: Room }) {
             {/* The Jar Icon (Styled Image) */}
             <div className="relative h-14 w-14 flex items-center justify-center">
               <img 
-                src="https://img.icons8.com/color/96/money-box.png" 
+                src="https://img.icons8.com/3d-fluency/188/glass-jar--v1.png" 
                 alt="Task Jar" 
                 className="h-10 w-10 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
               />
@@ -1772,10 +1774,10 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/10 animate-spin-slow" />
             </div>
 
-            {/* Notification Badge */}
-            {ROOM_TASKS.length - completedTasks.length > 0 && (
-              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-slate-950 flex items-center justify-center shadow-lg">
-                <span className="text-[9px] font-black">{ROOM_TASKS.length - completedTasks.length}</span>
+            {/* Notification Badge - Show count of achieved but UNCLAIMED tasks */}
+            {achievedTasks.filter(id => !claimedTasks.includes(id)).length > 0 && (
+              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-slate-950 flex items-center justify-center shadow-lg animate-bounce">
+                <span className="text-[9px] font-black">{achievedTasks.filter(id => !claimedTasks.includes(id)).length}</span>
               </div>
             )}
           </div>
