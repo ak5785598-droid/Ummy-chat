@@ -9,100 +9,62 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
- X,
- Volume2,
- VolumeX,
- HelpCircle,
- Maximize2,
- Coins // GoldCoinIcon की जगह Standard Icon
+ X, Volume2, VolumeX, HelpCircle, Clock
 } from 'lucide-react';
+import { GoldCoinIcon } from '@/components/icons';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { GameResultOverlay } from '@/components/game-result-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Helper function to replace 'cn' utility if it's missing
-const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(' ');
-
+// --- CONFIG ---
 const ITEMS = [
-  { id: 'apple', emoji: '🍎', multiplier: 5, label: '5X' },
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: '5X' },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: '5X' },
-  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: '5X' },
-  { id: 'pizza', emoji: '🍕', multiplier: 10, label: '10X' },
-  { id: 'skewers', emoji: '🍢', multiplier: 15, label: '15X' },
-  { id: 'burrito', emoji: '🌯', multiplier: 25, label: '25X' },
-  { id: 'meat', emoji: '🍖', multiplier: 45, label: '45X' },
+  { id: 'lemon', emoji: '🍋', multiplier: 5, label: '×5' },
+  { id: 'grapes', emoji: '🍇', multiplier: 10, label: '×10' },
+  { id: 'orange', emoji: '🍊', multiplier: 5, label: '×5' },
+  { id: 'cherry', emoji: '🍒', multiplier: 45, label: '×45' },
+  { id: 'timer', emoji: '', multiplier: 0, label: '' }, // Middle Slot
+  { id: 'apple', emoji: '🍎', multiplier: 25, label: '×25' },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: '×5' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 15, label: '×15' },
+  { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5' },
 ];
 
 const CHIPS = [
-  { value: 1000, label: '1K' },
-  { value: 50000, label: '50K' },
-  { value: 100000, label: '100K' },
-  { value: 500000, label: '500K' },
-  { value: 1000000, label: '1M' },
+  { value: 500, label: '500', color: 'bg-emerald-500' },
+  { value: 5000, label: '5,000', color: 'bg-rose-500' },
+  { value: 50000, label: '50,000', color: 'bg-red-600' },
+  { value: 500000, label: '500,000', color: 'bg-red-800' },
 ];
 
-export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
+export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
+ const { toast } = useToast();
 
+ // States
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(30);
- const [selectedChip, setSelectedChip] = useState(1000);
+ const [selectedChip, setSelectedChip] = useState(500);
  const [myBets, setMyBets] = useState<Record<string, number>>({});
- const [lastBets, setLastBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
- const [history, setHistory] = useState<string[]>(['watermelon', 'pizza', 'strawberry', 'apple', 'mango']);
+ const [history, setHistory] = useState<string[]>(['apple', 'grapes', 'lemon']);
  const [isMuted, setIsMuted] = useState(false);
  const [isLaunching, setIsLaunching] = useState(true);
+ 
+ // Winner Result States
+ const [winners, setWinners] = useState<any[]>([]);
  const [winningSymbol, setWinningSymbol] = useState<string>('');
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
- const audioCtxRef = useRef<AudioContext | null>(null);
-
- const initAudioContext = useCallback(() => {
-  if (!audioCtxRef.current && typeof window !== 'undefined') {
-   audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  return audioCtxRef.current;
- }, []);
-
- const playBetSound = useCallback(() => {
-  if (isMuted) return;
-  const ctx = initAudioContext();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1200, ctx.currentTime);
-  gain.gain.setValueAtTime(0.1, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.1);
- }, [isMuted, initAudioContext]);
-
- const playTickSound = useCallback(() => {
-  if (isMuted) return;
-  const ctx = initAudioContext();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1000, ctx.currentTime);
-  gain.gain.setValueAtTime(0.05, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.05);
- }, [isMuted, initAudioContext]);
-
+ // Loading screen
  useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 1500);
+  const timer = setTimeout(() => setIsLaunching(false), 1200);
   return () => clearTimeout(timer);
  }, []);
 
+ // Timer Logic
  useEffect(() => {
   if (isLaunching) return;
   const interval = setInterval(() => {
@@ -114,46 +76,83 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   return () => clearInterval(interval);
  }, [gameState, timeLeft, isLaunching]);
 
- const startSpin = async () => {
-  setGameState('spinning');
-  let winningId = ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
-  const targetIdx = ITEMS.findIndex(i => i.id === winningId);
-  let currentStep = 0;
-  const totalSteps = 32 + targetIdx;
-  let speed = 60;
+ // --- CORE LOGIC: COIN CUTTING ---
+ const handlePlaceBet = (id: string) => {
+  if (id === 'timer' || gameState !== 'betting' || !currentUser || !userProfile) return;
 
-  const runChase = () => {
-   setHighlightIdx(currentStep % ITEMS.length);
-   playTickSound();
-   currentStep++;
-   if (currentStep < totalSteps) {
-    if (totalSteps - currentStep < 12) speed += 35;
-    setTimeout(runChase, speed);
-   } else {
-    setTimeout(() => showResult(winningId), 800);
-   }
-  };
-  runChase();
- };
-
- const showResult = (id: string) => {
-  setHistory(prev => [id, ...prev].slice(0, 15));
-  const winItem = ITEMS.find(i => i.id === id);
-  const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
-
-  setWinningSymbol(winItem?.emoji || '🏆');
-  setTotalWinAmount(winAmount);
-  setGameState('result');
-
-  if (winAmount > 0 && currentUser && firestore) {
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
-    'wallet.coins': increment(winAmount),
-    updatedAt: serverTimestamp() 
-   });
+  // Check if user has enough coins
+  const currentBalance = userProfile.wallet?.coins || 0;
+  if (currentBalance < selectedChip) {
+   toast({ title: 'Insufficient Coins!', variant: 'destructive' });
+   return;
   }
 
+  // 1. Cut Coins from Database Immediately
+  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
+    'wallet.coins': increment(-selectedChip) 
+  });
+
+  // 2. Update UI
+  setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
+ };
+
+ // --- CORE LOGIC: SPINNING ---
+ const startSpin = () => {
+  setGameState('spinning');
+  const validItems = ITEMS.filter(i => i.id !== 'timer');
+  const winningItem = validItems[Math.floor(Math.random() * validItems.length)];
+  const targetIdx = ITEMS.findIndex(i => i.id === winningItem.id);
+  
+  const spinSequence = [0, 1, 2, 5, 8, 7, 6, 3]; // Clockwise outer border
+  let currentStep = 0;
+  const totalSteps = (spinSequence.length * 4) + spinSequence.indexOf(targetIdx);
+  let speed = 60;
+
+  const runAnimation = () => {
+   setHighlightIdx(spinSequence[currentStep % spinSequence.length]);
+   currentStep++;
+   
+   if (currentStep < totalSteps) {
+    if (totalSteps - currentStep < 10) speed += 40; // Slow down at end
+    setTimeout(runAnimation, speed);
+   } else {
+    setTimeout(() => finalizeResult(winningItem), 800);
+   }
+  };
+  runAnimation();
+ };
+
+ // --- CORE LOGIC: WINNER CALCULATION ---
+ const finalizeResult = (winItem: any) => {
+  const betOnThis = myBets[winItem.id] || 0;
+  const winAmount = betOnThis * winItem.multiplier;
+
+  setWinningSymbol(winItem.emoji);
+  setTotalWinAmount(winAmount);
+  setHistory(prev => [winItem.id, ...prev].slice(0, 10));
+
+  // Winners List for Overlay
+  const currentWinners = [];
+  if (winAmount > 0 && userProfile) {
+    currentWinners.push({
+      name: userProfile.username || 'You',
+      win: winAmount,
+      avatar: userProfile.avatarUrl,
+      isMe: true
+    });
+    
+    // Add Winnings to Database
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 
+      'wallet.coins': increment(winAmount),
+      updatedAt: serverTimestamp()
+    });
+  }
+  
+  setWinners(currentWinners);
+  setGameState('result'); // Shows Winner Page/Overlay
+
+  // Reset for next round
   setTimeout(() => {
-   setLastBets(myBets);
    setMyBets({});
    setHighlightIdx(null);
    setGameState('betting');
@@ -161,177 +160,113 @@ export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   }, 5000);
  };
 
- const handlePlaceBet = (id: string) => {
-  if (gameState !== 'betting' || !currentUser || !userProfile) return;
-  if ((userProfile.wallet?.coins || 0) < selectedChip) {
-   return;
-  }
-  playBetSound();
-  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
-  setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
- };
-
- if (isLaunching) return <div className="h-screen w-full bg-[#0F051D] flex items-center justify-center text-yellow-400 font-black italic">FRUIT PARTY LOADING...</div>;
+ if (isLaunching) return <div className="h-full w-full bg-[#1a0b2e] flex items-center justify-center text-yellow-400 font-bold">LOADING FRUIT PARTY...</div>;
 
  return (
-  <div className="flex flex-col relative min-h-screen w-full bg-[#0F051D] overflow-hidden text-white font-sans">
+  <div className="flex flex-col h-[100dvh] w-full bg-[#2a1a0a] overflow-hidden text-white">
    
-   {/* SIMPLE RESULT OVERLAY (Removed GameResultOverlay dependence) */}
+   {/* --- WINNER OVERLAY (Automatic) --- */}
    <AnimatePresence>
-     {gameState === 'result' && (
-      <motion.div 
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      >
-        <div className="text-center">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-8xl mb-4">{winningSymbol}</motion.div>
-          <h2 className="text-2xl font-black text-yellow-400 uppercase italic">Winning Symbol</h2>
-          {totalWinAmount > 0 && (
-            <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="text-4xl font-black text-green-400 mt-2">
-              +{totalWinAmount.toLocaleString()}
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-     )}
+    {gameState === 'result' && (
+      <div className="fixed inset-0 z-[200]">
+        <GameResultOverlay 
+          gameId="fruit-party" 
+          winningSymbol={winningSymbol} 
+          winAmount={totalWinAmount} 
+          winners={winners} 
+        />
+      </div>
+    )}
    </AnimatePresence>
 
    {/* --- HEADER --- */}
-   <header className="relative z-50 p-4 pt-8 space-y-4">
-    <div className="flex items-center justify-between">
-      <div className="flex gap-2">
-        <button className="bg-white/5 p-2 rounded-full border border-white/10"><Maximize2 className="h-4 w-4" /></button>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2 rounded-full border border-white/10">
-          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-        </button>
-      </div>
-      <h1 className="text-2xl font-black text-yellow-400 italic uppercase tracking-wider">Fruit Party</h1>
-      <div className="flex gap-2">
-        <button className="bg-white/5 p-2 rounded-full border border-white/10"><HelpCircle className="h-4 w-4" /></button>
-        {onClose && <button onClick={onClose} className="bg-pink-600 p-2 rounded-full active:bg-pink-700 transition-colors"><X className="h-4 w-4" /></button>}
-      </div>
+   <header className="bg-gradient-to-b from-[#8b5e34] to-[#4e342e] p-3 border-b-2 border-yellow-600 flex items-center justify-between shadow-2xl">
+    <button onClick={() => setIsMuted(!isMuted)} className="bg-black/40 p-2 rounded-md border border-yellow-500/50">
+      {isMuted ? <VolumeX size={18}/> : <Volume2 size={18}/>}
+    </button>
+    <div className="bg-black/40 px-6 py-1 rounded-full border border-yellow-500/50">
+      <span className="text-xs font-bold text-yellow-100 italic uppercase">Fruit Party</span>
     </div>
-
-    <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 mx-2 overflow-hidden">
-      <span className="text-[10px] font-black text-yellow-400/60 uppercase pl-2 border-r border-white/10 pr-2">History</span>
-      <div className="flex gap-4 overflow-x-auto no-scrollbar">
-        {history.map((id, i) => (
-          <span key={i} className={cn("text-xl shrink-0", i === 0 && "scale-125 brightness-125")}>
-            {ITEMS.find(it => it.id === id)?.emoji}
-          </span>
-        ))}
-      </div>
-    </div>
+    <button onClick={onClose} className="bg-red-600/80 p-2 rounded-md border border-white/20"><X size={18}/></button>
    </header>
 
-   {/* --- MAIN GAME AREA --- */}
-   <main className="flex-1 relative z-10 flex items-center justify-center py-10">
-      <div className="relative w-80 h-80 flex items-center justify-center">
-        
-        {/* CENTER TIMER (The Hub) */}
-        <div className="relative z-30 w-36 h-36 bg-[#2D1B4E] rounded-full shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col items-center justify-center border-4 border-yellow-400/40">
-          <span className="text-[10px] font-black text-white/50 uppercase mb-1">Time Left</span>
-          <motion.div key={timeLeft} className="text-5xl font-black text-yellow-400 drop-shadow-[0_0_15px_gold]">
-            {gameState === 'betting' ? `${timeLeft}s` : '??'}
-          </motion.div>
-        </div>
+   {/* --- GRID GAME AREA --- */}
+   <main className="flex-1 flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#4e342e] to-[#1a0b2e]">
+      <div className="bg-[#5d1a4a] p-3 rounded-2xl border-4 border-[#c19a4a] shadow-2xl relative">
+        <div className="grid grid-cols-3 gap-2">
+          {ITEMS.map((item, idx) => {
+            if (item.id === 'timer') {
+              return (
+                <div key="timer" className="w-24 h-24 bg-black/60 rounded-xl flex items-center justify-center border-2 border-yellow-500/30">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-yellow-400">
+                      {gameState === 'betting' ? timeLeft : 'SPIN'}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
-        {/* FRUIT CIRCLES & JOINING LINES */}
-        {ITEMS.map((item, idx) => {
-          const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
-          const radius = 135; 
-          const x = Math.cos(angle) * radius;
-          const y = Math.sin(angle) * radius;
-
-          return (
-            <div key={item.id} className="absolute flex items-center justify-center" style={{ transform: `translate(${x}px, ${y}px)` }}>
-              
-              {/* JOINING LINE: Connecting fruit center to hub center */}
-              <div 
-                className="absolute bg-gradient-to-t from-yellow-400/30 to-transparent w-[2px] h-[135px] origin-bottom" 
-                style={{ 
-                  transform: `rotate(${idx * 45}deg) translateY(-67px)`, 
-                  zIndex: 5 
-                }} 
-              />
-
-              <button 
+            return (
+              <button
+                key={item.id}
                 onClick={() => handlePlaceBet(item.id)}
                 disabled={gameState !== 'betting'}
-                className="relative z-40 active:scale-90 transition-all"
+                className={cn(
+                  "relative w-24 h-24 rounded-xl flex flex-col items-center justify-center transition-all",
+                  "bg-gradient-to-br from-[#a344a3] to-[#4a1a4a] border-2 border-white/20 shadow-inner",
+                  highlightIdx === idx && "ring-4 ring-yellow-400 scale-105 z-10 brightness-125 shadow-[0_0_25px_gold]"
+                )}
               >
-                <div className={cn(
-                  "h-16 w-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
-                  highlightIdx === idx 
-                    ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_40px_gold]" 
-                    : "bg-[#4E0D25] border-[#D4AF37]" 
-                )}>
-                  <span className="text-3xl mb-0.5">{item.emoji}</span>
-                  <span className={cn("text-[9px] font-black", highlightIdx === idx ? "text-black" : "text-yellow-400/80")}>
-                    {item.label}
-                  </span>
-                </div>
-
-                {/* Bet Tag */}
-                <AnimatePresence>
-                  {myBets[item.id] > 0 && (
-                    <motion.div 
-                      initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} 
-                      className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-[10px] px-3 py-1 rounded-full font-black border border-white/30 shadow-2xl z-[60]"
-                    >
-                      {myBets[item.id] >= 1000 ? `${(myBets[item.id]/1000).toFixed(0)}K` : myBets[item.id]}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <span className="text-4xl mb-1 drop-shadow-md">{item.emoji}</span>
+                <span className="text-[10px] font-black text-yellow-200">{item.label}</span>
+                
+                {/* Visual Bet Indicator */}
+                {myBets[item.id] > 0 && (
+                  <div className="absolute top-1 right-1 bg-yellow-500 text-black text-[8px] font-black px-1 rounded-sm">
+                    {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'K' : myBets[item.id]}
+                  </div>
+                )}
               </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* History Bar */}
+      <div className="mt-6 flex gap-2 bg-black/40 p-2 rounded-full border border-white/10">
+        {history.map((id, i) => (
+          <span key={i} className="text-xl">{ITEMS.find(it => it.id === id)?.emoji}</span>
+        ))}
       </div>
    </main>
 
    {/* --- FOOTER --- */}
-   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/90 backdrop-blur-3xl rounded-t-[3.5rem] border-t border-white/10">
-    
-    <div className="flex items-center justify-between px-4">
-      <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/10">
-        <Coins className="h-5 w-5 text-yellow-400" />
-        <span className="text-lg font-black text-yellow-400">
-          {(userProfile?.wallet?.coins || 0).toLocaleString()}
-        </span>
+   <footer className="bg-[#3d2a1a] p-6 pb-10 border-t-4 border-[#c19a4a] rounded-t-[2.5rem]">
+    <div className="flex justify-between mb-6">
+      <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-blue-400/30">
+        <GoldCoinIcon className="h-4 w-4" />
+        <span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
-      <button 
-        onClick={() => setMyBets(lastBets)} 
-        disabled={Object.keys(lastBets).length === 0 || gameState !== 'betting'}
-        className="bg-yellow-400/10 text-yellow-400 px-6 py-2.5 rounded-full text-[11px] font-black uppercase border border-yellow-400/20 active:bg-yellow-400/30 disabled:opacity-20 transition-all"
-      >
-        Repeat
-      </button>
+      <button className="text-[10px] font-black uppercase text-white/50 border border-white/10 px-4 rounded-xl">Rules</button>
     </div>
 
-    <div className="flex justify-center items-center gap-3 pb-2">
+    <div className="flex justify-between gap-2">
       {CHIPS.map(chip => (
         <button 
           key={chip.value} 
           onClick={() => setSelectedChip(chip.value)}
           className={cn(
-            "w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-xl",
-            selectedChip === chip.value 
-              ? "bg-yellow-400 border-white text-black scale-110 z-10" 
-              : "bg-[#2D1B4E] border-white/10 text-white/70 active:scale-95"
+            "flex-1 h-14 rounded-full flex items-center justify-center transition-all border-4 shadow-lg",
+            chip.color,
+            selectedChip === chip.value ? "border-white scale-110" : "border-black/30 opacity-60"
           )}
         >
-          <span className="text-[10px] font-black">{chip.label}</span>
+          <span className="text-white font-black text-xs">{chip.label}</span>
         </button>
       ))}
     </div>
-    <p className="text-center text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Select Chip • Tap fruit to bet</p>
    </footer>
-
-   <style jsx global>{`
-     .no-scrollbar::-webkit-scrollbar { display: none; }
-     button { -webkit-tap-highlight-color: transparent; }
-   `}</style>
   </div>
  );
 }
