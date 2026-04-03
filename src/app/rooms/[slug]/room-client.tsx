@@ -2095,9 +2095,7 @@ export function RoomClient({ room }: { room: Room }) {
             <SmilePlus className="h-6 w-6 text-white/80" />
           </button>
 
-          <button onClick={() => setShowSoundboard(!showSoundboard)} className="p-1 px-1 active:scale-90 transition-transform">
-            <Volume2 className="h-6 w-6 text-white/80" />
-          </button>
+
 
           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1 transition-all active:scale-90", !isInSeat && "opacity-30")}>
             {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/40" />}
