@@ -1731,7 +1731,7 @@ export function RoomClient({ room }: { room: Room }) {
               )}
             >
               <div className="absolute -top-1 -right-0.5 h-3.5 w-3.5 bg-[#BC5DFF] border border-white/20 rounded-full flex items-center justify-center z-20 shadow-[0_0_8px_rgba(188,93,255,0.4)]">
-                <span className="text-[6px] font-black text-white uppercase italic tracking-tighter leading-none pt-[1px]">AI</span>
+                <span className="text-[6px] font-black text-white uppercase italic tracking-tighter leading-none pt-[1px] font-headline">AI</span>
               </div>
               <Volume2 className={cn("h-3.5 w-3.5", isAIVoiceEnabled && "animate-pulse")} />
             </button>
@@ -2073,7 +2073,7 @@ export function RoomClient({ room }: { room: Room }) {
           <button
             onClick={handleInputClick}
             className={cn(
-              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium",
+              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-black uppercase italic font-headline",
               isChatMuted && !canManageRoom && "opacity-50 grayscale"
             )}
           >

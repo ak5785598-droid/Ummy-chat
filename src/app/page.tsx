@@ -37,7 +37,7 @@ export default function SplashScreen() {
 
    {/* Splash content */}
    <div className="absolute w-full bottom-20 flex justify-center z-10 animate-fade-in">
-    <p className="text-[20px] text-[#222222] font-normal font-sans tracking-normal pt-4">
+    <p className="text-[20px] text-[#222222] font-black font-headline tracking-normal pt-4 uppercase italic">
      Ummy - Connect Your Tribe
     </p>
    </div>

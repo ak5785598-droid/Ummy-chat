@@ -249,7 +249,7 @@ export default function RoomsPage() {
                       <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
                         <Icon className="h-5 w-5 text-white animate-pulse" />
                       </div>
-                      <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                      <h3 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] font-headline italic">{slide.title}</h3>
                     </div>
                     <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
                   </div>
@@ -268,7 +268,7 @@ export default function RoomsPage() {
             <div className="flex items-center justify-between mb-1 relative z-10 px-1">
                <div className="flex items-center gap-1">
                   <Trophy className="h-2.5 w-2.5 text-yellow-400 animate-bounce" />
-                  <h2 className="text-[8px] font-black uppercase text-white/90 tracking-widest">Live Frequency</h2>
+                  <h2 className="text-[8px] font-black uppercase text-white/90 tracking-widest font-headline italic">Live Frequency</h2>
                </div>
                <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
             </div>
@@ -308,7 +308,7 @@ export default function RoomsPage() {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                  "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap font-headline italic",
                   activeCategory === cat.id 
                     ? "bg-slate-900 text-white shadow-md shadow-slate-900/20" 
                     : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
@@ -359,7 +359,7 @@ export default function RoomsPage() {
               </div>
               
               <div className="flex flex-col flex-1 min-w-0 pr-2">
-                <h2 className="text-lg font-black uppercase text-slate-900 tracking-tighter truncate">{userDoc?.username || 'Member'}</h2>
+                <h2 className="text-lg font-black uppercase text-slate-900 tracking-tighter truncate font-headline italic">{userDoc?.username || 'Member'}</h2>
                 <div className="flex items-center gap-1">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
                 </div>
@@ -384,7 +384,7 @@ export default function RoomsPage() {
           <button 
             onClick={() => setMeTab('following')} 
             className={cn(
-              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all",
+              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all font-headline italic",
               meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
             )}
           >
@@ -394,7 +394,7 @@ export default function RoomsPage() {
           <button 
             onClick={() => setMeTab('recent')} 
             className={cn(
-              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all",
+              "pb-3 text-xs font-black uppercase tracking-[0.2em] relative transition-all font-headline italic",
               meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
             )}
           >

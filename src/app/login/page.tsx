@@ -376,8 +376,8 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-white">Ummy</h1>
-            <p className="text-sm text-white/80">Find your vibe. Connect with your Tribe</p>
+            <h1 className="text-3xl font-bold text-white font-headline uppercase tracking-tighter">Ummy</h1>
+            <p className="text-sm text-white/80 font-medium">Find your vibe. Connect with your Tribe</p>
           </div>
 
           <div className="space-y-3">
@@ -435,7 +435,7 @@ export default function LoginPage() {
               <Phone className="w-7 h-7 text-[#FFCC00]" />
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
+            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight font-headline uppercase">
               {phoneLoginStep === 'number' ? 'Enter Phone Number' : 'Enter OTP Code'}
             </h2>
             <p className="text-sm font-medium text-white/60 text-center mb-8 px-2">
