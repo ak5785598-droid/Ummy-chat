@@ -23,7 +23,6 @@ export function FirebaseErrorListener() {
       });
     };
 
-    // 2. NETWORK CONNECTIVITY MONITOR
     const handleOnline = () => {
       toast({
         title: 'Ummy AI Online',
@@ -39,14 +38,37 @@ export function FirebaseErrorListener() {
       });
     };
 
+    // 3. INTERNAL SDK ASSERTION MONITOR
+    const handleGlobalError = (event: ErrorEvent | PromiseRejectionEvent) => {
+      const message = (event instanceof ErrorEvent) ? event.message : (event as any).reason?.message;
+      
+      if (message && message.includes("INTERNAL ASSERTION FAILED")) {
+        console.error("[Performance Shield] Critical SDK Assertion Failure detected:", message);
+        toast({
+          variant: 'destructive',
+          title: 'Ummy AI System Repair',
+          description: 'Firestore me ek mechanical error aaya hai. Main system restore kar rahi hoon... 🛠️',
+        });
+        
+        // Automated Recovery: Reload after a short delay to clear corrupted state
+        setTimeout(() => {
+          if (typeof window !== 'undefined') window.location.reload();
+        }, 3000);
+      }
+    };
+
     errorEmitter.on('permission-error', handleError);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleGlobalError);
 
     return () => {
       errorEmitter.off('permission-error', handleError);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleGlobalError);
     };
   }, [toast]);
 

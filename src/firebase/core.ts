@@ -3,7 +3,7 @@
 import { firebaseConfig } from './config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 /**
@@ -37,11 +37,12 @@ export function initializeFirebase() {
   if (!firestoreInstance) {
     try {
       firestoreInstance = initializeFirestore(appInstance, {
-        experimentalForceLongPolling: true,
+        localCache: persistentLocalCache({
+          tabManager: persistentSingleTabManager({ forceOwnership: true })
+        }),
         experimentalAutoDetectLongPolling: true,
-        cacheSizeBytes: 10485760, // 10MB cache
       });
-      console.log('[Firebase Core] Firestore initialized with long polling');
+      console.log('[Firebase Core] Firestore initialized with auto-long-polling');
     } catch (e) {
       console.warn('[Firebase Core] Long polling failed, using default:', e);
       firestoreInstance = getFirestore(appInstance);
