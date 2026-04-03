@@ -31,7 +31,7 @@ const ITEMS = [
 ];
 
 const CHIPS = [
-  { value: 500, label: '500', color: 'bg-emerald-500' },
+  { value: 500, label: '500', color: 'bg-emerald-500' }, 
   { value: 5000, label: '5,000', color: 'bg-rose-500' },
   { value: 50000, label: '50,000', color: 'bg-red-600' },
   { value: 500000, label: '500,000', color: 'bg-red-800' },
