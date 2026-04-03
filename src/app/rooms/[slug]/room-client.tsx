@@ -1758,7 +1758,7 @@ export function RoomClient({ room }: { room: Room }) {
         {/* Floating Top-Right Badge (Tree) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent mix-blend-screen" />
+            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent mix-blend-multiply" />
             {achievedTasks.some(id => !claimedTasks.includes(id)) && (
               <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
             )}
