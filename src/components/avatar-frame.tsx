@@ -16,8 +16,134 @@ interface AvatarFrameProps {
  * Universal High-Fidelity 3D Frame Engine
  * Renders 19+ premium frames using a data-driven registry.
  */
+// Helper components for High-Fidelity layers
+const BackdropLayer = ({ type, color }: { type?: string, color: string }) => {
+  if (!type || type === 'none') return null;
+
+  switch (type) {
+    case 'wings':
+      return (
+        <div className="absolute inset-[-60%] z-[-1] flex items-center justify-center opacity-80 pointer-events-none">
+          <motion.svg 
+            viewBox="0 0 200 200" className="w-full h-full"
+            animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {/* High-detail SVG Wings */}
+            <path d="M100 100 C 60 40, 20 60, 10 120 C 30 140, 70 130, 90 110" fill={color} filter="blur(2px)" />
+            <path d="M100 100 C 140 40, 180 60, 190 120 C 170 140, 130 130, 110 110" fill={color} filter="blur(2px)" />
+            <path d="M100 100 C 50 20, 20 40, 5 100 C 25 120, 80 110, 95 105" fill={color} opacity="0.6" filter="blur(4px)" />
+            <path d="M100 100 C 150 20, 180 40, 195 100 C 175 120, 120 110, 105 105" fill={color} opacity="0.6" filter="blur(4px)" />
+          </motion.svg>
+        </div>
+      );
+    case 'clouds':
+      return (
+        <div className="absolute inset-[-40%] bottom-[-50%] z-[-1] flex items-center justify-center pointer-events-none">
+          {[1,2,3,4,5].map(i => (
+            <motion.div
+              key={i}
+              className="absolute bg-white/60 blur-xl rounded-full"
+              style={{ 
+                width: 40 + i * 10, 
+                height: 30 + i * 5, 
+                left: `${15 + i * 12}%`,
+                bottom: '10%'
+              }}
+              animate={{ x: [-5, 5, -5], y: [-2, 2, -2], opacity: [0.4, 0.8, 0.4] }}
+              transition={{ duration: 4 + i, repeat: Infinity }}
+            />
+          ))}
+        </div>
+      );
+    case 'crystals':
+      return (
+        <div className="absolute inset-[-30%] z-[-1] pointer-events-none">
+           {[0, 60, 120, 180, 240, 300].map(deg => (
+             <motion.div
+               key={deg}
+               className="absolute top-1/2 left-1/2 w-4 h-12"
+               style={{ 
+                 background: `linear-gradient(to top, transparent, ${color})`,
+                 clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+                 transformOrigin: '0 0',
+                 rotate: `${deg}deg`,
+                 translate: '-50% -120%'
+               }}
+               animate={{ scaleY: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+               transition={{ duration: 3, repeat: Infinity, delay: deg/100 }}
+             />
+           ))}
+        </div>
+      );
+    case 'sun-rays':
+      return (
+        <div className="absolute inset-[-50%] z-[-1] pointer-events-none flex items-center justify-center">
+           <motion.div 
+             animate={{ rotate: 360 }}
+             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+             className="w-full h-full"
+             style={{
+               background: `repeating-conic-gradient(from 0deg, ${color}33 0deg 10deg, transparent 10deg 20deg)`
+             }}
+           />
+        </div>
+      );
+    case 'dragon-body':
+      return (
+        <div className="absolute inset-[-20%] z-10 pointer-events-none border-[6px] border-transparent rounded-full"
+             style={{ 
+               borderTopColor: color, 
+               borderRightColor: color, 
+               filter: `drop-shadow(0 0 8px ${color})`,
+               rotate: '-45deg' 
+             }}>
+           <div className="absolute top-0 right-0 text-2xl rotate-45">🐲</div>
+        </div>
+      );
+    default: return null;
+  }
+};
+
+const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
+  if (!type || type === 'none') return null;
+  const count = type === 'matrix' ? 12 : 8;
+  
+  return (
+    <div className="absolute inset-[-20%] pointer-events-none z-40 overflow-visible">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{ 
+            width: type === 'matrix' ? '2px' : '4px', 
+            height: type === 'matrix' ? '8px' : '4px',
+            backgroundColor: color,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            boxShadow: `0 0 8px ${color}`
+          }}
+          animate={{ 
+            y: [-20, 20],
+            opacity: [0, 1, 0],
+            scale: [0.5, 1.2, 0.5]
+          }}
+          transition={{ 
+            duration: 2 + Math.random() * 2, 
+            repeat: Infinity,
+            delay: Math.random() * 2
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
-  const { gradient, borderColor, glowColor, ornament: Ornament, animationType } = config;
+  const { 
+    gradient, borderColor, glowColor, ornament: Ornament, animationType,
+    extraType, particleType, textureType, extraColor, particleColor
+  } = config;
 
   const getAnimation = () => {
     switch (animationType) {
@@ -39,67 +165,72 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full p-[1px] overflow-visible preserve-3d">
-      {/* 1. LAYER: Deep Background Glow (Atmospheric) */}
+      {/* 1. LAYER: Extra Backdrop Assets (Wings, Clouds, etc) */}
+      <BackdropLayer type={extraType} color={extraColor || borderColor} />
+
+      {/* 2. LAYER: Deep Background Glow */}
       <motion.div
         animate={getAnimation()}
         transition={transition}
-        className="absolute inset-[-25%] rounded-full blur-2xl opacity-30 z-0 pointer-events-none"
+        className="absolute inset-[-25%] rounded-full blur-2xl opacity-40 z-0 pointer-events-none"
         style={{ backgroundColor: glowColor }}
       />
 
-      {/* 2. LAYER: 3D Bevel Base (The thick part) */}
+      {/* 3. LAYER: Main 3D Frame Body */}
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={transition}
-        className="absolute inset-0 rounded-full z-10 shadow-[box-shadow:inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.4)]"
+        className="absolute inset-0 rounded-full z-10 shadow-[box-shadow:inset_0_4px_8px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.5)]"
         style={{
           background: gradient,
           backgroundSize: '200% 200%',
-          padding: '5px', // Thicker frame
-          maskImage: 'radial-gradient(circle, transparent 42%, black 43%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 42%, black 43%)',
-          boxShadow: `0 0 15px ${glowColor}, inset 0 0 10px rgba(0,0,0,0.5)`
+          padding: '6px', // Extra thick for 3D look
+          maskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
+          boxShadow: `0 0 20px ${glowColor}, inset 0 0 15px rgba(0,0,0,0.6)`
         }}
       >
-        {/* Inner Bevel Ring */}
+        {/* Texture Layer (Lava/Ice/Gold patterns) */}
+        {textureType !== 'none' && (
+          <div className="absolute inset-0 opacity-40 mix-blend-overlay">
+             <div className={cn(
+               "w-full h-full",
+               textureType === 'lava' ? "bg-[radial-gradient(circle,#ff4d00_10%,transparent_80%)] bg-[length:10px_10px]" :
+               textureType === 'ice' ? "bg-[linear-gradient(45deg,#fff_10%,transparent_20%)] bg-[length:5px_5px]" :
+               "bg-[radial-gradient(circle,transparent_20%,rgba(0,0,0,0.2)_80%)]"
+             )} />
+          </div>
+        )}
+
         <div 
-          className="w-full h-full rounded-full border-[1px]" 
-          style={{ borderColor: `${borderColor}66`, boxShadow: `inset 0 0 5px ${borderColor}44` }} 
+          className="w-full h-full rounded-full border-[1.5px]" 
+          style={{ borderColor: `${borderColor}88`, boxShadow: `inset 0 0 8px ${borderColor}66` }} 
         />
       </motion.div>
 
-      {/* 3. LAYER: Glossy Shine Overlay */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full z-20 pointer-events-none opacity-40 overflow-hidden"
-        style={{
-          maskImage: 'radial-gradient(circle, transparent 42%, black 43%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 42%, black 43%)',
-        }}
-      >
-        <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[conic-gradient(transparent,rgba(255,255,255,0.4),transparent_60%)]" />
-      </motion.div>
+      {/* 4. LAYER: Particle System */}
+      <ParticleSystem type={particleType} color={particleColor || borderColor} />
 
-      {/* 4. LAYER: Ornament (3D Positioning & Glow) */}
+      {/* 5. LAYER: Floating Ornament & Top Glow */}
       {Ornament && (
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-[50] drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-[60] drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
           <motion.div
             animate={{ 
-              y: [-3, 3, -3],
-              filter: [`drop-shadow(0 0 2px ${borderColor})`, `drop-shadow(0 0 8px ${borderColor})`, `drop-shadow(0 0 2px ${borderColor})`]
+              y: [-4, 4, -4],
+              rotate: [0, 5, -5, 0],
+              filter: [`drop-shadow(0 0 4px ${borderColor})`, `drop-shadow(0 0 12px ${borderColor})`, `drop-shadow(0 0 4px ${borderColor})`]
             }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             {typeof Ornament === 'string' ? (
-              <span className="text-3xl filter drop-shadow-md">{Ornament}</span>
+              <span className="text-4xl filter drop-shadow-lg">{Ornament}</span>
             ) : (
               <Ornament 
-                className="w-8 h-8" 
+                className="w-12 h-12" 
                 style={{ 
                   color: borderColor, 
-                  fill: animationType === 'pulse' ? borderColor : 'currentColor',
-                  strokeWidth: 2.5
+                  fill: 'currentColor',
+                  strokeWidth: 2
                 }} 
               />
             )}
@@ -107,15 +238,18 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
         </div>
       )}
 
-      {/* 5. LAYER: Special Tier Effects (Matrix) */}
-      {animationType === 'matrix' && (
-         <div className="absolute inset-0 rounded-full overflow-hidden opacity-40 pointer-events-none z-30">
-            <div 
-               className="w-full h-full bg-[linear-gradient(transparent_0%,#22c55e_50%,transparent_100%)] bg-[length:100%_8px] animate-[matrix_0.8s_linear_infinite]" 
-               style={{ maskImage: 'radial-gradient(circle, transparent 42%, black 43%)', WebkitMaskImage: 'radial-gradient(circle, transparent 42% , black 43%)' }}
-            />
-         </div>
-      )}
+      {/* 6. LAYER: Glossy Shine Overlay */}
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-0 rounded-full z-50 pointer-events-none opacity-30 overflow-hidden"
+        style={{
+          maskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 40%, black 41%)',
+        }}
+      >
+        <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[conic-gradient(transparent,rgba(255,255,255,0.6),transparent_40%)]" />
+      </motion.div>
 
       <style jsx>{`
         @keyframes matrix {
@@ -149,7 +283,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute inset-[-15%] z-10 pointer-events-none flex items-center justify-center overflow-visible"
+            className="absolute inset-[-60%] z-10 pointer-events-none flex items-center justify-center overflow-visible"
           >
              <EliteFrameRenderer config={config} />
           </motion.div>

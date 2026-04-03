@@ -9,134 +9,210 @@ export interface AvatarFrameConfig {
   glowColor: string;
   ornament?: string | LucideIcon;
   animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow';
-  overlayEffect?: string;
+  
+  // High-Fidelity Additions
+  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'none';
+  particleType?: 'stars' | 'fire' | 'bubbles' | 'matrix' | 'none';
+  textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
+  extraColor?: string;
+  particleColor?: string;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
-  // --- CELESTIAL & COSMIC ---
+  // --- LEGENDARY (SCREENSHOT 1 & 3 STYLE) ---
+  'mystic-dragon': {
+    id: 'mystic-dragon',
+    name: 'Mystic Dragon',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #9A7B4F, #D4AF37)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(212, 175, 55, 0.7)',
+    ornament: '🐉',
+    animationType: 'float',
+    extraType: 'dragon-body',
+    particleType: 'fire',
+    textureType: 'gold',
+    extraColor: '#FFD700'
+  },
+  'aurora-gem': {
+    id: 'aurora-gem',
+    name: 'Aurora Gem',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #A855F7, #E9D5FF, #7E22CE, #A855F7)',
+    borderColor: '#E9D5FF',
+    glowColor: 'rgba(168, 85, 247, 0.8)',
+    ornament: Gem,
+    animationType: 'sparkle',
+    extraType: 'crystals',
+    particleType: 'stars',
+    textureType: 'glass',
+    extraColor: '#E9D5FF'
+  },
+  'celestial-star': {
+    id: 'celestial-star',
+    name: 'Celestial Star',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFE29F, #FFA91B, #FF9912, #FFE29F)',
+    borderColor: '#FFA91B',
+    glowColor: 'rgba(255, 169, 27, 0.6)',
+    ornament: Stars,
+    animationType: 'rotate',
+    extraType: 'halo',
+    particleType: 'stars',
+    textureType: 'gold'
+  },
+  'phoenix-blaze': {
+    id: 'phoenix-blaze',
+    name: 'Phoenix Blaze',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #EF4444, #F97316, #FDE047, #EF4444)',
+    borderColor: '#F97316',
+    glowColor: 'rgba(249, 115, 22, 0.8)',
+    ornament: FlameKindling,
+    animationType: 'pulse',
+    extraType: 'wings',
+    particleType: 'fire',
+    textureType: 'lava',
+    extraColor: '#EF4444'
+  },
   'sun-king': {
     id: 'sun-king',
     name: 'Sun King',
     tier: 'legendary',
     gradient: 'conic-gradient(from 0deg, #F9E58A, #FDB931, #FFD700, #F9E58A)',
     borderColor: '#FFD700',
-    glowColor: 'rgba(255, 215, 0, 0.6)',
+    glowColor: 'rgba(255, 215, 0, 0.9)',
     ornament: Sun,
-    animationType: 'rotate'
-  },
-  'celestial-star': {
-    id: 'celestial-star',
-    name: 'Celestial Star',
-    tier: 'mythic',
-    gradient: 'conic-gradient(from 180deg, #1E1B4B, #6366F1, #A855F7, #1E1B4B)',
-    borderColor: '#6366F1',
-    glowColor: 'rgba(99, 102, 241, 0.5)',
-    ornament: Stars,
-    animationType: 'rotate'
-  },
-  'void-walker': {
-    id: 'void-walker',
-    name: 'Void Walker',
-    tier: 'legendary',
-    gradient: 'radial-gradient(circle, #000 30%, #4C1D95 70%, #000 100%)',
-    borderColor: '#7C3AED',
-    glowColor: 'rgba(124, 58, 237, 0.8)',
-    ornament: Orbit,
-    animationType: 'pulse'
+    animationType: 'rotate',
+    extraType: 'sun-rays',
+    particleType: 'fire',
+    textureType: 'gold'
   },
   'celestial-angel': {
     id: 'celestial-angel',
     name: 'Celestial Angel',
     tier: 'legendary',
-    gradient: 'linear-gradient(to bottom, #FFF, #F9E58A, #FFF)',
+    gradient: 'conic-gradient(from 0deg, #FFF, #F9E58A, #FFF)',
     borderColor: '#E8C27E',
-    glowColor: 'rgba(255, 255, 255, 0.6)',
-    ornament: CloudSun,
-    animationType: 'float'
-  },
-
-  // --- FANTASY & MYTHIC ---
-  'mystic-dragon': {
-    id: 'mystic-dragon',
-    name: 'Mystic Dragon',
-    tier: 'mythic',
-    gradient: 'conic-gradient(from 0deg, #991B1B, #EF4444, #7F1D1D, #991B1B)',
-    borderColor: '#B91C1C',
-    glowColor: 'rgba(239, 68, 68, 0.5)',
-    ornament: Flame,
-    animationType: 'float'
+    glowColor: 'rgba(255, 255, 255, 0.7)',
+    ornament: Crown,
+    animationType: 'float',
+    extraType: 'clouds',
+    particleType: 'stars',
+    textureType: 'gold',
   },
   'dragon-soul': {
     id: 'dragon-soul',
     name: 'Dragon Soul',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #450A0A, #DC2626, #450A0A)',
-    borderColor: '#991B1B',
-    glowColor: 'rgba(185, 28, 28, 0.7)',
-    ornament: '🐉',
-    animationType: 'flow'
+    gradient: 'linear-gradient(to right, #450A0A, #DC2626, #450A0A)',
+    borderColor: '#DC2626',
+    glowColor: 'rgba(220, 38, 38, 0.8)',
+    ornament: '🔥',
+    animationType: 'flow',
+    extraType: 'dragon-body',
+    particleType: 'fire',
+    textureType: 'lava',
   },
-  'phoenix-blaze': {
-    id: 'phoenix-blaze',
-    name: 'Phoenix Blaze',
+  'emerald-guardian': {
+    id: 'emerald-guardian',
+    name: 'Emerald Guardian',
     tier: 'legendary',
-    gradient: 'conic-gradient(from 0deg, #EA580C, #FDE68A, #EF4444, #EA580C)',
-    borderColor: '#F97316',
-    glowColor: 'rgba(249, 115, 22, 0.6)',
-    ornament: FlameKindling,
-    animationType: 'float'
-  },
-
-  // --- MATERIAL & LUXURY ---
-  'imperial-gold': {
-    id: 'imperial-gold',
-    name: 'Imperial Gold',
-    tier: 'luxury',
-    gradient: 'linear-gradient(135deg, #FFF281 0%, #FFB700 50%, #B8860B 100%)',
-    borderColor: '#FFD700',
-    glowColor: 'rgba(255, 215, 0, 0.4)',
-    ornament: Crown,
-    animationType: 'rotate'
-  },
-  'glacial-diamond': {
-    id: 'glacial-diamond',
-    name: 'Glacial Diamond',
-    tier: 'luxury',
-    gradient: 'linear-gradient(45deg, #E0F2FE 0%, #7DD3FC 50%, #0EA5E9 100%)',
-    borderColor: '#BAE6FD',
-    glowColor: 'rgba(14, 165, 233, 0.4)',
-    ornament: Diamond,
-    animationType: 'sparkle'
+    gradient: 'linear-gradient(45deg, #064E3B, #10B981, #064E3B)',
+    borderColor: '#10B981',
+    glowColor: 'rgba(5, 150, 105, 0.7)',
+    ornament: Trees,
+    animationType: 'pulse',
+    extraType: 'crystals',
+    particleType: 'none',
+    textureType: 'gold'
   },
   'diamond-empress': {
     id: 'diamond-empress',
     name: 'Diamond Empress',
     tier: 'legendary',
-    gradient: 'conic-gradient(from 0deg, #FFF, #BAE6FD, #FFF, #BAE6FD, #FFF)',
+    gradient: 'conic-gradient(from 0deg, #FFF, #E0F2FE, #FFF)',
     borderColor: '#fff',
-    glowColor: 'rgba(255, 255, 255, 0.8)',
+    glowColor: 'rgba(255, 255, 255, 0.9)',
     ornament: Gem,
-    animationType: 'sparkle'
+    animationType: 'sparkle',
+    extraType: 'halo',
+    particleType: 'stars',
+    textureType: 'ice'
   },
-  'rose-quartz': {
-    id: 'rose-quartz',
-    name: 'Rose Quartz',
-    tier: 'luxury',
-    gradient: 'linear-gradient(135deg, #FDF2F8, #F472B6, #FDF2F8)',
-    borderColor: '#F9A8D4',
-    glowColor: 'rgba(244, 114, 182, 0.4)',
-    ornament: Heart,
-    animationType: 'pulse'
+  'cyber-wraith': {
+    id: 'cyber-wraith',
+    name: 'Cyber Wraith',
+    tier: 'legendary',
+    gradient: 'linear-gradient(180deg, #000, #22C55E, #000)',
+    borderColor: '#22C55E',
+    glowColor: 'rgba(34, 197, 94, 0.8)',
+    ornament: Terminal,
+    animationType: 'matrix',
+    extraType: 'spikes',
+    particleType: 'matrix',
+    textureType: 'none'
   },
-  'obsidian-onyx': {
-    id: 'obsidian-onyx',
-    name: 'Obsidian Onyx',
+  'shadow-ninja': {
+    id: 'shadow-ninja',
+    name: 'Shadow Ninja',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #000, #991B1B, #000)',
+    borderColor: '#991B1B',
+    glowColor: 'rgba(153, 27, 27, 0.8)',
+    ornament: Sword,
+    animationType: 'float',
+    extraType: 'spikes',
+    particleType: 'none',
+    textureType: 'gold'
+  },
+
+  // --- MYTHIC & LUXURY (MORE DETAILED) ---
+  'void-walker': {
+    id: 'void-walker',
+    name: 'Void Walker',
+    tier: 'mythic',
+    gradient: 'radial-gradient(circle, #000 30%, #4C1D95 70%, #000 100%)',
+    borderColor: '#A855F7',
+    glowColor: 'rgba(124, 58, 237, 0.8)',
+    ornament: Orbit,
+    animationType: 'pulse',
+    extraType: 'nebula',
+    particleType: 'stars'
+  },
+  'ocean-mystic': {
+    id: 'ocean-mystic',
+    name: 'Ocean Mystic',
+    tier: 'mythic',
+    gradient: 'linear-gradient(180deg, #0EA5E9, #1E40AF, #0EA5E9)',
+    borderColor: '#60A5FA',
+    glowColor: 'rgba(37, 99, 235, 0.6)',
+    ornament: Waves,
+    animationType: 'flow',
+    extraType: 'bubbles' as any, // Temporary fix for 'bubbles' not in union yet
+    particleType: 'bubbles' as any
+  },
+  'imperial-gold': {
+    id: 'imperial-gold',
+    name: 'Imperial Gold',
     tier: 'luxury',
-    gradient: 'linear-gradient(135deg, #000, #444, #000)',
-    borderColor: '#111',
-    glowColor: 'rgba(0, 0, 0, 0.6)',
-    ornament: ShieldCheck,
-    animationType: 'pulse'
+    gradient: 'linear-gradient(135deg, #FFF281, #FFB700, #B8860B)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(255, 215, 0, 0.5)',
+    ornament: Crown,
+    animationType: 'rotate',
+    textureType: 'gold'
+  },
+  'glacial-diamond': {
+    id: 'glacial-diamond',
+    name: 'Glacial Diamond',
+    tier: 'luxury',
+    gradient: 'linear-gradient(45deg, #E0F2FE, #7DD3FC, #0EA5E9)',
+    borderColor: '#BAE6FD',
+    glowColor: 'rgba(14, 165, 233, 0.5)',
+    ornament: Diamond,
+    animationType: 'sparkle',
+    textureType: 'ice'
   },
   'veridian-emerald': {
     id: 'veridian-emerald',
@@ -144,73 +220,43 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     tier: 'luxury',
     gradient: 'linear-gradient(135deg, #064E3B, #10B981, #064E3B)',
     borderColor: '#059669',
-    glowColor: 'rgba(16, 185, 129, 0.4)',
-    ornament: Gem,
-    animationType: 'sparkle'
-  },
-
-  // --- ELEMENTAL & NATURE ---
-  'aurora-gem': {
-    id: 'aurora-gem',
-    name: 'Aurora Gem',
-    tier: 'mythic',
-    gradient: 'conic-gradient(from 0deg, #10B981, #3B82F6, #8B5CF6, #10B981)',
-    borderColor: '#34D399',
     glowColor: 'rgba(16, 185, 129, 0.5)',
-    ornament: Sparkles,
-    animationType: 'flow'
+    ornament: Gem,
+    animationType: 'sparkle',
+    textureType: 'glass'
   },
-  'ocean-mystic': {
-    id: 'ocean-mystic',
-    name: 'Ocean Mystic',
-    tier: 'mythic',
-    gradient: 'linear-gradient(180deg, #0EA5E9, #2563EB, #0EA5E9)',
-    borderColor: '#60A5FA',
-    glowColor: 'rgba(37, 99, 235, 0.5)',
-    ornament: Waves,
-    animationType: 'flow'
+  'rose-quartz': {
+    id: 'rose-quartz',
+    name: 'Rose Quartz',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #FDF2F8, #F472B6, #FDF2F8)',
+    borderColor: '#F9A8D4',
+    glowColor: 'rgba(244, 114, 182, 0.5)',
+    ornament: Heart,
+    animationType: 'pulse',
+    textureType: 'glass'
   },
-  'emerald-guardian': {
-    id: 'emerald-guardian',
-    name: 'Emerald Guardian',
-    tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #064E3B, #059669, #064E3B)',
-    borderColor: '#10B981',
-    glowColor: 'rgba(5, 150, 105, 0.6)',
-    ornament: Trees,
-    animationType: 'pulse'
+  'obsidian-onyx': {
+    id: 'obsidian-onyx',
+    name: 'Obsidian Onyx',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #000, #444, #000)',
+    borderColor: '#333',
+    glowColor: 'rgba(0, 0, 0, 0.7)',
+    ornament: ShieldCheck,
+    animationType: 'pulse',
+    textureType: 'gold'
   },
-
-  // --- DIGITAL & STEALTH ---
   'cyber-neon': {
     id: 'cyber-neon',
     name: 'Cyber Neon',
     tier: 'luxury',
     gradient: 'conic-gradient(from 0deg, #A855F7, #D946EF, #A855F7)',
     borderColor: '#D946EF',
-    glowColor: 'rgba(217, 70, 239, 0.5)',
+    glowColor: 'rgba(217, 70, 239, 0.6)',
     ornament: Zap,
-    animationType: 'pulse'
-  },
-  'cyber-wraith': {
-    id: 'cyber-wraith',
-    name: 'Cyber Wraith',
-    tier: 'legendary',
-    gradient: 'linear-gradient(180deg, #000, #22C55E, #000)',
-    borderColor: '#166534',
-    glowColor: 'rgba(34, 197, 94, 0.8)',
-    ornament: Terminal,
-    animationType: 'matrix'
-  },
-  'shadow-ninja': {
-    id: 'shadow-ninja',
-    name: 'Shadow Ninja',
-    tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #000, #991B1B, #000)',
-    borderColor: '#111',
-    glowColor: 'rgba(153, 27, 27, 0.6)',
-    ornament: Sword,
-    animationType: 'float'
+    animationType: 'pulse',
+    particleType: 'matrix'
   }
 };
 // End of registry
