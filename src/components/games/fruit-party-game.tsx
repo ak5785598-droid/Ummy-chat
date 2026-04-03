@@ -10,14 +10,13 @@ import {
  addDocumentNonBlocking 
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
  X,
  Volume2,
  VolumeX,
  HelpCircle,
- Maximize2,
- MoreHorizontal
+ Maximize2
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -44,7 +43,7 @@ const CHIPS = [
   { value: 1000000, label: '1M' },
 ];
 
-export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () => void, isOverlay?: boolean }) {
+export function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -191,7 +190,6 @@ export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () =>
  return (
   <div className={cn("flex flex-col relative h-[100dvh] w-full bg-[#0F051D] overflow-hidden text-white")}>
    
-   {/* Condition updated: Show overlay even if only to show the winning symbol */}
    {gameState === 'result' && (
     <div className="absolute inset-0 z-[100]">
       <GameResultOverlay 
@@ -232,49 +230,49 @@ export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () =>
    </header>
 
    {/* --- MAIN GAME AREA --- */}
-   <main className="flex-1 relative z-10 flex items-center justify-center">
+   <main className="flex-1 relative z-10 flex items-center justify-center -mt-10">
       <div className="relative w-80 h-80 flex items-center justify-center">
         
         {/* CENTER TIMER */}
-        <div className="relative z-20 w-32 h-32 bg-[#2D1B4E] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-yellow-400/30">
+        <div className="relative z-30 w-32 h-32 bg-[#2D1B4E] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-4 border-yellow-400/30">
           <span className="text-[9px] font-black text-white/40 uppercase mb-1">Time Left</span>
           <motion.div key={timeLeft} className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_10px_gold]">
             {gameState === 'betting' ? `${timeLeft}s` : '??'}
           </motion.div>
         </div>
 
-        {/* CHARACTER CIRCLES & BROWN LINES */}
+        {/* CHARACTER CIRCLES & CONNECTING LINES */}
         {ITEMS.map((item, idx) => {
           const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
-          const radius = 135; 
+          const radius = 125; 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
 
           return (
             <div key={item.id} className="absolute flex items-center justify-center" style={{ transform: `translate(${x}px, ${y}px)` }}>
               
-              {/* Brown Connection Line - Math adjusted for gap alignment */}
+              {/* Connection Line from Center to Fruit */}
               <div 
-                className="absolute bg-[#5D4037] w-1 h-14 origin-bottom" 
+                className="absolute bg-[#5D4037]/60 w-1 h-32 origin-bottom" 
                 style={{ 
-                  transform: `rotate(${idx * 45}deg) translateY(-58px)`, 
-                  zIndex: -1 
+                  transform: `rotate(${idx * 45}deg) translateY(-60px)`, 
+                  zIndex: 10 
                 }} 
               />
 
               <button 
                 onClick={() => handlePlaceBet(item.id)}
                 disabled={gameState !== 'betting'}
-                className="relative group active:scale-95 transition-transform"
+                className="relative z-40 group active:scale-95 transition-transform"
               >
                 <div className={cn(
-                  "h-20 w-20 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
+                  "h-16 w-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-2xl",
                   highlightIdx === idx 
                     ? "bg-yellow-400 border-white scale-125 z-50 shadow-[0_0_30px_rgba(255,215,0,0.6)]" 
                     : "bg-[#4E0D25] border-[#D4AF37]" 
                 )}>
-                  <span className="text-4xl mb-0.5 drop-shadow-md">{item.emoji}</span>
-                  <span className={cn("text-[9px] font-black", highlightIdx === idx ? "text-black" : "text-yellow-400/80")}>
+                  <span className="text-3xl mb-0.5 drop-shadow-md">{item.emoji}</span>
+                  <span className={cn("text-[8px] font-black", highlightIdx === idx ? "text-black" : "text-yellow-400/80")}>
                     {item.label}
                   </span>
                 </div>
@@ -299,24 +297,24 @@ export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () =>
    </main>
 
    {/* --- FOOTER & CHIPS --- */}
-   <footer className="relative z-50 p-6 pb-12 space-y-6 bg-black/70 backdrop-blur-xl rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+   <footer className="relative z-50 p-6 pb-10 space-y-6 bg-black/80 backdrop-blur-2xl rounded-t-[3rem] border-t border-white/10">
     
-    <div className="flex items-center justify-between px-4 -mt-4 mb-2">
-      <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-full border border-white/10">
+    <div className="flex items-center justify-between px-2">
+      <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
         <GoldCoinIcon className="h-4 w-4" />
         <span className="text-sm font-black tracking-tight">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <button 
         onClick={() => setMyBets(lastBets)} 
         disabled={Object.keys(lastBets).length === 0 || gameState !== 'betting'}
-        className="bg-yellow-400/20 text-yellow-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase border border-yellow-400/30 active:bg-yellow-400/40 disabled:opacity-30 transition-all"
+        className="bg-yellow-400/20 text-yellow-400 px-5 py-2 rounded-full text-[10px] font-black uppercase border border-yellow-400/30 active:bg-yellow-400/40 disabled:opacity-30 transition-all"
       >
         Repeat
       </button>
     </div>
 
-    {/* Chips section lifted higher */}
-    <div className="flex justify-center items-center gap-3 -mt-2">
+    {/* CHIPS SECTION - Fixed Visibility */}
+    <div className="flex justify-center items-center gap-2 pb-4">
       {CHIPS.map(chip => (
         <button 
           key={chip.value} 
@@ -324,15 +322,15 @@ export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () =>
           className={cn(
             "w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-lg",
             selectedChip === chip.value 
-              ? "bg-yellow-400 border-white text-black scale-115 shadow-[0_0_15px_rgba(255,255,255,0.3)] z-10" 
-              : "bg-[#2D1B4E] border-white/10 text-white/50 hover:border-white/30"
+              ? "bg-yellow-400 border-white text-black scale-110 z-10" 
+              : "bg-[#2D1B4E] border-white/10 text-white/70 active:scale-95"
           )}
         >
           <span className="text-[10px] font-black">{chip.label}</span>
         </button>
       ))}
     </div>
-    <p className="text-center text-[8px] font-black text-white/20 uppercase tracking-[0.2em] animate-pulse">Select amount • Tap fruit to bet</p>
+    <p className="text-center text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">Select amount • Tap fruit to bet</p>
    </footer>
 
    <style jsx global>{`
