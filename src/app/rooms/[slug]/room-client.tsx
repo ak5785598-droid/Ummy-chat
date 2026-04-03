@@ -183,7 +183,7 @@ const Seat = memo(({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-[60px] w-[60px] rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-black/60 backdrop-blur-xl border border-white/20",
+                "bg-sky-500/20 backdrop-blur-xl border border-white/30",
                 isLocked ? "border-red-500/60" : "",
                 occupant ? "p-0" : "p-0"
               )}
@@ -201,7 +201,7 @@ const Seat = memo(({
               ) : isLocked ? (
                 <Lock className="h-4 w-4 text-red-500/60" />
               ) : (
-                <Armchair className="text-purple-400/10 h-5 w-5" />
+                <Armchair className="text-white/60 h-6 w-6" />
               )}
             </button>
           </div>
