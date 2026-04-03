@@ -226,7 +226,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
     <DialogTrigger asChild>
      {trigger}
     </DialogTrigger>
-    <DialogContent className="sm:max-w-[450px] h-full sm:h-[90vh] overflow-hidden bg-white p-0 rounded-none sm:rounded-3xl border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-sans text-black z-[200]">
+    <DialogContent className="sm:max-w-[450px] h-full sm:h-[90vh] overflow-hidden bg-white p-0 rounded-none sm:rounded-3xl border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-sans text-black z-[9999]">
      <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between space-y-0 shrink-0 bg-white sticky top-0 z-10">
        <button onClick={() => setOpen(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
         <ChevronLeft className="h-6 w-6 text-gray-600" />
