@@ -183,7 +183,7 @@ const Seat = memo(({
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-[#1c192e] backdrop-blur-sm border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)]",
+                "bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]",
                 isLocked ? "border-red-500/40" : "",
                 occupant ? "p-0" : "p-0"
               )}
@@ -193,7 +193,7 @@ const Seat = memo(({
                   <Avatar className="h-full w-full p-0">
                     <AvatarImage
                       src={occupant.avatarUrl || undefined}
-                      className="image-render-crisp brightness-[1.12] contrast-[1.08] saturate-[1.15]"
+                      className="image-render-crisp brightness-[1.05] contrast-[1.02] saturate-[1.05]"
                     />
                     <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -215,7 +215,7 @@ const Seat = memo(({
         )}
       </div>
 
-      <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.15em] leading-none text-center mt-1.5">
+      <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.1em] leading-none text-center mt-1">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -1767,14 +1767,14 @@ export function RoomClient({ room }: { room: Room }) {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-4 overflow-hidden w-full">
-        <div className="shrink-0 flex flex-col items-center gap-8 w-full overflow-visible mb-4">
+        <div className="shrink-0 flex flex-col items-center gap-12 w-full overflow-visible mb-6">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
           </div>
 
           {/* 2x4 Grid Seats */}
-          <div className="w-full grid grid-cols-4 gap-y-12 px-2">
+          <div className="w-full grid grid-cols-4 gap-y-16 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
               <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}
