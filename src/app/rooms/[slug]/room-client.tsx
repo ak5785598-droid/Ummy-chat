@@ -167,9 +167,8 @@ const Seat = memo(({
         )}
 
         <AvatarFrame
-          frameId={occupant?.activeFrame}
+          frameId={occupant?.activeFrame || 'None'}
           size="md"
-          badgeType={null}
         >
           <div className="relative p-1 rounded-full overflow-visible">
             <button

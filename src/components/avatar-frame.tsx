@@ -31,7 +31,7 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
     }
   };
 
-  const transition = {
+  const transition: any = {
     duration: animationType === 'rotate' ? 6 : (animationType === 'matrix' ? 0.2 : 3),
     repeat: Infinity,
     ease: "linear"

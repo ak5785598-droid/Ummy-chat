@@ -1,4 +1,4 @@
-import { LucideIcon, Sun, Flame, Terminal, Waves, Orbit, Wind, Trees, Diamond, Sword, CloudSun, Stars, Gem, Crown, Rocket, Zap, Heart, FlameKindling, ShieldCheck } from 'lucide-react';
+import { LucideIcon, Sun, Flame, Terminal, Waves, Orbit, Wind, Trees, Diamond, Sword, CloudSun, Stars, Gem, Crown, Rocket, Zap, Heart, FlameKindling, ShieldCheck, Sparkles } from 'lucide-react';
 
 export interface AvatarFrameConfig {
   id: string;
@@ -157,7 +157,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     gradient: 'conic-gradient(from 0deg, #10B981, #3B82F6, #8B5CF6, #10B981)',
     borderColor: '#34D399',
     glowColor: 'rgba(16, 185, 129, 0.5)',
-    ornament: SparkleEmoji,
+    ornament: Sparkles,
     animationType: 'flow'
   },
   'ocean-mystic': {
@@ -213,7 +213,4 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'float'
   }
 };
-
-function SparkleEmoji() {
-  return <span>✨</span>;
-}
+// End of registry
