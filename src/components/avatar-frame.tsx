@@ -165,7 +165,7 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   const sizeClasses = {
     sm: 'h-10 w-10',
-    md: 'h-14 w-14',
+    md: 'h-[60px] w-[60px]',
     lg: 'h-20 w-20',
     xl: 'h-24 w-24'
   };

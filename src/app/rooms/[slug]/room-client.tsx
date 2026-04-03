@@ -182,7 +182,7 @@ const Seat = memo(({
             <button
               onClick={() => onClick(index, occupant)}
               className={cn(
-                "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
+                "h-[60px] w-[60px] rounded-full flex items-center justify-center transition-all relative z-10",
                 "bg-black/60 backdrop-blur-xl border border-white/20",
                 isLocked ? "border-red-500/60" : "",
                 occupant ? "p-0" : "p-0"
