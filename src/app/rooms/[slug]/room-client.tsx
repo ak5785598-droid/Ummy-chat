@@ -1713,7 +1713,7 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarFallback>RM</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
+              <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1 font-headline">
                 {room.title}
               </h1>
               <p className="text-[10px] font-medium text-white/50 leading-none">
