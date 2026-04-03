@@ -127,7 +127,7 @@ import { memo, useCallback } from 'react';
 const RoomTrophyBadge = ({ coins }: { coins: number }) => (
   <div className="w-fit flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
     <div className="bg-[#FFB300] rounded-full p-0.5 shrink-0">
-       <Trophy className="h-2.5 w-2.5 text-black fill-current" />
+      <Trophy className="h-2.5 w-2.5 text-black fill-current" />
     </div>
     <span className="text-[10px] font-black text-[#FFB300] leading-none whitespace-nowrap">
       {coins >= 1000000 ? `${(coins / 1000000).toFixed(1)}M` : coins.toLocaleString()}
@@ -163,7 +163,7 @@ const Seat = memo(({
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
-      <div className="relative overflow-visible"> 
+      <div className="relative overflow-visible">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
@@ -178,13 +178,13 @@ const Seat = memo(({
           frameId={occupant?.activeFrame || 'None'}
           size="md"
         >
-          <div className="relative p-0.5 rounded-full overflow-visible">
+          <div className="relative p-0.5 rounded-full">
             <button
               onClick={() => onClick(index, occupant)}
               className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center transition-all relative z-10",
-                "bg-white/10 backdrop-blur-sm border-2",
-                isLocked ? "border-red-500/40" : "border-white/5",
+                "bg-black/60 backdrop-blur-sm border border-white/10 shadow-[0_0_15px_rgba(99,102,241,0.2)]",
+                isLocked ? "border-red-500/40" : "",
                 occupant ? "p-0" : "p-0"
               )}
             >
@@ -201,7 +201,7 @@ const Seat = memo(({
               ) : isLocked ? (
                 <Lock className="h-4 w-4 text-red-500/60" />
               ) : (
-                 <Armchair className="text-white/20 h-5 w-5" />
+                <Armchair className="text-white/20 h-5 w-5" />
               )}
             </button>
           </div>
@@ -215,7 +215,7 @@ const Seat = memo(({
         )}
       </div>
 
-      <span className="text-[10px] font-bold text-white/70 uppercase tracking-tighter leading-none text-center">
+      <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none text-center mt-1">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -273,11 +273,11 @@ export function RoomClient({ room }: { room: Room }) {
   // This allows subsequent music to auto-play without user interaction
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     // Create a silent audio element
     const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAA==');
     silentAudioRef.current = silentAudio;
-    
+
     // Try to play immediately (will likely fail due to autoplay policy)
     const attemptSilentPlay = async () => {
       try {
@@ -288,9 +288,9 @@ export function RoomClient({ room }: { room: Room }) {
         console.log('[AutoUnlock] Silent play blocked, will retry on interaction');
       }
     };
-    
+
     attemptSilentPlay();
-    
+
     // Also set up interaction listeners as fallback
     const unlockOnInteraction = async () => {
       if (!silentAudioRef.current) return;
@@ -302,11 +302,11 @@ export function RoomClient({ room }: { room: Room }) {
         // Ignore errors
       }
     };
-    
+
     document.addEventListener('click', unlockOnInteraction, { once: true });
     document.addEventListener('touchstart', unlockOnInteraction, { once: true });
     document.addEventListener('keydown', unlockOnInteraction, { once: true });
-    
+
     return () => {
       document.removeEventListener('click', unlockOnInteraction);
       document.removeEventListener('touchstart', unlockOnInteraction);
@@ -425,19 +425,19 @@ export function RoomClient({ room }: { room: Room }) {
   // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
   useEffect(() => {
     if (!firestore || !room.id || !currentUser?.uid) return;
-    
+
     const updateHeartbeat = () => {
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-      updateDocumentNonBlocking(pRef, { 
+      updateDocumentNonBlocking(pRef, {
         lastSeen: serverTimestamp(),
         name: userProfile?.username || currentUser.displayName || 'User',
         avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
       });
     };
-    
+
     // Update immediately on mount
     updateHeartbeat();
-    
+
     // Then every 30 seconds
     const heartbeat = setInterval(updateHeartbeat, 30000);
     return () => clearInterval(heartbeat);
@@ -457,7 +457,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const participants = useMemo(() => {
     if (!participantsData) return [];
-    
+
     // Show ALL participants from Firestore - no filtering
     // This ensures everyone in the room is visible
     return participantsData;
@@ -468,9 +468,9 @@ export function RoomClient({ room }: { room: Room }) {
     console.log('[OnlineCount] Raw participantsData:', participantsData?.length || 0);
     console.log('[OnlineCount] Filtered participants:', participants.length);
     if (participantsData) {
-      console.log('[OnlineCount] All users:', participantsData.map(p => ({ 
-        uid: p.uid, 
-        name: p.name, 
+      console.log('[OnlineCount] All users:', participantsData.map(p => ({
+        uid: p.uid,
+        name: p.name,
         seat: p.seatIndex,
         lastSeen: (p as any).lastSeen ? 'yes' : 'no'
       })));
@@ -479,9 +479,9 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Initialize Room Tasks Hook
   const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
-    room.id, 
-    participants || [], 
-    room.ownerId, 
+    room.id,
+    participants || [],
+    room.ownerId,
     canManageRoom
   );
   const onlineCount = useMemo(() => {
@@ -490,7 +490,7 @@ export function RoomClient({ room }: { room: Room }) {
   // RECENT VISIT TRACKING (For "Me" Section)
   useEffect(() => {
     if (!firestore || !currentUser?.uid || !room.id) return;
-    
+
     const recordVisit = async () => {
       const recentRef = doc(firestore, 'users', currentUser.uid, 'recentVisits', room.id);
       await setDocumentNonBlocking(recentRef, {
@@ -745,7 +745,7 @@ export function RoomClient({ room }: { room: Room }) {
       const onlineMods = (participantsData || [])
         .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-      
+
       const sortedParticipants = [...(participantsData || [])]
         .filter(p => p && p.uid)
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
@@ -822,7 +822,7 @@ export function RoomClient({ room }: { room: Room }) {
   // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
   useEffect(() => {
     if (!firestore || !room.id) return;
-    
+
     // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
     const sortedParticipants = [...(participantsData || [])]
       .filter(p => p && p.uid)
@@ -840,7 +840,7 @@ export function RoomClient({ room }: { room: Room }) {
     // 0. DAILY RESET: Check if 24 hours have passed since last reset
     const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
     const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
-    
+
     if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
       hasResetRocketRef.current = true;
       console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
@@ -867,7 +867,7 @@ export function RoomClient({ room }: { room: Room }) {
       const launchTime = rocket.countdownUntil.toDate().getTime();
       if (now >= launchTime) {
         console.log('[Rocket] Launching! Firing Lucky Rain...');
-        
+
         // Dispatch Lucky Rain Message
         const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
         setDocumentNonBlocking(msgRef, {
@@ -985,7 +985,7 @@ export function RoomClient({ room }: { room: Room }) {
               const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
               const targetIsRoomOwner = target.uid === room.ownerId;
               const targetIsAppCreator = target.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
-              
+
               if (targetIsAppCreator) {
                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'App Creator cannot be kicked!' });
               } else if (targetIsRoomOwner && !isAppCreator) {
@@ -1256,7 +1256,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
-    
+
     // If muting this user, also stop their music
     if (!current && uid === currentUser?.uid && musicAudioRef.current) {
       musicAudioRef.current.pause();
@@ -1268,35 +1268,35 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleKick = (uid: string, duration: number) => {
     if (!firestore || !room.id || !currentUser?.uid) return;
-    
+
     // PERMISSION HIERARCHY CHECK
     const targetUser = participants.find(p => p.uid === uid);
     const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
     const isRoomOwner = currentUser?.uid === room.ownerId;
     const targetIsRoomOwner = uid === room.ownerId;
     const targetIsAppCreator = uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
-    
+
     // RULES:
     // 1. App Creator cannot be kicked by anyone
     // 2. Room Owner cannot be kicked by Admins (only App Creator can kick Room Owner)
     // 3. Admins can kick normal users
     // 4. Room Owner can kick normal users and Admins (but not other Room Owners)
-    
+
     if (targetIsAppCreator) {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'App Creator cannot be kicked!' });
       return;
     }
-    
+
     if (targetIsRoomOwner && !isAppCreator) {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'Room Owner cannot be kicked by Admins!' });
       return;
     }
-    
+
     if (!isRoomOwner && !isAppCreator && !room.moderatorIds?.includes(currentUser.uid)) {
       toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only Admins and Room Owner can kick users!' });
       return;
     }
-    
+
     const expires = new Date(Date.now() + duration * 60000);
     setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'bans', uid), { expiresAt: Timestamp.fromDate(expires) }, { merge: true });
     deleteDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid));
@@ -1314,7 +1314,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleTakeSeat = (seatIndex: number) => {
     if (!firestore || !room.id || !currentUser?.uid) return;
-    
+
     const isSeatMuted = room.mutedSeats?.includes(seatIndex) || false;
     const participantRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
     setDocumentNonBlocking(participantRef, {
@@ -1325,22 +1325,22 @@ export function RoomClient({ room }: { room: Room }) {
       uid: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });
-    
-    toast({ 
-      title: 'Seat Taken', 
-      description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}` 
+
+    toast({
+      title: 'Seat Taken',
+      description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}`
     });
   };
 
   const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
     if (!firestore || !room.id) return;
-    
+
     const roomRef = doc(firestore, 'chatRooms', room.id);
     setDocumentNonBlocking(roomRef, {
       mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
       updatedAt: serverTimestamp()
     }, { merge: true });
-    
+
     toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
   };
 
@@ -1522,10 +1522,10 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id || !room.currentMusicUrl) return;
     const audio = musicAudioRef.current;
     const roomRef = doc(firestore, 'chatRooms', room.id);
-    
+
     if (isMusicPlaying) {
       // 1. Update Firestore first so all clients pause
-      await updateDocumentNonBlocking(roomRef, { 
+      await updateDocumentNonBlocking(roomRef, {
         isMusicPlaying: false,
         musicStartOffset: audio?.currentTime || 0,
         musicStartedAt: null,
@@ -1538,7 +1538,7 @@ export function RoomClient({ room }: { room: Room }) {
     } else {
       // 1. Update Firestore first so all clients start playing from current position
       const currentOffset = audio?.currentTime || 0;
-      await updateDocumentNonBlocking(roomRef, { 
+      await updateDocumentNonBlocking(roomRef, {
         isMusicPlaying: true,
         musicStartedAt: serverTimestamp(),
         musicStartOffset: currentOffset,
@@ -1633,9 +1633,9 @@ export function RoomClient({ room }: { room: Room }) {
         totalGifts={room.rocket?.progress || 0}
         roomName={room.title}
       />
-      <RoomTasksDialog 
-        open={isRoomTasksOpen} 
-        onOpenChange={setIsRoomTasksOpen} 
+      <RoomTasksDialog
+        open={isRoomTasksOpen}
+        onOpenChange={setIsRoomTasksOpen}
         taskProgress={taskProgress}
         achievedTasks={achievedTasks}
         claimedTasks={claimedTasks}
@@ -1644,7 +1644,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
       {room.currentMusicUrl && room.isMusicPlaying && !userInteracted && (
-        <div 
+        <div
           className="fixed inset-0 z-[1]"
           style={{ pointerEvents: 'none' }}
           aria-hidden="true"
@@ -1705,48 +1705,51 @@ export function RoomClient({ room }: { room: Room }) {
       <header className="relative z-[100] flex flex-col w-full p-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-             <Avatar 
-               className="h-12 w-12 rounded-xl border border-white/10 shadow-lg cursor-pointer active:scale-95 transition-transform"
-               onClick={() => setIsRoomInfoOpen(true)}
-             >
-                <AvatarImage src={room.coverUrl || undefined} />
-                <AvatarFallback>RM</AvatarFallback>
-             </Avatar>
-             <div className="flex flex-col">
-                <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
-                  {room.title}
-                </h1>
-                <p className="text-[10px] font-medium text-white/50 leading-none">
-                  ID:{room.roomNumber}
-                </p>
-             </div>
+            <Avatar
+              className="h-12 w-12 rounded-xl border border-white/10 shadow-lg cursor-pointer active:scale-95 transition-transform"
+              onClick={() => setIsRoomInfoOpen(true)}
+            >
+              <AvatarImage src={room.coverUrl || undefined} />
+              <AvatarFallback>RM</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
+                {room.title}
+              </h1>
+              <p className="text-[10px] font-medium text-white/50 leading-none">
+                ID:{room.roomNumber}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
-             <button 
-               onClick={toggleAIVoice} 
-               className={cn(
-                 "h-10 w-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95",
-                 isAIVoiceEnabled ? "bg-cyan-500/40 text-cyan-400 border-cyan-400/50" : "bg-black/40 text-white/80"
-               )}
-             >
-                <Megaphone className={cn("h-4 w-4", isAIVoiceEnabled && "animate-pulse")} />
-             </button>
-             <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
-                <Users className="h-4 w-4 text-white/80" />
-                <span className="text-[9px] font-bold">{onlineCount}</span>
-             </button>
-             {canManageRoom && (
-               <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-white/80" />
-               </button>
-             )}
-             <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
-                <Share2 className="h-4 w-4 text-white/80" />
-             </button>
-             <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
-                <Power className="h-4 w-4 text-white/80" />
-             </button>
+            <button
+              onClick={toggleAIVoice}
+              className={cn(
+                "relative h-10 w-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95",
+                isAIVoiceEnabled ? "bg-cyan-500/40 text-cyan-400 border-cyan-400/50" : "bg-black/40 text-white/80"
+              )}
+            >
+              <div className="absolute -top-1 -right-1 bg-gray-900 border border-white/20 px-1 rounded-sm flex items-center z-20">
+                <span className="text-[7px] font-bold text-white uppercase italic tracking-tighter">AI</span>
+              </div>
+              <Megaphone className={cn("h-4 w-4", isAIVoiceEnabled && "animate-pulse")} />
+            </button>
+            <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
+              <Users className="h-4 w-4 text-white/80" />
+              <span className="text-[9px] font-bold">{onlineCount}</span>
+            </button>
+            {canManageRoom && (
+              <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-white/80" />
+              </button>
+            )}
+            <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <Share2 className="h-4 w-4 text-white/80" />
+            </button>
+            <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <Power className="h-4 w-4 text-white/80" />
+            </button>
           </div>
         </div>
 
@@ -1754,12 +1757,12 @@ export function RoomClient({ room }: { room: Room }) {
 
         {/* Floating Top-Right Badge (Tree) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
-           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-              <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)]" />
-              {achievedTasks.some(id => !claimedTasks.includes(id)) && (
-                <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
-              )}
-           </div>
+          <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
+            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="drop-shadow-[0_0_15px_rgba(255,179,0,0.4)]" />
+            {achievedTasks.some(id => !claimedTasks.includes(id)) && (
+              <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
+            )}
+          </div>
         </div>
       </header>
 
@@ -1928,7 +1931,7 @@ export function RoomClient({ room }: { room: Room }) {
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
                 </svg>
               </button>
 
@@ -1940,11 +1943,11 @@ export function RoomClient({ room }: { room: Room }) {
                 >
                   {room.isMusicPlaying ? (
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                     </svg>
                   ) : (
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
+                      <path d="M8 5v14l11-7z" />
                     </svg>
                   )}
                 </button>
@@ -1973,7 +1976,7 @@ export function RoomClient({ room }: { room: Room }) {
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                 </svg>
               </button>
 
@@ -1992,7 +1995,7 @@ export function RoomClient({ room }: { room: Room }) {
       {/* VOLUME POPUP */}
       {showVolumePopup && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center pb-24 pointer-events-none">
-          <div 
+          <div
             className="absolute inset-0 bg-black/20 pointer-events-auto"
             onClick={() => setShowVolumePopup(false)}
           />
@@ -2030,7 +2033,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-{/* RIGHT SIDE FLOATING MUSIC BUTTON - Shows when music is available and mini player is hidden */}
+      {/* RIGHT SIDE FLOATING MUSIC BUTTON - Shows when music is available and mini player is hidden */}
       {room.currentMusicUrl && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
@@ -2049,7 +2052,7 @@ export function RoomClient({ room }: { room: Room }) {
         </button>
       )}
 
-      
+
       {/* ROCKET BUTTON - Floating at bottom right */}
       <button
         onClick={() => setIsRocketOpen(true)}
@@ -2100,7 +2103,7 @@ export function RoomClient({ room }: { room: Room }) {
           </button>
 
           <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
-             <Mail className="h-6 w-6 text-white/80" />
+            <Mail className="h-6 w-6 text-white/80" />
           </button>
 
           <button
@@ -2109,7 +2112,7 @@ export function RoomClient({ room }: { room: Room }) {
           >
             <div className="absolute inset-0 bg-[#FF00FF]/20 rounded-full blur-lg animate-pulse" />
             <div className="relative h-full w-full bg-gradient-to-tr from-[#A020F0] to-[#FF69B4] rounded-2xl flex items-center justify-center border border-white/30 shadow-xl overflow-hidden p-1.5">
-               <Image src="https://img.icons8.com/color/96/gift--v1.png" width={32} height={32} alt="Gift" className="drop-shadow-lg" />
+              <Image src="https://img.icons8.com/color/96/gift--v1.png" width={32} height={32} alt="Gift" className="drop-shadow-lg" />
             </div>
           </button>
 
@@ -2231,10 +2234,10 @@ export function RoomClient({ room }: { room: Room }) {
         isAdmin={canManageRoom}
       />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
-      <RoomShareDialog 
-        open={isShareOpen} 
-        onOpenChange={setIsShareOpen} 
-        room={room} 
+      <RoomShareDialog
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        room={room}
         onShare={() => triggerTask('share_whatsapp')}
       />
       <RoomPlayDialog
@@ -2299,12 +2302,12 @@ export function RoomClient({ room }: { room: Room }) {
         initialRecipient={initialChatRecipient}
       />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
-      <GiftPicker 
-        open={isGiftPickerOpen} 
-        onOpenChange={setIsGiftPickerOpen} 
-        roomId={room.id} 
-        recipient={giftRecipient} 
-        participants={participants} 
+      <GiftPicker
+        open={isGiftPickerOpen}
+        onOpenChange={setIsGiftPickerOpen}
+        roomId={room.id}
+        recipient={giftRecipient}
+        participants={participants}
         onSuccess={() => triggerTask('gift_once')}
       />
 
@@ -2359,7 +2362,7 @@ export function RoomClient({ room }: { room: Room }) {
         }}
       />
 
-       <RoomUserProfileDialog
+      <RoomUserProfileDialog
         userId={selectedParticipantUid}
         open={isUserProfileCardOpen}
         onOpenChange={setIsUserProfileCardOpen}
@@ -2412,9 +2415,9 @@ export function RoomClient({ room }: { room: Room }) {
         }
       `}</style>
       <MountOverlay entries={mountEntries} />
-      <LuckyRainOverlay 
-        active={isLuckyRainActive} 
-        onComplete={() => setIsLuckyRainActive(false)} 
+      <LuckyRainOverlay
+        active={isLuckyRainActive}
+        onComplete={() => setIsLuckyRainActive(false)}
       />
     </div>
   );
