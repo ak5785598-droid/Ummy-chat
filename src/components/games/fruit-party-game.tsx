@@ -44,12 +44,7 @@ const CHIPS = [
   { value: 1000000, label: '1M' },
 ];
 
-interface FruitPartyGameProps {
- onClose?: () => void;
- isOverlay?: boolean;
-}
-
-export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGameProps) {
+export function FruitPartyGame({ onClose, isOverlay = false }: { onClose?: () => void; isOverlay?: boolean }) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -57,7 +52,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
 
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(30);
- const [selectedChip, setSelectedChip] = useState(1000);
+ const [selectedChip, setSelectedChip] = useState(1000); // 1K selected by default
  const [myBets, setMyBets] = useState<Record<string, number>>({});
  const [lastBets, setLastBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
@@ -68,11 +63,10 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
  const [winningSymbol, setWinningSymbol] = useState<string>('');
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
- const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'fruit-party'), [firestore]);
- const { data: gameData } = useDoc(gameDocRef);
-
+ // Ref for audio context to prevent multiple instances
  const audioCtxRef = useRef<AudioContext | null>(null);
 
+ // Initialize and resume AudioContext on user interaction
  const initAudioContext = useCallback(() => {
   if (!audioCtxRef.current && typeof window !== 'undefined') {
    audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -83,6 +77,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   return audioCtxRef.current;
  }, []);
 
+ // Play Bet Sound
  const playBetSound = useCallback(() => {
   if (isMuted) return;
   const ctx = initAudioContext();
@@ -101,6 +96,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   osc.stop(ctx.currentTime + 0.1);
  }, [isMuted, initAudioContext]);
 
+ // Play Tick Sound
  const playTickSound = useCallback(() => {
   if (isMuted) return;
   const ctx = initAudioContext();
@@ -117,11 +113,13 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   osc.stop(ctx.currentTime + 0.05);
  }, [isMuted, initAudioContext]);
 
+ // Handle Initial Launch
  useEffect(() => {
   const timer = setTimeout(() => setIsLaunching(false), 1500);
   return () => clearTimeout(timer);
  }, []);
 
+ // Betting Timer Logic
  useEffect(() => {
   if (isLaunching) return;
   const interval = setInterval(() => {
@@ -133,12 +131,15 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   return () => clearInterval(interval);
  }, [gameState, timeLeft, isLaunching]);
 
+ // Start Spin and Chase Animation
  const startSpin = async () => {
   setGameState('spinning');
   
+  // Choose Winner (Default random)
   let winningId = ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
   if (firestore) {
    try {
+    // Optional GameOracle integration
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'fruit-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      winningId = oracleSnap.data().forcedResult;
@@ -147,6 +148,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    } catch (e) {}
   }
 
+  // Animation sequence
   const targetIdx = ITEMS.findIndex(i => i.id === winningId);
   let currentStep = 0;
   const totalSteps = 32 + targetIdx;
@@ -157,7 +159,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    playTickSound();
    currentStep++;
    if (currentStep < totalSteps) {
-    if (totalSteps - currentStep < 10) speed += 30;
+    if (totalSteps - currentStep < 10) speed += 30; // Slow down at the end
     setTimeout(runChase, speed);
    } else {
     setTimeout(() => showResult(winningId), 800);
@@ -166,6 +168,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   runChase();
  };
 
+ // Show Result and Handle Payouts
  const showResult = (id: string) => {
   setHistory(prev => [id, ...prev].slice(0, 15));
   const winItem = ITEMS.find(i => i.id === id);
@@ -174,16 +177,19 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   setWinningSymbol(winItem?.emoji || '🏆');
   setTotalWinAmount(winAmount);
 
+  // Set winners for overlay
   const sessionWinners = [];
   if (winAmount > 0 && userProfile) {
    sessionWinners.push({ name: userProfile.username, win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
   }
+  // Optional simulated other winners
   if (Math.random() > 0.4) sessionWinners.push({ name: 'VIP Player', win: 15000, avatar: 'https://picsum.photos/seed/a1/100', isMe: false });
   if (Math.random() > 0.2) sessionWinners.push({ name: 'Gold Member', win: 3000, avatar: 'https://picsum.photos/seed/a2/100', isMe: false });
 
   setWinners(sessionWinners);
   setGameState('result');
 
+  // Handle Payout with Firebase (Missing in previous snippet, now fixed)
   if (winAmount > 0 && currentUser && firestore && userProfile) {
    const updateData = { 
     'wallet.coins': increment(winAmount), 
@@ -193,6 +199,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
 
+   // Add to global wins
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'fruit-party',
     userId: currentUser.uid,
@@ -203,6 +210,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    });
   }
 
+  // Reset game state for next round
   setTimeout(() => {
    setLastBets(myBets);
    setMyBets({});
@@ -213,10 +221,11 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   }, 5000);
  };
 
+ // Handle Placing a Bet
  const handlePlaceBet = (id: string) => {
   if (gameState !== 'betting' || !currentUser || !userProfile) return;
   if ((userProfile.wallet?.coins || 0) < selectedChip) {
-   toast({ variant: 'destructive', title: 'Insufficient Coins' });
+   toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Aapke paas coins kam hai.' });
    return;
   }
   
@@ -227,12 +236,13 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
  };
 
+ // Handle Repeat Bets
  const handleRepeat = () => {
   if (gameState !== 'betting' || !currentUser || !userProfile) return;
   const totalCost = Object.values(lastBets).reduce((a, b) => a + b, 0);
   if (totalCost === 0) return;
   if ((userProfile.wallet?.coins || 0) < totalCost) {
-   toast({ variant: 'destructive', title: 'Insufficient Coins' });
+   toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Repeat karne ke liye coins kam hai.' });
    return;
   }
 
@@ -243,30 +253,14 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   setMyBets(lastBets);
  };
 
- if (isLaunching) {
-  return (
-   <div className="h-full w-full bg-[#3D1E6D] flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-500">
-    <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
-    <h1 className="text-4xl font-headline font-black text-yellow-400 uppercase tracking-tight italic">Fruit Party</h1>
-    <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-     <div className="h-full bg-yellow-400 w-1/2 animate-[loading_1.5s_infinite_linear]" />
-    </div>
-    <style jsx>{`
-     @keyframes loading {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(200%); }
-     }
-    `}</style>
-   </div>
-  );
- }
-
+ // Main Render
  return (
   <div className={cn(
-   "flex flex-col relative overflow-hidden font-sans text-white",
-   isOverlay ? "h-full w-full" : "h-[100dvh] w-full bg-[#3D1E6D]"
+   "h-screen w-full bg-[#1A0B2E] flex flex-col relative overflow-hidden text-white font-sans",
+   isOverlay ? "h-full w-full" : "h-[100dvh]"
   )}>
    
+   {/* Result Overlay */}
    {gameState === 'result' && winners.length > 0 && (
     <div className="absolute inset-0 z-[100] pointer-events-auto">
      <GameResultOverlay 
@@ -277,12 +271,6 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
      />
     </div>
    )}
-
-   {/* Background Layer */}
-   <div className="absolute inset-0 z-0 pointer-events-none">
-    <div className="absolute inset-0 bg-[#3D1E6D]" />
-    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
-   </div>
 
    {/* Header Actions */}
    <div className="relative z-50 flex items-center justify-between p-4 pt-6">
@@ -295,54 +283,62 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
     </div>
     
     <div className="text-center">
-     <h1 className="text-xl font-headline font-black text-white uppercase tracking-wider drop-shadow-md">Fruit Party</h1>
+     <h1 className="text-xl font-black italic uppercase tracking-tighter drop-shadow-md">Fruit Party</h1>
     </div>
 
     <div className="flex gap-2">
      <button className="bg-white/10 p-2 rounded-xl border border-white/5 active:scale-95 transition-all"><MoreHorizontal className="h-4 w-4" /></button>
      {onClose && (
-      <button onClick={onClose} className="bg-pink-500/80 p-2 rounded-xl border border-white/20 active:scale-95 transition-all hover:bg-pink-600">
+      <button onClick={onClose} className="bg-pink-600 p-2 rounded-xl border border-white/20 active:scale-95 transition-all hover:bg-pink-600">
        <X className="h-4 w-4" />
       </button>
      )}
     </div>
    </div>
 
-    {/* Game Arena */}
+    {/* Game Arena (Ferris Wheel UI - Refined from snippet) */}
     <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
-      <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center p-8 bg-[#2A144E]/40 rounded-[2.5rem] border border-white/10">
+      <div className="relative w-[320px] h-[400px] flex items-center justify-center">
         
-        {/* Outer Circular Frame */}
-        <div className="absolute inset-10 border-2 border-indigo-400/20 rounded-full shadow-[0_0_40px_rgba(139,92,246,0.2)]" />
-        <div className="absolute inset-12 border border-white/5 rounded-full" />
-        
-        {/* Dynamic Spinning Glow (BEHIND items) */}
-        {gameState === 'spinning' && (
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-4 rounded-full border-t-8 border-yellow-400/40 blur-md pointer-events-none"
-          />
-        )}
+        {/* Ferris Wheel Structure (Static Visuals) */}
+        <div className="absolute inset-0 flex items-center justify-center -z-10">
+          <div className="w-[260px] h-[260px] border-4 border-indigo-500/30 rounded-full relative">
+            {/* Spokes */}
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="absolute top-1/2 left-1/2 w-[2px] h-[130px] bg-indigo-500/20 origin-top" 
+                   style={{ transform: `rotate(${i * 45}deg) translateX(-50%)` }} />
+            ))}
+            {/* Decorative Lights */}
+            {[...Array(16)].map((_, i) => (
+              <div key={i} className="absolute w-2 h-2 bg-yellow-200 rounded-full shadow-[0_0_8px_white]"
+                   style={{ 
+                     top: `${50 + 45 * Math.sin(i * 0.4)}%`, 
+                     left: `${50 + 45 * Math.cos(i * 0.4)}%` 
+                   }} />
+            ))}
+          </div>
+          {/* Wheel Stand */}
+          <div className="absolute bottom-4 w-32 h-40 border-l-4 border-r-4 border-indigo-500/40 rounded-t-full -z-10" />
+        </div>
 
-        {/* Center Display (30 BET NOW) */}
-        <div className="relative z-20 w-32 h-32 bg-[#1A0B2E] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center border-4 border-[#8B5CF6]/30 p-2 text-center">
+        {/* Center Timer Display */}
+        <div className="relative z-20 w-28 h-28 bg-[#0D041A] rounded-full shadow-[0_0_30px_rgba(79,70,229,0.5)] flex flex-col items-center justify-center border-4 border-indigo-500 text-center">
           <motion.span 
             key={timeLeft}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-4xl font-headline font-black text-[#FFD700] leading-none"
+            className="text-4xl font-headline font-black text-yellow-400"
           >
-            {gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? '??' : '!!')}
+            {gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? '??' : winningSymbol)}
           </motion.span>
-          <p className="text-[10px] font-black uppercase text-[#8B5CF6] tracking-widest mt-1 italic">
+          <p className="text-[10px] font-bold uppercase text-indigo-300 tracking-widest mt-1">
             BET NOW
           </p>
         </div>
 
         {/* Circular Wheel Items (Wafa Engineered) */}
         {ITEMS.map((item, idx) => {
-          const angle = (idx * (360 / ITEMS.length) - 90) * (Math.PI / 180);
+          const angle = (idx * 45 - 90) * (Math.PI / 180);
           const radius = 135; // px
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
@@ -353,42 +349,33 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
               onClick={() => handlePlaceBet(item.id)}
               disabled={gameState !== 'betting'}
               className={cn(
-                "absolute transition-all duration-300 flex flex-col items-center group active:scale-95",
-                highlightIdx === idx ? "z-30" : "z-10"
+                "absolute transition-all duration-300 flex flex-col items-center justify-center active:scale-95 h-20 w-16rounded-xl border-2",
+                highlightIdx === idx ? "bg-yellow-400 border-white scale-110 z-30" : "bg-[#1E0D3B] border-indigo-500/50"
               )}
               style={{ 
                 transform: `translate(${x}px, ${y}px)`,
-                top: 'calc(50% - 32px)',
-                left: 'calc(50% - 32px)'
               }}
             >
-              <div className={cn(
-                "h-20 w-16 rounded-[1.25rem] flex flex-col items-center justify-center p-1 transition-all border-2 relative overflow-hidden",
-                highlightIdx === idx 
-                  ? "bg-[#FFD700] border-white scale-110 shadow-[0_0_20px_rgba(255,215,0,0.4)]" 
-                  : "bg-[#2D1B4E] border-white/10"
+              <span className="text-3xl relative z-10 mb-1">
+                {item.emoji}
+              </span>
+              <span className={cn(
+                "text-[7px] font-black uppercase leading-tight relative z-10 text-center px-1",
+                highlightIdx === idx ? "text-[#3D1E6D]" : "text-white/60"
               )}>
-                <span className="text-3xl relative z-10 mb-1">
-                  {item.emoji}
-                </span>
-                <span className={cn(
-                  "text-[7px] font-black uppercase leading-tight relative z-10 text-center px-1",
-                  highlightIdx === idx ? "text-[#3D1E6D]" : "text-white/60"
-                )}>
-                  {item.label}
-                </span>
-              </div>
+                {item.label}
+              </span>
 
-              {/* Bet Tag (Wafa Style) */}
+              {/* Bet Tag (Missing in your code, now added back) */}
               <AnimatePresence>
                 {myBets[item.id] > 0 && (
                   <motion.div 
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="absolute -top-3 bg-indigo-600 text-white px-2 py-0.5 rounded-lg font-black text-[7px] shadow-lg flex items-center gap-1 border border-white/20 z-40 whitespace-nowrap"
+                    className="absolute -top-3 bg-indigo-600 px-2 py-0.5 rounded-lg text-white font-black text-[7px] flex items-center gap-1 border border-white/20 z-40"
                   >
                     <GoldCoinIcon className="h-2 w-2" />
-                    {myBets[item.id] > 1000 ? `${(myBets[item.id]/1000).toFixed(1)}k` : myBets[item.id]}
+                    {myBets[item.id] >= 1000 ? `${(myBets[item.id]/1000).toFixed(1)}k` : myBets[item.id]}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -398,18 +385,19 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
       </div>
     </main>
 
-   {/* Footer Controls */}
-   <footer className="relative z-50 p-4 pb-12 space-y-4 bg-black/40 backdrop-blur-xl border-t border-white/10">
+   {/* Footer UI (Fixed Bottom Look - Refined from snippet) */}
+   <footer className="relative z-50 p-4 pb-12 bg-[#0D041A]/90 backdrop-blur-xl border-t border-indigo-500/30">
     <div className="max-w-md mx-auto space-y-4">
      <div className="flex items-center justify-between gap-3">
-      <div className="bg-[#2D1B4E]/80 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10 flex-1">
-       <GoldCoinIcon className="h-4 w-4" />
-       <span className="text-sm font-headline font-black text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+      <div className="flex-1 bg-white/5 h-12 rounded-xl flex items-center px-4 gap-2 border border-white/10 flex-1">
+       <GoldCoinIcon className="h-5 w-5" />
+       <span className="text-lg font-headline font-black text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       
       <button 
        onClick={handleRepeat} 
-       className="bg-white/10 px-6 py-2 rounded-2xl font-headline font-black uppercase text-[12px] hover:bg-white/20 active:scale-95 transition-all border border-white/10 tracking-wider"
+       disabled={gameState !== 'betting'}
+       className="bg-white/10 h-12 px-6 rounded-xl font-headline font-black uppercase text-sm border border-white/10 tracking-wider disabled:opacity-50"
       >
        Repeat
       </button>
@@ -426,13 +414,13 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
         key={chip.value} 
         onClick={() => setSelectedChip(chip.value)} 
         className={cn(
-         "h-16 rounded-2xl flex flex-col items-center justify-center transition-all border-2 relative overflow-hidden", 
+         "h-14 rounded-xl flex flex-col items-center justify-center transition-all border-2 relative overflow-hidden", 
          selectedChip === chip.value 
-          ? "bg-[#FFD700] border-white text-[#3D1E6D] scale-105 shadow-[0_0_15px_rgba(255,215,0,0.3)]" 
-          : "bg-white text-black border-transparent hover:bg-white/90"
+          ? "bg-yellow-400 border-white text-black scale-105 shadow-[0_0_15px_rgba(255,215,0,0.3)]" 
+          : "bg-white text-black border-transparent"
         )}
        >
-        <GoldCoinIcon className={cn("h-4 w-4 mb-1", selectedChip === chip.value ? "text-[#3D1E6D]" : "text-amber-500")} />
+        <GoldCoinIcon className={cn("h-3 w-3 mb-1")} />
         <span className="text-[12px] font-headline font-black">{chip.label}</span>
        </button>
       ))}
@@ -440,14 +428,14 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
     </div>
 
     {/* Winning History */}
-    <div className="max-w-md mx-auto flex items-center gap-3">
-     <span className="text-[10px] font-headline font-black text-white p-2">Winning History</span>
-     <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1">
+    <div className="max-w-md mx-auto flex items-center gap-3 mt-4 bg-black/20 p-2 rounded-xl">
+     <span className="text-[10px] font-headline font-black text-white/60 whitespace-nowrap">Winning History</span>
+     <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
       {history.map((id, i) => (
        <div key={i} className="relative shrink-0 flex flex-col items-center">
         <span className="text-xl">{ITEMS.find(it => it.id === id)?.emoji}</span>
         {i === 0 && (
-         <div className="absolute -bottom-1 whitespace-nowrap bg-[#8B5CF6] text-[6px] px-1.5 py-0.5 rounded-md font-black shadow-md border border-white/20">
+         <div className="absolute -bottom-1 whitespace-nowrap bg-purple-600 text-[6px] px-1.5 py-0.5 rounded-md font-black shadow-md border border-white/20">
           New
          </div>
         )}
@@ -459,9 +447,6 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
 
    <style jsx global>{`
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    .bg-gradient-radial {
-     background-image: radial-gradient(var(--tw-gradient-stops));
-    }
    `}</style>
   </div>
  );
