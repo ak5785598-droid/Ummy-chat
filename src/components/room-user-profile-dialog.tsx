@@ -50,6 +50,7 @@ import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { CPProposeDialog } from '@/components/cp-propose-dialog';
 import { BudgetTag } from '@/components/budget-tag';
+import { AvatarFramePicker } from '@/components/avatar-frame-picker';
 
 interface RoomUserProfileDialogProps {
  userId: string | null;
@@ -111,6 +112,7 @@ export function RoomUserProfileDialog({
  const { toast } = useToast();
  const router = useRouter();
  const [showPropose, setShowPropose] = React.useState(false);
+ const [showFramePicker, setShowFramePicker] = React.useState(false);
 
  if (!userId) return null;
 
@@ -135,7 +137,7 @@ export function RoomUserProfileDialog({
  const handleRemoveFrame = async () => {
   try {
     const { doc, getFirestore, updateDoc } = await import('firebase/firestore');
-    await updateDoc(doc(getFirestore(), 'users', userId), {
+    await updateDoc(doc(getFirestore(), 'users', userId, 'profile', userId), {
       'inventory.activeFrame': 'None'
     });
     toast({ title: 'Frame Removed' });
@@ -267,10 +269,17 @@ export function RoomUserProfileDialog({
       {isMe && (
        <div className="w-full px-10 mb-8 flex flex-col gap-3">
          <button 
-          onClick={handleRemoveFrame}
-          className="w-full h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center gap-2 font-bold uppercase text-[10px] shadow-sm active:scale-95 transition-all border border-slate-200"
+          onClick={() => setShowFramePicker(true)}
+          className="w-full h-12 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-center gap-2 font-bold uppercase text-[10px] shadow-lg active:scale-95 transition-all border border-purple-400/20"
          >
-          <LogOut className="h-4 w-4" />
+          <Sparkles className="h-4 w-4" />
+          Change Frame
+         </button>
+
+         <button 
+          onClick={handleRemoveFrame}
+          className="w-full h-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center gap-2 font-bold uppercase text-[9px] active:scale-95 transition-all border border-slate-100 mt-[-4px]"
+         >
           Remove Frame
          </button>
 
@@ -310,6 +319,17 @@ export function RoomUserProfileDialog({
          username: profile.username,
          avatarUrl: profile.avatarUrl
        }}
+     />
+   )}
+
+   {profile && isMe && (
+     <AvatarFramePicker 
+       open={showFramePicker}
+       onOpenChange={setShowFramePicker}
+       userId={profile.id}
+       currentFrameId={profile.inventory?.activeFrame || null}
+       avatarUrl={profile.avatarUrl}
+       username={profile.username}
      />
    )}
   </Dialog>

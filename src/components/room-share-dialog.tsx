@@ -18,13 +18,14 @@ interface RoomShareDialogProps {
  open: boolean;
  onOpenChange: (open: boolean) => void;
  room: any;
+ onShare?: () => void;
 }
 
 /**
  * High-Fidelity Room Sharing Portal.
  * Allows tribe members to broadcast the current frequency URL.
  */
-export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogProps) {
+export function RoomShareDialog({ open, onOpenChange, room, onShare }: RoomShareDialogProps) {
  const [copied, setCopied] = useState(false);
  const { toast } = useToast();
 
@@ -73,10 +74,20 @@ export function RoomShareDialog({ open, onOpenChange, room }: RoomShareDialogPro
       </div>
     </div>
 
-    <DialogFooter className="p-8 pt-0 grid grid-cols-2 gap-4">
+    <DialogFooter className="p-8 pt-0 grid grid-cols-2 gap-4 flex-col">
+      <Button 
+        className="h-14 rounded-2xl bg-[#25D366] text-white shadow-xl shadow-green-900/20 font-bold uppercase text-xs col-span-2 mb-2" 
+        onClick={() => {
+          const text = `Join my room on Ummy Chat!\nRoom ID: ${room.roomNumber}\nLink: ${window.location.origin}/rooms/${room.id}`;
+          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          if (onShare) onShare();
+        }}
+      >
+        <span className="mr-2">📲</span> Share to WhatsApp
+      </Button>
       <Button variant="outline" className="h-14 rounded-2xl border-2 font-bold uppercase text-xs" onClick={() => onOpenChange(false)}>Cancel</Button>
       <Button className="h-14 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-900/20 font-bold uppercase text-xs" onClick={handleCopy}>
-       <Send className="h-4 w-4 mr-2" /> Invite Now
+       <Send className="h-4 w-4 mr-2" /> Copy ID
       </Button>
     </DialogFooter>
    </DialogContent>

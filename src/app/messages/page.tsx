@@ -473,7 +473,7 @@ export default function MessagesPage() {
  // 🔔 RED DOT SYNC: Check for pending requests
  const requestsQuery = useMemoFirebase(() => {
    if (!firestore || !user?.uid) return null;
-   return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'), limitToLast(1));
+   return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'), orderBy('timestamp', 'asc'), limitToLast(1));
  }, [firestore, user?.uid]);
  const { data: pendingRequests } = useCollection(requestsQuery);
  const hasPending = (pendingRequests?.length ?? 0) > 0;

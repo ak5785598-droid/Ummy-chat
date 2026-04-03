@@ -68,6 +68,7 @@ export function ProfileInitializer() {
       needsReset = true;
       resetData['wallet.dailySpent'] = 0;
       resetData['stats.dailyGiftsReceived'] = 0;
+      resetData['stats.dailyGifts'] = 0;
       resetData['stats.dailyGameWins'] = 0;
       resetData['stats.dailyFans'] = 0;
      }

@@ -62,7 +62,7 @@ const GIFTS: Record<string, any[]> = {
  ]
 };
 
-export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
+export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [], onSuccess }: any) {
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
@@ -99,12 +99,47 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
   try {
    const batch = writeBatch(firestore);
-   const senderRef = doc(firestore, 'users', user.uid);
-   batch.update(senderRef, { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() });
+   
+   // 🪙 SENDER: Deduct coins from both documents
+   const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+   const senderUserRef = doc(firestore, 'users', user.uid);
+   
+   batch.update(senderProfileRef, { 
+     'wallet.coins': increment(-totalCost),
+     'wallet.totalSpent': increment(totalCost),
+     'wallet.dailySpent': increment(totalCost),
+     updatedAt: serverTimestamp() 
+   });
+   
+   batch.update(senderUserRef, { 
+     'wallet.coins': increment(-totalCost),
+     updatedAt: serverTimestamp() 
+   });
 
+   // 💎 RECIPIENTS: Add 40% diamonds to both documents
+   const costPerRecipient = selectedGift.price * qty;
+   const diamondPerRecipient = Math.floor(costPerRecipient * 0.4);
+   
    selectedUids.forEach(uid => {
-     const recRef = doc(firestore, 'users', uid);
-     batch.update(recRef, { 'wallet.diamonds': increment(Math.floor(totalCost * 0.4)), updatedAt: serverTimestamp() });
+     const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
+     const recUserRef = doc(firestore, 'users', uid);
+     
+     batch.update(recProfileRef, { 
+       'wallet.diamonds': increment(diamondPerRecipient),
+       updatedAt: serverTimestamp() 
+     });
+     
+     batch.update(recUserRef, { 
+       'wallet.diamonds': increment(diamondPerRecipient),
+       updatedAt: serverTimestamp() 
+     });
+   });
+
+   // 🚀 ROOM: Update Rocket Progress
+   const roomRef = doc(firestore, 'chatRooms', roomId);
+   batch.update(roomRef, {
+     'rocket.progress': increment(totalCost),
+     updatedAt: serverTimestamp()
    });
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
@@ -249,4 +284,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Dialog>
   </>
  );
-                               }
+}

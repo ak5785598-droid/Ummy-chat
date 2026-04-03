@@ -2,7 +2,7 @@
   
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged, Auth } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth } from '../provider';
 
 export interface UserHookResult {
  user: User | null;
@@ -24,8 +24,6 @@ export function useUser(): UserHookResult {
  useEffect(() => {
   if (!auth) {
    setIsLoading(false);
-   // Optional: Set an error if auth service is not available
-   // setError(new Error("Firebase Auth service not available."));
    return;
   }
 

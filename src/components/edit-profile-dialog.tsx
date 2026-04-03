@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useUser, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
-import { Pen, Loader, Camera, Upload, Globe, Info } from 'lucide-react';
+import { Pen, Loader, Camera, Upload, Info, Sparkles, Trash2 } from 'lucide-react';
 import {
  Dialog,
  DialogContent,
@@ -30,6 +30,8 @@ import { useProfilePictureUpload } from '@/hooks/use-profile-picture-upload';
 import { CameraCaptureDialog } from '@/components/camera-capture-dialog';
 import { ImageCropDialog } from '@/components/image-crop-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AvatarFrame } from '@/components/avatar-frame';
+import { AvatarFramePicker } from '@/components/avatar-frame-picker';
 
 interface EditProfileDialogProps {
  profile: any;
@@ -50,13 +52,13 @@ const COUNTRIES = [
 
 /**
  * Production Persona Editor.
- * Re-engineered to support one-time set for Gender and Country.
- * Name and DP remain editable at any time.
+ * Integrated with the 19 Premium Frames system.
  */
 export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) {
  const [open, setOpen] = useState(false);
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [isCameraOpen, setIsCameraOpen] = useState(false);
+ const [showFramePicker, setShowFramePicker] = useState(false);
  
  const { user } = useUser();
  const firestore = useFirestore();
@@ -93,14 +95,12 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
   const userSummaryRef = doc(firestore, 'users', user.uid);
   const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
   
-  // Core data that can be updated multiple times
   const updateData: any = {
    username: name,
    bio: bio,
    updatedAt: serverTimestamp()
   };
 
-  // Only allow setting gender/country if they aren't already set
   if (!isGenderFixed && gender) updateData.gender = gender;
   if (!isCountryFixed && country) updateData.country = country;
 
@@ -159,10 +159,12 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
        <div className="p-8 space-y-6">
         <div className="flex flex-col items-center gap-4">
          <div className="relative group">
-          <Avatar className="h-24 w-32 border-4 border-primary/20 shadow-2xl">
-           <AvatarImage key={profile?.avatarUrl} src={profile?.avatarUrl || undefined} alt={name} />
-           <AvatarFallback className="text-4xl font-bold bg-slate-50">{(name || 'U').charAt(0)}</AvatarFallback>
-          </Avatar>
+          <AvatarFrame frameId={profile?.inventory?.activeFrame} size="xl" className="h-32 w-32 translate-y-2 translate-x-2">
+           <Avatar className="h-24 w-24 border-4 border-primary/20 shadow-2xl">
+            <AvatarImage key={profile?.avatarUrl} src={profile?.avatarUrl || undefined} alt={name} />
+            <AvatarFallback className="text-4xl font-bold bg-slate-50">{(name || 'U').charAt(0)}</AvatarFallback>
+           </Avatar>
+          </AvatarFrame>
           {isUploading && (
            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm z-10">
             <Loader className="h-8 w-8 animate-spin text-white" />
@@ -206,7 +208,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
            />
           </div>
 
-          {/* Gender Selection - One Time Set */}
+          {/* Gender Selection */}
           <div className="grid gap-2">
            <div className="flex items-center justify-between ml-1">
             <Label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Gender</Label>
@@ -223,26 +225,6 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
            </Select>
           </div>
 
-          {/* Country Selection - One Time Set */}
-          <div className="grid gap-2">
-           <div className="flex items-center justify-between ml-1">
-            <Label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Region Frequency</Label>
-            {isCountryFixed && <span className="text-[8px] font-bold uppercase text-green-500 bg-green-50 px-2 py-0.5 rounded-full">Locked</span>}
-           </div>
-           <Select value={country} onValueChange={setCountry} disabled={isCountryFixed || isSubmitting}>
-            <SelectTrigger className="rounded-2xl h-14 border-2 border-yellow-200 bg-yellow-50 focus:ring-primary font-bold text-yellow-900">
-              <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-2 rounded-2xl max-h-[300px]">
-              {COUNTRIES.map((c) => (
-               <SelectItem key={c.code} value={c.code} className="font-bold">
-                <span className="mr-2">{c.flag}</span> {c.name}
-               </SelectItem>
-              ))}
-            </SelectContent>
-           </Select>
-          </div>
-
           <div className="grid gap-2">
            <Label htmlFor="edit-bio" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">Personality Signature (Bio)</Label>
            <Textarea
@@ -254,13 +236,45 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
             disabled={isSubmitting}
            />
           </div>
+
+          {/* Premium Frame Selection */}
+          <div className="grid gap-3 pt-2">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">Avatar Dimension (Frame)</Label>
+            <div className="flex gap-2">
+              <Button 
+                type="button"
+                variant="outline"
+                className="flex-1 h-14 rounded-2xl border-2 border-purple-100 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold uppercase text-[10px] gap-2 transition-all"
+                onClick={() => setShowFramePicker(true)}
+              >
+                <Sparkles className="h-4 w-4" />
+                {profile?.inventory?.activeFrame && profile?.inventory?.activeFrame !== 'None' ? 'Change Frame' : 'Select Frame'}
+              </Button>
+              {profile?.inventory?.activeFrame && profile?.inventory?.activeFrame !== 'None' && (
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-14 w-14 rounded-2xl border-2 border-red-100 bg-red-50 hover:bg-red-100 text-red-500 transition-all"
+                  onClick={async () => {
+                    if (!user || !firestore) return;
+                    const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+                    await setDocumentNonBlocking(userProfileRef, { inventory: { activeFrame: 'None' } }, { merge: true });
+                    toast({ title: 'Frame Removed' });
+                  }}
+                >
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {(!isGenderFixed || !isCountryFixed) && (
          <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex gap-3">
            <Info className="h-5 w-5 text-orange-500 shrink-0" />
            <p className="text-[10px] font-bold text-orange-800 leading-relaxed uppercase">
-            Gender and Country can only be synchronized once. Please ensure accuracy before committing changes.
+            Gender and Country can only be synchronized once.
            </p>
          </div>
         )}
@@ -291,6 +305,17 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
     onCropComplete={handleCropComplete} 
     aspect={1/1} 
    />
+
+   {profile && (
+      <AvatarFramePicker 
+        open={showFramePicker}
+        onOpenChange={setShowFramePicker}
+        userId={user?.uid || ''}
+        currentFrameId={profile.inventory?.activeFrame || null}
+        avatarUrl={profile.avatarUrl}
+        username={profile.username}
+      />
+   )}
   </>
  );
 }

@@ -40,8 +40,10 @@ import {
   Shield,
   Smile,
   Sparkles,
-  UserPlus
+  UserPlus,
+  Trophy as TrophyIcon
 } from 'lucide-react';
+import { ROOM_TASKS } from '@/constants/room-tasks';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -116,6 +118,9 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { useRoomTasks } from '@/hooks/use-room-tasks';
+import { RoomTasksDialog } from '@/components/room-tasks-dialog';
+
 import { memo, useCallback } from 'react';
 
 // RemoteAudio shifted to ActiveRoomManager
@@ -150,7 +155,7 @@ const Seat = memo(({
 
   return (
     <div className="flex flex-col items-center gap-1 w-full max-w-[65px]">
-      <div className="relative">
+      <div className="relative p-4 overflow-visible"> {/* Increased padding to p-4 for large 3D effects */}
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
         {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
@@ -162,9 +167,8 @@ const Seat = memo(({
         )}
 
         <AvatarFrame
-          frameId={occupant?.activeFrame}
+          frameId={occupant?.activeFrame || (occupant?.uid === currentUser?.uid ? '3d-neon-dragon' : 'None')}
           size="md"
-          badgeType={null}
         >
           <div className="relative p-1 rounded-full overflow-visible">
             <button
@@ -247,11 +251,13 @@ export function RoomClient({ room }: { room: Room }) {
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isRocketOpen, setIsRocketOpen] = useState(false);
+  const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
+  const hasResetRocketRef = useRef(false);
 
   const [sessionJoinTime] = useState(() => new Date());
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
@@ -415,6 +421,8 @@ export function RoomClient({ room }: { room: Room }) {
         followedAt: serverTimestamp()
       }, { merge: true });
       toast({ title: 'Frequency Followed' });
+      triggerTask('follow_1');
+      triggerTask('follow_10');
     }
   };
 
@@ -479,11 +487,35 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [participantsData, participants]);
 
+  // Initialize Room Tasks Hook
+  const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
+    room.id, 
+    participants || [], 
+    room.ownerId, 
+    canManageRoom
+  );
   const onlineCount = useMemo(() => {
-    // Use filtered participants count (not raw participantsData)
-    // This ensures only active users are counted
     return participants.length || 0;
   }, [participants]);
+  // RECENT VISIT TRACKING (For "Me" Section)
+  useEffect(() => {
+    if (!firestore || !currentUser?.uid || !room.id) return;
+    
+    const recordVisit = async () => {
+      const recentRef = doc(firestore, 'users', currentUser.uid, 'recentVisits', room.id);
+      await setDocumentNonBlocking(recentRef, {
+        id: room.id,
+        title: room.title || 'Room',
+        coverUrl: room.coverUrl || '',
+        roomNumber: room.roomNumber || '0000',
+        ownerId: room.ownerId || '',
+        participantCount: onlineCount || 1,
+        visitedAt: serverTimestamp()
+      }, { merge: true });
+    };
+
+    recordVisit();
+  }, [firestore, currentUser?.uid, room.id, room.title, room.coverUrl, room.roomNumber, room.ownerId, onlineCount]);
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
@@ -720,8 +752,13 @@ export function RoomClient({ room }: { room: Room }) {
 
     messageProcessTimeoutRef.current = setTimeout(() => {
       // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-      const onlineMods = participantsData?.filter(p => room.moderatorIds?.includes(p.uid)).sort((a, b) => a.uid.localeCompare(b.uid)) || [];
-      const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+      const onlineMods = (participantsData || [])
+        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+      
+      const sortedParticipants = [...(participantsData || [])]
+        .filter(p => p && p.uid)
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
       const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
 
       let electedLeaderUid = sortedParticipants[0]?.uid;
@@ -797,7 +834,9 @@ export function RoomClient({ room }: { room: Room }) {
     if (!firestore || !room.id) return;
     
     // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
-    const sortedParticipants = [...(participantsData || [])].sort((a, b) => a.uid.localeCompare(b.uid));
+    const sortedParticipants = [...(participantsData || [])]
+      .filter(p => p && p.uid)
+      .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
     const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
     let electedLeaderUid = sortedParticipants[0]?.uid;
     if (ownerOnline) electedLeaderUid = room.ownerId;
@@ -812,12 +851,14 @@ export function RoomClient({ room }: { room: Room }) {
     const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
     const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
     
-    if (hoursSinceReset >= 24) {
+    if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
+      hasResetRocketRef.current = true;
       console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.progress': 0,
         'rocket.countdownUntil': null,
-        'rocket.lastReset': Timestamp.fromDate(new Date())
+        'rocket.lastReset': Timestamp.fromDate(new Date()),
+        'dailyWealth': 0 // RESET ROOM CUP COINS
       });
       return; // Exit early, reset will trigger re-render
     }
@@ -1081,19 +1122,25 @@ export function RoomClient({ room }: { room: Room }) {
     setActiveRoom(room);
     setMinimizedRoom(null);
 
-    // Add a dummy entry to history to intercept back
-    window.history.pushState(null, '', window.location.href);
-
-    const handlePopState = (event: PopStateEvent) => {
-      // Re-push to keep user on same URL while dialog is open
-      window.history.pushState(null, '', window.location.href);
-      setShowExitDialog(true);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    // Quick frame switcher for testing
+    const [testFrame, setTestFrame] = useState('3d-neon-dragon');
+  
+    useEffect(() => {
+      // Allow quick frame switching with keyboard
+      const handleKeyPress = (e: KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'f') {
+          e.preventDefault();
+          const frames = ['3d-neon-dragon', '3d-holographic', '3d-royal-phoenix', 'elite-mythic-gold'];
+          const currentIndex = frames.indexOf(testFrame);
+          const nextFrame = frames[(currentIndex + 1) % frames.length];
+          setTestFrame(nextFrame);
+          console.log(`Frame switched to: ${nextFrame}`);
+        }
+      };
+      
+      window.addEventListener('keydown', handleKeyPress);
+      return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [testFrame]);
   }, [room, setActiveRoom, setMinimizedRoom]);
 
   const themesQuery = useMemoFirebase(() => {
@@ -1581,6 +1628,12 @@ export function RoomClient({ room }: { room: Room }) {
     return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
   }, [room.maxActiveMics]);
 
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-black overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5">
       <DailyRewardDialog />
@@ -1590,11 +1643,19 @@ export function RoomClient({ room }: { room: Room }) {
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-            <RocketDialog
+      <RocketDialog
         open={isRocketOpen}
         onOpenChange={setIsRocketOpen}
-        totalGifts={room.stats?.totalGifts || 0}
+        totalGifts={room.rocket?.progress || 0}
         roomName={room.title}
+      />
+      <RoomTasksDialog 
+        open={isRoomTasksOpen} 
+        onOpenChange={setIsRoomTasksOpen} 
+        taskProgress={taskProgress}
+        achievedTasks={achievedTasks}
+        claimedTasks={claimedTasks}
+        onClaim={claimTask}
       />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
@@ -1648,22 +1709,6 @@ export function RoomClient({ room }: { room: Room }) {
         {/* PREMIUM UI CLARITY OVERLAYS (Vignettes) */}
         <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
-      </div>
-
-      {/* PREMIUM ENTRY OVERLAY */}
-      <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center animate-in fade-out duration-1000 fill-mode-forwards" style={{ animationDelay: '1500ms' }}>
-        <div className="flex flex-col items-center gap-4 animate-in zoom-in-50 duration-700">
-           <div className="relative">
-              <div className="absolute inset-0 bg-primary/40 blur-[40px] rounded-full animate-pulse" />
-              <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_50px_rgba(255,51,102,0.3)] relative z-10">
-                <AvatarImage src={userProfile?.avatarUrl} />
-                <AvatarFallback className="bg-slate-900 text-white font-black text-2xl">U</AvatarFallback>
-              </Avatar>
-           </div>
-           <div className="bg-white/10 backdrop-blur-2xl px-6 py-2 rounded-2xl border border-white/20 shadow-2xl relative z-10">
-             <span className="text-[14px] font-black text-white uppercase tracking-[0.4em] drop-shadow-md">Tribe Member Joined</span>
-           </div>
-        </div>
       </div>
 
       {/* SOUNDBOARD OVERLAY */}
@@ -1729,11 +1774,41 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={() => setIsShareOpen(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Share2 className="h-4 w-4 text-white/60" /></button>
           <button onClick={() => setShowExitDialog(true)} className="p-1 bg-white/10 rounded-full active:scale-95 transition-transform border border-white/5"><Power className="h-4 w-4 text-white/60" /></button>
         </div>
+
+        {/* TASK JAR ICON - Top Right Below Header (Wafa Style) */}
+        <button
+          onClick={() => setIsRoomTasksOpen(true)}
+          className="absolute top-20 right-4 z-[45] group active:scale-95 transition-transform duration-300"
+        >
+          <div className="relative">
+            {/* Pulsing Glow */}
+            <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full scale-110 animate-pulse" />
+            
+            {/* The Jar Icon (Styled Image) */}
+            <div className="relative h-14 w-14 flex items-center justify-center">
+              <img 
+                src="/images/golden_task_jar.png" 
+                alt="Task Jar" 
+                className="h-12 w-12 drop-shadow-2xl brightness-110 saturate-125 animate-reaction-float"
+              />
+              
+              {/* Progress Ring (Visual Indicator) */}
+              <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/10 animate-spin-slow" />
+            </div>
+
+            {/* Notification Badge - Show count of achieved but UNCLAIMED tasks */}
+            {achievedTasks.filter(id => !claimedTasks.includes(id)).length > 0 && (
+              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-slate-950 flex items-center justify-center shadow-lg animate-bounce">
+                <span className="text-[9px] font-black">{achievedTasks.filter(id => !claimedTasks.includes(id)).length}</span>
+              </div>
+            )}
+          </div>
+        </button>
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full">
-        {/* SEATS SECTION (Point 4) - Fixed height for consistency */}
-        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-2 w-full">
+        {/* SEATS SECTION (Point 4) - Adjusted padding-top (pt-8) as per user request */}
+        <div className="shrink-0 flex flex-col items-center justify-start gap-3 pt-8 w-full overflow-visible">
           <div className="w-full flex justify-center px-6 mb-1">
             <div className="w-1/4 max-w-[90px]">
               <Seat index={1} label="No.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
@@ -2204,7 +2279,12 @@ export function RoomClient({ room }: { room: Room }) {
         isAdmin={canManageRoom}
       />
       <RoomFollowersDialog open={isFollowersOpen} onOpenChange={setIsFollowersOpen} room={room} />
-      <RoomShareDialog open={isShareOpen} onOpenChange={setIsShareOpen} room={room} />
+      <RoomShareDialog 
+        open={isShareOpen} 
+        onOpenChange={setIsShareOpen} 
+        room={room} 
+        onShare={() => triggerTask('share_whatsapp')}
+      />
       <RoomPlayDialog
         open={isRoomPlayOpen}
         onOpenChange={setIsRoomPlayOpen}
@@ -2267,7 +2347,14 @@ export function RoomClient({ room }: { room: Room }) {
         initialRecipient={initialChatRecipient}
       />
       <RoomEmojiPickerDialog open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen} roomId={room.id} />
-      <GiftPicker open={isGiftPickerOpen} onOpenChange={setIsGiftPickerOpen} roomId={room.id} recipient={giftRecipient} participants={participants} />
+      <GiftPicker 
+        open={isGiftPickerOpen} 
+        onOpenChange={setIsGiftPickerOpen} 
+        roomId={room.id} 
+        recipient={giftRecipient} 
+        participants={participants} 
+        onSuccess={() => triggerTask('gift_once')}
+      />
 
       <RoomSeatMenuDialog
         open={isSeatMenuOpen}
@@ -2365,12 +2452,4 @@ export function RoomClient({ room }: { room: Room }) {
       />
     </div>
   );
-}
-
-// Helper function to format time
-function formatTime(seconds: number): string {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
