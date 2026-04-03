@@ -197,8 +197,8 @@ export default function RoomsPage() {
     <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
       <div className="pt-0 flex items-center justify-between w-full">
          <div className="flex items-center gap-3">
-            <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Popular</button>
-            <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
+            <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all font-headline", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
+            <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-black uppercase tracking-tighter italic transition-all font-headline", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
          </div>
          <div className="flex items-center gap-2 text-slate-800">
             <UserSearchDialog />

@@ -69,12 +69,12 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
 
     const taskRef = doc(firestore, 'users', user.uid, 'roomQuests', taskId);
     
-    await updateDocumentNonBlocking(taskRef, {
+    await setDocumentNonBlocking(taskRef, {
       current: currentVal,
       target: task.target,
       isCompleted: isNowComplete,
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
   };
 
   // 3. NEW: Manual Claim Function

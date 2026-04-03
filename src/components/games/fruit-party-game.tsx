@@ -16,35 +16,32 @@ import {
  Volume2,
  VolumeX,
  HelpCircle,
- BarChart2,
  Maximize2,
- MoreHorizontal,
- ChevronDown
+ MoreHorizontal
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { GameResultOverlay } from '@/components/game-result-overlay';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS = [
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: '5x' },
-  { id: 'bananas', emoji: '🍌', multiplier: 5, label: '5x' },
-  { id: 'oranges', emoji: '🍊', multiplier: 5, label: '5x' },
-  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: '5x' },
-  { id: 'pizza', emoji: '🍕', multiplier: 10, label: '10x' },
-  { id: 'burrito', emoji: '🌯', multiplier: 15, label: '15x' },
-  { id: 'skewers', emoji: '🍢', multiplier: 25, label: '25x' },
-  { id: 'chicken', emoji: '🍗', multiplier: 45, label: '45x' },
+  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'Win 5 times' },
+  { id: 'bananas', emoji: '🍌', multiplier: 5, label: 'Win 5 times' },
+  { id: 'oranges', emoji: '🍊', multiplier: 5, label: 'Win 5 times' },
+  { id: 'watermelon', emoji: '🍉', multiplier: 5, label: 'Win 5 times' },
+  { id: 'pizza', emoji: '🍕', multiplier: 10, label: 'Win 10 times' },
+  { id: 'burrito', emoji: '🌯', multiplier: 15, label: 'Win 15 times' },
+  { id: 'skewers', emoji: '🍢', multiplier: 25, label: 'Win 25 times' },
+  { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'Win 45 times' },
 ];
 
 const CHIPS = [
-  { value: 10, label: '10' },
-  { value: 50, label: '50' },
-  { value: 100, label: '100' },
-  { value: 500, label: '500' },
-  { value: 1000, label: '1k' },
+  { value: 1000, label: '1K' },
+  { value: 50000, label: '50K' },
+  { value: 100000, label: '100K' },
+  { value: 500000, label: '500K' },
+  { value: 1000000, label: '1M' },
 ];
 
 interface FruitPartyGameProps {
@@ -59,8 +56,8 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
  const { toast } = useToast();
 
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
- const [timeLeft, setTimeLeft] = useState(15);
- const [selectedChip, setSelectedChip] = useState(10);
+ const [timeLeft, setTimeLeft] = useState(30);
+ const [selectedChip, setSelectedChip] = useState(1000);
  const [myBets, setMyBets] = useState<Record<string, number>>({});
  const [lastBets, setLastBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
@@ -212,7 +209,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
    setWinners([]);
    setHighlightIdx(null);
    setGameState('betting');
-   setTimeLeft(15);
+   setTimeLeft(30);
   }, 5000);
  };
 
@@ -248,9 +245,9 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
 
  if (isLaunching) {
   return (
-   <div className="h-full w-full bg-[#58319d] flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-500">
+   <div className="h-full w-full bg-[#3D1E6D] flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-500">
     <div className="text-8xl animate-bounce text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">🎡</div>
-    <h1 className="text-4xl font-black text-yellow-400 uppercase tracking-tight italic">Fruit Party</h1>
+    <h1 className="text-4xl font-headline font-black text-yellow-400 uppercase tracking-tight italic">Fruit Party</h1>
     <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
      <div className="h-full bg-yellow-400 w-1/2 animate-[loading_1.5s_infinite_linear]" />
     </div>
@@ -264,12 +261,10 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
   );
  }
 
- const specialChicken = PlaceHolderImages.find(img => img.id === 'fruit-party-special-chicken');
-
  return (
   <div className={cn(
    "flex flex-col relative overflow-hidden font-sans text-white",
-   isOverlay ? "h-full w-full" : "h-[100dvh] w-full bg-[#58319d]"
+   isOverlay ? "h-full w-full" : "h-[100dvh] w-full bg-[#3D1E6D]"
   )}>
    
    {gameState === 'result' && winners.length > 0 && (
@@ -285,8 +280,8 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
 
    {/* Background Layer */}
    <div className="absolute inset-0 z-0 pointer-events-none">
-    <div className="absolute inset-0 bg-gradient-to-b from-[#58319d] to-[#311b92]" />
-    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
+    <div className="absolute inset-0 bg-[#3D1E6D]" />
+    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
    </div>
 
    {/* Header Actions */}
@@ -300,12 +295,7 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
     </div>
     
     <div className="text-center">
-     <h1 className="text-lg font-black text-white uppercase tracking-widest drop-shadow-md">Fruit Party</h1>
-     <div className="flex items-center justify-center gap-1">
-      <div className="h-0.5 w-8 bg-yellow-400/40 rounded-full" />
-      <span className="text-[8px] font-bold text-yellow-400 uppercase tracking-widest">Premium Suite</span>
-      <div className="h-0.5 w-8 bg-yellow-400/40 rounded-full" />
-     </div>
+     <h1 className="text-xl font-headline font-black text-white uppercase tracking-wider drop-shadow-md">Fruit Party</h1>
     </div>
 
     <div className="flex gap-2">
@@ -320,11 +310,11 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
 
     {/* Game Arena */}
     <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
-      <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+      <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center p-8 bg-[#2A144E]/40 rounded-[2.5rem] border border-white/10">
         
-        {/* Outer Glowing Ring */}
-        <div className="absolute inset-0 border-[10px] border-white/5 rounded-full shadow-[0_0_50px_rgba(124,58,237,0.3)]" />
-        <div className="absolute inset-2 border-2 border-yellow-400/10 rounded-full" />
+        {/* Outer Circular Frame */}
+        <div className="absolute inset-10 border-2 border-indigo-400/20 rounded-full shadow-[0_0_40px_rgba(139,92,246,0.2)]" />
+        <div className="absolute inset-12 border border-white/5 rounded-full" />
         
         {/* Dynamic Spinning Glow (BEHIND items) */}
         {gameState === 'spinning' && (
@@ -335,23 +325,19 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
           />
         )}
 
-        {/* Center Timer & Status (Premium Hub) */}
-        <div className="relative z-20 w-36 h-36 bg-gradient-to-b from-[#4c1d95] to-[#2e1065] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center border-[6px] border-[#7c3aed]/50 p-2 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+        {/* Center Display (30 BET NOW) */}
+        <div className="relative z-20 w-32 h-32 bg-[#1A0B2E] rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center border-4 border-[#8B5CF6]/30 p-2 text-center">
           <motion.span 
             key={timeLeft}
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-5xl font-black text-yellow-400 leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+            className="text-4xl font-headline font-black text-[#FFD700] leading-none"
           >
-            {gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? '🎰' : '🏆')}
+            {gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? '??' : '!!')}
           </motion.span>
-          <p className="text-[10px] font-black uppercase text-white/50 tracking-[0.2em] mt-2 relative z-10 italic">
-            {gameState === 'betting' ? 'Bet Now' : (gameState === 'spinning' ? 'Spinning' : 'Winner')}
+          <p className="text-[10px] font-black uppercase text-[#8B5CF6] tracking-widest mt-1 italic">
+            BET NOW
           </p>
-          
-          {/* Inner Decorative Ring */}
-          <div className="absolute inset-1 border border-white/5 rounded-full pointer-events-none" />
         </div>
 
         {/* Circular Wheel Items (Wafa Engineered) */}
@@ -377,35 +363,20 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
               }}
             >
               <div className={cn(
-                "h-16 w-16 rounded-2xl flex flex-col items-center justify-center p-0.5 transition-all border-4 relative overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.4)]",
+                "h-20 w-16 rounded-[1.25rem] flex flex-col items-center justify-center p-1 transition-all border-2 relative overflow-hidden",
                 highlightIdx === idx 
-                  ? "bg-gradient-to-br from-yellow-400 to-amber-600 border-white scale-125 shadow-[0_0_30px_rgba(250,204,21,0.6)]" 
-                  : "bg-[#1e1b4b]/80 border-white/10 group-hover:bg-[#1e1b4b] group-hover:border-white/20"
+                  ? "bg-[#FFD700] border-white scale-110 shadow-[0_0_20px_rgba(255,215,0,0.4)]" 
+                  : "bg-[#2D1B4E] border-white/10"
               )}>
-                {/* Winner Blast Effect */}
-                {highlightIdx === idx && (
-                  <motion.div 
-                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                    className="absolute inset-0 bg-white rounded-xl"
-                  />
-                )}
-                
-                <span className={cn(
-                  "text-3xl drop-shadow-md relative z-10 transition-transform",
-                  highlightIdx === idx && "scale-110"
-                )}>
+                <span className="text-3xl relative z-10 mb-1">
                   {item.emoji}
                 </span>
                 <span className={cn(
-                  "text-[8px] font-black uppercase mt-0.5 leading-tight relative z-10 tracking-tighter",
-                  highlightIdx === idx ? "text-black" : "text-white/40"
+                  "text-[7px] font-black uppercase leading-tight relative z-10 text-center px-1",
+                  highlightIdx === idx ? "text-[#3D1E6D]" : "text-white/60"
                 )}>
                   {item.label}
                 </span>
-                
-                {/* Item Background Glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
               </div>
 
               {/* Bet Tag (Wafa Style) */}
@@ -428,61 +399,56 @@ export function FruitPartyGame({ onClose, isOverlay = false }: FruitPartyGamePro
     </main>
 
    {/* Footer Controls */}
-   <footer className="relative z-50 p-4 pb-12 space-y-5 bg-black/20 backdrop-blur-md border-t border-white/5">
+   <footer className="relative z-50 p-4 pb-12 space-y-4 bg-black/40 backdrop-blur-xl border-t border-white/10">
     <div className="max-w-md mx-auto space-y-4">
-     <div className="flex items-center justify-between px-2">
-      <div className="bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-1.5 rounded-2xl flex items-center gap-2 shadow-[0_4px_15px_rgba(251,191,36,0.3)] border border-white/20">
-       <GoldCoinIcon className="h-4 w-4 text-black" />
-       <span className="text-sm font-black text-black">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+     <div className="flex items-center justify-between gap-3">
+      <div className="bg-[#2D1B4E]/80 px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10 flex-1">
+       <GoldCoinIcon className="h-4 w-4" />
+       <span className="text-sm font-headline font-black text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       
-      <div className="flex-1 text-center">
-       <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.3em]">CHOOSE WAGER THEN FOOD</p>
-      </div>
-
       <button 
        onClick={handleRepeat} 
-       className="bg-white/10 px-5 py-1.5 rounded-2xl font-black uppercase text-[10px] hover:bg-white/20 active:scale-95 transition-all border border-white/10 tracking-widest"
+       className="bg-white/10 px-6 py-2 rounded-2xl font-headline font-black uppercase text-[12px] hover:bg-white/20 active:scale-95 transition-all border border-white/10 tracking-wider"
       >
        Repeat
       </button>
      </div>
 
-     {/* Chips Selection - Premium style matching Wafa app */}
+     <div className="text-center">
+      <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Choose the amount of wager then choose food</p>
+     </div>
+
+     {/* Chips Selection */}
      <div className="grid grid-cols-5 gap-2 px-1">
       {CHIPS.map(chip => (
        <button 
         key={chip.value} 
         onClick={() => setSelectedChip(chip.value)} 
         className={cn(
-         "h-14 rounded-2xl flex flex-col items-center justify-center transition-all border-2 relative overflow-hidden", 
+         "h-16 rounded-2xl flex flex-col items-center justify-center transition-all border-2 relative overflow-hidden", 
          selectedChip === chip.value 
-          ? "bg-white border-white text-[#7c3aed] scale-105 shadow-[0_10px_20px_rgba(255,255,255,0.2)]" 
-          : "bg-black/30 border-white/5 text-white/40 hover:bg-white/10"
+          ? "bg-[#FFD700] border-white text-[#3D1E6D] scale-105 shadow-[0_0_15px_rgba(255,215,0,0.3)]" 
+          : "bg-white text-black border-transparent hover:bg-white/90"
         )}
        >
-        {selectedChip === chip.value && (
-         <div className="absolute top-0 right-0 p-1">
-          <div className="h-1.5 w-1.5 bg-[#7c3aed] rounded-full animate-pulse" />
-         </div>
-        )}
-        <GoldCoinIcon className={cn("h-4 w-4 mb-1", selectedChip === chip.value ? "text-[#7c3aed]" : "text-yellow-500/60")} />
-        <span className="text-[11px] font-black tracking-tight">{chip.label}</span>
+        <GoldCoinIcon className={cn("h-4 w-4 mb-1", selectedChip === chip.value ? "text-[#3D1E6D]" : "text-amber-500")} />
+        <span className="text-[12px] font-headline font-black">{chip.label}</span>
        </button>
       ))}
      </div>
     </div>
 
     {/* Winning History */}
-    <div className="max-w-md mx-auto bg-black/60 rounded-3xl border border-white/5 p-2 px-5 flex items-center gap-4 shadow-inner">
-     <span className="text-[9px] font-black uppercase tracking-widest text-white/20 shrink-0 border-r border-white/10 pr-4">History</span>
-     <div className="flex-1 flex gap-4 overflow-x-auto no-scrollbar py-1">
+    <div className="max-w-md mx-auto flex items-center gap-3">
+     <span className="text-[10px] font-headline font-black text-white p-2">Winning History</span>
+     <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1">
       {history.map((id, i) => (
-       <div key={i} className="relative shrink-0 flex flex-col items-center transition-transform hover:scale-110">
-        <span className="text-xl filter drop-shadow-sm">{ITEMS.find(it => it.id === id)?.emoji}</span>
+       <div key={i} className="relative shrink-0 flex flex-col items-center">
+        <span className="text-xl">{ITEMS.find(it => it.id === id)?.emoji}</span>
         {i === 0 && (
-         <div className="absolute -bottom-1 whitespace-nowrap bg-pink-500 text-[6px] px-1.5 py-0.5 rounded-full font-black animate-pulse shadow-md border border-white/20">
-          NEW
+         <div className="absolute -bottom-1 whitespace-nowrap bg-[#8B5CF6] text-[6px] px-1.5 py-0.5 rounded-md font-black shadow-md border border-white/20">
+          New
          </div>
         )}
        </div>

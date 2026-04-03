@@ -63,7 +63,7 @@ export function RoomTasksDialog({
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
         
         {/* Header with Title and Gold Accents */}
-        <div className="relative pt-12 pb-6 px-10 text-center border-b border-[#C19A5B]/20">
+        <div className="relative pt-8 pb-4 px-10 text-center border-b border-[#C19A5B]/20">
           {/* Close Button */}
           <button 
             onClick={() => onOpenChange(false)}
@@ -84,7 +84,7 @@ export function RoomTasksDialog({
           </div>
         </div>
 
-        <ScrollArea className="h-[520px] px-6 py-4 relative z-10 scrollbar-hide">
+        <ScrollArea className="h-[420px] px-6 py-4 relative z-10 scrollbar-hide">
           <div className="space-y-3 pb-10">
             {ROOM_TASKS.map((task) => {
               const progress = taskProgress[task.id] || 0;
@@ -105,7 +105,7 @@ export function RoomTasksDialog({
                 >
                   <div className="flex items-center gap-4 relative z-10">
                     {/* Icon Box */}
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#8B3A1C] to-[#4D1209] border border-[#C19A5B]/30 flex items-center justify-center p-3 shadow-lg shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#8B3A1C] to-[#4D1209] border border-[#C19A5B]/30 flex items-center justify-center p-2 shadow-lg shrink-0">
                       <CategoryIcon className="h-full w-full text-[#F9E58A]" strokeWidth={2.5} />
                     </div>
 
