@@ -334,14 +334,8 @@ export function RoomClient({ room }: { room: Room }) {
   // DYNAMIC LEVELING SYNC
   useActivityTracker(room?.id, currentUser?.uid || null);
 
-  // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
-  if (!room || !room.id) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
-        <Loader className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
-  }
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURN
+  // DO NOT ADD HOOKS AFTER THIS LINE
 
   const {
     setActiveRoom,
@@ -362,6 +356,16 @@ export function RoomClient({ room }: { room: Room }) {
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const storage = useStorage();
+
+  // ALL HOOKS ABOVE THIS LINE - NO CONDITIONAL RETURNS BEFORE THIS
+  // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
+  if (!room || !room.id) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
+        <Loader className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
   const welcomedUsersRef = useRef<Set<string>>(new Set());
