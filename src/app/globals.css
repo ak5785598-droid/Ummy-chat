@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Background: Stellar Pink #FF91B5 */
-    --background: 340 100% 78%;
+    /* Background: Soft Lavender #f3e5f5 */
+    --background: 280 40% 93%;
     --foreground: 270 100% 8%;
     
     --card: 0 0% 100%;
@@ -18,31 +18,31 @@
     --primary: 291 64% 42%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 340 40% 97%;
+    --secondary: 270 40% 97%;
     --secondary-foreground: 270 100% 8%;
     
-    --muted: 340 10% 90%;
-    --muted-foreground: 340 10% 40%;
+    --muted: 270 10% 90%;
+    --muted-foreground: 270 10% 40%;
     
-    --accent: 331 100% 66%;
+    --accent: 280 100% 66%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 340 20% 90%;
-    --input: 340 20% 90%;
+    --border: 270 20% 90%;
+    --input: 270 20% 90%;
     --ring: 291 64% 42%;
     --radius: 1.25rem;
 
-    --sidebar-background: 340 100% 78%;
+    --sidebar-background: 280 40% 93%;
     --sidebar-foreground: 270 100% 8%;
     --sidebar-primary: 291 64% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 340 40% 97%;
-    --sidebar-accent-foreground: 331 100% 66%;
-    --sidebar-border: 340 20% 90%;
-    --sidebar-ring: 331 100% 66%;
+    --sidebar-accent: 270 40% 97%;
+    --sidebar-accent-foreground: 280 100% 66%;
+    --sidebar-border: 270 20% 90%;
+    --sidebar-ring: 280 100% 66%;
   }
 }
 
@@ -58,7 +58,7 @@
   }
   
   html, body {
-    @apply min-h-screen w-full bg-[#FF91B5];
+    @apply min-h-screen w-full bg-background;
     min-height: 100dvh;
     min-height: -webkit-fill-available;
     touch-action: pan-x pan-y;
@@ -70,7 +70,7 @@
   }
 
   body {
-    @apply bg-[#FF91B5] text-foreground antialiased;
+    @apply bg-background text-foreground antialiased;
     /* Removed global padding to allow backgrounds to bleed into safe areas */
     padding: 0;
   }
@@ -94,7 +94,7 @@
   .top-safe { top: max(16px, env(safe-area-inset-top)); }
   .bottom-safe { bottom: max(16px, env(safe-area-inset-bottom)); }
   .bg-ummy-gradient {
-    background: linear-gradient(180deg, #FF91B5 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, #FFFFFF 100%);
   }
   .glass-card {
     @apply bg-white/80 backdrop-blur-[20px] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
