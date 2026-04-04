@@ -52,14 +52,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   return doc(firestore, 'chatRooms', slug, 'bans', currentUser.uid);
  }, [firestore, slug, isUserLoading, currentUser]);
 
- const { data: banData, isLoading: isBanLoading } = useDoc(banDocRef);
+ const { data: banData, loading: isBanLoading } = useDoc(banDocRef);
 
  const roomDocRef = useMemoFirebase(() => {
   if (!firestore || !slug || isUserLoading || !currentUser) return null;
   return doc(firestore, 'chatRooms', slug);
  }, [firestore, slug, isUserLoading, currentUser]);
 
- const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
+ const { data: firestoreRoom, loading: isDocLoading } = useDoc(roomDocRef);
 
  const bannedUntil = useMemo(() => {
   if (!banData || !isMounted) return null;
@@ -136,7 +136,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center space-y-4 bg-black relative">
      
      <div className="absolute inset-0 z-0">
-       {activeBg ? (
+       {(activeBg && isMounted) ? (
         <Image src={activeBg} fill className="object-cover opacity-60 animate-in fade-in duration-1000" alt="Loading" priority unoptimized />
        ) : (
         <div className="absolute inset-0 bg-ummy-gradient opacity-20" />

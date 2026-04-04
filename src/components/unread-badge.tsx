@@ -32,7 +32,12 @@ export const UnreadBadge = React.memo(({ className, size = 'md' }: UnreadBadgePr
     });
   }, [chatsForUnread, user?.uid]);
 
-  if (!hasUnread) return null;
+  const [isHydrated, setIsHydrated] = React.useState(false);
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  if (!isHydrated || !hasUnread) return null;
 
   return (
     <div 

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -12,8 +12,16 @@ interface LiveBackgroundProps {
 /**
  * LiveBackground - High-fidelity animated room environments.
  * Uses pure CSS/SVG animations for high performance on mobile.
+ * 
+ * HYDRATION STABILIZED: All randomness is deferred until after mount.
  */
 export function LiveBackground({ themeId, className }: LiveBackgroundProps) {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
   if (themeId === 'none') return null;
 
   return (
@@ -31,19 +39,22 @@ export function LiveBackground({ themeId, className }: LiveBackgroundProps) {
              transition={{ duration: 15, repeat: Infinity }}
              className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/30 blur-[120px] rounded-full"
            />
-           {/* Twinkling Stars */}
+           {/* Twinkling Stars - Deterministic during hydration */}
            <div className="absolute inset-0 opacity-50">
               {[...Array(40)].map((_, i) => (
                 <motion.div
                   key={i}
                   animate={{ opacity: [0.2, 1, 0.2] }}
-                  transition={{ duration: Math.random() * 3 + 2, repeat: Infinity }}
+                  transition={{ 
+                    duration: hasHydrated ? (Math.random() * 3 + 2) : 2.5, 
+                    repeat: Infinity 
+                  }}
                   className="absolute bg-white rounded-full"
                   style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    width: Math.random() * 2 + 1,
-                    height: Math.random() * 2 + 1,
+                    top: hasHydrated ? `${Math.random() * 100}%` : `${(i * 7) % 100}%`,
+                    left: hasHydrated ? `${Math.random() * 100}%` : `${(i * 13) % 100}%`,
+                    width: hasHydrated ? Math.random() * 2 + 1 : 1.5,
+                    height: hasHydrated ? Math.random() * 2 + 1 : 1.5,
                   }}
                 />
               ))}
@@ -58,13 +69,16 @@ export function LiveBackground({ themeId, className }: LiveBackgroundProps) {
               <motion.div
                 key={i}
                 animate={{ y: [0, 5, 0], scale: [1, 1.1, 1] }}
-                transition={{ duration: Math.random() * 5 + 3, repeat: Infinity }}
+                transition={{ 
+                  duration: hasHydrated ? (Math.random() * 5 + 3) : 4, 
+                  repeat: Infinity 
+                }}
                 className="absolute bg-blue-100 rounded-full blur-[1px]"
                 style={{
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  width: Math.random() * 2 + 0.5,
-                  height: Math.random() * 2 + 0.5,
+                  top: hasHydrated ? `${Math.random() * 100}%` : `${(i * 9) % 100}%`,
+                  left: hasHydrated ? `${Math.random() * 100}%` : `${(i * 17) % 100}%`,
+                  width: hasHydrated ? Math.random() * 2 + 0.5 : 1,
+                  height: hasHydrated ? Math.random() * 2 + 0.5 : 1,
                 }}
               />
            ))}
@@ -76,9 +90,20 @@ export function LiveBackground({ themeId, className }: LiveBackgroundProps) {
            {[...Array(15)].map((_, i) => (
               <motion.div
                 key={i}
-                initial={{ y: '110%', x: `${Math.random() * 100}%`, scale: Math.random() * 0.5 + 0.5 }}
-                animate={{ y: '-10%', x: `${Math.random() * 100}%` }}
-                transition={{ duration: Math.random() * 10 + 10, repeat: Infinity, ease: 'linear' }}
+                initial={{ 
+                  y: '110%', 
+                  x: hasHydrated ? `${Math.random() * 100}%` : `${(i * 15) % 100}%`, 
+                  scale: hasHydrated ? (Math.random() * 0.5 + 0.5) : 0.7 
+                }}
+                animate={{ 
+                  y: '-10%', 
+                  x: hasHydrated ? `${Math.random() * 100}%` : `${(i * 20) % 100}%` 
+                }}
+                transition={{ 
+                  duration: hasHydrated ? (Math.random() * 10 + 10) : 15, 
+                  repeat: Infinity, 
+                  ease: 'linear' 
+                }}
                 className="absolute text-pink-500/20"
               >
                  <svg viewBox="0 0 24 24" className="h-12 w-12 fill-current">
@@ -94,9 +119,17 @@ export function LiveBackground({ themeId, className }: LiveBackgroundProps) {
            {[...Array(50)].map((_, i) => (
               <motion.div
                 key={i}
-                initial={{ y: '-10%', x: `${Math.random() * 100}%` }}
+                initial={{ 
+                  y: '-10%', 
+                  x: hasHydrated ? `${Math.random() * 100}%` : `${(i * 5) % 100}%` 
+                }}
                 animate={{ y: '110%' }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: 'linear', delay: Math.random() * 2 }}
+                transition={{ 
+                  duration: 0.8, 
+                  repeat: Infinity, 
+                  ease: 'linear', 
+                  delay: hasHydrated ? (Math.random() * 2) : (i * 0.05) 
+                }}
                 className="absolute bg-blue-300/30 w-[1px] h-6"
               />
            ))}

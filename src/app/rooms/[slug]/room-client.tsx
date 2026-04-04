@@ -122,7 +122,7 @@ import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
-import { RoomParticipant, Room } from '@/lib/types';
+
 
 import { memo, useCallback } from 'react';
 
@@ -252,7 +252,10 @@ export function RoomClient({ room }: { room: Room }) {
   const [now, setNow] = useState<number | null>(null);
   const hasResetRocketRef = useRef(false);
 
-  const [sessionJoinTime] = useState(() => new Date());
+  const [sessionJoinTime, setSessionJoinTime] = useState<Date | null>(null);
+  useEffect(() => {
+    setSessionJoinTime(new Date());
+  }, []);
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [mountEntries, setMountEntries] = useState<MountEntry[]>([]);
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
@@ -319,12 +322,12 @@ export function RoomClient({ room }: { room: Room }) {
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('ummy_ai_voice_enabled') === 'true';
+  const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
+  useEffect(() => {
+    if (localStorage.getItem('ummy_ai_voice_enabled') === 'true') {
+      setIsAIVoiceEnabled(true);
     }
-    return false;
-  });
+  }, []);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -519,7 +522,7 @@ export function RoomClient({ room }: { room: Room }) {
     try {
       return query(
         collection(firestore, 'chatRooms', room.id, 'messages'),
-        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
+        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime || new Date())),
         orderBy('timestamp', 'asc'),
         limitToLast(50)
       );
@@ -1790,7 +1793,7 @@ export function RoomClient({ room }: { room: Room }) {
             <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
               {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
               {(globalConfig?.globalAnnouncement || room.announcement) &&
-                (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < sessionJoinTime) && (
+                (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < (sessionJoinTime || new Date())) && (
                   <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
                     <div className="relative overflow-hidden bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-4">
                       <div className="space-y-4">
@@ -1836,11 +1839,11 @@ export function RoomClient({ room }: { room: Room }) {
                 const clearedAt = (room as any).chatClearedAt?.toDate?.() || new Date(0);
                 const msgTime = (m as any).timestamp?.toDate?.() || new Date();
                 return msgTime > clearedAt;
-              }).map((msg: any) => {
+              }).map((msg: any, index: number) => {
                 const isMe = msg.senderId === currentUser?.uid;
                 return (
                   <div
-                    key={msg.id || Math.random().toString()}
+                    key={msg.id || `msg-${index}`}
                     onClick={() => {
                       if (msg.senderId) {
                         setSelectedParticipantUid(msg.senderId);
