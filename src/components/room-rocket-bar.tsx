@@ -154,8 +154,8 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil }: 
                     animate={{ 
                       opacity: 0, 
                       scale: 0,
-                      x: (Math.random() - 0.5) * 50,
-                      y: 50 + Math.random() * 50
+                      x: (i - 2) * 10,
+                      y: 60 + (i * 10)
                     }}
                     transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
                     style={{ width: 4, height: 4, left: '50%' }}

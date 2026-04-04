@@ -18,7 +18,7 @@ interface FirebaseProviderProps {
 
 interface UserAuthState {
  user: User | null;
- isUserLoading: boolean;
+ isLoading: boolean;
  userError: Error | null;
 }
 
@@ -29,7 +29,7 @@ export interface FirebaseContextState {
  auth: Auth | null;
  storage: FirebaseStorage | null;
  user: User | null;
- isUserLoading: boolean;
+ isLoading: boolean;
  userError: Error | null;
 }
 
@@ -48,7 +48,7 @@ export const FirebaseContext = createContext<FirebaseContextState>({
   auth: null,
   storage: null,
   user: null,
-  isUserLoading: true,
+  isLoading: true,
   userError: null
 });
 
@@ -60,7 +60,7 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
   const [mounted, setMounted] = useState(false);
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
-    isUserLoading: true,
+    isLoading: true,
     userError: null
   });
 
@@ -75,8 +75,8 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
     try {
       const unsubscribe = onAuthStateChanged(
         auth,
-        (firebaseUser) => setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null }),
-        (err) => setUserAuthState({ user: null, isUserLoading: false, userError: err })
+        (firebaseUser) => setUserAuthState({ user: firebaseUser, isLoading: false, userError: null }),
+        (err) => setUserAuthState({ user: null, isLoading: false, userError: err })
       );
       return () => unsubscribe();
     } catch (e) {
@@ -94,7 +94,7 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
     storage: storage || null,
     // CRITICAL: Force user to null during hydration window
     user: mounted ? userAuthState.user : null,
-    isUserLoading: mounted ? userAuthState.isUserLoading : true,
+    isLoading: mounted ? userAuthState.isLoading : true,
     userError: mounted ? userAuthState.userError : null
   }), [firebaseApp, firestore, auth, storage, userAuthState, mounted]);
 
@@ -124,8 +124,8 @@ export const useAuth = () => useFirebase().auth;
 export const useFirestore = () => useFirebase().firestore;
 export const useStorage = () => useFirebase().storage;
 export const useUser = () => {
-  const { user, isUserLoading, userError } = useFirebase();
-  return { user, isUserLoading, userError };
+  const { user, isLoading, userError } = useFirebase();
+  return { user, isLoading, userError };
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
@@ -136,12 +136,12 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
 export function useCollection<T = any>(query: any) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!query) {
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -149,47 +149,47 @@ export function useCollection<T = any>(query: any) {
       (snapshot: any) => {
         const docs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as T[];
         setData(docs);
-        setLoading(false);
+        setIsLoading(false);
         setError(null);
       },
       (err: any) => {
         setError(err);
-        setLoading(false);
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, [query, firestore]);
 
-  return { data, loading, error };
+  return { data, isLoading, error };
 }
 
 export function useDoc<T = any>(docRef: any) {
   const firestore = useFirestore();
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!docRef) {
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
     const unsubscribe = onSnapshot(docRef, 
       (snapshot: any) => {
         setData(snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() }) as T : null);
-        setLoading(false);
+        setIsLoading(false);
         setError(null);
       },
       (err: any) => {
         setError(err);
-        setLoading(false);
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, [docRef, firestore]);
 
-  return { data, loading, error };
+  return { data, isLoading, error };
 }

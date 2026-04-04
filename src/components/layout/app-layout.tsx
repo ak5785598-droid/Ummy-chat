@@ -35,9 +35,8 @@ import { QuestTracker } from "@/components/quest-tracker";
  * High-Integrity Application Layout.
  * 
  * SUPER NUCLEAR HYDRATION FIX (React #310):
- * Any logic that depends on `pathname` or `window` must return a deterministic
- * default until `hasHydrated` is true. This prevents structural mismatches
- * between server-rendered HTML and first-pass client hydration.
+ * Every useMemo is guarded by hasHydrated.
+ * Standardized on isLoading (FirebaseProvider alignment).
  */
 export function AppLayout({ 
  children, 
@@ -50,7 +49,7 @@ export function AppLayout({
  fullScreen?: boolean;
 }) {
  const pathname = usePathname();
- const { user, isUserLoading } = useUser();
+ const { user, isLoading } = useUser();
  const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid || undefined);
  const auth = useAuth();
  const firestore = useFirestore();
@@ -62,9 +61,10 @@ export function AppLayout({
    setHasHydrated(true);
  }, []);
 
- const isOfficial = useMemo(() => 
-   userProfile?.tags?.some(tag => ['Admin', 'Official', 'Super Admin'].includes(tag)) || false
- , [userProfile]);
+ const isOfficial = useMemo(() => {
+   if (!hasHydrated || !userProfile) return false;
+   return (userProfile as any)?.tags?.some((tag: string) => ['Admin', 'Official', 'Super Admin'].includes(tag)) || false;
+ }, [userProfile, hasHydrated]);
 
  const handleLogout = useCallback(async () => {
     if (!auth || !user || !firestore) return;
@@ -93,9 +93,7 @@ export function AppLayout({
 
  // DETERMINISTIC BOOLS: These MUST be stable during hydration window.
  const deterministicAuth = useMemo(() => {
-   // Whitelist of authentication pages.
    const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
-   // Server-side always defaults to false to avoid structure-swapping unless explicitly a root '/' (which we allow).
    if (!hasHydrated) return false; 
    return fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
  }, [pathname, fullScreen, hasHydrated]);
@@ -108,12 +106,11 @@ export function AppLayout({
  const shouldShowBottomNav = !hideBottomNav && deterministicMainNav && !fullScreen && hasHydrated;
 
  // CALCULATE CONTENT STATE (POST-HYDRATION ONLY)
- const isSyncingData = (isUserLoading || (isProfileLoading && !userProfile)) && !deterministicAuth;
+ const isSyncingData = (isLoading || (isProfileLoading && !userProfile)) && !deterministicAuth;
  const shouldShowChildren = hasHydrated && !isSyncingData;
 
  return (
   <SidebarProvider defaultOpen={!deterministicAuth}>
-    {/* SHELL START: Unconditional structural shell to maintain identical hierarchy */}
     {!deterministicAuth && (
       <Sidebar className="bg-[#140028] border-none text-white">
         <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
@@ -164,7 +161,7 @@ export function AppLayout({
           <span className="text-base font-bold uppercase ">{t.nav.signout}</span>
          </button>
         </SidebarFooter>
-       </Sidebar>
+      </Sidebar>
     )}
 
     <SidebarInset className={cn(

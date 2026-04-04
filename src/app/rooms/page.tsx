@@ -91,35 +91,34 @@ export default function RoomsPage() {
  const { toast } = useToast();
  const router = useRouter();
  const { t, isHydrated } = useTranslation();
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
-  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
+ const [activeCategory, setActiveCategory] = useState("All");
+ const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+ const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
 
-  const followedRoomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
-  }, [firestore, user?.uid]);
+ const followedRoomsQuery = useMemoFirebase(() => {
+   if (!firestore || !user?.uid) return null;
+   return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
+ }, [firestore, user?.uid]);
 
-  const { data: followedRoomsData, loading: isFollowedLoading } = useCollection(followedRoomsQuery);
+ const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
-  const recentRoomsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
-  }, [firestore, user?.uid]);
+ const recentRoomsQuery = useMemoFirebase(() => {
+   if (!firestore || !user?.uid) return null;
+   return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
+ }, [firestore, user?.uid]);
 
-  const { data: recentRoomsData, loading: isRecentLoading } = useCollection(recentRoomsQuery);
+ const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
 
-  const filteredRecentRooms = useMemo(() => {
-    // NUCLEAR SHIELD: Prevent structural variation until hydration is confirmed
-    if (!recentRoomsData || !isHydrated) return [];
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    return recentRoomsData.filter((visit: any) => {
-      const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
-      return visitTime > oneDayAgo;
-    });
-  }, [recentRoomsData, isHydrated]);
+ const filteredRecentRooms = useMemo(() => {
+   if (!recentRoomsData || !isHydrated) return [];
+   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+   return recentRoomsData.filter((visit: any) => {
+     const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
+     return visitTime > oneDayAgo;
+   });
+ }, [recentRoomsData, isHydrated]);
 
- // ⚡ DAILY QUEST INITIALIZER: High-Fidelity Reset logic
+ // ⚡ DAILY QUEST INITIALIZER
  useQuestInitializer();
 
  const questsQuery = useMemoFirebase(() => {
@@ -127,9 +126,7 @@ export default function RoomsPage() {
    return collection(firestore, 'users', user.uid, 'quests');
  }, [firestore, user?.uid]);
 
- const { data: questsData, loading: isQuestsLoading } = useCollection(questsQuery);
-
- const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
+ const { data: questsData, isLoading: isQuestsLoading } = useCollection(questsQuery);
 
  const CATEGORIES = [
   { id: "All", label: t.home.categories.all },
@@ -148,7 +145,7 @@ export default function RoomsPage() {
   );
  }, [firestore]);
 
- const { data: roomsData, loading: isRoomsLoading } = useCollection(roomsQuery);
+ const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
  const myRoomQuery = useMemoFirebase(() => {
   if (!firestore || !user) return null;
@@ -161,7 +158,6 @@ export default function RoomsPage() {
  const { data: bannerConfig } = useDoc(bannerRef);
 
  const displaySlides = useMemo(() => {
-  // NUCLEAR SHIELD
   if (!isHydrated || !bannerConfig?.slides || bannerConfig.slides.length === 0) {
     return [
      { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
@@ -172,7 +168,6 @@ export default function RoomsPage() {
  }, [bannerConfig, isHydrated]);
 
  const displayRooms = useMemo(() => {
-  // NUCLEAR SHIELD
   if (!roomsData || !isHydrated) return [];
   
   let filtered = roomsData.filter(room => {
@@ -193,7 +188,7 @@ export default function RoomsPage() {
 
  return (
   <AppLayout>
-    <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700">
+    <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900">
      
      <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
        <div className="pt-0 flex items-center justify-between w-full">
@@ -245,15 +240,15 @@ export default function RoomsPage() {
                  )}
                  <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                  {!slide.imageUrl && (
-                   <div className="relative z-10 px-2">
-                     <div className="flex items-center gap-2 mb-2">
-                       <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
-                         <Icon className="h-5 w-5 text-white animate-pulse" />
-                       </div>
-                       <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
-                     </div>
-                     <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
-                   </div>
+                    <div className="relative z-10 px-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                          <Icon className="h-5 w-5 text-white animate-pulse" />
+                        </div>
+                        <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                      </div>
+                      <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
+                    </div>
                  )}
                </div>
               </CarouselItem>
@@ -293,198 +288,193 @@ export default function RoomsPage() {
            </div>
          </div>
 
-       <div className="px-2.5 mb-1.5">
-          <div className="flex gap-2.5">
-             <RankingCard />
-             <FamilyCard />
-             <CpCard />
+        <div className="px-2.5 mb-1.5">
+           <div className="flex gap-2.5">
+              <RankingCard />
+              <FamilyCard />
+              <CpCard />
+           </div>
+        </div>
+
+        <div className="px-3 sticky top-0 z-40 bg-slate-50/80 backdrop-blur-md py-1 mb-1 border-b border-slate-200/50">
+          <div className="w-full overflow-x-auto no-scrollbar pb-1">
+            <div className="flex gap-1.5 pt-0.5">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                    activeCategory === cat.id 
+                      ? "bg-slate-900 text-white shadow-md shadow-slate-900/20" 
+                      : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
-       </div>
+        </div>
 
-       <div className="px-3 sticky top-0 z-40 bg-slate-50/80 backdrop-blur-md py-1 mb-1 border-b border-slate-200/50">
-         <div className="w-full overflow-x-auto no-scrollbar pb-1">
-           <div className="flex gap-1.5 pt-0.5">
-             {CATEGORIES.map((cat) => (
-               <button
-                 key={cat.id}
-                 onClick={() => setActiveCategory(cat.id)}
-                 className={cn(
-                   "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
-                   activeCategory === cat.id 
-                     ? "bg-slate-900 text-white shadow-md shadow-slate-900/20" 
-                     : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
-                 )}
-               >
-                 {cat.label}
-               </button>
-             ))}
-           </div>
-         </div>
-       </div>
-
-       <main className="px-3 flex-1 pb-6">
-        {(!isHydrated || (isRoomsLoading && !roomsData)) ? (
-         <div className="grid grid-cols-2 gap-x-2 gap-y-3">
-          {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
-         </div>
-        ) : displayRooms.length > 0 ? (
-         <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
-          {displayRooms.map((room: any) => (
-           <ChatRoomCard key={room.id} room={room} variant="modern" />
-          ))}
-         </div>
-        ) : (
-         <div className="py-12 text-center space-y-3 opacity-40">
-           <Ghost className="h-8 w-8 mx-auto text-slate-300" />
-           <p className="font-bold uppercase text-[9px] tracking-wider">{t.home.noActive}</p>
-         </div>
-        )}
-       </main>
-      </>
-     ) : (
-       <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
-         {/* Profile Card Redesign: Horizontal with My Room shortcut */}
-         <section className="mb-6 mt-2">
-           <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
-             
-             <div className="flex items-center gap-4 relative z-10 w-full">
-               <div className="relative shrink-0">
-                 <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
-                   <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
-                   <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
-                 </Avatar>
-                 <div className="absolute -bottom-1 -right-1">
-                   <VipBadge level={userDoc?.level?.rich || 1} />
-                 </div>
-               </div>
-               
-               <div className="flex flex-col flex-1 min-w-0 pr-2">
-                 <h2 className="text-lg font-bold text-slate-900 truncate">{userDoc?.username || 'Member'}</h2>
-                 <div className="flex items-center gap-1">
-                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
-                 </div>
-                 <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
-                   <GoldCoinIcon className="h-2.5 w-2.5" />
-                   <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
-                 </div>
-               </div>
-
-               <button 
-                 onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
-                 className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
-               >
-                 My Room
-               </button>
-             </div>
-           </div>
-         </section>
-
-         {/* Sub-Tabs: Following / Recent */}
-         <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
-           <button 
-             onClick={() => setMeTab('following')} 
-             className={cn(
-               "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-               meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
-             )}
-           >
-             Following
-             {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-           </button>
-           <button 
-             onClick={() => setMeTab('recent')} 
-             className={cn(
-               "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-               meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
-             )}
-           >
-             Recent
-             {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-           </button>
-         </div>
-
-         {/* Following Tab Content */}
-         {meTab === 'following' && (
-           <section className="animate-in fade-in slide-in-from-left-4 duration-300">
-             {isFollowedLoading ? (
-               <div className="grid grid-cols-2 gap-3">
-                 {Array.from({ length: 4 }).map((_, i) => (
-                   <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                 ))}
-               </div>
-             ) : followedRoomsData && followedRoomsData.length > 0 ? (
-               <div className="grid grid-cols-2 gap-3">
-                 {followedRoomsData.map((roomRef: any) => (
-                   <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                     <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
-                        <Image 
-                         src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                         alt={roomRef.title}
-                         fill
-                         className="object-cover group-hover:scale-105 transition-transform duration-500"
-                         unoptimized
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                           <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
-                        </div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             ) : (
-               <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                 No rooms followed yet
-               </div>
-             )}
-           </section>
+        <main className="px-3 flex-1 pb-6">
+         {(!isHydrated || (isRoomsLoading && !roomsData)) ? (
+          <div className="grid grid-cols-2 gap-x-2 gap-y-3">
+           {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
+          </div>
+         ) : displayRooms.length > 0 ? (
+          <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
+           {displayRooms.map((room: any) => (
+            <ChatRoomCard key={room.id} room={room} variant="modern" />
+           ))}
+          </div>
+         ) : (
+          <div className="py-12 text-center space-y-3 opacity-40">
+            <Ghost className="h-8 w-8 mx-auto text-slate-300" />
+            <p className="font-bold uppercase text-[9px] tracking-wider">{t.home.noActive}</p>
+          </div>
          )}
+        </main>
+       </>
+      ) : (
+        <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
+          <section className="mb-6 mt-2">
+            <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
+              
+              <div className="flex items-center gap-4 relative z-10 w-full">
+                <div className="relative shrink-0">
+                  <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
+                    <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
+                    <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1">
+                    <VipBadge level={userDoc?.level?.rich || 1} />
+                  </div>
+                </div>
+                
+                <div className="flex flex-col flex-1 min-w-0 pr-2">
+                  <h2 className="text-lg font-bold text-slate-900 truncate">{userDoc?.username || 'Member'}</h2>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
+                    <GoldCoinIcon className="h-2.5 w-2.5" />
+                    <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
+                  </div>
+                </div>
 
-         {/* Recent Tab Content */}
-         {meTab === 'recent' && (
-           <section className="animate-in fade-in slide-in-from-right-4 duration-300">
-             {isRecentLoading ? (
-               <div className="grid grid-cols-2 gap-3">
-                 {Array.from({ length: 4 }).map((_, i) => (
-                   <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                 ))}
-               </div>
-             ) : filteredRecentRooms.length > 0 ? (
-               <div className="grid grid-cols-2 gap-3">
-                 {filteredRecentRooms.map((visit: any) => (
-                   <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                     <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
-                        <Image 
-                         src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                         alt={visit.title}
-                         fill
-                         className="object-cover group-hover:scale-105 transition-transform duration-500"
-                         unoptimized
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
-                           <span className="text-[8px] font-black text-white uppercase">Recently</span>
-                        </div>
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                           <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
-                        </div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             ) : (
-               <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                 No recent visits (last 24h)
-               </div>
-             )}
-           </section>
-         )}
-       </main>
-     )}
+                <button 
+                  onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
+                  className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+                >
+                  My Room
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
+            <button 
+              onClick={() => setMeTab('following')} 
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
+                meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
+              )}
+            >
+              Following
+              {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+            </button>
+            <button 
+              onClick={() => setMeTab('recent')} 
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
+                meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
+              )}
+            >
+              Recent
+              {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+            </button>
+          </div>
+
+          {meTab === 'following' && (
+            <section className="animate-in fade-in slide-in-from-left-4 duration-300">
+              {isFollowedLoading ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : followedRoomsData && followedRoomsData.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {followedRoomsData.map((roomRef: any) => (
+                    <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                      <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                         <Image 
+                          src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                          alt={roomRef.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          unoptimized
+                         />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                         <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                  No rooms followed yet
+                </div>
+              )}
+            </section>
+          )}
+
+          {meTab === 'recent' && (
+            <section className="animate-in fade-in slide-in-from-right-4 duration-300">
+              {isRecentLoading ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : filteredRecentRooms.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredRecentRooms.map((visit: any) => (
+                    <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                      <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                         <Image 
+                          src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                          alt={visit.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          unoptimized
+                         />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                         <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
+                            <span className="text-[8px] font-black text-white uppercase">Recently</span>
+                         </div>
+                         <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                  No recent visits (last 24h)
+                </div>
+              )}
+            </section>
+          )}
+        </main>
+      )}
     </div>
     <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
    </AppLayout>
  );
 }
-
