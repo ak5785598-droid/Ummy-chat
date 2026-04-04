@@ -15,7 +15,7 @@ export function QuestTracker() {
   const firestore = useFirestore();
   const { activeRoom } = useRoomContext();
   const pathname = usePathname();
-  const lastUpdateRef = useRef<number>(Date.now());
+  const lastUpdateRef = useRef<number>(0);
 
   useEffect(() => {
     if (!user || !firestore) return;

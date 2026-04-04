@@ -651,9 +651,15 @@ const SidebarMenuSkeleton = React.forwardRef<
  }
 >(({ className, showIcon = false, ...props }, ref) => {
  // Random width between 50 to 90%.
- const width = React.useMemo(() => {
-  return `${Math.floor(Math.random() * 40) + 50}%`
+ const [isHydrated, setIsHydrated] = React.useState(false)
+ React.useEffect(() => {
+  setIsHydrated(true)
  }, [])
+
+ const width = React.useMemo(() => {
+  if (!isHydrated) return "80%"
+  return `${Math.floor(Math.random() * 40) + 50}%`
+ }, [isHydrated])
 
  return (
   <div

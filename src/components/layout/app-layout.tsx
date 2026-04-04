@@ -34,9 +34,10 @@ import { QuestTracker } from "@/components/quest-tracker";
 /**
  * High-Integrity Application Layout.
  * 
- * NUCLEAR HYDRATION FIX (React #310):
- * We must ensure the structural hierarchy (The Shell) is identical on the server and client.
- * We accomplish this by rendering the full shell unconditionally and only gating the INNER content.
+ * SUPER NUCLEAR HYDRATION FIX (React #310):
+ * Any logic that depends on `pathname` or `window` must return a deterministic
+ * default until `hasHydrated` is true. This prevents structural mismatches
+ * between server-rendered HTML and first-pass client hydration.
  */
 export function AppLayout({ 
  children, 
@@ -90,21 +91,30 @@ export function AppLayout({
     }
   }, [auth, user, firestore]);
 
- const isMainNav = pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
- const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
- 
- // WHITESPACE SENSITIVE: This whitelist must match across environments 100%.
- const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
- const isAuthScreen = fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
+ // DETERMINISTIC BOOLS: These MUST be stable during hydration window.
+ const deterministicAuth = useMemo(() => {
+   // Whitelist of authentication pages.
+   const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
+   // Server-side always defaults to false to avoid structure-swapping unless explicitly a root '/' (which we allow).
+   if (!hasHydrated) return false; 
+   return fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
+ }, [pathname, fullScreen, hasHydrated]);
+
+ const deterministicMainNav = useMemo(() => {
+   if (!hasHydrated) return false;
+   return pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
+ }, [pathname, hasHydrated]);
+
+ const shouldShowBottomNav = !hideBottomNav && deterministicMainNav && !fullScreen && hasHydrated;
 
  // CALCULATE CONTENT STATE (POST-HYDRATION ONLY)
- const isSyncingData = (isUserLoading || (isProfileLoading && !userProfile)) && !isAuthScreen;
+ const isSyncingData = (isUserLoading || (isProfileLoading && !userProfile)) && !deterministicAuth;
  const shouldShowChildren = hasHydrated && !isSyncingData;
 
  return (
-  <SidebarProvider defaultOpen={!isAuthScreen}>
-    {/* SHELL START: This wrapper exists on both server and client regardless of state */}
-    {!isAuthScreen && (
+  <SidebarProvider defaultOpen={!deterministicAuth}>
+    {/* SHELL START: Unconditional structural shell to maintain identical hierarchy */}
+    {!deterministicAuth && (
       <Sidebar className="bg-[#140028] border-none text-white">
         <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
          <div className="flex items-center gap-3">
@@ -159,16 +169,15 @@ export function AppLayout({
 
     <SidebarInset className={cn(
       "bg-background flex-1 flex flex-col p-0 w-full max-w-full h-screen overflow-hidden",
-      isAuthScreen ? "max-w-full" : ""
+      deterministicAuth ? "max-w-full" : ""
     )}>
      <main className={cn(
        "flex-1 w-full overflow-y-auto bg-ummy-gradient relative no-scrollbar overscroll-contain", 
        "touch-auto", 
        shouldShowBottomNav && "pb-32"
      )} style={{ WebkitOverflowScrolling: 'touch' }}>
-      {!isAuthScreen && <QuestTracker />}
+      {!deterministicAuth && hasHydrated && <QuestTracker />}
       <div className="min-h-full w-full">
-       {/* INTERNAL GATING ONLY: Prevents structural mismatches at the Layout level */}
        {!shouldShowChildren ? (
           <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
             <Loader className="h-10 w-10 animate-spin text-primary" />
