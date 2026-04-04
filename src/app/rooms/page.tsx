@@ -90,15 +90,10 @@ export default function RoomsPage() {
  const { userProfile: userDoc, isLoading: isUserLoading } = useUserProfile(user?.uid);
  const { toast } = useToast();
  const router = useRouter();
- const { t } = useTranslation();
+ const { t, isHydrated } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
   const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
 
   const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -115,13 +110,14 @@ export default function RoomsPage() {
   const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
 
   const filteredRecentRooms = useMemo(() => {
-    if (!recentRoomsData || !hasHydrated) return [];
+    // NUCLEAR SHIELD: Prevent structural variation until hydration is confirmed
+    if (!recentRoomsData || !isHydrated) return [];
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return recentRoomsData.filter((visit: any) => {
       const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
       return visitTime > oneDayAgo;
     });
-  }, [recentRoomsData, hasHydrated]);
+  }, [recentRoomsData, isHydrated]);
 
  // ⚡ DAILY QUEST INITIALIZER: High-Fidelity Reset logic
  useQuestInitializer();
@@ -165,17 +161,19 @@ export default function RoomsPage() {
  const { data: bannerConfig } = useDoc(bannerRef);
 
  const displaySlides = useMemo(() => {
-  if (bannerConfig?.slides && bannerConfig.slides.length > 0) {
-   return bannerConfig.slides;
+  // NUCLEAR SHIELD
+  if (!isHydrated || !bannerConfig?.slides || bannerConfig.slides.length === 0) {
+    return [
+     { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
+     { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
+    ];
   }
-  return [
-   { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
-   { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
-  ];
- }, [bannerConfig]);
+  return bannerConfig.slides;
+ }, [bannerConfig, isHydrated]);
 
  const displayRooms = useMemo(() => {
-  if (!roomsData) return [];
+  // NUCLEAR SHIELD
+  if (!roomsData || !isHydrated) return [];
   
   let filtered = roomsData.filter(room => {
    const cat = room.category || 'Chat';
@@ -191,7 +189,7 @@ export default function RoomsPage() {
    if (!a.isPinned && b.isPinned) return 1;
    return (b.participantCount || 0) - (a.participantCount || 0);
   });
- }, [roomsData, activeCategory]);
+ }, [roomsData, activeCategory, isHydrated]);
 
  return (
   <AppLayout>

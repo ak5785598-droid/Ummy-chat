@@ -33,9 +33,10 @@ import { QuestTracker } from "@/components/quest-tracker";
 
 /**
  * High-Integrity Application Layout.
- * Re-certified for React 18 Concurrent Mode & SSR Stability.
  * 
- * Permanently fixes Error #310 by decoupling hydration from async data states.
+ * NUCLEAR HYDRATION FIX (React #310):
+ * We must ensure the structural hierarchy (The Shell) is identical on the server and client.
+ * We accomplish this by rendering the full shell unconditionally and only gating the INNER content.
  */
 export function AppLayout({ 
  children, 
@@ -92,25 +93,17 @@ export function AppLayout({
  const isMainNav = pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
  
- // DETERMINISTIC AUTH SCREEN DETECTION
- const isAuthScreen = fullScreen || pathname?.startsWith('/login') || pathname === '/' || pathname === '/terms' || pathname === '/privacy-policy' || pathname === '/refund-policy' || pathname === '/contact' || pathname === '/help-center';
+ // WHITESPACE SENSITIVE: This whitelist must match across environments 100%.
+ const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
+ const isAuthScreen = fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
 
- // [PHASE 1] HYDRATION SYNC (STRICT)
- // Prevents #310 by ensuring server-rendered splash exactly matches initial client state.
- if (!hasHydrated && !isAuthScreen) {
-  return (
-    <div className="fixed inset-0 bg-[#140028] flex flex-col items-center justify-center z-[9999] gap-4">
-      <Loader className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
-    </div>
-  );
- }
-
- // [PHASE 2] DATA SYNC (POST-HYDRATION)
- const isSyncingData = !isAuthScreen && (isUserLoading || (isProfileLoading && !userProfile));
+ // CALCULATE CONTENT STATE (POST-HYDRATION ONLY)
+ const isSyncingData = (isUserLoading || (isProfileLoading && !userProfile)) && !isAuthScreen;
+ const shouldShowChildren = hasHydrated && !isSyncingData;
 
  return (
   <SidebarProvider defaultOpen={!isAuthScreen}>
+    {/* SHELL START: This wrapper exists on both server and client regardless of state */}
     {!isAuthScreen && (
       <Sidebar className="bg-[#140028] border-none text-white">
         <SidebarHeader className="bg-transparent p-6 pb-10 pt-safe">
@@ -175,8 +168,9 @@ export function AppLayout({
      )} style={{ WebkitOverflowScrolling: 'touch' }}>
       {!isAuthScreen && <QuestTracker />}
       <div className="min-h-full w-full">
-       {isSyncingData ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 opacity-50">
+       {/* INTERNAL GATING ONLY: Prevents structural mismatches at the Layout level */}
+       {!shouldShowChildren ? (
+          <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
             <Loader className="h-10 w-10 animate-spin text-primary" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
           </div>
@@ -184,7 +178,7 @@ export function AppLayout({
       </div>
      </main>
 
-     {!isAuthScreen && shouldShowBottomNav && (
+     {shouldShowChildren && shouldShowBottomNav && (
        <nav 
         style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom) + 12px)', left: '4%', right: '4%', width: '92%', maxWidth: '500px', margin: '0 auto', zIndex: 999 }}
         className="flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-14 shrink-0 px-2 rounded-2xl border-2 border-primary/20 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
@@ -215,7 +209,7 @@ export function AppLayout({
        </nav>
      )}
 
-     {!isAuthScreen && (
+     {shouldShowChildren && (
        <>
          <FloatingRoomBar />
          <RoomMiniPlayer />
@@ -223,7 +217,7 @@ export function AppLayout({
      )}
     </SidebarInset>
 
-    {!isAuthScreen && userProfile?.banStatus?.isBanned && (
+    {shouldShowChildren && userProfile?.banStatus?.isBanned && (
        <BanDialog 
          isOpen={true} 
          onClose={handleLogout} 
@@ -232,7 +226,7 @@ export function AppLayout({
        />
     )}
 
-    {!isAuthScreen && showQuests && (
+    {shouldShowChildren && showQuests && (
       <DailyQuestsDialog isOpen={showQuests} onClose={() => setShowQuests(false)} />
     )}
   </SidebarProvider>
