@@ -151,7 +151,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  if (isLaunching) return <div className="h-full w-full bg-[#0f071a] flex items-center justify-center text-yellow-400 font-bold">PREPARING 3D FRUIT WORLD...</div>;
 
  return (
-  <div className="flex flex-col h-[100dvh] w-full bg-[#120821] overflow-hidden text-white font-sans selection:bg-pink-500/30">
+  <div className="fixed inset-0 flex flex-col bg-[#120821] overflow-hidden text-white font-sans selection:bg-pink-500/30">
    
    <AnimatePresence>
     {gameState === 'result' && (
@@ -161,14 +161,12 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* --- 3D HEADER --- */}
-   <header className="p-4 pt-6 flex flex-col w-full z-10">
-    <div className="flex items-center justify-between w-full mb-6">
+   {/* --- 3D HEADER (Only Title & Buttons) --- */}
+   <header className="px-4 pt-6 pb-2 flex items-center justify-between w-full z-10">
       <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md border border-white/10">
         {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
       </button>
       
-      {/* Title Added Here */}
       <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 tracking-[0.1em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] filter">
         FRUIT PARTY
       </h1>
@@ -176,12 +174,15 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 shadow-lg shadow-red-500/5">
         <X size={20}/>
       </button>
-    </div>
+   </header>
 
-    {/* Game History moved slightly down */}
-    <div className="text-center flex flex-col items-center">
-      <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mb-2 font-black">Round History</p>
-      <div className="flex gap-2 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-2xl">
+   {/* --- 3D MAIN AREA --- */}
+   <main className="flex-1 flex flex-col items-center justify-center px-4 relative perspective-1000">
+    
+    {/* ROUND HISTORY (Moved closely above the grid) */}
+    <div className="text-center flex flex-col items-center mb-3 z-10 mt-[-10px]">
+      <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mb-1.5 font-black">Round History</p>
+      <div className="flex gap-2 bg-black/40 p-1.5 px-3 rounded-2xl border border-white/5 shadow-2xl">
         {history.map((id, i) => (
           <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} key={i} className="text-xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             {ITEMS.find(it => it.id === id)?.emoji}
@@ -189,97 +190,96 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
     </div>
-   </header>
 
-   {/* --- 3D MAIN AREA --- */}
-   <main className="flex-1 flex items-center justify-center px-4 relative perspective-1000">
-    
-    {/* Visualizers with Neon Glow */}
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-end gap-1 h-48">
-        {visualizerBars.slice(0, 8).map((height, i) => (
-            <motion.div key={i} className="w-1.5 bg-gradient-to-t from-pink-600 to-pink-300 rounded-full shadow-[0_0_15px_pink]" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.3, delay: i*0.05 }} />
-        ))}
-    </div>
-    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-end gap-1 h-48">
-        {visualizerBars.slice(8, 16).map((height, i) => (
-            <motion.div key={i} className="w-1.5 bg-gradient-to-t from-blue-600 to-blue-300 rounded-full shadow-[0_0_15px_#3b82f6]" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.3, delay: i*0.05 }} />
-        ))}
-    </div>
+    {/* Grid & Visualizers Wrapper */}
+    <div className="relative flex justify-center items-center w-full max-w-[360px]">
+        {/* Visualizers with Neon Glow */}
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 flex items-end gap-1 h-44">
+            {visualizerBars.slice(0, 8).map((height, i) => (
+                <motion.div key={i} className="w-1.5 bg-gradient-to-t from-pink-600 to-pink-300 rounded-full shadow-[0_0_15px_pink]" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.3, delay: i*0.05 }} />
+            ))}
+        </div>
+        <div className="absolute -right-1 top-1/2 -translate-y-1/2 flex items-end gap-1 h-44">
+            {visualizerBars.slice(8, 16).map((height, i) => (
+                <motion.div key={i} className="w-1.5 bg-gradient-to-t from-blue-600 to-blue-300 rounded-full shadow-[0_0_15px_#3b82f6]" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.3, delay: i*0.05 }} />
+            ))}
+        </div>
 
-      {/* Main 3D Grid Case */}
-      <div className="relative p-2 rounded-[3rem] transform-gpu rotate-x-2">
-        {/* Animated Gradient Outer Glow */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[3rem] blur-xl opacity-30" />
-        
-        {/* The 3D Border Case */}
-        <div className="relative p-[8px] rounded-[2.8rem] bg-gradient-to-b from-white/20 to-black/40 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[2.8rem]" />
+        {/* Main 3D Grid Case */}
+        <div className="relative p-1.5 rounded-[3rem] transform-gpu rotate-x-2 z-10 w-full max-w-[320px]">
+            {/* Animated Gradient Outer Glow */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[3rem] blur-xl opacity-30" />
             
-            <div className="relative bg-[#1e0d36] p-5 rounded-[2.5rem] overflow-hidden">
-                <div className="grid grid-cols-3 gap-4">
-                    {ITEMS.map((item, idx) => {
-                    if (item.id === 'timer') {
+            {/* The 3D Border Case */}
+            <div className="relative p-[8px] rounded-[2.8rem] bg-gradient-to-b from-white/20 to-black/40 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[2.8rem]" />
+                
+                <div className="relative bg-[#1e0d36] p-4 rounded-[2.5rem] overflow-hidden">
+                    <div className="grid grid-cols-3 gap-3">
+                        {ITEMS.map((item, idx) => {
+                        if (item.id === 'timer') {
+                            return (
+                            <div key="timer" className="w-full aspect-square bg-black/60 rounded-[1.8rem] flex items-center justify-center border-b-4 border-black shadow-inner">
+                                <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity }} className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_10px_gold]">
+                                {gameState === 'betting' ? timeLeft : '!!!'}
+                                </motion.span>
+                            </div>
+                            );
+                        }
                         return (
-                        <div key="timer" className="w-24 h-24 bg-black/60 rounded-[2rem] flex items-center justify-center border-b-4 border-black shadow-inner">
-                            <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity }} className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_10px_gold]">
-                            {gameState === 'betting' ? timeLeft : '!!!'}
-                            </motion.span>
-                        </div>
+                            <motion.button
+                                key={item.id}
+                                whileHover={{ scale: 1.05, translateZ: 20 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handlePlaceBet(item.id)}
+                                className={cn(
+                                    "relative w-full aspect-square rounded-[1.8rem] flex flex-col items-center justify-center transition-all",
+                                    "bg-gradient-to-b from-white/10 to-transparent border-t border-white/20 shadow-xl",
+                                    "before:absolute before:inset-0 before:rounded-[1.8rem] before:bg-black/20 before:-z-10",
+                                    highlightIdx === idx ? "ring-4 ring-yellow-400 shadow-[0_0_40px_gold] brightness-125 z-10" : "opacity-90"
+                                )}
+                            >
+                                <span className="text-[2.5rem] mb-1 filter drop-shadow-lg leading-none">{item.emoji}</span>
+                                <span className="text-[9px] font-black text-white/40 uppercase">{item.label}</span>
+                                
+                                {myBets[item.id] > 0 && (
+                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-xl shadow-lg border-2 border-[#1e0d36]">
+                                        {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'K' : myBets[item.id]}
+                                    </motion.div>
+                                )}
+                            </motion.button>
                         );
-                    }
-                    return (
-                        <motion.button
-                            key={item.id}
-                            whileHover={{ scale: 1.05, translateZ: 20 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handlePlaceBet(item.id)}
-                            className={cn(
-                                "relative w-24 h-24 rounded-[2rem] flex flex-col items-center justify-center transition-all",
-                                "bg-gradient-to-b from-white/10 to-transparent border-t border-white/20 shadow-xl",
-                                "before:absolute before:inset-0 before:rounded-[2rem] before:bg-black/20 before:-z-10",
-                                highlightIdx === idx ? "ring-4 ring-yellow-400 shadow-[0_0_40px_gold] brightness-125 z-10" : "opacity-90"
-                            )}
-                        >
-                            <span className="text-5xl mb-1 filter drop-shadow-lg">{item.emoji}</span>
-                            <span className="text-[10px] font-black text-white/40 uppercase">{item.label}</span>
-                            
-                            {myBets[item.id] > 0 && (
-                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-xl shadow-lg border-2 border-[#1e0d36]">
-                                    {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'K' : myBets[item.id]}
-                                </motion.div>
-                            )}
-                        </motion.button>
-                    );
-                    })}
-                </div>
+                        })}
+                    </div>
 
-                {/* 3D Hint Pointer */}
-                <AnimatePresence>
-                    {gameState === 'betting' && (
-                        <motion.div
-                            className="absolute z-50 pointer-events-none"
-                            animate={{ 
-                                x: (hintTargetIdx % 3) * 112 + 60,
-                                y: Math.floor(hintTargetIdx / 3) * 112 + 60
-                            }}
-                        >
-                            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity }}>
-                                <Pointer size={50} className="text-yellow-400 drop-shadow-[0_0_20px_gold] -rotate-45" />
+                    {/* 3D Hint Pointer */}
+                    <AnimatePresence>
+                        {gameState === 'betting' && (
+                            <motion.div
+                                className="absolute z-50 pointer-events-none"
+                                animate={{ 
+                                    x: (hintTargetIdx % 3) * 92 + 50,
+                                    y: Math.floor(hintTargetIdx / 3) * 92 + 50
+                                }}
+                            >
+                                <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity }}>
+                                    <Pointer size={40} className="text-yellow-400 drop-shadow-[0_0_20px_gold] -rotate-45" />
+                                </motion.div>
                             </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
         </div>
-      </div>
+    </div>
    </main>
 
    {/* --- 3D FOOTER --- */}
-   <footer className="bg-[#1a0b2e]/90 backdrop-blur-2xl p-6 pb-8 rounded-t-[4rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-20">
-    <div className="max-w-md mx-auto space-y-5">
+   <footer className="bg-[#1a0b2e]/90 backdrop-blur-2xl p-5 pb-8 rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-20">
+    <div className="max-w-md mx-auto space-y-4">
       
-      {/* 3D Chips Selection (Height reduced to h-11 and moved up slightly via layout) */}
-      <div className="flex justify-between gap-3 perspective-500">
+      {/* 3D Chips Selection (Gap reduced to gap-1.5) */}
+      <div className="flex justify-between gap-1.5 perspective-500">
         {CHIPS.map(chip => (
           <button 
             key={chip.value} 
@@ -291,20 +291,19 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
               selectedChip === chip.value ? "-translate-y-2 ring-[3px] ring-white" : "opacity-40 grayscale-[0.5]"
             )}
           >
-            <span className="text-white font-black text-xs drop-shadow-md">{chip.label}</span>
+            <span className="text-white font-black text-[11px] drop-shadow-md">{chip.label}</span>
           </button>
         ))}
       </div>
 
       {/* User ID & Coin Balance 3D Card */}
-      <div className="relative group overflow-hidden bg-gradient-to-r from-black/60 to-black/30 p-5 rounded-[2rem] border border-white/10 shadow-inner">
+      <div className="relative group overflow-hidden bg-gradient-to-r from-black/60 to-black/30 p-4 rounded-[2rem] border border-white/10 shadow-inner">
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
                 <div className="bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] p-3 rounded-2xl rotate-12 flex-shrink-0">
-                    <GoldCoinIcon className="h-6 w-6 text-black" />
+                    <GoldCoinIcon className="h-5 w-5 text-black" />
                 </div>
                 <div className="flex flex-col">
-                    {/* ID Shown Here */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="bg-white/10 px-2 py-0.5 rounded text-[9px] text-white/60 font-black uppercase tracking-wider">
                         ID: {currentUser?.uid ? currentUser.uid.slice(0, 8).toUpperCase() : 'GUEST'}
@@ -317,7 +316,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                 </div>
             </div>
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}>
-                <Pointer size={24} className="text-white/10" />
+                <Pointer size={22} className="text-white/10" />
             </motion.div>
         </div>
       </div>
