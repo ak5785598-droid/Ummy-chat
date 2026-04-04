@@ -10,7 +10,8 @@ import {
   useMemoFirebase, 
   useFirestore, 
   useDoc,
-  updateDocumentNonBlocking
+  updateDocumentNonBlocking,
+  useFirebase
 } from '@/firebase';
 import { 
   collection, 
@@ -90,7 +91,8 @@ export default function RoomsPage() {
  const { userProfile: userDoc, isLoading: isUserLoading } = useUserProfile(user?.uid);
  const { toast } = useToast();
  const router = useRouter();
- const { t, isHydrated } = useTranslation();
+ const { t } = useTranslation();
+ const { isHydrated } = useFirebase();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');

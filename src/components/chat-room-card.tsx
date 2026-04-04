@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useFirebase } from '@/firebase/provider';
 
 interface ChatRoomCardProps {
  room: any;
@@ -18,10 +19,7 @@ interface ChatRoomCardProps {
  * Features ultra-premium backdrop blurs and heavy font integrations.
  */
 export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
- const [isHydrated, setIsHydrated] = React.useState(false);
- React.useEffect(() => {
-   setIsHydrated(true);
- }, []);
+  const { isHydrated } = useFirebase();
 
  const { userProfile: owner } = useUserProfile(room?.ownerId);
 

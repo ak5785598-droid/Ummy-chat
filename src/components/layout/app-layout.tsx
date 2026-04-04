@@ -18,7 +18,7 @@ import {
  SidebarMenuButton,
  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useUser, useAuth, useFirestore } from "@/firebase";
+import { useUser, useAuth, useFirestore, useFirebase } from "@/firebase";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { UmmyLogoIcon } from "@/components/icons";
 import { signOut } from "firebase/auth";
@@ -35,7 +35,7 @@ import { QuestTracker } from "@/components/quest-tracker";
  * High-Integrity Application Layout.
  * 
  * SUPER NUCLEAR HYDRATION FIX (React #310):
- * Every useMemo is guarded by hasHydrated.
+ * Every useMemo is guarded by isHydrated.
  * Standardized on isLoading (FirebaseProvider alignment).
  */
 export function AppLayout({ 
@@ -55,16 +55,12 @@ export function AppLayout({
  const firestore = useFirestore();
  const { t } = useTranslation();
  const [showQuests, setShowQuests] = useState(false);
- const [hasHydrated, setHasHydrated] = useState(false);
-
- useEffect(() => {
-   setHasHydrated(true);
- }, []);
+ const { isHydrated } = useFirebase();
 
  const isOfficial = useMemo(() => {
-   if (!hasHydrated || !userProfile) return false;
+   if (!isHydrated || !userProfile) return false;
    return (userProfile as any)?.tags?.some((tag: string) => ['Admin', 'Official', 'Super Admin'].includes(tag)) || false;
- }, [userProfile, hasHydrated]);
+ }, [userProfile, isHydrated]);
 
  const handleLogout = useCallback(async () => {
     if (!auth || !user || !firestore) return;
@@ -94,20 +90,20 @@ export function AppLayout({
  // DETERMINISTIC BOOLS: These MUST be stable during hydration window.
  const deterministicAuth = useMemo(() => {
    const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
-   if (!hasHydrated) return false; 
+   if (!isHydrated) return false; 
    return fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
- }, [pathname, fullScreen, hasHydrated]);
+ }, [pathname, fullScreen, isHydrated]);
 
  const deterministicMainNav = useMemo(() => {
-   if (!hasHydrated) return false;
+   if (!isHydrated) return false;
    return pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
- }, [pathname, hasHydrated]);
+ }, [pathname, isHydrated]);
 
- const shouldShowBottomNav = !hideBottomNav && deterministicMainNav && !fullScreen && hasHydrated;
+ const shouldShowBottomNav = !hideBottomNav && deterministicMainNav && !fullScreen && isHydrated;
 
  // CALCULATE CONTENT STATE (POST-HYDRATION ONLY)
  const isSyncingData = (isLoading || (isProfileLoading && !userProfile)) && !deterministicAuth;
- const shouldShowChildren = hasHydrated && !isSyncingData;
+ const shouldShowChildren = isHydrated && !isSyncingData;
 
  return (
   <SidebarProvider defaultOpen={!deterministicAuth}>
@@ -173,7 +169,7 @@ export function AppLayout({
        "touch-auto", 
        shouldShowBottomNav && "pb-32"
      )} style={{ WebkitOverflowScrolling: 'touch' }}>
-      {!deterministicAuth && hasHydrated && <QuestTracker />}
+      {!deterministicAuth && isHydrated && <QuestTracker />}
       <div className="min-h-full w-full">
        {!shouldShowChildren ? (
           <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">

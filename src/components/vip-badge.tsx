@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sparkles, Crown, Shield, Star, Trophy, Zap, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useFirebase } from '@/firebase/provider';
 
 export type VipTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND' | 'SVIP';
 
@@ -18,10 +19,7 @@ interface VipBadgeProps {
  * Features luxury gradients and dynamic icons for VIP levels 1-10.
  */
 export function VipBadge({ level = 0, tier, className, showText = true }: VipBadgeProps) {
-  const [isHydrated, setIsHydrated] = React.useState(false);
-  React.useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+  const { isHydrated } = useFirebase();
 
   if (!isHydrated || (level === 0 && !tier)) return null;
 

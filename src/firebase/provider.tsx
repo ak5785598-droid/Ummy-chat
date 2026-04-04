@@ -30,6 +30,7 @@ export interface FirebaseContextState {
  storage: FirebaseStorage | null;
  user: User | null;
  isLoading: boolean;
+ isHydrated: boolean;
  userError: Error | null;
 }
 
@@ -49,6 +50,7 @@ export const FirebaseContext = createContext<FirebaseContextState>({
   storage: null,
   user: null,
   isLoading: true,
+  isHydrated: false,
   userError: null
 });
 
@@ -95,6 +97,7 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
     // CRITICAL: Force user to null during hydration window
     user: mounted ? userAuthState.user : null,
     isLoading: mounted ? userAuthState.isLoading : true,
+    isHydrated: mounted,
     userError: mounted ? userAuthState.userError : null
   }), [firebaseApp, firestore, auth, storage, userAuthState, mounted]);
 
@@ -134,14 +137,15 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
 
 // 4. FIRESTORE HOOKS
 export function useCollection<T = any>(query: any) {
-  const firestore = useFirestore();
+  const { isHydrated, firestore } = useFirebase();
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!query) {
-      setIsLoading(false);
+    if (!query || !isHydrated) {
+      if (!isHydrated) setIsLoading(true);
+      else setIsLoading(false);
       return;
     }
 
@@ -159,20 +163,21 @@ export function useCollection<T = any>(query: any) {
     );
 
     return () => unsubscribe();
-  }, [query, firestore]);
+  }, [query, firestore, isHydrated]);
 
-  return { data, isLoading, error };
+  return { data, isLoading: !isHydrated || isLoading, error };
 }
 
 export function useDoc<T = any>(docRef: any) {
-  const firestore = useFirestore();
+  const { isHydrated, firestore } = useFirebase();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!docRef) {
-      setIsLoading(false);
+    if (!docRef || !isHydrated) {
+      if (!isHydrated) setIsLoading(true);
+      else setIsLoading(false);
       return;
     }
 
@@ -189,7 +194,7 @@ export function useDoc<T = any>(docRef: any) {
     );
 
     return () => unsubscribe();
-  }, [docRef, firestore]);
+  }, [docRef, firestore, isHydrated]);
 
-  return { data, isLoading, error };
+  return { data, isLoading: !isHydrated || isLoading, error };
 }
