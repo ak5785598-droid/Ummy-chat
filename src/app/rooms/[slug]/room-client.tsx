@@ -122,6 +122,7 @@ import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
+import { ThemeSync } from '@/components/theme-sync';
 
 
 import { memo, useCallback } from 'react';
@@ -558,6 +559,16 @@ export function RoomClient({ room }: { room: Room }) {
 
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
+
+  // --- THEME SYNC: Full-Bleed Status Bar & Shell Alignment ---
+  const activeRoomTheme = useMemo(() => {
+    return ROOM_THEMES.find(t => t.id === room.roomThemeId) || ROOM_THEMES[0];
+  }, [room.roomThemeId]);
+  
+  const themeSyncColor = useMemo(() => {
+    // Priority: Room specific accent color -> Black (for most room themes)
+    return activeRoomTheme?.accentColor || '#030014';
+  }, [activeRoomTheme]);
 
   // AI MODERATION ACTIONS (GRAND MANAGER)
   const handleAIClearChat = async () => {
@@ -1627,6 +1638,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-black overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5">
+      <ThemeSync color={themeSyncColor} />
       <DailyRewardDialog />
       <ExitRoomDialog
         isOpen={showExitDialog}

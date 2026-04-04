@@ -72,7 +72,7 @@ export function AppLayout({
    return (
     <div className={cn(
       "min-h-screen flex flex-col items-center justify-center gap-4",
-      isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+      isRoom ? "bg-transparent" : "bg-[#FF91B5]"
     )}>
       <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
@@ -137,14 +137,14 @@ export function AppLayout({
 
     <SidebarInset className={cn(
       "flex flex-col min-h-screen relative overflow-hidden",
-      isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+      isRoom ? "bg-transparent shadow-none" : "bg-[#FF91B5]"
     )}>
       
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
         <div className={cn(
           "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
-          isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+          isRoom ? "bg-transparent" : "bg-[#FF91B5]"
         )}>
           <Loader className="h-10 w-10 animate-spin text-primary" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>

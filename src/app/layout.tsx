@@ -47,10 +47,11 @@ export default function RootLayout({
  children: React.ReactNode;
 }>) {
  return (
-  <html lang="en" suppressHydrationWarning className="bg-[#FF91B5] h-full w-full">
+  <html lang="en" suppressHydrationWarning className="h-full w-full">
    <body
+    style={{ backgroundColor: 'var(--app-bg, #FF91B5)' }}
     className={cn(
-     'min-h-screen bg-[#FF91B5] text-slate-900 antialiased touch-manipulation',
+     'min-h-screen text-slate-900 antialiased touch-manipulation transition-colors duration-500',
      fontHeadline.variable,
      fontBody.variable
     )}
