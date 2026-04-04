@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
  useUser, 
  useFirestore, 
@@ -9,7 +9,7 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
 import { 
- X, Volume2, VolumeX, Pointer, Trophy, Sparkles
+ X, Volume2, VolumeX, Pointer, Trophy, Sparkles, Music
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -37,7 +37,32 @@ const CHIPS = [
 
 const SEQUENCE = [0, 1, 2, 5, 8, 7, 6, 3];
 
-// --- Branch Decoration Component ---
+// --- Audio Engine ---
+const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
+  if (muted) return;
+  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  if (type === 'bet') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+  } else if (type === 'spin') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+  }
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.1);
+};
+
 const BranchDecoration = ({ className, delay, reverse = false }: { className?: string; delay: number; reverse?: boolean }) => (
   <motion.div
     initial={{ rotate: reverse ? 5 : -5 }}
@@ -52,6 +77,19 @@ const BranchDecoration = ({ className, delay, reverse = false }: { className?: s
       <motion.text animate={{ y: [0, 5, 0] }} transition={{ duration: 2.5, repeat: Infinity }} x="70" y="30" className="text-[18px]">🍎</motion.text>
     </svg>
   </motion.div>
+);
+
+const DJVisualizer = ({ colorClass = "bg-pink-500" }: { colorClass?: string }) => (
+  <div className="flex items-end gap-0.5 h-12 px-1">
+    {[...Array(5)].map((_, i) => (
+      <motion.div
+        key={i}
+        animate={{ height: [4, 48, 12, 40, 8] }}
+        transition={{ duration: 0.5 + Math.random(), repeat: Infinity, ease: "easeInOut", delay: i * 0.1 }}
+        className={cn("w-1.5 rounded-t-full shadow-[0_0_10px_rgba(255,255,255,0.3)]", colorClass)}
+      />
+    ))}
+  </div>
 );
 
 const VisualizerPillar = ({ height = "h-60", colors = ['#ff3366', '#ffcc00', '#00ffcc'] }: { height?: string, colors?: string[] }) => (
@@ -114,6 +152,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    toast({ title: 'No coins!', variant: 'destructive' });
    return;
   }
+  playSound('bet', isMuted);
   setLocalCoins(prev => prev - selectedChip);
   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
@@ -126,18 +165,23 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const targetIdx = ITEMS.findIndex(i => i.id === winItem.id);
   
   let currentStep = 0;
-  // Super Fast: Total 15+ rounds in ~5 seconds
-  const totalSteps = (SEQUENCE.length * 18) + SEQUENCE.indexOf(targetIdx); 
-  let speed = 25; 
+  // Adjusted for Medium Speed: ~8-10 full rounds
+  const totalSteps = (SEQUENCE.length * 8) + SEQUENCE.indexOf(targetIdx); 
+  let speed = 60; // Medium base speed
 
   const run = () => {
    setHighlightIdx(SEQUENCE[currentStep % SEQUENCE.length]);
+   playSound('spin', isMuted);
    currentStep++;
+   
    if (currentStep < totalSteps) {
-    if (totalSteps - currentStep < 12) speed += 35; 
+    // Gradual deceleration for "effort" feel
+    if (totalSteps - currentStep < 15) speed += 25; 
+    else if (totalSteps - currentStep < 30) speed += 5;
+    
     setTimeout(run, speed);
    } else {
-    setTimeout(() => finalizeResult(winItem), 800);
+    setTimeout(() => finalizeResult(winItem), 1200);
    }
   };
   run();
@@ -166,7 +210,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans">
-   {/* Top Branches */}
    <BranchDecoration className="top-0 -left-6" delay={0} />
    <BranchDecoration className="top-0 -right-6" delay={1} reverse />
 
@@ -195,17 +238,24 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       <VisualizerPillar height="h-72" />
       
       <div className="flex-1 flex flex-col items-center gap-4">
-        {/* Glossy Fruit Grid */}
-        <div className={cn("p-1.5 rounded-[3rem] transition-all duration-500", 
-             gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 via-white to-yellow-400 shadow-[0_0_80px_rgba(255,255,255,0.6)]" : "bg-indigo-500/30 shadow-2xl")}>
+        <div className={cn("p-1.5 rounded-[3rem] transition-all duration-700", 
+             gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 via-white to-yellow-400 shadow-[0_0_100px_rgba(255,255,255,0.4)] scale-[1.02]" : "bg-indigo-500/30 shadow-2xl")}>
           <div className="bg-[#120626] rounded-[2.8rem] p-4 grid grid-cols-3 gap-3 w-[310px] aspect-square relative border border-white/10">
             {ITEMS.map((item, idx) => {
               if (item.id === 'timer') {
                 return (
-                  <div key="timer" className="bg-black/80 rounded-[2rem] flex items-center justify-center border-2 border-yellow-500/30">
-                    <span className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] tabular-nums">
-                      {gameState === 'betting' ? timeLeft : '!!!'}
-                    </span>
+                  <div key="timer" className="bg-black/80 rounded-[2rem] flex items-center justify-center border-2 border-yellow-500/30 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                        <motion.span 
+                            key={gameState === 'betting' ? timeLeft : 'spin'}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -20, opacity: 0 }}
+                            className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] tabular-nums"
+                        >
+                            {gameState === 'betting' ? timeLeft : <Music className="animate-spin" />}
+                        </motion.span>
+                    </AnimatePresence>
                   </div>
                 );
               }
@@ -218,13 +268,14 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                   key={item.id}
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "relative flex flex-col items-center justify-center rounded-[1.8rem] transition-all duration-300 border-b-4 active:border-b-0 active:translate-y-1 overflow-hidden group",
-                    isHighlighted ? "scale-110 z-20 shadow-[0_0_30px_white] border-white ring-4 ring-white/50" : "border-black/40 shadow-xl",
-                    `bg-gradient-to-br ${item.color} opacity-95 hover:opacity-100`
+                    "relative flex flex-col items-center justify-center rounded-[1.8rem] transition-all duration-200 border-b-4 active:border-b-0 active:translate-y-1 overflow-hidden group",
+                    isHighlighted ? "scale-110 z-20 shadow-[0_0_40px_rgba(255,255,255,0.8)] border-white ring-4 ring-white/50 bg-white" : "border-black/40 shadow-xl",
+                    `bg-gradient-to-br ${item.color} opacity-95 hover:opacity-100`,
+                    gameState === 'spinning' && !isHighlighted && "grayscale-[0.5] opacity-50"
                   )}
                 >
                   <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <span className="text-4xl mb-1 filter drop-shadow-md z-10">{item.emoji}</span>
+                  <span className={cn("text-4xl mb-1 filter drop-shadow-md z-10 transition-transform", isHighlighted && "scale-125")}>{item.emoji}</span>
                   <span className="text-[9px] font-black text-white/90 bg-black/20 px-2 rounded-full z-10">{item.label}</span>
                   
                   {myBets[item.id] > 0 && (
@@ -244,7 +295,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        {/* --- My Balance Card (Middle Section) --- */}
+        {/* --- Balance --- */}
         <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md relative overflow-hidden group">
            <div className="flex items-center gap-3 z-10">
               <div className="p-2 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-xl shadow-[0_4px_10px_rgba(234,179,8,0.3)] border-b-2 border-orange-800">
@@ -260,36 +311,34 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
            <div className="bg-black/40 px-2 py-1 rounded-lg border border-white/5 font-mono text-[9px] text-white/40 tracking-tighter z-10">
               #{currentUser?.uid?.slice(0,4).toUpperCase()}
            </div>
-           <motion.div animate={{ x: ['-100%', '250%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute inset-y-0 w-12 bg-white/5 skew-x-12 pointer-events-none" />
         </div>
 
-        {/* Salad Section */}
-        <div className="flex items-center gap-6">
-           <div className="flex gap-1 items-end h-12">
-             <VisualizerPillar height="h-10" colors={['#3b82f6', '#60a5fa', '#93c5fd']} />
-           </div>
+        {/* Salad Section with DJ Effects */}
+        <div className="flex items-center gap-4">
+           <DJVisualizer colorClass="bg-blue-400" />
 
-           <div className="flex gap-8">
+           <div className="flex gap-4">
             {[1, 2].map(i => (
-              <div key={i} className="bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-600/40 p-5 rounded-[2.2rem] border-2 border-white/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] backdrop-blur-md relative group">
-                <span className="text-4xl filter drop-shadow-md">🥗</span>
-                <div className="absolute inset-0 bg-white/5 rounded-[2rem] animate-pulse" />
+              <div key={i} className="bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-600/40 p-5 rounded-[2.2rem] border-2 border-white/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] backdrop-blur-md relative overflow-hidden">
+                <motion.span 
+                  animate={gameState === 'spinning' ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                  transition={{ repeat: Infinity, duration: 0.5 }}
+                  className="text-4xl block filter drop-shadow-md"
+                >
+                  🥗
+                </motion.span>
               </div>
             ))}
            </div>
 
-           <div className="flex gap-1 items-end h-12">
-             <VisualizerPillar height="h-10" colors={['#ec4899', '#f472b6', '#fbcfe8']} />
-           </div>
+           <DJVisualizer colorClass="bg-pink-500" />
         </div>
       </div>
       
       <VisualizerPillar height="h-72" />
    </main>
 
-   {/* Footer with Chips */}
    <footer className="relative mt-auto p-6">
-      {/* Bottom Branches */}
       <BranchDecoration className="bottom-24 -left-8 -rotate-45" delay={0.5} />
       <BranchDecoration className="bottom-24 -right-8 rotate-45" delay={1.5} reverse />
 
@@ -298,10 +347,12 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           {CHIPS.map(chip => (
             <button 
               key={chip.value} 
+              disabled={gameState !== 'betting'}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
                 "w-16 h-16 rounded-full flex items-center justify-center transition-all border-[3px] border-white/20 shadow-[0_8px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-2 bg-gradient-to-br", chip.color,
-                selectedChip === chip.value ? "ring-4 ring-white scale-110 z-10 border-white" : "opacity-60 scale-90"
+                selectedChip === chip.value ? "ring-4 ring-white scale-110 z-10 border-white" : "opacity-60 scale-90",
+                gameState !== 'betting' && "opacity-20 grayscale cursor-not-allowed"
               )}
             >
               <div className="flex flex-col items-center">
@@ -314,7 +365,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       </div>
    </footer>
 
-   {/* Result Modal */}
    <AnimatePresence>
     {gameState === 'result' && winnerData && (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
