@@ -21,6 +21,7 @@ export function ThemeSync({ color, imageUrl }: ThemeSyncProps) {
     // Save original values for restoration
     const originalBg = body.style.backgroundColor;
     const originalAppBg = root.style.getPropertyValue('--app-bg');
+    const originalOverscroll = body.style.overscrollBehavior;
     
     // Find theme-color meta tag
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -35,12 +36,16 @@ export function ThemeSync({ color, imageUrl }: ThemeSyncProps) {
     // Apply new theme
     if (color) {
       root.style.setProperty('--app-bg', color);
+      body.style.backgroundColor = color;
+      body.style.overscrollBehavior = 'none'; // FIX: "Screen bhag jata hai" (overscroll bounce)
       metaThemeColor.setAttribute('content', color);
     }
 
     // CLEANUP: Restore original theme on unmount
     return () => {
       root.style.setProperty('--app-bg', originalAppBg || '#FF91B5');
+      body.style.backgroundColor = originalBg;
+      body.style.overscrollBehavior = originalOverscroll;
       metaThemeColor?.setAttribute('content', originalThemeColor);
     };
   }, [color, imageUrl]);
