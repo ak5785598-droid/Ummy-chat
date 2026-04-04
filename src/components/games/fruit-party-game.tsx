@@ -25,14 +25,14 @@ const ITEMS = [
   { id: 'apple', emoji: '🍎', multiplier: 25, label: '×25', color: 'from-red-500 to-rose-800', index: 5 },
   { id: 'mango', emoji: '🥭', multiplier: 5, label: '×5', color: 'from-yellow-400 to-orange-500', index: 6 },
   { id: 'strawberry', emoji: '🍓', multiplier: 15, label: '×15', color: 'from-pink-500 to-red-600', index: 7 },
-  { id: 'pear', emoji: '🍐', multiplier: 8, label: '×8', color: 'from-lime-400 to-green-600', index: 8 },
+  { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5', color: 'from-lime-400 to-green-600', index: 8 },
 ];
 
 const CHIPS = [
-  { value: 500, label: '500', color: 'from-emerald-400 to-emerald-700 shadow-emerald-500/50' },
-  { value: 5000, label: '5K', color: 'from-rose-400 to-rose-700 shadow-rose-500/50' },
-  { value: 50000, label: '50K', color: 'from-blue-400 to-blue-700 shadow-blue-500/50' },
-  { value: 500000, label: '500K', color: 'from-purple-500 to-fuchsia-800 shadow-purple-500/50' },
+  { value: 500, label: '500', color: 'from-cyan-400 to-blue-600 shadow-cyan-500/50' },
+  { value: 5000, label: '5K', color: 'from-pink-400 to-rose-600 shadow-rose-500/50' },
+  { value: 50000, label: '50K', color: 'from-yellow-300 to-orange-500 shadow-yellow-500/50' },
+  { value: 500000, label: '500K', color: 'from-fuchsia-500 to-purple-800 shadow-purple-600/50' },
 ];
 
 const SEQUENCE = [0, 1, 2, 5, 8, 7, 6, 3];
@@ -53,7 +53,7 @@ const BranchDecoration = ({ className, delay, reverse = false }: { className?: s
   </motion.div>
 );
 
-const VisualizerPillar = ({ height = "h-60" }: { height?: string }) => (
+const VisualizerPillar = ({ height = "h-60", colors = ['#ff3366', '#ffcc00', '#00ffcc'] }: { height?: string, colors?: string[] }) => (
   <div className={cn("flex flex-col gap-1 w-4 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md shadow-2xl", height)}>
     {Array.from({ length: 10 }).map((_, i) => (
       <motion.div
@@ -61,7 +61,7 @@ const VisualizerPillar = ({ height = "h-60" }: { height?: string }) => (
         animate={{ 
           opacity: [0.4, 1, 0.4],
           scaleX: [1, 1.3, 1],
-          backgroundColor: i < 3 ? '#ff3366' : i < 7 ? '#ffcc00' : '#00ffcc'
+          backgroundColor: i < 3 ? colors[0] : i < 7 ? colors[1] : colors[2]
         }}
         transition={{ duration: Math.random() * 0.5 + 0.2, repeat: Infinity, delay: i * 0.08 }}
         className="w-full h-full rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]"
@@ -163,7 +163,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans">
-   {/* Top Decorations */}
    <BranchDecoration className="top-0 -left-6" delay={0} />
    <BranchDecoration className="top-0 -right-6" delay={1} reverse />
 
@@ -215,6 +214,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                   className={cn(
                     "relative flex flex-col items-center justify-center rounded-[2rem] transition-all duration-300 border-b-4 active:border-b-0 active:translate-y-1 overflow-hidden group",
                     isHighlighted ? "scale-110 z-20 shadow-[0_0_40px_gold] border-yellow-400 ring-4 ring-yellow-400/50" : "border-black/40 shadow-xl",
+                    isHandPointing ? "ring-4 ring-yellow-400 shadow-[0_0_25px_rgba(234,179,8,0.6)]" : "",
                     `bg-gradient-to-br ${item.color} opacity-90 hover:opacity-100`
                   )}
                 >
@@ -230,7 +230,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                   
                   <AnimatePresence>{isHandPointing && (
                     <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                      <Pointer size={44} className="text-white fill-white drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] -rotate-45 animate-bounce" />
+                      <Pointer size={44} className="text-yellow-400 fill-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.9)] -rotate-45 animate-bounce" />
                     </motion.div>
                   )}</AnimatePresence>
                 </button>
@@ -239,13 +239,29 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        <div className="flex gap-12">
-          {[1, 2].map(i => (
-            <div key={i} className="bg-gradient-to-t from-purple-900/40 to-transparent p-4 rounded-3xl border border-white/5 shadow-2xl relative">
-              <span className="text-4xl filter drop-shadow-lg">🥗</span>
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-purple-500/50 blur-sm rounded-full" />
-            </div>
-          ))}
+        {/* Updated Salad Section with Music Bars */}
+        <div className="flex items-center gap-6">
+           {/* Left Music Bar */}
+           <div className="flex gap-1 items-end h-12">
+             <VisualizerPillar height="h-10" colors={['#3b82f6', '#60a5fa', '#93c5fd']} />
+             <VisualizerPillar height="h-6" colors={['#3b82f6', '#60a5fa', '#93c5fd']} />
+           </div>
+
+           <div className="flex gap-8">
+            {[1, 2].map(i => (
+              <div key={i} className="bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-600/40 p-5 rounded-[2rem] border-2 border-white/20 shadow-[0_0_25px_rgba(168,85,247,0.4)] backdrop-blur-md relative group">
+                <span className="text-4xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">🥗</span>
+                <div className="absolute inset-0 bg-white/5 rounded-[2rem] animate-pulse" />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-purple-400/50 blur-sm rounded-full" />
+              </div>
+            ))}
+           </div>
+
+           {/* Right Music Bar */}
+           <div className="flex gap-1 items-end h-12">
+             <VisualizerPillar height="h-6" colors={['#ec4899', '#f472b6', '#fbcfe8']} />
+             <VisualizerPillar height="h-10" colors={['#ec4899', '#f472b6', '#fbcfe8']} />
+           </div>
         </div>
       </div>
       
@@ -253,30 +269,32 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    </main>
 
    <footer className="relative mt-auto">
-      {/* Bottom Wrapped Branches */}
       <BranchDecoration className="bottom-24 -left-8 -rotate-45" delay={0.5} />
       <BranchDecoration className="bottom-24 -right-8 rotate-45" delay={1.5} reverse />
 
       <div className="p-6 bg-gradient-to-t from-[#1a0b2e] to-black/80 backdrop-blur-3xl rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] relative z-20">
         
-        {/* DJ Visualizers above Chips */}
         <div className="flex justify-center gap-20 mb-4 h-8">
            <VisualizerPillar height="h-8" />
            <VisualizerPillar height="h-8" />
            <VisualizerPillar height="h-8" />
         </div>
 
+        {/* Updated Attractive Chips */}
         <div className="flex gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide justify-center items-center">
           {CHIPS.map(chip => (
             <button 
               key={chip.value} 
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-14 h-14 rounded-full flex items-center justify-center transition-all border-4 shadow-[0_6px_0_rgb(0,0,0,0.3)] active:shadow-none active:translate-y-1 bg-gradient-to-br", chip.color,
-                selectedChip === chip.value ? "ring-4 ring-white scale-125 z-10" : "opacity-60 grayscale-[0.3]"
+                "w-16 h-16 rounded-full flex items-center justify-center transition-all border-[3px] border-white/30 shadow-[0_8px_0_rgb(0,0,0,0.4),0_15px_25px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-2 bg-gradient-to-br", chip.color,
+                selectedChip === chip.value ? "ring-4 ring-white scale-110 z-10 border-white" : "opacity-70 scale-90"
               )}
             >
-              <span className="text-white font-black text-xs drop-shadow-md">{chip.label}</span>
+              <div className="flex flex-col items-center">
+                <span className="text-white font-black text-sm drop-shadow-lg tracking-tighter">{chip.label}</span>
+                <div className="w-8 h-0.5 bg-white/30 rounded-full mt-0.5" />
+              </div>
             </button>
           ))}
         </div>
@@ -297,7 +315,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
             #{currentUser?.uid?.slice(0,6).toUpperCase()}
           </div>
           
-          {/* Subtle light sweep animation */}
           <motion.div 
             animate={{ x: ['-100%', '200%'] }} 
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
