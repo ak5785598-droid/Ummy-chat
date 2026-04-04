@@ -444,16 +444,16 @@ export function RoomClient({ room }: { room: Room }) {
   }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
 
   const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
+    if (!firestore || !room.id) return query(collection(firestore, 'dummy'));
     try {
       return query(collection(firestore, 'chatRooms', room.id, 'participants'));
     } catch (e) {
       console.error('[Room] Failed to create participants query:', e);
-      return null;
+      return query(collection(firestore, 'dummy'));
     }
   }, [firestore, room.id]);
 
-  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
+  const { data: participantsData } = useCollection<RoomParticipant>(firestore && room.id ? participantsQuery : null);
 
   const participants = useMemo(() => {
     if (!participantsData) return [];
@@ -512,7 +512,7 @@ export function RoomClient({ room }: { room: Room }) {
   // Audio connection handled by ActiveRoomManager
 
   const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
+    if (!firestore || !room.id) return query(collection(firestore, 'dummy'));
     try {
       return query(
         collection(firestore, 'chatRooms', room.id, 'messages'),
@@ -522,11 +522,11 @@ export function RoomClient({ room }: { room: Room }) {
       );
     } catch (e) {
       console.error('[Room] Failed to create messages query:', e);
-      return null;
+      return query(collection(firestore, 'dummy'));
     }
   }, [firestore, room.id, sessionJoinTime]);
 
-  const { data: firestoreMessages } = useCollection(messagesQuery);
+  const { data: firestoreMessages } = useCollection(firestore && room.id ? messagesQuery : null);
 
   // AUTO-SCROLL SYNC
   useEffect(() => {
@@ -1128,10 +1128,10 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room, setActiveRoom, setMinimizedRoom]);
 
   const themesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore) return query(collection(firestore, 'dummy'));
     return query(collection(firestore, 'roomThemes'));
   }, [firestore]);
-  const { data: dbThemes } = useCollection<any>(themesQuery);
+  const { data: dbThemes } = useCollection<any>(firestore ? themesQuery : null);
 
   const currentTheme = useMemo(() => {
     if (room.backgroundUrl) {
