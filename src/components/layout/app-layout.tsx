@@ -115,7 +115,7 @@ export function AppLayout({
                     <UnreadBadge size="sm" />
                   </Link>
                 </SidebarMenuButton>
-             </SidebarMenuItem>
+             </SidebarMenuItem> */}
              <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname?.startsWith('/profile')} className="h-12 rounded-xl text-slate-600 hover:bg-slate-100 active:text-primary">
                   <Link href="/profile" className="flex items-center gap-4">
@@ -123,7 +123,7 @@ export function AppLayout({
                     <span className="font-bold uppercase text-xs">{t?.nav?.me || 'Me'}</span>
                   </Link>
                 </SidebarMenuButton>
-             </SidebarMenuItem> */}
+             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -174,13 +174,13 @@ export function AppLayout({
                  <UnreadBadge size="sm" className="absolute -top-2 -right-2" />
                </div>
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
-            </Link>
+            </Link> */}
 
             <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-[#00E5FF]" : "text-white/40")}>
                {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-8 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
                <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
-            </Link> */}
+            </Link>
           </div>
         </nav>
       )}
