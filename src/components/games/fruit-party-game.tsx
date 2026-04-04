@@ -82,13 +82,17 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const handlePlaceBet = (id: string) => {
   if (id === 'timer' || gameState !== 'betting' || !currentUser || !userProfile) return;
   const currentBalance = userProfile.wallet?.coins || 0;
+  
   if (currentBalance < selectedChip) {
    toast({ title: 'Insufficient Coins!', variant: 'destructive' });
    return;
   }
+  
+  // Cut coins on placing bet
   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
     'wallet.coins': increment(-selectedChip) 
   });
+  
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
  };
 
@@ -125,6 +129,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const currentWinners = [];
   if (winAmount > 0 && userProfile) {
     currentWinners.push({ name: userProfile.username || 'You', win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
+    
+    // Credit coins on win
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 
       'wallet.coins': increment(winAmount),
       updatedAt: serverTimestamp()
@@ -156,11 +162,24 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    </AnimatePresence>
 
    {/* --- 3D HEADER --- */}
-   <header className="p-4 flex items-center justify-between z-10">
-    <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md border border-white/10">
-      {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
-    </button>
-    <div className="text-center">
+   <header className="p-4 pt-6 flex flex-col w-full z-10">
+    <div className="flex items-center justify-between w-full mb-6">
+      <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md border border-white/10">
+        {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
+      </button>
+      
+      {/* Title Added Here */}
+      <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 tracking-[0.1em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] filter">
+        FRUIT PARTY
+      </h1>
+
+      <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 shadow-lg shadow-red-500/5">
+        <X size={20}/>
+      </button>
+    </div>
+
+    {/* Game History moved slightly down */}
+    <div className="text-center flex flex-col items-center">
       <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mb-2 font-black">Round History</p>
       <div className="flex gap-2 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-2xl">
         {history.map((id, i) => (
@@ -170,7 +189,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
     </div>
-    <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 shadow-lg shadow-red-500/5"><X size={20}/></button>
    </header>
 
    {/* --- 3D MAIN AREA --- */}
@@ -257,20 +275,20 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    </main>
 
    {/* --- 3D FOOTER --- */}
-   <footer className="bg-[#1a0b2e]/90 backdrop-blur-2xl p-6 pb-12 rounded-t-[4rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
-    <div className="max-w-md mx-auto space-y-8">
+   <footer className="bg-[#1a0b2e]/90 backdrop-blur-2xl p-6 pb-8 rounded-t-[4rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-20">
+    <div className="max-w-md mx-auto space-y-5">
       
-      {/* 3D Chips Selection */}
+      {/* 3D Chips Selection (Height reduced to h-11 and moved up slightly via layout) */}
       <div className="flex justify-between gap-3 perspective-500">
         {CHIPS.map(chip => (
           <button 
             key={chip.value} 
             onClick={() => setSelectedChip(chip.value)}
             className={cn(
-              "flex-1 h-14 rounded-2xl flex items-center justify-center transition-all transform-gpu shadow-2xl",
-              "bg-gradient-to-br border-b-4 border-black/40",
+              "flex-1 h-11 rounded-xl flex items-center justify-center transition-all transform-gpu shadow-2xl",
+              "bg-gradient-to-br border-b-[3px] border-black/40",
               chip.color,
-              selectedChip === chip.value ? "-translate-y-2 ring-4 ring-white" : "opacity-40 grayscale-[0.5]"
+              selectedChip === chip.value ? "-translate-y-2 ring-[3px] ring-white" : "opacity-40 grayscale-[0.5]"
             )}
           >
             <span className="text-white font-black text-xs drop-shadow-md">{chip.label}</span>
@@ -278,17 +296,23 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
 
-      {/* User Coin Balance 3D Card */}
-      <div className="relative group overflow-hidden bg-gradient-to-r from-black/60 to-black/30 p-5 rounded-[2.5rem] border border-white/10 shadow-inner">
+      {/* User ID & Coin Balance 3D Card */}
+      <div className="relative group overflow-hidden bg-gradient-to-r from-black/60 to-black/30 p-5 rounded-[2rem] border border-white/10 shadow-inner">
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
-                <div className="bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] p-3 rounded-2xl rotate-12">
+                <div className="bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] p-3 rounded-2xl rotate-12 flex-shrink-0">
                     <GoldCoinIcon className="h-6 w-6 text-black" />
                 </div>
-                <div>
-                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Available Coins</p>
-                    <p className="text-2xl font-black text-yellow-400 drop-shadow-md italic">
-                    {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                <div className="flex flex-col">
+                    {/* ID Shown Here */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-white/10 px-2 py-0.5 rounded text-[9px] text-white/60 font-black uppercase tracking-wider">
+                        ID: {currentUser?.uid ? currentUser.uid.slice(0, 8).toUpperCase() : 'GUEST'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none mb-1">Available Coins</p>
+                    <p className="text-2xl font-black text-yellow-400 drop-shadow-md italic leading-none mt-1">
+                      {(userProfile?.wallet?.coins || 0).toLocaleString()}
                     </p>
                 </div>
             </div>
@@ -316,4 +340,3 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   </div>
  );
 }
-
