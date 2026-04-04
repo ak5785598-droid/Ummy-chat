@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ITEMS = [
   { id: 'lemon', emoji: '🍋', multiplier: 5, label: '×5', index: 0 },
   { id: 'grapes', emoji: '🍇', multiplier: 10, label: '×10', index: 1 },
-  { id: 'orange', emoji: '🍊', multiplier: 5, label: '×5', index: 2 },
+  { id: 'orange', emoji: '🍊', multiplier: 5, label: '×5', index: 2 }, 
   { id: 'cherry', emoji: '🍒', multiplier: 45, label: '×45', index: 3 },
   { id: 'timer', emoji: '', multiplier: 0, label: '', index: 4 }, 
   { id: 'apple', emoji: '🍎', multiplier: 25, label: '×25', index: 5 },
