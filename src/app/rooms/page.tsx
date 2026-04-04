@@ -495,7 +495,7 @@ export default function RoomsPage() {
      )}
     </div>
    )}
-    <style dangerouslySetInnerHTML={{ __html: \`.no-scrollbar::-webkit-scrollbar { display: none; }\` }} />
+    <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
    </AppLayout>
  );
 }
