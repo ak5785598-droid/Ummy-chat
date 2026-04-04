@@ -24,6 +24,9 @@ import { Crown, Users, Heart, Loader } from 'lucide-react';
 
 // 1. RANKING CARD
 export function RankingCard() {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
+  
   const router = useRouter();
   const firestore = useFirestore();
   const richQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -45,9 +48,9 @@ export function RankingCard() {
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">Ranking</span>
       </div>
       <div className="relative flex items-end justify-center h-full w-full pb-1">
-         {topUsers?.[1] && <Avatar className="h-6 w-6 border border-blue-200 -mr-2 shadow-lg scale-90"><AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
-         {topUsers?.[0] && <div className="relative z-10"><Avatar className="h-10 w-10 border-2 border-yellow-200 shadow-xl"><AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback></Avatar><div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full border border-white"><Crown className="h-1.5 w-1.5 text-white fill-current" /></div></div>}
-         {topUsers?.[2] && <Avatar className="h-6 w-6 border border-amber-500 -ml-2 shadow-lg scale-90"><AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
+         {(isHydrated && topUsers?.[1]) && <Avatar className="h-6 w-6 border border-blue-200 -mr-2 shadow-lg scale-90"><AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
+         {(isHydrated && topUsers?.[0]) && <div className="relative z-10"><Avatar className="h-10 w-10 border-2 border-yellow-200 shadow-xl"><AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback></Avatar><div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full border border-white"><Crown className="h-1.5 w-1.5 text-white fill-current" /></div></div>}
+         {(isHydrated && topUsers?.[2]) && <Avatar className="h-6 w-6 border border-amber-500 -ml-2 shadow-lg scale-90"><AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
       </div>
     </button>
   );
@@ -55,6 +58,9 @@ export function RankingCard() {
 
 // 2. FAMILY CARD
 export function FamilyCard() {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
+  
   const router = useRouter();
   const firestore = useFirestore();
   const familiesQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -77,8 +83,8 @@ export function FamilyCard() {
       </div>
       <div className="relative flex items-center justify-center h-full w-full pb-1">
          <div className="relative flex -space-x-4">
-            <Avatar className="h-8 w-8 border border-white/20 shadow-xl bg-blue-900/40"><AvatarImage src={topFamilies?.[1]?.bannerUrl || ""} /><AvatarFallback className="text-[5px]">F2</AvatarFallback></Avatar>
-            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl bg-blue-900"><AvatarImage src={topFamilies?.[0]?.bannerUrl || ""} /><AvatarFallback className="text-[5px]">F1</AvatarFallback></Avatar>
+            <Avatar className="h-8 w-8 border border-white/20 shadow-xl bg-blue-900/40"><AvatarImage src={(isHydrated && topFamilies?.[1]?.bannerUrl) || ""} /><AvatarFallback className="text-[5px]">F2</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border-2 border-white shadow-2xl bg-blue-900"><AvatarImage src={(isHydrated && topFamilies?.[0]?.bannerUrl) || ""} /><AvatarFallback className="text-[5px]">F1</AvatarFallback></Avatar>
          </div>
       </div>
     </button>
@@ -87,6 +93,9 @@ export function FamilyCard() {
 
 // 3. CP CARD
 export function CpCard() {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
+  
   const router = useRouter();
   const firestore = useFirestore();
   const cpQuery = useMemoFirebase(() => !firestore ? null : query(
@@ -109,8 +118,8 @@ export function CpCard() {
       </div>
       <div className="relative flex items-center justify-center h-full w-full pb-1">
          <div className="flex -space-x-3">
-            <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20"><AvatarImage src={topCp?.[0]?.user1Avatar || ""} /><AvatarFallback>P1</AvatarFallback></Avatar>
-            <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20"><AvatarImage src={topCp?.[0]?.user2Avatar || ""} /><AvatarFallback>P2</AvatarFallback></Avatar>
+            <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20"><AvatarImage src={(isHydrated && topCp?.[0]?.user1Avatar) || ""} /><AvatarFallback>P1</AvatarFallback></Avatar>
+            <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20"><AvatarImage src={(isHydrated && topCp?.[0]?.user2Avatar) || ""} /><AvatarFallback>P2</AvatarFallback></Avatar>
          </div>
       </div>
     </button>
