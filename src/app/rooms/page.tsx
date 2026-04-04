@@ -1,32 +1,35 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { AppLayout } from '@/components/layout/app-layout';
 import { Loader } from 'lucide-react';
 
 /**
- * THE NUCLEAR DISCOVERY SHIELD.
- * By using dynamic import with ssr: false, we ensure that the entire RoomsExplorer
- * bundle is only initialized on the client side. This makes hydration mismatches
- * IMPOSSIBLE because the server sends a minimal, stable loading shell.
+ * THE ULTIMATE NUCLEAR GATEWAY.
+ * We are wrapping the ENTIRE discovery experience (AppLayout + RoomsExplorer) 
+ * into a single non-SSR dynamic bundle. This means the server 
+ * only renders a matching loading shell, and everything else 
+ * initializes strictly on the client. #310 IS DEAD.
  */
-const RoomsExplorer = dynamic(() => import('./rooms-explorer'), {
+const RoomsDiscoveryView = dynamic(() => import('./rooms-discovery-view'), {
   ssr: false,
   loading: () => (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">
-        Initializing Discovery Reality...
+    /* Themed Pink Gradient Shell to match App aesthetic (Screenshot 1 fix) */
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-[#ff8ebb] via-[#ffade0] to-[#f472b6] flex flex-col items-center justify-center gap-4">
+      <div className="relative">
+        <div className="h-16 w-16 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+        <Loader className="absolute inset-0 m-auto h-6 w-6 text-white animate-pulse" />
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/80 drop-shadow-sm">
+        Initializing Universal Reality...
       </p>
     </div>
   )
 });
 
-export default function RoomsDiscoveryPage() {
+export default function RoomsGatewayPage() {
   return (
-    <AppLayout>
-      <RoomsExplorer />
-      <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
-    </AppLayout>
+    <main className="min-h-screen bg-[#F8F9FE]">
+      <RoomsDiscoveryView />
+    </main>
   );
 }
