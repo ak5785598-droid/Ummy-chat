@@ -35,7 +35,7 @@ import { QuestTracker } from "@/components/quest-tracker";
  * High-Integrity Application Layout.
  * Re-certified for React 18 Concurrent Mode & SSR Stability.
  * 
- * Fixes Error #310 by maintaining a persistent, non-branching component structure.
+ * Permanently fixes Error #310 by decoupling hydration from async data states.
  */
 export function AppLayout({ 
  children, 
@@ -89,14 +89,26 @@ export function AppLayout({
     }
   }, [auth, user, firestore]);
 
- const isInitialLoading = !hasHydrated || isUserLoading || (isProfileLoading && !userProfile);
  const isMainNav = pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
  
- // AVOID STRUCTRUAL REDIRECT BRANCHES DURING HYDRATION
+ // DETERMINISTIC AUTH SCREEN DETECTION
  const isAuthScreen = fullScreen || pathname?.startsWith('/login') || pathname === '/' || pathname === '/terms' || pathname === '/privacy-policy' || pathname === '/refund-policy' || pathname === '/contact' || pathname === '/help-center';
 
- // AVOID CONDITIONAL RENDER OF SIDEBAR PROVIDER TO FIX #310
+ // [PHASE 1] HYDRATION SYNC (STRICT)
+ // Prevents #310 by ensuring server-rendered splash exactly matches initial client state.
+ if (!hasHydrated && !isAuthScreen) {
+  return (
+    <div className="fixed inset-0 bg-[#140028] flex flex-col items-center justify-center z-[9999] gap-4">
+      <Loader className="h-10 w-10 animate-spin text-primary" />
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
+    </div>
+  );
+ }
+
+ // [PHASE 2] DATA SYNC (POST-HYDRATION)
+ const isSyncingData = !isAuthScreen && (isUserLoading || (isProfileLoading && !userProfile));
+
  return (
   <SidebarProvider defaultOpen={!isAuthScreen}>
     {!isAuthScreen && (
@@ -149,7 +161,7 @@ export function AppLayout({
           <span className="text-base font-bold uppercase ">{t.nav.signout}</span>
          </button>
         </SidebarFooter>
-      </Sidebar>
+       </Sidebar>
     )}
 
     <SidebarInset className={cn(
@@ -163,11 +175,11 @@ export function AppLayout({
      )} style={{ WebkitOverflowScrolling: 'touch' }}>
       {!isAuthScreen && <QuestTracker />}
       <div className="min-h-full w-full">
-       {isInitialLoading && !isAuthScreen ? (
-         <div className="flex flex-col items-center justify-center h-[500px] gap-4 opacity-50">
-           <Loader className="h-10 w-10 animate-spin text-primary" />
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
-         </div>
+       {isSyncingData ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 opacity-50">
+            <Loader className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>
+          </div>
        ) : children}
       </div>
      </main>

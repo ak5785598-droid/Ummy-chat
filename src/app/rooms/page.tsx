@@ -193,17 +193,8 @@ export default function RoomsPage() {
   });
  }, [roomsData, activeCategory]);
 
-
-
  return (
   <AppLayout>
-   {/* HYDRATION STABILIZER: Ensures initial UI matches server strictly to avoid #310 */}
-   {!hasHydrated ? (
-    <div className="flex flex-col items-center justify-center min-h-[500px] opacity-20">
-      <Loader className="h-6 w-6 animate-spin mb-2 text-primary" />
-      <span className="text-[10px] font-black tracking-widest uppercase text-white/40">Synchronizing...</span>
-    </div>
-   ) : (
     <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700">
      
      <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
@@ -494,7 +485,6 @@ export default function RoomsPage() {
        </main>
      )}
     </div>
-   )}
     <style dangerouslySetInnerHTML={{ __html: `.no-scrollbar::-webkit-scrollbar { display: none; }` }} />
    </AppLayout>
  );
