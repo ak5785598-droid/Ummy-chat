@@ -54,6 +54,11 @@ export function AppLayout({
  const firestore = useFirestore();
  const { t } = useTranslation();
  const [showQuests, setShowQuests] = useState(false);
+ const [hasHydrated, setHasHydrated] = useState(false);
+
+ useEffect(() => {
+   setHasHydrated(true);
+ }, []);
 
  const isOfficial = useMemo(() => 
    userProfile?.tags?.some(tag => ['Admin', 'Official', 'Super Admin'].includes(tag)) || false
@@ -84,7 +89,7 @@ export function AppLayout({
     }
   }, [auth, user, firestore]);
 
- const isInitialLoading = isUserLoading || (isProfileLoading && !userProfile);
+ const isInitialLoading = !hasHydrated || isUserLoading || (isProfileLoading && !userProfile);
  const isMainNav = pathname === '/rooms' || pathname === '/discover' || pathname === '/messages' || pathname === '/profile';
  const shouldShowBottomNav = !hideBottomNav && isMainNav && !fullScreen;
  
