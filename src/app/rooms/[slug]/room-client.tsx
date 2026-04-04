@@ -72,7 +72,7 @@ import {
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
   useStorage
-} from '@/firebase';
+} from '@/firebase/provider';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import {
   collection,
