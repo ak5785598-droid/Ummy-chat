@@ -97,6 +97,12 @@ export default function RoomsPage() {
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
 
+ // LOCKDOWN: Component Mount Tracker
+ const [isReady, setIsReady] = useState(false);
+ useEffect(() => {
+   setIsReady(true);
+ }, []);
+
  const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isHydrated) return null;
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
@@ -188,6 +194,9 @@ export default function RoomsPage() {
   });
  }, [roomsData, activeCategory, isHydrated]);
 
+  // STABILITY GUARD: Combine all signals for final flip.
+  const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
+
   return (
     <AppLayout>
       <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900">
@@ -271,7 +280,7 @@ export default function RoomsPage() {
                    <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
                 </div>
                 <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10 min-h-[40px]">
-                   {(!isHydrated || !roomsData) ? (
+                   {!showSummary ? (
                       Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="flex flex-col items-center gap-2 shrink-0 animate-pulse">
                           <div className="h-10 w-10 rounded-full bg-red-900/20 border border-white/10" />
@@ -330,7 +339,7 @@ export default function RoomsPage() {
 
             <main className="px-3 flex-1 pb-6">
               <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
-                {(!isHydrated || (isRoomsLoading && !roomsData)) ? (
+                {!showSummary ? (
                    Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)
                 ) : displayRooms.length > 0 ? (
                   displayRooms.map((room: any) => (
@@ -347,8 +356,8 @@ export default function RoomsPage() {
           </>
         ) : (
           <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
-            <div className={cn("transition-opacity duration-300", !isHydrated ? "opacity-40 pointer-events-none" : "opacity-100")}>
-               {!isHydrated ? (
+            <div className={cn("transition-opacity duration-300", !isReady ? "opacity-0" : "opacity-100")}>
+               {!isReady || !userDoc ? (
                  <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
                    <Loader className="h-8 w-8 animate-spin text-slate-300 mx-auto" />
                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Synchronizing Identity...</p>
