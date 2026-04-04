@@ -122,6 +122,7 @@ import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
+import { RoomParticipant, Room } from '@/lib/types';
 
 import { memo, useCallback } from 'react';
 
