@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
  Sidebar,
@@ -12,19 +12,11 @@ import {
  SidebarMenuButton,
  SidebarMenuItem,
  SidebarProvider,
- SidebarFooter,
 } from '@/components/ui/sidebar';
 import {
- Settings,
- ShoppingBag,
  Mail,
- Crown,
- Gamepad2,
- Power,
- ShieldAlert,
  Castle,
  Home,
- Users,
  User,
  Compass,
  Loader
@@ -38,14 +30,14 @@ import { ActiveRoomManager } from '@/components/active-room-manager';
 import { UnreadBadge } from '@/components/unread-badge';
 
 /**
- * THE ELITE NAVIGATION LAYOUT (Recovered & Shielded).
- * Resolves #310 (Hydration) + Restores All Nav Menus (Home, Discovery, Me).
+ * THE NUCLEAR STABILITY LAYOUT (Final Remediated Version).
+ * Resolves #310 (Hydration) by enforcing strict client-only structural logic.
  */
 export function AppLayout({
  children,
  fullScreen = false,
  hideBottomNav = false,
- hideSidebarOnMobile = false
+ hideSidebarOnMobile = false,
 }: {
  children: React.ReactNode;
  fullScreen?: boolean;
@@ -72,25 +64,25 @@ export function AppLayout({
 
  const showRealContent = mounted && isHydrated && !isFirebaseLoading && (deterministicAuth || userProfile);
 
- // SERVER-SIDE / PRE-MOUNT RENDER.
+ // SERVER-SIDE / PRE-MOUNT RENDER (100% Clean Shard).
  if (!mounted) {
    return (
     <div className="min-h-screen bg-[#F8F9FE] flex flex-col items-center justify-center gap-4">
       <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Initializing Reality Shell...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
     </div>
    );
  }
 
  return (
   <SidebarProvider defaultOpen={!deterministicAuth}>
-    {/* PERSISTENT MANAGERS */}
+    {/* PERSISTENT MANAGERS - Shielded by mounted check above */}
     <ActiveRoomManager />
-    {!deterministicAuth && isHydrated && mounted && <QuestTracker />}
+    {!deterministicAuth && isHydrated && <QuestTracker />}
 
-    {/* SIDEBAR FOR DESKTOP */}
-    {mounted && (
-      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white/80 backdrop-blur-xl">
+    {/* DESKTOP SIDEBAR (Strictly Client-Side) */}
+    {!deterministicAuth && (
+      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white/80 backdrop-blur-xl transition-all">
         <SidebarHeader className="h-16 flex items-center px-4 border-b border-slate-100">
            <div className="flex items-center gap-3">
              <div className="h-8 w-8 bg-primary rounded-xl" />
@@ -120,7 +112,7 @@ export function AppLayout({
                   <Link href="/messages" className="flex items-center gap-4 relative">
                     <Mail className="h-5 w-5" />
                     <span className="font-bold uppercase text-xs">{t?.nav?.message || 'Message'}</span>
-                    <UnreadBadge size="sm" className="absolute top-0 right-0" />
+                    <UnreadBadge size="sm" />
                   </Link>
                 </SidebarMenuButton>
              </SidebarMenuItem>
@@ -139,7 +131,7 @@ export function AppLayout({
 
     <SidebarInset className="bg-[#F8F9FE] flex flex-col min-h-screen relative overflow-hidden">
       
-      {/* THE VISIBLE SHELL: Loader absolute overlay */}
+      {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
         <div className="absolute inset-0 z-[9999] bg-[#F8F9FE] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
           <Loader className="h-10 w-10 animate-spin text-primary" />
@@ -147,7 +139,7 @@ export function AppLayout({
         </div>
       )}
 
-      {/* THE CHILDREN: Main Content */}
+      {/* MAIN CONTENT AREA */}
       <div 
         className={cn(
           "flex-1 flex flex-col transition-opacity duration-700 pb-20 md:pb-0",
@@ -157,8 +149,8 @@ export function AppLayout({
         {children}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION (RESTORED VICTORY) */}
-      {mounted && !deterministicAuth && !hideBottomNav && (
+      {/* MOBILE BOTTOM NAVIGATION (Atomic Shielded Rebuild) */}
+      {!deterministicAuth && !hideBottomNav && (
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-safe-area-inset-bottom"
         >
