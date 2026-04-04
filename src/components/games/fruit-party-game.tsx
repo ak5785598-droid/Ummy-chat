@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { GameResultOverlay } from '@/components/game-result-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- CONFIG ---
 const ITEMS = [
   { id: 'lemon', emoji: '🍋', multiplier: 5, label: '×5', index: 0 },
   { id: 'grapes', emoji: '🍇', multiplier: 10, label: '×10', index: 1 },
@@ -25,7 +24,7 @@ const ITEMS = [
   { id: 'cherry', emoji: '🍒', multiplier: 45, label: '×45', index: 3 },
   { id: 'timer', emoji: '', multiplier: 0, label: '', index: 4 }, 
   { id: 'apple', emoji: '🍎', multiplier: 25, label: '×25', index: 5 },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: '×5', index: 6 },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: '×6', index: 6 },
   { id: 'strawberry', emoji: '🍓', multiplier: 15, label: '×15', index: 7 },
   { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5', index: 8 },
 ];
@@ -36,6 +35,28 @@ const CHIPS = [
   { value: 50000, label: '50,000', color: 'from-blue-400 to-blue-700' },
   { value: 500000, label: '500,000', color: 'from-purple-400 to-purple-700' },
 ];
+
+// --- Branch Fruit Component ---
+const FallingFruit = ({ emoji, delay }: { emoji: string; delay: number }) => (
+  <motion.div
+    initial={{ scale: 0, opacity: 0 }}
+    animate={{ 
+      scale: [0, 1, 1, 0], 
+      opacity: [0, 1, 1, 0],
+      y: [0, 0, 0, 100],
+      rotate: [0, 0, 0, 45]
+    }}
+    transition={{ 
+      duration: 4, 
+      repeat: Infinity, 
+      delay: delay,
+      times: [0, 0.2, 0.8, 1] 
+    }}
+    className="text-2xl"
+  >
+    {emoji}
+  </motion.div>
+);
 
 export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const { user: currentUser } = useUser();
@@ -53,26 +74,31 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const [isLaunching, setIsLaunching] = useState(true);
  const [hintTargetIdx, setHintTargetIdx] = useState<number>(0);
 
- // Winners states
  const [winners, setWinners] = useState<any[]>([]);
  const [winningSymbol, setWinningSymbol] = useState<string>('');
  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
- // Loading
  useEffect(() => {
   const timer = setTimeout(() => setIsLaunching(false), 1200);
   return () => clearTimeout(timer);
  }, []);
 
- // Timer Logic & Random Hinting
+ // Hand Icon Movement Logic (Every 3 seconds)
+ useEffect(() => {
+  if (gameState !== 'betting') return;
+  const hintInterval = setInterval(() => {
+    const fruitIndices = ITEMS.filter(item => item.id !== 'timer').map(item => item.index);
+    setHintTargetIdx(fruitIndices[Math.floor(Math.random() * fruitIndices.length)]);
+  }, 3000);
+  return () => clearInterval(hintInterval);
+ }, [gameState]);
+
  useEffect(() => {
   if (isLaunching) return;
   const interval = setInterval(() => {
    if (gameState === 'betting') {
     if (timeLeft > 0) {
         setTimeLeft(prev => prev - 1);
-        const fruitIndices = ITEMS.filter(item => item.id !== 'timer').map(item => item.index);
-        setHintTargetIdx(fruitIndices[Math.floor(Math.random() * fruitIndices.length)]);
     } else startSpin();
    }
   }, 1000);
@@ -82,17 +108,13 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const handlePlaceBet = (id: string) => {
   if (id === 'timer' || gameState !== 'betting' || !currentUser || !userProfile) return;
   const currentBalance = userProfile.wallet?.coins || 0;
-  
   if (currentBalance < selectedChip) {
    toast({ title: 'Insufficient Coins!', variant: 'destructive' });
    return;
   }
-  
-  // Cut coins on placing bet
   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
     'wallet.coins': increment(-selectedChip) 
   });
-  
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
  };
 
@@ -125,12 +147,9 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   setWinningSymbol(winItem.emoji);
   setTotalWinAmount(winAmount);
   setHistory(prev => [winItem.id, ...prev].slice(0, 10));
-
   const currentWinners = [];
   if (winAmount > 0 && userProfile) {
     currentWinners.push({ name: userProfile.username || 'You', win: winAmount, avatar: userProfile.avatarUrl, isMe: true });
-    
-    // Credit coins on win
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 
       'wallet.coins': increment(winAmount),
       updatedAt: serverTimestamp()
@@ -161,25 +180,48 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* --- 3D HEADER (Only Title & Buttons) --- */}
-   <header className="px-4 pt-6 pb-2 flex items-center justify-between w-full z-10">
-      <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-md border border-white/10">
-        {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
-      </button>
-      
-      <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 tracking-[0.1em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] filter">
-        FRUIT PARTY
-      </h1>
+   {/* --- 3D HEADER WITH BRANCHES --- */}
+   <header className="relative px-4 pt-6 pb-2 flex flex-col items-center w-full z-10">
+      {/* Branches Effect */}
+      <div className="absolute top-14 left-0 right-0 h-20 overflow-visible pointer-events-none flex justify-between px-10">
+          {/* Left Branch */}
+          <div className="relative">
+            <svg width="120" height="60" viewBox="0 0 120 60" className="opacity-40">
+              <path d="M0 10 C 40 10, 80 40, 120 10" stroke="#4a2c1a" strokeWidth="4" fill="transparent" />
+            </svg>
+            <div className="absolute top-2 left-10 flex gap-4">
+               <FallingFruit emoji="🍎" delay={0} />
+               <FallingFruit emoji="🍇" delay={1} />
+            </div>
+          </div>
+          {/* Right Branch */}
+          <div className="relative scale-x-[-1]">
+            <svg width="120" height="60" viewBox="0 0 120 60" className="opacity-40">
+              <path d="M0 10 C 40 10, 80 40, 120 10" stroke="#4a2c1a" strokeWidth="4" fill="transparent" />
+            </svg>
+            <div className="absolute top-2 left-10 flex gap-4">
+               <FallingFruit emoji="🥭" delay={0.5} />
+               <FallingFruit emoji="🍎" delay={1.5} />
+            </div>
+          </div>
+      </div>
 
-      <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 shadow-lg shadow-red-500/5">
-        <X size={20}/>
-      </button>
+      <div className="flex items-center justify-between w-full">
+        <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl border border-white/10">
+          {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
+        </button>
+        <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 tracking-[0.1em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          FRUIT PARTY
+        </h1>
+        <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20">
+          <X size={20}/>
+        </button>
+      </div>
    </header>
 
    {/* --- 3D MAIN AREA --- */}
    <main className="flex-1 flex flex-col items-center justify-center px-4 relative perspective-1000">
     
-    {/* ROUND HISTORY (Moved closely above the grid) */}
     <div className="text-center flex flex-col items-center mb-3 z-10 mt-[-10px]">
       <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mb-1.5 font-black">Round History</p>
       <div className="flex gap-2 bg-black/40 p-1.5 px-3 rounded-2xl border border-white/5 shadow-2xl">
@@ -191,9 +233,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       </div>
     </div>
 
-    {/* Grid & Visualizers Wrapper */}
     <div className="relative flex justify-center items-center w-full max-w-[360px]">
-        {/* Visualizers with Neon Glow */}
+        {/* Visualizers */}
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 flex items-end gap-1 h-44">
             {visualizerBars.slice(0, 8).map((height, i) => (
                 <motion.div key={i} className="w-1.5 bg-gradient-to-t from-pink-600 to-pink-300 rounded-full shadow-[0_0_15px_pink]" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.3, delay: i*0.05 }} />
@@ -205,15 +246,11 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
             ))}
         </div>
 
-        {/* Main 3D Grid Case */}
+        {/* Main Grid Case */}
         <div className="relative p-1.5 rounded-[3rem] transform-gpu rotate-x-2 z-10 w-full max-w-[320px]">
-            {/* Animated Gradient Outer Glow */}
             <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[3rem] blur-xl opacity-30" />
-            
-            {/* The 3D Border Case */}
             <div className="relative p-[8px] rounded-[2.8rem] bg-gradient-to-b from-white/20 to-black/40 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                 <div className="absolute inset-0 bg-gradient-to-tr from-pink-500 via-blue-500 to-yellow-400 animate-spin-slow rounded-[2.8rem]" />
-                
                 <div className="relative bg-[#1e0d36] p-4 rounded-[2.5rem] overflow-hidden">
                     <div className="grid grid-cols-3 gap-3">
                         {ITEMS.map((item, idx) => {
@@ -229,19 +266,17 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                         return (
                             <motion.button
                                 key={item.id}
-                                whileHover={{ scale: 1.05, translateZ: 20 }}
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handlePlaceBet(item.id)}
                                 className={cn(
                                     "relative w-full aspect-square rounded-[1.8rem] flex flex-col items-center justify-center transition-all",
                                     "bg-gradient-to-b from-white/10 to-transparent border-t border-white/20 shadow-xl",
-                                    "before:absolute before:inset-0 before:rounded-[1.8rem] before:bg-black/20 before:-z-10",
                                     highlightIdx === idx ? "ring-4 ring-yellow-400 shadow-[0_0_40px_gold] brightness-125 z-10" : "opacity-90"
                                 )}
                             >
                                 <span className="text-[2.5rem] mb-1 filter drop-shadow-lg leading-none">{item.emoji}</span>
                                 <span className="text-[9px] font-black text-white/40 uppercase">{item.label}</span>
-                                
                                 {myBets[item.id] > 0 && (
                                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-xl shadow-lg border-2 border-[#1e0d36]">
                                         {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'K' : myBets[item.id]}
@@ -252,18 +287,19 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                         })}
                     </div>
 
-                    {/* 3D Hint Pointer */}
+                    {/* WHITE HAND ICON (ONLY IN BETTING) */}
                     <AnimatePresence>
                         {gameState === 'betting' && (
                             <motion.div
                                 className="absolute z-50 pointer-events-none"
+                                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
                                 animate={{ 
-                                    x: (hintTargetIdx % 3) * 92 + 50,
-                                    y: Math.floor(hintTargetIdx / 3) * 92 + 50
+                                    x: (hintTargetIdx % 3) * 95 + 40,
+                                    y: Math.floor(hintTargetIdx / 3) * 95 + 40
                                 }}
                             >
-                                <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity }}>
-                                    <Pointer size={40} className="text-yellow-400 drop-shadow-[0_0_20px_gold] -rotate-45" />
+                                <motion.div animate={{ y: [0, -8, 0], scale: [1, 0.9, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+                                    <Pointer size={42} className="text-white fill-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] -rotate-45" />
                                 </motion.div>
                             </motion.div>
                         )}
@@ -277,8 +313,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    {/* --- 3D FOOTER --- */}
    <footer className="bg-[#1a0b2e]/90 backdrop-blur-2xl p-5 pb-8 rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-20">
     <div className="max-w-md mx-auto space-y-4">
-      
-      {/* 3D Chips Selection (Gap reduced to gap-1.5) */}
       <div className="flex justify-between gap-1.5 perspective-500">
         {CHIPS.map(chip => (
           <button 
@@ -296,7 +330,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
 
-      {/* User ID & Coin Balance 3D Card */}
       <div className="relative group overflow-hidden bg-gradient-to-r from-black/60 to-black/30 p-4 rounded-[2rem] border border-white/10 shadow-inner">
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
@@ -320,7 +353,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
             </motion.div>
         </div>
       </div>
-
     </div>
    </footer>
 
