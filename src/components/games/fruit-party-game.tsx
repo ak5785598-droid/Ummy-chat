@@ -68,9 +68,9 @@ const BranchDecoration = ({ className, delay, reverse = false }: { className?: s
     initial={{ rotate: reverse ? 5 : -5 }}
     animate={{ rotate: reverse ? -5 : 5 }}
     transition={{ duration: 4, repeat: Infinity, repeatType: "mirror", delay }}
-    className={cn("absolute pointer-events-none opacity-90 z-30", className, reverse ? "scale-x-[-1]" : "")}
+    className={cn("pointer-events-none opacity-90 z-30", className, reverse ? "scale-x-[-1]" : "")}
   >
-    <svg width="140" height="120" viewBox="0 0 100 100">
+    <svg width="120" height="100" viewBox="0 0 100 100">
       <path d="M0 50 Q 30 40, 70 80" stroke="#1b4a1a" strokeWidth="8" fill="none" strokeLinecap="round" />
       <path d="M0 50 Q 50 45, 90 20" stroke="#2d6a27" strokeWidth="5" fill="none" strokeLinecap="round" />
       <motion.text animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity }} x="40" y="70" className="text-[24px]">🌿</motion.text>
@@ -93,7 +93,7 @@ const DJVisualizer = ({ colorClass = "bg-pink-500" }: { colorClass?: string }) =
 );
 
 const VisualizerPillar = ({ height = "h-60", colors = ['#ff3366', '#ffcc00', '#00ffcc'] }: { height?: string, colors?: string[] }) => (
-  <div className={cn("flex flex-col gap-1 w-4 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md shadow-2xl", height)}>
+  <div className={cn("flex flex-col gap-1 w-4 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md shadow-2xl z-20", height)}>
     {Array.from({ length: 10 }).map((_, i) => (
       <motion.div
         key={i}
@@ -165,20 +165,25 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const targetIdx = ITEMS.findIndex(i => i.id === winItem.id);
   
   let currentStep = 0;
-  // Adjusted for Medium Speed: ~8-10 full rounds
+  // Dynamic step count ensures it lands perfectly on targetIdx
   const totalSteps = (SEQUENCE.length * 8) + SEQUENCE.indexOf(targetIdx); 
-  let speed = 60; // Medium base speed
+  let speed = 40; // Fast base speed for smooth initial spin
 
   const run = () => {
    setHighlightIdx(SEQUENCE[currentStep % SEQUENCE.length]);
    playSound('spin', isMuted);
-   currentStep++;
    
    if (currentStep < totalSteps) {
-    // Gradual deceleration for "effort" feel
-    if (totalSteps - currentStep < 15) speed += 25; 
-    else if (totalSteps - currentStep < 30) speed += 5;
+    const remaining = totalSteps - currentStep;
     
+    // Smooth deceleration curve
+    if (remaining < 4) speed += 120;
+    else if (remaining < 8) speed += 60;
+    else if (remaining < 15) speed += 30;
+    else if (remaining < 25) speed += 15;
+    else if (remaining < 40) speed += 5;
+    
+    currentStep++;
     setTimeout(run, speed);
    } else {
     setTimeout(() => finalizeResult(winItem), 1200);
@@ -210,8 +215,17 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans">
-   <BranchDecoration className="top-0 -left-6" delay={0} />
-   <BranchDecoration className="top-0 -right-6" delay={1} reverse />
+   {/* --- Left & Right Full Hanging Branches --- */}
+   <div className="absolute top-0 bottom-0 left-[-25px] w-28 z-30 pointer-events-none flex flex-col justify-around overflow-hidden">
+     {[0, 1, 2, 3, 4, 5].map((i) => (
+       <BranchDecoration key={`left-${i}`} delay={i * 0.5} className="relative" />
+     ))}
+   </div>
+   <div className="absolute top-0 bottom-0 right-[-25px] w-28 z-30 pointer-events-none flex flex-col justify-around overflow-hidden">
+     {[0, 1, 2, 3, 4, 5].map((i) => (
+       <BranchDecoration key={`right-${i}`} delay={i * 0.5 + 0.2} className="relative" reverse />
+     ))}
+   </div>
 
    <header className="relative pt-6 px-6 flex flex-col items-center z-20">
       <div className="flex justify-between items-center w-full mb-4">
@@ -238,6 +252,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       <VisualizerPillar height="h-72" />
       
       <div className="flex-1 flex flex-col items-center gap-4">
+        {/* Spinner Grid */}
         <div className={cn("p-1.5 rounded-[3rem] transition-all duration-700", 
              gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 via-white to-yellow-400 shadow-[0_0_100px_rgba(255,255,255,0.4)] scale-[1.02]" : "bg-indigo-500/30 shadow-2xl")}>
           <div className="bg-[#120626] rounded-[2.8rem] p-4 grid grid-cols-3 gap-3 w-[310px] aspect-square relative border border-white/10">
@@ -295,26 +310,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        {/* --- Balance --- */}
-        <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md relative overflow-hidden group">
-           <div className="flex items-center gap-3 z-10">
-              <div className="p-2 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-xl shadow-[0_4px_10px_rgba(234,179,8,0.3)] border-b-2 border-orange-800">
-                <GoldCoinIcon className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-[8px] text-indigo-300 font-bold uppercase tracking-widest mb-0.5">My Balance</p>
-                <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-white to-orange-400 tabular-nums leading-none tracking-tight">
-                    {localCoins.toLocaleString()}
-                </p>
-              </div>
-           </div>
-           <div className="bg-black/40 px-2 py-1 rounded-lg border border-white/5 font-mono text-[9px] text-white/40 tracking-tighter z-10">
-              #{currentUser?.uid?.slice(0,4).toUpperCase()}
-           </div>
-        </div>
-
-        {/* Salad Section with DJ Effects */}
-        <div className="flex items-center gap-4">
+        {/* --- Salad Section with DJ Effects (Moved UP) --- */}
+        <div className="flex items-center gap-4 z-20">
            <DJVisualizer colorClass="bg-blue-400" />
 
            <div className="flex gap-4">
@@ -333,15 +330,31 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
            <DJVisualizer colorClass="bg-pink-500" />
         </div>
+
+        {/* --- Balance (Moved DOWN) --- */}
+        <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md relative overflow-hidden group z-20">
+           <div className="flex items-center gap-3 z-10">
+              <div className="p-2 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-xl shadow-[0_4px_10px_rgba(234,179,8,0.3)] border-b-2 border-orange-800">
+                <GoldCoinIcon className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-[8px] text-indigo-300 font-bold uppercase tracking-widest mb-0.5">My Balance</p>
+                <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-white to-orange-400 tabular-nums leading-none tracking-tight">
+                    {localCoins.toLocaleString()}
+                </p>
+              </div>
+           </div>
+           <div className="bg-black/40 px-2 py-1 rounded-lg border border-white/5 font-mono text-[9px] text-white/40 tracking-tighter z-10">
+              #{currentUser?.uid?.slice(0,4).toUpperCase()}
+           </div>
+        </div>
+
       </div>
       
       <VisualizerPillar height="h-72" />
    </main>
 
-   <footer className="relative mt-auto p-6">
-      <BranchDecoration className="bottom-24 -left-8 -rotate-45" delay={0.5} />
-      <BranchDecoration className="bottom-24 -right-8 rotate-45" delay={1.5} reverse />
-
+   <footer className="relative mt-auto p-6 z-40">
       <div className="bg-black/40 backdrop-blur-3xl rounded-[3rem] p-5 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
         <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center pb-1">
           {CHIPS.map(chip => (
