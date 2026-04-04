@@ -24,19 +24,18 @@ const ITEMS = [
   { id: 'cherry', emoji: '🍒', multiplier: 45, label: '×45', index: 3 },
   { id: 'timer', emoji: '', multiplier: 0, label: '', index: 4 }, 
   { id: 'apple', emoji: '🍎', multiplier: 25, label: '×25', index: 5 },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: '×6', index: 6 },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: '×5', index: 6 },
   { id: 'strawberry', emoji: '🍓', multiplier: 15, label: '×15', index: 7 },
   { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5', index: 8 },
 ];
 
 const CHIPS = [
-  { value: 500, label: '500', color: 'from-emerald-400 to-emerald-700' },
+  { value: 500, label: '500', color: 'from-emerald-400 to-emerald-700', icon: '🍇' },
   { value: 5000, label: '5,000', color: 'from-rose-400 to-rose-700' },
   { value: 50000, label: '50,000', color: 'from-blue-400 to-blue-700' },
-  { value: 500000, label: '500,000', color: 'from-purple-400 to-purple-700' },
+  { value: 500000, label: '500,000', color: 'from-purple-400 to-purple-700', icon: '🍎🥭' },
 ];
 
-// --- Growing/Falling Fruit on Branches ---
 const BranchFruit = ({ emoji, delay }: { emoji: string; delay: number }) => (
   <motion.div
     initial={{ scale: 0, opacity: 0, y: -10 }}
@@ -46,12 +45,7 @@ const BranchFruit = ({ emoji, delay }: { emoji: string; delay: number }) => (
       y: [0, 0, 0, 50, 100],
       rotate: [0, 0, 0, 15, 45]
     }}
-    transition={{ 
-      duration: 5, 
-      repeat: Infinity, 
-      delay: delay,
-      times: [0, 0.1, 0.7, 0.85, 1] 
-    }}
+    transition={{ duration: 5, repeat: Infinity, delay: delay, times: [0, 0.1, 0.7, 0.85, 1] }}
     className="text-2xl filter drop-shadow-md"
   >
     {emoji}
@@ -72,10 +66,10 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const [history, setHistory] = useState<string[]>(['apple', 'grapes', 'lemon', 'mango']);
  const [isMuted, setIsMuted] = useState(false);
  const [isLaunching, setIsLaunching] = useState(true);
+ const [deductions, setDeductions] = useState<{id: number, amount: number}[]>([]);
  
- // Hand Icon Sequential Movement
  const [hintStep, setHintStep] = useState(0);
- const sequenceIndices = [0, 1, 2, 5, 8, 7, 6, 3]; // Circular order around the timer
+ const sequenceIndices = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
  const [winners, setWinners] = useState<any[]>([]);
  const [winningSymbol, setWinningSymbol] = useState<string>('');
@@ -86,7 +80,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   return () => clearTimeout(timer);
  }, []);
 
- // Hand Icon Movement Logic (Moves every 1 second through 1-8 fruits)
  useEffect(() => {
   if (gameState !== 'betting') return;
   const hintInterval = setInterval(() => {
@@ -99,9 +92,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   if (isLaunching) return;
   const interval = setInterval(() => {
    if (gameState === 'betting') {
-    if (timeLeft > 0) {
-        setTimeLeft(prev => prev - 1);
-    } else startSpin();
+    if (timeLeft > 0) setTimeLeft(prev => prev - 1);
+    else startSpin();
    }
   }, 1000);
   return () => clearInterval(interval);
@@ -114,6 +106,12 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    toast({ title: 'Insufficient Coins!', variant: 'destructive' });
    return;
   }
+  
+  // Real-time Deduction Effect
+  const dedId = Date.now();
+  setDeductions(prev => [...prev, { id: dedId, amount: selectedChip }]);
+  setTimeout(() => setDeductions(prev => prev.filter(d => d.id !== dedId)), 1000);
+
   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 
     'wallet.coins': increment(-selectedChip) 
   });
@@ -167,12 +165,12 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   }, 5000);
  };
 
- const visualizerBars = useMemo(() => Array.from({ length: 16 }).map(() => Math.random()), []);
+ const visualizerBars = useMemo(() => Array.from({ length: 20 }).map(() => Math.random()), []);
 
  if (isLaunching) return <div className="h-full w-full bg-[#0f071a] flex items-center justify-center text-yellow-400 font-bold tracking-widest">LOADING FRUIT PARADISE...</div>;
 
  return (
-  <div className="fixed inset-0 flex flex-col bg-[#120821] overflow-hidden text-white font-sans">
+  <div className="fixed inset-0 flex flex-col bg-[#0a0414] overflow-hidden text-white font-sans">
    
    <AnimatePresence>
     {gameState === 'result' && (
@@ -182,42 +180,13 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* --- GREEN TREE BRANCHES HEADER --- */}
+   {/* --- HEADER --- */}
    <header className="relative px-4 pt-6 pb-2 flex flex-col items-center w-full z-30">
-      {/* Decorative Green Branches */}
-      <div className="absolute top-0 left-0 right-0 h-32 overflow-visible pointer-events-none flex justify-between">
-          {/* Left Green Branch */}
-          <div className="relative -ml-4">
-            <svg width="160" height="100" viewBox="0 0 160 100" className="drop-shadow-lg">
-              <path d="M0 0 Q 40 10, 60 50 T 140 80" stroke="#2d5a27" strokeWidth="8" fill="transparent" strokeLinecap="round" />
-              <circle cx="60" cy="50" r="6" fill="#4ade80" />
-              <circle cx="100" cy="65" r="5" fill="#22c55e" />
-              <circle cx="130" cy="75" r="7" fill="#16a34a" />
-            </svg>
-            <div className="absolute top-12 left-16 flex flex-col gap-2">
-               <BranchFruit emoji="🍋" delay={0} />
-               <BranchFruit emoji="🍓" delay={2} />
-            </div>
-          </div>
-          {/* Right Green Branch */}
-          <div className="relative -mr-4 scale-x-[-1]">
-            <svg width="160" height="100" viewBox="0 0 160 100" className="drop-shadow-lg">
-              <path d="M0 0 Q 40 10, 60 50 T 140 80" stroke="#2d5a27" strokeWidth="8" fill="transparent" strokeLinecap="round" />
-              <circle cx="70" cy="45" r="6" fill="#4ade80" />
-              <circle cx="110" cy="70" r="5" fill="#22c55e" />
-            </svg>
-            <div className="absolute top-10 left-20 flex flex-col gap-2">
-               <BranchFruit emoji="🍎" delay={1} />
-               <BranchFruit emoji="🍊" delay={3} />
-            </div>
-          </div>
-      </div>
-
       <div className="flex items-center justify-between w-full relative z-40">
         <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
           {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
         </button>
-        <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-green-400 tracking-[0.1em] drop-shadow-xl">
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-blue-400 tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
           FRUIT PARTY
         </h1>
         <button onClick={onClose} className="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 backdrop-blur-md">
@@ -226,87 +195,77 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       </div>
    </header>
 
-   {/* --- MAIN GAME AREA --- */}
-   <main className="flex-1 flex flex-col items-center justify-center px-4 relative perspective-1000">
+   <main className="flex-1 flex flex-col items-center justify-center px-4 relative">
     
-    <div className="text-center flex flex-col items-center mb-4 z-10">
-      <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mb-2 font-black">Round History</p>
-      <div className="flex gap-2 bg-black/40 p-2 px-4 rounded-2xl border border-white/5 shadow-2xl backdrop-blur-sm">
-        {history.map((id, i) => (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} key={i} className="text-xl">
-            {ITEMS.find(it => it.id === id)?.emoji}
-          </motion.span>
-        ))}
-      </div>
+    {/* --- SYNCED VOLUME VISUALIZERS (Pink/Blue) --- */}
+    <div className="absolute inset-x-0 top-1/4 flex justify-between px-2 pointer-events-none">
+        <div className="flex items-end gap-1 h-32">
+            {visualizerBars.slice(0, 10).map((h, i) => (
+                <motion.div key={i} animate={{ height: [`${h*40}%`, `${h*100}%`, `${h*40}%`] }} transition={{ repeat: Infinity, duration: 0.5, delay: i*0.05 }} className="w-1.5 bg-gradient-to-t from-blue-600 to-pink-400 rounded-full opacity-60" />
+            ))}
+        </div>
+        <div className="flex items-end gap-1 h-32 rotate-y-180">
+            {visualizerBars.slice(10, 20).map((h, i) => (
+                <motion.div key={i} animate={{ height: [`${h*40}%`, `${h*100}%`, `${h*40}%`] }} transition={{ repeat: Infinity, duration: 0.5, delay: i*0.05 }} className="w-1.5 bg-gradient-to-t from-pink-600 to-blue-400 rounded-full opacity-60" />
+            ))}
+        </div>
     </div>
 
-    <div className="relative flex justify-center items-center w-full max-w-[360px]">
-        {/* Visualizers Side Decor */}
-        <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex items-end gap-1 h-40">
-            {visualizerBars.slice(0, 6).map((height, i) => (
-                <motion.div key={i} className="w-1 bg-green-500/40 rounded-full" animate={{ height: `${height * 100}%` }} transition={{ repeat: Infinity, duration: 0.4, delay: i*0.1 }} />
+    <div className="relative flex flex-col items-center w-full max-w-[360px] transform-gpu transition-transform duration-700" style={{ transform: 'rotateX(10deg)' }}>
+        
+        {/* Round History */}
+        <div className="flex gap-2 bg-black/60 p-2 px-4 rounded-full border border-white/10 mb-6 backdrop-blur-xl">
+            {history.map((id, i) => (
+                <span key={i} className="text-lg grayscale-[0.5] hover:grayscale-0">{ITEMS.find(it => it.id === id)?.emoji}</span>
             ))}
         </div>
 
-        {/* Main Grid Case */}
-        <div className="relative p-2 rounded-[3rem] z-10 w-full max-w-[320px]">
-            <div className="absolute inset-0 bg-gradient-to-tr from-green-500/20 via-blue-500/20 to-yellow-500/20 blur-2xl opacity-50" />
-            <div className="relative p-[10px] rounded-[2.8rem] bg-white/10 shadow-2xl border border-white/20">
-                <div className="relative bg-[#1a0b2e] p-4 rounded-[2.5rem] overflow-hidden border border-black/40">
-                    <div className="grid grid-cols-3 gap-3">
-                        {ITEMS.map((item, idx) => {
-                        if (item.id === 'timer') {
-                            return (
-                            <div key="timer" className="w-full aspect-square bg-black/80 rounded-[1.8rem] flex items-center justify-center border-b-4 border-white/5 shadow-inner">
-                                <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity }} className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
-                                {gameState === 'betting' ? timeLeft : '!!!'}
-                                </motion.span>
-                            </div>
-                            );
-                        }
-                        
-                        // Hand Icon Target logic
+        {/* 3D Main Grid Case */}
+        <div className="relative w-full aspect-square max-w-[320px] group">
+            {/* Multi-Color Border Glow */}
+            <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-yellow-400 to-pink-600 rounded-[3.5rem] blur-xl opacity-40 animate-pulse" />
+            
+            <div className="relative h-full w-full p-1 rounded-[3.2rem] bg-gradient-to-br from-blue-400 via-yellow-300 to-pink-400 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <div className="h-full w-full bg-[#120626] rounded-[3rem] p-4 grid grid-cols-3 gap-3 shadow-inner">
+                    {ITEMS.map((item, idx) => {
                         const isHandTarget = gameState === 'betting' && sequenceIndices[hintStep] === idx;
+                        if (item.id === 'timer') return (
+                            <div key="timer" className="bg-black/40 rounded-[2rem] flex items-center justify-center border-2 border-white/5 shadow-2xl">
+                                <span className="text-4xl font-black text-yellow-400 drop-shadow-lg">{gameState === 'betting' ? timeLeft : '!!!'}</span>
+                            </div>
+                        );
 
                         return (
                             <motion.button
                                 key={item.id}
-                                whileTap={{ scale: 0.95 }}
+                                whileTap={{ scale: 0.92, rotateZ: -2 }}
                                 onClick={() => handlePlaceBet(item.id)}
                                 className={cn(
-                                    "relative w-full aspect-square rounded-[1.8rem] flex flex-col items-center justify-center transition-all duration-300",
-                                    "bg-gradient-to-b from-white/10 to-transparent border-t border-white/10 shadow-lg",
-                                    highlightIdx === idx ? "ring-4 ring-yellow-400 shadow-[0_0_30px_gold] brightness-125 z-10" : "opacity-90"
+                                    "relative rounded-[2rem] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden",
+                                    "bg-white/5 border border-white/10 shadow-lg",
+                                    highlightIdx === idx ? "scale-110 ring-4 ring-yellow-400 shadow-[0_0_40px_rgba(255,215,0,0.6)] z-20" : "",
+                                    isHandTarget ? "bg-green-500/20 border-green-400/50" : ""
                                 )}
                             >
-                                <span className="text-[2.5rem] mb-1 filter drop-shadow-md">{item.emoji}</span>
-                                <span className="text-[9px] font-black text-white/30 uppercase">{item.label}</span>
+                                <span className="text-4xl mb-1 drop-shadow-md">{item.emoji}</span>
+                                <span className="text-[10px] font-black text-white/40">{item.label}</span>
                                 
                                 {myBets[item.id] > 0 && (
-                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-xl shadow-lg border-2 border-[#1e0d36]">
-                                        {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'K' : myBets[item.id]}
-                                    </motion.div>
+                                    <div className="absolute top-1 right-1 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full shadow-md">
+                                        {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(1)+'K' : myBets[item.id]}
+                                    </div>
                                 )}
 
-                                {/* WHITE HAND ICON - Sequential Movement */}
                                 <AnimatePresence>
                                     {isHandTarget && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.5 }}
-                                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                                        >
-                                            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 0.6 }}>
-                                                <Pointer size={40} className="text-white fill-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)] -rotate-45" />
-                                            </motion.div>
+                                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} className="absolute inset-0 flex items-center justify-center bg-green-500/10 pointer-events-none">
+                                            <Pointer size={32} className="text-white fill-white -rotate-12 drop-shadow-lg animate-bounce" />
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
                             </motion.button>
                         );
-                        })}
-                    </div>
+                    })}
                 </div>
             </div>
         </div>
@@ -314,40 +273,55 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    </main>
 
    {/* --- FOOTER --- */}
-   <footer className="bg-[#1a0b2e] p-5 pb-8 rounded-t-[3rem] border-t border-white/10 shadow-2xl z-20">
-    <div className="max-w-md mx-auto space-y-5">
-      <div className="flex justify-between gap-2">
+   <footer className="bg-[#0f051c] p-6 rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_40px_rgba(0,0,0,0.4)] z-50">
+    <div className="max-w-md mx-auto space-y-6">
+      
+      {/* Chips with embedded fruit icons */}
+      <div className="flex justify-between gap-3">
         {CHIPS.map(chip => (
           <button 
             key={chip.value} 
             onClick={() => setSelectedChip(chip.value)}
             className={cn(
-              "flex-1 h-12 rounded-2xl flex items-center justify-center transition-all transform",
-              "bg-gradient-to-br border-b-4 border-black/40 shadow-xl",
+              "relative flex-1 h-14 rounded-2xl flex flex-col items-center justify-center transition-all",
+              "bg-gradient-to-br border-b-[6px] border-black/40 shadow-2xl",
               chip.color,
-              selectedChip === chip.value ? "-translate-y-2 ring-2 ring-white" : "opacity-40"
+              selectedChip === chip.value ? "scale-110 -translate-y-3 ring-2 ring-white z-10" : "opacity-50 grayscale-[0.3]"
             )}
           >
-            <span className="text-white font-black text-xs drop-shadow-md">{chip.label}</span>
+            {chip.icon && <span className="text-[10px] absolute top-1 opacity-80">{chip.icon}</span>}
+            <span className="text-white font-black text-[11px] mt-2">{chip.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="relative bg-white/5 p-4 rounded-[2rem] border border-white/10">
-        <div className="flex items-center justify-between">
+      {/* Balance Bar with Deduction Animation */}
+      <div className="relative bg-white/5 p-4 rounded-[2.2rem] border border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
-                <div className="bg-yellow-400 p-3 rounded-2xl shadow-lg rotate-12">
-                    <GoldCoinIcon className="h-5 w-5 text-black" />
+                <div className="bg-yellow-400 p-3 rounded-2xl shadow-xl">
+                    <GoldCoinIcon className="h-6 w-6 text-black" />
                 </div>
-                <div className="flex flex-col">
-                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Total Balance</p>
-                    <p className="text-2xl font-black text-yellow-400 italic">
+                <div>
+                    <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Total Balance</p>
+                    <p className="text-2xl font-black text-yellow-400 italic flex items-center gap-2">
                       {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                      
+                      {/* Floating Deduction Text */}
+                      <AnimatePresence>
+                        {deductions.map(d => (
+                            <motion.span 
+                                key={d.id}
+                                initial={{ opacity: 1, y: 0 }}
+                                animate={{ opacity: 0, y: -40 }}
+                                className="absolute text-red-500 text-lg font-bold right-0"
+                            >
+                                -{d.amount.toLocaleString()}
+                            </motion.span>
+                        ))}
+                      </AnimatePresence>
                     </p>
                 </div>
-            </div>
-            <div className="text-[10px] text-white/20 font-mono">
-              {currentUser?.uid?.slice(0, 8).toUpperCase()}
             </div>
         </div>
       </div>
@@ -355,10 +329,10 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    </footer>
 
    <style jsx global>{`
-     .perspective-1000 { perspective: 1000px; }
-     @keyframes float {
-       0%, 100% { transform: translateY(0px); }
-       50% { transform: translateY(-10px); }
+     .rotate-y-180 { transform: rotateY(180deg); }
+     @keyframes shimmer { 
+       0% { background-position: -200% 0; } 
+       100% { background-position: 200% 0; } 
      }
    `}</style>
   </div>
