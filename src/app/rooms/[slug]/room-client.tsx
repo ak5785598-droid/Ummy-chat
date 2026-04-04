@@ -1116,9 +1116,8 @@ export function RoomClient({ room }: { room: Room }) {
    * NAVIGATION & BACK BUTTON INTERCEPTION
    */
   useEffect(() => {
-    // Sync context on mount
-    setActiveRoom(room);
-    setMinimizedRoom(null);
+    // NUCLEAR SYNC FIX: Room context is now managed by the parent Gateway (page.tsx)
+    // to ensure safe hydration-aware frame updates. We only handle the local intercept logic here.
 
     // Add a dummy entry to history to intercept back
     window.history.pushState(null, '', window.location.href);
@@ -1133,7 +1132,7 @@ export function RoomClient({ room }: { room: Room }) {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [room, setActiveRoom, setMinimizedRoom]);
+  }, [room]);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;

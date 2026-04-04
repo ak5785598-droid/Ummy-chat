@@ -26,7 +26,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  const { slug } = use(params);
  const router = useRouter();
  const firestore = useFirestore();
- const { user: currentUser, isUserLoading } = useUser();
+ const { user: currentUser, isLoading: isUserLoading } = useUser();
  const { activeRoom: currentActiveRoom, setActiveRoom, setIsMinimized } = useRoomContext();
  const { toast } = useToast();
  
@@ -52,14 +52,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
   return doc(firestore, 'chatRooms', slug, 'bans', currentUser.uid);
  }, [firestore, slug, isUserLoading, currentUser]);
 
- const { data: banData, loading: isBanLoading } = useDoc(banDocRef);
+ const { data: banData, isLoading: isBanLoading } = useDoc(banDocRef);
 
  const roomDocRef = useMemoFirebase(() => {
   if (!firestore || !slug || isUserLoading || !currentUser) return null;
   return doc(firestore, 'chatRooms', slug);
  }, [firestore, slug, isUserLoading, currentUser]);
 
- const { data: firestoreRoom, loading: isDocLoading } = useDoc(roomDocRef);
+ const { data: firestoreRoom, isLoading: isDocLoading } = useDoc(roomDocRef);
 
  const bannedUntil = useMemo(() => {
   if (!banData || !isMounted) return null;
@@ -99,14 +99,16 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  const isOwner = currentUser?.uid === activeRoom?.ownerId;
  const requiresPassword = activeRoom?.password && !isOwner && !isUnlocked;
 
- useEffect(() => {
-  if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
-   if (activeRoom.id !== currentActiveRoom?.id) {
-    setActiveRoom(activeRoom);
+  useEffect(() => {
+   if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
+     requestAnimationFrame(() => {
+      if (activeRoom.id !== currentActiveRoom?.id) {
+       setActiveRoom(activeRoom);
+      }
+      setIsMinimized(false);
+     });
    }
-   setIsMinimized(false);
-  }
- }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
+  }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
 
  const handleVerifyPassword = () => {
   if (passwordInput === activeRoom?.password) {
