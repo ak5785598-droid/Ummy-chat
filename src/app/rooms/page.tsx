@@ -100,14 +100,14 @@ export default function RoomsPage() {
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
   }, [firestore, user?.uid]);
 
-  const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
+  const { data: followedRoomsData, loading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
   const recentRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
   }, [firestore, user?.uid]);
 
-  const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
+  const { data: recentRoomsData, loading: isRecentLoading } = useCollection(recentRoomsQuery);
 
   const filteredRecentRooms = useMemo(() => {
     // NUCLEAR SHIELD: Prevent structural variation until hydration is confirmed
@@ -127,7 +127,7 @@ export default function RoomsPage() {
    return collection(firestore, 'users', user.uid, 'quests');
  }, [firestore, user?.uid]);
 
- const { data: questsData, isLoading: isQuestsLoading } = useCollection(questsQuery);
+ const { data: questsData, loading: isQuestsLoading } = useCollection(questsQuery);
 
  const userRef = useMemoFirebase(() => !firestore || !user ? null : doc(firestore, 'users', user.uid), [firestore, user]);
 
@@ -148,7 +148,7 @@ export default function RoomsPage() {
   );
  }, [firestore]);
 
- const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
+ const { data: roomsData, loading: isRoomsLoading } = useCollection(roomsQuery);
 
  const myRoomQuery = useMemoFirebase(() => {
   if (!firestore || !user) return null;
@@ -274,7 +274,7 @@ export default function RoomsPage() {
                 <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
              </div>
              <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10">
-                {roomsData?.slice(0, 10).map((room: any) => (
+                {(isHydrated && roomsData) ? roomsData.slice(0, 10).map((room: any) => (
                   <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
                      <div className="relative">
                         <Avatar className="h-10 w-10 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
@@ -288,7 +288,7 @@ export default function RoomsPage() {
                      </div>
                      <span className="text-[8px] font-bold text-white/90 uppercase tracking-tighter truncate w-14 text-center drop-shadow-sm">{room.title}</span>
                   </div>
-                ))}
+                )) : null}
              </div>
            </div>
          </div>
@@ -323,7 +323,7 @@ export default function RoomsPage() {
        </div>
 
        <main className="px-3 flex-1 pb-6">
-        {isRoomsLoading && !roomsData ? (
+        {(!isHydrated || (isRoomsLoading && !roomsData)) ? (
          <div className="grid grid-cols-2 gap-x-2 gap-y-3">
           {Array.from({ length: 4 }).map((_, i) => <RoomSkeleton key={i} />)}
          </div>
