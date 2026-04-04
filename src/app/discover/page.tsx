@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { 
   Compass, 
@@ -123,6 +123,11 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(moment.likes || 0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLike = async () => {
     if (!firestore || !user) return;
@@ -167,7 +172,7 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
                   </div>
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">
-                  {moment.createdAt ? formatDistanceToNow(moment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                  {mounted && moment.createdAt ? formatDistanceToNow(moment.createdAt.toDate(), { addSuffix: true }) : 'Calculating...'}
                 </p>
               </div>
             </div>
