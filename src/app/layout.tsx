@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Outfit, Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from './providers';
+import { DESIGN_TOKENS } from '@/lib/design-tokens';
 
 const fontHeadline = Outfit({
  subsets: ['latin'],
@@ -36,7 +37,7 @@ export const viewport: Viewport = {
  initialScale: 1,
  maximumScale: 5,
  userScalable: true,
- themeColor: '#FF91B5',
+ themeColor: DESIGN_TOKENS.statusBarColor,
  viewportFit: 'cover',
  interactiveWidget: 'resizes-content',
 };
@@ -49,7 +50,7 @@ export default function RootLayout({
  return (
   <html lang="en" suppressHydrationWarning className="h-full w-full">
    <body
-    style={{ backgroundColor: 'var(--app-bg, #FF91B5)' }}
+    style={{ backgroundColor: `var(--app-bg, ${DESIGN_TOKENS.rootBackground})` }}
     className={cn(
      'min-h-screen text-slate-900 antialiased touch-manipulation transition-colors duration-500',
      fontHeadline.variable,

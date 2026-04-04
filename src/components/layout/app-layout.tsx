@@ -28,6 +28,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { QuestTracker } from '@/components/quest-tracker';
 import { ActiveRoomManager } from '@/components/active-room-manager';
 import { UnreadBadge } from '@/components/unread-badge';
+import { DESIGN_TOKENS } from '@/lib/design-tokens';
 
 /**
  * THE NUCLEAR STABILITY LAYOUT (Final Remediated Version).
@@ -72,8 +73,8 @@ export function AppLayout({
    return (
     <div className={cn(
       "min-h-screen flex flex-col items-center justify-center gap-4",
-      isRoom ? "bg-transparent" : "bg-[#FF91B5]"
-    )}>
+      isRoom ? "bg-transparent" : ""
+    )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
       <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
     </div>
@@ -137,15 +138,15 @@ export function AppLayout({
 
     <SidebarInset className={cn(
       "flex flex-col min-h-screen relative overflow-hidden",
-      isRoom ? "bg-transparent shadow-none" : "bg-[#FF91B5]"
-    )}>
+      isRoom ? "bg-transparent shadow-none" : ""
+    )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
       
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
         <div className={cn(
           "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
-          isRoom ? "bg-transparent" : "bg-[#FF91B5]"
-        )}>
+          isRoom ? "bg-transparent" : ""
+        )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
           <Loader className="h-10 w-10 animate-spin text-primary" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>
         </div>
@@ -168,20 +169,20 @@ export function AppLayout({
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-safe-area-inset-bottom"
         >
           <div className="flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 mb-4 rounded-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-pink-400" : "text-white/40")}>
-               {pathname === '/rooms' && <div className="absolute -top-2 w-8 h-0.5 bg-pink-400 rounded-full blur-[1px] animate-pulse" />}
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
+               {pathname === '/rooms' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
                <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-pink-400" : "text-white/40")}>
-               {pathname === '/discover' && <div className="absolute -top-2 w-8 h-0.5 bg-pink-400 rounded-full blur-[1px] animate-pulse" />}
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
+               {pathname === '/discover' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
                <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
             </Link>
 
-            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-pink-400" : "text-white/40")}>
-               {pathname === '/messages' && <div className="absolute -top-2 w-8 h-0.5 bg-pink-400 rounded-full blur-[1px] animate-pulse" />}
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
+               {pathname === '/messages' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
                <div className="relative">
                  <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
                  <UnreadBadge size="sm" className="absolute -top-2 -right-2" />
@@ -189,8 +190,8 @@ export function AppLayout({
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
             </Link>
 
-            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-pink-400" : "text-white/40")}>
-               {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-8 h-0.5 bg-pink-400 rounded-full blur-[1px] animate-pulse" />}
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
+               {pathname?.startsWith('/profile') && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
                <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
             </Link>

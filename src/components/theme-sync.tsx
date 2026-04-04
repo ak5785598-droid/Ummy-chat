@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { DESIGN_TOKENS } from '@/lib/design-tokens';
 
 interface ThemeSyncProps {
   color?: string;
@@ -25,7 +26,7 @@ export function ThemeSync({ color, imageUrl }: ThemeSyncProps) {
     
     // Find theme-color meta tag
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    const originalThemeColor = metaThemeColor?.getAttribute('content') || '#FF91B5';
+    const originalThemeColor = metaThemeColor?.getAttribute('content') || DESIGN_TOKENS.rootBackground || '#FF91B5';
 
     if (!metaThemeColor) {
       metaThemeColor = document.createElement('meta');
@@ -43,7 +44,7 @@ export function ThemeSync({ color, imageUrl }: ThemeSyncProps) {
 
     // CLEANUP: Restore original theme on unmount
     return () => {
-      root.style.setProperty('--app-bg', originalAppBg || '#FF91B5');
+      root.style.setProperty('--app-bg', originalAppBg || DESIGN_TOKENS.rootBackground || '#FF91B5');
       body.style.backgroundColor = originalBg;
       body.style.overscrollBehavior = originalOverscroll;
       metaThemeColor?.setAttribute('content', originalThemeColor);

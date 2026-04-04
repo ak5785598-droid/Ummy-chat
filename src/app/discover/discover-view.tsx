@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
+import { DESIGN_TOKENS } from '@/lib/design-tokens';
 import { 
   Compass, 
   Loader, 
@@ -53,7 +54,10 @@ export default function DiscoverView() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#FF91B5] text-slate-800 font-sans relative overflow-x-hidden">
+      <div className={cn(
+        "min-h-screen relative overflow-x-hidden text-slate-800 font-sans",
+        DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-slate-50"
+      )}>
         {/* Subtle Background Elements */}
         <div className="fixed inset-0 z-0">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/20 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -61,7 +65,10 @@ export default function DiscoverView() {
         </div>
 
         {/* Discovery Header */}
-        <header className="sticky top-0 z-50 pt-12 pb-4 px-6 bg-[#FF91B5]/80 backdrop-blur-xl border-b border-black/5">
+        <header className={cn(
+          "sticky top-0 z-50 pt-12 pb-4 px-6 backdrop-blur-xl border-b border-black/5",
+          DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]/80" : "bg-white/80"
+        )}>
           <div className="flex flex-col items-center">
             <h1 className="text-3xl font-headline font-black italic uppercase tracking-tighter text-slate-900 border-white">
               Moment of Day
