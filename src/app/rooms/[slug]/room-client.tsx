@@ -1747,7 +1747,7 @@ export function RoomClient({ room }: { room: Room }) {
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[9px] font-bold">{onlineCount}</span>
             </button>
-            {canManageRoom && (
+            {(isHydrated && canManageRoom) && (
               <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
                 <Settings className="h-5 w-5 text-white/80" />
               </button>
@@ -2204,7 +2204,7 @@ export function RoomClient({ room }: { room: Room }) {
             )}
 
             {/* LIVE THEME SELECTOR (PREMIUM) */}
-            {userProfile?.isAdmin && (
+            {(isHydrated && userProfile?.isAdmin) && (
               <button
                 onClick={() => {
                   const themes: any[] = ['galaxy', 'stars', 'love', 'rain', 'none'];
