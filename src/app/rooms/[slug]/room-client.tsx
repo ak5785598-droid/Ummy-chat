@@ -253,8 +253,10 @@ export function RoomClient({ room }: { room: Room }) {
   const hasResetRocketRef = useRef(false);
 
   const [sessionJoinTime, setSessionJoinTime] = useState<Date | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   useEffect(() => {
     setSessionJoinTime(new Date());
+    setIsHydrated(true);
   }, []);
   const [selectedSeatIdx, setSelectedSeatIdx] = useState<number | null>(null);
   const [mountEntries, setMountEntries] = useState<MountEntry[]>([]);
@@ -518,11 +520,11 @@ export function RoomClient({ room }: { room: Room }) {
   // Audio connection handled by ActiveRoomManager
 
   const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
+    if (!firestore || !room.id || !sessionJoinTime) return null;
     try {
       return query(
         collection(firestore, 'chatRooms', room.id, 'messages'),
-        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime || new Date())),
+        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
         orderBy('timestamp', 'asc'),
         limitToLast(50)
       );

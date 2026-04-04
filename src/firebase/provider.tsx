@@ -86,16 +86,17 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
 
   const contextValue = useMemo(() => ({
     // HACK: During SSR/Hydration, we report services as present to prevent children from skipping hooks.
-    // The actual values will be populated correctly once initializeFirebase is called on the client.
+    // However, we MUST stay as "Guest" (user = null) until after the first-pass hydration is confirmed.
     areServicesAvailable: !!(firebaseApp || typeof window === 'undefined'),
     firebaseApp: firebaseApp || null,
     firestore: firestore || null,
     auth: auth || null,
     storage: storage || null,
-    user: userAuthState.user,
-    isUserLoading: userAuthState.isUserLoading,
-    userError: userAuthState.userError
-  }), [firebaseApp, firestore, auth, storage, userAuthState]);
+    // CRITICAL: Force user to null during hydration window
+    user: mounted ? userAuthState.user : null,
+    isUserLoading: mounted ? userAuthState.isUserLoading : true,
+    userError: mounted ? userAuthState.userError : null
+  }), [firebaseApp, firestore, auth, storage, userAuthState, mounted]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -145,13 +146,13 @@ export function useCollection<T = any>(query: any) {
     }
 
     const unsubscribe = onSnapshot(query, 
-      (snapshot) => {
-        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+      (snapshot: any) => {
+        const docs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as T[];
         setData(docs);
         setLoading(false);
         setError(null);
       },
-      (err) => {
+      (err: any) => {
         setError(err);
         setLoading(false);
       }
@@ -176,12 +177,12 @@ export function useDoc<T = any>(docRef: any) {
     }
 
     const unsubscribe = onSnapshot(docRef, 
-      (snapshot) => {
+      (snapshot: any) => {
         setData(snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() }) as T : null);
         setLoading(false);
         setError(null);
       },
-      (err) => {
+      (err: any) => {
         setError(err);
         setLoading(false);
       }
