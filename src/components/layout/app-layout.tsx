@@ -99,7 +99,7 @@ export function AppLayout({
                   </Link>
                 </SidebarMenuButton>
              </SidebarMenuItem>
-             <SidebarMenuItem>
+             {/* <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === '/discover'} className="h-12 rounded-xl text-slate-600 hover:bg-slate-100 active:text-primary">
                   <Link href="/discover" className="flex items-center gap-4">
                     <Compass className="h-5 w-5" />
@@ -123,7 +123,7 @@ export function AppLayout({
                     <span className="font-bold uppercase text-xs">{t?.nav?.me || 'Me'}</span>
                   </Link>
                 </SidebarMenuButton>
-             </SidebarMenuItem>
+             </SidebarMenuItem> */}
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -161,7 +161,7 @@ export function AppLayout({
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
+            {/* <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-[#00E5FF]" : "text-white/40")}>
                {pathname === '/discover' && <div className="absolute -top-2 w-8 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
                <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
@@ -180,7 +180,7 @@ export function AppLayout({
                {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-8 h-0.5 bg-[#00E5FF] rounded-full blur-[1px] animate-pulse" />}
                <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
                <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
-            </Link>
+            </Link> */}
           </div>
         </nav>
       )}
