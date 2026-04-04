@@ -168,7 +168,7 @@ export function useCollection<T = any>(query: any) {
   return { data, isLoading: !isHydrated || isLoading, error };
 }
 
-export function useDoc<T = any>(docRef: any) {
+export function useDoc<T = any>(docRef: any, options?: { suppressGlobalError?: boolean }) {
   const { isHydrated, firestore } = useFirebase();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);

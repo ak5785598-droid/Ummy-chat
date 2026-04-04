@@ -1,6 +1,5 @@
 'use client';
-import { useMemo } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase, useFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 export interface UserProfile {
@@ -21,11 +20,6 @@ export interface UserProfile {
    dailySpent: number;
    weeklySpent?: number;
    monthlySpent?: number;
-  };
-  stats?: {
-   followers: number;
-   fans: number;
-   dailyFans: number;
    dailyGiftsReceived?: number;
    weeklyGiftsReceived?: number;
    monthlyGiftsReceived?: number;
@@ -35,6 +29,11 @@ export interface UserProfile {
    dailyGameWins?: number;
    weeklyGameWins?: number;
    monthlyGameWins?: number;
+  };
+  stats?: {
+   followers: number;
+   fans: number;
+   dailyFans: number;
   };
   level?: {
    rich: number;
@@ -77,17 +76,22 @@ export interface UserProfile {
 
 /**
  * Hook to fetch a specific user's profile from Firestore in real-time.
- * Supports optional useDoc options for error suppression.
+ * Unified with global isHydrated signal to prevent React 18 hydration crashes.
  */
 export function useUserProfile(userId: string | undefined, options?: { suppressGlobalError?: boolean }) {
-  const firestore = useFirestore();
+  const { isHydrated, firestore } = useFirebase();
 
+  // Guard the reference itself.
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
+    if (!firestore || !userId || !isHydrated) return null;
     return doc(firestore, 'users', userId, 'profile', userId);
-  }, [firestore, userId]);
+  }, [firestore, userId, isHydrated]);
   
   const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef, options);
 
-  return { userProfile: data, isLoading, error };
+  return { 
+    userProfile: isHydrated ? data : null, 
+    isLoading: !isHydrated || isLoading, 
+    error 
+  };
 }
