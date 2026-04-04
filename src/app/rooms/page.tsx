@@ -338,138 +338,147 @@ export default function RoomsPage() {
        </>
       ) : (
         <main className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
-          <section className="mb-6 mt-2">
-            <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
-              
-              <div className="flex items-center gap-4 relative z-10 w-full">
-                <div className="relative shrink-0">
-                  <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
-                    <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-1 -right-1">
-                    <VipBadge level={userDoc?.level?.rich || 1} />
-                  </div>
-                </div>
-                
-                <div className="flex flex-col flex-1 min-w-0 pr-2">
-                  <h2 className="text-lg font-bold text-slate-900 truncate">{userDoc?.username || 'Member'}</h2>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
-                    <GoldCoinIcon className="h-2.5 w-2.5" />
-                    <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
-                  </div>
-                </div>
+          {isHydrated ? (
+            <>
+              <section className="mb-6 mt-2">
+                <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
+                  
+                  <div className="flex items-center gap-4 relative z-10 w-full">
+                    <div className="relative shrink-0">
+                      <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
+                        <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1">
+                        <VipBadge level={userDoc?.level?.rich || 1} />
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col flex-1 min-w-0 pr-2">
+                      <h2 className="text-lg font-bold text-slate-900 truncate">{userDoc?.username || 'Member'}</h2>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
+                        <GoldCoinIcon className="h-2.5 w-2.5" />
+                        <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
 
+                    <button 
+                      onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
+                      className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+                    >
+                      My Room
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
                 <button 
-                  onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
-                  className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+                  onClick={() => setMeTab('following')} 
+                  className={cn(
+                    "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
+                    meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
+                  )}
                 >
-                  My Room
+                  Following
+                  {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+                </button>
+                <button 
+                  onClick={() => setMeTab('recent')} 
+                  className={cn(
+                    "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
+                    meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
+                  )}
+                >
+                  Recent
+                  {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
                 </button>
               </div>
+
+              {meTab === 'following' && (
+                <section className="animate-in fade-in slide-in-from-left-4 duration-300">
+                  {isFollowedLoading ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : followedRoomsData && followedRoomsData.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {followedRoomsData.map((roomRef: any) => (
+                        <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                          <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                             <Image 
+                              src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                              alt={roomRef.title}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              unoptimized
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                             <div className="absolute bottom-3 left-3 right-3 text-white">
+                                <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
+                             </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                      No rooms followed yet
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {meTab === 'recent' && (
+                <section className="animate-in fade-in slide-in-from-right-4 duration-300">
+                  {isRecentLoading ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : filteredRecentRooms.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {filteredRecentRooms.map((visit: any) => (
+                        <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
+                          <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                             <Image 
+                              src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                              alt={visit.title}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              unoptimized
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                             <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
+                                <span className="text-[8px] font-black text-white uppercase">Recently</span>
+                             </div>
+                             <div className="absolute bottom-3 left-3 right-3 text-white">
+                                <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
+                             </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+                      No recent visits (last 24h)
+                    </div>
+                  )}
+                </section>
+              )}
+            </>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center gap-4">
+              <Loader className="h-8 w-8 animate-spin text-slate-300" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Profile Reality...</p>
             </div>
-          </section>
-
-          <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
-            <button 
-              onClick={() => setMeTab('following')} 
-              className={cn(
-                "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-                meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
-              )}
-            >
-              Following
-              {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-            </button>
-            <button 
-              onClick={() => setMeTab('recent')} 
-              className={cn(
-                "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-                meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
-              )}
-            >
-              Recent
-              {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-            </button>
-          </div>
-
-          {meTab === 'following' && (
-            <section className="animate-in fade-in slide-in-from-left-4 duration-300">
-              {isFollowedLoading ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                  ))}
-                </div>
-              ) : followedRoomsData && followedRoomsData.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {followedRoomsData.map((roomRef: any) => (
-                    <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                      <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
-                         <Image 
-                          src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                          alt={roomRef.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          unoptimized
-                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                         <div className="absolute bottom-3 left-3 right-3 text-white">
-                            <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
-                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                  No rooms followed yet
-                </div>
-              )}
-            </section>
-          )}
-
-          {meTab === 'recent' && (
-            <section className="animate-in fade-in slide-in-from-right-4 duration-300">
-              {isRecentLoading ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                  ))}
-                </div>
-              ) : filteredRecentRooms.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredRecentRooms.map((visit: any) => (
-                    <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                      <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
-                         <Image 
-                          src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                          alt={visit.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          unoptimized
-                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                         <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
-                            <span className="text-[8px] font-black text-white uppercase">Recently</span>
-                         </div>
-                         <div className="absolute bottom-3 left-3 right-3 text-white">
-                            <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
-                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                  No recent visits (last 24h)
-                </div>
-              )}
-            </section>
           )}
         </main>
       )}

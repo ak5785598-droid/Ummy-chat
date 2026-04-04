@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -17,9 +18,14 @@ interface ChatRoomCardProps {
  * Features ultra-premium backdrop blurs and heavy font integrations.
  */
 export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
+ const [isHydrated, setIsHydrated] = React.useState(false);
+ React.useEffect(() => {
+   setIsHydrated(true);
+ }, []);
+
  const { userProfile: owner } = useUserProfile(room?.ownerId);
 
- if (!room) return null;
+ if (!room || !isHydrated) return null;
 
  const roomTitle = room.name || room.title || 'Frequency';
  const ownerName = owner?.username || 'Tribe Member';

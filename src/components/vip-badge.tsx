@@ -18,7 +18,12 @@ interface VipBadgeProps {
  * Features luxury gradients and dynamic icons for VIP levels 1-10.
  */
 export function VipBadge({ level = 0, tier, className, showText = true }: VipBadgeProps) {
-  if (level === 0 && !tier) return null;
+  const [isHydrated, setIsHydrated] = React.useState(false);
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  if (!isHydrated || (level === 0 && !tier)) return null;
 
   // Derive tier from level if not provided
   const activeTier = tier || (
@@ -67,7 +72,7 @@ export function VipBadge({ level = 0, tier, className, showText = true }: VipBad
 
   return (
     <div className={cn(
-      "flex items-center gap-1 px-2 py-0.5 rounded-sm border border-white/20 shadow-lg select-none",
+      "flex items-center gap-1 px-2 py-0.5 rounded-sm border border-white/20 shadow-lg select-none relative overflow-hidden",
       "bg-gradient-to-r",
       config.bg,
       className
@@ -80,16 +85,18 @@ export function VipBadge({ level = 0, tier, className, showText = true }: VipBad
       )}
       <Sparkles className={cn("h-2.5 w-2.5 absolute -top-1 -right-1 opacity-50 animate-pulse", config.text)} />
       
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shimmer-gold {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .animate-shimmer-gold {
-          background-size: 200% 100%;
-          animation: shimmer-gold 2s linear infinite;
-        }
-      ` }} />
+      {activeTier === 'SVIP' && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes shimmer-gold {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .animate-shimmer-gold {
+            background-size: 200% 100%;
+            animation: shimmer-gold 2s linear infinite;
+          }
+        ` }} />
+      )}
     </div>
   );
 }
