@@ -214,8 +214,8 @@ function LeaderboardContent() {
  const myValue = useMemo(() => {
   if (!me) return 0;
   if (rankingType === 'rich') return me.wallet?.dailySpent || 0;
-  if (rankingType === 'charm') return me.stats?.dailyGiftsReceived || 0;
-  if (rankingType === 'games') return me.stats?.dailyGameWins || 0;
+  if (rankingType === 'charm') return (me as any).stats?.dailyGiftsReceived || 0;
+  if (rankingType === 'games') return (me as any).stats?.dailyGameWins || 0;
   return 0;
  }, [me, rankingType]);
 

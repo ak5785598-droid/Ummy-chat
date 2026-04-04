@@ -132,8 +132,13 @@ export const useAuth = () => useFirebase().auth;
 export const useFirestore = () => useFirebase().firestore;
 export const useStorage = () => useFirebase().storage;
 export const useUser = () => {
-  const { user, isLoading, userError } = useFirebase();
-  return { user, isLoading, userError };
+  const { user, isHydrated, isLoading: isAuthLoading, userError } = useFirebase();
+  return { 
+    user, 
+    isLoading: isAuthLoading || !isHydrated, 
+    isUserLoading: isAuthLoading || !isHydrated, 
+    userError 
+  };
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
@@ -141,7 +146,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
 }
 
 // 4. FIRESTORE HOOKS
-export function useCollection<T = any>(query: any) {
+export function useCollection<T = any>(query: any, options?: { silent?: boolean }) {
   const { isHydrated, firestore } = useFirebase();
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
