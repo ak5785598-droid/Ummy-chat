@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect, useMemo, DependencyList } from 'react';
+import { onSnapshot } from 'firebase/firestore';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
@@ -128,4 +129,66 @@ export const useUser = () => {
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   return useMemo(factory, deps);
+}
+
+// 4. FIRESTORE HOOKS
+export function useCollection<T = any>(query: any) {
+  const firestore = useFirestore();
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!query) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(query, 
+      (snapshot) => {
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+        setData(docs);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [query, firestore]);
+
+  return { data, loading, error };
+}
+
+export function useDoc<T = any>(docRef: any) {
+  const firestore = useFirestore();
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!docRef) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(docRef, 
+      (snapshot) => {
+        setData(snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() }) as T : null);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [docRef, firestore]);
+
+  return { data, loading, error };
 }
