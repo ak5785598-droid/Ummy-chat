@@ -28,12 +28,12 @@ const ITEMS = [
   { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5', color: 'from-lime-400 to-green-600', index: 8 },
 ];
 
-// Wooden Design Chips
+// Attractive & Vibrant Chips
 const CHIPS = [
-  { value: 5000, label: '5K', color: 'from-[#5d4037] via-[#4e342e] to-[#3e2723] border-[#8d6e63]' },
-  { value: 50000, label: '50K', color: 'from-[#4e342e] via-[#3e2723] to-[#2d1b18] border-[#795548]' },
-  { value: 500000, label: '500K', color: 'from-[#3e2723] via-[#2d1b18] to-[#1b0000] border-[#5d4037]' },
-  { value: 5000000, label: '5M', color: 'from-[#2d1b18] via-[#1b0000] to-[#000000] border-[#4e342e]' },
+  { value: 5000, label: '5K', color: 'from-cyan-400 to-blue-600 shadow-blue-500/50' },
+  { value: 50000, label: '50K', color: 'from-pink-400 to-rose-600 shadow-rose-500/50' },
+  { value: 500000, label: '500K', color: 'from-yellow-300 to-orange-500 shadow-orange-500/50' },
+  { value: 5000000, label: '5M', color: 'from-fuchsia-500 to-purple-800 shadow-purple-600/50' },
 ];
 
 const SEQUENCE = [0, 1, 2, 5, 8, 7, 6, 3];
@@ -205,17 +205,17 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans">
-   {/* --- Top & Bottom ONLY Branches --- */}
+   {/* --- Branches: Only Top and Bottom (No Middle) --- */}
    <div className="absolute top-4 left-[-15px] w-28 z-30 pointer-events-none">
      <BranchDecoration delay={0} />
    </div>
    <div className="absolute top-4 right-[-15px] w-28 z-30 pointer-events-none">
      <BranchDecoration delay={0.2} reverse />
    </div>
-   <div className="absolute bottom-32 left-[-15px] w-28 z-30 pointer-events-none">
+   <div className="absolute bottom-40 left-[-15px] w-28 z-30 pointer-events-none">
      <BranchDecoration delay={0.5} />
    </div>
-   <div className="absolute bottom-32 right-[-15px] w-28 z-30 pointer-events-none">
+   <div className="absolute bottom-40 right-[-15px] w-28 z-30 pointer-events-none">
      <BranchDecoration delay={0.7} reverse />
    </div>
 
@@ -325,23 +325,28 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       <VisualizerPillar height="h-72" />
    </main>
 
+   {/* --- Wooden Design Chips Bar --- */}
    <footer className="relative mt-auto p-6 z-40">
-      <div className="bg-black/40 backdrop-blur-3xl rounded-[3rem] p-5 border border-white/10">
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center">
+      {/* Container Bar with Wooden Effect */}
+      <div className="bg-gradient-to-b from-[#6d4c41] via-[#4e342e] to-[#3e2723] rounded-[3rem] p-5 border-y-4 border-[#8d6e63] shadow-[0_10px_40px_rgba(0,0,0,0.8),inset_0_2px_10px_rgba(255,255,255,0.1)] relative overflow-hidden">
+        {/* Grain Texture Overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
+        
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center relative z-10">
           {CHIPS.map(chip => (
             <button 
               key={chip.value} 
               disabled={gameState !== 'betting'}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-[0_6px_0_rgba(0,0,0,0.6)] active:shadow-none active:translate-y-1 bg-gradient-to-br",
+                "w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-[0_8px_0_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-2 bg-gradient-to-br",
                 chip.color,
-                selectedChip === chip.value ? "ring-4 ring-yellow-400 scale-110 z-10 border-white" : "opacity-80 scale-95 grayscale-[0.2]",
+                selectedChip === chip.value ? "ring-4 ring-white scale-110 z-10 border-white" : "opacity-60 scale-90",
                 gameState !== 'betting' && "opacity-20 grayscale cursor-not-allowed"
               )}
             >
-                <span className="text-white font-black text-sm drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{chip.label}</span>
-                <div className="w-8 h-1 bg-black/40 rounded-full mt-1 border-t border-white/10" />
+                <span className="text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{chip.label}</span>
+                <div className="w-8 h-1 bg-white/20 rounded-full mt-1" />
             </button>
           ))}
         </div>
