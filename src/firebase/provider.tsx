@@ -66,10 +66,15 @@ export function FirebaseProvider({ children, firebaseApp, firestore, auth, stora
     userError: null
   });
 
-  // 1. HYDRATION LOCK
-  useEffect(() => { setMounted(true); }, []);
+  // 1. HYDRATION LOCK (With Atomic Buffer to prevent redirect-pulse crashes)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 100); 
+    return () => clearTimeout(timer);
+  }, []);
 
-  // 2. AUTH STATE LISTENER (Deferred until after mount to prevent 310)
+  // 2. AUTH STATE LISTENER (Deferred until after buffer to prevent 310)
   useEffect(() => {
     if (!mounted || !auth) return;
 

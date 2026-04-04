@@ -98,16 +98,16 @@ export default function RoomsPage() {
  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
 
  const followedRoomsQuery = useMemoFirebase(() => {
-   if (!firestore || !user?.uid) return null;
-   return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
- }, [firestore, user?.uid]);
+    if (!firestore || !user?.uid || !isHydrated) return null;
+    return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
+  }, [firestore, user?.uid, isHydrated]);
 
  const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
  const recentRoomsQuery = useMemoFirebase(() => {
-   if (!firestore || !user?.uid) return null;
-   return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
- }, [firestore, user?.uid]);
+    if (!firestore || !user?.uid || !isHydrated) return null;
+    return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
+  }, [firestore, user?.uid, isHydrated]);
 
  const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
 
@@ -150,9 +150,9 @@ export default function RoomsPage() {
  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
  const myRoomQuery = useMemoFirebase(() => {
-  if (!firestore || !user) return null;
-  return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
- }, [firestore, user]);
+   if (!firestore || !user?.uid || !isHydrated) return null;
+   return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
+  }, [firestore, user?.uid, isHydrated]);
  const { data: myRoomsData } = useCollection(myRoomQuery);
  const myRoom = myRoomsData?.[0];
 
