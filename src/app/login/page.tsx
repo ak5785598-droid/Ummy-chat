@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { Loader, Phone, X } from 'lucide-react';
@@ -34,7 +34,7 @@ const GOOGLE_CLIENT_ID = '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.goo
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isAuthLoading } = useUser();
   const { userProfile, isLoading: isProfileLoading, error: profileError } = useUserProfile(user?.uid || undefined, { suppressGlobalError: true });
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -58,10 +58,12 @@ export default function LoginPage() {
   
   const activeBg = loginBg || splashBg || fallbackBg;
 
+  // Global script ref to prevent multiple initializations
+  const hasInitializedGoogle = useRef(false);
+
   // Initialize Google One Tap - run ONCE when user is not logged in
   useEffect(() => {
-    if (isUserLoading || user || !auth) return;
-    // Guard: only initialize once
+    if (isAuthLoading || user || !auth || hasInitializedGoogle.current) return;
     if (typeof window === 'undefined') return;
 
     const handleOneTapResponse = async (response: any) => {
@@ -85,27 +87,30 @@ export default function LoginPage() {
       // @ts-ignore
       const gapi = window.google?.accounts?.id;
       if (!gapi) return false;
-      gapi.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleOneTapResponse,
-        auto_select: false, // Don't auto-select to reduce FedCM conflicts
-        cancel_on_tap_outside: false,
-        itp_support: true
-      });
-      gapi.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment?.()) {
-          console.warn('[OneTap] Not displayed. Reason:', notification.getSkippedReason?.());
-        }
-      });
+      
+      if (!hasInitializedGoogle.current) {
+        gapi.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleOneTapResponse,
+          auto_select: false, 
+          cancel_on_tap_outside: false,
+          itp_support: true
+        });
+        hasInitializedGoogle.current = true;
+      }
+      
+      gapi.prompt();
       return true;
     };
 
-    // Try immediately; if script not loaded yet, wait for it
-    if (!initializeGIS()) {
-      const timer = setTimeout(initializeGIS, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [user, isUserLoading, auth]);
+    const timer = setInterval(() => {
+      if (initializeGIS()) {
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [user, isAuthLoading, auth]);
 
   // SILENT BAN DETECTION & REDIRECT LOGIC
   useEffect(() => {
@@ -117,7 +122,7 @@ export default function LoginPage() {
     }
 
     // 2. Wait until both user and profile are loaded (or definitively failed)
-    if (isUserLoading || isProfileLoading) return;
+    if (isAuthLoading || isProfileLoading) return;
 
     if (user && userProfile) {
       console.log(`[Login] Checking Ban Status for: ${user.uid}`);
@@ -135,7 +140,7 @@ export default function LoginPage() {
       console.log(`[Login] Authorized. Navigating to discovery.`);
       router.replace('/rooms');
     }
-  }, [user, isUserLoading, userProfile, isProfileLoading, profileError, router]);
+  }, [user, isAuthLoading, userProfile, isProfileLoading, profileError, router]);
 
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore || !uid) return;
@@ -189,7 +194,7 @@ export default function LoginPage() {
           transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
           return nextUserId.toString().padStart(4, '0');
         });
-
+ 
         const baseData = {
           id: uid,
           username: displayName || `Tribe_${accountNumber.slice(-4)}`,
@@ -209,7 +214,7 @@ export default function LoginPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
-
+ 
         await setDoc(userRef, baseData);
         await setDoc(profileRef, {
           ...baseData,
@@ -238,7 +243,7 @@ export default function LoginPage() {
       console.error("[Identity Sync] Error:", err);
     }
   };
-
+ 
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
@@ -264,7 +269,7 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
-
+ 
   const handleFacebookSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
@@ -289,7 +294,7 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
-
+ 
   const initRecaptcha = () => {
     if (!auth) return;
     if (!(window as any).recaptchaVerifier) {
@@ -299,7 +304,7 @@ export default function LoginPage() {
     }
     return (window as any).recaptchaVerifier;
   };
-
+ 
   const handlePhoneSignIn = async () => {
     if (!auth) return;
     const cleanNumber = phoneNumber.replace(/\D/g, '');
@@ -339,15 +344,15 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
-
-  if (isUserLoading || user) {
+ 
+  if (isAuthLoading || user) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600">
         <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
       </div>
     );
   }
-
+ 
   return (
     <div 
       className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
@@ -360,11 +365,6 @@ export default function LoginPage() {
       <Script 
         src="https://accounts.google.com/gsi/client" 
         strategy="afterInteractive"
-        onLoad={() => {
-          // Script loaded - only call prompt() if already initialized via useEffect
-          // @ts-ignore
-          window.google?.accounts?.id?.prompt?.();
-        }}
       />
       <div className="absolute inset-0 bg-black/40" />
       <div id="recaptcha-container" />
