@@ -32,6 +32,7 @@ import { UnreadBadge } from '@/components/unread-badge';
 /**
  * THE NUCLEAR STABILITY LAYOUT (Final Remediated Version).
  * Resolves #310 (Hydration) by enforcing strict client-only structural logic.
+ * Updated for Project Pink: Full-bleed pink background except in rooms.
  */
 export function AppLayout({
  children,
@@ -62,12 +63,17 @@ export function AppLayout({
   return fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
  }, [pathname, fullScreen, isHydrated]);
 
+ const isRoom = useMemo(() => pathname?.startsWith('/rooms/'), [pathname]);
+
  const showRealContent = mounted && isHydrated && !isFirebaseLoading && (deterministicAuth || userProfile);
 
  // SERVER-SIDE / PRE-MOUNT RENDER (100% Clean Shard).
  if (!mounted) {
    return (
-    <div className="min-h-screen bg-[#F8F9FE] flex flex-col items-center justify-center gap-4">
+    <div className={cn(
+      "min-h-screen flex flex-col items-center justify-center gap-4",
+      isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+    )}>
       <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
     </div>
@@ -129,11 +135,17 @@ export function AppLayout({
       </Sidebar>
     )}
 
-    <SidebarInset className="bg-[#F8F9FE] flex flex-col min-h-screen relative overflow-hidden">
+    <SidebarInset className={cn(
+      "flex flex-col min-h-screen relative overflow-hidden",
+      isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+    )}>
       
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
-        <div className="absolute inset-0 z-[9999] bg-[#F8F9FE] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
+        <div className={cn(
+          "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
+          isRoom ? "bg-slate-950" : "bg-[#FF91B5]"
+        )}>
           <Loader className="h-10 w-10 animate-spin text-primary" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>
         </div>

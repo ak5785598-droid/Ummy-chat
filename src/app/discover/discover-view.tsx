@@ -53,24 +53,23 @@ export default function DiscoverView() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#0F011F] text-white font-sans relative overflow-x-hidden">
-        {/* Cosmic Background Elements */}
+      <div className="min-h-screen bg-[#FF91B5] text-slate-800 font-sans relative overflow-x-hidden">
+        {/* Subtle Background Elements */}
         <div className="fixed inset-0 z-0">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/20 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-300/30 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
         </div>
 
         {/* Discovery Header */}
-        <header className="sticky top-0 z-50 pt-12 pb-4 px-6 bg-[#0F011F]/80 backdrop-blur-xl border-b border-white/5">
+        <header className="sticky top-0 z-50 pt-12 pb-4 px-6 bg-[#FF91B5]/80 backdrop-blur-xl border-b border-black/5">
           <div className="flex flex-col items-center">
-            <h1 className="text-3xl font-headline font-black italic uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 animate-pulse">
+            <h1 className="text-3xl font-headline font-black italic uppercase tracking-tighter text-slate-900 border-white">
               Moment of Day
             </h1>
             <div className="flex items-center gap-2 mt-1">
-              <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-purple-500/50" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400">Cosmic Discovery</p>
-              <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-purple-500/50" />
+              <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-black/20" />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">Ummy Discovery</p>
+              <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-black/20" />
             </div>
           </div>
         </header>

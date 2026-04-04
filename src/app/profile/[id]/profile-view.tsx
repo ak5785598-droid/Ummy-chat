@@ -164,7 +164,7 @@ const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: numb
 };
 
 /**
- * Public Profile View.
+ * Public Profile View - Updated for Stellat Pink Theme
  */
 const PublicProfileView = ({ 
  profile, 
@@ -211,7 +211,7 @@ const PublicProfileView = ({
  const isCSLeader = profile.tags?.includes('CS Leader');
 
  return (
-  <div className="min-h-screen bg-[#f7f8fa] font-sans pb-24 flex flex-col animate-in fade-in duration-700 relative overflow-x-hidden">
+  <div className="min-h-screen bg-[#FF91B5] font-sans pb-24 flex flex-col animate-in fade-in duration-700 relative overflow-x-hidden">
    <div className="absolute inset-0 -z-10 overflow-hidden">
      {profile.avatarUrl && (
       <Image src={profile.avatarUrl} fill className="object-cover blur-3xl opacity-30 scale-110" alt="Ambient Backdrop" unoptimized />
@@ -466,13 +466,13 @@ export default function ProfileView({ profileId }: { profileId: string }) {
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
  if (isUserLoading || isProfileLoading || !profile) return (
-  <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4"><Loader className="animate-spin h-8 w-8 text-primary" /><p className="text-[10px] font-bold uppercase text-gray-400">Syncing Identity...</p></div></AppLayout>
+  <AppLayout><div className="flex h-full w-full flex-col items-center justify-center bg-[#FF91B5] space-y-4"><Loader className="animate-spin h-8 w-8 text-white" /><p className="text-[10px] font-bold uppercase text-white/60">Syncing Identity...</p></div></AppLayout>
  );
 
  if (isOwnProfile) {
   return (
    <AppLayout>
-    <div className="min-h-full bg-gradient-to-b from-[#f7f8fa] to-[#ffffff] text-gray-900 font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
+    <div className="min-h-full bg-gradient-to-b from-[#FF91B5] to-[#f472b6] text-gray-900 font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
      
      <div className="absolute inset-0 pointer-events-none opacity-40">
        {particles.map((pos, i) => (

@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Background: Soft Lavender #f3e5f5 */
-    --background: 280 40% 93%;
+    /* Background: Stellar Pink #FF91B5 */
+    --background: 340 100% 78%;
     --foreground: 270 100% 8%;
     
     --card: 0 0% 100%;
@@ -35,7 +35,7 @@
     --ring: 291 64% 42%;
     --radius: 1.25rem;
 
-    --sidebar-background: 280 40% 93%;
+    --sidebar-background: 340 100% 78%;
     --sidebar-foreground: 270 100% 8%;
     --sidebar-primary: 291 64% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -58,7 +58,7 @@
   }
   
   html, body {
-    @apply min-h-screen w-full bg-[#F8F9FE];
+    @apply min-h-screen w-full bg-[#FF91B5];
     min-height: 100dvh;
     min-height: -webkit-fill-available;
     touch-action: pan-x pan-y;
@@ -70,7 +70,7 @@
   }
 
   body {
-    @apply bg-[#F8F9FE] text-foreground antialiased;
+    @apply bg-[#FF91B5] text-foreground antialiased;
     /* Removed global padding to allow backgrounds to bleed into safe areas */
     padding: 0;
   }
@@ -94,7 +94,7 @@
   .top-safe { top: max(16px, env(safe-area-inset-top)); }
   .bottom-safe { bottom: max(16px, env(safe-area-inset-bottom)); }
   .bg-ummy-gradient {
-    background: linear-gradient(180deg, #F8F9FE 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, #FF91B5 0%, #FFFFFF 100%);
   }
   .glass-card {
     @apply bg-white/80 backdrop-blur-[20px] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];

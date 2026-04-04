@@ -347,7 +347,7 @@ export default function LoginPage() {
  
   if (isAuthLoading || user) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
         <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
       </div>
     );
@@ -422,7 +422,7 @@ export default function LoginPage() {
       {/* Phone Login Popup Modal */}
       {showPhonePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
-          <div className="relative w-full max-w-sm rounded-[32px] bg-gradient-to-b from-[#2a004a] to-[#140028] border border-white/10 shadow-2xl p-6 md:p-8 flex flex-col items-center">
+          <div className="relative w-full max-w-sm rounded-[32px] bg-gradient-to-b from-[#FF91B5] to-[#f472b6] border border-white/20 shadow-2xl p-6 md:p-8 flex flex-col items-center">
             
             <button 
               onClick={() => { setShowPhonePopup(false); setPhoneLoginStep('number'); }}

@@ -21,18 +21,18 @@ import {
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking } from '@/firebase';
 import { 
-  collection, 
-  query, 
-  orderBy, 
-  where, 
-  serverTimestamp, 
-  doc, 
-  limitToLast, 
-  arrayUnion, 
-  addDoc as addFirestoreDoc,
-  deleteDoc,
-  setDoc,
-  updateDoc
+   collection, 
+   query, 
+   orderBy, 
+   where, 
+   serverTimestamp, 
+   doc, 
+   limitToLast, 
+   arrayUnion, 
+   addDoc as addFirestoreDoc,
+   deleteDoc,
+   setDoc,
+   updateDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns';
@@ -57,7 +57,7 @@ import { UmmyLogoIcon } from '@/components/icons';
 const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
  <div 
   onClick={onClick}
-  className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0"
+  className="px-6 py-4 flex items-center gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0"
  >
   <div className="relative shrink-0">
    <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
@@ -65,18 +65,18 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
    </div>
    {isVerified && (
     <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
-      <CheckCircle className="h-3 w-3 text-green-500 fill-green-500 text-white" strokeWidth={3} />
+      <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500" strokeWidth={3} />
     </div>
    )}
   </div>
   <div className="flex-1 min-w-0">
    <div className="flex items-center justify-between mb-0.5">
-    <h3 className="font-bold text-sm text-gray-800 uppercase tracking-tight ">{label}</h3>
-    {date && <span className="text-[10px] font-bold text-gray-400 uppercase">{date}</span>}
+    <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight ">{label}</h3>
+    {date && <span className="text-[10px] font-bold text-slate-500 uppercase">{date}</span>}
    </div>
-   {subtext && <p className="text-[11px] font-body text-gray-400 truncate leading-tight">{subtext}</p>}
+   {subtext && <p className="text-[11px] font-body text-slate-600 truncate leading-tight">{subtext}</p>}
   </div>
-  <ChevronRight className="h-4 w-4 text-gray-200 group-hover:translate-x-1 transition-transform" />
+  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
  </div>
 );
 
@@ -86,11 +86,11 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
 
  if (isLoading) return (
-  <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-gray-50 last:border-0">
-   <div className="h-12 w-12 bg-gray-50 rounded-2xl" />
+  <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-black/5 last:border-0">
+   <div className="h-12 w-12 bg-white/40 rounded-2xl" />
    <div className="flex-1 space-y-3 pt-2">
-    <div className="h-3 bg-gray-50 rounded w-1/3" />
-    <div className="h-2 bg-gray-50 rounded w-1/2" />
+    <div className="h-3 bg-white/40 rounded w-1/3" />
+    <div className="h-2 bg-white/40 rounded w-1/2" />
    </div>
   </div>
  );
@@ -113,18 +113,18 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   <div 
    onClick={() => onSelect(chat.id, otherUser)}
    className={cn(
-    "px-6 py-4 flex gap-4 hover:bg-gray-50/50 active:bg-gray-100/50 transition-all cursor-pointer group border-b border-gray-50 last:border-0",
-    isUnread && "bg-primary/5"
+    "px-6 py-4 flex gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0",
+    isUnread && "bg-primary/10"
    )}
   >
    <div className="relative shrink-0">
     <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-md">
      <AvatarImage src={otherUser.avatarUrl || undefined} />
-     <AvatarFallback className="bg-slate-50 text-slate-400">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
+     <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
     </Avatar>
     {isOfficial && (
      <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-       <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500 text-white" strokeWidth={3} />
+       <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500" strokeWidth={3} />
      </div>
     )}
     {isUnread && (
@@ -133,19 +133,19 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
    </div>
    <div className="flex-1 min-w-0 pt-1">
     <div className="flex items-center justify-between mb-0.5">
-     <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-gray-800")}>
+     <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
       {otherUser.username}
      </h3>
-     <span className="text-[10px] font-bold text-gray-400 uppercase">
+     <span className="text-[10px] font-bold text-slate-500 uppercase">
       {getDisplayTime(chat.updatedAt)}
      </span>
     </div>
-    <p className={cn("text-[11px] font-body truncate ", isUnread ? "font-bold text-gray-900" : "text-gray-400")}>
+    <p className={cn("text-[11px] font-body truncate ", isUnread ? "font-black text-slate-900" : "text-slate-600")}>
      {chat.lastMessage || 'Sent a vibe'}
     </p>
    </div>
    <div className="flex items-center">
-     <ChevronRight className="h-4 w-4 text-gray-200 group-hover:translate-x-1 transition-transform" />
+     <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
    </div>
   </div>
  );
@@ -513,207 +513,207 @@ export default function MessagesView() {
 
  return (
   <AppLayout hideBottomNav={!!activeChatId}>
-   <div className="min-h-full bg-gradient-to-b from-[#f3e5f5] via-[#f3e5f5] to-[#ffffff] flex flex-col relative font-sans animate-in fade-in duration-1000 overflow-x-hidden">
-    
-    <div className="absolute inset-0 pointer-events-none opacity-40">
-      {[
-        { left: '10%', top: '15%', width: '2px', height: '2px', delay: '0s' },
-        { left: '25%', top: '35%', width: '3px', height: '3px', delay: '0.5s' },
-        { left: '40%', top: '25%', width: '2px', height: '2px', delay: '1s' },
-        { left: '55%', top: '45%', width: '2px', height: '2px', delay: '1.5s' },
-        { left: '70%', top: '55%', width: '3px', height: '3px', delay: '2s' },
-        { left: '85%', top: '20%', width: '2px', height: '2px', delay: '2.5s' },
-        { left: '15%', top: '65%', width: '2px', height: '2px', delay: '3s' },
-        { left: '30%', top: '75%', width: '3px', height: '3px', delay: '3.5s' },
-        { left: '45%', top: '85%', width: '2px', height: '2px', delay: '4s' },
-        { left: '60%', top: '70%', width: '2px', height: '2px', delay: '4.5s' },
-        { left: '75%', top: '80%', width: '3px', height: '3px', delay: '0.2s' },
-        { left: '90%', top: '60%', width: '2px', height: '2px', delay: '0.7s' },
-        { left: '20%', top: '40%', width: '2px', height: '2px', delay: '1.2s' },
-        { left: '50%', top: '10%', width: '3px', height: '3px', delay: '1.7s' },
-        { left: '80%', top: '90%', width: '2px', height: '2px', delay: '2.2s' }
-      ].map((pos, i) => (
-       <div key={i} className="absolute bg-white rounded-full animate-pulse" style={{
-        left: pos.left,
-        top: pos.top,
-        width: pos.width,
-        height: pos.height,
-        animationDelay: pos.delay
-       }} />
-      ))}
-    </div>
-
-    <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
-     <div className="relative z-10 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <UmmyLogoIcon className="h-14 w-14" />
-        <div className="flex flex-col">
-         <h1 className="text-3xl font-bold uppercase tracking-tight text-gray-900 drop-shadow-sm">{t.messages.title}</h1>
-         <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
-        </div>
-      </div>
-      <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
-        <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
-      </button>
-     </div>
-    </header>
-
-    <div className="flex-1 px-4 relative z-10 space-y-4 pb-32">
+    <div className="min-h-full bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans animate-in fade-in duration-1000 overflow-x-hidden">
      
-     <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md">
-      <CategoryItem 
-       icon={Flag} 
-       label={t.messages.team} 
-       subtext={latestTeam?.content || "Welcome to ummy Chat"}
-       date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
-       colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-       customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
-       isVerified
-       onClick={() => setShowOfficial(true)}
-      />
-      
-      <CategoryItem 
-       icon={Shield} 
-       label={t.messages.system} 
-       subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
-       date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
-       colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-       customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
-       isVerified
-       onClick={() => setShowSystemDialog(true)}
-      />
-
-      <CategoryItem 
-       icon={Heart} 
-       label="Bond Requests" 
-       subtext={hasPending ? "You have a new relationship proposal!" : "No new bond requests."}
-       colorClass="bg-gradient-to-br from-rose-500 to-pink-600"
-       onClick={() => setShowRequests(true)}
-       customIcon={
-         <div className="relative">
-           <Heart className="h-6 w-6 text-white" fill="white" />
-           {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full animate-ping" />}
-           {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-rose-300 rounded-full" />}
-         </div>
-       }
-      />
-     </Card>
-
-     <div className="space-y-2.5">
-       <div className="flex items-center justify-between px-4">
-        <h2 className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400 ">{t.messages.conversations}</h2>
-        <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-gray-400" /></button>
-       </div>
-       
-       <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/80 backdrop-blur-md min-h-[300px]">
-        {isChatsLoading ? (
-         <div className="py-20 flex flex-col items-center gap-4">
-          <Loader className="animate-spin text-primary h-8 w-8" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Syncing Identity...</p>
-         </div>
-        ) : chats && chats.length > 0 ? (
-         chats.map(chat => (
-          <ChatListItem 
-           key={chat.id} 
-           chat={chat} 
-           currentUid={user?.uid} 
-           onSelect={handleSelectChat} 
-          />
-         ))
-        ) : (
-         <div className="py-20 text-center space-y-4 opacity-40 flex flex-col items-center">
-           <MessageSquare className="h-10 w-10 text-gray-200" />
-           <div className="space-y-1">
-            <p className="font-bold text-xs uppercase text-gray-400">{t.messages.quiet}</p>
-            <p className="text-[9px] font-bold uppercase text-gray-300">{t.messages.startVibe}</p>
-           </div>
-         </div>
-        )}
-       </Card>
+     <div className="absolute inset-0 pointer-events-none opacity-40">
+       {[
+         { left: '10%', top: '15%', width: '2px', height: '2px', delay: '0s' },
+         { left: '25%', top: '35%', width: '3px', height: '3px', delay: '0.5s' },
+         { left: '40%', top: '25%', width: '2px', height: '2px', delay: '1s' },
+         { left: '55%', top: '45%', width: '2px', height: '2px', delay: '1.5s' },
+         { left: '70%', top: '55%', width: '3px', height: '3px', delay: '2s' },
+         { left: '85%', top: '20%', width: '2px', height: '2px', delay: '2.5s' },
+         { left: '15%', top: '65%', width: '2px', height: '2px', delay: '3s' },
+         { left: '30%', top: '75%', width: '3px', height: '3px', delay: '3.5s' },
+         { left: '45%', top: '85%', width: '2px', height: '2px', delay: '4s' },
+         { left: '60%', top: '70%', width: '2px', height: '2px', delay: '4.5s' },
+         { left: '75%', top: '80%', width: '3px', height: '3px', delay: '0.2s' },
+         { left: '90%', top: '60%', width: '2px', height: '2px', delay: '0.7s' },
+         { left: '20%', top: '40%', width: '2px', height: '2px', delay: '1.2s' },
+         { left: '50%', top: '10%', width: '3px', height: '3px', delay: '1.7s' },
+         { left: '80%', top: '90%', width: '2px', height: '2px', delay: '2.2s' }
+       ].map((pos, i) => (
+        <div key={i} className="absolute bg-white rounded-full animate-pulse" style={{
+         left: pos.left,
+         top: pos.top,
+         width: pos.width,
+         height: pos.height,
+         animationDelay: pos.delay
+        }} />
+       ))}
      </div>
-    </div>
 
-    <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
-     <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
-      <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
-       <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
-         <Flag className="h-6 w-6" />
+     <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
+      <div className="relative z-10 flex items-center justify-between">
+       <div className="flex items-center gap-3">
+         <UmmyLogoIcon className="h-14 w-14" />
+         <div className="flex flex-col">
+          <h1 className="text-3xl font-bold uppercase tracking-tight text-slate-900 drop-shadow-sm">{t.messages.title}</h1>
+          <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
+         </div>
        </div>
-       <div className="flex-1 text-left">
-        <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Official Activities</DialogTitle>
-        <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-orange-600/60 mt-1">Global team broadcasts.</DialogDescription>
-       </div>
-      </DialogHeader>
-      <ScrollArea className="max-h-[60vh] p-6">
-        <div className="space-y-4">
-         {teamMsgs.length === 0 ? (
-          <div className="py-10 text-center opacity-20 font-body">No official broadcasts in the grid.</div>
-         ) : (
-          teamMsgs.map((msg: any) => (
-           <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
-             <div className="flex justify-between items-start mb-2">
-              <h4 className="font-bold uppercase text-sm text-gray-800">{msg.title || 'Official'}</h4>
-              <span className="text-[10px] text-gray-400 font-bold uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
-             </div>
-             <p className="text-sm font-body text-gray-600 leading-relaxed">{msg.content}</p>
-           </div>
-          ))
-         )}
-        </div>
-      </ScrollArea>
-      <div className="p-8 pt-0">
-       <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-black text-white rounded-xl font-bold uppercase text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+       <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
+         <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
+       </button>
       </div>
-     </DialogContent>
-    </Dialog>
+     </header>
 
-    <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
-     <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
-      <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-blue-50/30">
-       <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
-         <Shield className="h-6 w-6" />
-       </div>
-       <div className="flex-1 text-left">
-        <DialogTitle className="text-2xl font-bold uppercase tracking-tight">System Notices</DialogTitle>
-        <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-blue-600/60 mt-1">Personal security frequency.</DialogDescription>
-       </div>
-      </DialogHeader>
-      <ScrollArea className="max-h-[60vh] p-6">
-        <div className="space-y-4">
-         {systemMsgs.length === 0 ? (
-          <div className="py-10 text-center opacity-20 font-body">No system notices found.</div>
-         ) : (
-          systemMsgs.map((msg: any) => (
-           <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
-             <div className="flex justify-between items-start mb-2">
-              <h4 className="font-bold uppercase text-sm text-gray-800">{msg.title || 'System'}</h4>
-              <span className="text-[10px] text-gray-400 font-bold uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
-             </div>
-             <p className="text-sm font-body text-gray-600 leading-relaxed">{msg.content}</p>
-           </div>
-          ))
-         )}
+     <div className="flex-1 px-4 relative z-10 space-y-4 pb-32">
+      
+      <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-md">
+       <CategoryItem 
+        icon={Flag} 
+        label={t.messages.team} 
+        subtext={latestTeam?.content || "Welcome to ummy Chat"}
+        date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
+        colorClass="bg-gradient-to-br from-orange-400 to-red-500"
+        customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
+        isVerified
+        onClick={() => setShowOfficial(true)}
+       />
+       
+       <CategoryItem 
+        icon={Shield} 
+        label={t.messages.system} 
+        subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
+        date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
+        colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
+        customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
+        isVerified
+        onClick={() => setShowSystemDialog(true)}
+       />
+
+       <CategoryItem 
+        icon={Heart} 
+        label="Bond Requests" 
+        subtext={hasPending ? "You have a new relationship proposal!" : "No new bond requests."}
+        colorClass="bg-gradient-to-br from-rose-500 to-pink-600"
+        onClick={() => setShowRequests(true)}
+        customIcon={
+          <div className="relative">
+            <Heart className="h-6 w-6 text-white" fill="white" />
+            {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full animate-ping" />}
+            {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-rose-300 rounded-full" />}
+          </div>
+        }
+       />
+      </Card>
+
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between px-4">
+         <h2 className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">{t.messages.conversations}</h2>
+         <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-slate-600" /></button>
         </div>
-      </ScrollArea>
-      <div className="p-8 pt-0">
-       <button onClick={() => setShowSystemDialog(false)} className="w-full h-16 bg-black text-white rounded-xl font-bold uppercase text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+        
+        <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-md min-h-[300px]">
+         {isChatsLoading ? (
+          <div className="py-20 flex flex-col items-center gap-4">
+           <Loader className="animate-spin text-primary h-8 w-8" />
+           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Syncing Identity...</p>
+          </div>
+         ) : chats && chats.length > 0 ? (
+          chats.map(chat => (
+           <ChatListItem 
+            key={chat.id} 
+            chat={chat} 
+            currentUid={user?.uid} 
+            onSelect={handleSelectChat} 
+           />
+          ))
+         ) : (
+          <div className="py-20 text-center space-y-4 opacity-40 flex flex-col items-center">
+            <MessageSquare className="h-10 w-10 text-slate-300" />
+            <div className="space-y-1">
+             <p className="font-bold text-xs uppercase text-slate-400">{t.messages.quiet}</p>
+             <p className="text-[9px] font-bold uppercase text-slate-300">{t.messages.startVibe}</p>
+            </div>
+          </div>
+         )}
+        </Card>
       </div>
-     </DialogContent>
-    </Dialog>
+     </div>
 
-    <RelationshipRequestsDialog 
-      open={showRequests}
-      onOpenChange={setShowRequests}
+     <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
+      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
+       <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
+        <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+          <Flag className="h-6 w-6" />
+        </div>
+        <div className="flex-1 text-left">
+         <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Official Activities</DialogTitle>
+         <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-orange-600/60 mt-1">Global team broadcasts.</DialogDescription>
+        </div>
+       </DialogHeader>
+       <ScrollArea className="max-h-[60vh] p-6">
+         <div className="space-y-4">
+          {teamMsgs.length === 0 ? (
+           <div className="py-10 text-center opacity-20 font-body">No official broadcasts in the grid.</div>
+          ) : (
+           teamMsgs.map((msg: any) => (
+            <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+               <h4 className="font-bold uppercase text-sm text-gray-800">{msg.title || 'Official'}</h4>
+               <span className="text-[10px] text-gray-400 font-bold uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
+              </div>
+              <p className="text-sm font-body text-gray-600 leading-relaxed">{msg.content}</p>
+            </div>
+           ))
+          )}
+         </div>
+       </ScrollArea>
+       <div className="p-8 pt-0">
+        <button onClick={() => setShowOfficial(false)} className="w-full h-16 bg-black text-white rounded-xl font-bold uppercase text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+       </div>
+      </DialogContent>
+     </Dialog>
+
+     <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
+      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
+       <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-blue-50/30">
+        <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
+          <Shield className="h-6 w-6" />
+        </div>
+        <div className="flex-1 text-left">
+         <DialogTitle className="text-2xl font-bold uppercase tracking-tight">System Notices</DialogTitle>
+         <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-blue-600/60 mt-1">Personal security frequency.</DialogDescription>
+        </div>
+       </DialogHeader>
+       <ScrollArea className="max-h-[60vh] p-6">
+         <div className="space-y-4">
+          {systemMsgs.length === 0 ? (
+           <div className="py-10 text-center opacity-20 font-body">No system notices found.</div>
+          ) : (
+           systemMsgs.map((msg: any) => (
+            <div key={msg.id} className="p-5 bg-gray-50 rounded-3xl border-2 border-white shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+               <h4 className="font-bold uppercase text-sm text-gray-800">{msg.title || 'System'}</h4>
+               <span className="text-[10px] text-gray-400 font-bold uppercase">{msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : ''}</span>
+              </div>
+              <p className="text-sm font-body text-gray-600 leading-relaxed">{msg.content}</p>
+            </div>
+           ))
+          )}
+         </div>
+       </ScrollArea>
+       <div className="p-8 pt-0">
+        <button onClick={() => setShowSystemDialog(false)} className="w-full h-16 bg-black text-white rounded-xl font-bold uppercase text-lg shadow-xl active:scale-95 transition-all">Dismiss</button>
+       </div>
+      </DialogContent>
+     </Dialog>
+
+     <RelationshipRequestsDialog 
+       open={showRequests}
+       onOpenChange={setShowRequests}
+      />
+
+     <ChatRoomDialog 
+      open={!!activeChatId} 
+      onOpenChange={(open: boolean) => !open && setActiveChatId(null)}
+      chatId={activeChatId}
+      otherUser={selectedRecipient}
+      currentUser={user}
      />
-
-    <ChatRoomDialog 
-     open={!!activeChatId} 
-     onOpenChange={(open: boolean) => !open && setActiveChatId(null)}
-     chatId={activeChatId}
-     otherUser={selectedRecipient}
-     currentUser={user}
-    />
-   </div>
+    </div>
   </AppLayout>
  );
 }
