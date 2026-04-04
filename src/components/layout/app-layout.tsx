@@ -171,7 +171,9 @@ export function AppLayout({
      )} style={{ WebkitOverflowScrolling: 'touch' }}>
       {!deterministicAuth && isHydrated && <QuestTracker />}
       <div className="min-h-full w-full">
-       {!shouldShowChildren ? (
+       {/* NUCLEAR FIX: Always render the children to maintain hook count, 
+           but show a loader overlay if synchronizing. */}
+       {!isHydrated || isSyncingData ? (
           <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
             <Loader className="h-10 w-10 animate-spin text-primary" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Synchronizing Reality...</p>

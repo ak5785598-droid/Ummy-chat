@@ -21,7 +21,9 @@ interface VipBadgeProps {
 export function VipBadge({ level = 0, tier, className, showText = true }: VipBadgeProps) {
   const { isHydrated } = useFirebase();
 
-  if (!isHydrated || (level === 0 && !tier)) return null;
+  // Safe: no other hooks below this, but we guard here after all hooks
+  if (!isHydrated) return null;
+  if (level === 0 && !tier) return null;
 
   // Derive tier from level if not provided
   const activeTier = tier || (

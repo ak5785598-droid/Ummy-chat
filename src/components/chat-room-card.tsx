@@ -15,21 +15,32 @@ interface ChatRoomCardProps {
 
 /**
  * High-Fidelity Room Card.
- * Re-engineered for Edge-to-Edge Identity.
- * Features ultra-premium backdrop blurs and heavy font integrations.
+ * NUCLEAR FIX: Hooks are ALWAYS called unconditionally.
+ * Loading/null state is handled AFTER hooks, not before.
  */
 export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
+  // ALL hooks called first, unconditionally - this is the React #310 fix
   const { isHydrated } = useFirebase();
+  const { userProfile: owner } = useUserProfile(room?.ownerId);
 
- const { userProfile: owner } = useUserProfile(room?.ownerId);
+  // Skeleton state AFTER hooks - never before
+  if (!isHydrated || !room) {
+    return (
+      <div className="flex flex-col gap-2 w-full animate-pulse">
+        <div className="relative aspect-[1/0.95] rounded-[1.2rem] bg-slate-200 w-full" />
+        <div className="space-y-1.5 px-1">
+          <div className="h-3 w-3/4 rounded-md bg-slate-200" />
+          <div className="h-2.5 w-1/2 rounded-md bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
 
- if (!room || !isHydrated) return null;
+  const roomTitle = room.name || room.title || 'Frequency';
+  const ownerName = owner?.username || 'Tribe Member';
+  const liveCount = Number(room.participantCount || 0);
 
- const roomTitle = room.name || room.title || 'Frequency';
- const ownerName = owner?.username || 'Tribe Member';
- const liveCount = Number(room.participantCount || 0);
-
- return (
+  return (
    <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 hover-scale active-press">
     <div className="relative aspect-[1/0.95] rounded-[1.2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.08)] bg-[#F8F9FE] isolate ring-1 ring-black/5">
      {/* Full Cover Background */}
@@ -84,5 +95,5 @@ export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
      <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-white/5 pointer-events-none z-30 mix-blend-overlay" />
     </div>
    </Link>
- );
+  );
 }
