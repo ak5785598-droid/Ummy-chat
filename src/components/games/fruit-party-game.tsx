@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { 
  useUser, 
  useFirestore, 
@@ -63,31 +63,34 @@ const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
   osc.stop(ctx.currentTime + 0.1);
 };
 
-// --- SINGLE LONG BRANCH DECORATION ---
+// --- SINGLE LONG BRANCH DECORATION (FULL SCREEN HEIGHT) ---
 const LongBranchDecoration = ({ className, delay = 0, reverse = false }: { className?: string; delay?: number; reverse?: boolean }) => (
   <motion.div
-    initial={{ y: -15 }}
-    animate={{ y: 15 }}
-    transition={{ duration: 5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay }}
-    className={cn("absolute top-[-5%] bottom-[-5%] w-[90px] pointer-events-none z-50", className, reverse ? "scale-x-[-1]" : "")}
+    initial={{ y: -10 }}
+    animate={{ y: 10 }}
+    transition={{ duration: 6, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay }}
+    className={cn("absolute top-0 h-screen w-[100px] pointer-events-none z-30", className, reverse ? "scale-x-[-1]" : "")}
   >
-    <svg viewBox="0 0 100 1000" className="w-full h-full overflow-visible drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" preserveAspectRatio="none">
-      {/* Thick Banyan Tree Root Base */}
-      <path d="M 50,0 C 20,200 80,400 50,600 C 20,800 80,950 50,1000" stroke="#1f1004" strokeWidth="10" fill="none" vectorEffect="non-scaling-stroke" />
-      {/* Intertwining Green Vines */}
-      <path d="M 60,0 C 90,150 10,350 60,550 C 90,750 10,900 60,1000" stroke="#1b4a1a" strokeWidth="6" fill="none" vectorEffect="non-scaling-stroke" />
-      <path d="M 40,0 C 10,100 90,300 40,500 C 10,700 90,850 40,1000" stroke="#2d6a27" strokeWidth="4" fill="none" vectorEffect="non-scaling-stroke" />
+    <svg viewBox="0 0 100 1200" className="w-full h-full overflow-visible drop-shadow-[0_15px_15px_rgba(0,0,0,0.9)]" preserveAspectRatio="none">
+      {/* Thick Root - Darker Wood Color */}
+      <path d="M 50,0 C 30,300 70,600 50,900 C 30,1100 60,1200 50,1200" stroke="#1a0d02" strokeWidth="12" fill="none" vectorEffect="non-scaling-stroke" />
+      {/* Intertwining Vines */}
+      <path d="M 55,0 C 85,250 15,550 55,850 C 85,1050 15,1200 55,1200" stroke="#143613" strokeWidth="7" fill="none" vectorEffect="non-scaling-stroke" />
+      <path d="M 45,0 C 15,200 85,450 45,750 C 15,950 85,1200 45,1200" stroke="#22521d" strokeWidth="5" fill="none" vectorEffect="non-scaling-stroke" />
     </svg>
     
-    {/* Scattered Leaves & Apples evenly distributed along the height */}
-    <div className="absolute inset-0 flex flex-col justify-evenly items-center py-20">
-      <motion.div animate={{ rotate: [0, 15, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-3xl translate-x-4">🌿</motion.div>
-      <motion.div animate={{ rotate: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity }} className="text-2xl -translate-x-3">🍎</motion.div>
-      <motion.div animate={{ rotate: [0, 20, 0] }} transition={{ duration: 3.5, repeat: Infinity }} className="text-4xl translate-x-2">🌿</motion.div>
-      <motion.div animate={{ rotate: [0, -15, 0] }} transition={{ duration: 4.5, repeat: Infinity }} className="text-3xl -translate-x-5">🌿</motion.div>
-      <motion.div animate={{ rotate: [0, 10, 0] }} transition={{ duration: 3.2, repeat: Infinity }} className="text-xl translate-x-6">🍎</motion.div>
-      <motion.div animate={{ rotate: [0, -20, 0] }} transition={{ duration: 3.8, repeat: Infinity }} className="text-4xl -translate-x-2">🌿</motion.div>
-      <motion.div animate={{ rotate: [0, 15, 0] }} transition={{ duration: 4.1, repeat: Infinity }} className="text-2xl translate-x-4">🌿</motion.div>
+    {/* Scattered Items along the whole height */}
+    <div className="absolute inset-0 flex flex-col justify-between py-10 items-center">
+      {[...Array(8)].map((_, i) => (
+        <motion.div 
+          key={i}
+          animate={{ rotate: i % 2 === 0 ? [0, 10, 0] : [0, -10, 0], x: i % 2 === 0 ? [0, 5, 0] : [0, -5, 0] }} 
+          transition={{ duration: 3 + i, repeat: Infinity }}
+          className="text-2xl"
+        >
+          {i % 3 === 0 ? "🍎" : "🌿"}
+        </motion.div>
+      ))}
     </div>
   </motion.div>
 );
@@ -178,9 +181,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const targetIdx = ITEMS.findIndex(i => i.id === winItem.id);
   
   let currentStep = 0;
-  // Dynamic step count ensures it lands perfectly on targetIdx
   const totalSteps = (SEQUENCE.length * 8) + SEQUENCE.indexOf(targetIdx); 
-  let speed = 40; // Fast base speed for smooth initial spin
+  let speed = 40;
 
   const run = () => {
    setHighlightIdx(SEQUENCE[currentStep % SEQUENCE.length]);
@@ -188,14 +190,11 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    
-    // Smooth deceleration curve
     if (remaining < 4) speed += 120;
     else if (remaining < 8) speed += 60;
     else if (remaining < 15) speed += 30;
     else if (remaining < 25) speed += 15;
     else if (remaining < 40) speed += 5;
-    
     currentStep++;
     setTimeout(run, speed);
    } else {
@@ -229,11 +228,11 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans relative">
    
-   {/* --- FULL HEIGHT LONG HANGING BRANCHES --- */}
-   <LongBranchDecoration className="left-[-15px]" delay={0} />
-   <LongBranchDecoration className="right-[-15px]" delay={1.5} reverse />
+   {/* --- FULL SCREEN HEIGHT LONG BRANCHES --- */}
+   <LongBranchDecoration className="left-[-10px]" delay={0} />
+   <LongBranchDecoration className="right-[-10px]" delay={2} reverse />
 
-   <header className="relative pt-6 px-6 flex flex-col items-center z-20">
+   <header className="relative pt-6 px-6 flex flex-col items-center z-40">
       <div className="flex justify-between items-center w-full mb-4">
         <button onClick={() => setIsMuted(!isMuted)} className="p-2.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-xl shadow-lg">
           {isMuted ? <VolumeX size={20} className="text-red-400"/> : <Volume2 size={20} className="text-green-400"/>}
@@ -257,7 +256,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    <main className="flex-1 flex items-center justify-between px-4 relative z-10">
       <VisualizerPillar height="h-72" />
       
-      <div className="flex-1 flex flex-col items-center gap-4 z-20">
+      <div className="flex-1 flex flex-col items-center gap-4 z-40">
         {/* Spinner Grid */}
         <div className={cn("p-1.5 rounded-[3rem] transition-all duration-700", 
              gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 via-white to-yellow-400 shadow-[0_0_100px_rgba(255,255,255,0.4)] scale-[1.02]" : "bg-indigo-500/30 shadow-2xl")}>
@@ -317,9 +316,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         </div>
 
         {/* --- Salad Section with DJ Effects --- */}
-        <div className="flex items-center gap-4 z-20">
+        <div className="flex items-center gap-4 z-40">
            <DJVisualizer colorClass="bg-blue-400" />
-
            <div className="flex gap-4">
             {[1, 2].map(i => (
               <div key={i} className="bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-600/40 p-5 rounded-[2.2rem] border-2 border-white/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] backdrop-blur-md relative overflow-hidden">
@@ -333,12 +331,11 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
               </div>
             ))}
            </div>
-
            <DJVisualizer colorClass="bg-pink-500" />
         </div>
 
         {/* --- Balance --- */}
-        <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md relative overflow-hidden group z-20">
+        <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md relative overflow-hidden group z-40">
            <div className="flex items-center gap-3 z-10">
               <div className="p-2 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-xl shadow-[0_4px_10px_rgba(234,179,8,0.3)] border-b-2 border-orange-800">
                 <GoldCoinIcon className="w-4 h-4 text-white" />
@@ -354,14 +351,14 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
               #{currentUser?.uid?.slice(0,4).toUpperCase()}
            </div>
         </div>
-
       </div>
       
       <VisualizerPillar height="h-72" />
    </main>
 
-   <footer className="relative mt-auto p-6 z-40">
-      <div className="bg-black/40 backdrop-blur-3xl rounded-[3rem] p-5 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative z-20">
+   {/* --- Footer with Chips --- */}
+   <footer className="relative mt-auto p-6 z-50">
+      <div className="bg-black/40 backdrop-blur-3xl rounded-[3rem] p-5 border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
         <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center pb-1">
           {CHIPS.map(chip => (
             <button 
