@@ -102,6 +102,8 @@ import {
   ShoppingBag,
   ShieldAlert,
   ArrowRightLeft,
+  Waves,
+  Cloud,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -2928,6 +2930,66 @@ export default function AdminPage() {
                       <h3 className="font-bold text-slate-900 uppercase">Magenta Frenzy</h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
                         High-intensity neon pink and fuchsia gradients for maximum pop.
+                      </p>
+                    </div>
+
+                    {/* Ocean Violet Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'OCEAN_VIOLET', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Ocean Violet Synchronized 🌊" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'OCEAN_VIOLET'
+                          ? "border-indigo-500 bg-indigo-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                          <Waves className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'OCEAN_VIOLET' && (
+                          <div className="bg-indigo-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Ocean Violet</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Deep indigo and violet tones with a clean, airy background layout.
+                      </p>
+                    </div>
+
+                    {/* Sky Lavender Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'SKY_LAVENDER', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Sky Lavender Synchronized ☁️" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'SKY_LAVENDER'
+                          ? "border-purple-300 bg-purple-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-400">
+                          <Cloud className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'SKY_LAVENDER' && (
+                          <div className="bg-purple-400 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Sky Lavender</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Soft airy lavender and pink tones for a gentle, calming experience.
                       </p>
                     </div>
                   </div>

@@ -73,6 +73,20 @@ export function DynamicThemeSync() {
         primary: '315 95% 55%',
         statusBar: '#FDECF9',
         navAccent: '#D946EF',
+      },
+      'OCEAN_VIOLET': {
+        background: '230 40% 96%',
+        foreground: '260 100% 8%',
+        primary: '260 80% 40%',
+        statusBar: '#F5F7FF',
+        navAccent: '#4F46E5',
+      },
+      'SKY_LAVENDER': {
+        background: '300 40% 92%',
+        foreground: '300 100% 8%',
+        primary: '300 60% 60%',
+        statusBar: '#F8F2F9',
+        navAccent: '#A855F7',
       }
     };
 
