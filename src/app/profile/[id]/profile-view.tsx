@@ -497,128 +497,133 @@ export default function ProfileView({ profileId }: { profileId: string }) {
        ))}
      </div>
 
-     <header className="sticky top-0 w-full px-6 pt-safe pb-6 flex flex-col items-center z-50 transition-all duration-500">
-       <div className="pt-5 absolute top-8 right-6 flex items-center gap-2">
-        <EditProfileDialog 
-         profile={profile} 
-         trigger={
-          <button className="p-1.5 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
-            <Pencil className="h-4 w-4 text-gray-600" />
-          </button>
-         } 
-        />
-       </div>
+      {/* 🚀 FIXED IDENTITY SHELL (Wafa-Style) */}
+      <div className="sticky top-0 z-50 transition-all duration-500">
+        <div className="w-full pb-4 px-6 pt-safe">
+          <header className="w-full flex flex-col items-center">
+            <div className="absolute top-8 right-6 flex items-center gap-2">
+              <EditProfileDialog 
+                profile={profile} 
+                trigger={
+                  <button className="p-1.5 bg-white/40 backdrop-blur-md rounded-full shadow-sm active:scale-90 transition-transform">
+                    <Pencil className="h-4 w-4 text-gray-600" />
+                  </button>
+                } 
+              />
+            </div>
 
-       <div className="flex items-center gap-5 w-full mt-2">
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
-          <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-           <Avatar className="h-24 w-24 border-4 border-white shadow-2xl relative z-10">
-             <AvatarImage src={profile.avatarUrl || undefined} />
-             <AvatarFallback className="text-2xl font-bold bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-           </Avatar>
-          </AvatarFrame>
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
-           <div className="bg-gradient-to-r from-[#7c3aed] to-[#d946ef] p-1 rounded-lg border-2 border-white shadow-xl scale-75">
-             <Sparkles className="h-4 w-4 text-white fill-current" />
-           </div>
-          </div>
-        </div>
+            <div className="flex items-center gap-5 w-full mt-1">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 bg-pink-400/20 blur-2xl rounded-full scale-125" />
+                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                  <Avatar className="h-24 w-24 border-4 border-white shadow-2xl relative z-10">
+                    <AvatarImage src={profile.avatarUrl || undefined} />
+                    <AvatarFallback className="text-2xl font-bold bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </AvatarFrame>
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
+                  <div className="bg-gradient-to-r from-[#7c3aed] to-[#d946ef] p-1 rounded-lg border-2 border-white shadow-xl scale-75">
+                    <Sparkles className="h-4 w-4 text-white fill-current" />
+                  </div>
+                </div>
+              </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-           <h1 className="text-2xl font-black text-slate-900 tracking-tight pr-2 leading-none truncate">{profile.username}</h1>
-           <span className="text-base leading-none">🇮🇳</span>
-           <GenderCircle gender={profile.gender} />
-           <RichLevelBadge level={profile.level?.rich || 1} />
-           <CharmLevelBadge level={profile.level?.charm || 1} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight pr-2 leading-none truncate">{profile.username}</h1>
+                  <span className="text-base leading-none">🇮🇳</span>
+                  <GenderCircle gender={profile.gender} />
+                  <RichLevelBadge level={profile.level?.rich || 1} />
+                  <CharmLevelBadge level={profile.level?.charm || 1} />
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className={cn(
+                      "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
+                      profile.idColor === 'red' ? 'text-red-500' : 
+                      profile.idColor === 'blue' ? 'text-blue-500' : 
+                      profile.idColor === 'purple' ? 'text-purple-600' : 
+                      'text-gray-400'
+                    )} 
+                    onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}
+                  >
+                    {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
+                    {profile.isBudgetId && (
+                      <Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>
+                    )}
+                  </p>
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="relative z-50 flex justify-around my-2 gap-2">
+            <StatItem label={t.profile.fans} value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+            <StatItem label={t.profile.following} value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+            <StatItem label={t.profile.friends} value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+            <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className={cn(
-                "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
-                profile.idColor === 'red' ? 'text-red-500' : 
-                profile.idColor === 'blue' ? 'text-blue-500' : 
-                profile.idColor === 'purple' ? 'text-purple-600' : 
-                'text-gray-400'
-              )} 
-              onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}
+
+          <div className="relative z-20 grid grid-cols-2 gap-4 mb-3">
+            <div 
+              onClick={() => router.push('/wallet')} 
+              className="h-24 rounded-[1.5rem] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(251,146,60,0.3)] active-press group cursor-pointer border border-white/20"
             >
-              {t.profile.id}:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-              {profile.isBudgetId && (
-                <Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>
-              )}
-            </p>
-           {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
-           {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-           {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-           {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s' }} />
+              <div className="relative z-30 flex flex-col h-full justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
+                  <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.coins}</h3>
+                </div>
+                <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
+              </div>
+              <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-700"><GoldCoinIcon className="w-full h-full" /></div>
+            </div>
+
+            <div 
+              onClick={() => router.push('/wallet')} 
+              className="h-24 rounded-[1.5rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(59,130,246,0.3)] active-press group cursor-pointer border border-white/20"
+            >
+              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s' }} />
+              <div className="relative z-30 flex flex-col h-full justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
+                  <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.diamonds}</h3>
+                </div>
+                <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
+              </div>
+              <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-110 transition-transform duration-700"><Gem className="w-full h-full text-white fill-current" /></div>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-3">
+            <div className="relative rounded-2xl overflow-hidden group shadow-md active:scale-[0.98] transition-all cursor-pointer bg-gradient-to-r from-gray-900 via-gray-800 to-black p-4 flex items-center justify-between border border-gray-700/50">
+              <div className="flex items-center gap-3 relative z-10 w-full">
+                <div className="bg-gradient-to-br from-amber-200 to-yellow-500 p-2 text-yellow-900 rounded-full shadow-inner"><Crown className="h-4 w-4 fill-current" /></div>
+                <div className="flex flex-col flex-1">
+                  <h2 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-400 tracking-wide uppercase">{t.profile.vip}</h2>
+                  <span className="text-[10px] text-gray-400 font-medium">{t.profile.secretCard}</span>
+                </div>
+                <div className="bg-white/10 rounded-full p-1.5"><ChevronRight className="h-4 w-4 text-gray-300" /></div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" style={{ animationDuration: '3s' }} />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center relative z-20">
+            <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+            <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
+            <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
+            <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
           </div>
         </div>
-       </div>
-     </header>
+      </div>
 
-     <div className="relative z-50 px-6 flex justify-around mb-4 gap-2">
-       <StatItem label={t.profile.fans} value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-       <StatItem label={t.profile.following} value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-       <StatItem label={t.profile.friends} value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-       <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
-     </div>
-
-     <div className="relative z-20 px-5 grid grid-cols-2 gap-4 mb-8">
-       <div 
-        onClick={() => router.push('/wallet')} 
-        className="h-24 rounded-[1.5rem] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(251,146,60,0.3)] active-press group cursor-pointer border border-white/20"
-       >
-        <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s' }} />
-        <div className="relative z-30 flex flex-col h-full justify-between">
-          <div className="flex items-center gap-2">
-           <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
-           <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.coins}</h3>
-          </div>
-          <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
-        </div>
-        <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 group-hover:scale-110 transition-transform duration-700"><GoldCoinIcon className="w-full h-full" /></div>
-       </div>
-
-       <div 
-        onClick={() => router.push('/wallet')} 
-        className="h-24 rounded-[1.5rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(59,130,246,0.3)] active-press group cursor-pointer border border-white/20"
-       >
-        <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s' }} />
-        <div className="relative z-30 flex flex-col h-full justify-between">
-          <div className="flex items-center gap-2">
-           <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
-           <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase shadow-sm">{t.profile.diamonds}</h3>
-          </div>
-          <div className="flex items-baseline mt-1"><span className="text-xl font-black text-white tracking-tighter drop-shadow-md">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
-        </div>
-        <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-110 transition-transform duration-700"><Gem className="w-full h-full text-white fill-current" /></div>
-       </div>
-     </div>
-
-     <div className="px-3 space-y-4 mb-6">
-       <div className="relative rounded-2xl overflow-hidden group shadow-md active:scale-[0.98] transition-all cursor-pointer bg-gradient-to-r from-gray-900 via-gray-800 to-black p-4 flex items-center justify-between border border-gray-700/50">
-        <div className="flex items-center gap-3 relative z-10 w-full">
-          <div className="bg-gradient-to-br from-amber-200 to-yellow-500 p-2 text-yellow-900 rounded-full shadow-inner"><Crown className="h-4 w-4 fill-current" /></div>
-          <div className="flex flex-col flex-1">
-           <h2 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-400 tracking-wide uppercase">{t.profile.vip}</h2>
-           <span className="text-[10px] text-gray-400 font-medium">{t.profile.secretCard}</span>
-          </div>
-          <div className="bg-white/10 rounded-full p-1.5"><ChevronRight className="h-4 w-4 text-gray-300" /></div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" style={{ animationDuration: '3s' }} />
-       </div>
-     </div>
-
-     <div className="px-10 flex justify-between items-center mb-8 relative z-20">
-       <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
-       <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
-       <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
-       <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
-     </div>
-
-     <div className="px-3 space-y-3 pb-20 relative z-20">
+      <div className="px-6 space-y-3 pb-20 relative z-20">
        <Card className="rounded-2xl border-none shadow-sm overflow-hidden bg-white px-3">
         <ProfileMenuItem 
          icon={UserPlus} 
