@@ -1,130 +1,262 @@
-import React from 'react';
+Import { LucideIcon, Sun, Flame, Terminal, Waves, Orbit, Wind, Trees, Diamond, Sword, CloudSun, Stars, Gem, Crown, Rocket, Zap, Heart, FlameKindling, ShieldCheck, Sparkles } from 'lucide-react';
 
-// --- STYLES (Inline for easy copy-paste) ---
-const styles = `
-  @keyframes float-wings {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-8px) rotate(2deg); }
+export interface AvatarFrameConfig {
+  id: string;
+  name: string;
+  tier: 'elite' | 'luxury' | 'mythic' | 'legendary';
+  gradient: string;
+  borderColor: string;
+  glowColor: string;
+  ornament?: string | LucideIcon;
+  animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow';
+  
+  // High-Fidelity Additions
+  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'none';
+  particleType?: 'stars' | 'fire' | 'bubbles' | 'matrix' | 'none';
+  textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
+  extraColor?: string;
+  particleColor?: string;
+}
+
+export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
+  // --- LEGENDARY ---
+  'mystic-dragon': {
+    id: 'mystic-dragon',
+    name: 'Mystic Dragon',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #9A7B4F, #D4AF37)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(212, 175, 55, 0.7)',
+    ornament: '🐉',
+    animationType: 'float',
+    extraType: 'dragon-body',
+    particleType: 'fire',
+    textureType: 'gold',
+    extraColor: '#FFD700'
+  },
+  'aurora-gem': {
+    id: 'aurora-gem',
+    name: 'Aurora Gem',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #A855F7, #E9D5FF, #7E22CE, #A855F7)',
+    borderColor: '#E9D5FF',
+    glowColor: 'rgba(168, 85, 247, 0.8)',
+    ornament: Gem,
+    animationType: 'sparkle',
+    extraType: 'crystals',
+    particleType: 'stars',
+    textureType: 'glass',
+    extraColor: '#E9D5FF'
+  },
+  'celestial-star': {
+    id: 'celestial-star',
+    name: 'Celestial Star',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFE29F, #FFA91B, #FF9912, #FFE29F)',
+    borderColor: '#FFA91B',
+    glowColor: 'rgba(255, 169, 27, 0.6)',
+    ornament: Stars,
+    animationType: 'rotate',
+    extraType: 'halo',
+    particleType: 'stars',
+    textureType: 'gold'
+  },
+  'phoenix-blaze': {
+    id: 'phoenix-blaze',
+    name: 'Phoenix Blaze',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #EF4444, #F97316, #FDE047, #EF4444)',
+    borderColor: '#F97316',
+    glowColor: 'rgba(249, 115, 22, 0.8)',
+    ornament: FlameKindling,
+    animationType: 'pulse',
+    extraType: 'wings',
+    particleType: 'fire',
+    textureType: 'lava',
+    extraColor: '#EF4444'
+  },
+  'sun-king': {
+    id: 'sun-king',
+    name: 'Sun King',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #F9E58A, #FDB931, #FFD700, #F9E58A)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(255, 215, 0, 0.9)',
+    ornament: Sun,
+    animationType: 'rotate',
+    extraType: 'sun-rays',
+    particleType: 'fire',
+    textureType: 'gold'
+  },
+  'celestial-angel': {
+    id: 'celestial-angel',
+    name: 'Celestial Angel',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFF, #F9E58A, #FFF)',
+    borderColor: '#E8C27E',
+    glowColor: 'rgba(255, 255, 255, 0.7)',
+    ornament: Crown,
+    animationType: 'float',
+    extraType: 'clouds',
+    particleType: 'stars',
+    textureType: 'gold',
+  },
+  'dragon-soul': {
+    id: 'dragon-soul',
+    name: 'Dragon Soul',
+    tier: 'legendary',
+    gradient: 'linear-gradient(to right, #450A0A, #DC2626, #450A0A)',
+    borderColor: '#DC2626',
+    glowColor: 'rgba(220, 38, 38, 0.8)',
+    ornament: '🔥',
+    animationType: 'flow',
+    extraType: 'dragon-body',
+    particleType: 'fire',
+    textureType: 'lava',
+  },
+  'emerald-guardian': {
+    id: 'emerald-guardian',
+    name: 'Emerald Guardian',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #064E3B, #10B981, #064E3B)',
+    borderColor: '#10B981',
+    glowColor: 'rgba(5, 150, 105, 0.7)',
+    ornament: Trees,
+    animationType: 'pulse',
+    extraType: 'crystals',
+    particleType: 'none',
+    textureType: 'gold'
+  },
+  'diamond-empress': {
+    id: 'diamond-empress',
+    name: 'Diamond Empress',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFF, #E0F2FE, #FFF)',
+    borderColor: '#fff',
+    glowColor: 'rgba(255, 255, 255, 0.9)',
+    ornament: Gem,
+    animationType: 'sparkle',
+    extraType: 'halo',
+    particleType: 'stars',
+    textureType: 'ice'
+  },
+  'cyber-wraith': {
+    id: 'cyber-wraith',
+    name: 'Cyber Wraith',
+    tier: 'legendary',
+    gradient: 'linear-gradient(180deg, #000, #22C55E, #000)',
+    borderColor: '#22C55E',
+    glowColor: 'rgba(34, 197, 94, 0.8)',
+    ornament: Terminal,
+    animationType: 'matrix',
+    extraType: 'spikes',
+    particleType: 'matrix',
+    textureType: 'none'
+  },
+  'shadow-ninja': {
+    id: 'shadow-ninja',
+    name: 'Shadow Ninja',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #000, #991B1B, #000)',
+    borderColor: '#991B1B',
+    glowColor: 'rgba(153, 27, 27, 0.8)',
+    ornament: Sword,
+    animationType: 'float',
+    extraType: 'spikes',
+    particleType: 'none',
+    textureType: 'gold'
+  },
+
+  // --- MYTHIC & LUXURY (MORE DETAILED) ---
+  'void-walker': {
+    id: 'void-walker',
+    name: 'Void Walker',
+    tier: 'mythic',
+    gradient: 'radial-gradient(circle, #000 30%, #4C1D95 70%, #000 100%)',
+    borderColor: '#A855F7',
+    glowColor: 'rgba(124, 58, 237, 0.8)',
+    ornament: Orbit,
+    animationType: 'pulse',
+    extraType: 'nebula',
+    particleType: 'stars'
+  },
+  'ocean-mystic': {
+    id: 'ocean-mystic',
+    name: 'Ocean Mystic',
+    tier: 'mythic',
+    gradient: 'linear-gradient(180deg, #0EA5E9, #1E40AF, #0EA5E9)',
+    borderColor: '#60A5FA',
+    glowColor: 'rgba(37, 99, 235, 0.6)',
+    ornament: Waves,
+    animationType: 'flow',
+    extraType: 'bubbles' as any, // Temporary fix for 'bubbles' not in union yet
+    particleType: 'bubbles' as any
+  },
+  'imperial-gold': {
+    id: 'imperial-gold',
+    name: 'Imperial Gold',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #FFF281, #FFB700, #B8860B)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(255, 215, 0, 0.5)',
+    ornament: Crown,
+    animationType: 'rotate',
+    textureType: 'gold'
+  },
+  'glacial-diamond': {
+    id: 'glacial-diamond',
+    name: 'Glacial Diamond',
+    tier: 'luxury',
+    gradient: 'linear-gradient(45deg, #E0F2FE, #7DD3FC, #0EA5E9)',
+    borderColor: '#BAE6FD',
+    glowColor: 'rgba(14, 165, 233, 0.5)',
+    ornament: Diamond,
+    animationType: 'sparkle',
+    textureType: 'ice'
+  },
+  'veridian-emerald': {
+    id: 'veridian-emerald',
+    name: 'Veridian Emerald',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #064E3B, #10B981, #064E3B)',
+    borderColor: '#059669',
+    glowColor: 'rgba(16, 185, 129, 0.5)',
+    ornament: Gem,
+    animationType: 'sparkle',
+    textureType: 'glass'
+  },
+  'rose-quartz': {
+    id: 'rose-quartz',
+    name: 'Rose Quartz',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #FDF2F8, #F472B6, #FDF2F8)',
+    borderColor: '#F9A8D4',
+    glowColor: 'rgba(244, 114, 182, 0.5)',
+    ornament: Heart,
+    animationType: 'pulse',
+    textureType: 'glass'
+  },
+  'obsidian-onyx': {
+    id: 'obsidian-onyx',
+    name: 'Obsidian Onyx',
+    tier: 'luxury',
+    gradient: 'linear-gradient(135deg, #000, #444, #000)',
+    borderColor: '#333',
+    glowColor: 'rgba(0, 0, 0, 0.7)',
+    ornament: ShieldCheck,
+    animationType: 'pulse',
+    textureType: 'gold'
+  },
+  'cyber-neon': {
+    id: 'cyber-neon',
+    name: 'Cyber Neon',
+    tier: 'luxury',
+    gradient: 'conic-gradient(from 0deg, #A855F7, #D946EF, #A855F7)',
+    borderColor: '#D946EF',
+    glowColor: 'rgba(217, 70, 239, 0.6)',
+    ornament: Zap,
+    animationType: 'pulse',
+    particleType: 'matrix'
   }
-  @keyframes glow-pulse {
-    0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); }
-    50% { filter: drop-shadow(0 0 25px rgba(0, 191, 255, 0.8)); }
-  }
-  .animate-wings { animation: float-wings 4s ease-in-out infinite; }
-  .animate-frame-glow { animation: glow-pulse 3s infinite; }
-`;
-
-const EliteAvatarFrame = ({ src = "https://via.placeholder.com/150" }) => {
-  return (
-    <div className="relative flex items-center justify-center w-[300px] h-[300px] bg-[#050a18] rounded-xl overflow-hidden">
-      <style>{styles}</style>
-
-      {/* --- BACKGROUND AMBIENT GLOW --- */}
-      <div className="absolute w-40 h-40 bg-blue-500/20 blur-[80px] rounded-full" />
-
-      <div className="relative w-full h-full flex items-center justify-center animate-frame-glow">
-        
-        {/* --- SVG FRAME DESIGN (Matching Image 2) --- */}
-        <svg viewBox="0 0 240 240" className="absolute w-full h-full pointer-events-none z-20">
-          <defs>
-            {/* Real Gold Texture Gradient */}
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#FFF8C4', stopOpacity: 1 }} />
-              <stop offset="40%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
-              <stop offset="70%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
-              <stop offset="100%" style={{ stopColor: '#8B6508', stopOpacity: 1 }} />
-            </linearGradient>
-
-            {/* Blue Crystal Gradient */}
-            <radialGradient id="crystalGradient">
-              <stop offset="0%" style={{ stopColor: '#00F0FF', stopOpacity: 1 }} />
-              <stop offset="100%" style={{ stopColor: '#0066FF', stopOpacity: 1 }} />
-            </radialGradient>
-          </defs>
-
-          {/* Left Wing Group */}
-          <g className="animate-wings" style={{ transformOrigin: 'center' }}>
-            <path 
-              d="M60,120 C20,100 10,60 50,40 C30,20 60,0 90,30 L80,50" 
-              fill="url(#goldGradient)" 
-              stroke="#FFF" strokeWidth="0.5"
-            />
-            <path 
-              d="M55,130 C15,110 5,70 45,50" 
-              fill="url(#crystalGradient)" 
-              className="opacity-80"
-            />
-          </g>
-
-          {/* Right Wing Group (Flipped) */}
-          <g className="animate-wings" style={{ transformOrigin: 'center', transform: 'scaleX(-1)' }}>
-            <path 
-              d="M60,120 C20,100 10,60 50,40 C30,20 60,0 90,30 L80,50" 
-              fill="url(#goldGradient)" 
-              stroke="#FFF" strokeWidth="0.5"
-            />
-            <path 
-              d="M55,130 C15,110 5,70 45,50" 
-              fill="url(#crystalGradient)" 
-              className="opacity-80"
-            />
-          </g>
-
-          {/* Top Crown/Ornament */}
-          <path 
-            d="M100,45 L120,20 L140,45 L120,55 Z" 
-            fill="url(#crystalGradient)" 
-            stroke="url(#goldGradient)" 
-            strokeWidth="2"
-          />
-          
-          {/* Bottom Crystal Base */}
-          <path 
-            d="M100,195 L120,220 L140,195 L120,185 Z" 
-            fill="url(#crystalGradient)" 
-            stroke="url(#goldGradient)" 
-            strokeWidth="2"
-          />
-
-          {/* Main Circular Golden Border */}
-          <circle 
-            cx="120" cy="120" r="78" 
-            stroke="url(#goldGradient)" 
-            strokeWidth="6" 
-            fill="none" 
-            strokeDasharray="10 5"
-          />
-        </svg>
-
-        {/* --- ACTUAL AVATAR IMAGE --- */}
-        <div className="relative z-10 w-36 h-36 rounded-full border-4 border-[#FFD700] overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
-          <img 
-            src={src} 
-            alt="User Avatar" 
-            className="w-full h-full object-cover"
-          />
-          {/* Inner Glossy Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
-        </div>
-
-        {/* --- FLOATING PARTICLES --- */}
-        <div className="absolute inset-0 z-30 pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <div 
-              key={i}
-              className="absolute w-1 h-1 bg-cyan-300 rounded-full animate-pulse"
-              style={{
-                top: `${20 + Math.random() * 60}%`,
-                left: `${20 + Math.random() * 60}%`,
-                animationDelay: `${i * 0.4}s`,
-                boxShadow: '0 0 10px #00F0FF'
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 };
-
-export default EliteAvatarFrame;
+// End of registry
