@@ -2024,6 +2024,12 @@ export default function AdminPage() {
                   <Crown className="h-4 w-4" /> Sovereign IDs
                 </TabsTrigger>
                 <TabsTrigger
+                  value="visual-identity"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-pink-500 data-[state=active]:text-white shadow-lg"
+                >
+                  <Palette className="h-4 w-4" /> Visual Identity 🎨
+                </TabsTrigger>
+                <TabsTrigger
                   value="system"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2700,6 +2706,89 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="visual-identity" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-pink-600">
+                    <Palette className="h-6 w-6" /> Theme & Visual Synchronizer
+                  </CardTitle>
+                  <CardDescription>
+                    Globally switch the application's design system between Classic and Modern styles.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Classic Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'CLASSIC', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Classic Theme Synchronized 🏛️" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'CLASSIC' || !config?.appTheme 
+                          ? "border-blue-500 bg-blue-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                          <Home className="h-5 w-5" />
+                        </div>
+                        {(config?.appTheme === 'CLASSIC' || !config?.appTheme) && (
+                          <div className="bg-blue-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Classic System</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Professional soft-light theme with slate accents and lavender highlights.
+                      </p>
+                    </div>
+
+                    {/* Stellar Pink Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'STELLAR_PINK', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Stellar Pink Synchronized 💖" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'STELLAR_PINK' 
+                          ? "border-pink-500 bg-pink-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600">
+                          <Sparkles className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'STELLAR_PINK' && (
+                          <div className="bg-pink-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Stellar Pink System</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Vibrant immersive theme with signature pink backgrounds and futuristic neon accents.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-amber-50 rounded-2xl border-2 border-amber-100 flex gap-4">
+                    <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
+                    <p className="text-xs font-bold text-amber-700 leading-relaxed uppercase">
+                      Changing this setting will affect ALL users currently inside the application in real-time. This is a global synchronization event.
+                    </p>
+                  </div>
+                </CardContent>
               </Card>
             </TabsContent>
 

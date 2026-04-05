@@ -29,6 +29,7 @@ import { QuestTracker } from '@/components/quest-tracker';
 import { ActiveRoomManager } from '@/components/active-room-manager';
 import { UnreadBadge } from '@/components/unread-badge';
 import { DESIGN_TOKENS } from '@/lib/design-tokens';
+import { DynamicThemeSync } from '@/components/dynamic-theme-sync';
 
 /**
  * THE NUCLEAR STABILITY LAYOUT (Final Remediated Version).
@@ -84,6 +85,7 @@ export function AppLayout({
  return (
   <SidebarProvider defaultOpen={!deterministicAuth}>
     {/* PERSISTENT MANAGERS - Shielded by mounted check above */}
+    <DynamicThemeSync />
     <ActiveRoomManager />
     {!deterministicAuth && isHydrated && <QuestTracker />}
 
