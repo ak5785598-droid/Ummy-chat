@@ -211,7 +211,12 @@ const PublicProfileView = ({
  const isCSLeader = profile.tags?.includes('CS Leader');
 
  return (
-  <div className="min-h-screen bg-[#FF91B5] font-sans pb-24 flex flex-col animate-in fade-in duration-700 relative overflow-x-hidden">
+  <div className="min-h-screen bg-slate-50 font-sans pb-24 flex flex-col animate-in fade-in duration-700 relative overflow-x-hidden">
+    {/* 🏙️ PREMIUM HEADER BACKDROP (Pinned) */}
+    <div 
+      className="fixed top-0 left-0 right-0 h-[300px] z-0 transition-all duration-700 border-b border-white/10" 
+      style={{ background: 'var(--header-gradient)' }}
+    />
    <div className="absolute inset-0 -z-10 overflow-hidden">
      {profile.avatarUrl && (
       <Image src={profile.avatarUrl} fill className="object-cover blur-3xl opacity-30 scale-110" alt="Ambient Backdrop" unoptimized />
@@ -472,7 +477,13 @@ export default function ProfileView({ profileId }: { profileId: string }) {
  if (isOwnProfile) {
   return (
    <AppLayout>
-    <div className="min-h-full bg-gradient-to-b from-[#FF91B5] to-[#f472b6] text-gray-900 font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
+    <div className="min-h-full bg-slate-50 text-gray-900 font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-1000">
+      
+      {/* 🏙️ PREMIUM HEADER BACKDROP (Pinned) */}
+      <div 
+        className="fixed top-0 left-0 right-0 h-[320px] z-0 transition-all duration-700" 
+        style={{ background: 'var(--header-gradient)' }}
+      />
      
      <div className="absolute inset-0 pointer-events-none opacity-40">
        {particles.map((pos, i) => (
@@ -486,7 +497,7 @@ export default function ProfileView({ profileId }: { profileId: string }) {
        ))}
      </div>
 
-     <header className="relative w-full px-6 pt-safe pb-4 flex flex-col items-center">
+     <header className="sticky top-0 w-full px-6 pt-safe pb-6 flex flex-col items-center z-50 transition-all duration-500">
        <div className="pt-5 absolute top-8 right-6 flex items-center gap-2">
         <EditProfileDialog 
          profile={profile} 
@@ -554,7 +565,7 @@ export default function ProfileView({ profileId }: { profileId: string }) {
        <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
      </div>
 
-     <div className="px-5 grid grid-cols-2 gap-4 mb-8">
+     <div className="relative z-20 px-5 grid grid-cols-2 gap-4 mb-8">
        <div 
         onClick={() => router.push('/wallet')} 
         className="h-24 rounded-[1.5rem] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-4 relative overflow-hidden shadow-[0_8px_30px_rgba(251,146,60,0.3)] active-press group cursor-pointer border border-white/20"
@@ -600,14 +611,14 @@ export default function ProfileView({ profileId }: { profileId: string }) {
        </div>
      </div>
 
-     <div className="px-10 flex justify-between items-center mb-8">
+     <div className="px-10 flex justify-between items-center mb-8 relative z-20">
        <IconButton icon={Trophy} label={t.profile.level} colorClass="bg-orange-400" onClick={() => router.push('/level')} />
        <IconButton icon={ShoppingBag} label={t.profile.store} colorClass="bg-pink-400" onClick={() => router.push('/store')} />
        <IconButton icon={History} label={t.profile.budget || 'Budget'} colorClass="bg-blue-400" onClick={() => router.push('/wallet')} />
        <IconButton icon={ClipboardList} label={t.profile.task} colorClass="bg-green-400" onClick={() => router.push('/tasks')} />
      </div>
 
-     <div className="px-3 space-y-3 pb-20">
+     <div className="px-3 space-y-3 pb-20 relative z-20">
        <Card className="rounded-2xl border-none shadow-sm overflow-hidden bg-white px-3">
         <ProfileMenuItem 
          icon={UserPlus} 

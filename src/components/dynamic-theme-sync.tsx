@@ -48,18 +48,20 @@ export function DynamicThemeSync() {
     // --- THEME DEFINITIONS ---
     const themes = {
       'CLASSIC': {
-        background: '280 40% 93%', // Soft Lavender
+        background: '280 40% 93%', 
         foreground: '270 100% 8%',
         primary: '291 64% 42%',
         statusBar: '#F8F9FE',
         navAccent: '#FFCC00',
+        headerGradient: 'linear-gradient(to bottom, #F8F9FE 0%, #E8E9F5 100%)',
       },
       'STELLAR_PINK': {
-        background: '340 100% 78%', // Stellar Pink
+        background: '340 100% 78%',
         foreground: '270 100% 8%',
         primary: '291 64% 42%',
         statusBar: '#FF91B5',
         navAccent: '#FF91B5',
+        headerGradient: 'linear-gradient(to bottom, #FF91B5 0%, #FFB6D1 100%)',
       },
       'PURPLE_MAJESTY': {
         background: '260 40% 92%',
@@ -67,6 +69,7 @@ export function DynamicThemeSync() {
         primary: '260 70% 55%',
         statusBar: '#F0F1FB',
         navAccent: '#8B5CF6',
+        headerGradient: 'linear-gradient(to bottom, #F0F1FB 0%, #E0E2F6 100%)',
       },
       'ROSE_GLOW': {
         background: '335 50% 94%',
@@ -74,6 +77,7 @@ export function DynamicThemeSync() {
         primary: '335 70% 60%',
         statusBar: '#FFF0F6',
         navAccent: '#EC4899',
+        headerGradient: 'linear-gradient(to bottom, #FFF0F6 0%, #FFE4F0 100%)',
       },
       'GOLDEN_HOUR': {
         background: '28 75% 94%',
@@ -81,6 +85,7 @@ export function DynamicThemeSync() {
         primary: '28 90% 60%',
         statusBar: '#FDF2EA',
         navAccent: '#F59E0B',
+        headerGradient: 'linear-gradient(to bottom, #FDF2EA 0%, #FBDFCA 100%)',
       },
       'MIDNIGHT_MAROON': {
         background: '345 50% 8%',
@@ -88,6 +93,7 @@ export function DynamicThemeSync() {
         primary: '345 80% 50%',
         statusBar: '#120409',
         navAccent: '#BE123C',
+        headerGradient: 'linear-gradient(to bottom, #120409 0%, #2A0813 100%)',
       },
       'MAGENTA_FRENZY': {
         background: '315 80% 94%',
@@ -95,6 +101,7 @@ export function DynamicThemeSync() {
         primary: '315 95% 55%',
         statusBar: '#FDECF9',
         navAccent: '#D946EF',
+        headerGradient: 'linear-gradient(to bottom, #FDECF9 0%, #FBDBF4 100%)',
       },
       'OCEAN_VIOLET': {
         background: '230 40% 96%',
@@ -102,6 +109,7 @@ export function DynamicThemeSync() {
         primary: '260 80% 40%',
         statusBar: '#F5F7FF',
         navAccent: '#4F46E5',
+        headerGradient: 'linear-gradient(to bottom, #F5F7FF 0%, #E6E9FF 100%)',
       },
       'SKY_LAVENDER': {
         background: '300 40% 92%',
@@ -109,6 +117,7 @@ export function DynamicThemeSync() {
         primary: '300 60% 60%',
         statusBar: '#F8F2F9',
         navAccent: '#A855F7',
+        headerGradient: 'linear-gradient(to bottom, #F8F2F9 0%, #F1E2F5 100%)',
       }
     };
 
@@ -118,6 +127,7 @@ export function DynamicThemeSync() {
     root.style.setProperty('--background', active.background);
     root.style.setProperty('--foreground', active.foreground);
     root.style.setProperty('--primary', active.primary);
+    root.style.setProperty('--header-gradient', active.headerGradient);
     
     // Update Meta Theme Color for mobile browser address bars
     if (metaThemeColor) {
