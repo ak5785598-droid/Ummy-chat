@@ -279,7 +279,7 @@ const PublicProfileView = ({
       </div>
      </div>
 
-     <div className="flex divide-x divide-gray-100 py-1">
+     <div className="relative z-50 flex divide-x divide-gray-100 py-1">
       <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
       <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
       <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
@@ -558,7 +558,7 @@ export default function ProfileView({ profileId }: { profileId: string }) {
        </div>
      </header>
 
-     <div className="px-6 flex justify-around mb-4 gap-2">
+     <div className="relative z-50 px-6 flex justify-around mb-4 gap-2">
        <StatItem label={t.profile.fans} value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
        <StatItem label={t.profile.following} value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
        <StatItem label={t.profile.friends} value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
