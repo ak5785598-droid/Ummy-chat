@@ -3,66 +3,72 @@
 import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Rocket, Lock, Trophy, Gift, Users, X, Zap, CheckCircle2 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { Lock, Trophy, Users, X, Zap, CheckCircle2 } from 'lucide-react';
 
-interface RocketDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  totalGifts: number;
-  roomName: string;
-}
+// --- Custom Rocket Component (Matching Image 2) ---
+const CustomRocketIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 100 120" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg" 
+    className={cn("drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]", className)}
+  >
+    {/* Side Thrusters */}
+    <path d="M25 70 Q15 80 20 100 L35 100 Q40 80 35 70 Z" fill="url(#metallicBlue)" stroke="#FFD700" strokeWidth="1"/>
+    <path d="M75 70 Q85 80 80 100 L65 100 Q60 80 65 70 Z" fill="url(#metallicBlue)" stroke="#FFD700" strokeWidth="1"/>
+    
+    {/* Main Body */}
+    <path d="M50 10 C30 40 30 80 35 105 L65 105 C70 80 70 40 50 10 Z" fill="url(#metallicBlue)" stroke="#FFD700" strokeWidth="1.5"/>
+    
+    {/* Gold Rings & Details */}
+    <circle cx="50" cy="50" r="8" fill="#1A1A1A" stroke="#FFD700" strokeWidth="2"/>
+    <rect x="35" y="75" width="30" height="3" fill="#FFD700" />
+    <rect x="38" y="25" width="24" height="2" fill="#FFD700" opacity="0.6" />
+    
+    {/* Fire/Thruster Effects */}
+    <path d="M45 105 L50 120 L55 105 Z" fill="white">
+      <animate attributeName="opacity" values="1;0.4;1" dur="0.2s" repeatCount="indefinite" />
+    </path>
+    <path d="M22 100 L27 110 L32 100 Z" fill="white" opacity="0.8" />
+    <path d="M68 100 L73 110 L78 100 Z" fill="white" opacity="0.8" />
+
+    <defs>
+      <linearGradient id="metallicBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#2B5876" />
+        <stop offset="50%" stopColor="#4E4376" />
+        <stop offset="100%" stopColor="#2B5876" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
 const ROCKET_LEVELS = [
   {
     level: 1,
     name: 'Star Fighter',
-    unlockAmount: 100000, // 1 Lakh
-    color: 'from-green-400 to-green-600',
-    glowColor: 'shadow-green-500/50',
-    icon: '🚀',
-    rewards: [
-      { type: 'frame', name: 'Star Frame', days: 1 },
-      { type: 'car', name: 'Sports Car', days: 1 },
-      { type: 'exp', name: 'EXP', amount: 10000 }
-    ]
+    unlockAmount: 100000,
+    color: 'from-blue-900/40 to-blue-600/20',
+    rewards: [{ name: 'Star Frame' }, { name: 'Sports Car' }, { name: '10K EXP' }]
   },
   {
     level: 2,
     name: 'Galaxy Destroyer',
-    unlockAmount: 500000, // 5 Lakh
-    color: 'from-purple-400 to-purple-600',
-    glowColor: 'shadow-purple-500/50',
-    icon: '🚀',
-    rewards: [
-      { type: 'frame', name: 'Galaxy Frame', days: 3 },
-      { type: 'jet', name: 'Private Jet', days: 3 },
-      { type: 'exp', name: 'EXP', amount: 50000 }
-    ]
+    unlockAmount: 500000,
+    color: 'from-indigo-900/40 to-purple-600/20',
+    rewards: [{ name: 'Galaxy Frame' }, { name: 'Private Jet' }, { name: '50K EXP' }]
   },
   {
     level: 3,
     name: 'Cosmic Emperor',
-    unlockAmount: 2000000, // 20 Lakh
-    color: 'from-red-400 via-orange-400 to-yellow-400',
-    glowColor: 'shadow-orange-500/50',
-    icon: '🚀',
-    rewards: [
-      { type: 'frame', name: 'Emperor Frame', days: 7 },
-      { type: 'yacht', name: 'Luxury Yacht', days: 7 },
-      { type: 'exp', name: 'EXP', amount: 200000 }
-    ]
+    unlockAmount: 2000000,
+    color: 'from-blue-600 via-indigo-500 to-purple-600',
+    rewards: [{ name: 'Emperor Frame' }, { name: 'Luxury Yacht' }, { name: '200K EXP' }]
   }
 ];
 
-export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: RocketDialogProps) {
+export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: any) {
   const currentLevel = useMemo(() => {
-    for (let i = ROCKET_LEVELS.length - 1; i >= 0; i--) {
-      if (totalGifts >= ROCKET_LEVELS[i].unlockAmount) {
-        return ROCKET_LEVELS[i];
-      }
-    }
-    return null;
+    return [...ROCKET_LEVELS].reverse().find(l => totalGifts >= l.unlockAmount) || null;
   }, [totalGifts]);
 
   const nextLevel = useMemo(() => {
@@ -71,165 +77,81 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
 
   const progressPercent = useMemo(() => {
     if (!nextLevel) return 100;
-    const prevLevel = ROCKET_LEVELS.find(l => l.level === nextLevel.level - 1);
-    const prevAmount = prevLevel ? prevLevel.unlockAmount : 0;
-    const progress = ((totalGifts - prevAmount) / (nextLevel.unlockAmount - prevAmount)) * 100;
-    return Math.min(progress, 100);
+    const prevAmount = ROCKET_LEVELS.find(l => l.level === nextLevel.level - 1)?.unlockAmount || 0;
+    return Math.min(((totalGifts - prevAmount) / (nextLevel.unlockAmount - prevAmount)) * 100, 100);
   }, [totalGifts, nextLevel]);
 
-  const formatAmount = (amount: number) => {
-    if (amount >= 10000000) {
-      const cr = amount / 10000000;
-      return cr % 1 === 0 ? `${cr}Cr` : `${cr.toFixed(1)}Cr`;
-    }
-    if (amount >= 100000) {
-      const lakh = amount / 100000;
-      return lakh % 1 === 0 ? `${lakh}L` : `${lakh.toFixed(1)}L`;
-    }
-    if (amount >= 1000) {
-      const k = amount / 1000;
-      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-    }
-    return amount.toString();
-  };
+  const format = (n: number) => n >= 100000 ? `${n / 100000}L` : `${n / 1000}K`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[360px] w-[92%] bg-[#0f141e]/90 backdrop-blur-2xl border border-white/10 p-0 overflow-hidden text-white shadow-[0_0_80px_rgba(30,58,138,0.4)] rounded-[2.5rem] border-white/20 outline-none ring-0">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Rocket System</DialogTitle>
-          <DialogDescription>Unlock powerful rockets by sending gifts</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[360px] w-[94%] bg-[#0B0F1A] border-white/10 p-0 overflow-hidden text-white rounded-[2rem] outline-none shadow-2xl">
+        <DialogHeader className="sr-only"><DialogTitle>Rocket System</DialogTitle></DialogHeader>
 
-        {/* Header with current rocket */}
-        <div className="relative p-6 pt-8 bg-gradient-to-b from-blue-600/20 to-transparent">
-          {/* Close Button - More prominence */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/20 transition-all z-50 border border-white/10 active:scale-90"
-            aria-label="Close"
-          >
-            <X className="h-4.5 w-4.5" />
-          </button>
+        {/* Top Header */}
+        <div className="relative p-8 flex flex-col items-center bg-gradient-to-b from-blue-600/10 to-transparent">
+          <button onClick={() => onOpenChange(false)} className="absolute top-4 right-4 text-white/40 hover:text-white"><X size={20}/></button>
           
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="bg-white/5 px-4 py-1 rounded-full border border-white/10 mb-4">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">{roomName}</h2>
-            </div>
-            
-            {/* Current Rocket Display */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full scale-150 animate-pulse" />
-              {currentLevel ? (
-                <div className={cn(
-                  "w-36 h-36 rounded-full bg-gradient-to-br flex items-center justify-center text-7xl shadow-2xl relative z-10 border-4 border-white/10",
-                  currentLevel.color,
-                  currentLevel.glowColor
-                )}>
-                  <span className="drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] animate-bounce-slow">{currentLevel.icon}</span>
-                </div>
-              ) : (
-                <div className="w-36 h-36 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-6xl border-2 border-white/10 relative z-10">
-                  <Lock className="h-14 w-14 text-white/20" />
-                </div>
-              )}
-              
-              {/* Level Badge */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border-2 border-[#12161f] shadow-xl z-20">
-                {currentLevel ? `Level ${currentLevel.level}` : 'Locked'}
-              </div>
-            </div>
-
-            <h3 className="mt-6 text-xl font-black uppercase tracking-tighter italic">
-              {currentLevel ? currentLevel.name : 'Initiate Sequence'}
-            </h3>
-            <p className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em] mt-1 italic">Atmospheric Goal</p>
+          <div className="mb-2 bg-blue-500/10 px-3 py-0.5 rounded-full border border-blue-500/20">
+            <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">{roomName}</span>
           </div>
+
+          {/* Big Rocket Display */}
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            <div className="absolute inset-0 bg-blue-500/10 blur-[50px] rounded-full animate-pulse" />
+            {currentLevel ? (
+              <CustomRocketIcon className="w-32 h-32 z-10 animate-bounce-slow" />
+            ) : (
+              <div className="w-28 h-28 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                <Lock className="text-white/20" size={40} />
+              </div>
+            )}
+            <div className="absolute -bottom-2 bg-blue-600 px-4 py-1 rounded-full text-[10px] font-black border-2 border-[#0B0F1A]">
+              {currentLevel ? `LEVEL ${currentLevel.level}` : 'LOCKED'}
+            </div>
+          </div>
+
+          <h2 className="mt-6 text-xl font-black italic tracking-tighter uppercase">
+            {currentLevel ? currentLevel.name : 'Ready for Launch'}
+          </h2>
         </div>
 
-        {/* Progress Section */}
-        <div className="px-6 py-4 bg-white/5 backdrop-blur-sm border-y border-white/10">
-          <div className="flex items-center justify-between mb-2 px-1">
-            <div className="flex items-center gap-2">
-              <Zap className="h-3 w-3 text-yellow-400 fill-current" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-white/70">Engine Power</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <GoldCoinIcon className="h-3 w-3" />
-              <span className="text-xs font-black text-white">{formatAmount(totalGifts)}</span>
-            </div>
+        {/* Progress Bar */}
+        <div className="px-6 py-4 bg-white/5 border-y border-white/5">
+          <div className="flex justify-between text-[10px] font-bold mb-2 text-white/60">
+            <div className="flex items-center gap-1"><Zap size={12} className="text-yellow-500 fill-current"/> POWER</div>
+            <div>{format(totalGifts)} / {nextLevel ? format(nextLevel.unlockAmount) : 'MAX'}</div>
           </div>
-          
-          {/* Progress Bar - More Premium */}
-          <div className="relative h-4 bg-black/40 rounded-full border border-white/10 p-0.5 shadow-inner">
+          <div className="h-3 bg-black/50 rounded-full p-0.5 border border-white/5 overflow-hidden">
             <div 
-              className="absolute inset-y-0.5 left-0.5 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-500 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_#2563eb]"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          
-          {nextLevel && (
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-              <p className="text-[8px] font-black uppercase tracking-widest text-blue-400/80 italic">
-                Need {formatAmount(nextLevel.unlockAmount - totalGifts)} for Lv.{nextLevel.level}
-              </p>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
-            </div>
-          )}
         </div>
 
-        {/* Rocket Levels List */}
-        <div className="p-5 space-y-4 max-h-[300px] overflow-y-auto no-scrollbar">
+        {/* Levels List */}
+        <div className="p-4 space-y-3 max-h-[280px] overflow-y-auto custom-scrollbar">
           {ROCKET_LEVELS.map((rocket) => {
             const isUnlocked = totalGifts >= rocket.unlockAmount;
-            const isCurrent = currentLevel?.level === rocket.level;
-            
             return (
-              <div 
-                key={rocket.level}
-                className={cn(
-                  "relative rounded-3xl p-4 border transition-all duration-500",
-                  isUnlocked 
-                    ? "bg-white/10 border-white/20 shadow-lg" 
-                    : "bg-black/20 border-white/5 opacity-40 grayscale-[0.5]"
-                )}
-              >
+              <div key={rocket.level} className={cn(
+                "p-4 rounded-2xl border transition-all",
+                isUnlocked ? "bg-white/5 border-white/10" : "bg-transparent border-white/5 opacity-40"
+              )}>
                 <div className="flex items-center gap-4">
-                  {/* Rocket Icon */}
-                  <div className={cn(
-                    "w-16 h-16 rounded-2xl flex items-center justify-center text-4xl border-2 border-white/5 shadow-inner",
-                    isUnlocked 
-                      ? `bg-gradient-to-br ${rocket.color}` 
-                      : "bg-white/5"
-                  )}>
-                    {isUnlocked ? rocket.icon : <Lock className="h-6 w-6 text-white/20" />}
+                  <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center">
+                    {isUnlocked ? <CustomRocketIcon className="w-8 h-8" /> : <Lock size={18}/>}
                   </div>
-                  
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-black uppercase tracking-tight">{rocket.name}</span>
-                      {isCurrent && (
-                        <div className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded-full">
-                          <CheckCircle2 className="h-2 w-2 text-blue-400" />
-                          <span className="text-[7px] font-black uppercase text-blue-400">Current</span>
-                        </div>
-                      )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase">{rocket.name}</span>
+                      {currentLevel?.level === rocket.level && <CheckCircle2 size={12} className="text-blue-400"/>}
                     </div>
-                    
-                    <div className="flex items-center gap-1.5 opacity-60">
-                      <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Goal:</span>
-                      <GoldCoinIcon className="h-2 w-2" />
-                      <span className="text-[9px] font-black">{formatAmount(rocket.unlockAmount)}</span>
-                    </div>
-
-                    {/* Rewards */}
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {rocket.rewards.map((reward, idx) => (
-                        <div key={idx} className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
-                          <span className="text-[7px] font-black uppercase text-white/50">{reward.name || 'EXP'}</span>
-                        </div>
+                    <div className="text-[10px] text-white/40 font-bold mt-0.5">TARGET: {format(rocket.unlockAmount)}</div>
+                    <div className="flex gap-2 mt-2">
+                      {rocket.rewards.map((r, i) => (
+                        <div key={i} className="text-[8px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-md border border-blue-500/20">{r.name}</div>
                       ))}
                     </div>
                   </div>
@@ -239,17 +161,10 @@ export function RocketDialog({ open, onOpenChange, totalGifts, roomName }: Rocke
           })}
         </div>
 
-        {/* Footer Info */}
-        <div className="p-4 bg-white/5 flex items-center justify-center gap-6 border-t border-white/10">
-          <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all cursor-default group">
-            <Trophy className="h-3 w-3 text-yellow-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] font-black uppercase tracking-widest text-white/40 group-hover:text-white/60">Top Rewards</span>
-          </div>
-          <div className="w-px h-3 bg-white/10" />
-          <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all cursor-default group">
-            <Users className="h-3 w-3 text-blue-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] font-black uppercase tracking-widest text-white/40 group-hover:text-white/60">Team Drive</span>
-          </div>
+        {/* Footer */}
+        <div className="p-4 flex justify-center gap-8 border-t border-white/5 opacity-40">
+           <div className="flex items-center gap-2"><Trophy size={14}/> <span className="text-[9px] font-black uppercase">Rewards</span></div>
+           <div className="flex items-center gap-2"><Users size={14}/> <span className="text-[9px] font-black uppercase">Ranking</span></div>
         </div>
       </DialogContent>
     </Dialog>
