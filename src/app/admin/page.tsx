@@ -2720,7 +2720,7 @@ export default function AdminPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {/* Classic Option */}
                     <div 
                       onClick={() => {
@@ -2778,6 +2778,156 @@ export default function AdminPage() {
                       <h3 className="font-bold text-slate-900 uppercase">Stellar Pink System</h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
                         Vibrant immersive theme with signature pink backgrounds and futuristic neon accents.
+                      </p>
+                    </div>
+
+                    {/* Purple Majesty Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'PURPLE_MAJESTY', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Purple Majesty Synchronized 🏛️" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'PURPLE_MAJESTY'
+                          ? "border-purple-500 bg-purple-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+                          <Crown className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'PURPLE_MAJESTY' && (
+                          <div className="bg-purple-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Purple Majesty</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Deep lavender tones and royal purple accents for a high-authority feel.
+                      </p>
+                    </div>
+
+                    {/* Rose Glow Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'ROSE_GLOW', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Rose Glow Synchronized 🌸" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'ROSE_GLOW'
+                          ? "border-rose-400 bg-rose-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-500">
+                          <Heart className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'ROSE_GLOW' && (
+                          <div className="bg-rose-500 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Rose Glow</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Soft, romantic rose and white gradients with elegant pink highlights.
+                      </p>
+                    </div>
+
+                    {/* Golden Hour Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'GOLDEN_HOUR', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Golden Hour Synchronized ☀️" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'GOLDEN_HOUR'
+                          ? "border-amber-400 bg-amber-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                          <Zap className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'GOLDEN_HOUR' && (
+                          <div className="bg-amber-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Golden Hour</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        Warm sunset peach and soft orange glow for a vibrant, energetic vibe.
+                      </p>
+                    </div>
+
+                    {/* Midnight Maroon Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'MIDNIGHT_MAROON', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Midnight Maroon Synchronized 🍷" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'MIDNIGHT_MAROON'
+                          ? "border-rose-900 bg-rose-950 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-rose-900 flex items-center justify-center text-rose-100">
+                          <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'MIDNIGHT_MAROON' && (
+                          <div className="bg-rose-500 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className={cn("font-bold uppercase", config?.appTheme === 'MIDNIGHT_MAROON' ? "text-white" : "text-slate-900")}>Midnight Maroon</h3>
+                      <p className={cn("text-[10px] font-bold uppercase leading-relaxed mt-1", config?.appTheme === 'MIDNIGHT_MAROON' ? "text-rose-300" : "text-slate-400")}>
+                        High-luxury deep dark red/maroon theme for the ultimate noctural elite.
+                      </p>
+                    </div>
+
+                    {/* Magenta Frenzy Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'MAGENTA_FRENZY', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Magenta Frenzy Synchronized 🎆" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'MAGENTA_FRENZY'
+                          ? "border-fuchsia-500 bg-fuchsia-50 shadow-lg" 
+                          : "border-slate-100 bg-slate-50 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="h-10 w-10 rounded-xl bg-fuchsia-100 flex items-center justify-center text-fuchsia-600">
+                          <Wand2 className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'MAGENTA_FRENZY' && (
+                          <div className="bg-fuchsia-600 text-white rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 uppercase">Magenta Frenzy</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed mt-1">
+                        High-intensity neon pink and fuchsia gradients for maximum pop.
                       </p>
                     </div>
                   </div>

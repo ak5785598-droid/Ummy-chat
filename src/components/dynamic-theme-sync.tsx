@@ -38,6 +38,41 @@ export function DynamicThemeSync() {
         primary: '291 64% 42%',
         statusBar: '#FF91B5',
         navAccent: '#FF91B5',
+      },
+      'PURPLE_MAJESTY': {
+        background: '260 40% 92%',
+        foreground: '260 100% 8%',
+        primary: '260 70% 55%',
+        statusBar: '#F0F1FB',
+        navAccent: '#8B5CF6',
+      },
+      'ROSE_GLOW': {
+        background: '335 50% 94%',
+        foreground: '335 100% 8%',
+        primary: '335 70% 60%',
+        statusBar: '#FFF0F6',
+        navAccent: '#EC4899',
+      },
+      'GOLDEN_HOUR': {
+        background: '28 75% 94%',
+        foreground: '28 100% 8%',
+        primary: '28 90% 60%',
+        statusBar: '#FDF2EA',
+        navAccent: '#F59E0B',
+      },
+      'MIDNIGHT_MAROON': {
+        background: '345 50% 8%',
+        foreground: '0 0% 100%',
+        primary: '345 80% 50%',
+        statusBar: '#120409',
+        navAccent: '#BE123C',
+      },
+      'MAGENTA_FRENZY': {
+        background: '315 80% 94%',
+        foreground: '315 100% 8%',
+        primary: '315 95% 55%',
+        statusBar: '#FDECF9',
+        navAccent: '#D946EF',
       }
     };
 
