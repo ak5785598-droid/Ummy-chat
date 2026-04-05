@@ -75,7 +75,7 @@ export function AppLayout({
     <div className={cn(
       "min-h-screen flex flex-col items-center justify-center gap-4",
       isRoom ? "bg-transparent" : ""
-    )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
+    )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
       <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
     </div>
@@ -141,14 +141,14 @@ export function AppLayout({
     <SidebarInset className={cn(
       "flex flex-col min-h-screen relative overflow-hidden",
       isRoom ? "bg-transparent shadow-none" : ""
-    )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
+    )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
       
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
         <div className={cn(
           "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
           isRoom ? "bg-transparent" : ""
-        )} style={{ backgroundColor: isRoom ? 'transparent' : DESIGN_TOKENS.appBackground }}>
+        )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
           <Loader className="h-10 w-10 animate-spin text-primary" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>
         </div>

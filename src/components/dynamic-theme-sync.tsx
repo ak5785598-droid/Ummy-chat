@@ -3,15 +3,19 @@
 import { useEffect } from 'react';
 import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { usePathname } from 'next/navigation';
 
 /**
  * DYNAMIC THEME SYNC ENGINE 🏁
  * 
  * This component listens to the global app configuration and applies
  * theme-level CSS variable overrides in real-time across the entire application.
+ * 
+ * UPDATED: Now includes Path-Aware Isolation to restrict designs to Social areas.
  */
 export function DynamicThemeSync() {
   const firestore = useFirestore();
+  const pathname = usePathname();
   
   const configRef = firestore ? doc(firestore, 'appConfig', 'global') : null;
   const { data: config } = useDoc(configRef);
@@ -19,7 +23,25 @@ export function DynamicThemeSync() {
   useEffect(() => {
     if (!config) return;
 
-    const theme = config.appTheme || 'CLASSIC';
+    // --- ISOLATION SHIELD ---
+    // Only apply premium themes to these specific social/identity paths.
+    // Everything else defaults to 'CLASSIC'.
+    const THEMED_PATHS = [
+      '/discover',
+      '/messages',
+      '/profile',
+      '/me',
+      '/moments',
+      '/leaderboard',
+      '/tasks',
+      '/level'
+    ];
+
+    // Home page (/) check: exact match
+    const isHome = pathname === '/';
+    const isSocialPath = THEMED_PATHS.some(p => pathname?.startsWith(p)) || isHome;
+    
+    const theme = isSocialPath ? (config.appTheme || 'CLASSIC') : 'CLASSIC';
     const root = document.documentElement;
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
 
@@ -106,8 +128,9 @@ export function DynamicThemeSync() {
     document.body.classList.remove('theme-classic', 'theme-stellar-pink');
     document.body.classList.add(theme === 'STELLAR_PINK' ? 'theme-stellar-pink' : 'theme-classic');
 
-    console.log(`[ThemeEngine] Synchronized to ${theme} mode. 🏁`);
-  }, [config]);
+    console.log(`[ThemeEngine] Path: ${pathname} | Theme: ${theme} 🏁`);
+  }, [config, pathname]);
 
   return null; // Side-effect only component
 }
+
