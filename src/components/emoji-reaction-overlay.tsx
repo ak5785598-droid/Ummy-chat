@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- ULTRA HD 3D EMOJI RENDERER WITH DYNAMIC ACTIONS ---
 const Emoji3DRenderer = ({ type }: { type: string }) => {
   const defs = (
     <defs>
@@ -17,10 +16,10 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <stop offset="0%" stopColor="#FF5252" />
         <stop offset="100%" stopColor="#B71C1C" />
       </radialGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
+      <radialGradient id="tearGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#E1F5FE" />
+        <stop offset="100%" stopColor="#29B6F6" />
+      </radialGradient>
     </defs>
   );
 
@@ -38,7 +37,6 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
           <circle cx="35" cy="40" r="6" fill="#3E2723" />
           <circle cx="65" cy="40" r="6" fill="#3E2723" />
           <path d="M 40 52 Q 50 60 60 52" stroke="#3E2723" strokeWidth="3" fill="none" strokeLinecap="round" />
-          {/* Banner held by two hands */}
           <motion.g animate={{ y: [40, 0], scale: [0.5, 1] }} transition={{ duration: 0.5, type: "spring" }}>
             <rect x="10" y="62" width="80" height="22" rx="6" fill="#D32F2F" />
             <text x="50" y="77" fontSize="8" fontWeight="900" fill="white" textAnchor="middle" style={{fontFamily: 'Arial Black'}}>{type.toUpperCase()}</text>
@@ -58,41 +56,16 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
           <path d="M 25 35 L 42 42 M 75 35 L 58 42" stroke="black" strokeWidth="4" strokeLinecap="round" />
           <circle cx="38" cy="50" r="5" fill="black" />
           <circle cx="62" cy="50" r="5" fill="black" />
-          {/* Hammer Action: Hits 2 times */}
           <motion.g 
-            initial={{ rotate: -40, x: 60, y: 0 }}
-            animate={{ rotate: [-40, 20, -40, 20, -40], x: [60, 45, 60, 45, 60] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            initial={{ rotate: -30, x: 70, y: 10 }}
+            animate={{ rotate: [-30, 30, -30], y: [10, -5, 10] }}
+            transition={{ duration: 0.5, repeat: Infinity }}
           >
-            <rect x="10" y="0" width="22" height="15" rx="3" fill="#424242" />
-            <rect x="18" y="15" width="6" height="20" rx="2" fill="#795548" />
+            <circle cx="15" cy="45" r="7" fill="url(#emojiHDGrad)" stroke="#E65100" strokeWidth="0.5" />
+            <rect x="8" y="10" width="22" height="15" rx="3" fill="#424242" />
+            <rect x="16" y="25" width="6" height="20" rx="2" fill="#795548" />
           </motion.g>
           <path d="M 40 75 Q 50 68 60 75" stroke="black" strokeWidth="4" fill="none" strokeLinecap="round" />
-        </svg>
-      );
-
-    case 'kissL':
-    case 'kissR':
-      const isKissRight = type === 'kissR';
-      return (
-        <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: isKissRight ? 'scaleX(-1)' : 'none' }}>
-          {defs}
-          <FaceBase />
-          <circle cx="32" cy="42" r="5" fill="#3E2723" />
-          <circle cx="68" cy="42" r="5" fill="#3E2723" />
-          {/* Pout Animation */}
-          <motion.path 
-            d="M 45 65 C 55 62, 55 75, 45 75 C 55 75, 55 88, 45 85" 
-            stroke="#AD1457" strokeWidth="4" fill="none" strokeLinecap="round"
-            animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 0.6 }}
-          />
-          {/* Floating Heart */}
-          <motion.path 
-            d="M 70 40 Q 70 30 80 30 Q 90 30 90 40 Q 90 55 70 70 Q 50 55 50 40 Q 50 30 60 30 Q 70 30 70 40" 
-            fill="#FF1744"
-            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.8], x: [0, 20], y: [0, -30] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          />
         </svg>
       );
 
@@ -101,40 +74,17 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase />
-          <circle cx="35" cy="45" r="12" fill="white" stroke="#90A4AE" strokeWidth="2" />
-          <circle cx="65" cy="45" r="12" fill="white" stroke="#90A4AE" strokeWidth="2" />
-          {/* Hypnotic Swirling Eyes */}
-          <motion.path 
-            d="M 35 45 m -8 0 a 8 8 0 1 0 16 0 a 8 8 0 1 0 -16 0" 
-            stroke="black" strokeWidth="2" fill="none" 
-            animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            style={{ originX: "35px", originY: "45px", strokeDasharray: "4,4" }}
-          />
-          <motion.path 
-            d="M 65 45 m -8 0 a 8 8 0 1 0 16 0 a 8 8 0 1 0 -16 0" 
-            stroke="black" strokeWidth="2" fill="none" 
-            animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            style={{ originX: "65px", originY: "45px", strokeDasharray: "4,4" }}
-          />
+          <g transform="translate(35, 45)">
+            <circle cx="0" cy="0" r="14" fill="white" stroke="#90A4AE" strokeWidth="1.5" />
+            <motion.path d="M -10 0 A 10 10 0 1 1 10 0 A 10 10 0 1 1 -10 0" stroke="black" strokeWidth="2" fill="none" strokeDasharray="5,3" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} />
+            <circle cx="0" cy="0" r="3" fill="black" />
+          </g>
+          <g transform="translate(65, 45)">
+            <circle cx="0" cy="0" r="14" fill="white" stroke="#90A4AE" strokeWidth="1.5" />
+            <motion.path d="M -10 0 A 10 10 0 1 1 10 0 A 10 10 0 1 1 -10 0" stroke="black" strokeWidth="2" fill="none" strokeDasharray="5,3" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} />
+            <circle cx="0" cy="0" r="3" fill="black" />
+          </g>
           <path d="M 45 75 Q 50 70 55 75" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round" />
-        </svg>
-      );
-
-    case 'laugh':
-      return (
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          {defs}
-          <FaceBase />
-          <motion.path 
-            d="M 25 40 Q 35 30 45 40 M 55 40 Q 65 30 75 40" 
-            stroke="#4E342E" strokeWidth="5" fill="none" strokeLinecap="round"
-            animate={{ y: [-2, 2, -2] }} transition={{ repeat: Infinity, duration: 0.3 }}
-          />
-          <motion.path 
-            d="M 30 60 Q 50 90 70 60 Z" fill="#3E2723" 
-            animate={{ scaleY: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.3 }}
-          />
-          <rect x="38" y="61" width="24" height="6" fill="white" rx="2" />
         </svg>
       );
 
@@ -143,12 +93,28 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase />
-          <circle cx="35" cy="45" r="5" fill="black" />
-          <circle cx="65" cy="45" r="5" fill="black" />
-          <path d="M 40 75 Q 50 65 60 75" stroke="black" strokeWidth="4" fill="none" strokeLinecap="round" />
-          {/* Falling Tears */}
-          <motion.circle cx="35" cy="52" r="3" fill="#29B6F6" animate={{ y: [0, 30], opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 1.2 }} />
-          <motion.circle cx="65" cy="52" r="3" fill="#29B6F6" animate={{ y: [0, 30], opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.6 }} />
+          <g>
+            <circle cx="35" cy="48" r="8" fill="white" opacity="0.4" />
+            <circle cx="35" cy="48" r="5" fill="black" />
+            <motion.circle cx="35" cy="52" r="4" fill="url(#tearGrad)" animate={{ y: [0, 25], opacity: [1, 0], scale: [1, 1.2] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeIn" }} />
+          </g>
+          <g>
+            <circle cx="65" cy="48" r="8" fill="white" opacity="0.4" />
+            <circle cx="65" cy="48" r="5" fill="black" />
+            <motion.circle cx="65" cy="52" r="4" fill="url(#tearGrad)" animate={{ y: [0, 25], opacity: [1, 0], scale: [1, 1.2] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeIn", delay: 0.75 }} />
+          </g>
+          <path d="M 35 78 Q 50 68 65 78" stroke="black" strokeWidth="4" fill="none" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'laugh':
+      return (
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {defs}
+          <FaceBase />
+          <motion.path d="M 25 40 Q 35 30 45 40 M 55 40 Q 65 30 75 40" stroke="#4E342E" strokeWidth="5" fill="none" strokeLinecap="round" animate={{ y: [-1, 1] }} transition={{ repeat: Infinity, duration: 0.2 }} />
+          <motion.path d="M 30 60 Q 50 90 70 60 Z" fill="#3E2723" animate={{ scaleY: [1, 1.2] }} transition={{ repeat: Infinity, duration: 0.2 }} />
+          <rect x="38" y="61" width="24" height="5" fill="white" rx="2" />
         </svg>
       );
 
@@ -157,8 +123,7 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase />
-          {/* Sunglasses moving Up and Down */}
-          <motion.g animate={{ y: [-5, 5, -5] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
+          <motion.g animate={{ y: [-4, 4] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
             <path d="M 15 42 H 48 V 55 Q 32 60 15 55 Z M 52 42 H 85 V 55 Q 68 60 52 55 Z" fill="#212121" />
             <rect x="46" y="45" width="8" height="4" fill="#212121" />
           </motion.g>
@@ -171,12 +136,26 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase fill="url(#angerGrad)" anger />
-          <motion.g animate={{ x: [-1, 1, -1] }} transition={{ repeat: Infinity, duration: 0.1 }}>
+          <motion.g animate={{ x: [-1, 1] }} transition={{ repeat: Infinity, duration: 0.05 }}>
             <path d="M 20 30 L 45 42 M 80 30 L 55 42" stroke="black" strokeWidth="6" strokeLinecap="round" />
             <circle cx="35" cy="50" r="7" fill="white" /><circle cx="35" cy="50" r="3" fill="black" />
             <circle cx="65" cy="50" r="7" fill="white" /><circle cx="65" cy="50" r="3" fill="black" />
           </motion.g>
           <path d="M 30 80 Q 50 65 70 80" stroke="black" strokeWidth="5" fill="none" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'kissL':
+    case 'kissR':
+      const isKissRight = type === 'kissR';
+      return (
+        <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: isKissRight ? 'scaleX(-1)' : 'none' }}>
+          {defs}
+          <FaceBase />
+          <circle cx="32" cy="42" r="5" fill="#3E2723" />
+          <circle cx="68" cy="42" r="5" fill="#3E2723" />
+          <motion.path d="M 45 65 C 55 62, 55 75, 45 75 C 55 75, 55 88, 45 85" stroke="#AD1457" strokeWidth="4" fill="none" strokeLinecap="round" animate={{ x: [0, 3] }} transition={{ repeat: Infinity, duration: 0.4 }} />
+          <motion.path d="M 70 40 Q 70 30 80 30 Q 90 30 90 40 Q 90 55 70 70 Q 50 55 50 40 Q 50 30 60 30 Q 70 30 70 40" fill="#FF1744" animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2], y: [0, -30], x: [0, 10] }} transition={{ repeat: Infinity, duration: 1.5 }} />
         </svg>
       );
 
@@ -216,4 +195,4 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | 
       </AnimatePresence>
     </div>
   );
-                    }
+        }
