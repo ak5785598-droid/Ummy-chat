@@ -98,7 +98,7 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
-const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
+const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
     extraType, particleType, extraColor, particleColor, id
@@ -106,28 +106,24 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
   const isSakura = id === 'sakura-blossom';
 
-  const getAnimation = () => {
-    switch (animationType) {
-      case 'rotate': return { rotate: 360 };
-      case 'pulse': return { scale: [1, 1.05, 1] };
-      case 'float': return { y: [-3, 3, -3] };
-      case 'sparkle': return { opacity: [0.7, 1, 0.7] };
-      case 'flow': return { backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] };
-      default: return {};
-    }
-  };
+  // Calculate pixel-perfect dimensions
+  // The frame container will be exactly 14px larger than the DP to accommodate a 6px thick "tube" and 1px gap
+  const framePixelSize = pixelSize + 14;
+  const holeRadius = (pixelSize / 2) + 1; // Exactly 1px larger than DP radius
 
   return (
-    <div className="absolute inset-0 w-full h-full rounded-full p-[1px] overflow-visible">
+    <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none">
       {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
-      {/* 3D Tubelike Frame Body */}
+      {/* 3D Tubelike Frame Body (Pixel Perfect) */}
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-[-18%] rounded-full z-10"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10"
         style={{
+          width: `${framePixelSize}px`,
+          height: `${framePixelSize}px`,
           padding: '6px', // Thickness of the tube
           background: gradient,
           backgroundSize: '200% 200%',
@@ -136,11 +132,11 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
             inset 0 0 10px rgba(0,0,0,0.5),
             inset 0 0 5px rgba(255,255,255,0.4)
           `,
-          maskImage: 'radial-gradient(circle, transparent 38%, black 39%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 38%, black 39%)',
+          maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+          WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
         }}
       >
-        {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
+        {/* Shine Highlight */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none opacity-50 shadow-inner" />
       </motion.div>
 
@@ -150,7 +146,6 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       {/* Ornaments Layer */}
       {isSakura ? (
         <>
-          {/* Side Ornaments for Sakura Blossom */}
           <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-[60] w-14 h-14 pointer-events-none drop-shadow-xl overflow-visible">
              <img src="/images/frames/sakura_branch.png" alt="" className="w-full h-full object-contain mix-blend-screen scale-x-[-1] brightness-125 rotate-[-20deg]" />
           </div>
@@ -177,6 +172,13 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 };
 
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
+  const sizeMap = {
+    sm: 40,
+    md: 60,
+    lg: 80,
+    xl: 96
+  };
+
   const sizeClasses = {
     sm: 'h-10 w-10',
     md: 'h-[60px] w-[60px]',
@@ -184,8 +186,9 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
     xl: 'h-24 w-24'
   };
 
+  const pixelSize = sizeMap[size];
   const config = frameId ? AVATAR_FRAMES[frameId] : null;
-  const isElite = !!config;
+  const isElite = !!config && frameId !== 'None';
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0', sizeClasses[size], className)}>
@@ -197,7 +200,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-20 pointer-events-none"
           >
-            <EliteFrameRenderer config={config} />
+            <EliteFrameRenderer config={config} pixelSize={pixelSize} />
           </motion.div>
         )}
       </AnimatePresence>
