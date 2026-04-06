@@ -107,37 +107,37 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   const isSakura = id === 'sakura-blossom';
 
   // Calculate pixel-perfect dimensions
-  // The frame container will be exactly 14px larger than the DP to accommodate a 6px thick "tube" and 1px gap
-  const framePixelSize = pixelSize + 14;
-  const holeRadius = (pixelSize / 2) + 1; // Exactly 1px larger than DP radius
+  // Expansion is now 22px larger to prevent any clipping of ornaments or 3D thickness
+  const frameDisplaySize = pixelSize + 22; 
+  const holeRadius = (pixelSize / 2) + 1.5; // Exactly 1.5px gap from DP
 
   return (
-    <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none">
+    <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
       {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
-      {/* 3D Tubelike Frame Body (Pixel Perfect) */}
+      {/* 3D Tubelike Frame Body (Enhanced Thickness) */}
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
         style={{
-          width: `${framePixelSize}px`,
-          height: `${framePixelSize}px`,
-          padding: '6px', // Thickness of the tube
+          width: `${frameDisplaySize}px`,
+          height: `${frameDisplaySize}px`,
+          padding: '8.5px', // Increased thickness (from 6px)
           background: gradient,
           backgroundSize: '200% 200%',
           boxShadow: `
-            0 0 15px ${glowColor},
-            inset 0 0 10px rgba(0,0,0,0.5),
-            inset 0 0 5px rgba(255,255,255,0.4)
+            0 0 20px ${glowColor},
+            inset 0 0 12px rgba(0,0,0,0.6),
+            inset 0 0 6px rgba(255,255,255,0.4)
           `,
           maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
           WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
         }}
       >
-        {/* Shine Highlight */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none opacity-50 shadow-inner" />
+        {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
       </motion.div>
 
       {/* Particles */}
@@ -146,23 +146,23 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* Ornaments Layer */}
       {isSakura ? (
         <>
-          <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-[60] w-14 h-14 pointer-events-none drop-shadow-xl overflow-visible">
+          <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-[110] w-14 h-14 pointer-events-none drop-shadow-2xl overflow-visible">
              <img src="/images/frames/sakura_branch.png" alt="" className="w-full h-full object-contain mix-blend-screen scale-x-[-1] brightness-125 rotate-[-20deg]" />
           </div>
-          <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-[60] w-14 h-14 pointer-events-none drop-shadow-xl overflow-visible">
+          <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-[110] w-14 h-14 pointer-events-none drop-shadow-2xl overflow-visible">
              <img src="/images/frames/sakura_branch.png" alt="" className="w-full h-full object-contain mix-blend-screen brightness-125 rotate-[20deg]" />
           </div>
         </>
       ) : Ornament && (
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-[60] drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-[110] drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]">
           <motion.div
-            animate={{ y: [-2, 2, -2] }}
+            animate={{ y: [-3, 3, -3] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             {typeof Ornament === 'string' ? (
-              <span className="text-3xl">{Ornament}</span>
+              <span className="text-4xl">{Ornament}</span>
             ) : (
-              <Ornament className="w-10 h-10" style={{ color: borderColor, strokeWidth: 1.5 }} />
+              <Ornament className="w-12 h-12" style={{ color: borderColor, strokeWidth: 1.5 }} />
             )}
           </motion.div>
         </div>
@@ -191,14 +191,14 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
   const isElite = !!config && frameId !== 'None';
 
   return (
-    <div className={cn('relative flex items-center justify-center shrink-0', sizeClasses[size], className)}>
+    <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>
       <AnimatePresence>
         {isElite && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 pointer-events-none"
+            className="absolute inset-0 z-50 pointer-events-none overflow-visible"
           >
             <EliteFrameRenderer config={config} pixelSize={pixelSize} />
           </motion.div>
@@ -206,7 +206,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent"
+        "relative rounded-full w-full h-full bg-transparent overflow-visible"
       )}>
         {children}
       </div>

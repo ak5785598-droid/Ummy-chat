@@ -29,16 +29,8 @@ interface RoomGamesDialogProps {
   showMiniPlayer?: boolean;
 }
 
-// Quick actions like Wafa app
-const QUICK_ACTIONS = [
-  { id: 'clean', title: 'Clean', icon: Brush, color: 'bg-blue-500/20 text-blue-400' },
-  { id: 'public-msg', title: 'Public Msg', icon: MessageSquare, color: 'bg-cyan-500/20 text-cyan-400', badge: true },
-  { id: 'gift-effects', title: 'Gift Effects', icon: Gift, color: 'bg-pink-500/20 text-pink-400', badge: true },
-];
-
 // Working games only - NO FAKE ICONS
 const WORKING_GAMES = [
-  { id: 'music', title: 'Music', icon: Music, color: 'bg-red-500/20 text-red-400', hasMusic: true },
   { id: 'carrom', title: 'Carrom', icon: Dices, color: 'bg-orange-500/20 text-orange-400' },
   { id: 'ludo', title: 'Ludo', icon: Dice5, color: 'bg-green-500/20 text-green-400' },
   { id: 'chess', title: 'Chess', icon: Shield, color: 'bg-purple-500/20 text-purple-400' },
@@ -60,10 +52,6 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
   const isSovereign = user?.uid === CREATOR_ID;
 
   const handleGameClick = (slug: string) => {
-    if (slug === 'music') {
-      onToggleMiniPlayer?.();
-      return;
-    }
     if (onSelectGame) {
       onSelectGame(slug);
     } else {
@@ -84,27 +72,8 @@ export function RoomGamesDialog({ open, onOpenChange, onSelectGame, onToggleMini
       >
         {/* Transparent overlay that doesn't blur background */}
         <div className="fixed inset-0 bg-black/40 z-[-1]" onClick={() => onOpenChange(false)} />
-        {/* Handle bar like Wafa */}
         <div className="w-full flex justify-center pt-3 pb-1">
           <div className="w-12 h-1.5 bg-white/20 rounded-full" />
-        </div>
-
-        {/* Quick Actions Row */}
-        <div className="flex justify-center gap-6 px-4 py-4 border-b border-white/5">
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.id}
-              className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
-            >
-              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center relative", action.color)}>
-                <action.icon className="h-7 w-7" />
-                {action.badge && (
-                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1a2e]" />
-                )}
-              </div>
-              <span className="text-[10px] text-white/70 font-medium">{action.title}</span>
-            </button>
-          ))}
         </div>
 
         {/* Games Grid */}
