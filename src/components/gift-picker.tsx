@@ -13,56 +13,30 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// --- PNG BASED 3D GIFTS CONFIG ---
+// Note: Make sure these images exist in your public folder or replace with your URLs
 const GIFTS: Record<string, any[]> = {
  'Hot': [
-  { id: 'choco_pops', name: 'Choco Pops', price: 200, icon: '🍭', animationId: 'choco-pops' },
-  { id: 'pizza', name: 'Pizza', price: 499, icon: '🍕', animationId: 'pizza' }, 
-  { id: 'doughnut', name: 'Doughnut', price: 999, icon: '🍩', animationId: 'doughnut' }, 
-  { id: 'chai', name: 'Chai', price: 700, icon: '☕', animationId: 'chai' },
-  { id: 'rose', name: 'Rose', price: 300, icon: '🌹', animationId: 'rose' },
-  { id: 'applaud', name: 'Applaud', price: 500, icon: '👏', animationId: 'applaud' },
-  { id: 'love_bomb', name: 'Love Bomb', price: 150999, icon: '💣', animationId: 'love-bomb' },
-  { id: 'kiss', name: 'Kiss', price: 2499, icon: '💋', animationId: 'kiss' },
-  { id: 'chocolate_box', name: 'Choco Box', price: 30000, icon: '🍫', animationId: 'chocolate-box' },
-  { id: 'money_gun', name: 'Money Gun', price: 70000, icon: '🔫', animationId: 'money-gun' },
-  { id: 'watch', name: 'Watch', price: 999999, icon: '⌚', animationId: 'watch' },
-  { id: 'birthday_cake', name: 'Cake', price: 109000, icon: '🎂', animationId: 'birthday-cake' },
-  { id: 'microphone', name: 'Mic', price: 100, icon: '🎤', animationId: 'microphone' },
-  { id: 'popcorn', name: 'Popcorn', price: 120, icon: '🍿', animationId: 'popcorn' },
+  { id: 'bouquet', name: 'Bouquet', price: 15000, image: '/assets/gifts/bouquet.png', animationId: 'bouquet' },
+  { id: 'love_text', name: 'Love', price: 25000, image: '/assets/gifts/love.png', animationId: 'love-text' }, 
+  { id: 'love_balloon', name: 'Love Balloon', price: 40000, image: '/assets/gifts/balloon.png', animationId: 'love-balloon' }, 
+  { id: 'chocolate', name: 'Chocolate', price: 250000, image: '/assets/gifts/chocolate.png', animationId: 'chocolate' },
+  { id: 'ring', name: 'Ring', price: 400000, image: '/assets/gifts/ring.png', animationId: 'ring' },
+  { id: 'coke_cheers', name: 'Coke Cheers', price: 20000, image: '/assets/gifts/coke.png', animationId: 'coke-cheers' },
+  { id: 'love_fireworks', name: 'Love Fireworks', price: 500000, image: '/assets/gifts/fireworks.png', animationId: 'love-fireworks' },
+  { id: 'forever_friends', name: 'Forever Friends', price: 100000, image: '/assets/gifts/friends.png', animationId: 'forever-friends' },
  ],
  'Lucky': [
-  { id: 'lucky_clover', name: 'Clover', price: 100, icon: '🍀', animationId: 'lucky-clover' },
-  { id: 'magic_wand', name: 'Magic Wand', price: 500, icon: '🪄', animationId: 'magic-wand' },
-  { id: 'jackpot', name: 'Jackpot', price: 2000, icon: '🎰', animationId: 'jackpot' },
-  { id: 'treasure', name: 'Treasure', price: 10000, icon: '🪙', animationId: 'treasure' },
-  { id: 'soaring', name: 'Soaring', price: 20000, icon: '🎆', animationId: 'soaring' },
-  { id: 'red_envelope', name: 'Red Envelope', price: 888, icon: '🧧', animationId: 'red-envelope' },
+  { id: 'lucky_clover', name: 'Clover', price: 100, image: '/assets/gifts/clover.png', animationId: 'lucky-clover' },
+  { id: 'treasure', name: 'Treasure', price: 10000, image: '/assets/gifts/treasure.png', animationId: 'treasure' },
  ],
  'Luxury': [
-  { id: 'library', name: 'Library', price: 50000, icon: '📚', animationId: 'library', isPremium: true },
-  { id: 'diamond', name: 'Diamond', price: 70000, icon: '💎', animationId: 'diamond', isPremium: true },
-  { id: 'trophy', name: 'Trophy', price: 90000, icon: '🏆', animationId: 'trophy', isPremium: true },
-  { id: 'yacht', name: 'Yacht', price: 250000, icon: '🛥️', animationId: 'yacht', isPremium: true },
-  { id: 'mansion', name: 'Mansion', price: 350000, icon: '🏡', animationId: 'mansion', isPremium: true },
-  { id: 'helicopter', name: 'Heli', price: 220000, icon: '🚁', animationId: 'helicopter', isPremium: true },
- ],
- 'Flag': [
-  { id: 'flag_india', name: 'India', price: 50000, icon: '🇮🇳', animationId: 'flag-india' },
-  { id: 'flag_pakistan', name: 'Pakistan', price: 50000, icon: '🇵🇰', animationId: 'flag-pakistan' },
-  { id: 'flag_bangladesh', name: 'Bangladesh', price: 50000, icon: '🇧🇩', animationId: 'flag-bangladesh' },
-  { id: 'flag_america', name: 'USA', price: 50000, icon: '🇺🇸', animationId: 'flag-america' },
-  { id: 'flag_canada', name: 'Canada', price: 50000, icon: '🇨🇦', animationId: 'flag-canada' },
-  { id: 'flag_china', name: 'China', price: 50000, icon: '🇨🇳', animationId: 'flag-china' },
-  { id: 'flag_philippines', name: 'Philippines', price: 50000, icon: '🇵🇭', animationId: 'flag-philippines' },
- ],
- 'Events': [
-  { id: 'eid_mubarak', name: 'Eid Mubarak', price: 150000, icon: '🕌', animationId: 'eid-mubarak' },
-  { id: 'fireworks', name: 'Fireworks', price: 10000, icon: '🎆', animationId: 'fireworks' },
-  { id: 'valentine_heart', name: 'Heart', price: 20000, icon: '💖', animationId: 'valentine-heart' },
+  { id: 'yacht', name: 'Yacht', price: 250000, image: '/assets/gifts/yacht.png', animationId: 'yacht', isPremium: true },
+  { id: 'mansion', name: 'Mansion', price: 350000, image: '/assets/gifts/mansion.png', animationId: 'mansion', isPremium: true },
  ]
 };
 
-export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [], onSuccess }: any) {
+export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
@@ -100,46 +74,24 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   try {
    const batch = writeBatch(firestore);
    
-   // 🪙 SENDER: Deduct coins from both documents
+   // LOGIC: Coins deduct and Diamonds add (40%)
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
    
    batch.update(senderProfileRef, { 
      'wallet.coins': increment(-totalCost),
      'wallet.totalSpent': increment(totalCost),
-     'wallet.dailySpent': increment(totalCost),
      updatedAt: serverTimestamp() 
    });
-   
-   batch.update(senderUserRef, { 
-     'wallet.coins': increment(-totalCost),
-     updatedAt: serverTimestamp() 
-   });
+   batch.update(senderUserRef, { 'wallet.coins': increment(-totalCost) });
 
-   // 💎 RECIPIENTS: Add 40% diamonds to both documents
-   const costPerRecipient = selectedGift.price * qty;
-   const diamondPerRecipient = Math.floor(costPerRecipient * 0.4);
+   const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
    
    selectedUids.forEach(uid => {
      const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
      const recUserRef = doc(firestore, 'users', uid);
-     
-     batch.update(recProfileRef, { 
-       'wallet.diamonds': increment(diamondPerRecipient),
-       updatedAt: serverTimestamp() 
-     });
-     
-     batch.update(recUserRef, { 
-       'wallet.diamonds': increment(diamondPerRecipient),
-       updatedAt: serverTimestamp() 
-     });
-   });
-
-   // 🚀 ROOM: Update Rocket Progress
-   const roomRef = doc(firestore, 'chatRooms', roomId);
-   batch.update(roomRef, {
-     'rocket.progress': increment(totalCost),
-     updatedAt: serverTimestamp()
+     batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient) });
+     batch.update(recUserRef, { 'wallet.diamonds': increment(diamondPerRecipient) });
    });
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
@@ -154,23 +106,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
 
-   // ⚡ QUEST TRACKING: Gift Master
-   try {
-     const questRef = doc(firestore, 'users', user.uid, 'quests', 'send_gift');
-     updateDocumentNonBlocking(questRef, { current: increment(qty) });
-   } catch (e) {
-     console.warn('[Missions] Failed to update gift quest:', e);
-   }
-
    const newId = Date.now();
-   const newNotif = {
-     id: newId,
-     name: userProfile.username,
-     avatar: userProfile.avatarUrl,
-     icon: selectedGift.icon,
-     qty: isComboTrigger ? (comboCount + 1) : qty
-   };
-   setNotifications(prev => [newNotif, ...prev].slice(0, 4));
+   setNotifications(prev => [{ id: newId, name: userProfile.username, avatar: userProfile.avatarUrl, image: selectedGift.image, qty: isComboTrigger ? (comboCount + 1) : qty }, ...prev].slice(0, 3));
    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== newId)), 3000);
 
    setComboCount(prev => prev + 1);
@@ -184,99 +121,117 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* Side Notification Stack */}
-   <div className="fixed left-4 top-1/4 z-[500] flex flex-col gap-3 pointer-events-none">
+   {/* Side Notifications */}
+   <div className="fixed left-4 top-1/3 z-[600] flex flex-col gap-2 pointer-events-none">
     <AnimatePresence>
      {notifications.map((notif) => (
-      <motion.div key={notif.id} initial={{ x: -200, opacity: 0 }} animate={{ x: 20, opacity: 1 }} exit={{ x: -200, opacity: 0 }}
-       className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-blue-500 p-2 pr-8 rounded-full border border-white/20 shadow-xl">
-       <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={notif.avatar} /></Avatar>
-       <div className="flex flex-col text-white">
-        <span className="text-[10px] font-bold opacity-70 uppercase">Gift Sent</span>
-        <span className="text-sm font-black truncate max-w-[90px]">{notif.name}</span>
+      <motion.div key={notif.id} initial={{ x: -150, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -150, opacity: 0 }}
+       className="flex items-center gap-3 bg-gradient-to-r from-indigo-900/90 to-blue-800/90 backdrop-blur-md p-1 pr-6 rounded-full border border-white/20 shadow-2xl">
+       <Avatar className="h-9 w-9 border-2 border-yellow-400 shadow-lg"><AvatarImage src={notif.avatar} /></Avatar>
+       <div className="flex flex-col">
+        <span className="text-[10px] font-black text-white truncate max-w-[80px] uppercase">{notif.name}</span>
+        <img src={notif.image} className="h-5 w-5 object-contain" alt="gift" />
        </div>
-       <div className="ml-2 text-2xl font-black italic text-yellow-400">x{notif.qty}</div>
+       <span className="ml-auto text-xl font-black italic text-yellow-400 drop-shadow-md">x{notif.qty}</span>
       </motion.div>
      ))}
     </AnimatePresence>
    </div>
 
-   {/* Combo Button */}
+   {/* 3D Combo Button */}
    <AnimatePresence>
     {showCombo && (
-     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="fixed bottom-40 right-6 z-[500]">
-      <button onClick={() => handleSend(true)} className="h-20 w-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full border-4 border-white shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-all">
-       <Zap className="h-6 w-6 text-white fill-white animate-bounce" />
-       <span className="text-xl font-black text-white italic">{comboCount}x</span>
-       <span className="text-[8px] font-black text-white/80 uppercase">Combo</span>
+     <motion.div initial={{ scale: 0 }} animate={{ scale: 1.1 }} exit={{ scale: 0 }} className="fixed bottom-36 right-8 z-[600]">
+      <button onClick={() => handleSend(true)} className="h-24 w-24 bg-gradient-to-tr from-orange-600 via-pink-600 to-yellow-500 rounded-full border-4 border-white shadow-[0_10px_40px_rgba(234,179,8,0.6)] flex flex-col items-center justify-center active:scale-90 transition-all group overflow-hidden">
+       <Zap className="h-8 w-8 text-white fill-white animate-bounce drop-shadow-lg" />
+       <span className="text-2xl font-black text-white italic drop-shadow-md">{comboCount}</span>
+       <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent pointer-events-none" />
       </button>
      </motion.div>
     )}
    </AnimatePresence>
 
    <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-md w-[95%] bg-[#12161f] border border-white/10 p-0 rounded-[28px] overflow-hidden text-white shadow-2xl">
+    <DialogContent className="max-w-md w-[95%] bg-[#0d1117] border border-white/10 p-0 rounded-[40px] overflow-hidden text-white shadow-2xl ring-1 ring-white/5">
      
-     {/* Recipient Selection */}
-     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-black/20">
-      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-bold shrink-0", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20" : "border-white/10 bg-white/5")}>ALL</button>
+     {/* Recipient Selector */}
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar bg-black/40 border-b border-white/5">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-14 w-14 rounded-full border-2 text-[10px] font-black shrink-0 transition-all flex items-center justify-center shadow-lg", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 bg-white/5 text-white/40")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105 shadow-md shadow-cyan-500/30" : "border-transparent opacity-60")}><AvatarImage src={p.avatarUrl} /></Avatar>
-        {selectedUids.includes(p.uid) && <Check className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 text-black rounded-full p-0.5" />}
+        <Avatar className={cn("h-14 w-14 border-2 transition-all duration-300", selectedUids.includes(p.uid) ? "border-cyan-400 scale-110 shadow-[0_0_20px_rgba(34,211,238,0.5)] ring-2 ring-cyan-400/20" : "border-transparent opacity-40 grayscale")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        {selectedUids.includes(p.uid) && <div className="absolute -top-1 -right-1 bg-cyan-400 rounded-full p-1 shadow-md"><Check className="h-3 w-3 text-black stroke-[4px]" /></div>}
        </button>
       ))}
      </div>
 
-     {/* Tabs & Grid */}
-     <Tabs defaultValue="Hot" className="w-full mt-2">
-      <TabsList className="mx-4 bg-white/5 p-1 rounded-full flex justify-between border border-white/5">
-       {['Hot', 'Lucky', 'Luxury', 'Flag', 'Events'].map(id => (
-        <TabsTrigger key={id} value={id} className="text-[10px] font-black px-4 py-1.5 rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 transition-all">{id}</TabsTrigger>
+     {/* Tabs */}
+     <Tabs defaultValue="Hot" className="w-full pt-4">
+      <TabsList className="mx-6 bg-white/5 p-1 rounded-2xl flex justify-between border border-white/10">
+       {['Hot', 'Lucky', 'Luxury'].map(id => (
+        <TabsTrigger key={id} value={id} className="flex-1 text-[11px] font-black py-2.5 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-500 data-[state=active]:shadow-xl transition-all uppercase tracking-widest">{id}</TabsTrigger>
        ))}
       </TabsList>
       
-      <div className="h-[320px] overflow-y-auto no-scrollbar p-4">
+      <div className="h-[360px] overflow-y-auto no-scrollbar p-6">
        {Object.entries(GIFTS).map(([cat, items]) => (
-        <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0 focus-visible:outline-none">
+        <TabsContent key={cat} value={cat} className="grid grid-cols-4 gap-4 m-0 outline-none">
          {items.map(gift => (
-          <button 
+          <motion.button 
+           whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}
            key={gift.id} 
            onClick={() => setSelectedGift(gift)} 
-           // --- COLOR FIX: Yahan solid background add kiya hai ---
            className={cn(
-            "flex flex-col items-center p-2 rounded-2xl border transition-all duration-200", 
+            "relative flex flex-col items-center p-2 rounded-[24px] border transition-all duration-500 group", 
             selectedGift?.id === gift.id 
-             ? "bg-[#1e2533] border-cyan-400/80 shadow-lg scale-105 ring-1 ring-cyan-400/20" 
-             : "bg-[#181d29] border-white/5 hover:bg-[#1e2533]"
+             ? "bg-[#1c2331] border-cyan-400/60 shadow-[0_15px_30px_rgba(0,0,0,0.6)]" 
+             : "bg-white/[0.03] border-white/5 hover:bg-white/[0.08]"
            )}
           >
-           <div className="text-4xl mb-1 filter drop-shadow-md">{gift.icon}</div>
-           <span className="text-[9px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-           <div className="flex items-center gap-1 mt-1">
-            <GoldCoinIcon className="h-2.5 w-2.5 text-yellow-400" />
-            <span className="text-[10px] text-yellow-400 font-black">{gift.price.toLocaleString()}</span>
+           {/* Gift PNG Image */}
+           <div className="h-16 w-16 flex items-center justify-center mb-1 relative">
+            <img src={gift.image} alt={gift.name} className={cn("h-full w-full object-contain transition-transform duration-300 drop-shadow-2xl", selectedGift?.id === gift.id ? "scale-110 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "group-hover:scale-105")} />
            </div>
-          </button>
+           
+           <span className="text-[9px] font-black text-white/90 truncate w-full text-center tracking-tight mb-1">{gift.name}</span>
+           
+           <div className="flex items-center gap-1 bg-black/50 px-2 py-0.5 rounded-full border border-white/5 shadow-inner">
+            <GoldCoinIcon className="h-2.5 w-2.5" />
+            <span className="text-[10px] text-yellow-400 font-black">{gift.price >= 1000 ? (gift.price/1000)+'k' : gift.price}</span>
+           </div>
+          </motion.button>
          ))}
         </TabsContent>
        ))}
       </div>
      </Tabs>
 
-     {/* Footer */}
-     <div className="p-4 bg-black/40 flex items-center justify-between border-t border-white/5 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-      <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
-       <GoldCoinIcon className="h-4 w-4" /><span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+     {/* 3D Footer */}
+     <div className="p-6 bg-gradient-to-t from-black to-[#0d1117] flex items-center justify-between border-t border-white/10">
+      <div className="flex items-center gap-3 bg-[#1e2533] border border-white/10 px-4 py-2 rounded-2xl shadow-inner">
+       <GoldCoinIcon className="h-5 w-5" />
+       <div className="flex flex-col">
+        <span className="text-[8px] font-bold text-white/50 uppercase">Balance</span>
+        <span className="text-sm font-black text-yellow-400">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+       </div>
       </div>
-      <div className="flex items-center gap-2">
+
+      <div className="flex items-center gap-3">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-10 bg-white/10 border-white/10 rounded-xl text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
-         <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+         <SelectTrigger className="w-20 h-11 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-black focus:ring-1 ring-cyan-400/50">
+          <SelectValue />
+         </SelectTrigger>
+         <SelectContent className="bg-[#0d1117] border-white/10 text-white font-bold rounded-2xl">
+          {['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q} className="focus:bg-cyan-600 transition-colors">{q}</SelectItem>)}
+         </SelectContent>
        </Select>
-       <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className="h-10 px-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 disabled:grayscale transition-all uppercase tracking-wider border-b-2 border-black/20">
-         {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
+
+       <button 
+         onClick={() => handleSend(false)} 
+         disabled={!selectedGift || isSending || selectedUids.length === 0} 
+         className="h-11 px-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 font-black text-[13px] shadow-[0_8px_20px_rgba(37,99,235,0.4)] active:scale-95 disabled:opacity-30 disabled:grayscale transition-all uppercase tracking-widest border-t border-white/20"
+       >
+         {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
        </button>
       </div>
      </div>
@@ -284,4 +239,5 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Dialog>
   </>
  );
-}
+                                     }
+        
