@@ -56,14 +56,15 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
           <path d="M 25 35 L 42 42 M 75 35 L 58 42" stroke="black" strokeWidth="4" strokeLinecap="round" />
           <circle cx="38" cy="50" r="5" fill="black" />
           <circle cx="62" cy="50" r="5" fill="black" />
+          {/* Hammer striking animation - swinging outside to hit neighbors */}
           <motion.g 
-            initial={{ rotate: -30, x: 70, y: 10 }}
-            animate={{ rotate: [-30, 30, -30], y: [10, -5, 10] }}
-            transition={{ duration: 0.5, repeat: Infinity }}
+            initial={{ rotate: -15, x: 50, y: 0 }}
+            animate={{ rotate: [-15, 60, -15], x: [50, 95, 50] }}
+            transition={{ duration: 0.4, repeat: Infinity, ease: "easeOut" }}
           >
-            <circle cx="15" cy="45" r="7" fill="url(#emojiHDGrad)" stroke="#E65100" strokeWidth="0.5" />
-            <rect x="8" y="10" width="22" height="15" rx="3" fill="#424242" />
-            <rect x="16" y="25" width="6" height="20" rx="2" fill="#795548" />
+            <rect x="5" y="5" width="28" height="18" rx="3" fill="#424242" />
+            <rect x="16" y="23" width="7" height="24" rx="2" fill="#795548" />
+            <circle cx="19" cy="52" r="9" fill="url(#emojiHDGrad)" stroke="#E65100" strokeWidth="0.5" />
           </motion.g>
           <path d="M 40 75 Q 50 68 60 75" stroke="black" strokeWidth="4" fill="none" strokeLinecap="round" />
         </svg>
@@ -85,6 +86,14 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
             <circle cx="0" cy="0" r="3" fill="black" />
           </g>
           <path d="M 45 75 Q 50 70 55 75" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round" />
+          {/* Thinking Hand - added near the chin */}
+          <motion.g 
+            animate={{ y: [0, -4, 0], rotate: [0, -2, 0] }} 
+            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+          >
+            <path d="M 42 82 Q 52 76 62 86 L 58 94 Q 48 90 38 94 Z" fill="url(#emojiHDGrad)" stroke="#E65100" strokeWidth="0.6" />
+            <path d="M 54 80 Q 58 72 64 77" stroke="#E65100" strokeWidth="2" fill="none" strokeLinecap="round" />
+          </motion.g>
         </svg>
       );
 
@@ -195,4 +204,4 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | 
       </AnimatePresence>
     </div>
   );
-        }
+}
