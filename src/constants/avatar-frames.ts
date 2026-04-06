@@ -20,6 +20,20 @@ export interface AvatarFrameConfig {
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
   // --- LEGENDARY ---
+  'sakura-blossom': {
+    id: 'sakura-blossom',
+    name: 'Sakura Blossom',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #FFB7C5, #D946EF, #4F46E5, #D946EF, #FFB7C5)',
+    borderColor: '#FF69B4',
+    glowColor: 'rgba(217, 70, 239, 0.6)',
+    ornament: '🌸',
+    animationType: 'float',
+    extraType: 'none',
+    particleType: 'stars',
+    textureType: 'glass',
+    extraColor: '#FF69B4'
+  },
   'mystic-dragon': {
     id: 'mystic-dragon',
     name: 'Mystic Dragon',

@@ -101,8 +101,10 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
 const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
-    extraType, particleType, textureType, extraColor, particleColor
+    extraType, particleType, extraColor, particleColor, id
   } = config;
+
+  const isSakura = id === 'sakura-blossom';
 
   const getAnimation = () => {
     switch (animationType) {
@@ -117,34 +119,46 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full p-[1px] overflow-visible">
+      {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
-      <motion.div
-        animate={getAnimation()}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-[-15%] rounded-full blur-xl opacity-30 z-0 pointer-events-none"
-        style={{ backgroundColor: glowColor }}
-      />
-
+      {/* 3D Tubelike Frame Body */}
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
-        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-[-12%] rounded-full z-10 "
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-[-12%] rounded-full z-10"
         style={{
+          padding: '6px', // Thickness of the tube
           background: gradient,
           backgroundSize: '200% 200%',
-          padding: '2.5px',
-          maskImage: 'radial-gradient(circle, transparent 40.5%, black 41%, black 44%, transparent 44.5%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 40.5%, black 41%, black 44%, transparent 44.5%)',
-          boxShadow: `0 0 10px ${glowColor}`
+          boxShadow: `
+            0 0 15px ${glowColor},
+            inset 0 0 10px rgba(0,0,0,0.5),
+            inset 0 0 5px rgba(255,255,255,0.4)
+          `,
+          maskImage: 'radial-gradient(circle, transparent 40.5%, black 41%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 40.5%, black 41%)',
         }}
       >
-        <div className="w-full h-full rounded-full border-[1px]" style={{ borderColor: `${borderColor}66` }} />
+        {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none opacity-50 shadow-inner" />
       </motion.div>
 
+      {/* Particles */}
       <ParticleSystem type={particleType} color={particleColor || borderColor} />
 
-      {Ornament && (
+      {/* Ornaments Layer */}
+      {isSakura ? (
+        <>
+          {/* Side Ornaments for Sakura Blossom */}
+          <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-[60] w-14 h-14 pointer-events-none drop-shadow-xl overflow-visible">
+             <img src="/images/frames/sakura_branch.png" alt="" className="w-full h-full object-contain mix-blend-screen scale-x-[-1] brightness-125 rotate-[-20deg]" />
+          </div>
+          <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-[60] w-14 h-14 pointer-events-none drop-shadow-xl overflow-visible">
+             <img src="/images/frames/sakura_branch.png" alt="" className="w-full h-full object-contain mix-blend-screen brightness-125 rotate-[20deg]" />
+          </div>
+        </>
+      ) : Ornament && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-[60] drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
           <motion.div
             animate={{ y: [-2, 2, -2] }}
