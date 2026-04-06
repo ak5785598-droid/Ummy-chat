@@ -1649,7 +1649,7 @@ export function RoomClient({ room }: { room: Room }) {
       <RocketDialog
         open={isRocketOpen}
         onOpenChange={setIsRocketOpen}
-        totalGifts={room.rocket?.progress || 0}
+        currentExp={room.rocket?.progress || 0}
         roomName={room.title}
       />
       <RoomTasksDialog

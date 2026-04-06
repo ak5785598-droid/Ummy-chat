@@ -70,11 +70,13 @@ const PremiumRocketSVG = ({ colors, isActive }: { colors: any, isActive: boolean
 export function RocketDialog({ 
   open, 
   onOpenChange, 
-  currentExp = 0 
+  currentExp = 0,
+  roomName
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void; 
   currentExp?: number;
+  roomName?: string;
 }) {
   const nextLevel = useMemo(() => 
     ROCKET_LEVELS.find(l => currentExp < l.target) || ROCKET_LEVELS[4]
