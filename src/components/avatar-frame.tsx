@@ -129,13 +129,13 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full z-10 "
+        className="absolute inset-[-12%] rounded-full z-10 "
         style={{
           background: gradient,
           backgroundSize: '200% 200%',
           padding: '2.5px',
-          maskImage: 'radial-gradient(circle, transparent 48%, black 49%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 48%, black 49%)',
+          maskImage: 'radial-gradient(circle, transparent 41%, black 42%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 41%, black 42%)',
           boxShadow: `0 0 10px ${glowColor}`
         }}
       >
