@@ -1,212 +1,167 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useMemo } from 'react';
+import { 
+  X, 
+  Rocket, 
+  ChevronRight, 
+  Star, 
+  Zap, 
+  Shield, 
+  Trophy,
+  Info 
+} from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent 
+} from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Lock, Trophy, Users, X, Zap, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-// --- TYPES & INTERFACES ---
-interface RocketLevel {
-  level: number;
-  name: string;
-  target: number;
-  rewards: string[];
-  color: string;
-}
+const ROCKET_LEVELS = [
+  { level: 1, name: 'Scout-1', target: 5000, colors: { primary: '#3b82f6', secondary: '#1d4ed8', flame: '#60a5fa' } },
+  { level: 2, name: 'Vanguard-2', target: 15000, colors: { primary: '#8b5cf6', secondary: '#6d28d9', flame: '#a78bfa' } },
+  { level: 3, name: 'Titan-3', target: 50000, colors: { primary: '#ec4899', secondary: '#be185d', flame: '#f472b6' } },
+  { level: 4, name: 'Nova-4', target: 150000, colors: { primary: '#f59e0b', secondary: '#b45309', flame: '#fbbf24' } },
+  { level: 5, name: 'Zenith-5', target: 500000, colors: { primary: '#10b981', secondary: '#047857', flame: '#34d399' } },
+];
 
-interface RocketProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  totalGifts?: number;
-  roomName?: string;
-}
-
-// --- 3D METALLIC ROCKET COMPONENT ---
-const Rocket3D: React.FC<{ className?: string }> = ({ className }) => (
+const PremiumRocketSVG = ({ colors, isActive }: { colors: any, isActive: boolean }) => (
   <motion.div 
-    animate={{ 
-      y: [0, -12, 0],
-      rotateZ: [-1, 1, -1]
-    }}
-    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-    className={cn("relative drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]", className)}
+    animate={isActive ? {
+      y: [0, -10, 0],
+      rotate: [0, 1, -1, 0]
+    } : {}}
+    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+    className="relative w-48 h-48 flex items-center justify-center"
   >
-    <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]">
       <defs>
-        {/* Brushed Metal Texture */}
-        <linearGradient id="metalBody" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#1E3A8A" />
-          <stop offset="30%" stopColor="#3B82F6" />
-          <stop offset="50%" stopColor="#BFDBFE" />
-          <stop offset="70%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#1E3A8A" />
+        <linearGradient id="rocketBody" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={colors.primary} />
+          <stop offset="100%" stopColor={colors.secondary} />
         </linearGradient>
-        
-        {/* Glow for Engine */}
-        <filter id="engineGlow">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
       </defs>
-
-      {/* Side Fins (3D Look) */}
-      <path d="M22 80 L10 105 L35 105 Z" fill="#1E40AF" stroke="#60A5FA" strokeWidth="1" />
-      <path d="M78 80 L90 105 L65 105 Z" fill="#1E40AF" stroke="#60A5FA" strokeWidth="1" />
-
-      {/* Main Hull (Metallic) */}
-      <path d="M50 5 C28 45 28 90 35 112 L65 112 C72 90 72 45 50 5 Z" fill="url(#metalBody)" />
       
-      {/* Chrome Window */}
-      <circle cx="50" cy="45" r="10" fill="#0F172A" stroke="#FDE047" strokeWidth="2" />
-      <circle cx="47" cy="42" r="3" fill="white" fillOpacity="0.4" />
-
-      {/* Animated Plasma Exhaust */}
-      <motion.path 
-        animate={{ opacity: [0.5, 1, 0.5], scaleY: [1, 1.4, 1] }}
-        transition={{ duration: 0.15, repeat: Infinity }}
-        d="M40 112 L50 135 L60 112 Z" 
-        fill="#60A5FA" 
-        filter="url(#engineGlow)"
-      />
+      {/* ROCKET BODY */}
+      <path d="M50 10 C35 30 30 70 30 90 L70 90 C70 70 65 30 50 10Z" fill="url(#rocketBody)" />
+      <path d="M50 15 C40 35 35 70 35 85 L65 85 C65 70 60 35 50 15Z" fill="white" fillOpacity="0.1" />
+      
+      {/* WINDOW */}
+      <circle cx="50" cy="50" r="8" fill="#0f172a" />
+      <circle cx="50" cy="50" r="5" fill="#38bdf8" fillOpacity="0.5" />
+      
+      {/* FINS */}
+      <path d="M30 70 L15 95 L30 90 Z" fill={colors.secondary} />
+      <path d="M70 70 L85 95 L70 90 Z" fill={colors.secondary} />
+      
+      {/* ENGINE / FLAME AREA */}
+      <path d="M40 90 L60 90 L55 95 L45 95 Z" fill="#334155" />
+      {isActive && (
+        <motion.g animate={{ opacity: [0.6, 1, 0.6], scaleY: [1, 1.2, 1] }} transition={{ duration: 0.2, repeat: Infinity }}>
+          <path d="M42 95 L58 95 L50 120 Z" fill={colors.flame} />
+          <path d="M45 95 L55 95 L50 110 Z" fill="white" fillOpacity="0.8" />
+        </motion.g>
+      )}
     </svg>
   </motion.div>
 );
 
-const ROCKET_LEVELS: RocketLevel[] = [
-  { level: 1, name: 'Star Fighter', target: 100000, rewards: ['Star Frame', 'Sports Car'], color: '#3B82F6' },
-  { level: 2, name: 'Galaxy Destroyer', target: 500000, rewards: ['Galaxy Frame', 'Private Jet'], color: '#8B5CF6' },
-  { level: 3, name: 'Cosmic Emperor', target: 2000000, rewards: ['Emperor Frame', 'Luxury Yacht'], color: '#F59E0B' },
-];
-
-export const RocketDialog: React.FC<RocketProps> = ({ 
+export function RocketDialog({ 
   open, 
   onOpenChange, 
-  totalGifts = 37900, 
-  roomName = "UMMY EVENT HR" 
-}) => {
-  const currentLevel = useMemo(() => 
-    [...ROCKET_LEVELS].reverse().find(l => totalGifts >= l.target)
-  , [totalGifts]);
-
+  currentExp = 0 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+  currentExp?: number;
+}) {
   const nextLevel = useMemo(() => 
-    ROCKET_LEVELS.find(l => totalGifts < l.target)
-  , [totalGifts]);
+    ROCKET_LEVELS.find(l => currentExp < l.target) || ROCKET_LEVELS[4]
+  , [currentExp]);
 
-  const progressPercent = useMemo(() => {
-    if (!nextLevel) return 100;
-    const prev = ROCKET_LEVELS.find(l => l.level === nextLevel.level - 1)?.target || 0;
-    return Math.min(((totalGifts - prev) / (nextLevel.target - prev)) * 100, 100);
-  }, [totalGifts, nextLevel]);
+  const activeLevel = useMemo(() => 
+    [...ROCKET_LEVELS].reverse().find(l => currentExp >= l.target) || null
+  , [currentExp]);
 
-  const formatTarget = (val: number) => val >= 100000 ? `${(val / 100000).toFixed(1)}L` : `${val / 1000}K`;
+  const progress = Math.min((currentExp / nextLevel.target) * 100, 100);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[360px] w-[92%] p-0 bg-[#050810] border-white/5 overflow-hidden rounded-[2.5rem] shadow-[0_0_60px_rgba(0,0,0,0.8)] outline-none">
-        <DialogHeader className="sr-only"><DialogTitle>Rocket System</DialogTitle></DialogHeader>
-
-        {/* HERO SECTION WITH STARFIELD */}
-        <div className="relative pt-12 pb-6 flex flex-col items-center bg-gradient-to-b from-blue-900/30 to-transparent">
-          {/* Animated Stars Background */}
-          <div className="absolute inset-0 opacity-20 overflow-hidden">
-             {[...Array(15)].map((_, i) => (
-               <motion.div 
-                 key={i}
-                 animate={{ y: [0, 400], opacity: [0, 1, 0] }}
-                 transition={{ duration: Math.random() * 2 + 2, repeat: Infinity, delay: Math.random() * 5 }}
-                 className="absolute w-[1px] h-10 bg-white"
-                 style={{ left: `${Math.random() * 100}%`, top: '-10%' }}
-               />
-             ))}
+      <DialogContent className="max-w-[385px] p-0 bg-[#050810] border-none rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
+        
+        {/* HEADER AREA - BLUE SPACE THEME */}
+        <div className="relative h-[340px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">
+          {/* Animated Falling Stars */}
+          <div className="absolute inset-0 overflow-hidden opacity-30">
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                animate={{ y: [-20, 400], opacity: [0, 1, 0] }}
+                transition={{ duration: Math.random() * 2 + 1, repeat: Infinity, delay: Math.random() * 3 }}
+                className="absolute w-[1px] h-12 bg-blue-400"
+                style={{ left: `${Math.random() * 100}%` }}
+              />
+            ))}
           </div>
 
-          <button onClick={() => onOpenChange(false)} className="absolute top-6 right-6 text-white/30 hover:text-white z-20">
-            <X size={20}/>
+          <button onClick={() => onOpenChange(false)} className="absolute top-8 right-8 text-white/20 hover:text-white z-50">
+            <X size={24} />
           </button>
-          
-          <div className="mb-4 bg-white/5 border border-white/10 px-4 py-1 rounded-full backdrop-blur-md">
-            <span className="text-[9px] font-black tracking-widest text-blue-400 uppercase">{roomName}</span>
-          </div>
 
-          <Rocket3D className="w-36 h-36 z-10" />
+          {/* MAIN ROCKET DISPLAY */}
+          <PremiumRocketSVG 
+            colors={activeLevel?.colors || ROCKET_LEVELS[0].colors} 
+            isActive={!!activeLevel} 
+          />
 
-          <h2 className="mt-6 text-2xl font-black italic tracking-tighter text-white uppercase leading-none drop-shadow-lg">
-            {currentLevel ? currentLevel.name : 'System Offline'}
-          </h2>
+          <motion.h1 
+            initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+            className="mt-6 text-3xl font-black italic tracking-widest text-white uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+          >
+            {activeLevel ? activeLevel.name : 'SYSTEM OFFLINE'}
+          </motion.h1>
         </div>
 
-        {/* PROGRESS CARD */}
-        <div className="px-6 py-6 bg-white/[0.03] border-y border-white/5">
-          <div className="flex justify-between items-end mb-2">
-            <div className="flex items-center gap-2 text-[10px] font-black text-blue-400 tracking-widest uppercase">
-              <Zap size={14} className="fill-blue-400"/> Fuel Level
+        {/* PROGRESS SECTION */}
+        <div className="p-8 pt-6 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Next Evolution</span>
+              <span className="text-white text-lg font-bold">{nextLevel.name}</span>
             </div>
-            <div className="text-xs font-black text-white/80">
-              {formatTarget(totalGifts)} <span className="text-white/20">/ {nextLevel ? formatTarget(nextLevel.target) : 'MAX'}</span>
+            <div className="text-right">
+              <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Current XP</span>
+              <div className="text-white font-mono font-bold">{currentExp.toLocaleString()}</div>
             </div>
           </div>
-          
-          <div className="h-4 bg-black/60 rounded-full p-1 border border-white/10 shadow-inner">
+
+          {/* CUSTOM PROGRESS BAR */}
+          <div className="relative h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
             <motion.div 
               initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              className="h-full bg-gradient-to-r from-blue-800 via-blue-400 to-cyan-300 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 1.5, ease: 'easeOut' }}
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-[0_0_20px_rgba(37,99,235,0.5)]"
             />
           </div>
-        </div>
 
-        {/* LEVEL LIST */}
-        <div className="p-4 space-y-3 max-h-[280px] overflow-y-auto no-scrollbar relative z-10">
-          {ROCKET_LEVELS.map((rocket) => {
-            const isUnlocked = totalGifts >= rocket.target;
-            const isCurrent = currentLevel?.level === rocket.level;
+          <div className="flex justify-between items-center text-[10px] font-black text-white/20 uppercase tracking-tighter">
+            <span>Level {activeLevel?.level || 0}</span>
+            <span>{nextLevel.target.toLocaleString()} XP Target</span>
+          </div>
 
-            return (
-              <motion.div 
-                key={rocket.level}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "p-4 rounded-[1.8rem] border transition-all duration-500 relative overflow-hidden",
-                  isUnlocked 
-                    ? "bg-gradient-to-br from-white/10 to-transparent border-white/10 shadow-xl" 
-                    : "bg-black/40 border-white/5 opacity-30 grayscale"
-                )}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-black/60 rounded-2xl flex items-center justify-center border border-white/10">
-                    <Rocket3D className="w-8 h-8" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase text-white/90">{rocket.name}</span>
-                      {isCurrent && <CheckCircle2 size={12} className="text-cyan-400" />}
-                    </div>
-                    <div className="text-[9px] font-bold text-blue-400/70 mt-0.5 tracking-wider">TARGET: {formatTarget(rocket.target)}</div>
-                    <div className="flex gap-1.5 mt-2">
-                      {rocket.rewards.map((r, i) => (
-                        <span key={i} className="text-[7px] font-black bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 text-blue-300 uppercase">
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* BOTTOM NAV */}
-        <div className="p-5 flex justify-center gap-12 bg-black/40 backdrop-blur-xl border-t border-white/5 opacity-40">
-           <div className="flex flex-col items-center gap-1 cursor-not-allowed">
-              <Trophy size={16}/><span className="text-[8px] font-black uppercase">Prizes</span>
-           </div>
-           <div className="flex flex-col items-center gap-1 cursor-not-allowed">
-              <Users size={16}/><span className="text-[8px] font-black uppercase">Friends</span>
-           </div>
+          {/* ACTION BUTTONS */}
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <button className="py-4 rounded-3xl bg-white/5 border border-white/10 text-white font-bold text-xs hover:bg-white/10 transition-all">
+              Mission Logs
+            </button>
+            <button className="py-4 rounded-3xl bg-blue-600 text-white font-bold text-xs shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95 transition-all">
+              Boost Sync
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}
