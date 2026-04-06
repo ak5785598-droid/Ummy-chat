@@ -126,7 +126,7 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       <motion.div
         animate={animationType === 'rotate' ? { rotate: 360 } : {}}
         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-[-12%] rounded-full z-10"
+        className="absolute inset-[-18%] rounded-full z-10"
         style={{
           padding: '6px', // Thickness of the tube
           background: gradient,
@@ -136,8 +136,8 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
             inset 0 0 10px rgba(0,0,0,0.5),
             inset 0 0 5px rgba(255,255,255,0.4)
           `,
-          maskImage: 'radial-gradient(circle, transparent 40.5%, black 41%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 40.5%, black 41%)',
+          maskImage: 'radial-gradient(circle, transparent 38%, black 39%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 38%, black 39%)',
         }}
       >
         {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
@@ -203,7 +203,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent overflow-hidden"
+        "relative rounded-full w-full h-full bg-transparent"
       )}>
         {children}
       </div>
