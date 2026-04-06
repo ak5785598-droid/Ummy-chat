@@ -134,8 +134,8 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
           background: gradient,
           backgroundSize: '200% 200%',
           padding: '2.5px',
-          maskImage: 'radial-gradient(circle, transparent 41%, black 42%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 41%, black 42%)',
+          maskImage: 'radial-gradient(circle, transparent 40.5%, black 41%, black 44%, transparent 44.5%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 40.5%, black 41%, black 44%, transparent 44.5%)',
           boxShadow: `0 0 10px ${glowColor}`
         }}
       >
