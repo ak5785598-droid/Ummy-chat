@@ -1774,10 +1774,10 @@ export function RoomClient({ room }: { room: Room }) {
 
         <RoomTrophyBadge coins={room.stats?.totalGifts || 0} />
 
-        {/* Floating Top-Right Badge (Tree) */}
+        {/* Floating Top-Right Badge (Golden Task Jar) */}
         <div className="absolute top-24 right-4 animate-reaction-float z-50">
           <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={56} height={56} alt="Tree" className="bg-transparent mix-blend-multiply" />
+            <Image src="/images/golden_task_jar.png" width={64} height={64} alt="Golden Task Jar" className="bg-transparent" />
             {achievedTasks.some(id => !claimedTasks.includes(id)) && (
               <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
             )}
