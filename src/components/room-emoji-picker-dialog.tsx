@@ -5,13 +5,12 @@ import {
  Dialog, 
  DialogContent, 
  DialogHeader, 
- DialogTitle, 
- DialogDescription 
+ DialogTitle 
 } from '@/components/ui/dialog';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
-// --- ULTRA HD 3D EMOJI DESIGNS ---
+// --- ULTRA HD 3D EMOJI DESIGNS (NO CHANGES HERE) ---
 
 const EmojiHD = ({ type }: { type: string }) => {
   const defs = (
@@ -207,30 +206,37 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[420px] bg-black/95 border-none p-0 rounded-t-[3rem] overflow-hidden text-white outline-none">
-    <div className="flex flex-col max-h-[80vh]">
-      <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 flex-shrink-0" />
-      <DialogHeader className="p-6 pb-2 text-center flex-shrink-0">
-       <DialogTitle className="text-3xl font-black italic tracking-tighter">EMOJIS</DialogTitle>
+   <DialogContent className="sm:max-w-[380px] bg-black/95 border border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.2)]">
+    <div className="flex flex-col">
+      <div className="mx-auto w-10 h-1 bg-white/20 rounded-full mt-4 flex-shrink-0" />
+      <DialogHeader className="p-4 pb-2 text-center flex-shrink-0">
+       <DialogTitle className="text-2xl font-black italic tracking-tighter text-yellow-500">EMOJIS</DialogTitle>
       </DialogHeader>
-      <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
-        <div className="grid grid-cols-3 gap-y-12 gap-x-4 pb-12">
+
+      <div className="h-[320px] overflow-y-auto px-6 py-4 custom-scrollbar">
+        <div className="grid grid-cols-3 gap-y-8 gap-x-4 pb-8">
           {REACTIONS.map((item) => (
-           <button key={item.id} onClick={() => handleSendEmoji(item.id)} className="flex flex-col items-center gap-3 group transition-all active:scale-75">
-            <div className="h-20 w-20 drop-shadow-2xl group-hover:scale-125 duration-300">
+           <button 
+             key={item.id} 
+             onClick={() => handleSendEmoji(item.id)} 
+             className="flex flex-col items-center gap-2 group transition-all active:scale-90"
+           >
+            <div className="h-16 w-16 drop-shadow-xl group-hover:scale-110 duration-200">
               <EmojiHD type={item.id} />
             </div>
-            <span className="text-[11px] font-bold text-white/30 uppercase group-hover:text-yellow-400">{item.label}</span>
+            <span className="text-[10px] font-bold text-white/30 uppercase group-hover:text-yellow-400">
+              {item.label}
+            </span>
            </button>
           ))}
         </div>
       </div>
     </div>
     <style jsx global>{`
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.2); border-radius: 10px; }
     `}</style>
    </DialogContent>
   </Dialog>
  );
-}
+   }
