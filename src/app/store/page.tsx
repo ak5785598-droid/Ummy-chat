@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Star, Loader, ChevronLeft, Crown, Check, Eye, Heart, Mic2, MessageSquare, Sparkles } from 'lucide-react'; 
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -12,75 +12,46 @@ import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { AvatarFrame } from '@/components/avatar-frame';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ItemPreview } from '@/components/item-preview';
 
-// --- HOD 2.0 ACCURATE FRAME DESIGN (REPLICATING IMAGE 7) ---
-const Hod2Frame = ({ className = "w-28 h-28 md:w-32 md:h-32" }) => {
-  return (
-    <div className={cn("relative flex items-center justify-center p-2 group", className)}>
-      <svg viewBox="0 0 120 120" className="absolute inset-0 w-full h-full drop-shadow-2xl overflow-visible">
-        <defs>
-          <linearGradient id="goldHOD" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFBD5" />
-            <stop offset="50%" stopColor="#FBC02D" />
-            <stop offset="100%" stopColor="#E65100" />
-          </linearGradient>
-          <linearGradient id="pCrystal" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#fff" /><stop offset="100%" stopColor="#e91e63" /></linearGradient>
-          <linearGradient id="bCrystal" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#fff" /><stop offset="100%" stopColor="#2196f3" /></linearGradient>
-          <linearGradient id="yCrystal" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#fff" /><stop offset="100%" stopColor="#ffeb3b" /></linearGradient>
-        </defs>
-
-        {/* Multi-layered Crystalline Feather Pattern */}
-        <g transform="translate(60,60)">
-          {[...Array(24)].map((_, i) => {
-            const angle = (i * 15) - 165;
-            if (i > 10 && i < 14) return null; // Space for the Bow at bottom
-            const crystalGrad = i % 3 === 0 ? "url(#pCrystal)" : i % 2 === 0 ? "url(#bCrystal)" : "url(#yCrystal)";
-            return (
-              <g key={i} transform={`rotate(${angle}) translate(0, -48)`}>
-                {/* Gold Leaf Structure */}
-                <path d="M0,0 C4,-8 10,-12 2,-22 C-6,-12 -2,-8 0,0" fill="url(#goldHOD)" stroke="#bf360c" strokeWidth="0.5" />
-                {/* Crystal Sharp Facet */}
-                <path d="M-2,-3 C-8,-14 -12,-20 -2,-30 C4,-20 -6,-14 -2,-3" fill={crystalGrad} stroke="white" strokeWidth="0.4" opacity="0.9" />
-                {/* Shine Particle */}
-                <circle cx="0" cy="-25" r="0.6" fill="white" className="animate-pulse" />
-              </g>
-            );
-          })}
-        </g>
-
-        {/* The BIG Pink Glossy Bow (Exactly like Image 7) */}
-        <g transform="translate(60, 94)">
-          {/* Main Bow Wings */}
-          <path d="M0,0 C-15,-5 -38,-28 -38,-10 C-38,12 -15,18 0,8 Z" fill="#ff4081" stroke="#880e4f" strokeWidth="1.2" />
-          <path d="M0,0 C15,-5 38,-28 38,-10 C38,12 15,18 0,8 Z" fill="#ff4081" stroke="#880e4f" strokeWidth="1.2" />
-          {/* Glossy Knot */}
-          <rect x="-7" y="-5" width="14" height="14" rx="4" fill="#f50057" stroke="#ad1457" strokeWidth="1" />
-          {/* Ribbon Tails */}
-          <path d="M-4,9 L-20,26 L-10,22 Z" fill="#c2185b" stroke="#880e4f" strokeWidth="0.5" />
-          <path d="M4,9 L20,26 L10,22 Z" fill="#c2185b" stroke="#880e4f" strokeWidth="0.5" />
-        </g>
-      </svg>
-
-      {/* Avatar Display */}
-      <div className="absolute inset-[22%] rounded-full overflow-hidden border-2 border-white/80 shadow-lg bg-slate-100">
-        <Avatar className="w-full h-full">
-          <AvatarImage src="https://picsum.photos/seed/petal/200" />
-          <AvatarFallback>U</AvatarFallback>
-        </Avatar>
-      </div>
-    </div>
-  );
-};
-
-// --- DATA & MAIN PAGE ---
 const STATIC_STORE_ITEMS = [
-  { id: 'hod-v2-petal', name: 'Petal Sovereignty V2', type: 'Frame', price: 3000000, isCustom: true, description: '3D Crystal & Silk Ribbon Premium Frame.' },
-  { id: 'legendary-king', name: 'Legendary King', type: 'Frame', price: 1250000, description: '24k Gold Glow ruler frame.' },
-  { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 15000, description: 'Animated floating heart bubble.' },
+  // BUBBLES
+  { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 30, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
+  { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 30, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
+  { id: 'evil-bubble', name: 'Evil Bubble', type: 'Bubble', price: 10495, durationDays: 30, description: 'Dark aura with devil horns.', icon: MessageSquare, color: 'text-purple-600' },
+  { id: 'candy-bubble', name: 'Candy Bubble', type: 'Bubble', price: 8995, durationDays: 30, description: 'Sweet pink with lollipop decals.', icon: MessageSquare, color: 'text-pink-300' },
+  { id: 'taurus-2025', name: 'Taurus 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Earthy golden constellation bubble.', icon: Sparkles, color: 'text-yellow-600' },
+  { id: 'cricket-2025', name: 'Cricket 2025', type: 'Bubble', price: 40000, durationDays: 30, description: 'Stadium green sporty bubble.', icon: MessageSquare, color: 'text-green-600' },
+  { id: 'gemini-2025', name: 'Gemini 2025', type: 'Bubble', price: 50000, durationDays: 30, description: 'Mystic blue constellation bubble.', icon: Sparkles, color: 'text-blue-500' },
+  { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 30, description: 'Exclusive premium gold trimmed bubble.', icon: Crown, color: 'text-yellow-400' },
+  
+  // ELITE FRAMES (UPGRADED)
+  { id: 'supreme-king', name: 'Legendary King', type: 'Frame', price: 1250000, durationDays: 30, description: 'The absolute ruler with 24k Gold Glow and Sovereign light beams.', icon: Crown, color: 'text-yellow-500' },
+  { id: 'rose-gold', name: 'Royal Rose', type: 'Frame', price: 750000, durationDays: 30, description: 'Elegant golden vines with animated red roses.', icon: Heart, color: 'text-red-500' },
+  { id: 'top3family', name: 'Sovereign Crystal Pink', type: 'Frame', price: 500000, durationDays: 30, description: 'Exclusive pink crystal sovereign frame for elite families.', icon: Crown, color: 'text-pink-500' },
+  { id: 'top2family', name: 'Sovereign Crystal Blue', type: 'Frame', price: 750000, durationDays: 30, description: 'Exclusive blue frost diamond frame for elite legends.', icon: Crown, color: 'text-blue-500' },
+  { id: 'neon-2025', name: 'Cybernetic Aura', type: 'Frame', price: 300000, durationDays: 30, description: 'Cyberpunk holographic glowing ring with neon light trails.', icon: Sparkles, color: 'text-purple-500' },
+  
+  // NEW LEGENDARY ARRIVALS
+  { id: 'elite-mythic-gold', name: 'Mythic Gold Elite', type: 'Frame', price: 5000000, durationDays: 30, description: 'Ultimate multi-tiered golden aura with rotating light sheen.', icon: Crown, color: 'text-yellow-400' },
+  { id: 'elite-arctic-diamond', name: 'Arctic Diamond Elite', type: 'Frame', price: 5000000, durationDays: 30, description: 'Frigid white-cyan aura with glowing diamond particles.', icon: Sparkles, color: 'text-cyan-300' },
+  { id: 'elite-phoenix-wild', name: 'Phoenix Wildfire Elite', type: 'Frame', price: 5000000, durationDays: 30, description: 'Massive animated fire trails with burning embers.', icon: Zap, color: 'text-orange-500' },
+  { id: 'elite-cosmic-purple', name: 'Cosmic Purple Elite', type: 'Frame', price: 5000000, durationDays: 30, description: 'Moving space nebula with twinkling stars and void glow.', icon: Star, color: 'text-purple-500' },
+  
+  // SPECIALTY FRAMES
+  { id: 'gold-mosque', name: 'Gold Mosque', type: 'Frame', price: 375000, durationDays: 30, description: 'Ramadan inspired golden crescents.', icon: Sparkles, color: 'text-yellow-500' },
+  { id: 'blue-roses', name: 'Blue Roses', type: 'Frame', price: 300000, durationDays: 30, description: 'Ethereal glowing frozen petals.', icon: Sparkles, color: 'text-blue-300' },
+  { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 30, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
+  { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 30, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
+  { id: 'f5', name: 'Celestial Angel', type: 'Frame', price: 200000, durationDays: 7, description: '3D luxury angelic white frame.', icon: Sparkles, color: 'text-white' },
+
+  // WAVES
+  { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, durationDays: 7, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
 ];
 
 export default function StorePage() {
@@ -96,103 +67,167 @@ export default function StorePage() {
     return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: dbThemes } = useCollection(themesQuery);
+  const { data: dbThemes, isLoading: isThemesLoading } = useCollection(themesQuery);
 
-  const allItems = useMemo(() => {
-    const themes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({ ...t, type: 'Theme' }));
-    return [...STATIC_STORE_ITEMS, ...themes];
+  const dynamicThemes = useMemo(() => {
+    return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
+      ...t,
+      type: 'Theme',
+      description: t.description || `High-fidelity ${t.name} frequency.`
+    }));
   }, [dbThemes]);
 
-  const handleAction = async (item: any, isOwned: boolean) => {
-    if (!userProfile || !user || !firestore) return;
-    const ref = doc(firestore, 'users', user.uid, 'profile', user.uid);
+  const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes];
 
-    if (!isOwned) {
-      if ((userProfile.wallet?.coins || 0) < item.price) {
-        toast({ variant: 'destructive', title: 'Coins kam hain bhai!' });
-        return;
-      }
-      await updateDocumentNonBlocking(ref, { 
-        'wallet.coins': increment(-item.price), 
-        'inventory.ownedItems': arrayUnion(item.id),
-        'updatedAt': serverTimestamp() 
-      });
-      toast({ title: 'Mubarak ho!', description: `${item.name} kharid liya.` });
-    } else {
-      const field = `inventory.active${item.type}`;
-      await updateDocumentNonBlocking(ref, { [field]: item.id, updatedAt: serverTimestamp() });
-      toast({ title: 'Equipped!', description: `${item.name} set ho gaya.` });
+  const handlePurchase = (item: any) => {
+    if (!userProfile || !user || !firestore) return;
+    const balance = userProfile.wallet?.coins || 0;
+    if (balance < item.price) {
+      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      return;
     }
+
+    const durationDays = item.durationDays || 7;
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + durationDays);
+    const expiryTimestamp = Timestamp.fromDate(expiryDate);
+
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    const userRef = doc(firestore, 'users', user.uid);
+    
+    const updateData = { 
+      'wallet.coins': increment(-item.price), 
+      'inventory.ownedItems': arrayUnion(item.id),
+      [`inventory.expiries.${item.id}`]: expiryTimestamp,
+      'updatedAt': serverTimestamp() 
+    };
+
+    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-item.price), 'updatedAt': serverTimestamp() });
+    toast({ title: 'Purchase Successful', description: `${item.name} added to your bag for ${durationDays} days.` });
   };
 
-  if (isProfileLoading) return <div className="h-screen flex items-center justify-center bg-pink-50"><Loader className="animate-spin text-pink-500" size={40} /></div>;
+  const handleEquip = (item: any) => {
+    if (!userProfile || !user || !firestore) return;
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+    const userRef = doc(firestore, 'users', user.uid);
+    
+    let field = '';
+    if (item.type === 'Frame') field = 'inventory.activeFrame';
+    else if (item.type === 'Theme') field = 'inventory.activeTheme';
+    else if (item.type === 'Bubble') field = 'inventory.activeBubble';
+    else if (item.type === 'Wave') field = 'inventory.activeWave';
+
+    const updateData = { [field]: item.id, updatedAt: serverTimestamp() };
+    updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, updateData);
+    toast({ title: 'Item Equipped' });
+  };
+
+  if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-[#f3e5f5]"><Loader className="animate-spin text-primary h-8 w-8" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#FDF2F8] pb-24">
-      <header className="p-6 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-            <ChevronLeft />
-          </Button>
-          <h1 className="text-2xl font-black italic tracking-tighter uppercase text-slate-800">Boutique</h1>
-        </div>
-        <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-2xl border border-amber-200">
-          <GoldCoinIcon className="h-6 w-6" />
-          <span className="font-black text-amber-700">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f3e5f5] pb-safe">
+      <div className="space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-6 pb-24 animate-in fade-in duration-700">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-primary/10 pb-6">
+          <div className="flex items-center gap-4">
+            <button onClick={() => router.back()} className="p-2 bg-white/50 rounded-full shadow-sm hover:bg-white transition-colors"><ChevronLeft className="h-6 w-6 text-slate-800" /></button>
+            <div>
+              <h1 className="text-3xl font-black font-sans uppercase tracking-tight flex items-center gap-2 text-slate-900">
+                <ShoppingBag className="text-primary h-8 w-8" /> Ummy Boutique
+              </h1>
+              <p className="text-muted-foreground font-body text-sm mt-1 font-medium">Customize your frequency identity.</p>
+            </div>
+          </div>
+          <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-primary/20 to-primary/5 px-6 py-3 rounded-2xl border-2 border-primary/20 flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+            <GoldCoinIcon className="h-8 w-8" />
+            <div className="flex flex-col justify-center">
+              <span className="text-2xl font-black text-primary leading-none">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+              <span className="text-[9px] uppercase font-bold tracking-wider text-primary/70 mt-1">Tap to Recharge</span>
+            </div>
+          </div>
+        </header>
 
-      <main className="p-4 max-w-5xl mx-auto">
-        <Tabs defaultValue="Frame" className="space-y-6">
-          <TabsList className="w-full justify-start bg-transparent gap-2 overflow-x-auto no-scrollbar">
-            {['Frame', 'Theme', 'Bubble', 'Wave'].map(tab => (
-              <TabsTrigger key={tab} value={tab} className="rounded-full px-6 py-2 font-bold data-[state=active]:bg-pink-500 data-[state=active]:text-white shadow-sm transition-all uppercase text-xs">
-                {tab}
-              </TabsTrigger>
+        <Tabs defaultValue="All" className="w-full space-y-6">
+          <TabsList className="bg-white/60 backdrop-blur-md p-1.5 h-12 rounded-full border border-primary/10 w-full md:w-fit overflow-x-auto no-scrollbar shadow-sm">
+            {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
+              <TabsTrigger key={cat} value={cat} className="rounded-full px-6 font-bold uppercase tracking-wider text-xs data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all">{cat}</TabsTrigger>
             ))}
           </TabsList>
 
-          <TabsContent value="Frame" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {allItems.filter(i => i.type === 'Frame').map(item => {
-              const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
-              const isActive = [userProfile?.inventory?.activeFrame].includes(item.id);
-
-              return (
-                <Card key={item.id} className="border-none shadow-lg rounded-[2.5rem] bg-white overflow-hidden group">
-                  <div className="aspect-square bg-slate-50 flex items-center justify-center p-4 relative">
-                    {item.isCustom ? <Hod2Frame /> : <div className="text-slate-200"><Star size={60} /></div>}
-                    <Badge className="absolute top-4 right-4 bg-white/90 text-slate-500 border-none font-bold text-[9px]">{item.type}</Badge>
-                    <button onClick={() => setPreviewItem(item)} className="absolute bottom-4 left-4 bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Eye size={16} />
-                    </button>
-                  </div>
+          {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(category => (
+            <TabsContent key={category} value={category} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                {allItems.filter(i => category === 'All' || i.type === category).map(item => {
+                  const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
+                  const isActive = userProfile?.inventory?.activeFrame === item.id || userProfile?.inventory?.activeTheme === item.id || userProfile?.inventory?.activeBubble === item.id || userProfile?.inventory?.activeWave === item.id;
                   
-                  <CardHeader className="p-4 text-center">
-                    <CardTitle className="text-sm font-black uppercase truncate">{item.name}</CardTitle>
-                    <CardDescription className="text-[10px] line-clamp-1">{item.description}</CardDescription>
-                  </CardHeader>
-
-                  <CardFooter className="p-4 pt-0 flex flex-col gap-3">
-                    <div className="flex items-center gap-1.5 font-black text-amber-500 text-lg">
-                      <GoldCoinIcon className="h-5 w-5" /> {item.price.toLocaleString()}
-                    </div>
-                    <Button 
-                      onClick={() => handleAction(item, !!isOwned)}
-                      className={cn("w-full h-11 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all", 
-                        isActive ? "bg-green-500 text-white" : isOwned ? "bg-slate-100 text-slate-600" : "bg-pink-500 text-white shadow-pink-200 shadow-lg"
-                      )}
-                    >
-                      {isActive ? 'Active' : isOwned ? 'Equip' : 'Purchase'}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </TabsContent>
+                  return (
+                    <Card key={item.id} className="relative overflow-hidden group border-none shadow-sm hover:shadow-md transition-shadow rounded-[1.5rem] bg-white ring-1 ring-black/5">
+                      <div className="aspect-square bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center p-4 relative">
+                        {item.type === 'Frame' ? (
+                          <AvatarFrame frameId={item.id} className="w-20 h-20 md:w-24 md:h-24">
+                            <Avatar className="w-full h-full border-2 border-slate-200 shadow-xl overflow-hidden"><AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} /><AvatarFallback>U</AvatarFallback></Avatar>
+                          </AvatarFrame>
+                        ) : item.type === 'Theme' ? (
+                          <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md border-[3px] border-white">
+                            <Image src={(item as any).url} alt={item.name} fill className="object-cover" unoptimized />
+                          </div>
+                        ) : item.type === 'Bubble' ? (
+                          <div className="w-full flex justify-center py-4">
+                            <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px] min-w-[100px] text-center shadow-md border-none">
+                              Hello Ummy 
+                            </ChatMessageBubble>
+                          </div>
+                        ) : <item.icon className={cn("h-12 w-12 md:h-16 md:w-16 opacity-30", item.color)} />}
+                        <Badge className="absolute top-2 right-2 bg-white/95 backdrop-blur-md text-slate-800 border-none font-bold uppercase text-[8px] tracking-wider px-1.5 py-0.5 shadow-sm rounded-md">{item.type}</Badge>
+                        
+                        {/* Try-On Button Layer */}
+                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center pointer-events-none">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setPreviewItem(item); }}
+                            className="bg-white/90 backdrop-blur-md text-primary font-black uppercase text-[9px] tracking-widest px-4 py-2 rounded-full shadow-xl pointer-events-auto transform translate-y-4 group-hover:translate-y-0 transition-all flex items-center gap-2"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Try On
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <CardHeader className="text-center pb-1 pt-3 px-2">
+                        <CardTitle className="font-sans uppercase text-sm md:text-base font-black tracking-tight text-slate-900 truncate">{item.name}</CardTitle>
+                        <CardDescription className="text-[9px] md:text-[10px] font-medium text-slate-500 truncate mt-0.5">{item.description}</CardDescription>
+                      </CardHeader>
+                      
+                      <CardFooter className="flex flex-col gap-2.5 p-3 pt-1">
+                        <div className="flex items-center justify-center gap-1 font-black text-lg text-primary ">
+                          <GoldCoinIcon className="h-4 w-4 md:h-5 md:w-5" />
+                          {item.price.toLocaleString()}
+                          {item.durationDays && <span className="text-[8px] font-bold text-slate-400 ml-1">/ {item.durationDays}d</span>}
+                        </div>
+                        {isOwned ? (
+                          <Button onClick={() => handleEquip(item)} className={cn("w-full h-9 md:h-10 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider shadow-sm transition-all", isActive ? "bg-green-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800")}>
+                            {isActive ? <><Check className="mr-1 h-3 w-3" /> Active</> : 'Equip'}
+                          </Button>
+                        ) : (
+                          <Button onClick={() => handlePurchase(item)} className="w-full h-9 md:h-10 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider shadow-md bg-primary text-white hover:bg-primary/90 transition-all active:scale-95">
+                            Purchase
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          ))}
         </Tabs>
-      </main>
-
-      <ItemPreview isOpen={!!previewItem} onClose={() => setPreviewItem(null)} item={previewItem} />
+        
+        <ItemPreview 
+          isOpen={!!previewItem} 
+          onClose={() => setPreviewItem(null)} 
+          item={previewItem} 
+        />
+      </div>
     </div>
   );
 }
