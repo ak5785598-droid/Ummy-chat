@@ -630,8 +630,9 @@ export function RoomClient({ room }: { room: Room }) {
     const cleanText = text
       .replace(/\[CMD:.*?\]/g, '')
       .replace(/UMMY/gi, 'Ummy') // Normal case for smooth reading
-      .replace(/COINS/gi, 'Coins') // prevent C-O-I-N-S spelling
-      .replace(/JAR/gi, 'Jar') // prevent J-A-R spelling
+      .replace(/COINS/gi, 'Coins') 
+      .replace(/JAR/gi, 'Jar') 
+      .replace(/TASK/gi, 'Task')
       .replace(/\s([A-Z])\s/g, (match, p1) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
       .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
 
@@ -1045,10 +1046,12 @@ export function RoomClient({ room }: { room: Room }) {
               toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
             }
           }
-        } else if (upperResponse.includes('[CMD:JAR:OPEN]') || upperResponse.includes('[CMD:TASKS:OPEN]')) {
+        } else if (upperResponse.includes('[CMD:JAR:OPEN]') || upperResponse.includes('[CMD:TASKS:OPEN]') || upperResponse.includes('OPEN JAR')) {
           if (isAdminAction) {
             setIsRoomTasksOpen(true);
             toast({ title: 'Sovereign Master', description: 'Opening the Golden Task Jar... ✨' });
+          } else {
+            speakAIText("Maafi chahti hoon, par ye adhikar sirf Room Owner ke paas hai.");
           }
         } else if (upperResponse.includes('[CMD:GAMES:OPEN]')) {
           if (isAdminAction) {
