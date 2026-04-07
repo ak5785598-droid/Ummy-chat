@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,6 +44,7 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
           <FaceBase />
           <circle cx="32" cy="40" r="5" fill="#3E2723" />
           <circle cx="68" cy="40" r="5" fill="#3E2723" />
+          <path d="M 35 58 Q 50 68 65 58" stroke="#3E2723" strokeWidth="3" fill="none" strokeLinecap="round" />
           <motion.g initial={{ y: 50 }} animate={{ y: 0 }} transition={{ type: "spring", bounce: 0.5 }}>
             <rect x="10" y="65" width="80" height="22" rx="4" fill="#D32F2F" stroke="#B71C1C" strokeWidth="1" />
             <text x="50" y="80" fontSize="8" fontWeight="900" fill="white" textAnchor="middle" style={{fontFamily: 'Arial Black'}}>{type === 'giftme' ? 'GIFT ME' : type.toUpperCase()}</text>
@@ -118,9 +119,10 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: isRight ? 'scaleX(-1)' : 'none' }}>
           {defs}
           <FaceBase fill="url(#angerGrad)" anger />
-          <motion.g animate={{ rotate: [0, 60, -20, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ originX: "50px", originY: "50px" }}>
-            <rect x="80" y="20" width="22" height="14" rx="2" fill="#424242" />
-            <rect x="89" y="34" width="5" height="18" rx="1" fill="#795548" />
+          <motion.g animate={{ rotate: [0, 45, -10, 0] }} transition={{ duration: 0.4, repeat: Infinity }} style={{ originX: "50px", originY: "50px" }}>
+            <rect x="75" y="15" width="22" height="14" rx="2" fill="#424242" />
+            <rect x="84" y="29" width="5" height="18" rx="1" fill="#795548" />
+            <circle cx="86" cy="48" r="7" fill="url(#emojiHDGrad)" stroke="#E65100" strokeWidth="0.6" />
           </motion.g>
           <circle cx="35" cy="55" r="6" fill="black" /><circle cx="65" cy="55" r="6" fill="black" />
           <path d="M 40 80 Q 50 72 60 80" stroke="black" strokeWidth="4" fill="none" />
@@ -168,10 +170,10 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase fill="url(#angerGrad)" anger />
-          <path d="M 20 30 L 45 42 M 80 30 L 55 42" stroke="black" strokeWidth="6" strokeLinecap="round" />
-          <circle cx="35" cy="50" r="7" fill="white" /><circle cx="35" cy="50" r="3" fill="black" />
-          <circle cx="65" cy="50" r="7" fill="white" /><circle cx="65" cy="50" r="3" fill="black" />
-          <path d="M 30 80 Q 50 65 70 80" stroke="black" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <motion.path d="M 20 35 L 45 42 M 80 35 L 55 42" stroke="black" strokeWidth="6" strokeLinecap="round" animate={{ y: [-2, 2] }} transition={{ repeat: Infinity, duration: 0.3 }} />
+          <circle cx="35" cy="52" r="7" fill="white" /><circle cx="35" cy="52" r="3" fill="black" />
+          <circle cx="65" cy="52" r="7" fill="white" /><circle cx="65" cy="52" r="3" fill="black" />
+          <path d="M 30 82 Q 50 65 70 82" stroke="black" strokeWidth="5" fill="none" strokeLinecap="round" />
         </svg>
       );
 
@@ -180,8 +182,8 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase />
-          <path d="M 15 42 H 48 V 55 Q 32 60 15 55 Z M 52 42 H 85 V 55 Q 68 60 52 55 Z" fill="#212121" />
-          <path d="M 30 75 Q 50 85 70 75" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M 15 50 H 48 V 62 Q 32 67 15 62 Z M 52 50 H 85 V 62 Q 68 67 52 62 Z" fill="#212121" />
+          <path d="M 30 80 Q 50 90 70 80" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round" />
         </svg>
       );
 
@@ -204,28 +206,31 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
 
 export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | null, size?: string }) {
   const [activeEmoji, setActiveEmoji] = useState<{ id: number, type: string } | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (emoji) {
+      if (timerRef.current) clearTimeout(timerRef.current);
       const newEmoji = { id: Date.now(), type: emoji };
       setActiveEmoji(newEmoji);
-      const timer = setTimeout(() => setActiveEmoji(null), 3500);
-      return () => clearTimeout(timer);
+      timerRef.current = setTimeout(() => setActiveEmoji(null), 3500);
+    } else {
+      setActiveEmoji(null);
     }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [emoji]);
 
   if (!activeEmoji) return null;
-
-  const sizeClasses: Record<string, string> = { sm: 'w-24 h-24', md: 'w-36 h-36', lg: 'w-48 h-48' };
+  const sizeClasses: Record<string, string> = { sm: 'w-16 h-16', md: 'w-24 h-24', lg: 'w-32 h-32' };
 
   return (
     <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none rounded-full">
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         <motion.div
           key={activeEmoji.id}
           className={cn("drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex items-center justify-center", sizeClasses[size] || sizeClasses.md)}
-          initial={{ scale: 0, y: 50 }}
-          animate={{ scale: 1.4, y: 0 }}
+          initial={{ scale: 0, y: 50, opacity: 0 }}
+          animate={{ scale: 1.4, y: 0, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
@@ -235,3 +240,4 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | 
     </div>
   );
 }
+
