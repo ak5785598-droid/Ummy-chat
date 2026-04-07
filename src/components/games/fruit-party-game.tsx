@@ -28,7 +28,6 @@ const ITEMS = [
   { id: 'pear', emoji: '🍐', multiplier: 5, label: '×5', color: 'from-lime-400 to-green-600', index: 8 },
 ];
 
-// Attractive & Vibrant Chips
 const CHIPS = [
   { value: 5000, label: '5K', color: 'from-cyan-400 to-blue-600 shadow-blue-500/50' },
   { value: 50000, label: '50K', color: 'from-pink-400 to-rose-600 shadow-rose-500/50' },
@@ -38,67 +37,23 @@ const CHIPS = [
 
 const SEQUENCE = [0, 1, 2, 5, 8, 7, 6, 3];
 
-const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
-  if (muted) return;
-  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  
-  if (type === 'bet') {
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-  } else if (type === 'spin') {
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-  }
-  
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.1);
-};
-
-const BranchDecoration = ({ className, delay, reverse = false }: { className?: string; delay: number; reverse?: boolean }) => (
-  <motion.div
-    initial={{ rotate: reverse ? 5 : -5 }}
-    animate={{ rotate: reverse ? -5 : 5 }}
-    transition={{ duration: 4, repeat: Infinity, repeatType: "mirror", delay }}
-    className={cn("pointer-events-none opacity-90 z-30", className, reverse ? "scale-x-[-1]" : "")}
-  >
-    <svg width="120" height="100" viewBox="0 0 100 100">
-      <path d="M0 50 Q 30 40, 70 80" stroke="#1b4a1a" strokeWidth="8" fill="none" strokeLinecap="round" />
-      <path d="M0 50 Q 50 45, 90 20" stroke="#2d6a27" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <motion.text animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity }} x="40" y="70" className="text-[24px]">🌿</motion.text>
-      <motion.text animate={{ y: [0, 5, 0] }} transition={{ duration: 2.5, repeat: Infinity }} x="70" y="30" className="text-[18px]">🍎</motion.text>
-    </svg>
-  </motion.div>
-);
-
-const DJVisualizer = ({ colorClass = "bg-pink-500" }: { colorClass?: string }) => (
-  <div className="flex items-end gap-0.5 h-12 px-1">
-    {[...Array(5)].map((_, i) => (
-      <motion.div
-        key={i}
-        animate={{ height: [4, 48, 12, 40, 8] }}
-        transition={{ duration: 0.5 + Math.random(), repeat: Infinity, ease: "easeInOut", delay: i * 0.1 }}
-        className={cn("w-1.5 rounded-t-full shadow-[0_0_10px_rgba(255,255,255,0.3)]", colorClass)}
-      />
-    ))}
-  </div>
-);
-
-const VisualizerPillar = ({ height = "h-60", colors = ['#ff3366', '#ffcc00', '#00ffcc'] }: { height?: string, colors?: string[] }) => (
-  <div className={cn("flex flex-col gap-1 w-4 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md shadow-2xl z-20", height)}>
-    {Array.from({ length: 10 }).map((_, i) => (
+// Improved Volume Visualizer Pillar (Blue & Pink Mix)
+const VolumePillar = () => (
+  <div className="flex flex-col-reverse gap-0.5 w-3 bg-black/80 p-0.5 rounded-full border border-white/5 h-48 shadow-2xl">
+    {Array.from({ length: 12 }).map((_, i) => (
       <motion.div
         key={i}
         animate={{ 
-          opacity: [0.4, 1, 0.4],
-          scaleX: [1, 1.3, 1],
-          backgroundColor: i < 3 ? colors[0] : i < 7 ? colors[1] : colors[2]
+          opacity: [0.2, 1, 0.2],
+          backgroundColor: i > 6 ? '#ec4899' : '#3b82f6', // Pink top, Blue bottom
+          boxShadow: i > 6 ? '0 0 8px #ec4899' : '0 0 8px #3b82f6'
         }}
-        transition={{ duration: Math.random() * 0.5 + 0.2, repeat: Infinity, delay: i * 0.08 }}
-        className="w-full h-full rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+        transition={{ 
+          duration: 0.4 + Math.random(), 
+          repeat: Infinity, 
+          delay: i * 0.05 
+        }}
+        className="w-full h-3 rounded-sm"
       />
     ))}
   </div>
@@ -147,7 +102,6 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    toast({ title: 'No coins!', variant: 'destructive' });
    return;
   }
-  playSound('bet', isMuted);
   setLocalCoins(prev => prev - selectedChip);
   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
   setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
@@ -160,23 +114,16 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const targetIdx = ITEMS.findIndex(i => i.id === winItem.id);
   
   let currentStep = 0;
-  const totalSteps = (SEQUENCE.length * 8) + SEQUENCE.indexOf(targetIdx); 
-  let speed = 40;
+  const totalSteps = (SEQUENCE.length * 6) + SEQUENCE.indexOf(targetIdx); 
+  let speed = 50;
 
   const run = () => {
    setHighlightIdx(SEQUENCE[currentStep % SEQUENCE.length]);
-   playSound('spin', isMuted);
    if (currentStep < totalSteps) {
-    const remaining = totalSteps - currentStep;
-    if (remaining < 4) speed += 120;
-    else if (remaining < 8) speed += 60;
-    else if (remaining < 15) speed += 30;
-    else if (remaining < 25) speed += 15;
-    else if (remaining < 40) speed += 5;
     currentStep++;
     setTimeout(run, speed);
    } else {
-    setTimeout(() => finalizeResult(winItem), 1200);
+    setTimeout(() => finalizeResult(winItem), 1000);
    }
   };
   run();
@@ -185,7 +132,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const finalizeResult = (winItem: any) => {
   const bet = myBets[winItem.id] || 0;
   const winAmount = bet * winItem.multiplier;
-  setHistory(prev => [winItem.id, ...prev].slice(0, 8));
+  setHistory(prev => [winItem.id, ...prev].slice(0, 6));
   
   if (winAmount > 0) {
     setLocalCoins(prev => prev + winAmount);
@@ -200,66 +147,44 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    setHighlightIdx(null);
    setGameState('betting');
    setTimeLeft(30);
-  }, 4000);
+  }, 3500);
  };
 
  return (
-  <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans">
-   {/* --- Branches: Only Top and Bottom (No Middle) --- */}
-   <div className="absolute top-4 left-[-15px] w-28 z-30 pointer-events-none">
-     <BranchDecoration delay={0} />
-   </div>
-   <div className="absolute top-4 right-[-15px] w-28 z-30 pointer-events-none">
-     <BranchDecoration delay={0.2} reverse />
-   </div>
-   <div className="absolute bottom-40 left-[-15px] w-28 z-30 pointer-events-none">
-     <BranchDecoration delay={0.5} />
-   </div>
-   <div className="absolute bottom-40 right-[-15px] w-28 z-30 pointer-events-none">
-     <BranchDecoration delay={0.7} reverse />
-   </div>
-
-   <header className="relative pt-6 px-6 flex flex-col items-center z-20">
-      <div className="flex justify-between items-center w-full mb-4">
-        <button onClick={() => setIsMuted(!isMuted)} className="p-2.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-xl shadow-lg">
-          {isMuted ? <VolumeX size={20} className="text-red-400"/> : <Volume2 size={20} className="text-green-400"/>}
+  <div className="fixed top-0 left-0 right-0 h-[65vh] bg-[#0d041a] text-white flex flex-col overflow-hidden select-none font-sans border-b-2 border-purple-500/30 rounded-b-[2rem] shadow-2xl">
+   
+   <header className="pt-4 px-4 flex flex-col items-center z-20">
+      <div className="flex justify-between items-center w-full mb-2">
+        <button onClick={() => setIsMuted(!isMuted)} className="p-1.5 bg-white/5 rounded-xl border border-white/10">
+          {isMuted ? <VolumeX size={16} className="text-red-400"/> : <Volume2 size={16} className="text-blue-400"/>}
         </button>
-        <div className="relative">
-          <h1 className="text-3xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-orange-400 to-red-500 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">FRUIT PARTY</h1>
-          <Sparkles className="absolute -top-2 -right-6 text-yellow-400 w-5 h-5 animate-pulse" />
-        </div>
-        <button onClick={onClose} className="p-2.5 bg-red-500/20 text-red-500 rounded-2xl border border-red-500/30 shadow-lg">
-          <X size={20}/>
+        <h1 className="text-xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-blue-400">FRUIT PARTY</h1>
+        <button onClick={onClose} className="p-1.5 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20">
+          <X size={16}/>
         </button>
       </div>
 
-      <div className="bg-black/60 backdrop-blur-2xl px-4 py-2 rounded-2xl border border-white/10 flex gap-2 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
+      <div className="bg-black/40 px-3 py-1 rounded-full border border-white/5 flex gap-1.5">
         {history.map((id, i) => (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} key={i} className="text-xl filter drop-shadow-md">{ITEMS.find(it => it.id === id)?.emoji}</motion.span>
+          <span key={i} className="text-sm">{ITEMS.find(it => it.id === id)?.emoji}</span>
         ))}
       </div>
    </header>
 
-   <main className="flex-1 flex items-center justify-between px-4 relative z-10">
-      <VisualizerPillar height="h-72" />
+   <main className="flex-1 flex items-center justify-around px-2 relative">
+      <VolumePillar />
       
-      <div className="flex-1 flex flex-col items-center gap-4">
-        <div className={cn("p-1.5 rounded-[3rem] transition-all duration-700", 
-             gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 via-white to-yellow-400 shadow-[0_0_100px_rgba(255,255,255,0.4)] scale-[1.02]" : "bg-indigo-500/30 shadow-2xl")}>
-          <div className="bg-[#120626] rounded-[2.8rem] p-4 grid grid-cols-3 gap-3 w-[310px] aspect-square relative border border-white/10">
+      <div className="flex flex-col items-center gap-3 scale-90">
+        <div className={cn("p-1 rounded-[2.5rem] transition-all", 
+             gameState === 'spinning' ? "bg-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.5)]" : "bg-purple-900/40")}>
+          <div className="bg-[#120626] rounded-[2.3rem] p-3 grid grid-cols-3 gap-2 w-[240px] aspect-square relative border border-white/5">
             {ITEMS.map((item, idx) => {
               if (item.id === 'timer') {
                 return (
-                  <div key="timer" className="bg-black/80 rounded-[2rem] flex items-center justify-center border-2 border-yellow-500/30 overflow-hidden">
-                    <AnimatePresence mode="wait">
-                        <motion.span 
-                            key={gameState === 'betting' ? timeLeft : 'spin'}
-                            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
-                            className="text-4xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] tabular-nums"
-                        >
-                            {gameState === 'betting' ? timeLeft : <Music className="animate-spin" />}
-                        </motion.span>
-                    </AnimatePresence>
+                  <div key="timer" className="bg-black/60 rounded-3xl flex items-center justify-center border border-blue-500/30">
+                    <span className="text-2xl font-black text-blue-400 tabular-nums">
+                        {gameState === 'betting' ? timeLeft : 'GO!'}
+                    </span>
                   </div>
                 );
               }
@@ -270,105 +195,74 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
                   key={item.id}
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "relative flex flex-col items-center justify-center rounded-[1.8rem] transition-all duration-200 border-b-4 active:border-b-0 active:translate-y-1 overflow-hidden group",
-                    isHighlighted ? "scale-110 z-20 shadow-[0_0_40px_rgba(255,255,255,0.8)] border-white ring-4 ring-white/50 bg-white" : "border-black/40 shadow-xl",
-                    `bg-gradient-to-br ${item.color} opacity-95`,
-                    gameState === 'spinning' && !isHighlighted && "grayscale-[0.5] opacity-50"
+                    "relative flex flex-col items-center justify-center rounded-2xl transition-all border-b-2 active:translate-y-0.5",
+                    isHighlighted ? "scale-105 z-10 shadow-[0_0_20px_white] border-white bg-white" : "border-black/20",
+                    `bg-gradient-to-br ${item.color}`,
+                    gameState === 'spinning' && !isHighlighted && "opacity-40"
                   )}
                 >
-                  <span className={cn("text-4xl mb-1 filter drop-shadow-md z-10 transition-transform", isHighlighted && "scale-125")}>{item.emoji}</span>
-                  <span className="text-[9px] font-black text-white/90 bg-black/20 px-2 rounded-full z-10">{item.label}</span>
+                  <span className="text-2xl mb-0.5">{item.emoji}</span>
+                  <span className="text-[7px] font-bold text-white/80">{item.label}</span>
                   {myBets[item.id] > 0 && (
-                    <div className="absolute top-1 right-1 bg-white text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-20">
-                      {myBets[item.id] >= 1000 ? (myBets[item.id]/1000).toFixed(0)+'k' : myBets[item.id]}
+                    <div className="absolute -top-1 -right-1 bg-white text-black text-[8px] font-black px-1 rounded-full shadow-md z-20">
+                      {(myBets[item.id]/1000).toFixed(0)}k
                     </div>
                   )}
-                  <AnimatePresence>{isHandPointing && (
-                    <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                      <Pointer size={40} className="text-white fill-white drop-shadow-[0_0_15px_white] -rotate-45 animate-bounce" />
-                    </motion.div>
-                  )}</AnimatePresence>
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex items-center gap-4 z-20">
-           <DJVisualizer colorClass="bg-blue-400" />
-           <div className="flex gap-4">
-            {[1, 2].map(i => (
-              <div key={i} className="bg-gradient-to-br from-indigo-600/40 via-purple-600/40 to-pink-600/40 p-5 rounded-[2.2rem] border-2 border-white/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] backdrop-blur-md relative">
-                <motion.span animate={gameState === 'spinning' ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}} transition={{ repeat: Infinity, duration: 0.5 }} className="text-4xl block filter drop-shadow-md">🥗</motion.span>
-              </div>
-            ))}
+        {/* Small Balance Card */}
+        <div className="w-[180px] bg-white/5 p-2 rounded-xl border border-white/10 flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <GoldCoinIcon className="w-3 h-3 text-yellow-400" />
+              <p className="text-sm font-bold text-white tabular-nums">{localCoins.toLocaleString()}</p>
            </div>
-           <DJVisualizer colorClass="bg-pink-500" />
-        </div>
-
-        <div className="w-[280px] bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-purple-900/60 p-3 rounded-2xl border border-white/20 flex items-center justify-between shadow-2xl backdrop-blur-md z-20">
-           <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-xl border-b-2 border-orange-800">
-                <GoldCoinIcon className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-[8px] text-indigo-300 font-bold uppercase tracking-widest">My Balance</p>
-                <p className="text-xl font-black text-white tabular-nums">{localCoins.toLocaleString()}</p>
-              </div>
-           </div>
-           <div className="bg-black/40 px-2 py-1 rounded-lg border border-white/5 font-mono text-[9px] text-white/40">
-              #{currentUser?.uid?.slice(0,4).toUpperCase()}
-           </div>
+           <div className="text-[7px] text-white/30 font-mono">#{currentUser?.uid?.slice(0,4)}</div>
         </div>
       </div>
       
-      <VisualizerPillar height="h-72" />
+      <VolumePillar />
    </main>
 
-   {/* --- Wooden Design Chips Bar --- */}
-   <footer className="relative mt-auto p-6 z-40">
-      {/* Container Bar with Wooden Effect */}
-      <div className="bg-gradient-to-b from-[#6d4c41] via-[#4e342e] to-[#3e2723] rounded-[3rem] p-5 border-y-4 border-[#8d6e63] shadow-[0_10px_40px_rgba(0,0,0,0.8),inset_0_2px_10px_rgba(255,255,255,0.1)] relative overflow-hidden">
-        {/* Grain Texture Overlay */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
-        
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center relative z-10">
-          {CHIPS.map(chip => (
-            <button 
-              key={chip.value} 
-              disabled={gameState !== 'betting'}
-              onClick={() => setSelectedChip(chip.value)}
-              className={cn(
-                "w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all border-[3px] shadow-[0_8px_0_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-2 bg-gradient-to-br",
-                chip.color,
-                selectedChip === chip.value ? "ring-4 ring-white scale-110 z-10 border-white" : "opacity-60 scale-90",
-                gameState !== 'betting' && "opacity-20 grayscale cursor-not-allowed"
-              )}
-            >
-                <span className="text-white font-black text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{chip.label}</span>
-                <div className="w-8 h-1 bg-white/20 rounded-full mt-1" />
-            </button>
-          ))}
-        </div>
+   {/* Compact Chips Bar */}
+   <footer className="p-3 mt-auto bg-black/40 backdrop-blur-md">
+      <div className="flex gap-3 justify-center items-center">
+        {CHIPS.map(chip => (
+          <button 
+            key={chip.value} 
+            disabled={gameState !== 'betting'}
+            onClick={() => setSelectedChip(chip.value)}
+            className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center transition-all border-2 text-[10px] font-black text-white bg-gradient-to-br",
+              chip.color,
+              selectedChip === chip.value ? "ring-2 ring-white scale-110" : "opacity-40 scale-90"
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
    </footer>
 
    <AnimatePresence>
     {gameState === 'result' && winnerData && (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
-        <motion.div initial={{ scale: 0.7, y: 50 }} animate={{ scale: 1, y: 0 }} className="bg-gradient-to-b from-[#2d0b5a] to-[#120626] border-4 border-yellow-400 rounded-[3.5rem] p-10 flex flex-col items-center shadow-2xl">
-          <Trophy className="text-yellow-400 w-16 h-16 mb-6 animate-bounce" />
-          <div className="text-9xl mb-8">{winnerData.emoji}</div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-[#120626] border-2 border-blue-400 rounded-[2rem] p-6 flex flex-col items-center">
+          <div className="text-6xl mb-4">{winnerData.emoji}</div>
           {winnerData.win > 0 ? (
             <div className="text-center">
-              <p className="text-green-400 font-black text-xl uppercase tracking-widest mb-2 animate-pulse">BIG WIN!</p>
-              <p className="text-6xl font-black text-white">+{winnerData.win.toLocaleString()}</p>
+              <p className="text-blue-400 font-bold text-xs uppercase tracking-widest">WINNER</p>
+              <p className="text-3xl font-black text-white">+{winnerData.win.toLocaleString()}</p>
             </div>
-          ) : <p className="text-white/20 font-black text-2xl italic">BETTER LUCK NEXT TIME</p>}
+          ) : <p className="text-white/40 font-bold">NEXT TIME!</p>}
         </motion.div>
       </motion.div>
     )}
    </AnimatePresence>
   </div>
  );
-}
+  }
+       
