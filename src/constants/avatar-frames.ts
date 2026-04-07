@@ -284,6 +284,61 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'float',
     extraType: 'none',
     particleType: 'stars'
+  },
+  'phoenix-flame': {
+    id: 'phoenix-flame',
+    name: 'Phoenix Flame',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #F97316, #EF4444, #F97316)',
+    borderColor: '#EF4444',
+    glowColor: 'rgba(239, 68, 68, 0.6)',
+    imageUrl: '/images/frames/phoenix_flame.png',
+    animationType: 'pulse',
+    extraType: 'none'
+  },
+  'emerald-vine': {
+    id: 'emerald-vine',
+    name: 'Emerald Vine',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #065F46, #10B981, #065F46)',
+    borderColor: '#10B981',
+    glowColor: 'rgba(16, 185, 129, 0.6)',
+    imageUrl: '/images/frames/emerald_vine.png',
+    animationType: 'float',
+    extraType: 'none'
+  },
+  'silver-crown': {
+    id: 'silver-crown',
+    name: 'Silver Crown',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #D1D5DB, #F3F4F6, #D1D5DB)',
+    borderColor: '#F3F4F6',
+    glowColor: 'rgba(243, 244, 246, 0.6)',
+    imageUrl: '/images/frames/silver_crown.png',
+    animationType: 'float',
+    extraType: 'none'
+  },
+  'angel-wing': {
+    id: 'angel-wing',
+    name: 'Angel Wing',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #BFDBFE, #EFF6FF, #BFDBFE)',
+    borderColor: '#EFF6FF',
+    glowColor: 'rgba(239, 246, 255, 0.6)',
+    imageUrl: '/images/frames/angel_wing.png',
+    animationType: 'float',
+    extraType: 'none'
+  },
+  'dark-star': {
+    id: 'dark-star',
+    name: 'Dark Star',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
+    borderColor: '#EF4444',
+    glowColor: 'rgba(239, 68, 68, 0.6)',
+    imageUrl: '/images/frames/dark_star.png',
+    animationType: 'pulse',
+    extraType: 'none'
   }
 };
 // End of registry
