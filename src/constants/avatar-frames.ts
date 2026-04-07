@@ -295,8 +295,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/phoenix_flame.png',
-    scaleMultiplier: 2.2,
-    holeRatio: 0.72,
+    scaleMultiplier: 2.22,
+    holeRatio: 0.45,
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -308,8 +308,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#10B981',
     glowColor: 'rgba(16, 185, 129, 0.6)',
     imageUrl: '/images/frames/emerald_vine.png',
-    scaleMultiplier: 2.4,
-    holeRatio: 0.60,
+    scaleMultiplier: 2.08,
+    holeRatio: 0.48,
     animationType: 'float',
     extraType: 'none'
   },
@@ -321,8 +321,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#F3F4F6',
     glowColor: 'rgba(243, 244, 246, 0.6)',
     imageUrl: '/images/frames/silver_crown.png',
-    scaleMultiplier: 1.8,
-    holeRatio: 0.75,
+    scaleMultiplier: 1.69,
+    holeRatio: 0.59,
     animationType: 'float',
     extraType: 'none'
   },
@@ -334,8 +334,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EFF6FF',
     glowColor: 'rgba(239, 246, 255, 0.6)',
     imageUrl: '/images/frames/angel_wing.png',
-    scaleMultiplier: 1.8,
-    holeRatio: 0.75,
+    scaleMultiplier: 1.81,
+    holeRatio: 0.55,
     animationType: 'float',
     extraType: 'none'
   },
@@ -347,8 +347,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/dark_star.png',
-    scaleMultiplier: 3.2,
-    holeRatio: 0.45,
+    scaleMultiplier: 2.32,
+    holeRatio: 0.43,
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -360,8 +360,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/Red_star.png',
-    scaleMultiplier: 2.8,
-    holeRatio: 0.44,
+    scaleMultiplier: 2.38,
+    holeRatio: 0.42,
     animationType: 'pulse',
     extraType: 'none'
   }

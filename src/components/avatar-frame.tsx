@@ -123,8 +123,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           style={{
             width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
-            // Accurate mask: Inner hole (transparent) -> Frame (black) -> Outer edge (transparent)
-            // We want the inner hole to be exactly 'pixelSize' (the DP size)
+            // Mask precisely to the DP size (pixelSize)
             maskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
             WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
           }}
@@ -132,11 +131,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-contain"
-            style={{
-              // Zoom into the image based on holeRatio so the hole fits the mask
-              transform: `scale(${1 / (config.holeRatio || 0.65)})`
-            }}
+            className="w-full h-full object-cover" // object-cover to ensure full bleed
           />
         </div>
       ) : (
