@@ -47,10 +47,10 @@ export function RankingCard() {
          <Crown className="h-2.5 w-2.5 text-white fill-current" />
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">Ranking</span>
       </div>
-      <div className="relative flex items-end justify-center h-full w-full pb-1">
-         {(isHydrated && topUsers?.[1]) && <Avatar className="h-6 w-6 border border-blue-200 -mr-2 shadow-lg scale-90"><AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
-         {(isHydrated && topUsers?.[0]) && <div className="relative z-10"><Avatar className="h-10 w-10 border-2 border-yellow-200 shadow-xl"><AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback></Avatar><div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full border border-white"><Crown className="h-1.5 w-1.5 text-white fill-current" /></div></div>}
-         {(isHydrated && topUsers?.[2]) && <Avatar className="h-6 w-6 border border-amber-500 -ml-2 shadow-lg scale-90"><AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
+      <div className="relative flex items-end justify-center h-full w-full pb-1 gap-1">
+         {(isHydrated && topUsers?.[1]) && <Avatar className="h-6 w-6 border border-white/40 shadow-lg scale-90 ring-1 ring-white/20"><AvatarImage src={topUsers[1].avatarUrl} /><AvatarFallback>2</AvatarFallback></Avatar>}
+         {(isHydrated && topUsers?.[0]) && <div className="relative z-10"><Avatar className="h-10 w-10 border-2 border-white/60 shadow-xl ring-2 ring-white/20"><AvatarImage src={topUsers[0].avatarUrl} /><AvatarFallback>1</AvatarFallback></Avatar><div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-500 p-0.5 rounded-full border border-white"><Crown className="h-1.5 w-1.5 text-white fill-current" /></div></div>}
+         {(isHydrated && topUsers?.[2]) && <Avatar className="h-6 w-6 border border-white/40 shadow-lg scale-90 ring-1 ring-white/20"><AvatarImage src={topUsers[2].avatarUrl} /><AvatarFallback>3</AvatarFallback></Avatar>}
       </div>
     </button>
   );
@@ -82,7 +82,7 @@ export function FamilyCard() {
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">Family</span>
       </div>
       <div className="relative flex items-center justify-center h-full w-full pb-1">
-         <div className="relative flex -space-x-4">
+         <div className="relative flex gap-2 items-center">
             <Avatar className="h-8 w-8 border border-white/20 shadow-xl bg-blue-900/40"><AvatarImage src={(isHydrated && topFamilies?.[1]?.bannerUrl) || ""} /><AvatarFallback className="text-[5px]">F2</AvatarFallback></Avatar>
             <Avatar className="h-10 w-10 border-2 border-white shadow-2xl bg-blue-900"><AvatarImage src={(isHydrated && topFamilies?.[0]?.bannerUrl) || ""} /><AvatarFallback className="text-[5px]">F1</AvatarFallback></Avatar>
          </div>
@@ -117,9 +117,9 @@ export function CpCard() {
          <span className="text-white font-black uppercase text-[7px] tracking-widest italic drop-shadow-md">CP Pair</span>
       </div>
       <div className="relative flex items-center justify-center h-full w-full pb-1">
-         <div className="flex -space-x-3">
-            <Avatar className="h-8 w-8 border border-pink-500 bg-pink-100/20"><AvatarImage src={(isHydrated && topCp?.[0]?.user1Avatar) || ""} /><AvatarFallback>P1</AvatarFallback></Avatar>
-            <Avatar className="h-8 w-8 border border-red-500 bg-red-100/20"><AvatarImage src={(isHydrated && topCp?.[0]?.user2Avatar) || ""} /><AvatarFallback>P2</AvatarFallback></Avatar>
+         <div className="flex gap-1.5">
+            <Avatar className="h-8 w-8 border-2 border-pink-500/40 bg-pink-100/20 shadow-md ring-1 ring-white/10"><AvatarImage src={(isHydrated && topCp?.[0]?.user1Avatar) || ""} /><AvatarFallback>P1</AvatarFallback></Avatar>
+            <Avatar className="h-8 w-8 border-2 border-red-500/40 bg-red-100/20 shadow-md ring-1 ring-white/10"><AvatarImage src={(isHydrated && topCp?.[0]?.user2Avatar) || ""} /><AvatarFallback>P2</AvatarFallback></Avatar>
          </div>
       </div>
     </button>

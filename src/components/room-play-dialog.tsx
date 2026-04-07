@@ -359,9 +359,9 @@ export function RoomPlayDialog({
   };
 
   const gameGrid = [
-    { id: 'game-selector', label: '🎮 Games',icon: 'https://img.icons8.com/color/96/video-game.png',color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); } },
-    { id: 'music', label: 'Music', icon: 'https://img.icons8.com/color/96/musical-notes.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => { setView('music'); onToggleMiniPlayer?.(); } },
-    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: 'https://img.icons8.com/color/96/mute.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: handleToggleVoice }, 
+    { id: 'game-selector', label: 'Games', icon: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_game_controller_icon_1775544183875.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); } },
+    { id: 'music', label: 'Music', icon: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_music_notes_icon_1775544207576.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => { setView('music'); onToggleMiniPlayer?.(); } },
+    { id: 'voice-off',  label: room?.isVoiceMuted ? 'Voice Off' : 'Voice On', icon: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_microphone_icon_1775544232062.png', color: room?.isVoiceMuted  ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: handleToggleVoice }, 
   ] ;
   return (
     <AnimatePresence>

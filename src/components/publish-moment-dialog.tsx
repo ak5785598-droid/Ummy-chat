@@ -71,9 +71,12 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
      userId: user.uid,
      username: userProfile?.username || 'Tribe Member',
      avatarUrl: userProfile?.avatarUrl || '',
+     userLevel: userProfile?.level?.rich || 1,
+     userCountry: userProfile?.country || 'IN',
      content: content.trim(),
      imageUrl,
      likes: 0,
+     commentsCount: 0,
      createdAt: serverTimestamp()
     });
 

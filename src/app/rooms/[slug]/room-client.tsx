@@ -594,9 +594,13 @@ export function RoomClient({ room }: { room: Room }) {
     const validSlugs = ['carrom', 'chess', 'ludo'];
     const lowerSlug = slug.toLowerCase();
     const target = validSlugs.find(s => lowerSlug.includes(s));
+    
     if (target) {
       setActiveGameSlug(target);
-      setIsRoomGamesOpen(false);
+      setIsRoomGamesOpen(false); // Close menu if we are jumping into a game
+    } else if (lowerSlug.includes('open') || lowerSlug.includes('menu')) {
+      setIsRoomGamesOpen(true);
+      toast({ title: 'AI: Opening Games Hub! 🎮✨' });
     }
   };
 
@@ -689,7 +693,9 @@ export function RoomClient({ room }: { room: Room }) {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN';
+    // DYNAMIC LANG: Check user profile country, default to Hindi (India)
+    const userCountry = userProfile?.country || 'IN';
+    recognition.lang = userCountry === 'AE' ? 'ar-AE' : userCountry === 'US' ? 'en-US' : 'hi-IN';
     recognition.interimResults = true; // QUICK RESPONSE: Provide live feedback
     recognition.continuous = false; // ONE-SHOT: respond as soon as speaking stops
     recognition.maxAlternatives = 1;
@@ -1032,6 +1038,11 @@ export function RoomClient({ room }: { room: Room }) {
               handleAILockSeat(index);
               toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
             }
+          }
+        } else if (upperResponse.includes('[CMD:GAMES:OPEN]')) {
+          if (isAdminAction) {
+            setIsRoomGamesOpen(true);
+            toast({ title: 'Sovereign Master', description: 'Opening the Games Library... 🎮' });
           }
         } else if (upperResponse.includes('[CMD:GAME:')) {
           const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/i)?.[1];
@@ -1774,15 +1785,17 @@ export function RoomClient({ room }: { room: Room }) {
 
         <RoomTrophyBadge coins={room.stats?.totalGifts || 0} />
 
-        {/* Floating Top-Right Badge (Golden Task Jar) */}
-        <div className="absolute top-24 right-4 animate-reaction-float z-50">
-          <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
-            <Image src="/images/golden_task_jar.png" width={64} height={64} alt="Golden Task Jar" className="bg-transparent" />
-            {achievedTasks.some(id => !claimedTasks.includes(id)) && (
-              <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
-            )}
+        {/* Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY */}
+        {(isHydrated && isOwner) && (
+          <div className="absolute top-24 right-4 animate-reaction-float z-50">
+            <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
+              <Image src="/images/golden_task_jar.png" width={64} height={64} alt="Golden Task Jar" className="bg-transparent" />
+              {achievedTasks.some(id => !claimedTasks.includes(id)) && (
+                <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full mt-2">

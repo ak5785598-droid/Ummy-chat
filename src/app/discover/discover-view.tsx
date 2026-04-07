@@ -161,7 +161,7 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
                   <AvatarFallback>{moment.username?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-black text-black">
-                  Lv.68
+                  Lv.{moment.userLevel || 1}
                 </div>
               </div>
               <div className="space-y-1">
@@ -220,7 +220,7 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
 
               <button className="flex items-center gap-2 text-white/40 hover:text-indigo-400 transition-colors">
                 <MessageCircle className="h-6 w-6" />
-                <span className="text-xs font-black">2.4k</span>
+                <span className="text-xs font-black">{moment.commentsCount || 0}</span>
               </button>
             </div>
 

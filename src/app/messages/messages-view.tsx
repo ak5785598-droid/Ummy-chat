@@ -546,7 +546,9 @@ export default function MessagesView() {
      <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
       <div className="relative z-10 flex items-center justify-between">
        <div className="flex items-center gap-3">
-         <UmmyLogoIcon className="h-14 w-14" />
+         <div className="h-14 w-14 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex items-center justify-center p-2.5 active:scale-95 transition-transform shrink-0">
+           <UmmyLogoIcon className="h-full w-full" />
+         </div>
          <div className="flex flex-col">
           <h1 className="text-3xl font-bold uppercase tracking-tight text-slate-900 drop-shadow-sm">{t.messages.title}</h1>
           <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
