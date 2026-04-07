@@ -61,6 +61,7 @@ export type User = {
  activityPoints?: number; // Total EXP from staying in rooms/tasks
  charmPoints?: number; // Total EXP from receiving gifts
  svip?: number; // SVIP Level (1-10)
+ medals?: string[]; // Array of medal IDs
 };
 
 export type Message = {
