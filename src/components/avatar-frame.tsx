@@ -113,18 +113,14 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   // IF IMAGE URL IS PRESENT: Show ONLY the image (Same-to-Same experience)
   if (imageUrl) {
     return (
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 w-full h-full pointer-events-none z-30 flex items-center justify-center">
         <div 
           className="relative"
           style={{
             width: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
             transform: `translate(${config.offsetX || 0}px, ${config.offsetY || 0}px)`,
-            // Precision Hole Mask - punches through the image to show the avatar
-            maskImage: `radial-gradient(circle at center, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
-            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
           }}
-          // Re-triggering build for premium frames
         >
           <img 
             src={imageUrl} 
@@ -215,7 +211,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 pointer-events-none overflow-visible"
+            className="absolute inset-0 z-10 pointer-events-none overflow-visible"
           >
             <EliteFrameRenderer config={config} pixelSize={pixelSize} />
           </motion.div>
@@ -223,7 +219,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent overflow-visible"
+        "relative rounded-full w-full h-full bg-transparent overflow-visible z-20"
       )}>
         {children}
       </div>
