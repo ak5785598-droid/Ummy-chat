@@ -358,14 +358,12 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     id: 'red-star',
     name: 'Red Star',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
+    gradient: 'none',
     borderColor: '#EF4444',
-    glowColor: 'rgba(239, 68, 68, 0.6)',
+    glowColor: 'none',
     imageUrl: '/images/frames/Red_star.png',
-    scaleMultiplier: 2.38,
-    holeRatio: 0.42,
-    animationType: 'pulse',
-    extraType: 'none'
+    scaleMultiplier: 3.3,
+    animationType: 'pulse'
   },
   'cloud-sky': {
     id: 'cloud-sky',
@@ -375,7 +373,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#BAE6FD',
     glowColor: 'none',
     imageUrl: '/images/frames/Cloud_sky.png',
-    scaleMultiplier: 2.15,
+    scaleMultiplier: 3.0,
     animationType: 'float'
   },
   'lion-wings': {
@@ -386,7 +384,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#FBBF24',
     glowColor: 'none',
     imageUrl: '/images/frames/Lion_wings.png',
-    scaleMultiplier: 2.3,
+    scaleMultiplier: 3.4,
     offsetX: 0,
     offsetY: 0,
     animationType: 'pulse'
@@ -399,7 +397,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#FFD700',
     glowColor: 'none',
     imageUrl: '/images/frames/Mystic_dragon.png',
-    scaleMultiplier: 2.1,
+    scaleMultiplier: 3.2,
     animationType: 'float'
   },
   'krishna-pankh': {
@@ -410,7 +408,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#4338CA',
     glowColor: 'none',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 2.4,
+    scaleMultiplier: 3.4,
     animationType: 'float'
   }
 };
