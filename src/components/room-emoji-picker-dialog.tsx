@@ -83,10 +83,12 @@ const EmojiHD = ({ type }: { type: string }) => {
           <path d="M 55 38 Q 65 32 75 35" stroke="#3E2723" strokeWidth="3" fill="none" />
           <ellipse cx="35" cy="45" rx="6" ry="3" fill="#3E2723" />
           <ellipse cx="65" cy="45" rx="6" ry="3" fill="#3E2723" />
+          {/* Nose holes */}
           <circle cx="47" cy="52" r="1.5" fill="#3E2723" />
           <circle cx="53" cy="52" r="1.5" fill="#3E2723" />
-          <path d="M 55 75 Q 65 75 65 52" stroke="#FFD54F" strokeWidth="6" strokeLinecap="round" />
-          <circle cx="65" cy="52" r="3" fill="#FFD54F" /> 
+          {/* Hand with finger in nose */}
+          <path d="M 50 82 Q 62 82 62 52" stroke="#FFD54F" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="62" cy="52" r="3" fill="#FFD54F" /> 
           <circle cx="50" cy="72" r="4" fill="#3E2723" />
         </svg>
       );
@@ -98,8 +100,10 @@ const EmojiHD = ({ type }: { type: string }) => {
           <FaceBase blush />
           <circle cx="32" cy="45" r="5" fill="#3E2723" />
           <circle cx="68" cy="45" r="5" fill="#3E2723" />
-          <path d="M 50 65 L 85 75 L 85 55 Z" fill="#FF5252" stroke="#B71C1C" strokeWidth="1" />
-          <path d="M 50 65 Q 45 70 55 75" fill="none" stroke="#3E2723" strokeWidth="3" />
+          {/* Mouth with thin blower */}
+          <path d="M 45 68 Q 50 72 55 68" stroke="#3E2723" strokeWidth="3" fill="none" />
+          <path d="M 50 70 L 85 85 L 85 75 Z" fill="#FF5252" stroke="#B71C1C" strokeWidth="1" />
+          {/* Confetti and Sparkles */}
           <rect x="20" y="20" width="4" height="4" fill="#FF4081" transform="rotate(45)" />
           <rect x="70" y="15" width="4" height="4" fill="#7C4DFF" transform="rotate(20)" />
           <circle cx="50" cy="15" r="2" fill="#00E676" />
@@ -260,14 +264,16 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
   <Dialog open={open} onOpenChange={onOpenChange}>
    <DialogContent className="sm:max-w-[380px] bg-black/95 border border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.2)]">
     <div className="flex flex-col">
-      <div className="mx-auto w-10 h-1 bg-white/20 rounded-full mt-4 flex-shrink-0" />
-      <DialogHeader className="p-4 pb-2 text-center flex-shrink-0">
+      {/* Decreased spacing at top and increased at bottom to shift content down */}
+      <div className="mx-auto w-10 h-1 bg-white/20 rounded-full mt-2 flex-shrink-0" />
+      <DialogHeader className="p-4 pb-1 text-center flex-shrink-0">
        <DialogTitle className="text-2xl font-black italic tracking-tighter text-yellow-500">EMOJIS</DialogTitle>
       </DialogHeader>
 
-      <div className="h-[400px] overflow-y-auto px-6 py-4 custom-scrollbar">
-        {/* Added mt-6 to push cards down and gap-y-10 for vertical spacing */}
-        <div className="grid grid-cols-3 gap-y-10 gap-x-4 mt-6 pb-12">
+      {/* Increased height and spacing in scroll container to shift down */}
+      <div className="h-[440px] overflow-y-auto px-6 py-6 custom-scrollbar">
+        {/* Increased gap-y-12 for vertical spacing, pb-20 to increase length at bottom */}
+        <div className="grid grid-cols-3 gap-y-12 gap-x-4 mt-6 pb-20">
           {REACTIONS.map((item) => (
            <button 
              key={item.id} 
