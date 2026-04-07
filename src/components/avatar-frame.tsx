@@ -124,6 +124,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             maskImage: `radial-gradient(circle at center, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
             WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
           }}
+          // Re-triggering build for premium frames
         >
           <img 
             src={imageUrl} 
