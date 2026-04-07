@@ -371,57 +371,47 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     id: 'cloud-sky',
     name: 'Cloud Sky',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #0EA5E9, #FFF, #0EA5E9)',
+    gradient: 'none',
     borderColor: '#BAE6FD',
-    glowColor: 'rgba(14, 165, 233, 0.5)',
+    glowColor: 'none',
     imageUrl: '/images/frames/Cloud_sky.png',
-    scaleMultiplier: 2.05,
-    holeRatio: 0.48,
-    animationType: 'float',
-    extraType: 'clouds'
+    scaleMultiplier: 2.15,
+    animationType: 'float'
   },
   'lion-wings': {
     id: 'lion-wings',
     name: 'Lion Wings',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #B45309, #FBBF24, #B45309)',
+    gradient: 'none',
     borderColor: '#FBBF24',
-    glowColor: 'rgba(251, 191, 36, 0.6)',
+    glowColor: 'none',
     imageUrl: '/images/frames/Lion_wings.png',
-    scaleMultiplier: 2.25,
-    holeRatio: 0.44,
+    scaleMultiplier: 2.3,
     offsetX: 0,
-    offsetY: 4, // Nudge down slightly for wing balance
-    animationType: 'pulse',
-    extraType: 'wings'
+    offsetY: 0,
+    animationType: 'pulse'
   },
   'mystic-dragon-3d': {
     id: 'mystic-dragon-3d',
-    name: 'Mystic Dragon 3D',
+    name: 'Mystic Dragon',
     tier: 'legendary',
-    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #EF4444, #D4AF37)',
+    gradient: 'none',
     borderColor: '#FFD700',
-    glowColor: 'rgba(212, 175, 55, 0.7)',
+    glowColor: 'none',
     imageUrl: '/images/frames/Mystic_dragon.png',
-    scaleMultiplier: 2.15,
-    holeRatio: 0.46,
-    animationType: 'float',
-    extraType: 'dragon-body',
-    extraColor: '#FFD700'
+    scaleMultiplier: 2.1,
+    animationType: 'float'
   },
   'krishna-pankh': {
     id: 'krishna-pankh',
     name: 'Krishna Pankh',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #1E1B4B, #4338CA, #1E1B4B)',
+    gradient: 'none',
     borderColor: '#4338CA',
-    glowColor: 'rgba(79, 70, 229, 0.7)',
+    glowColor: 'none',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 2.35,
-    holeRatio: 0.42,
-    animationType: 'float',
-    extraType: 'none',
-    extraColor: '#FFD700'
+    scaleMultiplier: 2.4,
+    animationType: 'float'
   }
 };
 // End of registry
