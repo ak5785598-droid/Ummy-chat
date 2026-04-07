@@ -487,6 +487,19 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     holeRatio: 0.48,
     animationType: 'float',
     extraType: 'none'
+  },
+  'green-cyber-pulse': {
+    id: 'green-cyber-pulse',
+    name: 'Green Cyber Pulse',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #166534, #22C55E, #166534)',
+    borderColor: '#22C55E',
+    glowColor: 'rgba(34, 197, 94, 0.7)',
+    imageUrl: '/images/frames/green_cyber_pulse.png',
+    scaleMultiplier: 3.3,
+    holeRatio: 0.45,
+    animationType: 'pulse',
+    extraType: 'none'
   }
 };
 // End of registry
