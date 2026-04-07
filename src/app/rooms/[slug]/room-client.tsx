@@ -627,7 +627,11 @@ export function RoomClient({ room }: { room: Room }) {
     window.speechSynthesis.cancel();
     setIsAISpeaking(true);
 
-    const cleanText = text.replace(/\[CMD:.*?\]/g, '').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
+    const cleanText = text
+      .replace(/\[CMD:.*?\]/g, '')
+      .replace(/UMMY/gi, 'Ummy') // Normal case for smooth reading
+      .replace(/\s([A-Z])\s/g, (match, p1) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
+      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
 
     // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
     const hasHindi = /[\u0900-\u097F]/.test(cleanText);

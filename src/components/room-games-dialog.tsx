@@ -34,31 +34,31 @@ const WORKING_GAMES = [
   { 
     id: 'carrom', 
     title: 'Carrom', 
-    thumbnail: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_carrom_game_icon_1775544440234.png',
+    thumbnail: '/images/premium_3d_carrom_game_icon_1775544440234.png',
     color: 'from-orange-500 to-orange-600' 
   },
   { 
     id: 'ludo', 
     title: 'Ludo', 
-    thumbnail: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_ludo_game_icon_1775544459753.png',
+    thumbnail: '/images/premium_3d_ludo_game_icon_1775544459753.png',
     color: 'from-green-500 to-emerald-600' 
   },
   { 
     id: 'chess', 
     title: 'Chess', 
-    thumbnail: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_chess_game_icon_1775544479327.png',
+    thumbnail: '/images/premium_3d_chess_game_icon_1775544479327.png',
     color: 'from-purple-500 to-indigo-600' 
   },
   { 
     id: 'fruit-party', 
     title: 'Fruit Party', 
-    thumbnail: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_fruit_party_game_icon_1775544501942.png',
+    thumbnail: '/images/premium_3d_fruit_party_game_icon_1775544501942.png',
     color: 'from-pink-500 to-rose-600' 
   },
   { 
     id: 'forest-party', 
     title: 'Forest Party', 
-    thumbnail: '/C:/Users/HP/.gemini/antigravity/brain/1fda6d5c-c79a-482a-bbc3-11882d82c38d/premium_3d_forest_party_game_icon_1775544521843.png',
+    thumbnail: '/images/premium_3d_forest_party_game_icon_1775544521843.png',
     color: 'from-yellow-500 to-amber-600' 
   },
 ];
