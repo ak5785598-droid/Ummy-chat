@@ -239,31 +239,28 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="fixed inset-x-0 bottom-0 sm:max-w-[450px] mx-auto bg-neutral-950 border-t-2 border-yellow-500/50 p-0 rounded-t-[3rem] overflow-hidden text-white outline-none shadow-[0_-20px_50px_-10px_rgba(234,179,8,0.4)]">
-    
-    <div className="flex flex-col h-[60vh] max-h-[500px]">
+   <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
+    <div className="flex flex-col h-full">
       {/* Visual Top Handle */}
-      <div className="mx-auto w-14 h-1.5 bg-neutral-700 rounded-full mt-4 mb-2 flex-shrink-0" />
+      <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
       
       <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-       <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">
-        Emojis
-       </DialogTitle>
+       <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
       </DialogHeader>
 
-      {/* Grid Container - Perfect 9 emoji view, then scroll */}
-      <div className="flex-grow overflow-y-auto px-6 py-4 custom-scrollbar">
+      {/* Grid Container - Fixed height for 9 Emojis view, scrollable for others */}
+      <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
         <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
           {REACTIONS.map((item) => (
            <button 
              key={item.id} 
              onClick={() => handleSendEmoji(item.id)} 
-             className="flex flex-col items-center gap-2 group active:scale-90 transition-transform"
+             className="flex flex-col items-center gap-2 group transition-all active:scale-90"
            >
-            <div className="h-16 w-16 drop-shadow-2xl group-hover:scale-110 transition-transform">
+            <div className="h-16 w-16 drop-shadow-2xl group-hover:scale-110 duration-200">
               <EmojiHD type={item.id} />
             </div>
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter group-hover:text-yellow-500">
+            <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter group-hover:text-yellow-400 transition-colors">
               {item.label}
             </span>
            </button>
@@ -271,10 +268,9 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
         </div>
       </div>
     </div>
-    
     <style jsx global>{`
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #eab308; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.3); border-radius: 10px; }
     `}</style>
    </DialogContent>
   </Dialog>
