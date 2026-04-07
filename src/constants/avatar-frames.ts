@@ -351,6 +351,19 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     holeRatio: 0.45,
     animationType: 'pulse',
     extraType: 'none'
+  },
+  'red-star': {
+    id: 'red-star',
+    name: 'Red Star',
+    tier: 'legendary',
+    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
+    borderColor: '#EF4444',
+    glowColor: 'rgba(239, 68, 68, 0.6)',
+    imageUrl: '/images/frames/Red_star.png',
+    scaleMultiplier: 2.8,
+    holeRatio: 0.44,
+    animationType: 'pulse',
+    extraType: 'none'
   }
 };
 // End of registry
