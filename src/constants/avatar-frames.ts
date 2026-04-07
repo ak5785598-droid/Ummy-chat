@@ -19,6 +19,8 @@ export interface AvatarFrameConfig {
   imageUrl?: string;
   scaleMultiplier?: number;
   holeRatio?: number;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
@@ -373,8 +375,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#BAE6FD',
     glowColor: 'rgba(14, 165, 233, 0.5)',
     imageUrl: '/images/frames/Cloud_sky.png',
-    scaleMultiplier: 2.2,
-    holeRatio: 0.45,
+    scaleMultiplier: 2.05,
+    holeRatio: 0.48,
     animationType: 'float',
     extraType: 'clouds'
   },
@@ -386,10 +388,26 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#FBBF24',
     glowColor: 'rgba(251, 191, 36, 0.6)',
     imageUrl: '/images/frames/Lion_wings.png',
-    scaleMultiplier: 2.4,
-    holeRatio: 0.42,
+    scaleMultiplier: 2.25,
+    holeRatio: 0.44,
+    offsetX: 0,
+    offsetY: 4, // Nudge down slightly for wing balance
     animationType: 'pulse',
     extraType: 'wings'
+  },
+  'mystic-dragon-3d': {
+    id: 'mystic-dragon-3d',
+    name: 'Mystic Dragon 3D',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #EF4444, #D4AF37)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(212, 175, 55, 0.7)',
+    imageUrl: '/images/frames/Mystic_dragon.png',
+    scaleMultiplier: 2.15,
+    holeRatio: 0.46,
+    animationType: 'float',
+    extraType: 'dragon-body',
+    extraColor: '#FFD700'
   },
   'krishna-pankh': {
     id: 'krishna-pankh',
@@ -399,8 +417,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#4338CA',
     glowColor: 'rgba(79, 70, 229, 0.7)',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 2.3,
-    holeRatio: 0.43,
+    scaleMultiplier: 2.35,
+    holeRatio: 0.42,
     animationType: 'float',
     extraType: 'none',
     extraColor: '#FFD700'

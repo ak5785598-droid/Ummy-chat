@@ -119,19 +119,20 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* 3D Tubelike Frame Body (Enhanced Thickness) or Image Frame */}
       {imageUrl ? (
         <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+          className="absolute left-1/2 top-1/2"
           style={{
             width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
+            transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
             // Mask precisely to the DP size (pixelSize)
-            maskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
-            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
+            maskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50.5%)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50.5%)`,
           }}
         >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-cover" // object-cover to ensure full bleed
+            className="w-full h-full object-contain" // object-contain for 3D assets to prevent cropping
           />
         </div>
       ) : (
