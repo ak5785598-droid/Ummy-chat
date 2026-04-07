@@ -16,6 +16,7 @@ export interface AvatarFrameConfig {
   textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
   extraColor?: string;
   particleColor?: string;
+  imageUrl?: string;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
@@ -271,6 +272,18 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     ornament: Zap,
     animationType: 'pulse',
     particleType: 'matrix'
+  },
+  'royal-wreath': {
+    id: 'royal-wreath',
+    name: 'Royal Wreath',
+    tier: 'legendary',
+    gradient: 'conic-gradient(from 0deg, #F9E58A, #FDB931, #FFD700, #F9E58A)',
+    borderColor: '#FFD700',
+    glowColor: 'rgba(255, 215, 0, 0.4)',
+    imageUrl: '/images/frames/royal_wreath.png',
+    animationType: 'float',
+    extraType: 'none',
+    particleType: 'stars'
   }
 };
 // End of registry

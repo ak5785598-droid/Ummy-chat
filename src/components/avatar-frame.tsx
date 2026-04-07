@@ -101,7 +101,7 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
 const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
-    extraType, particleType, extraColor, particleColor, id
+    extraType, particleType, extraColor, particleColor, id, imageUrl
   } = config;
 
   const isSakura = id === 'sakura-blossom';
@@ -116,29 +116,45 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
-      {/* 3D Tubelike Frame Body (Enhanced Thickness) */}
-      <motion.div
-        animate={animationType === 'rotate' ? { rotate: 360 } : {}}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
-        style={{
-          width: `${frameDisplaySize}px`,
-          height: `${frameDisplaySize}px`,
-          padding: '8.5px', // Increased thickness (from 6px)
-          background: gradient,
-          backgroundSize: '200% 200%',
-          boxShadow: `
-            0 0 20px ${glowColor},
-            inset 0 0 12px rgba(0,0,0,0.6),
-            inset 0 0 6px rgba(255,255,255,0.4)
-          `,
-          maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-          WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-        }}
-      >
-        {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
-      </motion.div>
+      {/* 3D Tubelike Frame Body (Enhanced Thickness) or Image Frame */}
+      {imageUrl ? (
+        <div 
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+          style={{
+            width: `${pixelSize * 1.6}px`, // Slight oversized for the decorative parts
+            height: `${pixelSize * 1.6}px`,
+          }}
+        >
+          <img 
+            src={imageUrl} 
+            alt={config.name} 
+            className="w-full h-full object-contain"
+          />
+        </div>
+      ) : (
+        <motion.div
+          animate={animationType === 'rotate' ? { rotate: 360 } : {}}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
+          style={{
+            width: `${frameDisplaySize}px`,
+            height: `${frameDisplaySize}px`,
+            padding: '8.5px', // Increased thickness (from 6px)
+            background: gradient,
+            backgroundSize: '200% 200%',
+            boxShadow: `
+              0 0 20px ${glowColor},
+              inset 0 0 12px rgba(0,0,0,0.6),
+              inset 0 0 6px rgba(255,255,255,0.4)
+            `,
+            maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+          }}
+        >
+          {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
+        </motion.div>
+      )}
 
       {/* Particles */}
       <ParticleSystem type={particleType} color={particleColor || borderColor} />

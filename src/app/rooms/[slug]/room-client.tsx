@@ -1046,7 +1046,7 @@ export function RoomClient({ room }: { room: Room }) {
               toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
             }
           }
-        } else if (upperResponse.includes('[CMD:JAR:OPEN]') || upperResponse.includes('[CMD:TASKS:OPEN]') || upperResponse.includes('OPEN JAR')) {
+        } else if (upperResponse.includes('[CMD:JAR:OPEN]') || upperResponse.includes('[CMD:TASKS:OPEN]') || upperResponse.includes('JAR KHOL') || upperResponse.includes('OPEN JAR')) {
           if (isAdminAction) {
             setIsRoomTasksOpen(true);
             toast({ title: 'Sovereign Master', description: 'Opening the Golden Task Jar... ✨' });
