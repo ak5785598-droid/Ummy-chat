@@ -119,20 +119,18 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* 3D Tubelike Frame Body (Enhanced Thickness) or Image Frame */}
       {imageUrl ? (
         <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 overflow-hidden"
           style={{
-            width: `${pixelSize * 1.6}px`, // Slight oversized for the decorative parts
-            height: `${pixelSize * 1.6}px`,
+            width: `${pixelSize * 1.54}px`, // Adjusted scale to eliminate gap
+            height: `${pixelSize * 1.54}px`,
+            maskImage: `radial-gradient(circle, transparent ${holeRadius - 1}px, black ${holeRadius}px, black ${pixelSize * 0.72}px, transparent ${pixelSize * 0.75}px)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius - 1}px, black ${holeRadius}px, black ${pixelSize * 0.72}px, transparent ${pixelSize * 0.75}px)`,
           }}
         >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-contain"
-            style={{
-              maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-              WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-            }}
+            className="w-full h-full object-contain scale-105" // Overlap slightly to ensure no gap
           />
         </div>
       ) : (
