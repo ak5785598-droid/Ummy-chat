@@ -192,17 +192,17 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
 
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   const sizeMap = {
-    sm: 64,  // w-16
-    md: 96,  // w-24
-    lg: 128, // w-32
-    xl: 160  // w-40
+    sm: 40,
+    md: 60,
+    lg: 80,
+    xl: 96
   };
 
   const sizeClasses = {
-    sm: 'w-16 h-16',
-    md: 'w-24 h-24',
-    lg: 'w-32 h-32',
-    xl: 'w-40 h-40'
+    sm: 'w-10 h-10',
+    md: 'w-[60px] h-[60px]',
+    lg: 'w-20 h-20',
+    xl: 'w-24 h-24'
   };
 
   const pixelSize = sizeMap[size];
