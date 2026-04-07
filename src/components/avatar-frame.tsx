@@ -129,6 +129,10 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             src={imageUrl} 
             alt={config.name} 
             className="w-full h-full object-contain"
+            style={{
+              maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+              WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+            }}
           />
         </div>
       ) : (
