@@ -121,10 +121,10 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
         <div 
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 overflow-hidden"
           style={{
-            width: `${pixelSize * 1.54}px`, // Adjusted scale to eliminate gap
-            height: `${pixelSize * 1.54}px`,
-            maskImage: `radial-gradient(circle, transparent ${holeRadius - 1}px, black ${holeRadius}px, black ${pixelSize * 0.72}px, transparent ${pixelSize * 0.75}px)`,
-            WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius - 1}px, black ${holeRadius}px, black ${pixelSize * 0.72}px, transparent ${pixelSize * 0.75}px)`,
+            width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
+            height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
+            maskImage: `radial-gradient(circle, transparent ${((pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2) - 1}px, black ${(pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2}px, black 48%, transparent 52%)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${((pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2) - 1}px, black ${(pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2}px, black 48%, transparent 52%)`,
           }}
         >
           <img 
