@@ -123,14 +123,20 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           style={{
             width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
-            maskImage: `radial-gradient(circle, transparent ${((pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2) - 1}px, black ${(pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2}px, black 48%, transparent 52%)`,
-            WebkitMaskImage: `radial-gradient(circle, transparent ${((pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2) - 1}px, black ${(pixelSize * (config.scaleMultiplier || 1.54) * (config.holeRatio || 0.65)) / 2}px, black 48%, transparent 52%)`,
+            // Accurate mask: Inner hole (transparent) -> Frame (black) -> Outer edge (transparent)
+            // We want the inner hole to be exactly 'pixelSize' (the DP size)
+            maskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50%)`,
           }}
         >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-contain scale-105" // Overlap slightly to ensure no gap
+            className="w-full h-full object-contain"
+            style={{
+              // Zoom into the image based on holeRatio so the hole fits the mask
+              transform: `scale(${1 / (config.holeRatio || 0.65)})`
+            }}
           />
         </div>
       ) : (

@@ -295,8 +295,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/phoenix_flame.png',
-    scaleMultiplier: 2.1,
-    holeRatio: 0.52,
+    scaleMultiplier: 2.2,
+    holeRatio: 0.72,
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -308,8 +308,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#10B981',
     glowColor: 'rgba(16, 185, 129, 0.6)',
     imageUrl: '/images/frames/emerald_vine.png',
-    scaleMultiplier: 2.3,
-    holeRatio: 0.50,
+    scaleMultiplier: 2.4,
+    holeRatio: 0.60,
     animationType: 'float',
     extraType: 'none'
   },
@@ -322,7 +322,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'rgba(243, 244, 246, 0.6)',
     imageUrl: '/images/frames/silver_crown.png',
     scaleMultiplier: 1.8,
-    holeRatio: 0.65,
+    holeRatio: 0.75,
     animationType: 'float',
     extraType: 'none'
   },
@@ -334,8 +334,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EFF6FF',
     glowColor: 'rgba(239, 246, 255, 0.6)',
     imageUrl: '/images/frames/angel_wing.png',
-    scaleMultiplier: 2.0,
-    holeRatio: 0.58,
+    scaleMultiplier: 1.8,
+    holeRatio: 0.75,
     animationType: 'float',
     extraType: 'none'
   },
@@ -348,7 +348,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/dark_star.png',
     scaleMultiplier: 3.2,
-    holeRatio: 0.38,
+    holeRatio: 0.45,
     animationType: 'pulse',
     extraType: 'none'
   }
