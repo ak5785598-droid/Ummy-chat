@@ -10,7 +10,7 @@ import {
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
-// --- ULTRA HD 3D EMOJI DESIGNS (NO CHANGES HERE) ---
+// --- ULTRA HD 3D EMOJI DESIGNS ---
 
 const EmojiHD = ({ type }: { type: string }) => {
   const defs = (
@@ -57,6 +57,7 @@ const EmojiHD = ({ type }: { type: string }) => {
   );
 
   switch (type) {
+    case 'giftme':
     case 'welcome':
     case 'thanks':
       return (
@@ -65,11 +66,58 @@ const EmojiHD = ({ type }: { type: string }) => {
           <FaceBase blush />
           <circle cx="32" cy="42" r="6" fill="#3E2723" />
           <circle cx="68" cy="42" r="6" fill="#3E2723" />
-          <path d="M 38 70 Q 50 80 62 70" stroke="#3E2723" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <rect x="14" y="60" width="72" height="20" rx="4" fill="#D32F2F" />
-          <text x="50" y="74" fontSize="9" fontWeight="900" fill="white" textAnchor="middle" style={{fontFamily: 'Arial Black'}}>{type.toUpperCase()}</text>
-          <circle cx="14" cy="70" r="8" fill="url(#gradFace)" stroke="#E65100" strokeWidth="0.5" />
-          <circle cx="86" cy="70" r="8" fill="url(#gradFace)" stroke="#E65100" strokeWidth="0.5" />
+          <path d="M 42 62 Q 50 68 58 62" stroke="#3E2723" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <rect x="14" y="65" width="72" height="20" rx="4" fill="#D32F2F" />
+          <text x="50" y="79" fontSize="9" fontWeight="900" fill="white" textAnchor="middle" style={{fontFamily: 'Arial Black'}}>{type === 'giftme' ? 'GIFT ME' : type.toUpperCase()}</text>
+          <circle cx="14" cy="75" r="8" fill="url(#gradFace)" stroke="#E65100" strokeWidth="0.5" />
+          <circle cx="86" cy="75" r="8" fill="url(#gradFace)" stroke="#E65100" strokeWidth="0.5" />
+        </svg>
+      );
+
+    case 'irritated':
+      return (
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {defs}
+          <FaceBase blush />
+          <path d="M 25 35 Q 35 32 45 38" stroke="#3E2723" strokeWidth="3" fill="none" />
+          <path d="M 55 38 Q 65 32 75 35" stroke="#3E2723" strokeWidth="3" fill="none" />
+          <ellipse cx="35" cy="45" rx="6" ry="3" fill="#3E2723" />
+          <ellipse cx="65" cy="45" rx="6" ry="3" fill="#3E2723" />
+          <circle cx="47" cy="52" r="1.5" fill="#3E2723" />
+          <circle cx="53" cy="52" r="1.5" fill="#3E2723" />
+          <path d="M 55 75 Q 65 75 65 52" stroke="#FFD54F" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="65" cy="52" r="3" fill="#FFD54F" /> 
+          <circle cx="50" cy="72" r="4" fill="#3E2723" />
+        </svg>
+      );
+
+    case 'party':
+      return (
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {defs}
+          <FaceBase blush />
+          <circle cx="32" cy="45" r="5" fill="#3E2723" />
+          <circle cx="68" cy="45" r="5" fill="#3E2723" />
+          <path d="M 50 65 L 85 75 L 85 55 Z" fill="#FF5252" stroke="#B71C1C" strokeWidth="1" />
+          <path d="M 50 65 Q 45 70 55 75" fill="none" stroke="#3E2723" strokeWidth="3" />
+          <rect x="20" y="20" width="4" height="4" fill="#FF4081" transform="rotate(45)" />
+          <rect x="70" y="15" width="4" height="4" fill="#7C4DFF" transform="rotate(20)" />
+          <circle cx="50" cy="15" r="2" fill="#00E676" />
+        </svg>
+      );
+
+    case 'shisha':
+      return (
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {defs}
+          <FaceBase />
+          <path d="M 30 45 Q 40 38 50 45" stroke="#3E2723" strokeWidth="3" fill="none" />
+          <path d="M 60 45 Q 70 38 80 45" stroke="#3E2723" strokeWidth="3" fill="none" />
+          <rect x="75" y="40" width="10" height="40" rx="2" fill="#D32F2F" />
+          <circle cx="80" cy="40" r="6" fill="#CFD8DC" />
+          <path d="M 50 70 Q 60 85 75 60" stroke="#424242" strokeWidth="2" fill="none" />
+          <circle cx="50" cy="70" r="6" fill="#3E2723" />
+          <circle cx="50" cy="60" r="10" fill="white" opacity="0.6" filter="url(#blurBlush)" />
         </svg>
       );
 
@@ -177,9 +225,13 @@ const EmojiHD = ({ type }: { type: string }) => {
 };
 
 const REACTIONS = [
+  { id: 'giftme', label: 'Gift Me' },
   { id: 'welcome', label: 'Welcome' },
   { id: 'thanks', label: 'Thanks' },
   { id: 'laugh', label: 'Laugh' },
+  { id: 'party', label: 'Party' },
+  { id: 'shisha', label: 'Shisha' },
+  { id: 'irritated', label: 'Irritated' },
   { id: 'thinking', label: 'Thinking' },
   { id: 'anger', label: 'Anger' },
   { id: 'kissL', label: 'Kiss L' },
@@ -213,8 +265,9 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
        <DialogTitle className="text-2xl font-black italic tracking-tighter text-yellow-500">EMOJIS</DialogTitle>
       </DialogHeader>
 
-      <div className="h-[320px] overflow-y-auto px-6 py-4 custom-scrollbar">
-        <div className="grid grid-cols-3 gap-y-8 gap-x-4 pb-8">
+      <div className="h-[400px] overflow-y-auto px-6 py-4 custom-scrollbar">
+        {/* Added mt-6 to push cards down and gap-y-10 for vertical spacing */}
+        <div className="grid grid-cols-3 gap-y-10 gap-x-4 mt-6 pb-12">
           {REACTIONS.map((item) => (
            <button 
              key={item.id} 
@@ -239,4 +292,4 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
    </DialogContent>
   </Dialog>
  );
-   }
+}
