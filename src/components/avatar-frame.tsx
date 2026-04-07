@@ -119,7 +119,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* 3D Tubelike Frame Body (Enhanced Thickness) or Image Frame */}
       {imageUrl ? (
         <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 overflow-hidden"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
           style={{
             width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,

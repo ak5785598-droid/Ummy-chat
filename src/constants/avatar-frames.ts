@@ -347,8 +347,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/dark_star.png',
-    scaleMultiplier: 2.4,
-    holeRatio: 0.48,
+    scaleMultiplier: 3.2,
+    holeRatio: 0.38,
     animationType: 'pulse',
     extraType: 'none'
   }
