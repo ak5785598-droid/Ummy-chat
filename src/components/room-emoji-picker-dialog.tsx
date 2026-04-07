@@ -239,28 +239,38 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
-    <div className="flex flex-col h-full">
+   <DialogContent className="fixed bottom-0 left-0 right-0 sm:max-w-[450px] mx-auto bg-gradient-to-b from-neutral-900 to-black border-t-2 border-yellow-500/50 p-0 rounded-t-[3rem] overflow-hidden text-white outline-none shadow-[0_-20px_50px_-10px_rgba(234,179,8,0.4)] transition-all duration-500 ease-out">
+    
+    {/* Animated Golden Shine Layer */}
+    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-pulse" />
+
+    <div className="flex flex-col h-full relative z-10">
       {/* Visual Top Handle */}
-      <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
+      <div className="mx-auto w-14 h-1.5 bg-gradient-to-r from-yellow-600/40 via-yellow-400/60 to-yellow-600/40 rounded-full mt-4 mb-2 flex-shrink-0 shadow-sm" />
       
       <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-       <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
+       <DialogTitle className="text-3xl font-black italic tracking-[0.2em] bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 bg-clip-text text-transparent drop-shadow-md uppercase">
+        Emojis
+       </DialogTitle>
       </DialogHeader>
 
-      {/* Grid Container - Fixed height for 9 Emojis view, scrollable for others */}
-      <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
-        <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
+      {/* Grid Container - 9 Emojis Visible at once, Ultra Smooth Scroll */}
+      <div className="h-[360px] overflow-y-auto px-8 py-6 custom-scrollbar scroll-smooth">
+        <div className="grid grid-cols-3 gap-y-12 gap-x-8 pt-4 pb-16">
           {REACTIONS.map((item) => (
            <button 
              key={item.id} 
              onClick={() => handleSendEmoji(item.id)} 
-             className="flex flex-col items-center gap-2 group transition-all active:scale-90"
+             className="flex flex-col items-center gap-3 group relative"
            >
-            <div className="h-16 w-16 drop-shadow-2xl group-hover:scale-110 duration-200">
+            {/* Hover Glow Effect */}
+            <div className="absolute inset-0 bg-yellow-500/0 group-hover:bg-yellow-500/10 rounded-full blur-xl transition-all duration-300 scale-150" />
+            
+            <div className="h-16 w-16 drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] group-hover:scale-125 group-hover:-translate-y-2 group-active:scale-95 transition-all duration-300 ease-out z-10">
               <EmojiHD type={item.id} />
             </div>
-            <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter group-hover:text-yellow-400 transition-colors">
+            
+            <span className="text-[11px] font-black text-neutral-500 uppercase tracking-widest group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_5px_rgba(234,179,8,0.5)] transition-all duration-300 z-10">
               {item.label}
             </span>
            </button>
@@ -268,9 +278,16 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
         </div>
       </div>
     </div>
+
+    {/* Style Overrides for Scrollbar and Glass Effect */}
     <style jsx global>{`
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.3); border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { 
+        background: linear-gradient(to bottom, transparent, #eab308, transparent); 
+        border-radius: 10px; 
+      }
+      [data-radix-popper-content-wrapper] { z-index: 100 !important; }
     `}</style>
    </DialogContent>
   </Dialog>
