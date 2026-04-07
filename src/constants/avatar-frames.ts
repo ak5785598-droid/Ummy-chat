@@ -417,11 +417,76 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#4338CA',
     glowColor: 'rgba(79, 70, 229, 0.7)',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 2.35,
+    scaleMultiplier: 3.4,
     holeRatio: 0.42,
     animationType: 'float',
     extraType: 'none',
     extraColor: '#FFD700'
+  },
+  'lightning-tiger': {
+    id: 'lightning-tiger',
+    name: 'Lightning Tiger',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #0891B2, #22D3EE, #0891B2)',
+    borderColor: '#06B6D4',
+    glowColor: 'rgba(6, 182, 212, 0.7)',
+    imageUrl: '/images/frames/lightning_tiger.png',
+    scaleMultiplier: 3.4,
+    holeRatio: 0.45,
+    animationType: 'float',
+    extraType: 'none'
+  },
+  'shadow-eclipse': {
+    id: 'shadow-eclipse',
+    name: 'Shadow Eclipse',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #475569, #94A3B8, #475569)',
+    borderColor: '#94A3B8',
+    glowColor: 'rgba(148, 163, 184, 0.6)',
+    imageUrl: '/images/frames/shadow_eclipse.png',
+    scaleMultiplier: 3.2,
+    holeRatio: 0.46,
+    animationType: 'pulse',
+    extraType: 'none'
+  },
+  'blue-energy': {
+    id: 'blue-energy',
+    name: 'Blue Pulse',
+    tier: 'elite',
+    gradient: 'linear-gradient(135deg, #2563EB, #3B82F6, #2563EB)',
+    borderColor: '#3B82F6',
+    glowColor: 'rgba(59, 130, 246, 0.7)',
+    imageUrl: '/images/frames/blue_energy.png',
+    scaleMultiplier: 3.1,
+    holeRatio: 0.48,
+    animationType: 'pulse',
+    extraType: 'none'
+  },
+  'crimson-bolt': {
+    id: 'crimson-bolt',
+    name: 'Crimson Lightning',
+    tier: 'elite',
+    gradient: 'linear-gradient(135deg, #DC2626, #EF4444, #DC2626)',
+    borderColor: '#EF4444',
+    glowColor: 'rgba(239, 68, 68, 0.7)',
+    imageUrl: '/images/frames/crimson_bolt.png',
+    scaleMultiplier: 3.3,
+    holeRatio: 0.45,
+    animationType: 'float',
+    extraType: 'none'
+  },
+  'neon-void': {
+    id: 'neon-void',
+    name: 'Neon Void',
+    tier: 'elite',
+    gradient: 'linear-gradient(135deg, #4F46E5, #818CF8, #4F46E5)',
+    borderColor: '#818CF8',
+    glowColor: 'rgba(129, 140, 248, 0.7)',
+    imageUrl: '/images/frames/neon_void.png',
+    scaleMultiplier: 3.1,
+    holeRatio: 0.48,
+    animationType: 'float',
+    extraType: 'none'
   }
 };
 // End of registry
