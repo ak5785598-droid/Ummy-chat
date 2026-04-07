@@ -107,56 +107,63 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   const isSakura = id === 'sakura-blossom';
 
   // Calculate pixel-perfect dimensions
+  // Expansion is now 22px larger to prevent any clipping of ornaments or 3D thickness
   const frameDisplaySize = pixelSize + 22; 
-  const holeRadius = (pixelSize / 2) + 1.5;
+  const holeRadius = (pixelSize / 2) + 1.5; // Exactly 1.5px gap from DP
 
-  // IF IMAGE URL IS PRESENT: Show ONLY the image (Same-to-Same experience)
-  if (imageUrl) {
-    return (
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-30 flex items-center justify-center">
+  return (
+    <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
+      {/* Background Extras */}
+      <BackdropLayer type={extraType} color={extraColor || borderColor} />
+
+      {/* 3D Tubelike Frame Body (Enhanced Thickness) or Image Frame */}
+      {imageUrl ? (
         <div 
-          className="relative"
+          className="absolute left-1/2 top-1/2"
           style={{
-            width: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
-            height: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
-            transform: `translate(${config.offsetX || 0}px, ${config.offsetY || 0}px)`,
+            width: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
+            height: `${pixelSize * (config.scaleMultiplier || 1.54)}px`,
+            transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
+            // Mask precisely to the DP size (pixelSize)
+            maskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50.5%)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2 - 0.5}px, black ${pixelSize/2}px, black 48%, transparent 50.5%)`,
           }}
         >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain" // object-contain for 3D assets to prevent cropping
           />
         </div>
-      </div>
-    );
-  }
+      ) : (
+        <motion.div
+          animate={animationType === 'rotate' ? { rotate: 360 } : {}}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
+          style={{
+            width: `${frameDisplaySize}px`,
+            height: `${frameDisplaySize}px`,
+            padding: '8.5px', // Increased thickness (from 6px)
+            background: gradient,
+            backgroundSize: '200% 200%',
+            boxShadow: `
+              0 0 20px ${glowColor},
+              inset 0 0 12px rgba(0,0,0,0.6),
+              inset 0 0 6px rgba(255,255,255,0.4)
+            `,
+            maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
+          }}
+        >
+          {/* Shine Highlight (Fixed to Top-Left for 3D depth) */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
+        </motion.div>
+      )}
 
-  // CSS-BASED FRAMES ONLY: Keep the fancy layers
-  return (
-    <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
-      <BackdropLayer type={extraType} color={extraColor || borderColor} />
-      
-      <motion.div
-        animate={animationType === 'rotate' ? { rotate: 360 } : {}}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
-        style={{
-          width: `${frameDisplaySize}px`,
-          height: `${frameDisplaySize}px`,
-          padding: '8.5px',
-          background: gradient,
-          backgroundSize: '200% 200%',
-          boxShadow: `0 0 20px ${glowColor}, inset 0 0 12px rgba(0,0,0,0.6), inset 0 0 6px rgba(255,255,255,0.4)`,
-          maskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-          WebkitMaskImage: `radial-gradient(circle, transparent ${holeRadius}px, black ${holeRadius + 0.5}px)`,
-        }}
-      >
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
-      </motion.div>
-
+      {/* Particles */}
       <ParticleSystem type={particleType} color={particleColor || borderColor} />
 
+      {/* Ornaments Layer */}
       {isSakura ? (
         <>
           <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-[110] w-14 h-14 pointer-events-none drop-shadow-2xl overflow-visible">
@@ -211,7 +218,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 pointer-events-none overflow-visible"
+            className="absolute inset-0 z-50 pointer-events-none overflow-visible"
           >
             <EliteFrameRenderer config={config} pixelSize={pixelSize} />
           </motion.div>
@@ -219,7 +226,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent overflow-visible z-20"
+        "relative rounded-full w-full h-full bg-transparent overflow-visible"
       )}>
         {children}
       </div>

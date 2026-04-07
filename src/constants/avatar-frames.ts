@@ -358,58 +358,70 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     id: 'red-star',
     name: 'Red Star',
     tier: 'legendary',
-    gradient: 'none',
+    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
     borderColor: '#EF4444',
-    glowColor: 'none',
+    glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/Red_star.png',
-    scaleMultiplier: 3.3,
-    animationType: 'pulse'
+    scaleMultiplier: 2.38,
+    holeRatio: 0.42,
+    animationType: 'pulse',
+    extraType: 'none'
   },
   'cloud-sky': {
     id: 'cloud-sky',
     name: 'Cloud Sky',
     tier: 'legendary',
-    gradient: 'none',
+    gradient: 'linear-gradient(135deg, #0EA5E9, #FFF, #0EA5E9)',
     borderColor: '#BAE6FD',
-    glowColor: 'none',
+    glowColor: 'rgba(14, 165, 233, 0.5)',
     imageUrl: '/images/frames/Cloud_sky.png',
-    scaleMultiplier: 3.0,
-    animationType: 'float'
+    scaleMultiplier: 2.05,
+    holeRatio: 0.48,
+    animationType: 'float',
+    extraType: 'clouds'
   },
   'lion-wings': {
     id: 'lion-wings',
     name: 'Lion Wings',
     tier: 'legendary',
-    gradient: 'none',
+    gradient: 'linear-gradient(135deg, #B45309, #FBBF24, #B45309)',
     borderColor: '#FBBF24',
-    glowColor: 'none',
+    glowColor: 'rgba(251, 191, 36, 0.6)',
     imageUrl: '/images/frames/Lion_wings.png',
-    scaleMultiplier: 3.4,
+    scaleMultiplier: 2.25,
+    holeRatio: 0.44,
     offsetX: 0,
-    offsetY: 0,
-    animationType: 'pulse'
+    offsetY: 4, // Nudge down slightly for wing balance
+    animationType: 'pulse',
+    extraType: 'wings'
   },
   'mystic-dragon-3d': {
     id: 'mystic-dragon-3d',
-    name: 'Mystic Dragon',
+    name: 'Mystic Dragon 3D',
     tier: 'legendary',
-    gradient: 'none',
+    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #EF4444, #D4AF37)',
     borderColor: '#FFD700',
-    glowColor: 'none',
+    glowColor: 'rgba(212, 175, 55, 0.7)',
     imageUrl: '/images/frames/Mystic_dragon.png',
-    scaleMultiplier: 3.2,
-    animationType: 'float'
+    scaleMultiplier: 2.15,
+    holeRatio: 0.46,
+    animationType: 'float',
+    extraType: 'dragon-body',
+    extraColor: '#FFD700'
   },
   'krishna-pankh': {
     id: 'krishna-pankh',
     name: 'Krishna Pankh',
     tier: 'legendary',
-    gradient: 'none',
+    gradient: 'linear-gradient(135deg, #1E1B4B, #4338CA, #1E1B4B)',
     borderColor: '#4338CA',
-    glowColor: 'none',
+    glowColor: 'rgba(79, 70, 229, 0.7)',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 3.4,
-    animationType: 'float'
+    scaleMultiplier: 2.35,
+    holeRatio: 0.42,
+    animationType: 'float',
+    extraType: 'none',
+    extraColor: '#FFD700'
   }
 };
 // End of registry
