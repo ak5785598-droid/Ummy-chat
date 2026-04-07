@@ -120,6 +120,9 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             width: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
             height: `${pixelSize * (config.scaleMultiplier || 1.6)}px`,
             transform: `translate(${config.offsetX || 0}px, ${config.offsetY || 0}px)`,
+            // Central Hole Mask - ensures frame stays at the edges
+            maskImage: `radial-gradient(circle, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
+            WebkitMaskImage: `radial-gradient(circle, transparent ${pixelSize/2}px, black ${pixelSize/2 + 0.5}px)`,
           }}
         >
           <img 
