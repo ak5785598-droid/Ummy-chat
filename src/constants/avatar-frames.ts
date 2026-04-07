@@ -364,6 +364,46 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     holeRatio: 0.42,
     animationType: 'pulse',
     extraType: 'none'
+  },
+  'cloud-sky': {
+    id: 'cloud-sky',
+    name: 'Cloud Sky',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #0EA5E9, #FFF, #0EA5E9)',
+    borderColor: '#BAE6FD',
+    glowColor: 'rgba(14, 165, 233, 0.5)',
+    imageUrl: '/images/frames/Cloud_sky.png',
+    scaleMultiplier: 2.2,
+    holeRatio: 0.45,
+    animationType: 'float',
+    extraType: 'clouds'
+  },
+  'lion-wings': {
+    id: 'lion-wings',
+    name: 'Lion Wings',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #B45309, #FBBF24, #B45309)',
+    borderColor: '#FBBF24',
+    glowColor: 'rgba(251, 191, 36, 0.6)',
+    imageUrl: '/images/frames/Lion_wings.png',
+    scaleMultiplier: 2.4,
+    holeRatio: 0.42,
+    animationType: 'pulse',
+    extraType: 'wings'
+  },
+  'krishna-pankh': {
+    id: 'krishna-pankh',
+    name: 'Krishna Pankh',
+    tier: 'legendary',
+    gradient: 'linear-gradient(135deg, #1E1B4B, #4338CA, #1E1B4B)',
+    borderColor: '#4338CA',
+    glowColor: 'rgba(79, 70, 229, 0.7)',
+    imageUrl: '/images/frames/krishna_pankh.png',
+    scaleMultiplier: 2.3,
+    holeRatio: 0.43,
+    animationType: 'float',
+    extraType: 'none',
+    extraColor: '#FFD700'
   }
 };
 // End of registry
