@@ -215,19 +215,19 @@ export function RoomUserProfileDialog({
 
       {/* Medals/Honors Section */}
       {profile.medals && profile.medals.length > 0 && (
-        <div className=\"flex flex-wrap justify-center gap-3 mb-6 px-6\">
+        <div className="flex flex-wrap justify-center gap-3 mb-6 px-6">
           {profile.medals.map(medalId => {
             const medal = MEDAL_REGISTRY[medalId];
             if (!medal) return null;
             return (
-              <div key={medalId} className=\"group relative cursor-pointer\">
+              <div key={medalId} className="group relative cursor-pointer">
                 <img 
                   src={medal.imageUrl} 
                   alt={medal.name} 
-                  className=\"h-12 w-12 object-contain drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1\"
+                  className="h-12 w-12 object-contain drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1"
                 />
                 {/* Simple Tooltip */}
-                <div className=\"absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10\">
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">
                   {medal.name}
                 </div>
               </div>

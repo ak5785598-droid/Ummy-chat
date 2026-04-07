@@ -72,6 +72,7 @@ export interface UserProfile {
   svip?: number;
   familyId?: string;
   familyRole?: string;
+  medals?: string[];
 }
 
 /**

@@ -19,7 +19,13 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ItemPreview } from '@/components/item-preview';
 
 // --- NEW PREMIUM DESIGN COMPONENT (THE ONE YOU JUST SHARED) ---
-const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }) => {
+interface PremiumAvatarFrameProps {
+  imageUrl: string;
+  size?: number;
+  className?: string;
+}
+
+const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAvatarFrameProps) => {
   return (
     <div className={cn("relative flex items-center justify-center", className)} style={{ width: size, height: size }}>
       {/* SVG Structure */}
@@ -188,7 +194,7 @@ export default function StorePage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => {
                   const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
-                  const isActive = userProfile?.inventory?.[`active${item.type}`] === item.id;
+                  const isActive = userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
                   
                   return (
                     <Card key={item.id} className="overflow-hidden rounded-[1.5rem] bg-white border-none shadow-sm">
