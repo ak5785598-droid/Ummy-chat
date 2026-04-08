@@ -152,7 +152,7 @@ function ChessGameContent() {
                     <Avatar className="h-12 w-12 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
                     <div>
                         <p className="text-xs font-bold uppercase opacity-60 italic text-blue-400">White</p>
-                        <p className="font-black text-lg uppercase">{userProfile?.displayName || 'YOU'}</p>
+                        <p className="font-black text-lg uppercase">{userProfile?.username || 'YOU'}</p>
                     </div>
                 </div>
                 <div className="h-8 w-[2px] bg-white/10" />
