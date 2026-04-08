@@ -207,7 +207,11 @@ export default function StorePage() {
                           />
                         ) : item.type === 'Bubble' ? (
                           <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
-                        ) : <item.icon className={cn("h-12 w-12 opacity-30", item.color)} />}
+                        ) : item.type === 'Theme' ? (
+                          <Palette className={cn("h-12 w-12 opacity-30", item.color || "text-purple-500")} />
+                        ) : item.icon ? (
+                          <item.icon className={cn("h-12 w-12 opacity-30", item.color)} />
+                        ) : null}
                         
                         <Badge className="absolute top-2 right-2">{item.type}</Badge>
                       </div>
