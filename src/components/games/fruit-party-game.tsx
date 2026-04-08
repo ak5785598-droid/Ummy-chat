@@ -221,6 +221,22 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100]">
+      {/* HEADER */}
+      <header className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-[70]">
+        <button 
+          onClick={onClose} 
+          className="bg-slate-100/80 backdrop-blur-md p-3 rounded-2xl border border-slate-200 text-slate-800 shadow-xl active:scale-90 transition-all"
+        >
+          <X className="h-6 w-6" />
+        </button>
+        <button 
+          onClick={() => setShowRules(true)} 
+          className="bg-slate-100/80 backdrop-blur-md p-3 rounded-2xl border border-slate-200 text-slate-800 shadow-xl active:scale-90 transition-all"
+        >
+          <HelpCircle className="h-6 w-6" />
+        </button>
+      </header>
+
      {/* LIVE STATUS BAR */}
    <div className="absolute top-[22%] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20">
       <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
