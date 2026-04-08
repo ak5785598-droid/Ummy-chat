@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, Volume2, VolumeX, Loader, Shield, Swords, Trophy, RefreshCcw 
+ ChevronLeft, Volume2, VolumeX, X, Loader, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 
-// --- 3D Custom Assets ---
+// 3D Custom Character Icons (Using SVGs for depth effect)
 const pieceSVG: Record<string, string> = {
   'pw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg',
   'rw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg',
@@ -34,48 +34,27 @@ function ChessGameContent() {
    const roomId = searchParams.get('roomId') || 'global_room';
    const { user: currentUser } = useUser();
    const { userProfile } = useUserProfile(currentUser?.uid);
-   
    const [isLaunching, setIsLaunching] = useState(true);
    const [isMuted, setIsMuted] = useState(false);
    const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
  
-   const { gameState, isLoading, startMatch, makeMove } = useChessEngine(roomId, currentUser?.uid || null);
+   const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
 
    useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 1200);
+    const timer = setTimeout(() => setIsLaunching(false), 1500);
     return () => clearTimeout(timer);
    }, []);
 
-   // --- Game Logic: Handling Moves ---
-   const handleSquareClick = useCallback((coord: string) => {
-      const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
-                       (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
-      
-      if (!isMyTurn || gameState?.status === 'finished') return;
-
-      if (selectedSquare === null) {
-          // First Click: Select the piece
-          setSelectedSquare(coord);
-      } else if (selectedSquare === coord) {
-          // Click same square: Deselect
-          setSelectedSquare(null);
-      } else {
-          // Second Click: Make the move
-          makeMove(selectedSquare, coord);
-          setSelectedSquare(null);
-          // Sound effect logic can be triggered here
-          if(!isMuted) { /* new Audio('/move.mp3').play(); */ }
-      }
-   }, [selectedSquare, gameState, currentUser, makeMove, isMuted]);
-
    if (isLaunching || isLoading) {
     return (
-     <div className="h-screen w-full bg-[#020617] flex flex-col items-center justify-center space-y-4">
+     <div className="h-screen w-full bg-[#0f172a] flex flex-col items-center justify-center space-y-6 overflow-hidden">
       <div className="relative">
-        <div className="h-20 w-20 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        <Shield className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white h-6 w-6" />
+        <Loader className="h-24 w-24 text-blue-500 animate-spin" />
+        <div className="absolute inset-0 flex items-center justify-center">
+            <Shield className="h-8 w-8 text-white animate-pulse" />
+        </div>
       </div>
-      <p className="text-blue-400 font-black tracking-[0.3em] text-[10px] animate-pulse">GENERATING 3D ARENA</p>
+      <h1 className="text-2xl font-bold text-white tracking-widest animate-pulse">PREPARING 3D ARENA...</h1>
      </div>
     );
    }
@@ -83,144 +62,112 @@ function ChessGameContent() {
    const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
                     (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
 
+   const renderSquare = (row: number, col: number) => {
+     const isBlack = (row + col) % 2 === 1;
+     const fileLabel = String.fromCharCode(97 + col);
+     const rankLabel = 8 - row;
+     const coord = `${fileLabel}${rankLabel}`;
+
+     // Simple piece placement logic for visual demo
+     let pieceKey = "";
+     if (row === 1) pieceKey = "pb";
+     if (row === 6) pieceKey = "pw";
+     if (row === 0) {
+        const rank0 = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"];
+        pieceKey = rank0[col];
+     }
+     if (row === 7) {
+        const rank7 = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"];
+        pieceKey = rank7[col];
+     }
+
+     return (
+       <div 
+         key={coord}
+         onClick={() => isMyTurn && setSelectedSquare(coord)}
+         className={cn(
+           "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
+           isBlack ? "bg-[#1e40af] shadow-inner" : "bg-[#60a5fa] shadow-inner",
+           selectedSquare === coord && "ring-4 ring-yellow-400 z-20 brightness-125"
+         )}
+         style={{ transform: 'translateZ(2px)' }}
+       >
+         {pieceKey && (
+           <img 
+             src={pieceSVG[pieceKey]} 
+             alt={pieceKey}
+             className="w-[85%] h-[85%] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform active:translate-y-[-10px]"
+           />
+         )}
+       </div>
+     );
+   };
+
    return (
     <AppLayout fullScreen>
-     <div className="h-screen w-full bg-[#020617] flex flex-col justify-end relative overflow-hidden text-white">
+     <div className="h-screen w-full bg-gradient-to-b from-[#0f172a] to-[#1e293b] flex flex-col relative overflow-hidden text-white font-sans">
       
-      {/* Background Glow */}
-      <div className="absolute top-0 left-0 w-full h-full bg-blue-900/10 pointer-events-none" />
-
-      {/* HEADER & STATS */}
-      <header className="absolute top-0 w-full p-6 z-50 flex flex-col gap-6">
-        <div className="flex justify-between items-center">
-            <button onClick={() => router.back()} className="bg-white/5 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-lg active:scale-90 transition-all"><ChevronLeft className="h-5 w-5"/></button>
-            <div className="text-center">
-                <h1 className="text-xl font-black italic tracking-tighter text-blue-400">CHESS ROYALE 3D</h1>
-                <p className="text-[8px] opacity-40 uppercase tracking-[0.4em]">Grandmaster Table</p>
-            </div>
-            <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-3 rounded-2xl border border-white/10 active:scale-90 transition-all">
-                {isMuted ? <VolumeX className="h-5 w-5"/> : <Volume2 className="h-5 w-5"/>}
-            </button>
+      {/* Header Area */}
+      <header className="z-50 flex items-center justify-between p-6">
+        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20 hover:bg-white/20 transition-all"><ChevronLeft /></button>
+        <div className="text-center">
+            <h1 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">CHESS ROYALE 3D</h1>
+            <p className="text-[10px] opacity-50 uppercase tracking-[0.3em]">Grandmaster Edition</p>
         </div>
-
-        {/* Player Cards */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
-            {/* Opponent Card */}
-            <div className={cn("p-3 rounded-2xl border transition-all duration-500", gameState?.turn === 'b' ? "bg-red-500/10 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-white/5 border-white/10 opacity-60")}>
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8 border border-white/20"><AvatarImage src={gameState?.black?.avatarUrl} /></Avatar>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[7px] font-bold text-red-400 uppercase tracking-tighter">Opponent</p>
-                        <p className="text-[10px] font-black truncate">{gameState?.black?.displayName || 'Searching...'}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* User Card */}
-            <div className={cn("p-3 rounded-2xl border transition-all duration-500", gameState?.turn === 'w' ? "bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "bg-white/5 border-white/10 opacity-60")}>
-                <div className="flex items-center gap-2">
-                    <div className="flex-1 text-right min-w-0">
-                        <p className="text-[7px] font-bold text-blue-400 uppercase tracking-tighter">Master (You)</p>
-                        <p className="text-[10px] font-black truncate">{userProfile?.displayName || 'Golu'}</p>
-                    </div>
-                    <Avatar className="h-8 w-8 border border-white/20"><AvatarImage src={userProfile?.avatarUrl} /></Avatar>
-                </div>
-            </div>
-        </div>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-3 rounded-xl border border-white/20">
+            {isMuted ? <VolumeX /> : <Volume2 />}
+        </button>
       </header>
 
-      {/* GAME BOARD AREA (Half Screen) */}
-      <div className="relative h-[60vh] bg-gradient-to-t from-[#0f172a] to-transparent flex flex-col items-center justify-start rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-30px_60px_rgba(0,0,0,0.8)] pt-16">
+      <main className="flex-1 flex flex-col items-center justify-center perspective-[1000px] py-4">
          
-         <div className="perspective-[1200px] w-full flex justify-center">
-            {/* The 3D Board */}
-            <div 
-                className="relative w-[88vw] max-w-[380px] aspect-square transition-transform duration-1000"
-                style={{ 
-                    transform: 'rotateX(50deg) rotateZ(0deg)',
-                    transformStyle: 'preserve-3d',
-                }}
-            >
-                {/* Board Side/Depth Effect */}
-                <div className="absolute inset-0 bg-[#1e293b] translate-z-[-20px] rounded-xl border-[8px] border-[#334155] shadow-2xl" />
-                
-                {/* Main Chess Grid */}
-                <div className="grid grid-cols-8 grid-rows-8 w-full h-full border-2 border-slate-700 rounded-sm overflow-hidden shadow-2xl">
-                    {Array.from({ length: 64 }).map((_, i) => {
-                        const row = Math.floor(i / 8);
-                        const col = i % 8;
-                        const isBlack = (row + col) % 2 === 1;
-                        const file = String.fromCharCode(97 + col);
-                        const rank = 8 - row;
-                        const coord = `${file}${rank}`;
-                        
-                        // Piece logic from gameState
-                        const piece = gameState?.board?.[row]?.[col]; // Assume board is 2D array in engine
-
-                        return (
-                           <div 
-                             key={coord}
-                             onClick={() => handleSquareClick(coord)}
-                             className={cn(
-                                "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
-                                isBlack ? "bg-[#1e293b]" : "bg-[#475569]",
-                                selectedSquare === coord && "bg-blue-500/80 shadow-[0_0_25px_#3b82f6] z-30 brightness-110 scale-105"
-                             )}
-                             style={{ transform: 'translateZ(1px)' }}
-                           >
-                             {piece && (
-                               <div className="relative w-full h-full flex items-center justify-center">
-                                  <img 
-                                    src={pieceSVG[piece]} 
-                                    className="w-[85%] h-[85%] z-20 drop-shadow-[0_15px_8px_rgba(0,0,0,0.7)]"
-                                    style={{ transform: 'rotateX(-50deg) translateY(-8px)' }}
-                                  />
-                                  <div className="absolute bottom-1 w-1/2 h-1 bg-black/50 blur-md rounded-full -z-10" />
-                               </div>
-                             )}
-                           </div>
-                        )
-                    })}
-                </div>
+         {/* 3D BOARD CONTAINER */}
+         <div 
+            className="relative w-[95vw] max-w-[450px] aspect-square rounded-lg border-[12px] border-[#334155] shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+            style={{ 
+                transform: 'rotateX(25deg) rotateZ(0deg)',
+                transformStyle: 'preserve-3d',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.2)'
+            }}
+         >
+            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-[#0f172a]">
+                {Array.from({ length: 8 }).map((_, r) => 
+                  Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
+                )}
             </div>
          </div>
 
-         {/* GAME OVER OVERLAY */}
-         {gameState?.status === 'finished' && (
-             <div className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center rounded-t-[3.5rem]">
-                <Trophy className="h-16 w-16 text-yellow-400 mb-4 animate-bounce" />
-                <h2 className="text-3xl font-black italic mb-2 tracking-tighter">CHECKMATE!</h2>
-                <p className="text-white/60 mb-8 uppercase text-xs tracking-widest">Victory belongs to {gameState.winner === 'w' ? 'White' : 'Black'}</p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="bg-white text-black px-10 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all"
-                >
-                  <RefreshCcw className="h-4 w-4" /> Rematch
-                </button>
-             </div>
-         )}
-
-         {/* ACTION BUTTON */}
-         <div className="mt-20 w-full px-8 flex flex-col items-center gap-4">
-            {!gameState && (
-                <button 
-                  onClick={() => startMatch(userProfile)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-4 rounded-2xl font-black uppercase tracking-widest shadow-[0_15px_40px_rgba(37,99,235,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                  <Swords className="h-5 w-5" /> Start Battle
-                </button>
-            )}
-            {isMyTurn && gameState?.status !== 'finished' && (
-                <div className="flex items-center gap-2 animate-pulse bg-white/5 px-6 py-2 rounded-full border border-white/10">
-                    <div className="h-2 w-2 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400">Your Turn, Master Golu</span>
+         {/* PLAYER STATS */}
+         <div className="mt-16 w-full max-w-[380px] px-6 space-y-6">
+            <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-blue-400">White Player</p>
+                        <p className="font-black text-lg">YOU</p>
+                    </div>
                 </div>
-            )}
-         </div>
-      </div>
+                <div className="h-8 w-[2px] bg-white/10" />
+                <div className="flex items-center gap-3 text-right">
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-red-400">Black Player</p>
+                        <p className="font-black text-lg">OPPONENT</p>
+                    </div>
+                    <Avatar className="h-12 w-12 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
+                </div>
+            </div>
 
-      <footer className="h-8 flex items-center justify-center opacity-10">
-         <p className="text-[8px] font-bold uppercase tracking-[0.5em]">Tactical Core v3.0</p>
+            <button 
+                onClick={() => startMatch(userProfile)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(37,99,235,0.4)] active:scale-95 transition-all"
+            >
+                Start New Battle
+            </button>
+         </div>
+      </main>
+
+      <footer className="p-6 text-center">
+         <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Powered by Unreal-Style CSS 3D Engine</p>
       </footer>
      </div>
     </AppLayout>
@@ -229,7 +176,7 @@ function ChessGameContent() {
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-[#020617] flex items-center justify-center text-blue-500 font-bold tracking-widest">INITIALIZING...</div>}>
+    <Suspense fallback={<div className="h-screen w-full bg-[#0f172a] flex items-center justify-center text-white">SYNCING...</div>}>
       <ChessGameContent />
     </Suspense>
   );
