@@ -360,96 +360,71 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     id: 'lion-wings',
     name: 'Lion Wings',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #B45309, #FBBF24, #B45309)',
-    borderColor: '#FBBF24',
-    glowColor: 'rgba(251, 191, 36, 0.6)',
-    imageUrl: '/images/frames/Lion_wings.png',
-
-
-
- // Nudge down slightly for wing balance
-    animationType: 'pulse',
-    extraType: 'wings'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/Lion_wings.png'
   },
   'mystic-dragon-3d': {
     id: 'mystic-dragon-3d',
     name: 'Mystic Dragon 3D',
     tier: 'legendary',
-    gradient: 'conic-gradient(from 0deg, #D4AF37, #FFD700, #EF4444, #D4AF37)',
-    borderColor: '#FFD700',
-    glowColor: 'rgba(212, 175, 55, 0.7)',
-    imageUrl: '/images/frames/Mystic_dragon.png',
-
-
-    animationType: 'float',
-    extraType: 'dragon-body',
-    extraColor: '#FFD700'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/Mystic_dragon.png'
   },
   'krishna-pankh': {
     id: 'krishna-pankh',
     name: 'Krishna Pankh',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #1E1B4B, #4338CA, #1E1B4B)',
-    borderColor: '#4338CA',
-    glowColor: 'rgba(79, 70, 229, 0.7)',
-    imageUrl: '/images/frames/krishna_pankh.png',
-
-
-    animationType: 'float',
-    extraType: 'none',
-    extraColor: '#FFD700'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/krishna_pankh.png'
   },
   'lightning-tiger': {
     id: 'lightning-tiger',
     name: 'Lightning Tiger',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #0891B2, #22D3EE, #0891B2)',
-    borderColor: '#06B6D4',
-    glowColor: 'rgba(6, 182, 212, 0.7)',
-    imageUrl: '/images/frames/lightning_tiger.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/lightning_tiger.png'
   },
   'shadow-eclipse': {
     id: 'shadow-eclipse',
     name: 'Shadow Eclipse',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #475569, #94A3B8, #475569)',
-    borderColor: '#94A3B8',
-    glowColor: 'rgba(148, 163, 184, 0.6)',
-    imageUrl: '/images/frames/shadow_eclipse.png',
-
-
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/shadow_eclipse.png'
   },
   'blue-energy': {
     id: 'blue-energy',
     name: 'Blue Pulse',
     tier: 'elite',
-    gradient: 'linear-gradient(135deg, #2563EB, #3B82F6, #2563EB)',
-    borderColor: '#3B82F6',
-    glowColor: 'rgba(59, 130, 246, 0.7)',
-    imageUrl: '/images/frames/blue_energy.png',
-
-
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/blue_energy.png'
   },
   'crimson-bolt': {
     id: 'crimson-bolt',
     name: 'Crimson Lightning',
     tier: 'elite',
-    gradient: 'linear-gradient(135deg, #DC2626, #EF4444, #DC2626)',
-    borderColor: '#EF4444',
-    glowColor: 'rgba(239, 68, 68, 0.7)',
-    imageUrl: '/images/frames/crimson_bolt.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/crimson_bolt.png'
   },
     'green-cyber-pulse': {
     id: 'green-cyber-pulse',
@@ -469,17 +444,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: 'transparent',
     glowColor: 'transparent',
     animationType: 'none',
-    imageUrl: '/images/frames/crystal_shard.png'
-  },
-  'thunder-core': {
-    id: 'thunder-core',
-    name: 'Thunder Core',
-    tier: 'mythic',
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/thunder_core.png'
+    imageUrl: '/images/frames/shadow_eclipse.png'
   },
   'shadow-orb': {
     id: 'shadow-orb',
@@ -489,37 +454,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: 'transparent',
     glowColor: 'transparent',
     animationType: 'none',
-    imageUrl: '/images/frames/shadow_orb.png'
-  },
-  'frost-ring': {
-    id: 'frost-ring',
-    name: 'Frost Ring',
-    tier: 'luxury',
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/frost_ring.png'
-  },
-  'cosmic-halo': {
-    id: 'cosmic-halo',
-    name: 'Cosmic Halo',
-    tier: 'elite',
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/cosmic_halo.png'
-  },
-  'toxic-waste': {
-    id: 'toxic-waste',
-    name: 'Toxic Waste',
-    tier: 'elite',
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/toxic_waste.png'
+    imageUrl: '/images/frames/shadow_eclipse.png'
   }
 };
 // End of registry

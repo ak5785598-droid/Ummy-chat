@@ -115,8 +115,9 @@ const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
           objectFit: 'cover',
           objectPosition: 'center',
           // Create a hole in the center for the DP to show through
-          maskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
+          // 80px total, 70px center hole, 5px thickness = 87.5% transparent
+          maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
           // Ensure no black background
           mixBlendMode: 'normal'
         }}
@@ -151,8 +152,9 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
               objectFit: 'cover',
               objectPosition: 'center',
               // Create a hole in the center for the DP to show through
-              maskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
-              WebkitMaskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
+              // 80px total, 70px center hole, 5px thickness = 87.5% transparent
+              maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
+              WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
               mixBlendMode: 'normal'
             }}
           />
@@ -163,11 +165,11 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
           className="absolute inset-0 rounded-full z-10 shadow-2xl"
           style={{
-            padding: '2.5px',
+            padding: '5px',
             background: gradient,
             backgroundSize: '200% 200%',
-            maskImage: 'radial-gradient(circle, transparent 48%, black 49%)',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 48%, black 49%)',
+            maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
+            WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
             boxShadow: `0 0 10px ${glowColor}`
           }}
         >
