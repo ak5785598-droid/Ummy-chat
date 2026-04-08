@@ -1,35 +1,31 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, 
- Volume2, 
- VolumeX, 
- HelpCircle, 
- Trophy, 
- X,
- ChevronDown,
- Users,
- Move,
- Loader,
- Play
+ ChevronLeft, Volume2, VolumeX, X, Loader, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 
-/**
- * Grand Chess Board - Multiplayer Integration.
- * Zero-Asset Unicode rendering for maximum speed and compatibility.
- */
-const pieceMap: Record<string, string> = {
-  'pw': '♙', 'rw': '♖', 'nw': '♘', 'bw': '♗', 'qw': '♕', 'kw': '♔',
-  'pb': '♟', 'rb': '♜', 'nb': '♞', 'bb': '♝', 'qb': '♛', 'kb': '♚'
+// 3D Custom Character Icons (Using SVGs for depth effect)
+const pieceSVG: Record<string, string> = {
+  'pw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg',
+  'rw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg',
+  'nw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wN.svg',
+  'bw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wB.svg',
+  'qw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wQ.svg',
+  'kw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wK.svg',
+  'pb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bP.svg',
+  'rb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bR.svg',
+  'nb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bN.svg',
+  'bb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bB.svg',
+  'qb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bQ.svg',
+  'kb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bK.svg'
 };
 
 function ChessGameContent() {
@@ -42,134 +38,145 @@ function ChessGameContent() {
    const [isMuted, setIsMuted] = useState(false);
    const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
  
-   // CHESS ENGINE SYNC
-   const { gameState, isLoading, startMatch, makeMove } = useChessEngine(roomId, currentUser?.uid || null);
+   const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
 
- useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 1500);
-  return () => clearTimeout(timer);
- }, []);
+   useEffect(() => {
+    const timer = setTimeout(() => setIsLaunching(false), 1500);
+    return () => clearTimeout(timer);
+   }, []);
 
- if (isLaunching || isLoading) {
-  return (
-   <div className="h-screen w-full bg-[#1a1a1a] flex flex-col items-center justify-center space-y-6 font-sans relative overflow-hidden">
-    <Loader className="h-20 w-20 text-white animate-spin" />
-    <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">Initializing Grandmaster</h1>
-   </div>
-  );
- }
+   if (isLaunching || isLoading) {
+    return (
+     <div className="h-screen w-full bg-[#0f172a] flex flex-col items-center justify-center space-y-6 overflow-hidden">
+      <div className="relative">
+        <Loader className="h-24 w-24 text-blue-500 animate-spin" />
+        <div className="absolute inset-0 flex items-center justify-center">
+            <Shield className="h-8 w-8 text-white animate-pulse" />
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold text-white tracking-widest animate-pulse">PREPARING 3D ARENA...</h1>
+     </div>
+    );
+   }
 
- const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
-                  (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
+   const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
+                    (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
 
- // UI board rendering helper
- const renderSquare = (row: number, col: number) => {
-   const isBlack = (row + col) % 2 === 1;
-   const fileLabel = String.fromCharCode(97 + col);
-   const rankLabel = 8 - row;
-   const coord = `${fileLabel}${rankLabel}`;
+   const renderSquare = (row: number, col: number) => {
+     const isBlack = (row + col) % 2 === 1;
+     const fileLabel = String.fromCharCode(97 + col);
+     const rankLabel = 8 - row;
+     const coord = `${fileLabel}${rankLabel}`;
+
+     // Simple piece placement logic for visual demo
+     let pieceKey = "";
+     if (row === 1) pieceKey = "pb";
+     if (row === 6) pieceKey = "pw";
+     if (row === 0) {
+        const rank0 = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"];
+        pieceKey = rank0[col];
+     }
+     if (row === 7) {
+        const rank7 = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"];
+        pieceKey = rank7[col];
+     }
+
+     return (
+       <div 
+         key={coord}
+         onClick={() => isMyTurn && setSelectedSquare(coord)}
+         className={cn(
+           "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
+           isBlack ? "bg-[#1e40af] shadow-inner" : "bg-[#60a5fa] shadow-inner",
+           selectedSquare === coord && "ring-4 ring-yellow-400 z-20 brightness-125"
+         )}
+         style={{ transform: 'translateZ(2px)' }}
+       >
+         {pieceKey && (
+           <img 
+             src={pieceSVG[pieceKey]} 
+             alt={pieceKey}
+             className="w-[85%] h-[85%] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform active:translate-y-[-10px]"
+           />
+         )}
+       </div>
+     );
+   };
 
    return (
-     <div 
-       key={coord}
-       onClick={() => isMyTurn && setSelectedSquare(coord)}
-       className={cn(
-         "w-full aspect-square flex items-center justify-center text-4xl cursor-pointer transition-all duration-200",
-         isBlack ? "bg-[#333333]" : "bg-[#666666]",
-         selectedSquare === coord && "bg-yellow-400/50 scale-105 z-10 shadow-2xl ring-2 ring-yellow-400"
-       )}
-     >
-       {/* Pieces would go here based on FEN parsing - for now placeholder symbols */}
-       <span className={cn(
-         "drop-shadow-lg",
-         isBlack ? "text-white" : "text-black"
-       )}>
-         {row === 1 ? '♟' : row === 6 ? '♙' : ''}
-       </span>
-     </div>
-   );
- };
-
- return (
-  <AppLayout fullScreen>
-   <div className="h-screen w-full bg-[#121212] flex flex-col relative overflow-hidden font-sans text-white">
-    <CompactRoomView />
-
-    <header className="relative z-50 flex items-center justify-between p-4 pt-32 shrink-0">
-      <div className="flex gap-1.5">
-       <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 shadow-lg active:scale-90 transition-all"><ChevronLeft className="h-4 w-4" /></button>
-       <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 active:scale-90 transition-all shadow-lg">
-        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-       </button>
-      </div>
+    <AppLayout fullScreen>
+     <div className="h-screen w-full bg-gradient-to-b from-[#0f172a] to-[#1e293b] flex flex-col relative overflow-hidden text-white font-sans">
       
-      <h1 className="text-xl font-black text-white uppercase tracking-tighter drop-shadow-md italic">Grand Chess</h1>
+      {/* Header Area */}
+      <header className="z-50 flex items-center justify-between p-6">
+        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20 hover:bg-white/20 transition-all"><ChevronLeft /></button>
+        <div className="text-center">
+            <h1 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">CHESS ROYALE 3D</h1>
+            <p className="text-[10px] opacity-50 uppercase tracking-[0.3em]">Grandmaster Edition</p>
+        </div>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-3 rounded-xl border border-white/20">
+            {isMuted ? <VolumeX /> : <Volume2 />}
+        </button>
+      </header>
 
-      <div className="flex gap-1.5">
-       <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/5 active:scale-90 transition-all shadow-lg"><X className="h-4 w-4" /></button>
-      </div>
-    </header>
-
-    <main className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
-       {/* 8x8 Board Grid */}
-       <div className="relative w-full max-w-[400px] aspect-square bg-[#2a2a2a] rounded-xl border-[8px] border-[#0a0a0a] shadow-[0_40px_80px_rgba(0,0,0,0.8)] grid grid-cols-8 grid-rows-8 overflow-hidden">
-          {Array.from({ length: 8 }).map((_, r) => 
-            Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
-          )}
-       </div>
-
-       {/* PLAYER HUD */}
-       <div className="mt-12 flex flex-col items-center gap-6 w-full max-w-[320px]">
-          {!gameState && (
-            <button 
-              onClick={() => startMatch(userProfile)}
-              className="bg-white text-black px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all text-sm"
-            >
-              Start Battle
-            </button>
-          )}
-
-          {gameState?.status === 'lobby' && !gameState.black && gameState.white?.uid !== currentUser?.uid && (
-            <button onClick={() => startMatch(userProfile)} className="bg-white text-black px-12 py-4 rounded-full font-black uppercase tracking-widest">Join Match</button>
-          )}
-
-          {gameState && (
-            <div className="flex items-center justify-between w-full bg-white/5 backdrop-blur-2xl p-4 rounded-3xl border border-white/10 shadow-2xl">
-               <div className={cn("text-center transition-all", gameState.turn === 'w' ? "scale-110" : "opacity-40")}>
-                  <div className={cn("p-1 rounded-full border-2", gameState.turn === 'w' ? "border-white shadow-[0_0_15px_#ffffff]" : "border-transparent")}>
-                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.white?.avatarUrl || ''} /></Avatar>
-                  </div>
-                  <span className="text-[10px] font-black uppercase mt-1 block">White</span>
-               </div>
-
-               <div className="text-center font-black italic uppercase tracking-[0.2em] text-white/20">VS</div>
-
-               <div className={cn("text-center transition-all", gameState.turn === 'b' ? "scale-110" : "opacity-40")}>
-                  <div className={cn("p-1 rounded-full border-2", gameState.turn === 'b' ? "border-white shadow-[0_0_15px_#ffffff]" : "border-transparent")}>
-                    <Avatar className="h-10 w-10 border border-white/10"><AvatarImage src={gameState.black?.avatarUrl || ''} /></Avatar>
-                  </div>
-                  <span className="text-[10px] font-black uppercase mt-1 block">Black</span>
-               </div>
+      <main className="flex-1 flex flex-col items-center justify-center perspective-[1000px] py-4">
+         
+         {/* 3D BOARD CONTAINER */}
+         <div 
+            className="relative w-[95vw] max-w-[450px] aspect-square rounded-lg border-[12px] border-[#334155] shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+            style={{ 
+                transform: 'rotateX(25deg) rotateZ(0deg)',
+                transformStyle: 'preserve-3d',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.2)'
+            }}
+         >
+            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-[#0f172a]">
+                {Array.from({ length: 8 }).map((_, r) => 
+                  Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
+                )}
             </div>
-          )}
+         </div>
 
-          {isMyTurn && (
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40 animate-pulse">It's Your Turn, Master</p>
-          )}
-       </div>
-    </main>
+         {/* PLAYER STATS */}
+         <div className="mt-16 w-full max-w-[380px] px-6 space-y-6">
+            <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-blue-400">White Player</p>
+                        <p className="font-black text-lg">YOU</p>
+                    </div>
+                </div>
+                <div className="h-8 w-[2px] bg-white/10" />
+                <div className="flex items-center gap-3 text-right">
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-red-400">Black Player</p>
+                        <p className="font-black text-lg">OPPONENT</p>
+                    </div>
+                    <Avatar className="h-12 w-12 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
+                </div>
+            </div>
 
-    <footer className="p-10 shrink-0 flex flex-col items-center">
-       <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Tactical Strategy System v2.0</p>
-    </footer>
-   </div>
-  </AppLayout>
- );
+            <button 
+                onClick={() => startMatch(userProfile)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(37,99,235,0.4)] active:scale-95 transition-all"
+            >
+                Start New Battle
+            </button>
+         </div>
+      </main>
+
+      <footer className="p-6 text-center">
+         <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Powered by Unreal-Style CSS 3D Engine</p>
+      </footer>
+     </div>
+    </AppLayout>
+   );
 }
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-[#1a1a1a] flex items-center justify-center font-headline text-white">SYNCING CHESS...</div>}>
+    <Suspense fallback={<div className="h-screen w-full bg-[#0f172a] flex items-center justify-center text-white">SYNCING...</div>}>
       <ChessGameContent />
     </Suspense>
   );
