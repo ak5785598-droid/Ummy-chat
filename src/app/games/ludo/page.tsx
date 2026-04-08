@@ -14,6 +14,8 @@ import {
   Loader
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { useLudoEngine } from '@/hooks/use-ludo-engine';
