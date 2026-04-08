@@ -18,13 +18,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS = [
   { id: 'apple', emoji: '🍎', multiplier: 5, label: 'x5', color: 'from-red-400 to-red-600', index: 0 },
-  { id: 'lemon', emoji: '🍋', multiplier: 5, label: 'x5', color: 'from-yellow-300 to-yellow-500', index: 1 },
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'x5', color: 'from-pink-400 to-rose-500', index: 2 },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: 'x5', color: 'from-orange-400 to-amber-500', index: 3 },
-  { id: 'fish', emoji: '🐟', multiplier: 10, label: 'x10', color: 'from-cyan-400 to-blue-500', index: 4 },
-  { id: 'burger', emoji: '🍔', multiplier: 15, label: 'x15', color: 'from-orange-500 to-red-600', index: 5 },
-  { id: 'pizza', emoji: '🍕', multiplier: 25, label: 'x25', color: 'from-yellow-500 to-orange-600', index: 6 },
-  { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'x45', color: 'from-amber-600 to-orange-700', index: 7 },
+  { id: 'orange', emoji: '🍊', multiplier: 5, label: 'x5', color: 'from-orange-400 to-amber-500', index: 1 },
+  { id: 'grapes', emoji: '🍇', multiplier: 5, label: 'x5', color: 'from-purple-400 to-indigo-500', index: 2 },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: 'x5', color: 'from-yellow-400 to-orange-500', index: 3 },
+  { id: 'watermelon', emoji: '🍉', multiplier: 10, label: 'x10', color: 'from-green-400 to-emerald-500', index: 4 },
+  { id: 'pineapple', emoji: '🍍', multiplier: 15, label: 'x15', color: 'from-yellow-500 to-amber-600', index: 5 },
+  { id: 'strawberry', emoji: '🍓', multiplier: 25, label: 'x25', color: 'from-pink-400 to-rose-500', index: 6 },
+  { id: 'bell', emoji: '🔔', multiplier: 45, label: 'x45', color: 'from-yellow-300 to-yellow-500', index: 7 },
 ];
 
 const CHIPS_DATA = [
@@ -38,29 +38,6 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-const BanianTree = ({ side }: { side: 'left' | 'right' }) => (
-  <div className={cn("absolute top-0 bottom-0 w-24 z-[60] pointer-events-none", side === 'left' ? "left-0" : "right-0")}>
-    {/* Reduced to 3 branches as requested */}
-    {[...Array(3)].map((_, i) => (
-      <motion.div
-        key={i}
-        animate={{ rotate: side === 'left' ? [-2, 2, -2] : [2, -2, 2] }}
-        transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut" }}
-        className={cn(
-            "absolute top-0 w-2 bg-gradient-to-b from-[#3d2b1f] via-[#5d4037] to-transparent rounded-full shadow-lg",
-            side === 'left' ? "left-4" : "right-4"
-        )}
-        style={{ height: `${60 + i * 10}%`, left: `${i * 20}px` }}
-      >
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col gap-8">
-            <span className="text-xl animate-bounce">🌿</span>
-            <span className="text-2xl drop-shadow-lg">🍎</span>
-            <span className="text-xl opacity-80">🌿</span>
-        </div>
-      </motion.div>
-    ))}
-  </div>
-);
 
 export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const { user: currentUser } = useUser();
@@ -266,7 +243,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
              className="text-6xl drop-shadow-lg mb-1"
            >
-             🐘
+             🍉
            </motion.div>
            <div className="bg-red-500 px-4 py-1 rounded-full border-2 border-white/40 shadow-xl">
              <p className="text-[9px] font-black uppercase text-white tracking-widest text-center leading-none">Bet Time</p>
@@ -368,16 +345,11 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
            ))}
          </div>
       </div>
-      {/* SIDE SHORTCUT BUTTONS (Fruit & Pizza) */}
-      <div className="absolute bottom-[35%] w-full max-w-[360px] flex justify-between px-2 z-[60] pointer-events-none">
-         <button className="h-9 w-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest text-white shadow-orange-950/20 pointer-events-auto active:scale-95 transition-all">Fruit</button>
-         <button className="h-9 w-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest text-white shadow-orange-950/20 pointer-events-auto active:scale-95 transition-all">Pizza</button>
-      </div>
    </main>
 
    {/* PREMIUM CHIP BAR */}
    <footer className="relative mt-auto pb-12 px-6 z-[70] flex flex-col items-center gap-6">
-      <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 mb-[-10px]">Choose the amount wager -{'>'} Choose food</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 mb-[-10px]">Choose the amount wager -{'>'} Choose fruit</p>
       <div className="bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] p-4 border-2 border-white shadow-2xl w-full max-w-[400px]">
         <div className="flex gap-3 items-center justify-between overflow-x-auto no-scrollbar px-2">
           {CHIPS_DATA.map(chip => (

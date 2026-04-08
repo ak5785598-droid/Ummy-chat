@@ -32,14 +32,25 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ANIMALS = [
- { id: 'panda', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400', index: 0 },
- { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300', index: 1 },
- { id: 'cow', emoji: '🐮', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white', index: 2 },
- { id: 'dog', emoji: '🐶', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300', index: 3 },
- { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400', index: 4 },
- { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400', index: 5 },
- { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', color: 'from-orange-400 to-orange-600', border: 'border-orange-400', index: 6 },
- { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-yellow-400 to-red-600', border: 'border-yellow-400', index: 7 },
+  { id: 'panda', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400', index: 0 },
+  { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300', index: 1 },
+  { id: 'cow', emoji: '🐮', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white', index: 2 },
+  { id: 'dog', emoji: '🐶', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300', index: 3 },
+  { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400', index: 4 },
+  { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400', index: 5 },
+  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', color: 'from-orange-400 to-orange-600', border: 'border-orange-400', index: 6 },
+  { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-yellow-400 to-red-600', border: 'border-yellow-400', index: 7 },
+];
+
+const FOOD_ITEMS = [
+  { id: 'apple', emoji: '🍎', multiplier: 5, label: 'x5', pos: 'top', color: 'from-red-400 to-red-600', border: 'border-red-400', index: 0 },
+  { id: 'lemon', emoji: '🍋', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-yellow-300 to-yellow-500', border: 'border-yellow-400', index: 1 },
+  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'x5', pos: 'right', color: 'from-pink-400 to-rose-500', border: 'border-pink-300', index: 2 },
+  { id: 'mango', emoji: '🥭', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-400 to-amber-500', border: 'border-orange-300', index: 3 },
+  { id: 'fish', emoji: '🐟', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-cyan-400 to-blue-500', border: 'border-blue-400', index: 4 },
+  { id: 'burger', emoji: '🍔', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-orange-500 to-red-600', border: 'border-orange-600', index: 5 },
+  { id: 'pizza', emoji: '🍕', multiplier: 25, label: 'x25', pos: 'left', color: 'from-yellow-500 to-orange-600', border: 'border-orange-500', index: 6 },
+  { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-amber-600 to-orange-700', border: 'border-amber-600', index: 7 },
 ];
 
 const CHIPS_DATA = [
@@ -101,6 +112,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
  const [hintStep, setHintStep] = useState(0);
  const [showRules, setShowRules] = useState(false);
+ const [gameMode, setGameMode] = useState<'animals' | 'food'>('animals');
+
+ const ACTIVE_ITEMS = gameMode === 'animals' ? ANIMALS : FOOD_ITEMS;
 
  const handleInvite = () => {
    if (typeof window !== 'undefined') {
@@ -210,11 +224,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
   const newChips: any[] = [];
   Object.entries(lastBets).forEach(([id, amount]) => {
     if (amount === 0) return;
-    const animal = ANIMALS.find(a => a.id === id);
-    if (!animal) return;
+    const item = ACTIVE_ITEMS.find(a => a.id === id);
+    if (!item) return;
     newChips.push({
       id: Math.random(),
-      itemIdx: animal.index,
+      itemIdx: item.index,
       label: '...', // Generic label for repeat pulse
       color: 'from-yellow-400 to-orange-500',
       x: 0,
@@ -229,7 +243,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
  const startSpin = async () => {
   setGameState('spinning');
-  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+  let winningId = ACTIVE_ITEMS[Math.floor(Math.random() * ACTIVE_ITEMS.length)].id;
 
   // Oracle Support
   if (firestore) {
@@ -237,13 +251,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) winningId = forced;
+     if (ACTIVE_ITEMS.some(a => a.id === forced)) winningId = forced;
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
    } catch (e) {}
   }
 
-  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
+  const targetIdx = ACTIVE_ITEMS.findIndex(a => a.id === winningId);
   const targetSequenceIdx = SEQUENCE.indexOf(targetIdx);
   let currentStep = 0;
   const totalSteps = (SEQUENCE.length * 6) + targetSequenceIdx;
@@ -274,7 +288,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  };
 
  const finalizeResult = (id: string) => {
-  const winItem = ANIMALS.find(i => i.id === id);
+  const winItem = ACTIVE_ITEMS.find(i => i.id === id);
   const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
   setHistory(prev => [id, ...prev].slice(0, 15));
@@ -397,7 +411,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           "h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-2xl border border-white/5",
           i === 0 && "bg-white/20 border-white/30"
         )}>
-         {ANIMALS.find(a => a.id === id)?.emoji}
+         {ACTIVE_ITEMS.find(a => a.id === id)?.emoji}
         </div>
         {i === 0 && <div className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-rose-600 text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white/20">NEW</div>}
       </div>
@@ -432,30 +446,52 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         )}
       </div>
 
-      {/* ANIMAL GRID */}
-      {ANIMALS.map((animal, idx) => {
+      {/* ANIMAL/FOOD SELECTION MODE TOGGLE */}
+      <div className="absolute top-[30%] w-full max-w-[320px] flex justify-between px-2 z-[60] pointer-events-none">
+         <button 
+           onClick={() => setGameMode('animals')}
+           className={cn(
+             "h-9 w-24 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto active:scale-95 transition-all outline-none",
+             gameMode === 'animals' ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white" : "bg-white/10 backdrop-blur-md text-white/40"
+           )}
+         >
+           Animals
+         </button>
+         <button 
+           onClick={() => setGameMode('food')}
+           className={cn(
+             "h-9 w-24 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto active:scale-95 transition-all outline-none",
+             gameMode === 'food' ? "bg-gradient-to-r from-orange-500 to-red-600 text-white" : "bg-white/10 backdrop-blur-md text-white/40"
+           )}
+         >
+           Food
+         </button>
+      </div>
+
+      {/* ITEM GRID */}
+      {ACTIVE_ITEMS.map((item, idx) => {
        const isActive = highlightIdx === idx;
-       const betOnThis = myBets[animal.id] || 0;
+       const betOnThis = myBets[item.id] || 0;
        const isHandPointing = gameState === 'betting' && SEQUENCE[hintStep] === idx;
 
        return (
         <motion.div  
-         key={animal.id} 
-         className={cn(
-          "absolute transition-all duration-300",
-          animal.pos === 'top' && "top-0",
-          animal.pos === 'top-right' && "top-[10%] right-[10%]",
-          animal.pos === 'right' && "right-0",
-          animal.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
-          animal.pos === 'bottom' && "bottom-0",
-          animal.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
-          animal.pos === 'left' && "left-0",
-          animal.pos === 'top-left' && "top-[10%] left-[10%]",
-          isActive && "z-50"
-         )}
+          key={item.id} 
+          className={cn(
+           "absolute transition-all duration-300",
+           item.pos === 'top' && "top-0",
+           item.pos === 'top-right' && "top-[10%] right-[10%]",
+           item.pos === 'right' && "right-0",
+           item.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
+           item.pos === 'bottom' && "bottom-0",
+           item.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
+           item.pos === 'left' && "left-0",
+           item.pos === 'top-left' && "top-[10%] left-[10%]",
+           isActive && "z-50"
+          )}
         >
           <button
-            onClick={() => handlePlaceBet(animal)}
+            onClick={() => handlePlaceBet(item)}
             disabled={gameState !== 'betting'}
             className={cn(
               "relative group active:scale-95 transition-all outline-none",
@@ -464,14 +500,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           >
             <div className={cn(
              "h-24 w-24 rounded-[2rem] flex flex-col items-center justify-center transition-all border-4 relative overflow-hidden shadow-2xl",
-             isActive ? "border-yellow-400 bg-white shadow-[0_0_50px_#fbbf24] scale-125" : `bg-gradient-to-br ${animal.color} ${animal.border}`
+             isActive ? "border-yellow-400 bg-white shadow-[0_0_50px_#fbbf24] scale-125" : `bg-gradient-to-br ${item.color} ${item.border}`
             )}>
               <span className={cn("text-5xl drop-shadow-xl relative z-10 transition-transform", isActive && "scale-110")}>
-               {animal.emoji}
+               {item.emoji}
               </span>
               <div className="absolute bottom-1 bg-black/20 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/10 z-10">
                 <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">
-                 {animal.label}
+                 {item.label}
                 </span>
               </div>
               <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
@@ -480,7 +516,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             {/* CHIPS DROP CONTAINER */}
             <div className="absolute inset-0 pointer-events-none">
               <AnimatePresence>
-                {droppedChips.filter(c => c.itemIdx === animal.index).map(chip => (
+                {droppedChips.filter(c => c.itemIdx === item.index).map(chip => (
                   <motion.div 
                     key={chip.id} 
                     initial={{ y: -150, opacity: 0, scale: 0.5 }} 
