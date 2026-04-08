@@ -98,36 +98,23 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
-const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
-  const { imageUrl } = config;
-  
-  if (!imageUrl) return null;
-  
-  return (
-    <div className="absolute inset-0 w-full h-full rounded-full z-10 pointer-events-none">
-      <img 
-        src={imageUrl} 
-        alt="Frame"
-        className="absolute inset-0 w-full h-full rounded-full object-contain"
-        style={{
-          // Frame sits on the edge, not covering the DP
-          backgroundColor: 'transparent',
-          // PNG images already have transparent center hole designed in
-          // No mask needed - images are already designed with 70px hole
-          mixBlendMode: 'normal'
-        }}
-      />
-    </div>
-  );
-};
-
-const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
+const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
     extraType, particleType, extraColor, particleColor, id, imageUrl
   } = config;
 
   const isSakura = id === 'sakura-blossom';
+
+  // Calculate pixel-perfect dimensions with dynamic hole sizing
+  const multiplier = config.scaleMultiplier || 1.54;
+  const imgSize = pixelSize * multiplier;
+  const imgRadius = imgSize / 2;
+  
+  // Precise hole radius in pixels
+  const holeRadius = config.holeRatio 
+    ? (imgRadius * config.holeRatio) 
+    : (pixelSize / 2);
 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
@@ -136,36 +123,45 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
       {/* 3D Tubelike Frame Body or Image Frame */}
       {imageUrl ? (
-        <div className="absolute inset-0 w-full h-full rounded-full">
+        <div 
+          className="absolute left-1/2 top-1/2"
+          style={{
+            width: `${imgSize}px`,
+            height: `${imgSize}px`,
+            transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
+            // Accurate pixel-based mask
+            maskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+            WebkitMaskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+          }}
+        >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="absolute inset-0 w-full h-full rounded-full object-contain"
-            style={{
-              // Frame sits on the edge, not covering the DP
-              backgroundColor: 'transparent',
-              // PNG images already have transparent center hole designed in
-              // No mask needed - images are already designed with 70px hole
-              mixBlendMode: 'normal'
-            }}
+            className="w-full h-full object-contain"
           />
         </div>
       ) : (
         <motion.div
           animate={animationType === 'rotate' ? { rotate: 360 } : {}}
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 rounded-full z-10 shadow-2xl"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
           style={{
-            padding: '5px',
+            width: `${pixelSize + 22}px`,
+            height: `${pixelSize + 22}px`,
+            padding: '8.5px',
             background: gradient,
             backgroundSize: '200% 200%',
-            // 90px total, 80px hole, 5px thickness = 88.9% transparent
-            maskImage: 'radial-gradient(circle, transparent 88.9%, black 100%)',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 88.9%, black 100%)',
-            boxShadow: `0 0 10px ${glowColor}`
+            boxShadow: `
+              0 0 20px ${glowColor},
+              inset 0 0 12px rgba(0,0,0,0.6),
+              inset 0 0 6px rgba(255,255,255,0.4)
+            `,
+            maskImage: `radial-gradient(circle at center, transparent ${(pixelSize/2) + 1.5}px, black ${(pixelSize/2) + 2}px)`,
+            WebkitMaskImage: `radial-gradient(circle at center, transparent ${(pixelSize/2) + 1.5}px, black ${(pixelSize/2) + 2}px)`,
           }}
         >
-          <div className="w-full h-full rounded-full border-[1px]" style={{ borderColor: `${borderColor}66` }} />
+          {/* Shine Highlight */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
         </motion.div>
       )}
 
@@ -201,16 +197,23 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 };
 
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
-  const sizeClasses = {
-    sm: 'h-[60px] w-[60px]',    // 60px total, ~50px hole
-    md: 'h-[70px] w-[70px]',    // 70px total, ~60px hole
-    lg: 'h-[90px] w-[90px]',    // 90px total, 80px hole (5px thickness each side)
-    xl: 'h-[110px] w-[110px]'   // 110px total, ~100px hole
+  const sizeMap = {
+    sm: 40,
+    md: 60,
+    lg: 80,
+    xl: 100
   };
 
+  const sizeClasses = {
+    sm: 'h-[60px] w-[60px]',    // 60px total, ~40px hole
+    md: 'h-[80px] w-[80px]',    // 80px total, ~60px hole
+    lg: 'h-[100px] w-[100px]',  // 100px total, ~80px hole
+    xl: 'h-[120px] w-[120px]'    // 120px total, ~100px hole
+  };
+
+  const pixelSize = sizeMap[size];
   const config = frameId ? AVATAR_FRAMES[frameId] : null;
-  const isElite = !!config;
-  const isImageFrame = config?.imageUrl;
+  const isElite = !!config && frameId !== 'None';
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>
@@ -222,17 +225,18 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 pointer-events-none overflow-visible"
           >
-            {isImageFrame ? (
-              <ImageFrameRenderer config={config} />
-            ) : (
-              <EliteFrameRenderer config={config} />
-            )}
+            <EliteFrameRenderer config={config} pixelSize={pixelSize} />
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className={cn(
-        "relative rounded-full w-full h-full bg-transparent overflow-visible"
+        "relative rounded-full bg-transparent overflow-visible flex items-center justify-center",
+        // The display size of the avatar itself
+        size === 'sm' ? 'w-10 h-10' : 
+        size === 'md' ? 'w-[60px] h-[60px]' : 
+        size === 'lg' ? 'w-20 h-20' : 
+        'w-24 h-24'
       )}>
         {children}
       </div>
