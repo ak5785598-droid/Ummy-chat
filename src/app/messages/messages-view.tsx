@@ -507,6 +507,7 @@ export default function MessagesView() {
  const teamMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'system') || [], [allNotifications]);
  const systemMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'direct_system') || [], [allNotifications]);
 
+ const latestTeam = teamMsgs[0];
  const latestSystem = systemMsgs[0];
 
  if (theme === 'GLOSSY') {
