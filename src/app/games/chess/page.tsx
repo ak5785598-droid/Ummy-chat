@@ -6,10 +6,10 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, Volume2, VolumeX, Shield
+ ChevronLeft, Volume2, VolumeX, Shield, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 
 const pieceSVG: Record<string, string> = {
@@ -44,18 +44,20 @@ function ChessGameContent() {
     return () => clearTimeout(timer);
    }, []);
 
-   // Updated Loading Screen with White Circle and Ummy Team Branding
+   // White Half-Screen Loading Page
    if (isLaunching || isLoading) {
     return (
-     <div className="h-[50vh] w-full bg-[#0f172a] flex flex-col items-center justify-center space-y-4 overflow-hidden rounded-b-3xl">
-      <div className="relative flex items-center justify-center">
-        <div className="h-16 w-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-        <Shield className="absolute h-6 w-6 text-white animate-pulse" />
-      </div>
-      <div className="text-center">
-        <h1 className="text-sm font-bold text-white tracking-[0.2em] uppercase">Loading Arena</h1>
-        <p className="text-[10px] text-white/40 mt-2 tracking-widest uppercase">Powered By Ummy Team</p>
-      </div>
+     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex flex-col justify-end">
+        <div className="h-[75vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center p-10 animate-in slide-in-from-bottom duration-500">
+            <div className="relative mb-8">
+                <Loader2 className="h-20 w-20 text-indigo-600 animate-spin stroke-[1.5px]" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Shield className="h-6 w-6 text-indigo-600" />
+                </div>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Syncing Arena...</h2>
+            <p className="text-slate-400 text-xs mt-2 font-medium uppercase tracking-[0.2em]">Powered-By Ummy Team</p>
+        </div>
      </div>
     );
    }
@@ -65,38 +67,26 @@ function ChessGameContent() {
 
    const renderSquare = (row: number, col: number) => {
      const isBlack = (row + col) % 2 === 1;
-     const fileLabel = String.fromCharCode(97 + col);
-     const rankLabel = 8 - row;
-     const coord = `${fileLabel}${rankLabel}`;
+     const coord = `${String.fromCharCode(97 + col)}${8 - row}`;
 
      let pieceKey = "";
      if (row === 1) pieceKey = "pb";
      if (row === 6) pieceKey = "pw";
-     if (row === 0) {
-        const rank0 = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"];
-        pieceKey = rank0[col];
-     }
-     if (row === 7) {
-        const rank7 = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"];
-        pieceKey = rank7[col];
-     }
+     if (row === 0) pieceKey = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"][col];
+     if (row === 7) pieceKey = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"][col];
 
      return (
        <div 
          key={coord}
          onClick={() => isMyTurn && setSelectedSquare(coord)}
          className={cn(
-           "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
+           "relative w-full aspect-square flex items-center justify-center",
            isBlack ? "bg-[#1e40af]" : "bg-[#60a5fa]",
-           selectedSquare === coord && "ring-2 ring-yellow-400 z-20 scale-105"
+           selectedSquare === coord && "ring-2 ring-yellow-400 z-10 scale-105 shadow-xl"
          )}
        >
          {pieceKey && (
-           <img 
-             src={pieceSVG[pieceKey]} 
-             alt={pieceKey}
-             className="w-[85%] h-[85%] drop-shadow-lg transform active:scale-90 transition-transform"
-           />
+           <img src={pieceSVG[pieceKey]} alt="" className="w-[85%] h-[85%] drop-shadow-md" />
          )}
        </div>
      );
@@ -104,62 +94,67 @@ function ChessGameContent() {
 
    return (
     <AppLayout fullScreen>
-     <div className="h-screen w-full bg-[#020617] flex flex-col relative overflow-hidden text-white font-sans">
+     <div className="h-screen w-full bg-[#020617] flex flex-col relative overflow-hidden">
       
-      {/* Header Area */}
-      <header className="z-50 flex items-center justify-between p-4 bg-[#0f172a]">
-        <button onClick={() => router.back()} className="p-2 rounded-lg bg-white/5 border border-white/10"><ChevronLeft size={20}/></button>
-        <div className="text-center">
-            <h1 className="text-lg font-black italic tracking-tighter text-blue-400">CHESS ROYALE 3D</h1>
-        </div>
-        <button onClick={() => setIsMuted(!isMuted)} className="p-2 rounded-lg bg-white/5 border border-white/10">
-            {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
-        </button>
-      </header>
+      {/* Background/Top Area (Transparent/Dimmed) */}
+      <div className="flex-1 w-full bg-gradient-to-b from-indigo-950/50 to-transparent p-6">
+          <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-full text-white"><ChevronLeft /></button>
+      </div>
 
-      {/* HALF SCREEN GAME AREA (50vh) */}
-      <main className="h-[50vh] w-full flex items-center justify-center perspective-[1000px] bg-gradient-to-b from-[#0f172a] to-[#1e293b] border-b border-white/10">
+      {/* HALF SCREEN GAME CONTAINER (Purple/Dark Theme as per image) */}
+      <main className="h-[80vh] w-full bg-[#5b36af] rounded-t-[40px] flex flex-col items-center p-6 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-700">
+         
+         {/* Drag Handle Decoration */}
+         <div className="w-12 h-1.5 bg-white/20 rounded-full mb-6" />
+
+         <header className="w-full flex justify-between items-center mb-6 text-white px-2">
+            <div className="flex flex-col">
+                <h1 className="text-xl font-black italic leading-none">CHESS ROYALE 3D</h1>
+                <span className="text-[10px] opacity-60 uppercase tracking-widest">Grandmaster Edition</span>
+            </div>
+            <button onClick={() => setIsMuted(!isMuted)} className="p-2 opacity-80">
+                {isMuted ? <VolumeX /> : <Volume2 />}
+            </button>
+         </header>
+         
+         {/* 3D BOARD */}
          <div 
-            className="relative w-[85vw] max-w-[320px] aspect-square rounded-lg border-[8px] border-[#334155] shadow-2xl overflow-hidden"
-            style={{ 
-                transform: 'rotateX(20deg)',
-                transformStyle: 'preserve-3d',
-            }}
+            className="relative w-full max-w-[340px] aspect-square rounded-xl border-[8px] border-slate-800 shadow-2xl overflow-hidden mb-8"
+            style={{ transform: 'rotateX(15deg)', transformStyle: 'preserve-3d' }}
          >
-            <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
+            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-slate-900">
                 {Array.from({ length: 8 }).map((_, r) => 
                   Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
                 )}
             </div>
          </div>
-      </main>
 
-      {/* CONTROLS AREA (BOTTOM HALF) */}
-      <div className="flex-1 flex flex-col items-center justify-start py-8 px-6 space-y-6">
-            <div className="w-full flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+         {/* STATS & START */}
+         <div className="w-full max-w-[340px] space-y-4">
+            <div className="flex justify-between items-center bg-black/20 backdrop-blur-md p-4 rounded-2xl border border-white/10">
                 <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
-                    <p className="font-bold text-sm text-blue-400 uppercase">You</p>
+                    <Avatar className="h-10 w-10 ring-2 ring-blue-400"><AvatarImage src="" /></Avatar>
+                    <p className="text-white font-bold text-sm">YOU</p>
                 </div>
-                <div className="text-white/20 font-black text-xs">VS</div>
+                <div className="h-6 w-px bg-white/10" />
                 <div className="flex items-center gap-3">
-                    <p className="font-bold text-sm text-red-400 uppercase">Opponent</p>
-                    <Avatar className="h-10 w-10 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
+                    <p className="text-white font-bold text-sm">OPPONENT</p>
+                    <Avatar className="h-10 w-10 ring-2 ring-red-400"><AvatarImage src="" /></Avatar>
                 </div>
             </div>
 
             <button 
                 onClick={() => startMatch(userProfile)}
-                className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                className="w-full bg-white text-[#5b36af] py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
             >
                 Start New Battle
             </button>
+         </div>
 
-            <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.4em] pt-4">
-               Powered By Ummy Team
-            </p>
-      </div>
-
+         <footer className="mt-auto pb-4">
+            <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Powered-By Ummy Team</p>
+         </footer>
+      </main>
      </div>
     </AppLayout>
    );
@@ -167,12 +162,7 @@ function ChessGameContent() {
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={
-        <div className="h-screen w-full bg-[#0f172a] flex flex-col items-center justify-center text-white">
-            <div className="h-12 w-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4" />
-            <span className="text-[10px] tracking-widest opacity-50">SYNCING ARENA...</span>
-        </div>
-    }>
+    <Suspense fallback={<div className="h-screen w-full bg-white flex items-center justify-center text-slate-900 font-bold">LOADING...</div>}>
       <ChessGameContent />
     </Suspense>
   );
