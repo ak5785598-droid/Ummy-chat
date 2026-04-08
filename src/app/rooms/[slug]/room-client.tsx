@@ -123,6 +123,7 @@ import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { ThemeSync } from '@/components/theme-sync';
+import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 
 import { memo, useCallback } from 'react';
@@ -1660,7 +1661,6 @@ export function RoomClient({ room }: { room: Room }) {
     const count = (room.maxActiveMics || 9) - 1;
     return Array.from({ length: count }, (_, i) => i + 2);
   }, [room.maxActiveMics]);
-
   const chatConfig = useMemo(() => {
     const mics = room.maxActiveMics || 9;
     if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
@@ -1676,6 +1676,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
+      <ThemeColorMeta color="#0d0d0d" />
       <ThemeSync color={themeSyncColor} />
       <DailyRewardDialog />
       <ExitRoomDialog

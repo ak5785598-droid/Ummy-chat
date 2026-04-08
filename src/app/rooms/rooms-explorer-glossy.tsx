@@ -45,6 +45,7 @@ import { useQuestInitializer } from '@/hooks/use-quest-initializer';
 import { VipBadge } from '@/components/vip-badge';
 import { GoldCoinIcon } from '@/components/icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 const ICON_MAP: Record<string, any> = {
  Sparkles,
@@ -167,6 +168,7 @@ export function RoomsExplorerGlossy() {
 
   return (
       <div className="flex-1 flex flex-col font-sans animate-in fade-in duration-700 bg-white h-screen overflow-hidden relative">
+        <ThemeColorMeta color="#eef9ff" />
         
         {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix for Glossy) */}
         <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">

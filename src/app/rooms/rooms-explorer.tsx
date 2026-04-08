@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
  Carousel,
@@ -175,6 +176,7 @@ export default function RoomsExplorer() {
 
   return (
       <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 pb-20 relative bg-white">
+        <ThemeColorMeta color="#eef9ff" />
         
         {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix) */}
         <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">

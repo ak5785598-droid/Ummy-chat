@@ -26,6 +26,7 @@ import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { PublishMomentDialog } from '@/components/publish-moment-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 /**
  * Discovery Dimension - Post Of The Day
@@ -54,6 +55,7 @@ export function DiscoverViewGlossy() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
+      <ThemeColorMeta color="#ffffff" />
       
       {/* FIXED GLOSSY HEADER */}
       <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-5 shrink-0">
