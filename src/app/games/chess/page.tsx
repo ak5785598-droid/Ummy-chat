@@ -44,19 +44,17 @@ function ChessGameContent() {
     return () => clearTimeout(timer);
    }, []);
 
-   // WHITE LOADING SCREEN (Half-Height Bottom Sheet)
+   // White Loading Page (Bottom Sheet)
    if (isLaunching || isLoading) {
     return (
-     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/20">
-        <div className="h-[70vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center p-10 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500">
-            <div className="relative mb-6">
-                <Loader2 className="h-16 w-16 text-indigo-600 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-indigo-600" />
-                </div>
+     <div className="fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="h-[75vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center p-10 shadow-[0_-20px_80px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom duration-500">
+            <div className="relative mb-6 flex flex-col items-center">
+                <div className="h-20 w-20 border-4 border-slate-100 border-t-purple-600 rounded-full animate-spin" />
+                <Shield className="absolute top-7 h-6 w-6 text-purple-600 animate-pulse" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Syncing Arena...</h2>
-            <p className="text-slate-400 text-[10px] mt-2 font-black uppercase tracking-[0.3em]">Powered-By Ummy Team</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight italic">PREPARING MATCH</h2>
+            <p className="text-slate-400 text-[10px] mt-4 font-black uppercase tracking-[0.4em]">Powered-By Ummy Team</p>
         </div>
      </div>
     );
@@ -72,50 +70,45 @@ function ChessGameContent() {
      if (row === 7) pieceKey = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"][col];
 
      return (
-       <div 
-         key={coord}
-         onClick={() => setSelectedSquare(coord)}
-         className={cn(
-           "relative w-full aspect-square flex items-center justify-center",
+       <div key={coord} onClick={() => setSelectedSquare(coord)} className={cn(
+           "relative w-full aspect-square flex items-center justify-center transition-all",
            isBlack ? "bg-[#1e40af]" : "bg-[#60a5fa]",
-           selectedSquare === coord && "ring-2 ring-yellow-400 z-10 scale-105"
-         )}
-       >
-         {pieceKey && <img src={pieceSVG[pieceKey]} alt="" className="w-[85%] h-[85%]" />}
+           selectedSquare === coord && "ring-4 ring-yellow-400 z-10 scale-105 shadow-2xl"
+       )}>
+         {pieceKey && <img src={pieceSVG[pieceKey]} alt="" className="w-[85%] h-[85%] drop-shadow-xl" />}
        </div>
      );
    };
 
    return (
     <AppLayout fullScreen>
-     {/* The background is transparent so the 'Room' (Castle/Moon) shows through */}
-     <div className="h-screen w-full bg-transparent flex flex-col relative overflow-hidden">
+     <div className="h-screen w-full relative overflow-hidden bg-transparent">
       
-      {/* TOP HALF: Transparent to show Room Background */}
-      <div className="flex-1 w-full bg-transparent flex items-start p-4">
-          <button onClick={() => router.back()} className="bg-black/40 backdrop-blur-md p-3 rounded-full text-white shadow-lg">
-            <ChevronLeft />
+      {/* Top Navigation Overlay */}
+      <div className="absolute top-6 left-6 z-20">
+          <button onClick={() => router.back()} className="bg-black/40 backdrop-blur-xl p-4 rounded-full text-white border border-white/10 active:scale-90 transition-all">
+            <ChevronLeft size={28} />
           </button>
       </div>
 
-      {/* BOTTOM HALF: The Chess Game Sheet */}
-      <main className="h-[75vh] w-full bg-[#5b36af] rounded-t-[40px] flex flex-col items-center p-6 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-700">
+      {/* CHESS GAME SHEET (Fixed at Bottom) */}
+      <div className="absolute bottom-0 w-full h-[78vh] bg-[#5b36af] rounded-t-[45px] flex flex-col items-center p-6 shadow-[0_-30px_100px_rgba(0,0,0,0.8)] border-t border-white/20 animate-in slide-in-from-bottom duration-700">
          
-         {/* Top Handle */}
-         <div className="w-10 h-1 bg-white/20 rounded-full mb-6" />
+         {/* Drag Handle */}
+         <div className="w-12 h-1.5 bg-white/30 rounded-full mb-8" />
 
-         <header className="w-full flex justify-between items-center mb-6 px-2">
-            <div className="text-white">
-                <h1 className="text-xl font-black italic tracking-tighter">CHESS ROYALE 3D</h1>
-                <p className="text-[9px] opacity-60 uppercase tracking-widest">Grandmaster Edition</p>
+         <header className="w-full flex justify-between items-center mb-6 px-4 text-white">
+            <div className="flex flex-col">
+                <h1 className="text-2xl font-black italic tracking-tighter leading-none">CHESS ROYALE 3D</h1>
+                <span className="text-[10px] opacity-60 uppercase tracking-[0.3em] mt-1 font-bold">Grandmaster Edition</span>
             </div>
-            <button onClick={() => setIsMuted(!isMuted)} className="text-white p-2 bg-white/10 rounded-xl">
-                {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
+            <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 rounded-2xl border border-white/10">
+                {isMuted ? <VolumeX size={24}/> : <Volume2 size={24}/>}
             </button>
          </header>
          
-         {/* 3D BOARD */}
-         <div className="relative w-full max-w-[340px] aspect-square rounded-xl border-[8px] border-slate-900 shadow-2xl overflow-hidden mb-8">
+         {/* BOARD CONTAINER */}
+         <div className="relative w-full max-w-[350px] aspect-square rounded-2xl border-[10px] border-slate-900 shadow-2xl overflow-hidden mb-8">
             <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-slate-900">
                 {Array.from({ length: 8 }).map((_, r) => 
                   Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
@@ -123,32 +116,29 @@ function ChessGameContent() {
             </div>
          </div>
 
-         {/* PLAYERS & BUTTON */}
-         <div className="w-full max-w-[340px] space-y-4">
-            <div className="flex justify-between items-center bg-black/20 p-4 rounded-2xl border border-white/10 text-white">
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8 ring-2 ring-blue-400"><AvatarImage src="" /></Avatar>
-                    <span className="font-bold text-xs uppercase">You</span>
+         {/* PLAYERS & START BUTTON */}
+         <div className="w-full max-w-[350px] space-y-5">
+            <div className="flex justify-between items-center bg-black/30 backdrop-blur-lg p-5 rounded-3xl border border-white/10 text-white">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full border-2 border-blue-400 bg-blue-500/20" />
+                    <span className="font-black text-sm uppercase italic">You</span>
                 </div>
-                <div className="text-[10px] opacity-30 font-black">VS</div>
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs uppercase">Opponent</span>
-                    <Avatar className="h-8 w-8 ring-2 ring-red-400"><AvatarImage src="" /></Avatar>
+                <div className="text-[10px] opacity-40 font-black">VS</div>
+                <div className="flex items-center gap-3">
+                    <span className="font-black text-sm uppercase italic">Opponent</span>
+                    <div className="h-10 w-10 rounded-full border-2 border-red-400 bg-red-500/20" />
                 </div>
             </div>
 
-            <button 
-                onClick={() => startMatch(userProfile)}
-                className="w-full bg-white text-[#5b36af] py-4 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all"
-            >
-                Start New Battle
+            <button onClick={() => startMatch(userProfile)} className="w-full bg-white text-[#5b36af] py-5 rounded-[22px] font-black text-lg uppercase tracking-[0.2em] shadow-[0_15px_30px_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-inner transition-all">
+                START NEW BATTLE
             </button>
          </div>
 
-         <footer className="mt-auto pb-2">
-            <p className="text-[9px] font-bold text-white/40 uppercase tracking-[0.5em]">Powered-By Ummy Team</p>
+         <footer className="mt-auto pb-4">
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.5em]">Powered-By Ummy Team</p>
          </footer>
-      </main>
+      </div>
      </div>
     </AppLayout>
    );
@@ -156,7 +146,7 @@ function ChessGameContent() {
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-white flex items-center justify-center text-indigo-600 font-bold">LOADING...</div>}>
+    <Suspense fallback={<div className="h-screen w-full bg-white" />}>
       <ChessGameContent />
     </Suspense>
   );
