@@ -11,7 +11,7 @@ export interface AvatarFrameConfig {
   animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow' | 'none';
   
   // High-Fidelity Additions
-  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'none';
+  extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'bubbles' | 'none';
   particleType?: 'stars' | 'fire' | 'bubbles' | 'matrix' | 'none';
   textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
   extraColor?: string;
@@ -19,6 +19,10 @@ export interface AvatarFrameConfig {
   
   // Image-based frame support
   imageUrl?: string;
+  scaleMultiplier?: number;
+  holeRatio?: number;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {

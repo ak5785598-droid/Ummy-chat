@@ -238,6 +238,12 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         <Loader2 className="w-16 h-16 text-emerald-700 animate-spin" />
         <h2 className="text-xl font-black italic text-emerald-800">POWERED-BY UMMY TEAM</h2>
       </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100]">
      {/* LIVE STATUS BAR */}
    <div className="absolute top-[22%] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20">
       <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />

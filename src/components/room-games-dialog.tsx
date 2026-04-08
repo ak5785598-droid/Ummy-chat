@@ -14,6 +14,9 @@ interface RoomGamesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectGame?: (slug: string) => void;
+  onToggleMiniPlayer?: () => void;
+  roomHasMusic?: boolean;
+  showMiniPlayer?: boolean;
 }
 
 const WORKING_GAMES = [
