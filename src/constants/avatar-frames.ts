@@ -304,8 +304,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#10B981',
     glowColor: 'rgba(16, 185, 129, 0.6)',
     imageUrl: '/images/frames/emerald_vine.png',
-    scaleMultiplier: 2.08,
-    holeRatio: 0.48,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -317,8 +317,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#F3F4F6',
     glowColor: 'rgba(243, 244, 246, 0.6)',
     imageUrl: '/images/frames/silver_crown.png',
-    scaleMultiplier: 1.69,
-    holeRatio: 0.59,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -330,8 +330,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EFF6FF',
     glowColor: 'rgba(239, 246, 255, 0.6)',
     imageUrl: '/images/frames/angel_wing.png',
-    scaleMultiplier: 1.81,
-    holeRatio: 0.55,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -343,8 +343,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/dark_star.png',
-    scaleMultiplier: 2.32,
-    holeRatio: 0.43,
+
+
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -356,8 +356,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.6)',
     imageUrl: '/images/frames/Red_star.png',
-    scaleMultiplier: 2.38,
-    holeRatio: 0.42,
+
+
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -369,8 +369,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#BAE6FD',
     glowColor: 'rgba(14, 165, 233, 0.5)',
     imageUrl: '/images/frames/Cloud_sky.png',
-    scaleMultiplier: 2.05,
-    holeRatio: 0.48,
+
+
     animationType: 'float',
     extraType: 'clouds'
   },
@@ -382,10 +382,10 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#FBBF24',
     glowColor: 'rgba(251, 191, 36, 0.6)',
     imageUrl: '/images/frames/Lion_wings.png',
-    scaleMultiplier: 2.25,
-    holeRatio: 0.44,
-    offsetX: 0,
-    offsetY: 4, // Nudge down slightly for wing balance
+
+
+
+ // Nudge down slightly for wing balance
     animationType: 'pulse',
     extraType: 'wings'
   },
@@ -397,8 +397,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#FFD700',
     glowColor: 'rgba(212, 175, 55, 0.7)',
     imageUrl: '/images/frames/Mystic_dragon.png',
-    scaleMultiplier: 2.15,
-    holeRatio: 0.46,
+
+
     animationType: 'float',
     extraType: 'dragon-body',
     extraColor: '#FFD700'
@@ -411,8 +411,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#4338CA',
     glowColor: 'rgba(79, 70, 229, 0.7)',
     imageUrl: '/images/frames/krishna_pankh.png',
-    scaleMultiplier: 3.4,
-    holeRatio: 0.42,
+
+
     animationType: 'float',
     extraType: 'none',
     extraColor: '#FFD700'
@@ -425,8 +425,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#06B6D4',
     glowColor: 'rgba(6, 182, 212, 0.7)',
     imageUrl: '/images/frames/lightning_tiger.png',
-    scaleMultiplier: 3.4,
-    holeRatio: 0.45,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -438,8 +438,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#94A3B8',
     glowColor: 'rgba(148, 163, 184, 0.6)',
     imageUrl: '/images/frames/shadow_eclipse.png',
-    scaleMultiplier: 3.2,
-    holeRatio: 0.46,
+
+
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -451,8 +451,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#3B82F6',
     glowColor: 'rgba(59, 130, 246, 0.7)',
     imageUrl: '/images/frames/blue_energy.png',
-    scaleMultiplier: 3.1,
-    holeRatio: 0.48,
+
+
     animationType: 'pulse',
     extraType: 'none'
   },
@@ -464,8 +464,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#EF4444',
     glowColor: 'rgba(239, 68, 68, 0.7)',
     imageUrl: '/images/frames/crimson_bolt.png',
-    scaleMultiplier: 3.3,
-    holeRatio: 0.45,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -477,8 +477,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     borderColor: '#818CF8',
     glowColor: 'rgba(129, 140, 248, 0.7)',
     imageUrl: '/images/frames/neon_void.png',
-    scaleMultiplier: 3.1,
-    holeRatio: 0.48,
+
+
     animationType: 'float',
     extraType: 'none'
   },
@@ -489,17 +489,8 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     gradient: 'linear-gradient(135deg, #166534, #22C55E, #166534)',
     borderColor: '#22C55E',
     glowColor: 'rgba(34, 197, 94, 0.7)',
-    imageUrl: '/images/frames/green_cyber_pulse.png',
-    scaleMultiplier: 3.3,
-    holeRatio: 0.45,
     animationType: 'pulse',
     extraType: 'none'
-=======
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/phoenix_flame.png'
   },
   'crystal-shard': {
     id: 'crystal-shard',
@@ -560,7 +551,6 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'transparent',
     animationType: 'none',
     imageUrl: '/images/frames/toxic_waste.png'
->>>>>>> firebase-crash-fix
   }
 };
 // End of registry
