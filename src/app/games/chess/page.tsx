@@ -6,12 +6,13 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, Volume2, VolumeX, Shield, Loader2
+ ChevronLeft, Volume2, VolumeX, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 
+// 3D Custom Character Icons
 const pieceSVG: Record<string, string> = {
   'pw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg',
   'rw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg',
@@ -40,105 +41,142 @@ function ChessGameContent() {
    const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
 
    useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 2000);
+    const timer = setTimeout(() => setIsLaunching(false), 1500);
     return () => clearTimeout(timer);
    }, []);
 
-   // White Loading Page (Bottom Sheet)
+   // UPDATED: WHITE LOADING PAGE DESIGN
    if (isLaunching || isLoading) {
     return (
-     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-        <div className="h-[75vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center p-10 shadow-[0_-20px_80px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom duration-500">
-            <div className="relative mb-6 flex flex-col items-center">
-                <div className="h-20 w-20 border-4 border-slate-100 border-t-purple-600 rounded-full animate-spin" />
-                <Shield className="absolute top-7 h-6 w-6 text-purple-600 animate-pulse" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight italic">PREPARING MATCH</h2>
-            <p className="text-slate-400 text-[10px] mt-4 font-black uppercase tracking-[0.4em]">Powered-By Ummy Team</p>
+     <div className="h-screen w-full bg-white flex flex-col items-center justify-center space-y-8 font-sans">
+        <div className="relative flex items-center justify-center">
+          {/* Circular Loader */}
+          <div className="h-20 w-20 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute">
+              <Shield className="h-6 w-6 text-blue-600/30 animate-pulse" />
+          </div>
+        </div>
+
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Preparing Arena</h1>
+          <p className="text-sm text-slate-400 font-medium animate-pulse">Syncing 3D assets...</p>
+        </div>
+
+        {/* Branding */}
+        <div className="absolute bottom-12 flex flex-col items-center gap-1">
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Powered By</span>
+          <span className="text-sm font-black text-slate-900 tracking-widest italic">UMMY TEAM</span>
         </div>
      </div>
     );
    }
 
+   const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
+                    (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
+
    const renderSquare = (row: number, col: number) => {
      const isBlack = (row + col) % 2 === 1;
-     const coord = `${String.fromCharCode(97 + col)}${8 - row}`;
+     const fileLabel = String.fromCharCode(97 + col);
+     const rankLabel = 8 - row;
+     const coord = `${fileLabel}${rankLabel}`;
+
      let pieceKey = "";
      if (row === 1) pieceKey = "pb";
      if (row === 6) pieceKey = "pw";
-     if (row === 0) pieceKey = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"][col];
-     if (row === 7) pieceKey = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"][col];
+     if (row === 0) {
+        const rank0 = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"];
+        pieceKey = rank0[col];
+     }
+     if (row === 7) {
+        const rank7 = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"];
+        pieceKey = rank7[col];
+     }
 
      return (
-       <div key={coord} onClick={() => setSelectedSquare(coord)} className={cn(
-           "relative w-full aspect-square flex items-center justify-center transition-all",
-           isBlack ? "bg-[#1e40af]" : "bg-[#60a5fa]",
-           selectedSquare === coord && "ring-4 ring-yellow-400 z-10 scale-105 shadow-2xl"
-       )}>
-         {pieceKey && <img src={pieceSVG[pieceKey]} alt="" className="w-[85%] h-[85%] drop-shadow-xl" />}
+       <div 
+         key={coord}
+         onClick={() => isMyTurn && setSelectedSquare(coord)}
+         className={cn(
+           "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
+           isBlack ? "bg-[#1e40af] shadow-inner" : "bg-[#60a5fa] shadow-inner",
+           selectedSquare === coord && "ring-4 ring-yellow-400 z-20 brightness-125"
+         )}
+         style={{ transform: 'translateZ(2px)' }}
+       >
+         {pieceKey && (
+           <img 
+             src={pieceSVG[pieceKey]} 
+             alt={pieceKey}
+             className="w-[85%] h-[85%] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform active:translate-y-[-10px]"
+           />
+         )}
        </div>
      );
    };
 
    return (
     <AppLayout fullScreen>
-     <div className="h-screen w-full relative overflow-hidden bg-transparent">
+     <div className="h-screen w-full bg-gradient-to-b from-[#0f172a] to-[#1e293b] flex flex-col relative overflow-hidden text-white font-sans">
       
-      {/* Top Navigation Overlay */}
-      <div className="absolute top-6 left-6 z-20">
-          <button onClick={() => router.back()} className="bg-black/40 backdrop-blur-xl p-4 rounded-full text-white border border-white/10 active:scale-90 transition-all">
-            <ChevronLeft size={28} />
-          </button>
-      </div>
+      <header className="z-50 flex items-center justify-between p-6">
+        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20 hover:bg-white/20 transition-all"><ChevronLeft /></button>
+        <div className="text-center">
+            <h1 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">CHESS ROYALE 3D</h1>
+            <p className="text-[10px] opacity-50 uppercase tracking-[0.3em]">Grandmaster Edition</p>
+        </div>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-3 rounded-xl border border-white/20">
+            {isMuted ? <VolumeX /> : <Volume2 />}
+        </button>
+      </header>
 
-      {/* CHESS GAME SHEET (Fixed at Bottom) */}
-      <div className="absolute bottom-0 w-full h-[78vh] bg-[#5b36af] rounded-t-[45px] flex flex-col items-center p-6 shadow-[0_-30px_100px_rgba(0,0,0,0.8)] border-t border-white/20 animate-in slide-in-from-bottom duration-700">
+      <main className="flex-1 flex flex-col items-center justify-center perspective-[1000px] py-4">
          
-         {/* Drag Handle */}
-         <div className="w-12 h-1.5 bg-white/30 rounded-full mb-8" />
-
-         <header className="w-full flex justify-between items-center mb-6 px-4 text-white">
-            <div className="flex flex-col">
-                <h1 className="text-2xl font-black italic tracking-tighter leading-none">CHESS ROYALE 3D</h1>
-                <span className="text-[10px] opacity-60 uppercase tracking-[0.3em] mt-1 font-bold">Grandmaster Edition</span>
-            </div>
-            <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 rounded-2xl border border-white/10">
-                {isMuted ? <VolumeX size={24}/> : <Volume2 size={24}/>}
-            </button>
-         </header>
-         
-         {/* BOARD CONTAINER */}
-         <div className="relative w-full max-w-[350px] aspect-square rounded-2xl border-[10px] border-slate-900 shadow-2xl overflow-hidden mb-8">
-            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-slate-900">
+         <div 
+            className="relative w-[95vw] max-w-[450px] aspect-square rounded-lg border-[12px] border-[#334155] shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+            style={{ 
+                transform: 'rotateX(25deg) rotateZ(0deg)',
+                transformStyle: 'preserve-3d',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.2)'
+            }}
+         >
+            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-[#0f172a]">
                 {Array.from({ length: 8 }).map((_, r) => 
                   Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
                 )}
             </div>
          </div>
 
-         {/* PLAYERS & START BUTTON */}
-         <div className="w-full max-w-[350px] space-y-5">
-            <div className="flex justify-between items-center bg-black/30 backdrop-blur-lg p-5 rounded-3xl border border-white/10 text-white">
+         <div className="mt-16 w-full max-w-[380px] px-6 space-y-6">
+            <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full border-2 border-blue-400 bg-blue-500/20" />
-                    <span className="font-black text-sm uppercase italic">You</span>
+                    <Avatar className="h-12 w-12 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-blue-400">White</p>
+                        <p className="font-black text-lg uppercase">{userProfile?.displayName || 'YOU'}</p>
+                    </div>
                 </div>
-                <div className="text-[10px] opacity-40 font-black">VS</div>
-                <div className="flex items-center gap-3">
-                    <span className="font-black text-sm uppercase italic">Opponent</span>
-                    <div className="h-10 w-10 rounded-full border-2 border-red-400 bg-red-500/20" />
+                <div className="h-8 w-[2px] bg-white/10" />
+                <div className="flex items-center gap-3 text-right">
+                    <div>
+                        <p className="text-xs font-bold uppercase opacity-60 italic text-red-400">Black</p>
+                        <p className="font-black text-lg">OPPONENT</p>
+                    </div>
+                    <Avatar className="h-12 w-12 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
                 </div>
             </div>
 
-            <button onClick={() => startMatch(userProfile)} className="w-full bg-white text-[#5b36af] py-5 rounded-[22px] font-black text-lg uppercase tracking-[0.2em] shadow-[0_15px_30px_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-inner transition-all">
-                START NEW BATTLE
+            <button 
+                onClick={() => startMatch(userProfile)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(37,99,235,0.4)] active:scale-95 transition-all"
+            >
+                Start New Battle
             </button>
          </div>
+      </main>
 
-         <footer className="mt-auto pb-4">
-            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.5em]">Powered-By Ummy Team</p>
-         </footer>
-      </div>
+      <footer className="p-6 text-center">
+         <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Powered by Unreal-Style CSS 3D Engine</p>
+      </footer>
      </div>
     </AppLayout>
    );
@@ -146,7 +184,11 @@ function ChessGameContent() {
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-white" />}>
+    <Suspense fallback={
+        <div className="h-screen w-full bg-white flex items-center justify-center font-black text-slate-200 tracking-widest">
+            INITIALIZING...
+        </div>
+    }>
       <ChessGameContent />
     </Suspense>
   );
