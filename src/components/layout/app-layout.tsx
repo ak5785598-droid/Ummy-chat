@@ -30,6 +30,7 @@ import { ActiveRoomManager } from '@/components/active-room-manager';
 import { UnreadBadge } from '@/components/unread-badge';
 import { DESIGN_TOKENS } from '@/lib/design-tokens';
 import { DynamicThemeSync } from '@/components/dynamic-theme-sync';
+import { motion } from 'framer-motion';
 
 /**
  * THE NUCLEAR STABILITY LAYOUT (Final Remediated Version).
@@ -165,37 +166,37 @@ export function AppLayout({
         {children}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION (Atomic Shielded Rebuild) */}
+      {/* MOBILE BOTTOM NAVIGATION (Glossy White Rebuild) */}
       {!deterministicAuth && !hideBottomNav && (
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-safe-area-inset-bottom"
         >
-          <div className="flex items-center justify-around bg-gradient-to-r from-[#1a0b2e] via-[#2d144d] to-[#1a0b2e] h-16 mb-2 rounded-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
-               {pathname === '/rooms' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
-               <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
+          <div className="flex items-center justify-around bg-white/70 backdrop-blur-3xl h-16 mb-4 rounded-3xl border border-white shadow-[0_10px_40px_rgba(0,0,0,0.05)] transition-all">
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-slate-900" : "text-slate-300")}>
+               {pathname === '/rooms' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
+               <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
-               {pathname === '/discover' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
-               <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-slate-900" : "text-slate-300")}>
+               {pathname === '/discover' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
+               <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
             </Link>
 
-            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
-               {pathname === '/messages' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-slate-900" : "text-slate-300")}>
+               {pathname === '/messages' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
                <div className="relative">
-                 <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
-                 <UnreadBadge size="sm" className="absolute -top-2 -right-2" />
+                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
+                 <UnreadBadge size="sm" className="absolute -top-2 -right-2 border-2 border-white" />
                </div>
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
             </Link>
 
-            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
-               {pathname?.startsWith('/profile') && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
-               <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-slate-900" : "text-slate-300")}>
+               {pathname?.startsWith('/profile') && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
+               <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
             </Link>
           </div>
         </nav>
