@@ -108,17 +108,12 @@ const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       <img 
         src={imageUrl} 
         alt="Frame"
-        className="absolute inset-0 w-full h-full rounded-full"
+        className="absolute inset-0 w-full h-full rounded-full object-contain"
         style={{
           // Frame sits on the edge, not covering the DP
           backgroundColor: 'transparent',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          // Create a hole in the center for the DP to show through
-          // 80px total, 70px center hole, 5px thickness = 87.5% transparent
-          maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
-          WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
-          // Ensure no black background
+          // PNG images already have transparent center hole designed in
+          // No mask needed - images are already designed with 70px hole
           mixBlendMode: 'normal'
         }}
       />
@@ -145,16 +140,12 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="absolute inset-0 w-full h-full rounded-full"
+            className="absolute inset-0 w-full h-full rounded-full object-contain"
             style={{
               // Frame sits on the edge, not covering the DP
               backgroundColor: 'transparent',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              // Create a hole in the center for the DP to show through
-              // 80px total, 70px center hole, 5px thickness = 87.5% transparent
-              maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
-              WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
+              // PNG images already have transparent center hole designed in
+              // No mask needed - images are already designed with 70px hole
               mixBlendMode: 'normal'
             }}
           />
