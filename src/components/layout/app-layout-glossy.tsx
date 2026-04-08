@@ -168,16 +168,16 @@ export function AppLayoutGlossy({
       {/* MOBILE BOTTOM NAVIGATION (Glossy White Rebuild) */}
       {!deterministicAuth && !hideBottomNav && (
         <nav 
-          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-safe-area-inset-bottom"
+          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden"
         >
-          <div className="flex items-center justify-around bg-white/70 backdrop-blur-3xl h-16 mb-4 rounded-3xl border border-white shadow-[0_10px_40px_rgba(0,0,0,0.05)] transition-all">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-slate-900" : "text-slate-300")}>
+          <div className="flex items-center justify-around bg-white/70 backdrop-blur-2xl h-14 border-t border-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] transition-all">
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-slate-400")}>
                {pathname === '/rooms' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
                <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-slate-900" : "text-slate-300")}>
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? DESIGN_TOKENS.navActiveTextColor : "text-slate-400")}>
                {pathname === '/discover' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
                <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>

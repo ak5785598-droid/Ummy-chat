@@ -194,8 +194,8 @@ export default function RoomsExplorer() {
            </div>
         </div>
 
-        <header className="flex items-center justify-between px-4 pt-safe pb-0 shrink-0 relative z-10">
-          <div className="pt-2 flex items-center justify-between w-full">
+        <header className="flex items-center justify-between px-4 pb-0 shrink-0 relative z-10 mt-1">
+          <div className="flex items-center justify-between w-full">
              <div className="flex items-center gap-3">
                 <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
                 <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
