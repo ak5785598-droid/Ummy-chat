@@ -179,33 +179,35 @@ const Seat = memo(({
 
         <AvatarFrame
           frameId={occupant?.activeFrame || 'None'}
-          size="sm"
+          size="md"
         >
-          <button
-            onClick={() => onClick(index, occupant)}
-            className={cn(
-              "h-[50px] w-[50px] rounded-full flex items-center justify-center transition-all relative z-10",
-              "bg-sky-500/20 backdrop-blur-xl border border-white/30",
-              isLocked ? "border-red-500/60" : "",
-              occupant ? "p-0" : "p-0"
-            )}
-          >
-            {occupant ? (
-              <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
-                <Avatar className="h-full w-full p-0">
-                  <AvatarImage
-                    src={occupant.avatarUrl || undefined}
-                    className="image-render-crisp brightness-[1.05] contrast-[1.02] saturate-[1.05]"
-                  />
-                  <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
-                </Avatar>
-              </div>
-            ) : isLocked ? (
-              <Lock className="h-4 w-4 text-red-500/60" />
-            ) : (
-              <Armchair className="text-white/90 h-5 w-5" />
-            )}
-          </button>
+          <div className="relative p-0.5 rounded-full">
+            <button
+              onClick={() => onClick(index, occupant)}
+              className={cn(
+                "h-[60px] w-[60px] rounded-full flex items-center justify-center transition-all relative z-10",
+                "bg-sky-500/20 backdrop-blur-xl border border-white/30",
+                isLocked ? "border-red-500/60" : "",
+                occupant ? "p-0" : "p-0"
+              )}
+            >
+              {occupant ? (
+                <div className={cn("h-full w-full transition-opacity duration-300", occupant.activeEmoji ? "opacity-0" : "opacity-100")}>
+                  <Avatar className="h-full w-full p-0">
+                    <AvatarImage
+                      src={occupant.avatarUrl || undefined}
+                      className="image-render-crisp brightness-[1.05] contrast-[1.02] saturate-[1.05]"
+                    />
+                    <AvatarFallback>{(occupant.name || 'U').charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+              ) : isLocked ? (
+                <Lock className="h-4 w-4 text-red-500/60" />
+              ) : (
+                <Armchair className="text-white/90 h-6 w-6" />
+              )}
+            </button>
+          </div>
         </AvatarFrame>
 
         {/* Mic Status Badge - Only show when muted */}
