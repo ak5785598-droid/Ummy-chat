@@ -633,6 +633,8 @@ export function RoomClient({ room }: { room: Room }) {
   // AI VOICE ENGINE (TTS)
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    
     const loadVoices = () => {
       const v = window.speechSynthesis.getVoices();
       if (v.length > 0) setVoicesLoaded(true);
