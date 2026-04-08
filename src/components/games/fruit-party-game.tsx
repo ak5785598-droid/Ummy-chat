@@ -9,7 +9,7 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
 import { 
- X, Volume2, VolumeX, Pointer, Trophy, Sparkles, Music
+ X, Volume2, VolumeX, Pointer, Trophy, Sparkles, Music, HelpCircle
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -29,15 +29,14 @@ const ITEMS = [
 ];
 
 const CHIPS = [
-  { value: 500, label: '500', color: 'from-cyan-400 to-blue-600 shadow-cyan-500/50' },
-  { value: 5000, label: '5K', color: 'from-pink-400 to-rose-600 shadow-rose-500/50' },
-  { value: 50000, label: '50K', color: 'from-yellow-300 to-orange-500 shadow-yellow-500/50' },
-  { value: 500000, label: '500K', color: 'from-fuchsia-500 to-purple-800 shadow-purple-600/50' },
+  { value: 1000, label: '1K', color: 'from-cyan-400 to-blue-600 shadow-cyan-500/50' },
+  { value: 50000, label: '50K', color: 'from-pink-400 to-rose-600 shadow-rose-500/50' },
+  { value: 500000, label: '500K', color: 'from-yellow-300 to-orange-500 shadow-yellow-500/50' },
+  { value: 5000000, label: '5M', color: 'from-fuchsia-500 to-purple-800 shadow-purple-600/50' },
 ];
 
 const SEQUENCE = [0, 1, 2, 5, 8, 7, 6, 3];
 
-// --- Audio Engine ---
 const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
   if (muted) return;
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -52,9 +51,9 @@ const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
   } else if (type === 'spin') {
     osc.type = 'square';
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
   }
   
   osc.connect(gain);
@@ -63,22 +62,22 @@ const playSound = (type: 'bet' | 'spin' | 'win', muted: boolean) => {
   osc.stop(ctx.currentTime + 0.1);
 };
 
-// --- BRANCH DECORATION ---
-const LongBranchDecoration = ({ className, delay = 0, reverse = false, horizontal = false }: { className?: string; delay?: number; reverse?: boolean; horizontal?: boolean }) => (
+const LongBranchDecoration = ({ className, delay = 0, reverse = false }: { className?: string; delay?: number; reverse?: boolean }) => (
   <motion.div
-    initial={horizontal ? { x: -10 } : { y: -10 }}
-    animate={horizontal ? { x: 10 } : { y: 10 }}
+    initial={{ y: -10 }}
+    animate={{ y: 10 }}
     transition={{ duration: 6, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay }}
-    className={cn("absolute pointer-events-none z-30", className, reverse ? "scale-x-[-1]" : "", horizontal ? "w-screen h-[60px]" : "h-screen w-[80px]")}
+    className={cn("absolute top-0 h-screen w-[80px] pointer-events-none z-30", className, reverse ? "scale-x-[-1]" : "")}
   >
-    <svg viewBox={horizontal ? "0 0 1200 100" : "0 0 100 1200"} className="w-full h-full overflow-visible drop-shadow-[0_8px_10px_rgba(0,0,0,0.7)]" preserveAspectRatio="none">
-      <path d={horizontal ? "M 0,50 C 300,30 600,70 900,50 C 1100,30 1200,60 1200,50" : "M 50,0 C 30,300 70,600 50,900 C 30,1100 60,1200 50,1200"} stroke="#1a0d02" strokeWidth="10" fill="none" vectorEffect="non-scaling-stroke" />
-      <path d={horizontal ? "M 0,55 C 250,85 550,15 850,55 C 1050,85 1200,15 1200,55" : "M 55,0 C 85,250 15,550 55,850 C 85,1050 15,1200 55,1200"} stroke="#143613" strokeWidth="6" fill="none" vectorEffect="non-scaling-stroke" />
+    <svg viewBox="0 0 100 1200" className="w-full h-full overflow-visible drop-shadow-[0_15px_15px_rgba(0,0,0,0.9)]" preserveAspectRatio="none">
+      <path d="M 50,0 C 30,300 70,600 50,900 C 30,1100 60,1200 50,1200" stroke="#1a0d02" strokeWidth="12" fill="none" vectorEffect="non-scaling-stroke" />
+      <path d="M 55,0 C 85,250 15,550 55,850 C 85,1050 15,1200 55,1200" stroke="#143613" strokeWidth="7" fill="none" vectorEffect="non-scaling-stroke" />
+      <path d="M 45,0 C 15,200 85,450 45,750 C 15,950 85,1200 45,1200" stroke="#22521d" strokeWidth="5" fill="none" vectorEffect="non-scaling-stroke" />
     </svg>
-    <div className={cn("absolute inset-0 flex justify-between items-center px-4", horizontal ? "flex-row" : "flex-col py-10")}>
-      {[...Array(6)].map((_, i) => (
-        <motion.div key={i} animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3 + i, repeat: Infinity }} className="text-xl">
-          {i % 2 === 0 ? "🌿" : "🍎"}
+    <div className="absolute inset-0 flex flex-col justify-between py-10 items-center">
+      {[...Array(8)].map((_, i) => (
+        <motion.div key={i} animate={{ rotate: i % 2 === 0 ? [0, 10, 0] : [0, -10, 0] }} transition={{ duration: 3 + i, repeat: Infinity }} className="text-xl">
+          {i % 3 === 0 ? "🍎" : "🌿"}
         </motion.div>
       ))}
     </div>
@@ -103,11 +102,7 @@ const VisualizerPillar = ({ height = "h-48", colors = ['#ff3366', '#ffcc00', '#0
     {Array.from({ length: 8 }).map((_, i) => (
       <motion.div
         key={i}
-        animate={{ 
-          opacity: [0.4, 1, 0.4],
-          scaleX: [1, 1.3, 1],
-          backgroundColor: i < 2 ? colors[0] : i < 5 ? colors[1] : colors[2]
-        }}
+        animate={{ opacity: [0.4, 1, 0.4], scaleX: [1, 1.3, 1], backgroundColor: i < 2 ? colors[0] : i < 5 ? colors[1] : colors[2] }}
         transition={{ duration: Math.random() * 0.5 + 0.2, repeat: Infinity, delay: i * 0.08 }}
         className="w-full h-full rounded-full"
       />
@@ -171,8 +166,8 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   const targetIdx = ITEMS.findIndex(i => i.id === winItem.id);
   
   let currentStep = 0;
-  const totalSteps = (SEQUENCE.length * 8) + SEQUENCE.indexOf(targetIdx); 
-  let speed = 40;
+  const totalSteps = (SEQUENCE.length * 6) + SEQUENCE.indexOf(targetIdx); 
+  let speed = 30;
 
   const run = () => {
    setHighlightIdx(SEQUENCE[currentStep % SEQUENCE.length]);
@@ -180,15 +175,13 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
    
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    if (remaining < 4) speed += 120;
-    else if (remaining < 8) speed += 60;
-    else if (remaining < 15) speed += 30;
-    else if (remaining < 25) speed += 15;
-    else if (remaining < 40) speed += 5;
+    if (remaining < 5) speed += 100;
+    else if (remaining < 10) speed += 40;
+    else if (remaining < 20) speed += 10;
     currentStep++;
     setTimeout(run, speed);
    } else {
-    setTimeout(() => finalizeResult(winItem), 1200);
+    setTimeout(() => finalizeResult(winItem), 1000);
    }
   };
   run();
@@ -218,16 +211,19 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans relative">
    
-   {/* --- BRANCH DECORATIONS (FULL FRAME) --- */}
-   <LongBranchDecoration className="left-[-15px] top-0" delay={0} />
-   <LongBranchDecoration className="right-[-15px] top-0" delay={2} reverse />
-   <LongBranchDecoration className="top-[-20px] left-0" delay={1} horizontal />
+   <LongBranchDecoration className="left-[-15px]" delay={0} />
+   <LongBranchDecoration className="right-[-15px]" delay={2} reverse />
 
-   <header className="relative pt-6 px-6 flex flex-col items-center z-40">
-      <div className="flex justify-between items-center w-full mb-3">
-        <button onClick={() => setIsMuted(!isMuted)} className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
-          {isMuted ? <VolumeX size={18} className="text-red-400"/> : <Volume2 size={18} className="text-green-400"/>}
-        </button>
+   <header className="relative pt-4 px-6 flex flex-col items-center z-40">
+      <div className="flex justify-between items-center w-full mb-2">
+        <div className="flex gap-2">
+          <button onClick={() => setIsMuted(!isMuted)} className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
+            {isMuted ? <VolumeX size={18} className="text-red-400"/> : <Volume2 size={18} className="text-green-400"/>}
+          </button>
+          <button className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
+            <HelpCircle size={18} className="text-blue-400"/>
+          </button>
+        </div>
         <div className="relative">
           <h1 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-orange-400 to-red-500">FRUIT PARTY</h1>
           <Sparkles className="absolute -top-1 -right-4 text-yellow-400 w-4 h-4 animate-pulse" />
@@ -322,19 +318,19 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
            <DJVisualizer colorClass="bg-pink-500" />
         </div>
 
-        <div className="w-[220px] bg-gradient-to-r from-purple-900/70 to-indigo-900/70 p-2 rounded-xl border border-white/10 flex items-center justify-between shadow-xl backdrop-blur-md z-40">
-           <div className="flex items-center gap-2">
+        <div className="w-[240px] bg-gradient-to-r from-purple-900/60 to-indigo-900/60 p-2.5 rounded-xl border border-white/10 flex items-center justify-between shadow-xl backdrop-blur-md z-40">
+           <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-gradient-to-br from-yellow-300 via-orange-500 to-yellow-600 rounded-lg">
-                <GoldCoinIcon className="w-3 h-3 text-white" />
+                <GoldCoinIcon className="w-3.5 h-3.5 text-white" />
               </div>
               <div>
-                <p className="text-[7px] text-indigo-300 font-bold uppercase mb-0">Balance</p>
+                <p className="text-[7px] text-indigo-300 font-bold uppercase tracking-wider mb-0">Balance</p>
                 <p className="text-lg font-black text-white tabular-nums leading-none">
                     {localCoins.toLocaleString()}
                 </p>
               </div>
            </div>
-           <div className="bg-black/40 px-1 py-0.5 rounded text-[7px] text-white/30">
+           <div className="bg-black/40 px-1.5 py-0.5 rounded border border-white/5 font-mono text-[8px] text-white/30">
               #{currentUser?.uid?.slice(0,4).toUpperCase()}
            </div>
         </div>
@@ -343,47 +339,27 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
       <VisualizerPillar height="h-60" />
    </main>
 
-   {/* --- 3D TREE TRUNK (LOG) CHIP CARD --- */}
-   <footer className="relative mt-auto p-4 z-50">
-      <div className="relative group">
-        {/* The 3D Tree Trunk Effect */}
-        <div className="absolute inset-0 bg-[#3d2410] rounded-[3rem] transform translate-y-3 shadow-[0_15px_30px_rgba(0,0,0,0.8)]" />
-        <div className="relative bg-gradient-to-b from-[#5c3a1e] via-[#4a2e17] to-[#3d2410] backdrop-blur-md rounded-[3rem] p-5 border-t-4 border-l-2 border-white/10 shadow-inner flex flex-col gap-2 overflow-hidden">
-          
-          {/* Wood Grain Texture Pattern (SVG Background) */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <svg width="100%" height="100%">
-              <filter id="grain">
-                <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" />
-              </filter>
-              <rect width="100%" height="100%" filter="url(#grain)" />
-            </svg>
-          </div>
-
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide justify-center items-center py-2 relative z-10">
-            {CHIPS.map(chip => (
-              <button 
-                key={chip.value} 
-                disabled={gameState !== 'betting'}
-                onClick={() => setSelectedChip(chip.value)}
-                className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center transition-all border-[3px] border-white/20 active:translate-y-1 bg-gradient-to-br shadow-2xl", chip.color,
-                  selectedChip === chip.value ? "ring-4 ring-white/60 scale-110 border-white opacity-100 z-10" : "opacity-60 scale-90",
-                  gameState !== 'betting' && "opacity-20 grayscale cursor-not-allowed"
-                )}
-              >
-                <div className="flex flex-col items-center">
-                  <span className="text-white font-black text-sm drop-shadow-lg">{chip.label}</span>
-                  <div className="w-8 h-0.5 bg-white/30 rounded-full mt-0.5" />
-                </div>
-              </button>
-            ))}
-          </div>
-          
-          {/* Bark texture detail */}
-          <div className="flex justify-center">
-            <div className="w-24 h-1 bg-black/20 rounded-full blur-[1px]" />
-          </div>
+   {/* --- Chips Card - Height and Width Reduced --- */}
+   <footer className="relative mt-auto p-4 z-50 flex justify-center">
+      <div className="bg-[#4a2e17] backdrop-blur-3xl rounded-[2rem] p-3 border border-[#5c3a1e] shadow-[0_10px_20px_rgba(0,0,0,0.5),inset_0_2px_5px_rgba(255,255,255,0.1)] w-fit">
+        <div className="flex gap-2.5 overflow-x-auto scrollbar-hide justify-center items-center">
+          {CHIPS.map(chip => (
+            <button 
+              key={chip.value} 
+              disabled={gameState !== 'betting'}
+              onClick={() => setSelectedChip(chip.value)}
+              className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center transition-all border-[2px] border-white/10 active:translate-y-1 bg-gradient-to-br", chip.color,
+                selectedChip === chip.value ? "ring-2 ring-white scale-105 border-white opacity-100" : "opacity-50 scale-90",
+                gameState !== 'betting' && "opacity-10 grayscale cursor-not-allowed"
+              )}
+            >
+              <div className="flex flex-col items-center">
+                <span className="text-white font-black text-[10px] drop-shadow-md">{chip.label}</span>
+                <div className="w-5 h-0.5 bg-white/20 rounded-full mt-0.5" />
+              </div>
+            </button>
+          ))}
         </div>
       </div>
    </footer>
@@ -407,3 +383,4 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
   </div>
  );
 }
+
