@@ -99,6 +99,8 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
 };
 
 const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
+  if (!config) return null;
+
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
     extraType, particleType, extraColor, particleColor, id, imageUrl

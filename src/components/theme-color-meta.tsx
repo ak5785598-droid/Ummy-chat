@@ -23,10 +23,14 @@ export function ThemeColorMeta({ color }: { color: string }) {
     // 2. UPDATE NATIVE APK STATUS BAR (If running built via Capacitor Android/iOS)
     const updateNativeStatusBar = async () => {
       try {
+        if (!color || typeof color !== 'string') return;
+        
         if (Capacitor.isNativePlatform()) {
           // Calculate brightness to set text icon color (black or white icons)
           // Basic hex to rgb conversion to check luma
-          const hex = color.replace('#', '');
+          const hex = color.startsWith('#') ? color.replace('#', '') : color;
+          if (hex.length < 6) return; // Fallback for shortened or non-hex colors
+          
           const r = parseInt(hex.substring(0, 2), 16) || 255;
           const g = parseInt(hex.substring(2, 4), 16) || 255;
           const b = parseInt(hex.substring(4, 6), 16) || 255;
