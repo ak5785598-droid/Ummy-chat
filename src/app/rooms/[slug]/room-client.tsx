@@ -251,7 +251,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
   const [now, setNow] = useState<number | null>(null);
-  const hasResetRocketRef = useRef(false);
 
   const [sessionJoinTime, setSessionJoinTime] = useState<Date | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -277,6 +276,33 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
+  const welcomedUsersRef = useRef<Set<string>>(new Set());
+  const cleanupWelcomesRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Messages ref
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastProcessedId = useRef<string | null>(null);
+
+  // Music refs
+  const musicAudioRef = useRef<HTMLAudioElement>(null);
+  const pendingSeekTime = useRef<number | null>(null);
+
+  // Throttle ref for message processing
+  const messageProcessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // AI Voice refs
+  const recognitionRef = useRef<any>(null);
+
+  // Image upload ref
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Rocket reset ref
+  const hasResetRocketRef = useRef(false);
+
+  // Warning counts ref for AI moderation
+  const warningCounts = useRef<Record<string, number>>({});
 
   // AUTO-UNLOCK: Play silent audio on mount to unlock browser audio context
   // This allows subsequent music to auto-play without user interaction
@@ -332,22 +358,18 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, []);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // SYNC: Initialize standard user hook
   const { user: currentUser } = useUser();
 
+  // Get voice activity from context - MOVED TO TOP
+  const { isSpeaking, intensity } = useVoiceActivityContext();
+
   // DYNAMIC LEVELING SYNC
   useActivityTracker(room?.id, currentUser?.uid || null);
 
-  // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
-  if (!room || !room.id) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
-        <Loader className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
-  }
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURN
+  // DO NOT ADD HOOKS AFTER THIS LINE
 
   const {
     setActiveRoom,
@@ -357,11 +379,6 @@ export function RoomClient({ room }: { room: Room }) {
     setMusicStream,
     isMusicEnabled
   } = useRoomContext();
-  const musicAudioRef = useRef<HTMLAudioElement>(null);
-  const pendingSeekTime = useRef<number | null>(null);
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const lastProcessedId = useRef<string | null>(null);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -369,12 +386,15 @@ export function RoomClient({ room }: { room: Room }) {
   const firestore = useFirestore();
   const storage = useStorage();
 
-  // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
-  const welcomedUsersRef = useRef<Set<string>>(new Set());
-  const cleanupWelcomesRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Get voice activity from context
-  const { isSpeaking, intensity } = useVoiceActivityContext();
+  // ALL HOOKS ABOVE THIS LINE - NO CONDITIONAL RETURNS BEFORE THIS
+  // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
+  if (!room || !room.id) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
+        <Loader className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
@@ -684,7 +704,6 @@ export function RoomClient({ room }: { room: Room }) {
 
   // AI VOICE INTERACTION (STT)
   const [isAIListening, setIsAIListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
 
   const toggleAIListening = () => {
     if (typeof window === 'undefined') return;
@@ -759,9 +778,6 @@ export function RoomClient({ room }: { room: Room }) {
       toast({ title: 'AI Voice Disabled' });
     }
   };
-
-  // Throttle ref for message processing
-  const messageProcessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // GIFT & EVENT SYNC ENGINE - OPTIMIZED with throttling
   useEffect(() => {
@@ -921,9 +937,6 @@ export function RoomClient({ room }: { room: Room }) {
   }, [room.rocket, participantsData, currentUser?.uid, room.ownerId, firestore, room.id]);
 
   // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
-
-  // AI GUARD STATE
-  const warningCounts = useRef<Record<string, number>>({});
 
   const handleAIEngine = async (msg: any) => {
     if (!firestore || !room.id || !msg.content) return;

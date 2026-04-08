@@ -98,7 +98,36 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
+<<<<<<< HEAD
 const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
+=======
+const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
+  const { imageUrl } = config;
+  
+  if (!imageUrl) return null;
+  
+  return (
+    <div className="absolute inset-0 w-full h-full rounded-full z-10 pointer-events-none">
+      <img 
+        src={imageUrl} 
+        alt="Frame"
+        className="w-full h-full rounded-full object-contain"
+        style={{
+          // Remove any background - transparent
+          backgroundColor: 'transparent',
+          // Frame sits exactly on avatar edge - no padding
+          objectFit: 'contain',
+          objectPosition: 'center',
+          // Ensure no black background
+          mixBlendMode: 'normal'
+        }}
+      />
+    </div>
+  );
+};
+
+const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
+>>>>>>> firebase-crash-fix
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
     extraType, particleType, extraColor, particleColor, id, imageUrl
@@ -192,23 +221,16 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
 };
 
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
-  const sizeMap = {
-    sm: 40,
-    md: 60,
-    lg: 80,
-    xl: 96
-  };
-
   const sizeClasses = {
-    sm: 'w-10 h-10',
-    md: 'w-[60px] h-[60px]',
-    lg: 'w-20 h-20',
-    xl: 'w-24 h-24'
+    sm: 'h-[50px] w-[50px]',
+    md: 'h-[60px] w-[60px]',
+    lg: 'h-20 w-20',
+    xl: 'h-24 w-24'
   };
 
-  const pixelSize = sizeMap[size];
   const config = frameId ? AVATAR_FRAMES[frameId] : null;
-  const isElite = !!config && frameId !== 'None';
+  const isElite = !!config;
+  const isImageFrame = config?.imageUrl;
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>
@@ -220,7 +242,11 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 pointer-events-none overflow-visible"
           >
-            <EliteFrameRenderer config={config} pixelSize={pixelSize} />
+            {isImageFrame ? (
+              <ImageFrameRenderer config={config} />
+            ) : (
+              <EliteFrameRenderer config={config} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

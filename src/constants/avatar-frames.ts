@@ -8,7 +8,7 @@ export interface AvatarFrameConfig {
   borderColor: string;
   glowColor: string;
   ornament?: string | LucideIcon;
-  animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow';
+  animationType: 'rotate' | 'pulse' | 'float' | 'sparkle' | 'matrix' | 'flow' | 'none';
   
   // High-Fidelity Additions
   extraType?: 'wings' | 'halo' | 'clouds' | 'nebula' | 'crystals' | 'dragon-body' | 'sun-rays' | 'spikes' | 'none';
@@ -16,11 +16,9 @@ export interface AvatarFrameConfig {
   textureType?: 'gold' | 'glass' | 'lava' | 'ice' | 'none';
   extraColor?: string;
   particleColor?: string;
+  
+  // Image-based frame support
   imageUrl?: string;
-  scaleMultiplier?: number;
-  holeRatio?: number;
-  offsetX?: number;
-  offsetY?: number;
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
@@ -277,30 +275,26 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'pulse',
     particleType: 'matrix'
   },
-  'royal-wreath': {
-    id: 'royal-wreath',
-    name: 'Royal Wreath',
+// --- IMAGE-BASED FRAMES ---
+  'neon-void': {
+    id: 'neon-void',
+    name: 'Neon Void',
     tier: 'legendary',
-    gradient: 'conic-gradient(from 0deg, #F9E58A, #FDB931, #FFD700, #F9E58A)',
-    borderColor: '#FFD700',
-    glowColor: 'rgba(255, 215, 0, 0.4)',
-    imageUrl: '/images/frames/royal_wreath.png',
-    animationType: 'float',
-    extraType: 'none',
-    particleType: 'stars'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/neon_void.png'
   },
   'phoenix-flame': {
     id: 'phoenix-flame',
     name: 'Phoenix Flame',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #F97316, #EF4444, #F97316)',
-    borderColor: '#EF4444',
-    glowColor: 'rgba(239, 68, 68, 0.6)',
-    imageUrl: '/images/frames/phoenix_flame.png',
-    scaleMultiplier: 2.22,
-    holeRatio: 0.45,
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/phoenix_flame.png'
   },
   'emerald-vine': {
     id: 'emerald-vine',
@@ -500,6 +494,73 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     holeRatio: 0.45,
     animationType: 'pulse',
     extraType: 'none'
+=======
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/phoenix_flame.png'
+  },
+  'crystal-shard': {
+    id: 'crystal-shard',
+    name: 'Crystal Shard',
+    tier: 'mythic',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/crystal_shard.png'
+  },
+  'thunder-core': {
+    id: 'thunder-core',
+    name: 'Thunder Core',
+    tier: 'mythic',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/thunder_core.png'
+  },
+  'shadow-orb': {
+    id: 'shadow-orb',
+    name: 'Shadow Orb',
+    tier: 'luxury',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/shadow_orb.png'
+  },
+  'frost-ring': {
+    id: 'frost-ring',
+    name: 'Frost Ring',
+    tier: 'luxury',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/frost_ring.png'
+  },
+  'cosmic-halo': {
+    id: 'cosmic-halo',
+    name: 'Cosmic Halo',
+    tier: 'elite',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/cosmic_halo.png'
+  },
+  'toxic-waste': {
+    id: 'toxic-waste',
+    name: 'Toxic Waste',
+    tier: 'elite',
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/toxic_waste.png'
+>>>>>>> firebase-crash-fix
   }
 };
 // End of registry

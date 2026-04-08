@@ -22,9 +22,9 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   return (
    <FirebaseProvider
     firebaseApp={firebaseApp}
-    auth={auth || {} as any}
-    firestore={firestore || {} as any}
-    storage={storage || {} as any}
+    auth={auth || null}
+    firestore={firestore || null}
+    storage={storage || null}
    >
     {children}
    </FirebaseProvider>
