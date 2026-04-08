@@ -119,7 +119,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const [isLoading, setIsLoading] = useState(true);
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(30);
- const [selectedChip, setSelectedChip] = useState(500);
+ const [selectedChip, setSelectedChip] = useState(1000);
  const [myBets, setMyBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
  const [history, setHistory] = useState<string[]>(['grapes', 'pear', 'orange']);
@@ -127,6 +127,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  const [hintStep, setHintStep] = useState(0);
  const [winnerData, setWinnerData] = useState<{ emoji: string; win: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
+ const [showRules, setShowRules] = useState(false);
 
  // Simulate initial load
  useEffect(() => {
@@ -217,10 +218,10 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
  if (isLoading) {
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-pink-600 via-[#080212] to-blue-600 flex flex-col items-center justify-center z-[100]">
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100]">
       <div className="flex flex-col items-center gap-6">
-        <Loader2 className="w-16 h-16 text-white animate-spin" />
-        <h2 className="text-xl font-black italic tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+        <Loader2 className="w-16 h-16 text-pink-500 animate-spin" />
+        <h2 className="text-xl font-black italic tracking-widest text-pink-600 drop-shadow-sm">
           POWERED-BY UMMY TEAM
         </h2>
       </div>
@@ -231,10 +232,10 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
  return (
   <div className="fixed inset-0 bg-[#080212] text-white flex flex-col overflow-hidden select-none font-sans relative">
    
-   {/* Pink and Blue Mixing Background Gradients */}
+   {/* Pink and Sky Blue Mixing Background Gradients */}
    <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-     <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/20 blur-[120px] rounded-full" />
-     <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/20 blur-[120px] rounded-full" />
+     <div className="absolute top-[-5%] left-[-10%] w-[60%] h-[60%] bg-pink-500/30 blur-[130px] rounded-full" />
+     <div className="absolute bottom-[-5%] right-[-10%] w-[60%] h-[60%] bg-sky-400/30 blur-[130px] rounded-full" />
    </div>
 
    <LongBranchDecoration className="left-[-15px]" delay={0} />
@@ -246,7 +247,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
           <button onClick={() => setIsMuted(!isMuted)} className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
             {isMuted ? <VolumeX size={18} className="text-red-400"/> : <Volume2 size={18} className="text-green-400"/>}
           </button>
-          <button className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
+          <button onClick={() => setShowRules(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-xl">
             <HelpCircle size={18} className="text-blue-400"/>
           </button>
         </div>
@@ -327,7 +328,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
         </div>
 
         <div className="flex items-center gap-3 z-40">
-           <DJVisualizer colorClass="bg-blue-400" />
+           <DJVisualizer colorClass="bg-sky-400" />
            <div className="flex gap-3">
             {[1, 2].map(i => (
               <div key={i} className="bg-gradient-to-br from-indigo-600/30 via-purple-600/30 to-pink-600/30 p-3 rounded-[1.5rem] border border-white/20 shadow-lg backdrop-blur-md">
@@ -391,7 +392,7 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
 
    <AnimatePresence>
     {gameState === 'result' && winnerData && (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md">
         <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-gradient-to-b from-[#2d0b5a] to-[#120626] border-2 border-yellow-400 rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl">
           <Trophy className="text-yellow-400 w-12 h-12 mb-4 animate-bounce" />
           <div className="text-7xl mb-6">{winnerData.emoji}</div>
@@ -401,6 +402,62 @@ export default function FruitPartyGame({ onClose }: { onClose?: () => void }) {
               <p className="text-5xl font-black text-white">+{winnerData.win.toLocaleString()}</p>
             </div>
           ) : <p className="text-white/30 font-bold text-xl italic">TRY AGAIN</p>}
+        </motion.div>
+      </motion.div>
+    )}
+   </AnimatePresence>
+
+   {/* Rules Modal */}
+   <AnimatePresence>
+    {showRules && (
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6"
+      >
+        <motion.div 
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          className="bg-[#8b4367] w-full max-w-sm rounded-[2rem] p-6 relative border-2 border-white/20 shadow-2xl text-white font-medium"
+        >
+          <button 
+            onClick={() => setShowRules(false)}
+            className="absolute -top-3 -right-3 w-10 h-10 bg-black/80 rounded-full flex items-center justify-center border-2 border-white/50 z-10"
+          >
+            <X size={24} className="text-white" />
+          </button>
+
+          <h2 className="text-yellow-400 text-center text-xl font-bold mb-6">Rule</h2>
+          
+          <div className="space-y-4 text-sm leading-relaxed">
+            <div className="flex gap-2">
+              <span>1.</span>
+              <p>Choose the quantity of coins and then select a type of food to place a bet on.</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <span>2.</span>
+              <p>Each round, you have 30 seconds to choose a food, and then the winning food will be drawn.</p>
+            </div>
+
+            <div className="flex gap-2">
+              <span>3.</span>
+              <p>If you bet coins on the winning food, you will receive the corresponding prize money.</p>
+            </div>
+
+            <div className="flex gap-2">
+              <span>4.</span>
+              <p>
+                If the winning food is a fruit, then apple, mango, strawberry, and lemon are all winners. 
+                If the winning food is a pizza, then fish, burger, pizza, and chicken are all winners.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center opacity-40 text-[10px] font-mono">
+            v1.0.12
+          </div>
         </motion.div>
       </motion.div>
     )}
