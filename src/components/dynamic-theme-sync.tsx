@@ -139,7 +139,16 @@ export function DynamicThemeSync() {
     
     // Update Meta Theme Color for mobile browser address bars
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', active.statusBar);
+      let finalStatusBarColor = active.statusBar;
+      
+      // OPTIMIZATION FOR PWA SEAMLESS HEADERS:
+      // If we are on the /rooms page, we force the status bar color to perfectly 
+      // match the top of the newly added mountain gradient (#eef9ff)
+      if (pathname === '/rooms' || pathname?.startsWith('/rooms/')) {
+        finalStatusBarColor = '#eef9ff';
+      }
+      
+      metaThemeColor.setAttribute('content', finalStatusBarColor);
     }
 
     // Optional: Add a class to body for specific CSS selectors if needed
