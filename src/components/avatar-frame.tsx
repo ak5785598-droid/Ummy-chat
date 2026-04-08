@@ -98,6 +98,31 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
+const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
+  const { imageUrl } = config;
+  
+  if (!imageUrl) return null;
+  
+  return (
+    <div className="absolute inset-0 w-full h-full rounded-full z-10 pointer-events-none">
+      <img 
+        src={imageUrl} 
+        alt="Frame"
+        className="w-full h-full rounded-full object-contain"
+        style={{
+          // Remove any background - transparent
+          backgroundColor: 'transparent',
+          // Frame sits exactly on avatar edge - no padding
+          objectFit: 'contain',
+          objectPosition: 'center',
+          // Ensure no black background
+          mixBlendMode: 'normal'
+        }}
+      />
+    </div>
+  );
+};
+
 const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
   const { 
     gradient, borderColor, glowColor, ornament: Ornament, animationType,
@@ -172,6 +197,7 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
 
   const config = frameId ? AVATAR_FRAMES[frameId] : null;
   const isElite = !!config;
+  const isImageFrame = config?.imageUrl;
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0', sizeClasses[size], className)}>
@@ -183,7 +209,11 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-20 pointer-events-none"
           >
-            <EliteFrameRenderer config={config} />
+            {isImageFrame ? (
+              <ImageFrameRenderer config={config} />
+            ) : (
+              <EliteFrameRenderer config={config} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
