@@ -37,7 +37,6 @@ export const viewport: Viewport = {
  initialScale: 1,
  maximumScale: 5,
  userScalable: true,
- themeColor: DESIGN_TOKENS.statusBarColor,
  viewportFit: 'cover',
  interactiveWidget: 'resizes-content',
 };
