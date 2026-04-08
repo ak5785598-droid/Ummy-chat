@@ -166,11 +166,26 @@ export function RoomsExplorerGlossy() {
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
 
   return (
-      <div className="flex-1 flex flex-col font-sans animate-in fade-in duration-700 bg-[#F4F7FE] h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col font-sans animate-in fade-in duration-700 bg-white h-screen overflow-hidden relative">
         
-        {/* FIXED GLOSSY HEADER */}
-        <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-4 py-3 shrink-0">
-          <div className="flex items-center justify-between w-full max-w-lg mx-auto">
+        {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix for Glossy) */}
+        <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
+           <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
+           <div className="absolute bottom-0 left-0 right-0 h-48 opacity-[0.12]">
+              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-500">
+                 <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
+              </svg>
+           </div>
+           <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.08]">
+              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-600">
+                 <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
+              </svg>
+           </div>
+        </div>
+
+        {/* FIXED GLOSSY HEADER - Now Transparent & Safe-Area Aware */}
+        <header className="sticky top-0 z-[100] w-full bg-transparent px-4 pt-safe pb-3 shrink-0 relative">
+          <div className="flex items-center justify-between w-full max-w-lg mx-auto pt-2">
              <div className="flex items-center gap-6">
                 <button 
                   onClick={() => setHeaderTab('recommend')} 

@@ -154,8 +154,8 @@ export function AppLayout(props: {
 
     <SidebarInset className={cn(
       "flex flex-col min-h-screen relative overflow-hidden",
-      isRoom ? "bg-transparent shadow-none" : ""
-    )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
+      (isRoom || pathname === '/rooms') ? "bg-transparent shadow-none" : ""
+    )} style={{ backgroundColor: (isRoom || pathname === '/rooms') ? 'transparent' : 'hsl(var(--background))' }}>
       
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
