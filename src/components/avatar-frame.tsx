@@ -108,13 +108,15 @@ const ImageFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
       <img 
         src={imageUrl} 
         alt="Frame"
-        className="w-full h-full rounded-full object-contain"
+        className="absolute inset-0 w-full h-full rounded-full"
         style={{
-          // Remove any background - transparent
+          // Frame sits on the edge, not covering the DP
           backgroundColor: 'transparent',
-          // Frame sits exactly on avatar edge - no padding
-          objectFit: 'contain',
+          objectFit: 'cover',
           objectPosition: 'center',
+          // Create a hole in the center for the DP to show through
+          maskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
           // Ensure no black background
           mixBlendMode: 'normal'
         }}
@@ -138,11 +140,21 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
       {/* 3D Tubelike Frame Body or Image Frame */}
       {imageUrl ? (
-        <div className="absolute inset-0 w-full h-full rounded-full flex items-center justify-center">
+        <div className="absolute inset-0 w-full h-full rounded-full">
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full rounded-full object-contain"
+            className="absolute inset-0 w-full h-full rounded-full"
+            style={{
+              // Frame sits on the edge, not covering the DP
+              backgroundColor: 'transparent',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              // Create a hole in the center for the DP to show through
+              maskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
+              WebkitMaskImage: 'radial-gradient(circle, transparent 45%, black 50%, black 100%)',
+              mixBlendMode: 'normal'
+            }}
           />
         </div>
       ) : (

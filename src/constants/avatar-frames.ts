@@ -300,79 +300,61 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     id: 'emerald-vine',
     name: 'Emerald Vine',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #065F46, #10B981, #065F46)',
-    borderColor: '#10B981',
-    glowColor: 'rgba(16, 185, 129, 0.6)',
-    imageUrl: '/images/frames/emerald_vine.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/emerald_vine.png'
   },
   'silver-crown': {
     id: 'silver-crown',
     name: 'Silver Crown',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #D1D5DB, #F3F4F6, #D1D5DB)',
-    borderColor: '#F3F4F6',
-    glowColor: 'rgba(243, 244, 246, 0.6)',
-    imageUrl: '/images/frames/silver_crown.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/silver_crown.png'
   },
   'angel-wing': {
     id: 'angel-wing',
     name: 'Angel Wing',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #BFDBFE, #EFF6FF, #BFDBFE)',
-    borderColor: '#EFF6FF',
-    glowColor: 'rgba(239, 246, 255, 0.6)',
-    imageUrl: '/images/frames/angel_wing.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/angel_wing.png'
   },
   'dark-star': {
     id: 'dark-star',
     name: 'Dark Star',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
-    borderColor: '#EF4444',
-    glowColor: 'rgba(239, 68, 68, 0.6)',
-    imageUrl: '/images/frames/dark_star.png',
-
-
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/dark_star.png'
   },
   'red-star': {
     id: 'red-star',
     name: 'Red Star',
     tier: 'legendary',
-    gradient: 'linear-gradient(45deg, #1F2937, #EF4444, #1F2937)',
-    borderColor: '#EF4444',
-    glowColor: 'rgba(239, 68, 68, 0.6)',
-    imageUrl: '/images/frames/Red_star.png',
-
-
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/Red_star.png'
   },
   'cloud-sky': {
     id: 'cloud-sky',
     name: 'Cloud Sky',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #0EA5E9, #FFF, #0EA5E9)',
-    borderColor: '#BAE6FD',
-    glowColor: 'rgba(14, 165, 233, 0.5)',
-    imageUrl: '/images/frames/Cloud_sky.png',
-
-
-    animationType: 'float',
-    extraType: 'clouds'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/Cloud_sky.png'
   },
   'lion-wings': {
     id: 'lion-wings',
@@ -469,28 +451,15 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'float',
     extraType: 'none'
   },
-  'neon-void': {
-    id: 'neon-void',
-    name: 'Neon Void',
-    tier: 'elite',
-    gradient: 'linear-gradient(135deg, #4F46E5, #818CF8, #4F46E5)',
-    borderColor: '#818CF8',
-    glowColor: 'rgba(129, 140, 248, 0.7)',
-    imageUrl: '/images/frames/neon_void.png',
-
-
-    animationType: 'float',
-    extraType: 'none'
-  },
-  'green-cyber-pulse': {
+    'green-cyber-pulse': {
     id: 'green-cyber-pulse',
     name: 'Green Cyber Pulse',
     tier: 'legendary',
-    gradient: 'linear-gradient(135deg, #166534, #22C55E, #166534)',
-    borderColor: '#22C55E',
-    glowColor: 'rgba(34, 197, 94, 0.7)',
-    animationType: 'pulse',
-    extraType: 'none'
+    gradient: 'transparent',
+    borderColor: 'transparent',
+    glowColor: 'transparent',
+    animationType: 'none',
+    imageUrl: '/images/frames/green_cyber_pulse.png'
   },
   'crystal-shard': {
     id: 'crystal-shard',
