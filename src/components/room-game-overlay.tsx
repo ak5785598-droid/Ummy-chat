@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import FruitPartyGame from './games/fruit-party-game';
+import ForestPartyGame from './games/forest-party-game';
 import { X } from 'lucide-react';
 
 interface RoomGameOverlayProps {
@@ -23,8 +24,12 @@ export function RoomGameOverlay({ activeGame, onClose }: RoomGameOverlayProps) {
      {activeGame === 'fruit-party' && (
       <FruitPartyGame onClose={onClose} />
      )}
+
+     {activeGame === 'forest-party' && (
+      <ForestPartyGame onBack={onClose} />
+     )}
      
-     {activeGame !== 'fruit-party' && (
+     {activeGame !== 'fruit-party' && activeGame !== 'forest-party' && (
       <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4">
        <div className="h-20 w-20 bg-white/10 rounded-full flex items-center justify-center">
         <X className="h-10 w-10 text-white/20" />
