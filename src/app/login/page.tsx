@@ -10,6 +10,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithCredential,
   FacebookAuthProvider,
   RecaptchaVerifier,
@@ -111,6 +113,34 @@ export default function LoginPage() {
 
     return () => clearInterval(timer);
   }, [user, isAuthLoading, auth]);
+
+  // Handle Firebase Redirect Result (Fix for Mobile White Screen)
+  useEffect(() => {
+    if (!auth || isAuthLoading || user) return;
+
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          console.log("✅ User logged in via Redirect:", result.user.uid);
+          setIsSigningIn(true);
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } catch (error: any) {
+        console.error("❌ Redirect Login Error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Login Error',
+          description: 'Failed to complete sign in. Please try again.',
+        });
+      } finally {
+        setIsSigningIn(false);
+      }
+    };
+
+    checkRedirect();
+  }, [auth, isAuthLoading, user]);
 
   // SILENT BAN DETECTION & REDIRECT LOGIC
   useEffect(() => {
@@ -250,22 +280,15 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        console.log("✅ User logged in with Google:", result.user);
-        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-        router.push('/rooms');
-      }
+      // Use Redirect for Mobile/WebView compatibility
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        console.error("❌ Google Login Error:", error.code, error.message);
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: 'Could not sign in with Google. Please try again.',
-        });
-      }
-    } finally {
+      console.error("❌ Google Login Error:", error.code, error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Sign In Failed',
+        description: 'Could not sign in with Google. Please try again.',
+      });
       setIsSigningIn(false);
     }
   };
@@ -275,22 +298,15 @@ export default function LoginPage() {
     setIsSigningIn(true);
     try {
       const provider = new FacebookAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        console.log("✅ User logged in with Facebook:", result.user);
-        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-        router.push('/rooms');
-      }
+      // Use Redirect for Mobile/WebView compatibility
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        console.error("❌ Facebook Login Error:", error.code, error.message);
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: 'Could not sign in with Facebook. Please try again.',
-        });
-      }
-    } finally {
+      console.error("❌ Facebook Login Error:", error.code, error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Sign In Failed',
+        description: 'Could not sign in with Facebook. Please try again.',
+      });
       setIsSigningIn(false);
     }
   };
