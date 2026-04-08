@@ -72,6 +72,8 @@ export default function DiscoverView() {
         DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-slate-50"
       )}>
         {/* Subtle Background Elements */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/20 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-300/30 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
         </div>
 
