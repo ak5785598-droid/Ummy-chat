@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 /**
- * PWA Status Bar Sync
- * Dynamically strictly controls the Android/iOS meta theme-color per-component.
- * Mount this component in any view to forcefully sync the OS boundary with the HTML UI.
+ * PWA & Native Status Bar Sync
+ * Dynamically strictly controls both the Android/iOS meta theme-color per-component
+ * AND the Native APK Hardware Status Bar via Capacitor bridge for a true edge-to-edge illusion.
  */
 export function ThemeColorMeta({ color }: { color: string }) {
   useEffect(() => {
+    // 1. UPDATE PWA WEB META TAG (For standard browsers / homescreen apps)
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (!metaThemeColor) {
       metaThemeColor = document.createElement('meta');
@@ -17,9 +20,28 @@ export function ThemeColorMeta({ color }: { color: string }) {
     }
     metaThemeColor.setAttribute('content', color);
     
-    return () => {
-      // On unmount, we optionally could revert, but it's simpler to just let the next page mount its own.
+    // 2. UPDATE NATIVE APK STATUS BAR (If running built via Capacitor Android/iOS)
+    const updateNativeStatusBar = async () => {
+      try {
+        if (Capacitor.isNativePlatform()) {
+          // Calculate brightness to set text icon color (black or white icons)
+          // Basic hex to rgb conversion to check luma
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16) || 255;
+          const g = parseInt(hex.substring(2, 4), 16) || 255;
+          const b = parseInt(hex.substring(4, 6), 16) || 255;
+          const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
+          
+          await StatusBar.setBackgroundColor({ color });
+          await StatusBar.setStyle({ style: luma < 128 ? Style.Dark : Style.Light });
+          await StatusBar.setOverlaysWebView({ overlay: false }); // False ensures the background color is respected cleanly like Wafa
+        }
+      } catch (err) {
+        console.warn('Native StatusBar sync unsupported on this device', err);
+      }
     };
+
+    updateNativeStatusBar();
   }, [color]);
 
   return null;
