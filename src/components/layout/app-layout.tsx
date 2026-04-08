@@ -40,46 +40,45 @@ import { AppLayoutGlossy } from './app-layout-glossy';
  * Updated for Project Pink: Full-bleed pink background except in rooms.
  */
 export function AppLayout(props: {
- children: React.ReactNode;
- fullScreen?: boolean;
- hideBottomNav?: boolean;
- hideSidebarOnMobile?: boolean;
+  children: React.ReactNode;
+  fullScreen?: boolean;
+  hideBottomNav?: boolean;
+  hideSidebarOnMobile?: boolean;
 }) {
- const firestore = useFirestore();
- const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
- const { data: config } = useDoc(configRef);
- const theme = config?.appTheme || 'CLASSIC';
+  const pathname = usePathname();
+  const { t } = useTranslation();
+  const { isHydrated, isLoading: isFirebaseLoading } = useFirebase();
+  const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
+  const [mounted, setMounted] = useState(false);
+  
+  const firestore = useFirestore();
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config } = useDoc(configRef);
+  const theme = config?.appTheme || 'CLASSIC';
 
- if (theme === 'GLOSSY') {
-  return <AppLayoutGlossy {...props} />;
- }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
- const {
-  children,
-  fullScreen = false,
-  hideBottomNav = false,
-  hideSidebarOnMobile = false,
- } = props;
+  const deterministicAuth = useMemo(() => {
+    const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
+    if (!isHydrated) return false; 
+    return props.fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
+  }, [pathname, props.fullScreen, isHydrated]);
 
- const pathname = usePathname();
- const { t } = useTranslation();
- const { isHydrated, isLoading: isFirebaseLoading } = useFirebase();
- const { user } = useUser();
- const { userProfile } = useUserProfile(user?.uid);
- 
- // 🔒 THE MASTER HYDRATION LOCK.
- const [mounted, setMounted] = useState(false);
- useEffect(() => {
-   setMounted(true);
- }, []);
+  const isRoom = useMemo(() => pathname?.startsWith('/rooms/'), [pathname]);
 
- const deterministicAuth = useMemo(() => {
-  const AUTH_PAGES = ['/login', '/', '/terms', '/privacy-policy', '/refund-policy', '/contact', '/help-center'];
-  if (!isHydrated) return false; 
-  return fullScreen || AUTH_PAGES.some(page => pathname === page || (page !== '/' && pathname?.startsWith(page)));
- }, [pathname, fullScreen, isHydrated]);
+  if (theme === 'GLOSSY') {
+    return <AppLayoutGlossy {...props} />;
+  }
 
- const isRoom = useMemo(() => pathname?.startsWith('/rooms/'), [pathname]);
+  const {
+    children,
+    fullScreen = false,
+    hideBottomNav = false,
+    hideSidebarOnMobile = false,
+  } = props;
 
  const showRealContent = mounted && isHydrated && !isFirebaseLoading && (deterministicAuth || userProfile);
 
