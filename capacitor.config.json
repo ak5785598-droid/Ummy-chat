@@ -11,7 +11,7 @@
     }
   },
   "server": {
-    "url": "https://ummy-chat.vercel.app",
+    "url": "https://storied-mermaid-6cbe46.netlify.app",
     "cleartext": true,
     "allowNavigation": ["*"]
   },

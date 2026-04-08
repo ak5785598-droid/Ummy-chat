@@ -36,9 +36,11 @@ export function ThemeColorMeta({ color }: { color: string }) {
           const b = parseInt(hex.substring(4, 6), 16) || 255;
           const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
           
-          await StatusBar.setBackgroundColor({ color });
+          // Enable Overlay for true edge-to-edge (Transparent Status Bar)
+          await StatusBar.setOverlaysWebView({ overlay: true });
+          // Optional: Some devices need a transparent background explicitly
+          await StatusBar.setBackgroundColor({ color: '#00000000' }); 
           await StatusBar.setStyle({ style: luma < 128 ? Style.Dark : Style.Light });
-          await StatusBar.setOverlaysWebView({ overlay: false }); // False ensures the background color is respected cleanly like Wafa
         }
       } catch (err) {
         console.warn('Native StatusBar sync unsupported on this device', err);

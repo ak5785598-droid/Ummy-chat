@@ -1686,7 +1686,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
-      <ThemeColorMeta color="#0d0d0d" />
+      <ThemeColorMeta color={currentTheme.accentColor || "#1a0b2e"} />
       <ThemeSync color={themeSyncColor} />
       <DailyRewardDialog />
       <ExitRoomDialog
@@ -1770,8 +1770,8 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
       )}
 
-      <header className="relative z-[100] flex flex-col w-full p-4">
-        <div className="flex items-center justify-between w-full">
+      <header className="relative z-[100] flex flex-col w-full px-4 pt-safe pb-1">
+        <div className="flex items-center justify-between w-full h-11">
           <div className="flex items-center gap-3">
             <Avatar
               className="h-12 w-12 rounded-xl border border-white/10 shadow-lg cursor-pointer active:scale-95 transition-transform"
@@ -1836,8 +1836,8 @@ export function RoomClient({ room }: { room: Room }) {
         )}
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full mt-2">
-        <div className="shrink-0 flex flex-col items-center gap-2 w-full overflow-visible mb-2 mt-2">
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full -mt-2">
+        <div className="shrink-0 flex flex-col items-center gap-1 w-full overflow-visible mb-1 mt-0">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />

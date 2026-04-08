@@ -79,7 +79,7 @@ export default function DiscoverView() {
 
         {/* Discovery Header */}
         <header className={cn(
-          "sticky top-0 z-50 pt-12 pb-4 px-6 backdrop-blur-xl border-b border-black/5",
+          "sticky top-0 z-50 pt-safe pb-4 px-6 backdrop-blur-xl border-b border-black/5",
           DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]/80" : "bg-white/80"
         )}>
           <div className="flex flex-col items-center">
