@@ -633,14 +633,22 @@ export function RoomClient({ room }: { room: Room }) {
   // AI VOICE ENGINE (TTS)
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    
-    const loadVoices = () => {
-      const v = window.speechSynthesis.getVoices();
-      if (v.length > 0) setVoicesLoaded(true);
-    };
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices();
+    try {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return;
+      
+      const loadVoices = () => {
+        if (!window.speechSynthesis) return;
+        const v = window.speechSynthesis.getVoices();
+        if (v.length > 0) setVoicesLoaded(true);
+      };
+      
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      loadVoices();
+    } catch (err) {
+      console.warn("Speech Synthesis unsupported/crashed in this native wrapper", err);
+    }
   }, []);
 
   const speakAIText = (text: string) => {
