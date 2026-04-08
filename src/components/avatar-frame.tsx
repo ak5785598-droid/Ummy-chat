@@ -159,8 +159,9 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
             padding: '5px',
             background: gradient,
             backgroundSize: '200% 200%',
-            maskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 87.5%, black 100%)',
+            // 90px total, 80px hole, 5px thickness = 88.9% transparent
+            maskImage: 'radial-gradient(circle, transparent 88.9%, black 100%)',
+            WebkitMaskImage: 'radial-gradient(circle, transparent 88.9%, black 100%)',
             boxShadow: `0 0 10px ${glowColor}`
           }}
         >
@@ -201,10 +202,10 @@ const EliteFrameRenderer = ({ config }: { config: AvatarFrameConfig }) => {
 
 export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
   const sizeClasses = {
-    sm: 'h-[50px] w-[50px]',
-    md: 'h-[60px] w-[60px]',
-    lg: 'h-20 w-20',
-    xl: 'h-24 w-24'
+    sm: 'h-[60px] w-[60px]',    // 60px total, ~50px hole
+    md: 'h-[70px] w-[70px]',    // 70px total, ~60px hole
+    lg: 'h-[90px] w-[90px]',    // 90px total, 80px hole (5px thickness each side)
+    xl: 'h-[110px] w-[110px]'   // 110px total, ~100px hole
   };
 
   const config = frameId ? AVATAR_FRAMES[frameId] : null;
