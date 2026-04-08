@@ -2992,6 +2992,39 @@ export default function AdminPage() {
                         Soft airy lavender and pink tones for a gentle, calming experience.
                       </p>
                     </div>
+
+                    {/* Glossy Modern Option */}
+                    <div 
+                      onClick={() => {
+                        if (!firestore || !configRef) return;
+                        updateDoc(configRef, { appTheme: 'GLOSSY', updatedAt: serverTimestamp() })
+                          .then(() => toast({ title: "Glossy White Synchronized 💎" }));
+                      }}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-3xl border-2 transition-all active:scale-95",
+                        config?.appTheme === 'GLOSSY'
+                          ? "border-slate-900 bg-slate-900 shadow-xl shadow-slate-200" 
+                          : "border-slate-100 bg-white hover:border-slate-300 shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={cn(
+                          "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                          config?.appTheme === 'GLOSSY' ? "bg-white text-slate-900" : "bg-slate-100 text-slate-400"
+                        )}>
+                          <Monitor className="h-5 w-5" />
+                        </div>
+                        {config?.appTheme === 'GLOSSY' && (
+                          <div className="bg-white text-slate-900 rounded-full p-1 shadow-md">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className={cn("font-bold uppercase transition-colors", config?.appTheme === 'GLOSSY' ? "text-white" : "text-slate-900")}>Glossy Modern</h3>
+                      <p className={cn("text-[10px] font-bold uppercase leading-relaxed mt-1 transition-colors", config?.appTheme === 'GLOSSY' ? "text-slate-400" : "text-slate-400")}>
+                        Ultra-premium white/slate design system with glassmorphic depth and modern typography.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="p-6 bg-amber-50 rounded-2xl border-2 border-amber-100 flex gap-4">

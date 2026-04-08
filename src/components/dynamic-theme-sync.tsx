@@ -118,6 +118,14 @@ export function DynamicThemeSync() {
         statusBar: '#F8F2F9',
         navAccent: '#A855F7',
         headerGradient: 'linear-gradient(to bottom, #F8F2F9 0%, #F1E2F5 100%)',
+      },
+      'GLOSSY': {
+        background: '220 33% 98%', // Near white
+        foreground: '222 47% 11%', // Slate 900
+        primary: '222 47% 11%',    // Slate 900
+        statusBar: '#FFFFFF',
+        navAccent: '#0F172A',
+        headerGradient: 'linear-gradient(to bottom, #FFFFFF 0%, #F4F7FE 100%)',
       }
     };
 
@@ -135,8 +143,10 @@ export function DynamicThemeSync() {
     }
 
     // Optional: Add a class to body for specific CSS selectors if needed
-    document.body.classList.remove('theme-classic', 'theme-stellar-pink');
-    document.body.classList.add(theme === 'STELLAR_PINK' ? 'theme-stellar-pink' : 'theme-classic');
+    document.body.classList.remove('theme-classic', 'theme-stellar-pink', 'theme-glossy');
+    if (theme === 'STELLAR_PINK') document.body.classList.add('theme-stellar-pink');
+    else if (theme === 'GLOSSY') document.body.classList.add('theme-glossy');
+    else document.body.classList.add('theme-classic');
 
     console.log(`[ThemeEngine] Path: ${pathname} | Theme: ${theme} 🏁`);
   }, [config, pathname]);
