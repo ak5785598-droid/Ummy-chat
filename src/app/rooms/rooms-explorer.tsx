@@ -174,10 +174,26 @@ export default function RoomsExplorer() {
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
 
   return (
-      <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 pb-20">
+      <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 pb-20 relative bg-white">
         
-        <header className="flex items-center justify-between px-4 pt-2 pb-0 shrink-0">
-          <div className="pt-0 flex items-center justify-between w-full">
+        {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix) */}
+        <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
+           {/* Sophisticated Mountain Silhouette to match Screenshot 2 aesthetic */}
+           <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
+           <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.15]">
+              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-500">
+                 <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
+              </svg>
+           </div>
+           <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
+              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-600">
+                 <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
+              </svg>
+           </div>
+        </div>
+
+        <header className="flex items-center justify-between px-4 pt-safe pb-0 shrink-0 relative z-10">
+          <div className="pt-2 flex items-center justify-between w-full">
              <div className="flex items-center gap-3">
                 <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
                 <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>

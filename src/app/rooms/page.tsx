@@ -28,7 +28,7 @@ const RoomsDiscoveryView = dynamic(() => import('./rooms-discovery-view'), {
 
 export default function RoomsGatewayPage() {
   return (
-    <main className="min-h-screen bg-[#FF91B5]">
+    <main className="min-h-screen bg-transparent">
       <RoomsDiscoveryView />
     </main>
   );
