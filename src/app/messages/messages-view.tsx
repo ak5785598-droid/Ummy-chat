@@ -467,12 +467,7 @@ export default function MessagesView() {
  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
  const { data: config } = useDoc(configRef);
  const theme = config?.appTheme || 'CLASSIC';
-
- if (theme === 'GLOSSY') {
-  return <MessagesViewGlossy />;
- }
-
- const { t } = useTranslation();
+  const { t } = useTranslation();
  const [showOfficial, setShowOfficial] = useState(false);
  const [showSystemDialog, setShowSystemDialog] = useState(false);
  const [showRequests, setShowRequests] = useState(false);
@@ -512,8 +507,11 @@ export default function MessagesView() {
  const teamMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'system') || [], [allNotifications]);
  const systemMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'direct_system') || [], [allNotifications]);
 
- const latestTeam = teamMsgs[0];
  const latestSystem = systemMsgs[0];
+
+ if (theme === 'GLOSSY') {
+  return <MessagesViewGlossy />;
+ }
 
  const handleSelectChat = (id: string, other: any) => {
   setActiveChatId(id);

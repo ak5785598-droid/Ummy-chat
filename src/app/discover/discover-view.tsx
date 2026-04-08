@@ -35,16 +35,12 @@ import { DiscoverViewGlossy } from './discover-view-glossy';
  */
 export default function DiscoverView() {
   const firestore = useFirestore();
+  const { user } = useUser();
+  const [showPublish, setShowPublish] = useState(false);
+  
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
   const { data: config } = useDoc(configRef);
   const theme = config?.appTheme || 'CLASSIC';
-
-  if (theme === 'GLOSSY') {
-    return <DiscoverViewGlossy />;
-  }
-
-  const { user } = useUser();
-  const [showPublish, setShowPublish] = useState(false);
 
   // Filter moments from last 24 hours
   const discoveryQuery = useMemoFirebase(() => {
@@ -61,6 +57,10 @@ export default function DiscoverView() {
   }, [firestore]);
 
   const { data: moments, isLoading } = useCollection(discoveryQuery);
+
+  if (theme === 'GLOSSY') {
+    return <DiscoverViewGlossy />;
+  }
 
   return (
     <AppLayout>

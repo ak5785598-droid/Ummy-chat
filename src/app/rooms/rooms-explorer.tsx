@@ -67,10 +67,6 @@ export default function RoomsExplorer() {
  const { data: config } = useDoc(configRef);
  const theme = config?.appTheme || 'CLASSIC';
 
- if (theme === 'GLOSSY') {
-  return <RoomsExplorerGlossy />;
- }
-
  const { user } = useUser();
  const { userProfile: userDoc } = useUserProfile(user?.uid);
  const router = useRouter();
@@ -172,6 +168,10 @@ export default function RoomsExplorer() {
 
   // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
+
+  if (theme === 'GLOSSY') {
+   return <RoomsExplorerGlossy />;
+  }
 
   return (
       <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 pb-20 relative bg-white">

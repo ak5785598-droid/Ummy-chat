@@ -355,10 +355,6 @@ export default function ProfileView({ profileId }: { profileId: string }) {
  const { data: config } = useDoc(configRef);
  const theme = config?.appTheme || 'CLASSIC';
 
- if (theme === 'GLOSSY') {
-  return <ProfileViewGlossy profileId={profileId} />;
- }
-
  const auth = useAuth();
  const { t } = useTranslation();
  const { user: currentUser, isUserLoading } = useUser();
@@ -479,6 +475,10 @@ export default function ProfileView({ profileId }: { profileId: string }) {
  const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
+
+ if (theme === 'GLOSSY') {
+  return <ProfileViewGlossy profileId={profileId} />;
+ }
 
  if (isUserLoading || isProfileLoading || !profile) return (
   <AppLayout>
