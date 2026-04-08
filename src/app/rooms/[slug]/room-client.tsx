@@ -2455,7 +2455,7 @@ export function RoomClient({ room }: { room: Room }) {
         room={room}
       />
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes shine {
           0% { background-position: -200% 0; }
@@ -2473,7 +2473,7 @@ export function RoomClient({ room }: { room: Room }) {
         .touch-responsive:active {
           transform: scale(0.95);
         }
-      `}</style>
+      `}}></style>
       <MountOverlay entries={mountEntries} />
       <LuckyRainOverlay
         active={isLuckyRainActive}
