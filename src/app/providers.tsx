@@ -2,6 +2,7 @@
 
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ProfileInitializer } from '@/components/profile-initializer';
+import { useBackButtonHandler } from '@/hooks/use-back-button-handler';
 import { RoomProvider } from '@/components/room-provider';
 import { RoomPresenceManager } from '@/components/room-presence-manager';
 import { GlobalPresenceManager } from '@/components/global-presence-manager';
@@ -19,7 +20,8 @@ import type { ReactNode } from 'react';
  * Removed experimental boundaries to prioritize flat, stable hook ordering.
  */
 export function Providers({ children }: { children: ReactNode }) {
- return (
+  useBackButtonHandler();
+  return (
   <FirebaseClientProvider>
    <LanguageProvider>
     <AdBlockWarning />

@@ -83,34 +83,9 @@
     padding-top: max(24px, env(safe-area-inset-top)); 
   }
   .pb-safe { 
-    padding-bottom: 24px; 
     padding-bottom: env(safe-area-inset-bottom, 24px); 
-    padding-bottom: max(24px, env(safe-area-inset-bottom)); 
+    padding-bottom: max(16px, env(safe-area-inset-bottom)); 
   }
-  .pl-safe { padding-left: max(16px, env(safe-area-inset-left)); }
-  .pr-safe { padding-right: max(16px, env(safe-area-inset-right)); }
-  .mt-safe { margin-top: max(16px, env(safe-area-inset-top)); }
-  .mb-safe { margin-bottom: max(16px, env(safe-area-inset-bottom)); }
-  .top-safe { top: max(16px, env(safe-area-inset-top)); }
-  .bottom-safe { bottom: max(16px, env(safe-area-inset-bottom)); }
-  .bg-ummy-gradient {
-    background: linear-gradient(180deg, hsl(var(--background)) 0%, #FFFFFF 100%);
-  }
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-[20px] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
-  }
-  .hover-scale {
-    @apply transition-transform hover:scale-[1.02] duration-200;
-  }
-  .active-press {
-    @apply active:scale-95 transition-transform duration-100;
-  }
-  .logo-glow {
-    filter: drop-shadow(0 0 45px rgba(156, 39, 176, 0.4));
-  }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
 
 @keyframes voice-wave {

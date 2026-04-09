@@ -173,45 +173,44 @@ export default function RoomsExplorer() {
   if (theme === 'GLOSSY') {
    return <RoomsExplorerGlossy />;
   }
-
   return (
-      <div className="min-h-full flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 pb-20 relative bg-white">
-        <ThemeColorMeta color="#eef9ff" />
-        
-        {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix) */}
-        <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
-           {/* Sophisticated Mountain Silhouette to match Screenshot 2 aesthetic */}
-           <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
-           <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.15]">
-              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-500">
-                 <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
-              </svg>
+    <div className="h-[100dvh] flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
+      <ThemeColorMeta color="#eef9ff" />
+      
+      {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix) */}
+      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
+         <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
+         <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.15]">
+            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-500">
+               <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
+            </svg>
+         </div>
+         <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
+            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-600">
+               <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
+            </svg>
+         </div>
+      </div>
+
+      <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
+        <div className="flex items-center justify-between w-full">
+           <div className="flex items-center gap-3">
+              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
+              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
            </div>
-           <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
-              <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-600">
-                 <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
-              </svg>
+           <div className="flex items-center gap-2 text-slate-800">
+              <UserSearchDialog />
+              <button 
+                onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
+                className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
+              >
+                <Home className="h-4 w-4" />
+              </button>
            </div>
         </div>
+      </header>
 
-        <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-10">
-          <div className="flex items-center justify-between w-full">
-             <div className="flex items-center gap-3">
-                <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
-                <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
-             </div>
-             <div className="flex items-center gap-2 text-slate-800">
-                <UserSearchDialog />
-                <button 
-                  onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
-                  className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
-                >
-                  <Home className="h-4 w-4" />
-                </button>
-             </div>
-          </div>
-        </header>
-
+      <div className="flex-1 overflow-y-auto relative z-10 no-scrollbar pb-32">
         {headerTab === 'recommend' ? (
           <>
             <div className="px-2.5 mb-1 mt-0">
@@ -272,7 +271,7 @@ export default function RoomsExplorer() {
                    </div>
                    <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
                 </div>
-                <div className="h-full flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10 min-h-[40px]">
+                <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10 min-h-[40px]">
                    {!showSummary ? (
                       Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="flex flex-col items-center gap-2 shrink-0 animate-pulse">
@@ -309,9 +308,9 @@ export default function RoomsExplorer() {
               </div>
             </div>
 
-            <div className="px-3 sticky top-0 z-40 bg-slate-50/80 backdrop-blur-md py-1 mb-1 border-b border-slate-200/50">
-              <div className="w-full overflow-x-auto no-scrollbar pb-1">
-                <div className="flex gap-1.5 pt-0.5">
+            <div className="px-3 sticky top-0 z-40 bg-white/80 backdrop-blur-md py-2 mb-1 border-b border-slate-100 flex items-center">
+              <div className="w-full overflow-x-auto no-scrollbar">
+                <div className="flex gap-1.5 px-0.5">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
@@ -385,7 +384,7 @@ export default function RoomsExplorer() {
 
                          <button 
                            onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
-                           className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+                           className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20_rgba(15,23,42,0.3)] active:scale-95 transition-all"
                          >
                            My Room
                          </button>
@@ -496,5 +495,5 @@ export default function RoomsExplorer() {
           </div>
         )}
       </div>
-  );
-}
+    </div>
+

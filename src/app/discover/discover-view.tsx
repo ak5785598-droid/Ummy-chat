@@ -68,7 +68,7 @@ export default function DiscoverView() {
     <AppLayout>
       <ThemeColorMeta color={DESIGN_TOKENS.appBackground === '#FF91B5' ? '#FF91B5' : '#f8fafc'} />
       <div className={cn(
-        "min-h-screen relative overflow-x-hidden text-slate-800 font-sans",
+        "h-[100dvh] flex flex-col relative overflow-hidden text-slate-800 font-sans",
         DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-slate-50"
       )}>
         {/* Subtle Background Elements */}
@@ -77,10 +77,10 @@ export default function DiscoverView() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-300/30 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
         </div>
 
-        {/* Discovery Header */}
+        {/* Discovery Header - NOW TRULY FIXED */}
         <header className={cn(
-          "sticky top-0 z-50 pt-safe pb-4 px-6 backdrop-blur-xl border-b border-black/5",
-          DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]/80" : "bg-white/80"
+          "shrink-0 pt-safe pb-4 px-6 z-50 border-b border-black/5",
+          DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-white/80 backdrop-blur-xl"
         )}>
           <div className="flex flex-col items-center">
             <h1 className="text-3xl font-headline font-black italic uppercase tracking-tighter text-slate-900 border-white">
@@ -94,7 +94,7 @@ export default function DiscoverView() {
           </div>
         </header>
 
-        <main className="relative z-10 px-4 py-6 space-y-6 max-w-2xl mx-auto pb-32">
+        <main className="flex-1 overflow-y-auto no-scrollbar relative z-10 px-4 py-6 space-y-6 max-w-2xl mx-auto pb-40">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
               <div className="relative">
@@ -105,7 +105,7 @@ export default function DiscoverView() {
             </div>
           ) : (
             <>
-              {moments?.map((moment, idx) => (
+              {moments?.map((moment: any, idx: number) => (
                 <MomentCard key={moment.id} moment={moment} index={idx} />
               ))}
 

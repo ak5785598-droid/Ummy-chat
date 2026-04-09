@@ -519,9 +519,8 @@ export default function MessagesView() {
   setSelectedRecipient(other);
  };
 
- return (
-  <AppLayout hideBottomNav={!!activeChatId}>
-    <div className="min-h-full bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans animate-in fade-in duration-1000 overflow-x-hidden">
+ return    <AppLayout hideBottomNav={!!activeChatId}>
+    <div className="h-[100dvh] bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans animate-in fade-in duration-1000 overflow-hidden">
      
      <div className="absolute inset-0 pointer-events-none opacity-40">
        {[
@@ -551,8 +550,9 @@ export default function MessagesView() {
        ))}
      </div>
 
-     <header className="relative shrink-0 pt-12 pb-6 px-6 bg-transparent">
-      <div className="relative z-10 flex items-center justify-between">
+     {/* MESSAGES HEADER - NOW TRULY FIXED */}
+     <header className="relative shrink-0 pt-safe pb-4 px-6 bg-transparent">
+      <div className="relative z-10 flex items-center justify-between pt-2">
        <div className="flex items-center gap-3">
          <div className="h-14 w-14 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex items-center justify-center p-2.5 active:scale-95 transition-transform shrink-0">
            <UmmyLogoIcon className="h-full w-full" />
@@ -568,7 +568,7 @@ export default function MessagesView() {
       </div>
      </header>
 
-     <div className="flex-1 px-4 relative z-10 space-y-4 pb-32">
+     <div className="flex-1 overflow-y-auto no-scrollbar px-4 relative z-10 space-y-4 pb-40">
       
       <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-md">
        <CategoryItem 
@@ -642,6 +642,7 @@ export default function MessagesView() {
         </Card>
       </div>
      </div>
+>
 
      <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
       <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">

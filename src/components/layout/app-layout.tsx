@@ -171,7 +171,7 @@ export function AppLayout(props: {
       <div 
         className={cn(
           "flex-1 flex flex-col transition-opacity duration-700",
-          !hideBottomNav && !isRoom ? "pb-20 md:pb-0" : "pb-0",
+          !hideBottomNav && !isRoom ? "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0" : "pb-0",
           !showRealContent ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       >

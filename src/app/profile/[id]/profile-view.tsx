@@ -211,108 +211,116 @@ const PublicProfileView = ({
  const isCSLeader = profile.tags?.includes('CS Leader');
 
  return (
-  <div className="min-h-screen bg-slate-50 font-sans pb-24 flex flex-col animate-in fade-in duration-700 relative overflow-x-hidden">
-    {/* 🏙️ PREMIUM HEADER BACKDROP (Pinned) */}
-    <div 
-      className="fixed top-0 left-0 right-0 h-[300px] z-0 transition-all duration-700 border-b border-white/10" 
-      style={{ background: 'var(--header-gradient)' }}
-    />
-   <div className="absolute inset-0 -z-10 overflow-hidden">
-     {profile.avatarUrl && (
-      <Image src={profile.avatarUrl} fill className="object-cover blur-3xl opacity-30 scale-110" alt="Ambient Backdrop" unoptimized />
-     )}
-   </div>
-
-   <div className="relative h-[35vh] w-full shrink-0">
-    <Image src={profile.coverUrl || profile.avatarUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} alt="Cover" fill className="object-cover" unoptimized />
-    <div className="absolute top-0 left-6 right-6 flex justify-between z-10 pt-safe mt-8">
-      <button onClick={onBack} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform"><ChevronLeft className="h-5 w-5" /></button>
-      <DropdownMenu>
-       <DropdownMenuTrigger asChild>
-         <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-transform"><MoreHorizontal className="h-5 w-5" /></button>
-       </DropdownMenuTrigger>
-       <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-         <DropdownMenuItem onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400">
-          <Flag className="h-4 w-4" />
-          <span className="font-bold uppercase text-[10px]">Report</span>
-         </DropdownMenuItem>
-       </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-   </div>
-
-   <div className="flex-1 bg-white/95 backdrop-blur-md rounded-t-[2.5rem] -mt-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-4 space-y-6">
-     <div className="flex items-start gap-4">
-      <div className="shrink-0 -mt-12 relative">
-        <AvatarFrame frameId={profile.inventory?.activeFrame} size="lg">
-         <Avatar className="h-20 w-20 border-4 border-white shadow-xl bg-slate-50">
-           <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
-           <AvatarFallback className="text-xl bg-slate-100 text-slate-400">{firstLetter}</AvatarFallback>
-         </Avatar>
-        </AvatarFrame>
-      </div>
+  return (
+    <div className="h-[100dvh] bg-slate-50 font-sans flex flex-col animate-in fade-in duration-700 relative overflow-hidden">
+      {/* 🏙️ PREMIUM HEADER BACKDROP */}
+      <div 
+        className="fixed top-0 left-0 right-0 h-[300px] z-0 transition-all duration-700" 
+        style={{ background: 'var(--header-gradient)' }}
+      />
       
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-         <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h1>
-         <span className="text-sm leading-none">🇮🇳</span>
-         <GenderCircle gender={profile.gender} />
-         <RichLevelBadge level={profile.level?.rich || 1} />
-         <CharmLevelBadge level={profile.level?.charm || 1} />
-        </div>
-        
-        <div className="flex items-center gap-2 flex-wrap">
-         <div className="flex items-center gap-2" onClick={handleCopyId}>
-           <span className={cn(
-               "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
-               profile.idColor === 'red' ? 'text-red-500' : 
-               profile.idColor === 'blue' ? 'text-blue-500' : 
-               profile.idColor === 'purple' ? 'text-purple-600' : 
-               'text-gray-400'
-             )}>ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />{profile.isBudgetId && (<Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>)}</span>
-         </div>
-         {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
-         {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-         {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-         {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-        </div>
-      </div>
-     </div>
-
-     <div className="relative z-50 flex divide-x divide-gray-100 py-1">
-      <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
-      <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
-      <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
-      <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
-     </div>
-
-     <div className="px-1 pt-1">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-[0.2em] ">Top Contribution</h4>
-        <ChevronRight className="h-3 w-3 text-gray-300" />
-      </div>
-      <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex justify-around items-center">
-        {isContributorsLoading ? (
-         <div className="py-2 flex justify-center w-full"><Loader className="animate-spin h-3 w-3 text-primary/40" /></div>
-        ) : contributors && contributors.length > 0 ? (
-         contributors.map((c, i) => (
-          <ContributorAvatar key={c.id} contributor={c} rank={i + 1} />
-         ))
-        ) : (
-         <p className="text-[9px] font-bold text-gray-300 uppercase py-2">Awaiting Sync...</p>
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        {profile.avatarUrl && (
+          <Image src={profile.avatarUrl} fill className="object-cover blur-3xl opacity-30 scale-110" alt="Ambient Backdrop" unoptimized />
         )}
       </div>
-     </div>
 
-     <div className="space-y-3">
-      <div className="px-1 pt-1">
-        <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-wider mb-1.5 ml-1">Signature Bio</h4>
-        <p className="text-xs font-body text-gray-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-         {profile.bio || 'This member has not established a custom personality signature yet.'}
-        </p>
+      {/* STATIONARY TOP SECTION */}
+      <div className="shrink-0 relative z-30 bg-white/95 backdrop-blur-md pb-4 shadow-sm">
+        <div className="relative h-[25vh] w-full overflow-hidden">
+          <Image src={profile.coverUrl || profile.avatarUrl || "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000"} alt="Cover" fill className="object-cover" unoptimized />
+          <div className="absolute top-0 left-6 right-6 flex justify-between z-10 pt-safe mt-4">
+            <button onClick={onBack} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-90 transition-transform"><ChevronLeft className="h-5 w-5" /></button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-transform"><MoreHorizontal className="h-5 w-5" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
+                <DropdownMenuItem onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400">
+                  <Flag className="h-4 w-4" />
+                  <span className="font-bold uppercase text-[10px]">Report</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="px-5 -mt-8 relative z-40">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="shrink-0 relative -mt-4">
+              <AvatarFrame frameId={profile.inventory?.activeFrame} size="lg">
+                <Avatar className="h-20 w-20 border-4 border-white shadow-xl bg-slate-50">
+                  <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
+                  <AvatarFallback className="text-xl bg-slate-100 text-slate-400">{firstLetter}</AvatarFallback>
+                </Avatar>
+              </AvatarFrame>
+            </div>
+            
+            <div className="flex-1 min-w-0 pt-6">
+              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h1>
+                <span className="text-sm leading-none">🇮🇳</span>
+                <GenderCircle gender={profile.gender} />
+                <RichLevelBadge level={profile.level?.rich || 1} />
+                <CharmLevelBadge level={profile.level?.charm || 1} />
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2" onClick={handleCopyId}>
+                  <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
+                      profile.idColor === 'red' ? 'text-red-500' : 
+                      profile.idColor === 'blue' ? 'text-blue-500' : 
+                      profile.idColor === 'purple' ? 'text-purple-600' : 
+                      'text-gray-400'
+                    )}>ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />{profile.isBudgetId && (<Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>)}</span>
+                </div>
+                {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
+                {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+                {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex divide-x divide-gray-100 py-1 border-t border-gray-50 mt-2">
+            <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
+            <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
+            <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
+            <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
+          </div>
+        </div>
       </div>
-     </div>
-   </div>
+
+      {/* SCROLLABLE BOTTOM SECTION */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pt-4 pb-40 px-5 space-y-6 relative z-10">
+        <div className="px-1 pt-1">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-[0.2em]">Top Contribution</h4>
+            <ChevronRight className="h-3 w-3 text-gray-300" />
+          </div>
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex justify-around items-center">
+            {isContributorsLoading ? (
+              <div className="py-2 flex justify-center w-full"><Loader className="animate-spin h-3 w-3 text-primary/40" /></div>
+            ) : contributors && contributors.length > 0 ? (
+              contributors.map((c, i) => (
+                <ContributorAvatar key={c.id} contributor={c} rank={i + 1} />
+              ))
+            ) : (
+              <p className="text-[9px] font-bold text-gray-300 uppercase py-2">Awaiting Sync...</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="px-1 pt-1">
+            <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-wider mb-1.5 ml-1">Signature Bio</h4>
+            <p className="text-xs font-body text-gray-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+              {profile.bio || 'This member has not established a custom personality signature yet.'}
+            </p>
+          </div>
+        </div>
+      </div>
 
    <div className="fixed bottom-0 left-0 right-0 p-4 pt-1 pb-safe bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-3">
      <button 
