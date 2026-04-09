@@ -9,10 +9,11 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- 3D WHITE HAND POINTER ---
+// Adjusted radius to 125 to match the smaller circle
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
-  const x = Math.cos((angle * Math.PI) / 180) * 140; 
-  const y = Math.sin((angle * Math.PI) / 180) * 140;
+  const x = Math.cos((angle * Math.PI) / 180) * 125;
+  const y = Math.sin((angle * Math.PI) / 180) * 125;
 
   return (
     <motion.div
@@ -30,7 +31,7 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       }}
       className="absolute z-[100] pointer-events-none"
     >
-      <svg width="45" height="45" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
         <path 
           d="M9 10V5C9 3.89543 9.89543 3 11 3C12.1046 3 13 3.89543 13 5V11M13 11V9C13 7.89543 13.8954 7 15 7C16.1046 7 17 7.89543 17 9V11M17 11V10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10V16C21 18.7614 18.7614 21 16 21H10C7.23858 21 5 18.7614 5 16V13.6742C5 12.5632 5.76016 11.597 6.84534 11.3558L9 10.877" 
           stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="white"
@@ -159,10 +160,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </button>
         </div>
 
-        {/* Game Arena - Scaled to 90% */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-4">
+        {/* Game Arena */}
+        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6">
           
-          {/* Support Structure SVG */}
+          {/* Main Support Sticks */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
               <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -172,21 +173,30 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               </linearGradient>
             </defs>
             <g transform="translate(175, 175)">
-              <line x1="0" y1="20" x2="-110" y2="400" stroke="url(#stickGradient)" strokeWidth="14" strokeLinecap="round" />
-              <line x1="0" y1="20" x2="110" y2="400" stroke="url(#stickGradient)" strokeWidth="14" strokeLinecap="round" />
+              <line 
+                x1="0" y1="20" x2="-120" y2="450" 
+                stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" 
+                className="drop-shadow-[10px_0_5px_rgba(0,0,0,0.3)]"
+              />
+              <line 
+                x1="0" y1="20" x2="120" y2="450" 
+                stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" 
+                className="drop-shadow-[-10px_0_5px_rgba(0,0,0,0.3)]"
+              />
             </g>
           </svg>
 
-          {/* Lines connecting center to cards */}
-          <svg className="absolute w-[300px] h-[300px] pointer-events-none overflow-visible">
-            <g transform="translate(150, 150)">
+          {/* Fruit Connected Lines - Now thicker (strokeWidth="10") */}
+          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+            <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
                 <line 
                   key={angle} 
                   x1="0" y1="0" 
-                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
-                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                  stroke="#fbbf24" strokeWidth="4" strokeLinecap="round"
+                  // Radius reduced to 125 for smaller circle
+                  x2={100 * Math.cos((angle-90)*Math.PI/180)} 
+                  y2={100 * Math.sin((angle-90)*Math.PI/180)} 
+                  stroke="#fbbf24" strokeWidth="10" strokeLinecap="round"
                 />
               ))}
             </g>
@@ -196,7 +206,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
           {/* Center Hub */}
           <div className="relative z-50">
-            <div className="w-24 h-24 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_40px_rgba(234,179,8,0.4)]">
+            <div className="w-24 h-24 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.5)]">
               <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50">
                 {HUB_ICONS.slice(0, 4).map((icon, i) => (
                    <motion.span 
@@ -216,11 +226,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
-          {/* Fruit Circle Cards */}
+          {/* Fruit Circle Cards - Positioned on a smaller circle (radius 125) */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const x = Math.cos((angle * Math.PI) / 180) * 140; 
-            const y = Math.sin((angle * Math.PI) / 180) * 140;
+            const x = Math.cos((angle * Math.PI) / 180) * 125;
+            const y = Math.sin((angle * Math.PI) / 180) * 125;
             const betAmount = myBets[item.id] || 0;
 
             return (
@@ -228,37 +238,38 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-20 h-20 rounded-full border-[3px] border-orange-500 flex flex-col overflow-hidden transition-all duration-300 shadow-2xl relative items-center justify-center",
-                    highlightIdx === idx ? "scale-110 ring-4 ring-white z-30 shadow-[0_0_25px_rgba(255,255,255,0.7)]" : ""
+                    "w-20 h-20 rounded-full border-[4px] flex flex-col overflow-hidden transition-all duration-300 shadow-2xl relative items-center justify-center",
+                    "border-orange-500 bg-orange-500", // Outer border orange
+                    highlightIdx === idx ? "scale-110 ring-4 ring-white z-30 shadow-[0_0_30px_rgba(255,255,255,0.8)]" : ""
                   )}
                 >
-                  {/* TOP HALF: Maroon with Fruit Icon */}
+                  {/* TOP HALF: Fruit Icon (Maroon Color) */}
                   <div className={cn(
-                    "w-full flex items-center justify-center bg-[#800000] transition-all",
+                    "w-full flex items-center justify-center bg-[#800000] transition-all duration-300",
                     betAmount > 0 ? "flex-[1.2]" : "flex-[2]"
                   )}>
                     <span className="text-3xl drop-shadow-sm">{item.icon}</span>
                   </div>
 
-                  {/* MIDDLE SECTION: Orange (ONLY SHOWS ON BET) */}
+                  {/* MIDDLE SECTION (Bet info) */}
                   <AnimatePresence mode="wait">
                     {betAmount > 0 && (
                       <motion.div 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="w-full bg-orange-500 flex items-center justify-center border-y border-white/20 overflow-hidden py-0.5"
+                        className="w-full bg-orange-600 flex items-center justify-center border-y border-white/20 overflow-hidden py-0.5"
                       >
-                        <span className="text-[9px] font-black text-white whitespace-nowrap px-1">
+                        <span className="text-[10px] font-black text-white whitespace-nowrap px-1">
                           🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
                         </span>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* BOTTOM HALF: Orange with Multiplier */}
-                  <div className="w-full flex-1 flex items-center justify-center bg-orange-600">
-                    <span className="font-black text-[10px] text-white italic">×{item.multiplier}</span>
+                  {/* BOTTOM HALF: Multiplier (Orange Color) */}
+                  <div className="w-full flex-1 flex items-center justify-center bg-orange-500">
+                    <span className="font-black text-[11px] text-maroon-900 italic">×{item.multiplier}</span>
                   </div>
                 </button>
               </div>
@@ -267,19 +278,19 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Chips Footer */}
-        <div className="w-full bg-gradient-to-b from-[#451a03] to-[#270c01] p-6 flex justify-center gap-3 z-20 border-t-4 border-yellow-600/50">
+        <div className="w-full bg-gradient-to-b from-[#451a03] to-[#270c01] p-6 flex justify-center gap-3 z-20 border-t-4 border-yellow-600/50 shadow-2xl">
           {CHIPS_DATA.map(chip => (
             <button 
               key={chip.value}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-14 h-14 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all",
+                "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative",
                 "bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
                 chip.color,
-                selectedChip === chip.value ? "scale-110 -translate-y-2 ring-2 ring-yellow-400 border-solid opacity-100" : "opacity-70"
+                selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
               )}
             >
-              <div className="absolute inset-1 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
+              <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
                 <span className="text-white">{chip.label}</span>
               </div>
             </button>
@@ -290,12 +301,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
-              <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-8 rounded-[3rem] border-8 border-white text-center shadow-2xl">
-                <Trophy className="w-12 h-12 text-white mx-auto mb-2" />
-                <span className="text-7xl block mb-2">{winnerData.icon}</span>
-                <h2 className="text-white font-black text-3xl italic uppercase">WINNER!</h2>
-                <div className="mt-4 bg-white/20 py-2 px-6 rounded-full">
-                  <p className="text-white text-3xl font-black">+{winnerData.win.toLocaleString()}</p>
+              <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-10 rounded-[3rem] border-8 border-white text-center shadow-2xl">
+                <Trophy className="w-16 h-16 text-white mx-auto mb-2 animate-bounce" />
+                <span className="text-8xl block mb-2">{winnerData.icon}</span>
+                <h2 className="text-white font-black text-4xl italic uppercase">WINNER!</h2>
+                <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
+                  <p className="text-white text-4xl font-black">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
             </motion.div>
