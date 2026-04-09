@@ -37,7 +37,11 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
-        run: npx cap build ios
-        env:
-          CAPACITOR_NON_INTERACTIVE: true
+      - name: Verify iOS Compilation
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -configuration Debug \
+                     -sdk iphonesimulator \
+                     CODE_SIGNING_ALLOWED=NO \
+                     COMPILER_INDEX_STORE_ENABLE=NO | xcpretty
