@@ -8,44 +8,24 @@ import { X, Trophy, Clock, Volume2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Components ---
-const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
-  const angle = (targetIdx * 45) - 90;
-  const x = Math.cos((angle * Math.PI) / 180) * 125;
-  const y = Math.sin((angle * Math.PI) / 180) * 125;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: [1, 1.1, 1], x: x, y: y - 25 }}
-      transition={{ x: { type: "spring", stiffness: 100 }, y: { type: "spring", stiffness: 100 }, scale: { duration: 0.8, repeat: Infinity } }}
-      className="absolute z-[100] pointer-events-none"
-    >
-      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
-        <path d="M9 10V5C9 3.89543 9.89543 3 11 3C12.1046 3 13 3.89543 13 5V11M13 11V9C13 7.89543 13.8954 7 15 7C16.1046 7 17 7.89543 17 9V11M17 11V10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10V16C21 18.7614 18.7614 21 16 21H10C7.23858 21 5 18.7614 5 16V13.6742C5 12.5632 5.76016 11.597 6.84534 11.3558L9 10.877" stroke="#cbd5e1" strokeWidth="2" fill="white" />
-      </svg>
-    </motion.div>
-  );
-};
-
-// --- Data ---
+// --- Constants ---
 const ITEMS = [
-  { id: 'orange', icon: '🍊', multiplier: 5 },
-  { id: 'coconut', icon: '🥥', multiplier: 10 },
-  { id: 'broccoli', icon: '🥦', multiplier: 15 },
-  { id: 'lettuce', icon: '🥬', multiplier: 25 },
-  { id: 'carrot', icon: '🥕', multiplier: 45 },
-  { id: 'tomato', icon: '🍅', multiplier: 5 },
-  { id: 'grapes', icon: '🍇', multiplier: 5 },
-  { id: 'corn', icon: '🌽', multiplier: 5 },
+  { id: 'orange', icon: '🍊', multiplier: 5, color: '#f97316' },
+  { id: 'coconut', icon: '🥥', multiplier: 10, color: '#713f12' },
+  { id: 'broccoli', icon: '🥦', multiplier: 15, color: '#16a34a' },
+  { id: 'lettuce', icon: '🥬', multiplier: 25, color: '#22c55e' },
+  { id: 'carrot', icon: '🥕', multiplier: 45, color: '#ea580c' },
+  { id: 'tomato', icon: '🍅', multiplier: 5, color: '#dc2626' },
+  { id: 'grapes', icon: '🍇', multiplier: 5, color: '#9333ea' },
+  { id: 'corn', icon: '🌽', multiplier: 5, color: '#eab308' },
 ];
 
 const CHIPS_DATA = [
-  { value: 100, label: '100', color: 'from-blue-600 to-blue-800' },
-  { value: 1000, label: '1K', color: 'from-emerald-500 to-emerald-700' },
-  { value: 5000, label: '5K', color: 'from-purple-600 to-purple-800' },
-  { value: 10000, label: '10K', color: 'from-red-600 to-red-800' },
-  { value: 50000, label: '50K', color: 'from-amber-500 to-amber-700' },
+  { value: 100, label: '100', color: 'bg-blue-600 border-blue-400' },
+  { value: 1000, label: '1K', color: 'bg-emerald-500 border-emerald-300' },
+  { value: 5000, label: '5K', color: 'bg-purple-600 border-purple-400' },
+  { value: 10000, label: '10K', color: 'bg-red-600 border-red-400' },
+  { value: 50000, label: '50K', color: 'bg-amber-500 border-amber-300' },
 ];
 
 export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
@@ -60,12 +40,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
-  const [pointerIdx, setPointerIdx] = useState(0);
-  
-  // Real Game History State
-  const [gameHistory, setGameHistory] = useState<string[]>(['🍎', '🍋', '🍇', '🌽', '🍅', '🥥', '🥦', '🥬']);
+  const [gameHistory, setGameHistory] = useState<string[]>(['🍓', '🥬', '🍎', '🍋', '🥥', '🍋', '🍎', '🥭']);
 
-  useEffect(() => { if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins); }, [userProfile]);
+  useEffect(() => { 
+    if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins); 
+  }, [userProfile]);
 
   useEffect(() => {
     if (gameState !== 'betting') return;
@@ -76,14 +55,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState]);
-
-  useEffect(() => {
-    if (gameState !== 'betting') return;
-    const pointerInterval = setInterval(() => {
-      setPointerIdx(prev => (prev + 1) % ITEMS.length);
-    }, 1500);
-    return () => clearInterval(pointerInterval);
   }, [gameState]);
 
   const handlePlaceBet = (id: string) => {
@@ -103,10 +74,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setHighlightIdx(currentStep % ITEMS.length);
       if (currentStep < totalSteps) { 
         currentStep++; 
-        setTimeout(run, 50 + (currentStep * 2)); 
-      }
-      else { 
-        setTimeout(() => finalizeResult(winItem), 1000); 
+        setTimeout(run, 50 + (currentStep * 1.5)); 
+      } else { 
+        setTimeout(() => finalizeResult(winItem), 800); 
       }
     };
     run();
@@ -114,117 +84,120 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const finalizeResult = (winItem: any) => {
     const winAmount = (myBets[winItem.id] || 0) * winItem.multiplier;
-    
-    // Update local coins if won
     if (winAmount > 0) {
       setLocalCoins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
-
-    // Update History with Real Winning Item
     setGameHistory(prev => [winItem.icon, ...prev.slice(0, 7)]);
-
     setWinnerData({ ...winItem, win: winAmount });
     setGameState('result');
-    
     setTimeout(() => {
-      setGameState('betting'); 
-      setTimeLeft(20); 
-      setMyBets({}); 
-      setWinnerData(null); 
-      setHighlightIdx(null);
-    }, 4000);
+      setGameState('betting'); setTimeLeft(20); setMyBets({}); setWinnerData(null); setHighlightIdx(null);
+    }, 3500);
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/60 flex flex-col justify-end z-[100] font-sans">
+    <div className="fixed inset-0 bg-black/80 flex flex-col justify-end z-[100] font-sans select-none">
       <div className="flex-1" onClick={onClose} />
 
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }}
-        className="h-[90vh] w-full bg-[#0a0a2e] rounded-t-[2.5rem] border-t-4 border-yellow-500 relative overflow-hidden flex flex-col"
-        style={{ backgroundImage: 'radial-gradient(circle at center, #1e1b4b, #020617)' }}
+        className="h-[85vh] w-full bg-[#1a237e] rounded-t-[3rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
       >
-        {/* Header Section */}
-        <div className="w-full p-4 flex justify-between items-start z-20">
-          <div className="bg-amber-400 text-blue-950 px-4 py-1.5 rounded-full font-bold shadow-[0_4px_0_#b45309] flex items-center gap-2">
-            <span className="text-lg">🪙</span> {localCoins.toLocaleString()}
+        {/* Header: Coins and Buttons */}
+        <div className="w-full p-6 flex justify-between items-start z-30">
+          <div className="bg-[#ffca28] text-[#3e2723] px-5 py-2 rounded-full font-black text-xl shadow-[inset_0_-4px_0_rgba(0,0,0,0.2),0_4px_0_#b71c1c] flex items-center gap-2">
+            <div className="w-6 h-6 bg-white/30 rounded-full flex items-center justify-center border border-black/10">🏛️</div>
+            {localCoins.toLocaleString()}
           </div>
           
-          <div className="flex flex-col items-end gap-3">
-             <div className="flex gap-2">
-                <button className="w-9 h-9 bg-indigo-900/80 rounded-full flex items-center justify-center text-white border border-indigo-400"><Clock size={18}/></button>
-                <button className="w-9 h-9 bg-indigo-900/80 rounded-full flex items-center justify-center text-white border border-indigo-400"><Volume2 size={18}/></button>
-                <button className="w-9 h-9 bg-indigo-900/80 rounded-full flex items-center justify-center text-white border border-indigo-400"><HelpCircle size={18}/></button>
-                <button onClick={onClose} className="w-9 h-9 bg-red-600 rounded-full flex items-center justify-center text-white border-2 border-white shadow-lg"><X size={20}/></button>
-             </div>
-             <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-gradient-to-b from-yellow-300 to-amber-600 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                  <span className="text-xl">💎</span>
-                </div>
-                <span className="text-[10px] text-white font-bold bg-red-600 px-2 rounded-full -mt-2">Drop</span>
-             </div>
+          <div className="flex gap-2">
+            {[Clock, Volume2, HelpCircle, X].map((Icon, i) => (
+              <button key={i} onClick={i === 3 ? onClose : undefined} className={cn(
+                "w-11 h-11 rounded-xl flex items-center justify-center border-b-4 shadow-lg transition-transform active:scale-95",
+                i === 3 ? "bg-red-600 border-red-800 text-white" : "bg-[#283593] border-[#1a237e] text-indigo-100"
+              )}>
+                <Icon size={24} strokeWidth={3} />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Sidebar Trophy */}
-        <div className="absolute left-4 top-24 z-20 flex flex-col items-center">
-           <div className="w-12 h-12 bg-gradient-to-b from-yellow-300 to-amber-600 rounded-lg border-2 border-white flex items-center justify-center shadow-lg">
-              <Trophy className="text-amber-900" size={24} />
-           </div>
-           <span className="bg-red-600 text-[10px] text-white px-1.5 rounded-full font-bold border border-white -mt-2">99+</span>
+        {/* Floating Badges */}
+        <div className="absolute left-6 top-32 z-30 flex flex-col items-center gap-1">
+          <div className="w-16 h-16 bg-gradient-to-b from-yellow-300 to-orange-500 rounded-full border-4 border-white shadow-xl flex items-center justify-center">
+            <Trophy className="text-white drop-shadow-md" size={32} />
+          </div>
+          <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white -mt-3 z-10 shadow-md">99+</span>
         </div>
 
-        {/* Main Game Arena */}
-        <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* Support Sticks */}
-          <div className="absolute bottom-0 w-full h-full flex justify-center pointer-events-none">
-             <div className="w-1 bg-amber-900/40 h-64 rotate-[15deg] origin-top translate-x-8" />
-             <div className="w-1 bg-amber-900/40 h-64 -rotate-[15deg] origin-top -translate-x-8" />
+        <div className="absolute right-6 top-32 z-30 flex flex-col items-center">
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full border-4 border-yellow-400 flex items-center justify-center overflow-hidden shadow-xl">
+             <span className="text-4xl">🔮</span>
           </div>
+          <span className="bg-orange-500 text-white text-[10px] font-black px-2 rounded-md -mt-2 shadow-sm border border-white uppercase">Drop</span>
+        </div>
 
-          {/* Hand Pointer */}
-          {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
+        {/* GAME ARENA */}
+        <div className="relative w-full flex-1 flex items-center justify-center -mt-10">
+          
+          {/* Wooden Support Pillars */}
+          <div className="absolute bottom-0 w-40 h-[280px] bg-gradient-to-b from-[#5d4037] to-[#3e2723] clip-path-pillar shadow-2xl" 
+               style={{ clipPath: 'polygon(35% 0%, 65% 0%, 100% 100%, 0% 100%)' }} />
 
-          {/* Center Timer Hub */}
+          {/* Yellow Spokes (Connecting Center to Items) */}
+          <svg className="absolute w-[300px] h-[300px] pointer-events-none opacity-60">
+            {ITEMS.map((_, i) => {
+              const angle = (i * 45) - 90;
+              const x2 = 150 + Math.cos((angle * Math.PI) / 180) * 120;
+              const y2 = 150 + Math.sin((angle * Math.PI) / 180) * 120;
+              return <line key={i} x1="150" y1="150" x2={x2} y2={y2} stroke="#fdd835" strokeWidth="6" strokeLinecap="round" />;
+            })}
+          </svg>
+
+          {/* CENTER TIMER HUB */}
           <div className="relative z-50">
-            <div className="w-20 h-20 rounded-full border-4 border-yellow-400 bg-red-600 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.4)]">
-              <div className="flex gap-0.5 mb-1">
-                {['🥦','🥬','🥕'].map((f,i)=><span key={i} className="text-[10px]">{f}</span>)}
+            <div className="w-24 h-24 rounded-full border-[6px] border-[#ffeb3b] bg-[#d32f2f] flex flex-col items-center justify-center shadow-[0_0_40px_rgba(255,235,59,0.5),inset_0_4px_10px_rgba(0,0,0,0.3)]">
+              <div className="flex gap-0.5 mb-1 scale-125">
+                {['🥬','🍅','🍓'].map((f,i)=><span key={i} className="text-[10px]">{f}</span>)}
               </div>
-              <div className="w-full h-[2px] bg-yellow-400/50" />
-              <span className="text-2xl font-black text-white">{timeLeft}s</span>
-              <span className="text-[8px] text-white/80 uppercase font-bold tracking-widest">Wait</span>
+              <div className="w-full h-[3px] bg-yellow-400/50 my-0.5" />
+              <span className="text-3xl font-black text-white leading-none">{timeLeft}s</span>
+              <span className="text-[10px] text-white/90 font-bold uppercase tracking-widest">Wait</span>
             </div>
           </div>
 
-          {/* Fruit Items Circle */}
+          {/* CIRCLE OF ITEMS */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const x = Math.cos((angle * Math.PI) / 180) * 120;
-            const y = Math.sin((angle * Math.PI) / 180) * 120;
+            const x = Math.cos((angle * Math.PI) / 180) * 135;
+            const y = Math.sin((angle * Math.PI) / 180) * 135;
             const betAmount = myBets[item.id] || 0;
 
             return (
-              <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
+              <div key={item.id} className="absolute z-40" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-[4.5rem] h-[4.5rem] rounded-full border-[3px] flex flex-col overflow-hidden transition-all shadow-xl",
-                    "border-yellow-500 bg-amber-500",
-                    highlightIdx === idx ? "scale-110 ring-4 ring-white z-30 shadow-white/50" : ""
+                    "w-[5.2rem] h-[5.2rem] rounded-full border-[4px] flex flex-col overflow-hidden transition-all shadow-[0_10px_20px_rgba(0,0,0,0.4)] relative",
+                    "border-[#fdd835] bg-[#fb8c00]",
+                    highlightIdx === idx ? "scale-115 ring-[6px] ring-white z-50 brightness-110" : ""
                   )}
                 >
-                  <div className="flex-[1.5] bg-[#7c0000] flex items-center justify-center border-b border-yellow-500/30">
-                    <span className="text-2xl">{item.icon}</span>
+                  <div className="flex-[1.8] bg-[#8d0a0a] flex items-center justify-center border-b-2 border-yellow-500/40">
+                    <span className="text-3xl drop-shadow-md">{item.icon}</span>
                   </div>
-                  <div className="flex-1 bg-orange-500 flex items-center justify-center">
-                    <span className="text-[12px] font-black text-amber-950 italic">×{item.multiplier}</span>
+                  <div className="flex-1 bg-[#ff9800] flex items-center justify-center">
+                    <span className="text-sm font-black text-[#4e342e] italic">×{item.multiplier}</span>
                   </div>
+                  
+                  {/* Bet Overlay */}
                   <AnimatePresence>
                     {betAmount > 0 && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full">
-                         <span className="bg-yellow-400 text-blue-950 text-[10px] font-black px-1 rounded">🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute inset-0 bg-black/50 backdrop-blur-[1px] flex items-center justify-center rounded-full">
+                         <span className="bg-yellow-400 text-red-900 text-[11px] font-black px-1.5 rounded-full border border-white shadow-lg">
+                           🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
+                         </span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -233,23 +206,20 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             );
           })}
 
-          {/* Floating Props */}
-          <div className="absolute bottom-10 left-10 text-3xl opacity-80 filter drop-shadow-lg">🥗</div>
-          <div className="absolute bottom-10 right-10 text-3xl opacity-80 filter drop-shadow-lg">🍕</div>
+          {/* Decorations */}
+          <div className="absolute bottom-4 left-10 text-5xl filter drop-shadow-2xl">🥗</div>
+          <div className="absolute bottom-4 right-10 text-5xl filter drop-shadow-2xl">🍕</div>
         </div>
 
-        {/* Real History Line */}
-        <div className="w-full px-4 mb-2">
-           <div className="bg-orange-200/20 backdrop-blur-md rounded-xl p-1.5 flex gap-2 overflow-x-hidden border border-white/10 items-center">
-              <span className="text-[10px] font-bold text-yellow-400 uppercase px-1 border-r border-white/20 mr-1">New</span>
-              <div className="flex gap-2">
+        {/* GAME HISTORY BAR */}
+        <div className="w-full px-4 mb-4">
+           <div className="bg-[#4e342e]/60 backdrop-blur-md rounded-2xl p-2.5 flex items-center gap-3 border-2 border-white/10 shadow-inner">
+              <div className="bg-[#ffeb3b] text-[#3e2723] text-[10px] font-black px-2 py-1 rounded-lg shadow-sm">NEW</div>
+              <div className="flex gap-2.5 overflow-x-hidden">
                 {gameHistory.map((emoji, i) => (
                   <motion.div 
-                    layout
-                    key={`${emoji}-${i}`}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="min-w-[32px] h-8 bg-white/10 rounded-lg flex items-center justify-center text-lg shadow-inner"
+                    layout key={`${emoji}-${i}`} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                    className="w-10 h-10 bg-[#795548] rounded-xl flex items-center justify-center text-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] border border-white/5"
                   >
                     {emoji}
                   </motion.div>
@@ -258,35 +228,37 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
            </div>
         </div>
 
-        {/* Chips Footer */}
-        <div className="w-full bg-[#1e1b4b]/80 backdrop-blur-xl p-5 flex justify-center gap-3 border-t-2 border-yellow-600/30">
+        {/* CHIPS SELECTION FOOTER */}
+        <div className="w-full bg-[#3e2723] p-6 pb-10 flex justify-center gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t-4 border-[#5d4037]">
           {CHIPS_DATA.map(chip => (
             <button 
               key={chip.value}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-14 h-14 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center text-[10px] font-black transition-all",
-                "bg-gradient-to-br", chip.color,
-                selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-emerald-400 border-solid opacity-100" : "opacity-60"
+                "w-[4.2rem] h-[4.2rem] rounded-full border-4 border-dashed flex items-center justify-center text-xs font-black transition-all",
+                chip.color,
+                selectedChip === chip.value ? "scale-110 -translate-y-4 ring-[6px] ring-green-400 border-solid brightness-110" : "opacity-70 scale-95"
               )}
             >
-              <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center bg-black/10">
-                <span className="text-white drop-shadow-md">{chip.label}</span>
+              <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center border border-white/20">
+                <span className="text-white drop-shadow-lg text-sm">{chip.label}</span>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Winning Overlay */}
+        {/* WINNER SCREEN */}
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
-              <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-8 rounded-[2.5rem] border-4 border-white text-center shadow-2xl">
-                <Trophy className="w-12 h-12 text-white mx-auto mb-2 animate-bounce" />
-                <span className="text-7xl block">{winnerData.icon}</span>
-                <h2 className="text-white font-black text-3xl uppercase italic">Winner!</h2>
-                <div className="mt-2 bg-black/20 rounded-full py-1">
-                  <p className="text-white text-3xl font-black">+{winnerData.win.toLocaleString()}</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
+              <motion.div 
+                initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }}
+                className="bg-gradient-to-b from-yellow-400 to-red-600 p-10 rounded-[3rem] border-8 border-white text-center shadow-[0_0_100px_rgba(255,193,7,0.5)]"
+              >
+                <div className="text-8xl mb-4 filter drop-shadow-2xl">{winnerData.icon}</div>
+                <h2 className="text-white font-black text-5xl uppercase italic tracking-tighter drop-shadow-lg">BIG WIN!</h2>
+                <div className="mt-4 bg-white/20 backdrop-blur-md rounded-2xl py-3 px-6 border border-white/30">
+                  <p className="text-white text-4xl font-black tabular-nums">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
             </motion.div>
