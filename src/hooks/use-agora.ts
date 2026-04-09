@@ -123,14 +123,20 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         if (localAudioTrack || isPublishingRef.current) return;
         isPublishingRef.current = true;
         try {
+          // ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
+          await resumeAudioContext();
+
           const track = await AgoraRTC.createMicrophoneAudioTrack({
             AEC: true, AGC: true, ANS: true, encoderConfig: 'high_quality_stereo'
           });
-          // FINAL GUARD: Re-check connection before final API call
+          
+          // FINAL GUARD: Re-check connection and state before final API call
           if (client.connectionState === 'CONNECTED' && client.uid) {
             await client.publish(track);
+            // Redundant play to ensure the track is active in the browser's context
+            track.play(); 
             setLocalAudioTrack(track);
-            console.log('[Agora] Mic PUBLISHED');
+            console.log('[Agora] Mic PUBLISHED with AudioContext Resume');
           } else {
             track.close();
           }

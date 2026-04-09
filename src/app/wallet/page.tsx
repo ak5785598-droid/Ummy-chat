@@ -585,8 +585,8 @@ function WalletContent() {
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
         
-        {/* TOP NOTICE (Compact) */}
-        <div className="bg-amber-400 py-2 px-4 flex items-center justify-center gap-2 shrink-0">
+        {/* TOP NOTICE (Adjusted for Safe Area) */}
+        <div className="bg-amber-400 py-4 px-4 flex items-center justify-center gap-2 shrink-0 pt-safe shadow-md">
            <ShieldAlert className="h-4 w-4 text-black" />
            <p className="text-[10px] font-black uppercase text-black tracking-tight leading-none pt-0.5">Online Recharge Unavailable • Use Manual Scanner Below</p>
         </div>
