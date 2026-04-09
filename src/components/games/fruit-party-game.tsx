@@ -30,13 +30,11 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       }}
       className="absolute z-[100] pointer-events-none"
     >
-      {/* 3D-ish White Hand SVG */}
       <svg width="50" height="50" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
         <path 
           d="M9 10V5C9 3.89543 9.89543 3 11 3C12.1046 3 13 3.89543 13 5V11M13 11V9C13 7.89543 13.8954 7 15 7C16.1046 7 17 7.89543 17 9V11M17 11V10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10V16C21 18.7614 18.7614 21 16 21H10C7.23858 21 5 18.7614 5 16V13.6742C5 12.5632 5.76016 11.597 6.84534 11.3558L9 10.877" 
           stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="white"
         />
-        <path d="M9 10.877L11 11" stroke="#e2e8f0" strokeWidth="1" />
       </svg>
     </motion.div>
   );
@@ -153,7 +151,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       >
         {/* Header */}
         <div className="w-full p-6 flex justify-between items-center z-20">
-          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-[0_4px_0_rgba(0,0,0,0.2)] flex items-center gap-2">
+          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
             <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
           </div>
           <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
@@ -162,30 +160,49 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Game Arena */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-6">
+        <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-10">
           
-          {/* Wooden Support Lines (Rectangular) */}
-          <div className="absolute w-[8px] h-[200px] bg-gradient-to-b from-[#78350f] to-[#451a03] bottom-[-150px] left-[38%] rounded-t-lg z-0 shadow-lg transform -rotate-6" />
-          <div className="absolute w-[8px] h-[200px] bg-gradient-to-b from-[#78350f] to-[#451a03] bottom-[-150px] right-[38%] rounded-t-lg z-0 shadow-lg transform rotate-6" />
+          {/* A-Shape Bottom Wooden Support */}
+          <svg className="absolute w-full h-[300px] bottom-[-220px] pointer-events-none z-0">
+            <path 
+              d="M 160 0 L 100 300 M 230 0 L 290 300" 
+              stroke="#5d2707" strokeWidth="12" strokeLinecap="round" 
+              transform="translate(45, 0)"
+            />
+          </svg>
 
-          {/* Spokes */}
+          {/* Connected Lines (Thick Yellow) */}
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                <line key={angle} x1="0" y1="0" x2={145 * Math.cos((angle-90)*Math.PI/180)} y2={145 * Math.sin((angle-90)*Math.PI/180)} stroke="#eab308" strokeWidth="6" strokeLinecap="round" opacity="0.6"/>
+                <line 
+                  key={angle} 
+                  x1="0" y1="0" 
+                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
+                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
+                  stroke="#fbbf24" strokeWidth="10" strokeLinecap="round"
+                />
               ))}
             </g>
           </svg>
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* Center Hub (Chota Countdown Circle) */}
+          {/* Center Hub with Floating Icons */}
           <div className="relative z-50">
             <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_40px_rgba(234,179,8,0.4)]">
-              <div className="flex-1 bg-red-900/60 flex items-center justify-center border-b-2 border-yellow-500/50">
-                <div className="flex gap-0.5 opacity-60">
-                  {HUB_ICONS.slice(0,3).map((icon, i) => <span key={i} className="text-xs">{icon}</span>)}
-                </div>
+              <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50 overflow-hidden">
+                {HUB_ICONS.slice(0, 4).map((icon, i) => (
+                   <motion.span 
+                    key={i} 
+                    animate={{ y: [0, -5, 0], x: [0, i % 2 === 0 ? 3 : -3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
+                    className="text-xs absolute"
+                    style={{ left: `${20 + (i * 20)}%` }}
+                   >
+                     {icon}
+                   </motion.span>
+                ))}
               </div>
               <div className="flex-1 bg-red-600 flex items-center justify-center">
                 <span className="text-4xl font-black text-white italic drop-shadow-md">{gameState === 'betting' ? timeLeft : '...'}</span>
@@ -193,7 +210,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
-          {/* Fruits Cards */}
+          {/* Fruit Cards (Perfectly Circle) */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 145;
@@ -206,28 +223,28 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
                     "w-22 h-22 rounded-full border-[5px] flex flex-col overflow-hidden transition-all duration-200 shadow-xl relative",
-                    "border-orange-500 bg-[#1e1b4b] ring-2 ring-black/20", // Orange Border
+                    "border-orange-500 bg-[#1e1b4b]",
                     highlightIdx === idx ? "scale-110 border-white ring-4 ring-yellow-400 z-30" : ""
                   )}
                 >
-                  {/* Glossy Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+                  {/* Glossy Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                   
-                  {/* Top Icon Area */}
+                  {/* Top Icon */}
                   <div className={cn("w-full bg-red-800 flex items-center justify-center transition-all", betAmount > 0 ? "h-7" : "flex-1")}>
                     <span className={cn("transition-all", betAmount > 0 ? "text-xl" : "text-3xl")}>{item.icon}</span>
                   </div>
 
-                  {/* Middle Bet Card (Orange & Chota) */}
+                  {/* Middle Bet (Orange & Small) */}
                   <AnimatePresence>
                     {betAmount > 0 && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 border-y border-white/30">
-                        <span className="text-[10px] font-black text-white drop-shadow-sm">🪙 {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 border-y border-white/20">
+                        <span className="text-[10px] font-black text-white">🪙 {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* Multiplier Area */}
+                  {/* Bottom Multiplier */}
                   <div className={cn("w-full flex items-center justify-center bg-gradient-to-b from-orange-400 to-orange-600", betAmount > 0 ? "h-6" : "h-8")}>
                     <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
                   </div>
