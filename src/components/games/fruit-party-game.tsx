@@ -8,7 +8,7 @@ import { X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- CONNECTED 3D SPOKES ---
+// --- THICKER CONNECTED SPOKES ---
 const FerrisWheelSpokes = () => (
   <svg className="absolute w-[320px] h-[320px] pointer-events-none overflow-visible">
     <defs>
@@ -26,35 +26,22 @@ const FerrisWheelSpokes = () => (
           x2={130 * Math.cos((angle - 90) * Math.PI / 180)}
           y2={130 * Math.sin((angle - 90) * Math.PI / 180)}
           stroke="url(#goldSpoke)"
-          strokeWidth="6"
+          strokeWidth="10" // Increased thickness
           strokeLinecap="round"
-          className="opacity-80"
+          className="opacity-90"
         />
       ))}
     </g>
   </svg>
 );
 
-// --- CLEAN HAND POINTER ---
-const RealisticHandPointer = () => (
-  <motion.div className="relative drop-shadow-xl">
-    <svg width="60" height="60" viewBox="0 0 100 100" fill="none">
-      <path 
-        d="M30 40 C 30 30, 40 30, 40 40 L 40 70 C 40 80, 75 80, 75 65 L 75 50 C 75 40, 65 35, 60 35 L 60 40 M 30 40 L 30 20 C 30 10, 40 10, 40 20 L 40 40 M 30 40 L 30 10 C 30 0, 40 0, 40 10 L 40 40" 
-        fill="white" stroke="#e2e8f0" strokeWidth="1"
-      />
-      <circle cx="35" cy="45" r="25" fill="white" fillOpacity="0.2" />
-    </svg>
-  </motion.div>
-);
-
 const ITEMS = [
   { id: 'broccoli', icon: '🥦', multiplier: 15 },
   { id: 'lettuce', icon: '🥬', multiplier: 25 },
   { id: 'carrot', icon: '🥕', multiplier: 45 },
-  { id: 'corn', icon: '🌽', multiplier: 5 },
+  { id: 'corn', icon: '🌽', multiplier: 10 },
   { id: 'tomato', icon: '🍅', multiplier: 5 },
-  { id: 'coconut', icon: '🥥', multiplier: 10 },
+  { id: 'coconut', icon: '🥥', multiplier: 5 },
   { id: 'grapes', icon: '🍇', multiplier: 5 },
   { id: 'orange', icon: '🍊', multiplier: 5 },
 ];
@@ -81,7 +68,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
-  const [pointerTargetIdx, setPointerTargetIdx] = useState(0);
 
   useEffect(() => {
     if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins);
@@ -95,12 +81,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         return prev - 1;
       });
     }, 1000);
-
-    const handInterval = setInterval(() => {
-      setPointerTargetIdx(Math.floor(Math.random() * ITEMS.length));
-    }, 2000);
-
-    return () => { clearInterval(interval); clearInterval(handInterval); };
+    return () => clearInterval(interval);
   }, [gameState]);
 
   const handlePlaceBet = (id: string) => {
@@ -156,7 +137,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       >
         {/* Header */}
         <div className="w-full p-6 flex justify-between items-center z-20">
-          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
+          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2 border-2 border-white/20">
             <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
           </div>
           <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
@@ -170,60 +151,49 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {/* UPDATED COUNTDOWN HUB */}
           <div className="relative z-50">
-            <div className="w-32 h-32 rounded-full border-[8px] border-yellow-500 bg-red-700 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.5)] border-double">
-              {/* TOP HALF: ICONS CURVE */}
-              <div className="flex-1 bg-red-800 relative border-b-4 border-yellow-500/50 flex items-center justify-center overflow-hidden">
-                <div className="absolute w-full h-full flex items-center justify-center">
-                   {HUB_ICONS.map((icon, i) => {
-                     const angle = (i * (180 / (HUB_ICONS.length - 1))) - 180;
-                     const radius = 38;
-                     const iconX = radius * Math.cos((angle * Math.PI) / 180);
-                     const iconY = radius * Math.sin((angle * Math.PI) / 180) + 10;
-                     return (
-                       <span 
-                        key={i} 
-                        className="absolute text-[13px] drop-shadow-sm"
-                        style={{ transform: `translate(${iconX}px, ${iconY}px)` }}
-                       >
-                         {icon}
-                       </span>
-                     );
-                   })}
+            <div className="w-36 h-36 rounded-full border-[6px] border-yellow-500 bg-[#450a0a] flex flex-col overflow-hidden shadow-[0_0_60px_rgba(234,179,8,0.4)]">
+              {/* TOP HALF: FLOATING ICONS */}
+              <div className="flex-1 bg-red-900/40 relative flex items-center justify-center overflow-hidden border-b-2 border-yellow-500/30">
+                <div className="flex gap-1 animate-pulse">
+                  {HUB_ICONS.slice(0, 4).map((icon, i) => (
+                    <motion.span 
+                      key={i} 
+                      animate={{ y: [0, -5, 0] }} 
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                      className="text-lg"
+                    >
+                      {icon}
+                    </motion.span>
+                  ))}
+                </div>
+                <div className="absolute bottom-1 flex gap-1">
+                  {HUB_ICONS.slice(4).map((icon, i) => (
+                    <motion.span 
+                      key={i} 
+                      animate={{ y: [0, 5, 0] }} 
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                      className="text-lg"
+                    >
+                      {icon}
+                    </motion.span>
+                  ))}
                 </div>
               </div>
 
               {/* BOTTOM HALF: COUNTDOWN */}
-              <div className="flex-1 bg-red-600 flex items-center justify-center">
-                <span className="text-4xl font-black text-white leading-none drop-shadow-md">
+              <div className="flex-1 bg-red-700 flex items-center justify-center">
+                <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
                   {gameState === 'betting' ? timeLeft : '...'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Hand Pointer */}
-          <AnimatePresence>
-            {gameState === 'betting' && (
-              <motion.div
-                key="hand"
-                transition={{ type: "spring", stiffness: 100, damping: 15 }}
-                animate={{
-                  x: Math.cos(((pointerTargetIdx * 45) - 90) * Math.PI / 180) * 135,
-                  y: Math.sin(((pointerTargetIdx * 45) - 90) * Math.PI / 180) * 135,
-                  rotate: (pointerTargetIdx * 45) 
-                }}
-                className="absolute z-[60] pointer-events-none"
-              >
-                <RealisticHandPointer />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Fruit Betting Circles */}
+          {/* Fruit Betting Circles - Triple Layer */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const x = Math.cos((angle * Math.PI) / 180) * 135;
-            const y = Math.sin((angle * Math.PI) / 180) * 135;
+            const x = Math.cos((angle * Math.PI) / 180) * 145;
+            const y = Math.sin((angle * Math.PI) / 180) * 145;
             const betAmount = myBets[item.id] || 0;
 
             return (
@@ -231,33 +201,30 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-20 h-20 rounded-full border-[5px] flex flex-col overflow-hidden transition-all duration-200 shadow-2xl",
-                    "border-yellow-500 bg-red-700",
-                    highlightIdx === idx ? "scale-115 border-white ring-4 ring-yellow-400 z-30" : ""
+                    "w-24 h-24 rounded-full border-[4px] flex flex-col overflow-hidden transition-all duration-200 shadow-2xl relative",
+                    "border-yellow-500 bg-[#1e1b4b]",
+                    highlightIdx === idx ? "scale-110 border-white ring-4 ring-yellow-400 z-30" : ""
                   )}
                 >
-                  {/* Section 1: Fruit Icon */}
-                  <div className="flex-[1.2] bg-red-800 w-full flex items-center justify-center relative">
-                    <span className="text-3xl drop-shadow-md">{item.icon}</span>
-                    
-                    {/* Section 2: Mini Coin Card (Floating) */}
-                    <AnimatePresence>
-                      {betAmount > 0 && (
-                        <motion.div 
-                          initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }}
-                          className="absolute -top-1 -right-1 bg-white border-2 border-blue-600 rounded px-1.5 min-w-[32px] shadow-lg z-30"
-                        >
-                          <span className="text-[10px] font-black text-blue-900 leading-none">
-                             {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
-                          </span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                  {/* TOP: ICON */}
+                  <div className="flex-1 bg-red-800 flex items-center justify-center border-b border-white/10">
+                    <span className="text-3xl">{item.icon}</span>
                   </div>
 
-                  {/* Section 3: Orange Multiplier Area */}
-                  <div className="flex-1 w-full flex items-center justify-center bg-gradient-to-b from-orange-400 to-orange-600 border-t-2 border-orange-300/30">
-                    <span className="font-black text-[11px] text-white italic drop-shadow-sm">
+                  {/* MIDDLE: BET VALUE (Shows only if bet > 0) */}
+                  <div className="h-6 w-full bg-white flex items-center justify-center">
+                    {betAmount > 0 ? (
+                      <span className="text-[12px] font-black text-blue-800 animate-bounce">
+                        🪙 {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
+                      </span>
+                    ) : (
+                      <div className="w-full h-full bg-black/20" /> /* Placeholder when empty */
+                    )}
+                  </div>
+
+                  {/* BOTTOM: MULTIPLIER */}
+                  <div className="flex-[0.8] w-full flex items-center justify-center bg-gradient-to-b from-orange-400 to-orange-600">
+                    <span className="font-black text-[12px] text-white italic">
                       ×{item.multiplier}
                     </span>
                   </div>
@@ -274,8 +241,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               key={chip.value}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-14 h-14 rounded-full border-4 border-white flex items-center justify-center text-xs font-black transition-all",
-                "bg-gradient-to-tr from-indigo-600 to-blue-500 shadow-xl",
+                "w-14 h-14 rounded-full border-4 border-white flex items-center justify-center text-xs font-black transition-all shadow-xl",
+                "bg-gradient-to-tr from-indigo-600 to-blue-500",
                 selectedChip === chip.value ? "scale-115 ring-4 ring-yellow-400 opacity-100" : "opacity-40"
               )}
             >
