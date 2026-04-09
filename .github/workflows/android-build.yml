@@ -49,29 +49,22 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --stacktrace
 
-      - name: Sign APK
+      - name: Install Legacy Build Tools (29.0.3)
         run: |
-          # 1. Decode keystore from secret
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
-          
-          # 2. Find build tools (using project version 35)
-          ZIPALIGN=$ANDROID_HOME/build-tools/35.0.0/zipalign
-          APKSIGNER=$ANDROID_HOME/build-tools/35.0.0/apksigner
-          
-          # 3. Zipalign the unsigned APK
-          $ZIPALIGN -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
-          
-          # 4. Sign with apksigner
-          $APKSIGNER sign --ks release.keystore \
-                          --ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
-                          --ks-pass pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-                          --key-pass pass:"${{ secrets.ANDROID_KEY_PASSWORD }}" \
-                          --v2-signing-enabled true \
-                          --out app-release-signed.apk \
-                          app-release-aligned.apk
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;29.0.3"
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-signed
-          path: app-release-signed.apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
