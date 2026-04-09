@@ -53,6 +53,13 @@ jobs:
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;29.0.3"
 
+      - name: Debug Keystore Aliases
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > debug.keystore
+          echo "Listing entries in keystore:"
+          keytool -list -v -keystore debug.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep -E "Alias name|Entry type"
+          rm debug.keystore
+
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_app
