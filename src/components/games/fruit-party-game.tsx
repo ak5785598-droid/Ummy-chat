@@ -4,35 +4,22 @@ import { useState, useEffect } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Clock, HelpCircle, Trophy } from 'lucide-react';
+import { X, HelpCircle, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- NEW: SPOKES COMPONENT ---
-// Draws the thick lines from center to each item like in the image
+// --- YELLOW SPOKES ---
 const FerrisWheelSpokes = () => (
-  <svg className="absolute w-[400px] h-[400px] pointer-events-none opacity-40">
-    <g transform="translate(200, 200)">
+  <svg className="absolute w-[450px] h-[450px] pointer-events-none opacity-60">
+    <g transform="translate(225, 225)">
       {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
         <line
           key={angle}
           x1="0" y1="0"
-          x2={160 * Math.cos((angle - 90) * Math.PI / 180)}
-          y2={160 * Math.sin((angle - 90) * Math.PI / 180)}
-          stroke="#9333ea" // Deep purple spoke
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-      ))}
-      {/* Thinner inner highlight for 3D line effect */}
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-        <line
-          key={`inner-${angle}`}
-          x1="0" y1="0"
-          x2={155 * Math.cos((angle - 90) * Math.PI / 180)}
-          y2={155 * Math.sin((angle - 90) * Math.PI / 180)}
-          stroke="#a855f7" // Lighter purple core
-          strokeWidth="4"
+          x2={180 * Math.cos((angle - 90) * Math.PI / 180)}
+          y2={180 * Math.sin((angle - 90) * Math.PI / 180)}
+          stroke="#eab308"
+          strokeWidth="10"
           strokeLinecap="round"
         />
       ))}
@@ -40,71 +27,51 @@ const FerrisWheelSpokes = () => (
   </svg>
 );
 
-// --- EXACT ELEPHANT MASCOT COMPONENT ---
-const ElephantMascotUI = ({ timeLeft, gameState }: { timeLeft: number; gameState: string }) => (
-  <div className="relative flex items-center justify-center z-50">
-    <svg viewBox="0 0 100 100" className="w-44 h-44 drop-shadow-2xl">
-      <defs>
-        <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#c3e4f7" />
-          <stop offset="100%" stopColor="#5da9e1" />
-        </radialGradient>
-        <radialGradient id="earGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fbcfe8" />
-          <stop offset="100%" stopColor="#f472b6" />
-        </radialGradient>
-        <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FF1A1A" />
-          <stop offset="100%" stopColor="#990000" />
-        </linearGradient>
-      </defs>
-      
-      {/* Outer Glow Border */}
-      <circle cx="50" cy="50" r="48" fill="#FFD700" />
-      <g>
-        {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map(angle => (
-          <circle key={angle} cx={50 + 44 * Math.cos(angle * Math.PI / 180)} cy={50 + 44 * Math.sin(angle * Math.PI / 180)} r="2.5" fill="white" />
-        ))}
-      </g>
-      
-      <circle cx="50" cy="50" r="43.5" fill="url(#redGrad)"/>
+// --- ANIMATED CLOUDS ---
+const SkyBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+    {[
+      { top: '10%', left: '-10%', delay: 0, duration: 25 },
+      { top: '25%', left: '-20%', delay: 5, duration: 30 },
+      { top: '15%', left: '100%', delay: 2, duration: 28 },
+    ].map((cloud, i) => (
+      <motion.div
+        key={i}
+        initial={{ x: cloud.left }}
+        animate={{ x: i === 2 ? '-120%' : '120vw' }}
+        transition={{ duration: cloud.duration, repeat: Infinity, delay: cloud.delay, ease: "linear" }}
+        className="absolute w-32 h-12 bg-white rounded-full blur-xl"
+        style={{ top: cloud.top }}
+      />
+    ))}
+  </div>
+);
 
-      <clipPath id="elephantClip"><circle cx="50" cy="50" r="44" /></clipPath>
-      
-      <g clipPath="url(#elephantClip)" transform="translate(10, 5) scale(0.8)">
-        <ellipse cx="25" cy="45" rx="18" ry="22" fill="url(#bodyGrad)" />
-        <ellipse cx="75" cy="45" rx="18" ry="22" fill="url(#bodyGrad)" />
-        <ellipse cx="25" cy="45" rx="10" ry="14" fill="url(#earGrad)" />
-        <ellipse cx="75" cy="45" rx="10" ry="14" fill="url(#earGrad)" />
-        <circle cx="50" cy="55" r="32" fill="url(#bodyGrad)" />
-        <path d="M38 38 Q42 35 46 38" stroke="#333" strokeWidth="2" fill="none" />
-        <path d="M54 38 Q58 35 62 38" stroke="#333" strokeWidth="2" fill="none" />
-        <circle cx="42" cy="45" r="4" fill="white" /><circle cx="42" cy="45" r="2" fill="black" />
-        <circle cx="58" cy="45" r="4" fill="white" /><circle cx="58" cy="45" r="2" fill="black" />
-        <path d="M50 55 Q50 85 40 85" fill="none" stroke="url(#bodyGrad)" strokeWidth="10" strokeLinecap="round" />
-        <circle cx="30" cy="65" r="6" fill="url(#bodyGrad)" />
-        <circle cx="70" cy="65" r="6" fill="url(#bodyGrad)" />
-        {/* Utensils */}
-        <path d="M26 55 L26 70" stroke="#f2f2f2" strokeWidth="4" strokeLinecap="round" />
-        <path d="M74 55 L74 70" stroke="#f2f2f2" strokeWidth="4" strokeLinecap="round" />
-      </g>
-    </svg>
-    
-    <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 pointer-events-none">
-      <p className="text-[10px] uppercase font-bold text-white/90 tracking-tighter shadow-black">Bet Time</p>
-      <p className="text-[28px] font-black text-white leading-none drop-shadow-lg">
-        {gameState === 'betting' ? `${timeLeft}s` : '...'}
-      </p>
+// --- CENTER UI ---
+const BettingCenterUI = ({ timeLeft, gameState }: { timeLeft: number; gameState: string }) => (
+  <div className="relative flex items-center justify-center z-50">
+    <div className="w-32 h-32 rounded-full border-4 border-yellow-500 bg-red-600 flex flex-col items-center justify-center overflow-hidden shadow-2xl">
+      <div className="flex-1 w-full bg-red-700 flex items-center justify-center gap-1 border-b-2 border-yellow-500/50">
+        <span className="text-2xl">🥦</span>
+        <span className="text-2xl">🥬</span>
+      </div>
+      <div className="flex-1 w-full flex flex-col items-center justify-center bg-red-600">
+        <p className="text-[10px] uppercase font-bold text-white/80 tracking-tighter">Bet Time</p>
+        <p className="text-2xl font-black text-white leading-none">
+          {gameState === 'betting' ? `${timeLeft}s` : '...'}
+        </p>
+      </div>
     </div>
+    <div className="absolute inset-[-8px] border-2 border-dashed border-yellow-400/30 rounded-full animate-[spin_20s_linear_infinite]" />
   </div>
 );
 
 const ITEMS = [
   { id: 'apple', icon: '🍎', multiplier: 5, index: 0 },
-  { id: 'lemon', icon: '🍉', multiplier: 5, index: 1 },
+  { id: 'lemon', icon: '🍇', multiplier: 5, index: 1 },
   { id: 'strawberry', icon: '🍓', multiplier: 5, index: 2 },
-  { id: 'mango', icon: '🍇', multiplier: 5, index: 3 },
-  { id: 'fish', icon: '🥥', multiplier: 10, index: 4 },
+  { id: 'mango', icon: '🥭', multiplier: 5, index: 3 },
+  { id: 'fish', icon: '🍉', multiplier: 10, index: 4 },
   { id: 'burger', icon: '🌯', multiplier: 15, index: 5 },
   { id: 'pizza', icon: '🍕', multiplier: 25, index: 6 },
   { id: 'chicken', icon: '🍗', multiplier: 45, index: 7 },
@@ -189,34 +156,36 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex flex-col justify-end z-[100]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex flex-col justify-end z-[100]">
+      {/* Tap outside to close area */}
+      <div className="flex-1" onClick={onClose} />
+
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }}
-        className="h-[85vh] w-full bg-[#1a0633] rounded-t-[3rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+        className="h-[85vh] w-full bg-[#1e3a8a] rounded-t-[3rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+        style={{ backgroundImage: 'linear-gradient(to bottom, #1e3a8a, #1e40af)' }}
       >
+        <SkyBackground />
+
         {/* Header */}
         <div className="w-full p-6 flex justify-between items-center z-20">
           <div className="bg-yellow-500 text-blue-900 px-4 py-1 rounded-full font-black shadow-lg">
             🪙 {localCoins.toLocaleString()}
           </div>
-          <div className="flex gap-4 items-center text-white/50">
+          <div className="flex gap-4 items-center text-white/70">
             <HelpCircle className="w-6 h-6" />
             <X className="w-8 h-8 cursor-pointer" onClick={onClose} />
           </div>
         </div>
 
-        {/* Center Game Board */}
+        {/* Board Area */}
         <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* THE SPOKES (Moti lines connecting everything) */}
           <FerrisWheelSpokes />
+          <BettingCenterUI timeLeft={timeLeft} gameState={gameState} />
 
-          {/* Elephant Center */}
-          <ElephantMascotUI timeLeft={timeLeft} gameState={gameState} />
-
-          {/* Food Items */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const radius = 160;
+            const radius = 180;
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
 
@@ -225,15 +194,15 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 shadow-xl",
+                    "w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 shadow-2xl",
                     "border-yellow-600 bg-yellow-400",
-                    highlightIdx === idx ? "scale-125 border-white brightness-125 shadow-[0_0_30px_white] z-20" : "hover:scale-105"
+                    highlightIdx === idx ? "scale-110 border-white brightness-125 shadow-[0_0_40px_white] z-20" : "hover:scale-105"
                   )}
                 >
-                  <span className="text-3xl">{item.icon}</span>
-                  <span className="text-white font-black text-xs drop-shadow-md">X{item.multiplier}</span>
+                  <span className="text-4xl drop-shadow-sm">{item.icon}</span>
+                  <span className="text-white font-black text-sm drop-shadow-md">X{item.multiplier}</span>
                   {myBets[item.id] > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-7 h-7 rounded-full flex items-center justify-center border-2 border-white">
+                    <div className="absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-bold w-8 h-8 rounded-full flex items-center justify-center border-2 border-white animate-bounce">
                       {myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}k` : myBets[item.id]}
                     </div>
                   )}
@@ -243,8 +212,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Chips Footer */}
-        <div className="w-full bg-black/40 p-6 flex flex-col items-center gap-4">
+        {/* Footer Chips */}
+        <div className="w-full bg-black/30 p-6 flex flex-col items-center gap-4 z-20 border-t border-white/10">
           <div className="flex gap-3 justify-center">
             {CHIPS_DATA.map(chip => (
               <button 
@@ -252,8 +221,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 onClick={() => setSelectedChip(chip.value)}
                 className={cn(
                   "w-14 h-14 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-black transition-all",
-                  "bg-gradient-to-tr from-blue-600 to-indigo-400",
-                  selectedChip === chip.value ? "scale-110 ring-4 ring-yellow-400" : "opacity-60"
+                  "bg-gradient-to-tr from-blue-600 to-indigo-400 shadow-lg",
+                  selectedChip === chip.value ? "scale-110 ring-4 ring-yellow-400 opacity-100" : "opacity-60"
                 )}
               >
                 {chip.label}
@@ -265,11 +234,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* Win Overlay */}
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
               <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-12 rounded-full border-8 border-white flex flex-col items-center shadow-2xl">
                 <Trophy className="w-16 h-16 text-white mb-2" />
-                <span className="text-6xl mb-2">{winnerData.icon}</span>
-                <h2 className="text-white font-black text-4xl italic">WIN!</h2>
+                <span className="text-7xl mb-2">{winnerData.icon}</span>
+                <h2 className="text-white font-black text-4xl italic uppercase">Win!</h2>
                 <p className="text-white text-3xl font-black">+{winnerData.win}</p>
               </motion.div>
             </motion.div>
