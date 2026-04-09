@@ -496,4 +496,5 @@ export default function RoomsExplorer() {
         )}
       </div>
     </div>
-
+  );
+}

@@ -642,7 +642,6 @@ export default function MessagesView() {
         </Card>
       </div>
      </div>
->
 
      <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
       <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">

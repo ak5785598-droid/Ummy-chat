@@ -211,7 +211,6 @@ const PublicProfileView = ({
  const isCSLeader = profile.tags?.includes('CS Leader');
 
  return (
-  return (
     <div className="h-[100dvh] bg-slate-50 font-sans flex flex-col animate-in fade-in duration-700 relative overflow-hidden">
       {/* 🏙️ PREMIUM HEADER BACKDROP */}
       <div 
