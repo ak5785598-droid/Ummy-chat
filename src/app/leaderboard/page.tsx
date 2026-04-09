@@ -245,9 +245,8 @@ function LeaderboardContent() {
         </div>
        ))}
      </div>
-    </header>
 
-    <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
+     <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
        <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
     </main>
 

@@ -36,6 +36,13 @@ import { motion } from 'framer-motion';
  * THE GLOSSY WHITE LAYOUT
  * Restructured for sticky headers and translucent navigation.
  */
+export function AppLayoutGlossy(props: {
+ children: React.ReactNode;
+ fullScreen?: boolean;
+ hideBottomNav?: boolean;
+ hideSidebarOnMobile?: boolean;
+}) {
+  const pathname = usePathname();
   const MAIN_TABS = ['/rooms', '/discover', '/messages', '/profile'];
   const isMainTab = useMemo(() => MAIN_TABS.includes(pathname || ''), [pathname]);
 
@@ -45,7 +52,6 @@ import { motion } from 'framer-motion';
   hideBottomNav = !isMainTab,
   hideSidebarOnMobile = false,
  } = props;
- const pathname = usePathname();
  const { t } = useTranslation();
  const { isHydrated, isLoading: isFirebaseLoading } = useFirebase();
  const { user } = useUser();
