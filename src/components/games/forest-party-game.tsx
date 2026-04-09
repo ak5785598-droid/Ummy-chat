@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
  useUser, 
  useFirestore, 
@@ -25,10 +25,6 @@ import {
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { CompactRoomView } from '@/components/compact-room-view';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GameResultOverlay } from '@/components/game-result-overlay';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ANIMALS = [
@@ -42,17 +38,6 @@ const ANIMALS = [
   { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-yellow-400 to-red-600', border: 'border-yellow-400', index: 7 },
 ];
 
-const FOOD_ITEMS = [
-  { id: 'apple', emoji: '🍎', multiplier: 5, label: 'x5', pos: 'top', color: 'from-red-400 to-red-600', border: 'border-red-400', index: 0 },
-  { id: 'lemon', emoji: '🍋', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-yellow-300 to-yellow-500', border: 'border-yellow-400', index: 1 },
-  { id: 'strawberry', emoji: '🍓', multiplier: 5, label: 'x5', pos: 'right', color: 'from-pink-400 to-rose-500', border: 'border-pink-300', index: 2 },
-  { id: 'mango', emoji: '🥭', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-400 to-amber-500', border: 'border-orange-300', index: 3 },
-  { id: 'fish', emoji: '🐟', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-cyan-400 to-blue-500', border: 'border-blue-400', index: 4 },
-  { id: 'burger', emoji: '🍔', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-orange-500 to-red-600', border: 'border-orange-600', index: 5 },
-  { id: 'pizza', emoji: '🍕', multiplier: 25, label: 'x25', pos: 'left', color: 'from-yellow-500 to-orange-600', border: 'border-orange-500', index: 6 },
-  { id: 'chicken', emoji: '🍗', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-amber-600 to-orange-700', border: 'border-amber-600', index: 7 },
-];
-
 const CHIPS_DATA = [
  { value: 100, label: '100', color: 'from-blue-400 to-cyan-500' },
  { value: 1000, label: '1K', color: 'from-green-400 to-emerald-500' },
@@ -64,33 +49,6 @@ const CHIPS_DATA = [
 ];
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
-
-const ForestDecor = ({ side }: { side: 'left' | 'right' }) => (
-  <div className={cn("absolute top-0 bottom-0 w-32 z-[60] pointer-events-none overflow-hidden", side === 'left' ? "left-0" : "right-0")}>
-    {[...Array(3)].map((_, i) => (
-      <motion.div
-        key={i}
-        animate={{ 
-          rotate: side === 'left' ? [-3, 3, -3] : [3, -3, 3],
-          y: [0, 10, 0]
-        }}
-        transition={{ duration: 5 + i, repeat: Infinity, ease: "easeInOut" }}
-        className={cn(
-            "absolute top-[-10%] w-3 bg-gradient-to-b from-[#1b4332] via-[#2d6a4f] to-transparent rounded-full shadow-2xl",
-            side === 'left' ? "left-6" : "right-6"
-        )}
-        style={{ height: `${80 + i * 15}%`, left: side === 'left' ? `${i * 25}px` : 'auto', right: side === 'right' ? `${i * 25}px` : 'auto' }}
-      >
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col gap-12">
-            <span className="text-3xl animate-pulse">🌿</span>
-            <span className="text-4xl drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]">🦜</span>
-            <span className="text-2xl opacity-60">🍃</span>
-            <span className="text-4xl drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]">🐒</span>
-        </div>
-      </motion.div>
-    ))}
-  </div>
-);
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const { user: currentUser } = useUser();
@@ -112,9 +70,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
  const [hintStep, setHintStep] = useState(0);
  const [showRules, setShowRules] = useState(false);
- const [gameMode, setGameMode] = useState<'animals' | 'food'>('animals');
-
- const ACTIVE_ITEMS = gameMode === 'animals' ? ANIMALS : FOOD_ITEMS;
 
  const handleInvite = () => {
    if (typeof window !== 'undefined') {
@@ -220,16 +175,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
   }
 
   playSound('bet');
-  // Visually drop chips for all repeated bets
   const newChips: any[] = [];
   Object.entries(lastBets).forEach(([id, amount]) => {
     if (amount === 0) return;
-    const item = ACTIVE_ITEMS.find(a => a.id === id);
+    const item = ANIMALS.find(a => a.id === id);
     if (!item) return;
     newChips.push({
       id: Math.random(),
       itemIdx: item.index,
-      label: '...', // Generic label for repeat pulse
+      label: '...',
       color: 'from-yellow-400 to-orange-500',
       x: 0,
       y: 0
@@ -243,21 +197,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
  const startSpin = async () => {
   setGameState('spinning');
-  let winningId = ACTIVE_ITEMS[Math.floor(Math.random() * ACTIVE_ITEMS.length)].id;
+  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
-  // Oracle Support
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      const forced = oracleSnap.data().forcedResult;
-     if (ACTIVE_ITEMS.some(a => a.id === forced)) winningId = forced;
+     if (ANIMALS.some(a => a.id === forced)) winningId = forced;
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
    } catch (e) {}
   }
 
-  const targetIdx = ACTIVE_ITEMS.findIndex(a => a.id === winningId);
+  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   const targetSequenceIdx = SEQUENCE.indexOf(targetIdx);
   let currentStep = 0;
   const totalSteps = (SEQUENCE.length * 6) + targetSequenceIdx;
@@ -288,7 +241,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  };
 
  const finalizeResult = (id: string) => {
-  const winItem = ACTIVE_ITEMS.find(i => i.id === id);
+  const winItem = ANIMALS.find(i => i.id === id);
   const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
 
   setHistory(prev => [id, ...prev].slice(0, 15));
@@ -345,8 +298,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2000')] bg-cover bg-center opacity-10" />
    </div>
-   <ForestDecor side="left" />
-   <ForestDecor side="right" />
 
    <AnimatePresence>
     {showRules && (
@@ -411,7 +362,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           "h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-2xl border border-white/5",
           i === 0 && "bg-white/20 border-white/30"
         )}>
-         {ACTIVE_ITEMS.find(a => a.id === id)?.emoji}
+         {ANIMALS.find(a => a.id === id)?.emoji}
         </div>
         {i === 0 && <div className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-rose-600 text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white/20">NEW</div>}
       </div>
@@ -419,24 +370,37 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </div>
 
-   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative">
+   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative mt-4">
+    
     {/* WHEEL CONTAINER */}
-    <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
+    <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
       
+      {/* THICK YELLOW CONNECTING LINES (SVG) */}
+      <svg className="absolute inset-0 w-full h-full z-10 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" viewBox="0 0 100 100">
+        <line x1="50" y1="50" x2="50" y2="12.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="77.5" y2="22.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="87.5" y2="50" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="77.5" y2="77.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="50" y2="87.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="22.5" y2="77.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="12.5" y2="50" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="22.5" y2="22.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+      </svg>
+
       {/* GLOWING CENTER */}
-      <div className="relative z-20 w-40 h-40 bg-gradient-to-br from-emerald-600 via-green-800 to-emerald-950 rounded-full shadow-[0_0_80px_rgba(34,197,94,0.3)] flex flex-col items-center justify-center border-[6px] border-[#d4af37] p-4 text-center overflow-hidden">
+      <div className="relative z-20 w-32 h-32 bg-gradient-to-br from-emerald-600 via-green-800 to-emerald-950 rounded-full shadow-[0_0_50px_rgba(34,197,94,0.4)] flex flex-col items-center justify-center border-[6px] border-[#d4af37] p-2 text-center overflow-hidden">
         <div className="absolute inset-0 bg-white/5 animate-shine -skew-x-[45deg]" />
-        <p className="text-[10px] font-black uppercase text-yellow-500/80 leading-tight tracking-[0.4em] mb-2 drop-shadow-md">
-         {gameState === 'betting' ? 'Bet Now' : 'Wild Spin'}
+        <p className="text-[9px] font-black uppercase text-yellow-500/80 leading-tight tracking-[0.3em] mb-1 drop-shadow-md">
+         {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
         </p>
         <span className={cn(
-         "text-5xl font-black tracking-tight transition-all duration-500",
+         "text-4xl font-black tracking-tight transition-all duration-500",
          gameState === 'betting' ? "text-white" : "text-yellow-400 scale-125 rotate-12"
         )}>
          {gameState === 'betting' ? timeLeft : '🎲'}
         </span>
         {gameState === 'betting' && (
-          <div className="mt-2 w-full bg-black/20 rounded-full h-1 relative overflow-hidden">
+          <div className="mt-2 w-[80%] mx-auto bg-black/20 rounded-full h-1 relative overflow-hidden">
             <motion.div 
               initial={{ width: '100%' }}
               animate={{ width: `${(timeLeft/25)*100}%` }}
@@ -446,30 +410,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         )}
       </div>
 
-      {/* ANIMAL/FOOD SELECTION MODE TOGGLE */}
-      <div className="absolute top-[30%] w-full max-w-[320px] flex justify-between px-2 z-[60] pointer-events-none">
-         <button 
-           onClick={() => setGameMode('animals')}
-           className={cn(
-             "h-9 w-24 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto active:scale-95 transition-all outline-none",
-             gameMode === 'animals' ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white" : "bg-white/10 backdrop-blur-md text-white/40"
-           )}
-         >
-           Animals
-         </button>
-         <button 
-           onClick={() => setGameMode('food')}
-           className={cn(
-             "h-9 w-24 rounded-full border-2 border-white shadow-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto active:scale-95 transition-all outline-none",
-             gameMode === 'food' ? "bg-gradient-to-r from-orange-500 to-red-600 text-white" : "bg-white/10 backdrop-blur-md text-white/40"
-           )}
-         >
-           Food
-         </button>
-      </div>
-
       {/* ITEM GRID */}
-      {ACTIVE_ITEMS.map((item, idx) => {
+      {ANIMALS.map((item, idx) => {
        const isActive = highlightIdx === idx;
        const betOnThis = myBets[item.id] || 0;
        const isHandPointing = gameState === 'betting' && SEQUENCE[hintStep] === idx;
@@ -478,14 +420,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         <motion.div  
           key={item.id} 
           className={cn(
-           "absolute transition-all duration-300",
-           item.pos === 'top' && "top-0",
+           "absolute transition-all duration-300 z-20",
+           item.pos === 'top' && "top-0 left-1/2 -translate-x-1/2",
            item.pos === 'top-right' && "top-[10%] right-[10%]",
-           item.pos === 'right' && "right-0",
+           item.pos === 'right' && "right-0 top-1/2 -translate-y-1/2",
            item.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
-           item.pos === 'bottom' && "bottom-0",
+           item.pos === 'bottom' && "bottom-0 left-1/2 -translate-x-1/2",
            item.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
-           item.pos === 'left' && "left-0",
+           item.pos === 'left' && "left-0 top-1/2 -translate-y-1/2",
            item.pos === 'top-left' && "top-[10%] left-[10%]",
            isActive && "z-50"
           )}
@@ -499,14 +441,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             )}
           >
             <div className={cn(
-             "h-24 w-24 rounded-[2rem] flex flex-col items-center justify-center transition-all border-4 relative overflow-hidden shadow-2xl",
+             "h-20 w-20 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-4 relative overflow-hidden shadow-2xl",
              isActive ? "border-yellow-400 bg-white shadow-[0_0_50px_#fbbf24] scale-125" : `bg-gradient-to-br ${item.color} ${item.border}`
             )}>
-              <span className={cn("text-5xl drop-shadow-xl relative z-10 transition-transform", isActive && "scale-110")}>
+              <span className={cn("text-4xl drop-shadow-xl relative z-10 transition-transform", isActive && "scale-110")}>
                {item.emoji}
               </span>
-              <div className="absolute bottom-1 bg-black/20 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/10 z-10">
-                <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">
+              <div className="absolute bottom-1 bg-black/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 z-10">
+                <span className="text-[8px] font-black text-white/90 uppercase tracking-widest">
                  {item.label}
                 </span>
               </div>
@@ -524,8 +466,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
                     transition={{ type: 'spring', damping: 15 }} 
                     className="absolute top-1/2 left-1/2"
                   >
-                    <div className={cn("w-8 h-8 rounded-full border-2 border-white shadow-2xl flex items-center justify-center bg-gradient-to-br", chip.color)} style={{ marginLeft: chip.x, marginTop: chip.y }}>
-                      <span className="text-[7px] font-black text-white drop-shadow-md">{chip.label}</span>
+                    <div className={cn("w-6 h-6 rounded-full border-2 border-white shadow-2xl flex items-center justify-center bg-gradient-to-br", chip.color)} style={{ marginLeft: chip.x, marginTop: chip.y }}>
+                      <span className="text-[6px] font-black text-white drop-shadow-md">{chip.label}</span>
                     </div>
                   </motion.div>
                 ))}
@@ -534,16 +476,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
             {betOnThis > 0 && (
              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-2 z-40">
-               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 h-9 w-9 rounded-full border-2 border-white shadow-xl flex items-center justify-center">
-                 <span className="text-[9px] font-black text-white">{betOnThis >= 1000 ? (betOnThis/1000).toFixed(0)+'K' : betOnThis}</span>
+               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 h-8 w-8 rounded-full border-2 border-white shadow-xl flex items-center justify-center">
+                 <span className="text-[8px] font-black text-white">{betOnThis >= 1000 ? (betOnThis/1000).toFixed(0)+'K' : betOnThis}</span>
                </div>
              </motion.div>
             )}
 
             <AnimatePresence>
               {isHandPointing && (
-                <motion.div initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0 }} className="absolute -top-12 left-1/2 -translate-x-1/2 z-40">
-                  <Pointer size={36} className="text-white fill-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-bounce" />
+                <motion.div initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0 }} className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
+                  <Pointer size={28} className="text-white fill-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-bounce" />
                 </motion.div>
               )}
             </AnimatePresence>
