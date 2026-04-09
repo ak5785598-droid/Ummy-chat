@@ -8,67 +8,63 @@ import { X, HelpCircle, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- REALISTIC 3D YELLOW SPOKES ---
+// --- REALISTIC 3D YELLOW GOLD SPOKES ---
 const FerrisWheelSpokes = () => (
-  <svg className="absolute w-[400px] h-[400px] pointer-events-none overflow-visible">
+  <svg className="absolute w-[450px] h-[450px] pointer-events-none overflow-visible">
     <defs>
-      <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#fbbf24" />
-        <stop offset="50%" stopColor="#f59e0b" />
-        <stop offset="100%" stopColor="#b45309" />
+      <linearGradient id="gold3D" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#fef08a" />
+        <stop offset="50%" stopColor="#eab308" />
+        <stop offset="100%" stopColor="#854d0e" />
       </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+      <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+        <feOffset dx="2" dy="2" result="offsetblur" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="0.5" />
+        </feComponentTransfer>
         <feMerge>
-          <feMergeNode in="coloredBlur" />
+          <feMergeNode />
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
     </defs>
-    <g transform="translate(200, 200)">
-      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+    <g transform="translate(225, 225)" filter="url(#shadow3D)">
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
         <line
           key={angle}
           x1="0" y1="0"
-          x2={140 * Math.cos((angle - 90) * Math.PI / 180)}
-          y2={140 * Math.sin((angle - 90) * Math.PI / 180)}
-          stroke="url(#goldGradient)"
-          strokeWidth="6"
+          x2={165 * Math.cos((angle - 90) * Math.PI / 180)}
+          y2={165 * Math.sin((angle - 90) * Math.PI / 180)}
+          stroke="url(#gold3D)"
+          strokeWidth="10"
           strokeLinecap="round"
-          filter="url(#glow)"
-          className="opacity-90"
         />
       ))}
     </g>
   </svg>
 );
 
-// --- SVG WHITE 3D HAND POINTER ---
-const White3DHand = () => (
-  <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-xl">
+// --- 3D WHITE HAND POINTER ---
+const RealisticHandPointer = () => (
+  <svg width="75" height="75" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
     <path 
-      d="M7 10.5V6.5C7 5.11929 8.11929 4 9.5 4V4C10.8807 4 12 5.11929 12 6.5V10.5M7 10.5C7 11.8807 8.11929 13 9.5 13V13C10.8807 13 12 11.8807 12 10.5M7 10.5H6.5C4.567 10.5 3 12.067 3 14V16C3 18.7614 5.23858 21 8 21H14C17.3137 21 20 18.3137 20 15V11.5C20 10.1193 18.8807 9 17.5 9V9C16.1193 9 15 10.1193 15 11.5V10.5C15 9.11929 13.8807 8 12.5 8V8C11.1193 8 10 9.11929 10 10.5V10.5" 
-      stroke="white" 
-      strokeWidth="1.5" 
-      fill="white"
+      d="M35 45 C 35 35, 45 35, 45 45 L 45 75 C 45 85, 80 85, 80 70 L 80 55 C 80 45, 70 40, 65 40 L 65 45 M 35 45 L 35 25 C 35 15, 45 15, 45 25 L 45 45 M 35 45 L 35 15 C 35 5, 45 5, 45 15 L 45 45" 
+      fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5"
     />
-    <path d="M12 4V2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M35 45 Q 60 45 80 55 Q 80 85 55 85 Q 35 85 35 65 Z" fill="#f8fafc" />
   </svg>
 );
 
 const ITEMS = [
-  { id: 'apple', icon: '🍎', multiplier: 5 },
-  { id: 'broccoli', icon: '🥦', multiplier: 5 },
-  { id: 'lettuce', icon: '🥬', multiplier: 5 },
-  { id: 'burrito', icon: '🌯', multiplier: 15 },
+  { id: 'tomato', icon: '🍅', multiplier: 5 },
+  { id: 'corn', icon: '🌽', multiplier: 5 },
   { id: 'grapes', icon: '🍇', multiplier: 5 },
+  { id: 'orange', icon: '🍊', multiplier: 5 },
   { id: 'coconut', icon: '🥥', multiplier: 10 },
-  { id: 'watermelon', icon: '🍉', multiplier: 10 },
-  { id: 'chicken', icon: '🍗', multiplier: 45 },
-  { id: 'pizza', icon: '🍕', multiplier: 25 },
-  { id: 'burger', icon: '🍔', multiplier: 15 },
-  { id: 'mango', icon: '🥭', multiplier: 5 },
-  { id: 'strawberry', icon: '🍓', multiplier: 5 },
+  { id: 'broccoli', icon: '🥦', multiplier: 15 },
+  { id: 'lettuce', icon: '🥬', multiplier: 25 },
+  { id: 'carrot', icon: '🥕', multiplier: 45 },
 ];
 
 const CHIPS_DATA = [
@@ -108,12 +104,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     const handInterval = setInterval(() => {
       setPointerTargetIdx(Math.floor(Math.random() * ITEMS.length));
-    }, 2000);
+    }, 1800);
 
-    return () => {
-      clearInterval(interval);
-      clearInterval(handInterval);
-    };
+    return () => { clearInterval(interval); clearInterval(handInterval); };
   }, [gameState]);
 
   const handlePlaceBet = (id: string) => {
@@ -127,13 +120,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     setGameState('spinning');
     const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
     let currentStep = 0;
-    const totalSteps = 60 + ITEMS.indexOf(winItem);
+    const totalSteps = 40 + ITEMS.indexOf(winItem);
 
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
       if (currentStep < totalSteps) {
         currentStep++;
-        setTimeout(run, 40 + (currentStep * 1.5));
+        setTimeout(run, 50 + (currentStep * 2));
       } else {
         setTimeout(() => finalizeResult(winItem), 1000);
       }
@@ -155,124 +148,147 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setMyBets({});
       setWinnerData(null);
       setHighlightIdx(null);
-    }, 4000);
+    }, 4500);
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-md bg-black/40 flex flex-col justify-end z-[100]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex flex-col justify-end z-[100]">
       <div className="flex-1" onClick={onClose} />
 
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }}
-        className="h-[85vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
-        style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
+        className="h-[88vh] w-full bg-[#020617] rounded-t-[4rem] border-t-[10px] border-yellow-500 relative overflow-hidden flex flex-col items-center"
+        style={{ backgroundImage: 'radial-gradient(circle at top, #1e40af, #020617)' }}
       >
-        {/* Header */}
+        {/* Header Section */}
         <div className="w-full p-6 flex justify-between items-center z-20">
-          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-[0_4px_10px_rgba(234,179,8,0.4)] flex items-center gap-2">
-            <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
+          <div className="bg-gradient-to-b from-yellow-300 to-yellow-600 text-blue-950 px-6 py-2 rounded-full font-black shadow-[0_4px_0_#854d0e] flex items-center gap-2 border-2 border-white/30">
+            <span className="text-2xl drop-shadow-sm">🪙</span> {localCoins.toLocaleString()}
           </div>
-          <div className="flex gap-4 items-center">
-            <HelpCircle className="w-6 h-6 text-white/50" />
-            <X className="w-8 h-8 text-white cursor-pointer hover:rotate-90 transition-transform" onClick={onClose} />
-          </div>
+          <motion.button whileTap={{ scale: 0.8 }} onClick={onClose} className="p-2 bg-red-600 rounded-full border-4 border-white shadow-lg">
+            <X className="w-6 h-6 text-white font-bold" />
+          </motion.button>
         </div>
 
-        {/* Board Area */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-90 sm:scale-100">
+        {/* Game Arena */}
+        <div className="relative w-full flex-1 flex items-center justify-center">
           <FerrisWheelSpokes />
           
-          {/* Center Betting UI */}
+          {/* Main Wheel Hub */}
           <div className="relative z-50">
-            <div className="w-32 h-32 rounded-full border-8 border-yellow-500 bg-red-600 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(234,179,8,0.6)]">
-              <div className="flex gap-1 text-lg mb-1">🥦🍇🥥🍋🥬</div>
-              <p className="text-3xl font-black text-white leading-none">
-                {gameState === 'betting' ? `${timeLeft}s` : 'Wait'}
-              </p>
-              <div className="flex gap-1 text-lg mt-1">🍇🍉🍓🥥</div>
+            <div className="w-40 h-40 rounded-full border-[10px] border-yellow-500 bg-red-700 flex flex-col overflow-hidden shadow-[0_0_80px_rgba(234,179,8,0.4),inset_0_0_20px_rgba(0,0,0,0.5)]">
+              <div className="flex-[1.2] bg-red-800 relative flex items-center justify-center border-b-4 border-yellow-500/50">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  {['🥬','🥦','🍅','🍇','🍊','🥕','🌽'].map((icon, i) => (
+                    <motion.span key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.5, delay: i * 0.1 }}
+                      className="text-2xl absolute" style={{ transform: `rotate(${(i - 3) * 22}deg) translateY(-28px)` }}>
+                      {icon}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 bg-red-600 flex flex-col items-center justify-center">
+                <span className="text-4xl font-black text-white tracking-tighter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+                  {gameState === 'betting' ? timeLeft : '...'}
+                </span>
+                <span className="text-[11px] font-black text-yellow-300 uppercase tracking-widest animate-pulse">
+                   {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* SVG Hand Pointer */}
+          {/* Hand Animation */}
           <AnimatePresence>
             {gameState === 'betting' && (
               <motion.div
-                key="hand"
+                key="hand-pointer"
                 transition={{ type: "spring", stiffness: 80, damping: 12 }}
                 animate={{
-                  x: Math.cos(((pointerTargetIdx * (360/ITEMS.length)) - 90) * Math.PI / 180) * 150,
-                  y: Math.sin(((pointerTargetIdx * (360/ITEMS.length)) - 90) * Math.PI / 180) * 150,
+                  x: Math.cos(((pointerTargetIdx * 45) - 90) * Math.PI / 180) * 175,
+                  y: Math.sin(((pointerTargetIdx * 45) - 90) * Math.PI / 180) * 175,
+                  rotate: (pointerTargetIdx * 45) 
                 }}
                 className="absolute z-[60] pointer-events-none"
               >
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  <White3DHand />
-                </motion.div>
+                <RealisticHandPointer />
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Fruit Circles */}
+          {/* Betting Circles (Fruits) */}
           {ITEMS.map((item, idx) => {
-            const angle = (idx * (360 / ITEMS.length)) - 90;
-            const radius = 155;
-            const x = Math.cos((angle * Math.PI) / 180) * radius;
-            const y = Math.sin((angle * Math.PI) / 180) * radius;
+            const angle = (idx * 45) - 90;
+            const x = Math.cos((angle * Math.PI) / 180) * 175;
+            const y = Math.sin((angle * Math.PI) / 180) * 175;
+            const hasBet = myBets[item.id] > 0;
 
             return (
               <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
-                <button 
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 overflow-hidden",
-                    "border-orange-500 bg-gradient-to-b from-yellow-300 via-yellow-400 to-orange-500 shadow-xl",
-                    highlightIdx === idx ? "scale-125 border-white ring-4 ring-yellow-300 brightness-110 z-20" : "hover:scale-105"
+                    "w-24 h-24 rounded-full border-[6px] flex flex-col overflow-hidden transition-all duration-300 shadow-2xl",
+                    "border-t-yellow-300 border-x-yellow-500 border-b-orange-600 bg-red-700",
+                    highlightIdx === idx ? "scale-110 ring-[6px] ring-white brightness-125 z-30" : ""
                   )}
                 >
-                  <div className="flex-[1.2] w-full flex items-center justify-center pt-1">
-                    <span className="text-3xl drop-shadow-md">{item.icon}</span>
+                  {/* Top: Icon Layer */}
+                  <div className="flex-[1.2] bg-red-800 w-full flex items-center justify-center border-b-[3px] border-orange-500/40">
+                    <span className="text-5xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">{item.icon}</span>
                   </div>
-                  <div className="flex-1 w-full bg-black/30 flex items-center justify-center">
-                    <span className="text-white font-black text-[10px]">×{item.multiplier}</span>
+
+                  {/* Bottom: Orange Multiplier/Bet Layer */}
+                  <div className={cn(
+                    "flex-1 w-full flex items-center justify-center",
+                    "bg-gradient-to-b from-orange-400 to-orange-600"
+                  )}>
+                    <span className="font-black text-white text-base drop-shadow-md">
+                      {hasBet 
+                        ? (myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}K` : myBets[item.id])
+                        : `×${item.multiplier}`
+                      }
+                    </span>
                   </div>
-                  {myBets[item.id] > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-white text-red-600 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-lg border-2 border-red-600 animate-bounce">
-                      {myBets[item.id] >= 1000 ? `${myBets[item.id]/1000}K` : myBets[item.id]}
-                    </div>
-                  )}
-                </button>
+                </motion.button>
               </div>
             );
           })}
         </div>
 
         {/* Chips Footer */}
-        <div className="w-full bg-white/5 backdrop-blur-xl p-6 flex justify-center gap-3 z-20 border-t border-white/10">
+        <div className="w-full bg-black/60 backdrop-blur-xl p-8 flex justify-center gap-4 z-20 border-t-2 border-yellow-500/30">
           {CHIPS_DATA.map(chip => (
-            <button 
+            <motion.button 
               key={chip.value}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-14 h-14 rounded-full border-4 border-white flex items-center justify-center text-xs font-black transition-all",
-                "bg-gradient-to-tr from-indigo-600 to-purple-500 shadow-lg",
-                selectedChip === chip.value ? "scale-110 ring-4 ring-yellow-400 opacity-100" : "opacity-40"
+                "w-16 h-16 rounded-full border-4 flex items-center justify-center text-sm font-black transition-all shadow-xl",
+                "bg-gradient-to-tr from-indigo-700 via-blue-600 to-indigo-500 border-white",
+                selectedChip === chip.value ? "scale-115 ring-4 ring-yellow-400 opacity-100 shadow-yellow-500/50" : "opacity-50 grayscale-[0.5]"
               )}
             >
               {chip.label}
-            </button>
+            </motion.button>
           ))}
         </div>
 
-        {/* Win Overlay */}
+        {/* Win Animation */}
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
-              <motion.div initial={{ scale: 0.5, rotate: -5 }} animate={{ scale: 1, rotate: 0 }} className="bg-gradient-to-b from-yellow-300 to-orange-600 p-12 rounded-[3rem] border-8 border-white text-center shadow-[0_0_100px_rgba(234,179,8,0.5)]">
-                <Trophy className="w-20 h-20 text-white mx-auto mb-4" />
-                <span className="text-8xl block mb-4">{winnerData.icon}</span>
-                <h2 className="text-white font-black text-5xl italic tracking-tighter">BIG WIN!</h2>
-                <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
-                  <p className="text-yellow-100 text-4xl font-black">+{winnerData.win.toLocaleString()}</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/85">
+              <motion.div 
+                initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} 
+                className="bg-gradient-to-b from-yellow-400 to-orange-600 p-12 rounded-[4rem] border-[10px] border-white text-center shadow-[0_0_100px_rgba(234,179,8,0.6)]"
+              >
+                <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
+                <span className="text-9xl block mb-6 animate-bounce">{winnerData.icon}</span>
+                <h2 className="text-white font-black text-6xl italic uppercase tracking-tighter">Big Win!</h2>
+                <div className="mt-6 bg-white py-3 px-10 rounded-full shadow-inner">
+                  <p className="text-orange-600 text-5xl font-black">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
             </motion.div>
