@@ -53,11 +53,14 @@ jobs:
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;29.0.3"
 
-      - name: Debug Keystore Aliases
+      - name: Detect Keystore Alias
+        id: detect_alias
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > debug.keystore
-          echo "Listing entries in keystore:"
-          keytool -list -v -keystore debug.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep -E "Alias name|Entry type"
+          # Get the first alias that is a PrivateKeyEntry
+          ALIAS=$(keytool -list -keystore debug.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep PrivateKeyEntry | cut -d',' -f1)
+          echo "Detected Alias: $ALIAS"
+          echo "alias=$ALIAS" >> $GITHUB_OUTPUT
           rm debug.keystore
 
       - name: Sign APK
@@ -66,7 +69,7 @@ jobs:
         with:
           releaseDirectory: android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          alias: ${{ steps.detect_alias.outputs.alias }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
