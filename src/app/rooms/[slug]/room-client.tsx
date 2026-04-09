@@ -209,15 +209,16 @@ const Seat = memo(({
                 <Armchair className="text-white/90 h-6 w-6" />
               )}
             </button>
+
+            {/* Mic Status Badge - Tied to Avatar Button Parent */}
+            {occupant && (occupant.isMuted || isSeatMuted) && (
+              <div className="absolute bottom-0 right-0 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950 bg-red-500 shadow-lg">
+                <MicOff className="h-2.5 w-2.5 text-white" />
+              </div>
+            )}
           </div>
         </AvatarFrame>
 
-        {/* Mic Status Badge - Only show when muted */}
-        {occupant && (occupant.isMuted || isSeatMuted) && (
-          <div className="absolute bottom-0 right-0 z-30 h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950 bg-red-500 shadow-lg">
-            <MicOff className="h-2.5 w-2.5 text-white" />
-          </div>
-        )}
       </div>
 
       <span className="text-[9px] font-bold text-white/70 uppercase tracking-[0.1em] leading-none text-center mt-1">
@@ -1825,7 +1826,7 @@ export function RoomClient({ room }: { room: Room }) {
 
         {/* Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY */}
         {(isHydrated && isOwner) && (
-          <div className="absolute top-24 right-4 animate-reaction-float z-50">
+          <div className="absolute top-24 right-1 animate-reaction-float z-50">
             <div className="relative group cursor-pointer" onClick={() => setIsRoomTasksOpen(true)}>
               <Image src="/images/golden_task_jar.png" width={64} height={64} alt="Golden Task Jar" className="bg-transparent" />
               {achievedTasks.some(id => !claimedTasks.includes(id)) && (
