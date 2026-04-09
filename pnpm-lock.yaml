@@ -9,19 +9,19 @@ importers:
   .:
     dependencies:
       '@capacitor/android':
-        specifier: ^7.0.0
+        specifier: 7.6.1
         version: 7.6.1(@capacitor/core@7.6.1)
       '@capacitor/app':
-        specifier: ^7.1.2
+        specifier: 7.1.2
         version: 7.1.2(@capacitor/core@7.6.1)
       '@capacitor/core':
-        specifier: ^7.0.0
+        specifier: 7.6.1
         version: 7.6.1
       '@capacitor/ios':
-        specifier: ^7.6.1
+        specifier: 7.6.1
         version: 7.6.1(@capacitor/core@7.6.1)
       '@capacitor/status-bar':
-        specifier: ^7.0.6
+        specifier: 7.0.6
         version: 7.0.6(@capacitor/core@7.6.1)
       '@cashfreepayments/cashfree-js':
         specifier: ^1.0.7
