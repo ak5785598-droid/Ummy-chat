@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Source
@@ -78,3 +80,18 @@ jobs:
         with:
           name: app-release-signed
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/main')
+        with:
+          files: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          tag_name: latest
+          name: Latest Stable Build
+          body: |
+            Automated production build for Ummy-chat.
+            Last updated: ${{ github.event.head_commit.timestamp }}
+            Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
