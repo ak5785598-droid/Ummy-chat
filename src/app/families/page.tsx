@@ -59,16 +59,21 @@ export default function FamiliesPage() {
     <AppLayout>
       <div className="min-h-screen pb-32 animate-in fade-in duration-700">
         {/* Header Section */}
-        <header className="px-6 pt-10 pb-6 relative overflow-hidden bg-gradient-to-b from-indigo-950 to-ummy-gradient">
+        <header className="px-6 pt-safe pb-6 relative overflow-hidden bg-gradient-to-b from-indigo-950 to-ummy-gradient">
            <div className="absolute top-0 right-0 p-8 opacity-10">
               <Users className="h-40 w-40 text-white" />
            </div>
            
-           <div className="relative z-10 flex flex-col gap-6">
+           <div className="relative z-10 flex flex-col gap-6 pt-4">
               <div className="flex items-center justify-between">
-                 <div>
-                    <h1 className="text-3xl font-black text-white uppercase tracking-tight">Social Kings</h1>
-                    <p className="text-white/60 text-sm font-medium mt-1">Conquer the leaderboard with your family.</p>
+                 <div className="flex items-center gap-2">
+                    <button onClick={() => window.history.back()} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors md:hidden">
+                       <ChevronLeft className="h-6 w-6 text-white" />
+                    </button>
+                    <div>
+                       <h1 className="text-3xl font-black text-white uppercase tracking-tight">Social Kings</h1>
+                       <p className="text-white/60 text-sm font-medium mt-1">Conquer the leaderboard with your family.</p>
+                    </div>
                  </div>
                  <Button 
                    onClick={() => router.push('/families/create')}

@@ -177,8 +177,11 @@ export default function TasksPage() {
  return (
   <AppLayout>
    <div className="space-y-8 max-w-5xl mx-auto p-4 animate-in fade-in duration-700 font-sans pb-32">
-    <header className="flex flex-col gap-2">
+    <header className="flex flex-col gap-2 pt-safe">
      <div className="flex items-center gap-3">
+      <button onClick={() => window.history.back()} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors md:hidden">
+        <ChevronLeft className="h-6 w-6 text-slate-600" />
+      </button>
       <div className="bg-primary p-2.5 rounded-2xl shadow-xl shadow-primary/20">
         <ClipboardList className="h-8 w-8 text-white" />
       </div>

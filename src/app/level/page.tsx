@@ -77,7 +77,7 @@ export default function UserLevelPage() {
  return (
   <AppLayout>
    <div className="min-h-full bg-white font-sans pb-20 animate-in fade-in duration-700">
-    <header className="p-6 pt-10 flex items-center justify-between">
+    <header className="p-6 pt-safe flex items-center justify-between">
      <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
       <ChevronLeft className="h-6 w-6 text-gray-800" />
      </button>

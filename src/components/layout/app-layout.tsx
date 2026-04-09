@@ -73,10 +73,13 @@ export function AppLayout(props: {
     return <AppLayoutGlossy {...props} />;
   }
 
+  const MAIN_TABS = ['/rooms', '/discover', '/messages', '/profile'];
+  const isMainTab = useMemo(() => MAIN_TABS.includes(pathname || ''), [pathname]);
+
   const {
     children,
     fullScreen = false,
-    hideBottomNav = false,
+    hideBottomNav = !isMainTab,
     hideSidebarOnMobile = false,
   } = props;
 
@@ -179,7 +182,7 @@ export function AppLayout(props: {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION (Atomic Shielded Rebuild) */}
-      {!deterministicAuth && !hideBottomNav && (
+      {!deterministicAuth && !hideBottomNav && isMainTab && (
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-[#1a0b2e]"
         >

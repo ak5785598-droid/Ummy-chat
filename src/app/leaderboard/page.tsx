@@ -223,14 +223,13 @@ function LeaderboardContent() {
 
  return (
   <div className="min-h-screen bg-[#05070a] text-white relative font-sans flex flex-col">
-    <header className="relative z-50 p-6 pt-10">
-     <div className="flex items-center justify-between mb-8">
+    <header className="relative z-50 p-6 pt-safe flex items-center justify-between">
        <Link href="/rooms"><ChevronLeft className="h-6 w-6 text-cyan-400" /></Link>
        <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Hall of Fame</h1>
        <HelpCircle className="h-5 w-5 text-white/20" />
-     </div>
+    </header>
 
-     <div className="flex items-center justify-around border-b border-white/10 pb-2 mb-2">
+    <div className="flex items-center justify-around border-b border-white/10 pb-2 mb-2">
        {[
         { id: 'rich', label: 'Honor' },
         { id: 'charm', label: 'Charm' },
