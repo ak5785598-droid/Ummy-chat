@@ -10,6 +10,7 @@ import {
   Flame, 
   ShieldCheck, 
   ChevronRight,
+  ChevronLeft,
   TrendingUp,
   Loader
 } from 'lucide-react';

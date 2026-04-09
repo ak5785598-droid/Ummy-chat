@@ -17,6 +17,7 @@ import {
  Rocket,
  ArrowRight,
  Zap,
+ ChevronLeft,
  Gift as GiftIcon
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
