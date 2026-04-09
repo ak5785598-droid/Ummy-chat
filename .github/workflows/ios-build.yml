@@ -18,11 +18,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install
 
       - name: Build Web Project
-        run: npm run build
+        run: pnpm build
 
       - name: Capacitor Sync
         run: npx cap sync ios
