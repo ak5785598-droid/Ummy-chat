@@ -519,7 +519,8 @@ export default function MessagesView() {
   setSelectedRecipient(other);
  };
 
- return    <AppLayout hideBottomNav={!!activeChatId}>
+ return (
+    <AppLayout hideBottomNav={!!activeChatId}>
     <div className="h-[100dvh] bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans animate-in fade-in duration-1000 overflow-hidden">
      
      <div className="absolute inset-0 pointer-events-none opacity-40">
