@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
-    "@capacitor/app": "^8.1.0",
+    "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^8.3.0",
+    "@capacitor/ios": "^7.6.1",
     "@capacitor/status-bar": "^7.0.6",
     "@cashfreepayments/cashfree-js": "^1.0.7",
     "@genkit-ai/google-genai": "1.19.1",
