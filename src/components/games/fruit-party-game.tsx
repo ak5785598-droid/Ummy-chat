@@ -162,13 +162,24 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-10">
           
-          {/* A-Shape Bottom Wooden Support */}
-          <svg className="absolute w-full h-[300px] bottom-[-220px] pointer-events-none z-0">
-            <path 
-              d="M 160 0 L 100 300 M 230 0 L 290 300" 
-              stroke="#5d2707" strokeWidth="12" strokeLinecap="round" 
-              transform="translate(45, 0)"
-            />
+          {/* A-Shape Lines - Positioned between Fruit Cards */}
+          <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
+            <g transform="translate(175, 175)">
+              {/* Line 1: Between Coconut (idx 5) and Tomato (idx 4) */}
+              <line 
+                x1={120 * Math.cos((157.5-90)*Math.PI/180)} 
+                y1={120 * Math.sin((157.5-90)*Math.PI/180)} 
+                x2="80" y2="450" 
+                stroke="#5d2707" strokeWidth="12" strokeLinecap="round" 
+              />
+              {/* Line 2: Between Corn (idx 3) and Tomato (idx 4) */}
+              <line 
+                x1={120 * Math.cos((112.5-90)*Math.PI/180)} 
+                y1={120 * Math.sin((112.5-90)*Math.PI/180)} 
+                x2="-80" y2="450" 
+                stroke="#5d2707" strokeWidth="12" strokeLinecap="round" 
+              />
+            </g>
           </svg>
 
           {/* Connected Lines (Thick Yellow) */}
@@ -180,7 +191,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   x1="0" y1="0" 
                   x2={110 * Math.cos((angle-90)*Math.PI/180)} 
                   y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                  stroke="#fbbf24" strokeWidth="10" strokeLinecap="round"
+                  stroke="#fbbf24" strokeWidth="8" strokeLinecap="round"
                 />
               ))}
             </g>
@@ -188,7 +199,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* Center Hub with Floating Icons */}
+          {/* Center Hub */}
           <div className="relative z-50">
             <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_40px_rgba(234,179,8,0.4)]">
               <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50 overflow-hidden">
@@ -210,7 +221,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
-          {/* Fruit Cards (Perfectly Circle) */}
+          {/* Fruit Circle Cards */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 145;
@@ -222,31 +233,33 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-22 h-22 rounded-full border-[5px] flex flex-col overflow-hidden transition-all duration-200 shadow-xl relative",
+                    "w-20 h-20 rounded-full border-[5px] flex flex-col overflow-hidden transition-all duration-200 shadow-xl relative items-center justify-center",
                     "border-orange-500 bg-[#1e1b4b]",
-                    highlightIdx === idx ? "scale-110 border-white ring-4 ring-yellow-400 z-30" : ""
+                    highlightIdx === idx ? "scale-115 border-white ring-4 ring-yellow-400 z-30 shadow-[0_0_20px_white]" : ""
                   )}
                 >
-                  {/* Glossy Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
                   
-                  {/* Top Icon */}
-                  <div className={cn("w-full bg-red-800 flex items-center justify-center transition-all", betAmount > 0 ? "h-7" : "flex-1")}>
-                    <span className={cn("transition-all", betAmount > 0 ? "text-xl" : "text-3xl")}>{item.icon}</span>
+                  <div className="w-full flex-1 flex items-center justify-center bg-red-800/80">
+                    <span className={cn("transition-all duration-300", betAmount > 0 ? "text-xl" : "text-3xl")}>
+                      {item.icon}
+                    </span>
                   </div>
 
-                  {/* Middle Bet (Orange & Small) */}
                   <AnimatePresence>
                     {betAmount > 0 && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 border-y border-white/20">
-                        <span className="text-[10px] font-black text-white">🪙 {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
+                      <motion.div 
+                        initial={{ scale: 0, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-orange-500 px-2 py-0.5 rounded-md border border-white/40 shadow-lg"
+                      >
+                        <span className="text-[10px] font-bold text-white whitespace-nowrap">🪙 {betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* Bottom Multiplier */}
-                  <div className={cn("w-full flex items-center justify-center bg-gradient-to-b from-orange-400 to-orange-600", betAmount > 0 ? "h-6" : "h-8")}>
-                    <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
+                  <div className="w-full h-7 flex items-center justify-center bg-gradient-to-b from-orange-400 to-orange-600 border-t border-white/10">
+                    <span className="font-black text-[11px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
                   </div>
                 </button>
               </div>
