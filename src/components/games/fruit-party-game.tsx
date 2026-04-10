@@ -8,27 +8,34 @@ import { X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- 3D GLOVE HAND POINTER ---
+// --- 3D WHITE HAND POINTER ---
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
-  const x = Math.cos((angle * Math.PI) / 180) * 115;
-  const y = Math.sin((angle * Math.PI) / 180) * 115;
+  const x = Math.cos((angle * Math.PI) / 180) * 135;
+  const y = Math.sin((angle * Math.PI) / 180) * 135;
 
   return (
     <motion.div
-      initial={false}
-      animate={{ x: x, y: y - 20, rotate: angle + 90 }}
-      transition={{ type: "spring", stiffness: 80, damping: 15 }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ 
+        opacity: 1, 
+        scale: [1, 1.1, 1], 
+        x: x, 
+        y: y - 25 
+      }}
+      transition={{ 
+        x: { type: "spring", stiffness: 100, damping: 10 },
+        y: { type: "spring", stiffness: 100, damping: 10 },
+        scale: { duration: 0.8, repeat: Infinity }
+      }}
       className="absolute z-[100] pointer-events-none"
     >
-      <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1, repeat: Infinity }}>
-        <svg width="65" height="65" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_8px_4px_rgba(0,0,0,0.4)]">
-          <path 
-            d="M10 11V4.5C10 3.67157 10.6716 3 11.5 3C12.3284 3 13 3.67157 13 4.5V11M13 11C13 10.1716 13.6716 9.5 14.5 9.5C15.3284 9.5 16 10.1716 16 11M16 11C16 10.4477 16.4477 10 17 10C17.5523 10 18 10.4477 18 11M18 11C18 10.7239 18.2239 10.5 18.5 10.5C18.7761 10.5 19 10.7239 19 11V15C19 17.7614 16.7614 20 14 20H11C8.23858 20 6 17.7614 6 15V13.5C6 12.6716 6.67157 12 7.5 12C8.32843 12 9 12.6716 9 13.5V11" 
-            stroke="#94a3b8" strokeWidth="1.5" fill="white"
-          />
-        </svg>
-      </motion.div>
+      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+        <path 
+          d="M9 10V5C9 3.89543 9.89543 3 11 3C12.1046 3 13 3.89543 13 5V11M13 11V9C13 7.89543 13.8954 7 15 7C16.1046 7 17 7.89543 17 9V11M17 11V10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10V16C21 18.7614 18.7614 21 16 21H10C7.23858 21 5 18.7614 5 16V13.6742C5 12.5632 5.76016 11.597 6.84534 11.3558L9 10.877" 
+          stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="white"
+        />
+      </svg>
     </motion.div>
   );
 };
@@ -43,6 +50,8 @@ const ITEMS = [
   { id: 'grapes', icon: '🍇', multiplier: 5 },
   { id: 'orange', icon: '🍊', multiplier: 5 },
 ];
+
+const HUB_ICONS = ['🥦', '🥬', '🥕', '🌽', '🍅', '🥥', '🍇', '🍊'];
 
 const CHIPS_DATA = [
   { value: 100, label: '100', color: 'from-blue-500 to-blue-700' },
@@ -65,9 +74,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
   const [pointerIdx, setPointerIdx] = useState(0);
-  const [history, setHistory] = useState<string[]>(['🥦', '🍅', '🥕', '🍊', '🍇']);
-
-  const RADIUS = 120;
+  const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']); // Initial dummy history
 
   useEffect(() => {
     if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins);
@@ -77,7 +84,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (gameState !== 'betting') return;
     const pointerInterval = setInterval(() => {
       setPointerIdx(prev => (prev + 1) % ITEMS.length);
-    }, 2000);
+    }, 1500);
     return () => clearInterval(pointerInterval);
   }, [gameState]);
 
@@ -109,7 +116,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setHighlightIdx(currentStep % ITEMS.length);
       if (currentStep < totalSteps) {
         currentStep++;
-        setTimeout(run, 50 + (currentStep * 2.5));
+        setTimeout(run, 50 + (currentStep * 2));
       } else {
         setTimeout(() => finalizeResult(winItem), 1000);
       }
@@ -119,11 +126,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const finalizeResult = (winItem: any) => {
     const winAmount = (myBets[winItem.id] || 0) * winItem.multiplier;
+    
+    // Update History
+    setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
+
     if (winAmount > 0) {
       setLocalCoins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
-    setHistory(prev => [winItem.icon, ...prev.slice(0, 7)]);
     setWinnerData({ ...winItem, win: winAmount });
     setGameState('result');
     setTimeout(() => {
@@ -136,107 +146,75 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-md bg-black/70 flex flex-col justify-end z-[100]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/60 flex flex-col justify-end z-[100]">
       <div className="flex-1" onClick={onClose} />
 
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }}
-        className="h-[88vh] w-full bg-[#020617] rounded-t-[4rem] border-t-[10px] border-yellow-500 relative overflow-hidden flex flex-col items-center shadow-[0_-20px_50px_rgba(0,0,0,0.8)]"
-        style={{ backgroundImage: 'radial-gradient(circle at 50% 20%, #1e40af, #020617)' }}
+        className="h-[85vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+        style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
       >
         {/* Header */}
-        <div className="w-full p-8 flex justify-between items-center z-20">
-          <div className="bg-gradient-to-b from-yellow-300 to-yellow-600 text-blue-950 px-6 py-2 rounded-full font-black shadow-[0_4px_0_#854d0e] flex items-center gap-2 border-2 border-yellow-100">
-            <span className="text-2xl">🪙</span> 
-            <span className="text-xl tracking-tight">{localCoins.toLocaleString()}</span>
+        <div className="w-full p-6 flex justify-between items-center z-20">
+          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
+            <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
           </div>
-          <button onClick={onClose} className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-xl">
-            <X className="w-7 h-7 stroke-[3]" />
+          <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Wheel Arena */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-[1.05] -translate-y-8">
-          
+        {/* Game Arena */}
+        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6">
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
-              <linearGradient id="leg3D" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#451a03" />
-                <stop offset="50%" stopColor="#78350f" />
-                <stop offset="100%" stopColor="#451a03" />
-              </linearGradient>
-              <linearGradient id="line3D" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#854d0e" />
-                <stop offset="50%" stopColor="#eab308" />
-                <stop offset="100%" stopColor="#854d0e" />
+              <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8b4513" />
+                <stop offset="50%" stopColor="#5d2707" />
+                <stop offset="100%" stopColor="#270c01" />
               </linearGradient>
             </defs>
-
-            {/* Connecting Lines (Hub to Fruits) */}
-            <g transform="translate(195, 230)">
-              {ITEMS.map((_, idx) => {
-                const angle = (idx * 45) - 90;
-                return (
-                  <line 
-                    key={idx}
-                    x1="0" y1="0" 
-                    x2={Math.cos((angle * Math.PI) / 180) * RADIUS} 
-                    y2={Math.sin((angle * Math.PI) / 180) * RADIUS}
-                    stroke="url(#line3D)"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    className="drop-shadow-lg opacity-40"
-                  />
-                );
-              })}
-            </g>
-            
-            {/* UPDATED: Support Legs connecting Hub to History Bar */}
-            <g transform="translate(195, 230)">
-               {/* Left Leg: Hub -> Between Coconut/Tomato -> Bottom */}
-               <path 
-                 d="M -20,0 L -110,130 L -120,380" 
-                 stroke="url(#leg3D)" 
-                 strokeWidth="18" 
-                 fill="none" 
-                 strokeLinecap="round"
-                 className="drop-shadow-[4px_0_10px_rgba(0,0,0,0.5)]"
-               />
-               {/* Right Leg: Hub -> Between Corn/Tomato -> Bottom */}
-               <path 
-                 d="M 20,0 L 110,130 L 120,380" 
-                 stroke="url(#leg3D)" 
-                 strokeWidth="18" 
-                 fill="none" 
-                 strokeLinecap="round"
-                 className="drop-shadow-[-4px_0_10px_rgba(0,0,0,0.5)]"
-               />
+            <g transform="translate(175, 175)">
+              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
+              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
             </g>
           </svg>
 
-          {/* Central Hub with Timer */}
+          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+            <g transform="translate(175, 175)">
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                <line 
+                  key={angle} 
+                  x1="0" y1="0" 
+                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
+                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
+                  stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
+                />
+              ))}
+            </g>
+          </svg>
+          
+          {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
+
           <div className="relative z-50">
-            <div className="w-32 h-32 rounded-full border-[8px] border-yellow-500 bg-gradient-to-b from-red-800 to-red-950 flex flex-col overflow-hidden shadow-[0_0_60px_rgba(234,179,8,0.6),inset_0_4px_10px_rgba(0,0,0,0.5)]">
-              <div className="flex-1 bg-black/20 flex items-center justify-center border-b-4 border-yellow-500/30">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="flex gap-1">
-                   {['🥦', '🥕', '🍅'].map((icon, i) => <span key={i} className="text-xs">{icon}</span>)}
-                </motion.div>
+            <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.5)]">
+              <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50">
+                {HUB_ICONS.slice(0, 4).map((icon, i) => (
+                   <motion.span key={i} animate={{ y: [0, -4, 0] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }} className="text-xs absolute" style={{ left: `${20 + (i * 20)}%` }}>
+                     {icon}
+                   </motion.span>
+                ))}
               </div>
               <div className="flex-1 bg-red-600 flex items-center justify-center">
-                <span className="text-5xl font-black text-white italic">
-                  {gameState === 'betting' ? timeLeft : '...'}
-                </span>
+                <span className="text-4xl font-black text-white italic drop-shadow-md">{gameState === 'betting' ? timeLeft : '...'}</span>
               </div>
             </div>
           </div>
 
-          {/* Fruit Buttons */}
-          {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
-          
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const x = Math.cos((angle * Math.PI) / 180) * RADIUS;
-            const y = Math.sin((angle * Math.PI) / 180) * RADIUS;
+            const x = Math.cos((angle * Math.PI) / 180) * 135;
+            const y = Math.sin((angle * Math.PI) / 180) * 135;
             const betAmount = myBets[item.id] || 0;
 
             return (
@@ -244,27 +222,29 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   className={cn(
-                    "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
-                    "shadow-[0_10px_20px_rgba(0,0,0,0.4),inset_0_-4px_8px_rgba(0,0,0,0.3)] bg-gradient-to-b from-red-500 to-red-900",
-                    highlightIdx === idx ? "scale-125 z-40 ring-[6px] ring-white shadow-[0_0_40px_rgba(255,255,255,0.9)]" : "hover:scale-105"
+                    "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 shadow-2xl relative items-center justify-center",
+                    highlightIdx === idx ? "scale-110 ring-4 ring-white z-30 shadow-[0_0_30px_rgba(255,255,255,0.8)]" : ""
                   )}
                 >
-                  <div className="w-full flex-[1.3] flex items-center justify-center">
-                    <span className="text-5xl drop-shadow-lg">{item.icon}</span>
+                  <div className="w-full flex-[1.2] flex items-center justify-center bg-[#7f1d1d]">
+                    <span className="text-4xl drop-shadow-sm">{item.icon}</span>
                   </div>
-                  
-                  <AnimatePresence>
+                  <AnimatePresence mode="wait">
                     {betAmount > 0 && (
-                      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                        <span className="bg-yellow-400 text-blue-900 text-[12px] font-black px-2 py-0.5 rounded-md">
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-1"
+                      >
+                        <span className="text-[11px] font-black text-white whitespace-nowrap px-1">
                           🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
                         </span>
                       </motion.div>
                     )}
                   </AnimatePresence>
-
-                  <div className="w-full h-8 flex items-center justify-center bg-orange-500 border-t-2 border-yellow-400">
-                    <span className="font-black text-[14px] text-white italic">×{item.multiplier}</span>
+                  <div className="w-full flex-1 flex items-center justify-center bg-orange-500">
+                    <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
                   </div>
                 </button>
               </div>
@@ -272,52 +252,53 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* History Bar (Connected to legs) */}
-        <div className="w-full px-6 mb-4 z-30">
-          <div className="w-full h-12 bg-gradient-to-r from-[#3b1c0a] to-[#5d2707] border-[3px] border-yellow-600/50 rounded-2xl flex items-center px-4 gap-4 shadow-2xl relative">
-            <span className="text-[12px] font-black text-yellow-500 uppercase italic pr-3 border-r border-yellow-500/20">Recent</span>
-            <div className="flex gap-4 overflow-hidden">
-              {history.map((icon, i) => (
-                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} key={i} className="text-xl">{icon}</motion.span>
-              ))}
-            </div>
+        {/* --- HISTORY BAR --- */}
+        <div className="w-full px-4 mb-2 z-20">
+          <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar shadow-inner">
+             <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
+             {history.map((icon, i) => (
+               <motion.div 
+                 initial={{ scale: 0, opacity: 0 }} 
+                 animate={{ scale: 1, opacity: 1 }} 
+                 key={i} 
+                 className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg"
+               >
+                 {icon}
+               </motion.div>
+             ))}
           </div>
         </div>
 
-        {/* 3D Chips Selection */}
-        <div className="w-full bg-[#1e1b4b]/80 backdrop-blur-md p-8 flex justify-center gap-4 z-20 border-t-4 border-yellow-500/30 rounded-t-[3rem]">
+        {/* Chips Footer */}
+        <div className="w-full bg-gradient-to-b from-[#451a03] to-[#270c01] p-6 flex justify-center gap-3 z-20 border-t-4 border-yellow-600/50 shadow-2xl">
           {CHIPS_DATA.map(chip => (
             <button 
               key={chip.value}
               onClick={() => setSelectedChip(chip.value)}
               className={cn(
-                "w-16 h-16 rounded-full flex items-center justify-center text-[11px] font-black transition-all",
-                "bg-gradient-to-br shadow-[0_6px_0_rgba(0,0,0,0.5)] border-4 border-white/20",
+                "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative",
+                "bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
                 chip.color,
-                selectedChip === chip.value ? "scale-125 -translate-y-4 ring-4 ring-yellow-400 opacity-100 shadow-[0_12px_20px_rgba(0,0,0,0.6)]" : "opacity-60"
+                selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
               )}
             >
-              <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center bg-black/10">
+              <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
                 <span className="text-white">{chip.label}</span>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Win Result Popup */}
+        {/* Result Overlay */}
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-              <motion.div 
-                initial={{ scale: 0, rotate: -20 }} 
-                animate={{ scale: 1, rotate: 0 }} 
-                className="bg-gradient-to-b from-yellow-300 via-orange-500 to-red-600 p-12 rounded-[4rem] border-[10px] border-white text-center shadow-[0_0_100px_rgba(251,191,36,0.5)]"
-              >
-                <Trophy className="w-20 h-20 text-white mx-auto mb-4 animate-bounce" />
-                <span className="text-9xl block mb-4 filter drop-shadow-2xl">{winnerData.icon}</span>
-                <h2 className="text-white font-black text-5xl italic uppercase tracking-tighter">BIG WIN!</h2>
-                <div className="mt-6 bg-white/30 py-3 px-10 rounded-3xl border-2 border-white/50">
-                  <p className="text-white text-5xl font-black">+{winnerData.win.toLocaleString()}</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
+              <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-10 rounded-[3rem] border-8 border-white text-center shadow-2xl">
+                <Trophy className="w-16 h-16 text-white mx-auto mb-2 animate-bounce" />
+                <span className="text-8xl block mb-2">{winnerData.icon}</span>
+                <h2 className="text-white font-black text-4xl italic uppercase">WINNER!</h2>
+                <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
+                  <p className="text-white text-4xl font-black">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
             </motion.div>
