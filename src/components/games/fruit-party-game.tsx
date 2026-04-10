@@ -184,7 +184,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </svg>
 
           {/* --- 3D ALL 8 CONNECTED LINES (WHEEL SPOKES) --- */}
-          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+          <svg className="absolute w-full h-full pointer-events-none overflow-visible z-10">
             <defs>
               <linearGradient id="spoke3D" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#b45309" />
@@ -193,13 +193,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               </linearGradient>
             </defs>
             <g transform="translate(175, 175)">
-              {/* All 8 spokes representing each item position */}
+              {/* FIXED: Drawing all 8 lines with explicit angles */}
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
                 <line 
                   key={angle} 
                   x1="0" y1="0" 
-                  x2={120 * Math.cos((angle-90)*Math.PI/180)} 
-                  y2={120 * Math.sin((angle-90)*Math.PI/180)} 
+                  x2={135 * Math.cos((angle - 90) * Math.PI / 180)} 
+                  y2={135 * Math.sin((angle - 90) * Math.PI / 180)} 
                   stroke="url(#spoke3D)" 
                   strokeWidth="8" 
                   strokeLinecap="round"
@@ -237,7 +237,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             const betAmount = myBets[item.id] || 0;
 
             return (
-              <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
+              <div key={item.id} className="absolute z-20" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   style={{ transformStyle: 'preserve-3d', transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
