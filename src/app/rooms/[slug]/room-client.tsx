@@ -1634,6 +1634,18 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
+    // IMPORTANT: Only the OWNER (Sender) should play the audio locally.
+    // Everyone else (Audience) listens exclusively via the Agora stream.
+    // This prevents the '1-minute sync delay' and fixes earbuds routing issues.
+    if (!isOwner) {
+      if (audio.src) {
+        audio.pause();
+        audio.src = '';
+      }
+      setIsMusicPlaying(isPlaying);
+      return;
+    }
+
     // Calculate where the song SHOULD be right now (Virtual Clock)
     const calcTargetTime = () => {
       let t = (room as any)?.musicStartOffset || 0;
@@ -1774,26 +1786,51 @@ export function RoomClient({ room }: { room: Room }) {
     const audio = musicAudioRef.current;
     if (!audio) return;
 
-    const updateProgress = () => {
-      setMusicCurrentTime(audio.currentTime);
-      setMusicDuration(audio.duration || 0);
-      setMusicProgress((audio.currentTime / (audio.duration || 1)) * 100);
-    };
-    const onPlay = () => { setIsMusicPlaying(true); setShowMiniPlayer(true); };
-    const onPause = () => setIsMusicPlaying(false);
+    if (isOwner) {
+      // OWNER uses real audio events
+      const updateProgress = () => {
+        setMusicCurrentTime(audio.currentTime);
+        setMusicDuration(audio.duration || 0);
+        setMusicProgress((audio.currentTime / (audio.duration || 1)) * 100);
+      };
+      const onPlay = () => { setIsMusicPlaying(true); setShowMiniPlayer(true); };
+      const onPause = () => setIsMusicPlaying(false);
 
-    audio.addEventListener('timeupdate', updateProgress);
-    audio.addEventListener('loadedmetadata', updateProgress);
-    audio.addEventListener('play', onPlay);
-    audio.addEventListener('pause', onPause);
+      audio.addEventListener('timeupdate', updateProgress);
+      audio.addEventListener('loadedmetadata', updateProgress);
+      audio.addEventListener('play', onPlay);
+      audio.addEventListener('pause', onPause);
 
-    return () => {
-      audio.removeEventListener('timeupdate', updateProgress);
-      audio.removeEventListener('loadedmetadata', updateProgress);
-      audio.removeEventListener('play', onPlay);
-      audio.removeEventListener('pause', onPause);
-    };
-  }, []);
+      return () => {
+        audio.removeEventListener('timeupdate', updateProgress);
+        audio.removeEventListener('loadedmetadata', updateProgress);
+        audio.removeEventListener('play', onPlay);
+        audio.removeEventListener('pause', onPause);
+      };
+    } else {
+      // AUDIENCE uses Virtual Clock to update progress UI
+      if (!room.isMusicPlaying || !room.currentMusicUrl) return;
+
+      const updateVirtualProgress = () => {
+        const startedAt = (room as any)?.musicStartedAt;
+        let t = (room as any)?.musicStartOffset || 0;
+        if (startedAt) {
+          const startMs = startedAt?.toMillis?.() ?? (startedAt?.seconds ? startedAt.seconds * 1000 : null);
+          if (startMs) t += (Date.now() - startMs) / 1000;
+        }
+        
+        // Approximate duration if available from room or default
+        const duration = (room as any)?.musicDuration || 180; 
+        setMusicCurrentTime(t);
+        setMusicDuration(duration);
+        setMusicProgress(Math.min(100, (t / duration) * 100));
+      };
+
+      updateVirtualProgress(); // Run once
+      const interval = setInterval(updateVirtualProgress, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isOwner, room.isMusicPlaying, room.currentMusicUrl, (room as any)?.musicStartedAt, (room as any)?.musicStartOffset, (room as any)?.musicDuration]);
 
   const extraSeats = useMemo(() => {
     const count = (room.maxActiveMics || 9) - 1;
@@ -1900,7 +1937,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <header className="relative z-[100] flex flex-col w-full px-4 pt-safe pb-1">
         <div className="flex items-center justify-between w-full h-11">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <Avatar
               className="h-12 w-12 rounded-xl border border-white/10 shadow-lg cursor-pointer active:scale-95 transition-transform"
               onClick={() => setIsRoomInfoOpen(true)}
@@ -1908,7 +1945,7 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>RM</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col min-w-0 max-w-[140px]">
+            <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
                 <h1 className="text-[14px] font-bold text-white tracking-tight leading-none truncate flex-1">
                   {room.title}
@@ -1936,7 +1973,7 @@ export function RoomClient({ room }: { room: Room }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={toggleAIVoice}
               className={cn(
