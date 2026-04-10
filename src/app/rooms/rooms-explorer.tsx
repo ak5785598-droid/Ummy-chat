@@ -26,6 +26,7 @@ import {
   Sparkles,
   Home,
   LayoutGrid,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +38,7 @@ import {
  CarouselItem,
 } from "@/components/ui/carousel";
 import { UserSearchDialog } from '@/components/user-search-dialog';
+import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
@@ -200,12 +202,23 @@ export default function RoomsExplorer() {
            </div>
            <div className="flex items-center gap-2 text-slate-800">
               <UserSearchDialog />
-              <button 
-                onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
-                className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
-              >
-                <Home className="h-4 w-4" />
-              </button>
+               {myRoom ? (
+                 <button 
+                   onClick={() => router.push(`/rooms/${myRoom.id}`)} 
+                   className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
+                 >
+                   <Home className="h-4 w-4" />
+                 </button>
+               ) : (
+                 <CreateRoomDialog 
+                   iconOnly 
+                   trigger={
+                     <button className="p-1 px-1.5 bg-slate-900 rounded-full shadow-md active:scale-90 transition-all flex items-center">
+                       <Plus className="h-4 w-4 text-white" />
+                     </button>
+                   } 
+                 />
+               )}
            </div>
         </div>
       </header>
@@ -382,12 +395,22 @@ export default function RoomsExplorer() {
                            </div>
                          </div>
 
-                         <button 
-                           onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
-                           className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[0_10px_20_rgba(15,23,42,0.3)] active:scale-95 transition-all"
-                         >
-                           My Room
-                         </button>
+                           {myRoom ? (
+                             <button 
+                               onClick={() => router.push(`/rooms/${myRoom.id}`)}
+                               className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                             >
+                               My Room
+                             </button>
+                           ) : (
+                             <CreateRoomDialog 
+                               trigger={
+                                 <button className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                                   Create Room
+                                 </button>
+                               } 
+                             />
+                           )}
                        </div>
                      </div>
                    </section>

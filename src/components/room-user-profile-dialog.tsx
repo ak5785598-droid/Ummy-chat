@@ -159,7 +159,11 @@ export function RoomUserProfileDialog({
 
  return (
   <Sheet open={open} onOpenChange={onOpenChange}>
-   <SheetContent side="bottom" className="sm:max-w-none h-auto max-h-[90vh] border-none p-0 rounded-t-[3rem] overflow-hidden shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-12">
+   <SheetContent 
+      side="bottom" 
+      hideOverlay={true}
+      className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 rounded-t-[3rem] overflow-hidden shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-12"
+    >
     <SheetHeader className="sr-only">
      <SheetTitle>User Profile</SheetTitle>
      <SheetDescription>Identity Sync</SheetDescription>
@@ -239,13 +243,14 @@ export function RoomUserProfileDialog({
       )}
 
        <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
-        <BudgetTag 
-          variant={idStatusVariant} 
-          label={`ID:${profile.accountNumber}`} 
-          size="sm" 
-          className="scale-110" 
-          onClick={handleCopyId}
-        />
+        <div onClick={handleCopyId} className="cursor-pointer active:scale-95 transition-transform">
+          <BudgetTag 
+            variant={idStatusVariant} 
+            label={`ID:${profile.accountNumber}`} 
+            size="sm" 
+            className="scale-110" 
+          />
+        </div>
         <span className="opacity-20 text-lg">|</span>
         <div className="flex items-center gap-1">
          <span>{profile.stats?.fans || 0} Fans</span>

@@ -23,7 +23,7 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
   'mansion', 'private-island', 'helicopter', 'submarine', 'limo', 'private-jet', 
   'diamond-necklace', 'gold-watch', 'designer-bag', 'sports-car', 'grand-piano', 
   'space-station', 'moon-base', 'mars-rover', 'dragon', 'phoenix', 'unicorn', 
-  'pegasus', 'kraken', 'world-tree', 'excalibur', 'holy-grail'
+  'pegasus', 'kraken', 'world-tree', 'excalibur', 'holy-grail', 'crown_gift_premium'
  ];
 
  const isPremium = giftId ? premiumTier.includes(giftId) : false;
@@ -33,7 +33,7 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
    setIsVisible(true);
    setTriggerKey(prev => prev + 1);
    
-   const duration = isPremium ? 6000 : 4000;
+   const duration = isPremium ? 7000 : 4500;
 
    const timer = setTimeout(() => {
     setIsVisible(false);
@@ -45,78 +45,95 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
 
  if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
- // 2. FULL EMOJI MAP (Covering All IDs)
+ // 2. FULL EMOJI MAP
  const getEmoji = () => {
   const map: Record<string, string> = {
-   // Basic & Fun
    'choco-pops': '🍭', 'chai': '☕', 'rose': '🌹', 'applaud': '👏', 'love-bomb': '💣', 
    'kiss': '💋', 'chocolate-box': '🍫', 'money-gun': '🔫', 'watch': '⌚', 'birthday-cake': '🎂',
    'lucky-clover': '🍀', 'magic-wand': '🪄', 'jackpot': '🎰', 'treasure': '🪙', 'soaring': '🎆',
    'golden-football': '⚽', 'chupa-chups': '🍬', 'microphone': '🎤', 'headphones': '🎧', 
    'perfume': '🧴', 'ticket': '🎟️', 'popcorn': '🍿', 'controller': '🎮', 'vinyl': '📀',
-
-   // Food & Drinks
+   'crown_gift_premium': '👑', 'ferrari': '🏎️', 'neon-car': '🚘', 'space-station': '🛰️',
    'pizza': '🍕', 'burger': '🍔', 'taco': '🌮', 'doughnut': '🍩', 'ice-cream': '🍦',
    'bubble-tea': '🧋', 'cocktail': '🍸', 'beer': '🍺', 'champagne': '🥂', 'coffee': '☕',
-
-   // Luxury & Premium
    'library': '📚', 'fountain': '⛲', 'diamond': '💎', 'lipstick': '💄', 'trophy': '🏆',
    'golden-phone': '📱', 'gem-knife': '🗡️', 'scepter': '🦯', 'dressing-table': '🪞', 
-   'star-rain': '🌠', 'coronation': '👑', 'rose-vow': '💑', 'glory': '🕊️', 'neon-car': '🚘',
-   'ferrari': '🏎️', 'sword-of-ocean': '⚔️', 'yacht': '🛥️', 'mansion': '🏡', 'private-island': '🏝️',
+   'star-rain': '🌠', 'coronation': '👑', 'rose-vow': '💑', 'glory': '🕊️',
+   'sword-of-ocean': '⚔️', 'yacht': '🛥️', 'mansion': '🏡', 'private-island': '🏝️',
    'helicopter': '🚁', 'submarine': '🛳️', 'limo': '🚘', 'private-jet': '🛩️', 
    'diamond-necklace': '💎', 'gold-watch': '⌚', 'designer-bag': '👜', 'sports-car': '🏎️', 
-   'grand-piano': '🎹', 'space-station': '🛰️', 'moon-base': '🌖', 'mars-rover': '🛸',
-
-   // Fantasy & Mythical
+   'grand-piano': '🎹', 'moon-base': '🌖', 'mars-rover': '🛸',
    'dragon': '🐉', 'phoenix': '🐦', 'unicorn': '🦄', 'pegasus': '🐎', 'kraken': '🐙', 
    'world-tree': '🌳', 'excalibur': '🗡️', 'holy-grail': '🏆',
-
-   // Seasonal & Special
    'new-year': '🎊', 'eid-mubarak': '🕌', 'fireworks': '🎆', 'christmas-tree': '🎄', 
    'santa-sleigh': '🎅', 'valentine-heart': '💖',
-
-   // Flags
    'flag-india': '🇮🇳', 'flag-pakistan': '🇵🇰', 'flag-canada': '🇨🇦', 'flag-america': '🇺🇸'
   };
   return map[giftId] || '🎁';
  };
 
- // 3. SPECIAL PARTICLE EFFECTS (Popcorn, Money, Hearts)
+ // 3. SPECIAL PARTICLE EFFECTS
  const renderExtraParticles = () => {
     const particles = [];
+    // Enhanced popcorn (more particles, wider spread)
     if (giftId === 'popcorn') {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 40; i++) {
         particles.push(
           <motion.div key={i} className="absolute text-2xl"
             initial={{ x: 0, y: 0, scale: 0 }}
-            animate={{ x: (Math.random() - 0.5) * 400, y: [0, -150, 450], scale: [0, 1, 0.7], rotate: Math.random() * 360 }}
-            transition={{ duration: 2.5, delay: 0.5 + Math.random() * 1.2, ease: "easeOut" }}
+            animate={{ x: (Math.random() - 0.5) * 800, y: [0, -300, 600], scale: [0, 1.2, 0.8], rotate: Math.random() * 720 }}
+            transition={{ duration: 3, delay: Math.random() * 1.5, ease: "easeOut" }}
           >🍿</motion.div>
         );
       }
     }
+    // Money gun rain across whole room
     if (giftId === 'money-gun') {
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 50; i++) {
         particles.push(
-          <motion.div key={i} className="absolute text-3xl text-green-500"
-            initial={{ x: 40, y: 0, scale: 0 }}
-            animate={{ x: [40, 350], y: [0, -120, 350], scale: [0, 1.2, 1], rotate: [0, 360] }}
-            transition={{ duration: 1.8, delay: 0.2 + (i * 0.08) }}
+          <motion.div key={i} className="absolute text-3xl"
+            initial={{ x: (Math.random() - 0.5) * 600, y: -400, opacity: 0 }}
+            animate={{ y: 800, x: (Math.random() - 0.5) * 800, opacity: [0, 1, 1, 0], rotate: 360 }}
+            transition={{ duration: 2.5, delay: i * 0.05 }}
           >💸</motion.div>
         );
       }
     }
-    if (['love-bomb', 'valentine-heart', 'kiss'].includes(giftId)) {
-      for (let i = 0; i < 15; i++) {
+    // Hearts flourish
+    if (['love-bomb', 'valentine-heart', 'kiss', 'rose-vow'].includes(giftId)) {
+      for (let i = 0; i < 30; i++) {
         particles.push(
           <motion.div key={i} className="absolute text-red-500"
             initial={{ x: 0, y: 0, scale: 0 }}
-            animate={{ x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 500, scale: [0, 1.5, 0] }}
-            transition={{ duration: 2, delay: 0.8 }}
+            animate={{ 
+              x: (Math.random() - 0.5) * 700, 
+              y: (Math.random() - 0.5) * 900, 
+              scale: [0, 1.8, 0], 
+              opacity: [0, 1, 0] 
+            }}
+            transition={{ duration: 2.5, delay: 0.5 + Math.random() * 1.5 }}
           >❤️</motion.div>
         );
       }
+    }
+    // Premium sparkles for high-tier
+    if (isPremium) {
+       for (let i = 0; i < 40; i++) {
+         particles.push(
+           <motion.div key={`sparkle-${i}`} className="absolute"
+             initial={{ x: 0, y: 0, scale: 0 }}
+             animate={{ 
+               x: (Math.random() - 0.5) * 1000, 
+               y: (Math.random() - 0.5) * 1200, 
+               scale: [0, 1, 0],
+               rotate: 360
+             }}
+             transition={{ duration: 4, delay: Math.random() * 2 }}
+           >
+             <Sparkles className="h-4 w-4 text-cyan-400 fill-cyan-400/20" />
+           </motion.div>
+         );
+       }
     }
     return particles;
  };
@@ -127,21 +144,21 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
   const isFlag = giftId?.startsWith('flag-');
   const isActionItem = ['popcorn', 'money-gun', 'love-bomb'].includes(giftId);
 
-  const times = [0, 0.2, 0.5, 0.8, 1];
-  const exitPos = { y: 600, x: -180, scale: 0.15 }; // Seat position logic
+  const times = [0, 0.15, 0.5, 0.85, 1];
+  const exitPos = { y: 600, x: -180, scale: 0.1 }; 
 
   if (isClap) {
-   return { scale: [0, 1.5, 1.5, 1.5, exitPos.scale], y: [500, -50, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -25, 25, -25, 0], opacity: [0, 1, 1, 1, 0], times };
+   return { scale: [0, 2, 2, 2, exitPos.scale], y: [500, -50, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -35, 35, -35, 0], opacity: [0, 1, 1, 1, 0], times };
   }
   if (isFlag) {
-   return { scale: [0, 1.8, 1.8, 1.8, exitPos.scale], y: [500, -30, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], skewX: [0, 15, -15, 10, 0], opacity: [0, 1, 1, 1, 0], times };
+   return { scale: [0, 2.2, 2.2, 2.2, exitPos.scale], y: [500, -30, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], skewX: [0, 20, -20, 15, 0], opacity: [0, 1, 1, 1, 0], times };
   }
   if (isActionItem) {
-   return { scale: [0, 1.5, 1.6, 1.5, exitPos.scale], y: [500, 0, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -8, 8, -8, 0], opacity: [0, 1, 1, 1, 0], times };
+   return { scale: [0, 1.8, 2, 1.8, exitPos.scale], y: [500, 0, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -15, 15, -15, 0], opacity: [0, 1, 1, 1, 0], times };
   }
 
-  // DEFAULT (3D Spin for normal & premium)
-  return { scale: [0, 1.4, 1.2, 1.2, exitPos.scale], y: [500, -30, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateY: [0, 180, 360, 360, 360], opacity: [0, 1, 1, 1, 0], times };
+  // DEFAULT (High Impact 3D Float)
+  return { scale: [0, 2, 1.6, 1.6, exitPos.scale], y: [500, -100, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateY: [0, 360, 720, 720, 720], opacity: [0, 1, 1, 1, 0], times };
  };
 
  const anim = getAnimationParams();
@@ -151,36 +168,67 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
    {isVisible && (
     <motion.div 
      key={triggerKey} 
-     className="fixed inset-0 z-[300] pointer-events-none flex items-center justify-center overflow-hidden [perspective:1200px]"
+     className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden [perspective:1500px]"
      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
     >
-     {/* Premium Banner */}
+     {/* 1. SCREEN PULSE EFFECT (Full Room) */}
+     <motion.div 
+       className={cn("absolute inset-0 z-[1001]", isPremium ? "bg-cyan-500/10" : "bg-white/5")}
+       initial={{ opacity: 0, scale: 0.8 }}
+       animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 1.5] }}
+       transition={{ duration: 1.5, ease: "easeOut" }}
+     />
+
+     {/* 2. CINEMATIC GOD RAYS (Premium Only) */}
      {isPremium && (
-      <motion.div className="absolute top-[10%] z-[310]" initial={{ y: -100 }} animate={{ y: 0 }}>
-        <div className="bg-black/70 backdrop-blur-3xl px-12 py-5 rounded-full border-2 border-cyan-400 shadow-[0_0_50px_rgba(34,211,238,0.4)] flex items-center gap-6">
-          <Sparkles className="h-8 w-8 text-cyan-400 animate-pulse" />
-          <span className="text-white font-black text-2xl italic tracking-tighter uppercase">{senderName || 'VIP'} SENT {getEmoji()}</span>
-          <Sparkles className="h-8 w-8 text-cyan-400 animate-pulse" />
+       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-[1002]">
+         {[...Array(8)].map((_, i) => (
+           <motion.div
+             key={i}
+             className="absolute w-[200%] h-32 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent"
+             style={{ rotate: i * 45 }}
+             animate={{ opacity: [0.2, 0.5, 0.2], scaleY: [1, 1.5, 1] }}
+             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+           />
+         ))}
+       </div>
+     )}
+
+     {/* 3. PREMIUM ANNOUNCEMENT BANNER */}
+     {isPremium && (
+      <motion.div className="absolute top-[8%] z-[1100]" initial={{ y: -150, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", damping: 15 }}>
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-indigo-500 blur-xl opacity-50 animate-pulse rounded-full" />
+          <div className="relative bg-black/80 backdrop-blur-3xl px-14 py-4 rounded-full border border-white/20 shadow-2xl flex items-center gap-6 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] animate-[shine_3s_infinite]" />
+            <Sparkles className="h-6 w-6 text-cyan-400" />
+            <span className="text-white font-black text-xl italic tracking-tighter uppercase drop-shadow-lg">
+              {senderName || 'VIP'} <span className="text-cyan-400">SENT</span> {getEmoji()}
+            </span>
+            <Sparkles className="h-6 w-6 text-cyan-400" />
+          </div>
         </div>
       </motion.div>
      )}
 
-     {/* Main Icon & Particles */}
+     {/* 4. MAIN ICON & PARTICLES */}
      <div className="relative flex items-center justify-center">
         {renderExtraParticles()}
 
         <motion.div
-         className="relative z-[305] transform-gpu"
+         className="relative z-[1050] transform-gpu"
          initial={{ scale: 0, y: 500, opacity: 0 }}
          animate={{ 
            scale: anim.scale, y: anim.y, x: anim.x,
            rotateY: anim.rotateY || 0, rotateZ: anim.rotateZ || 0,
            skewX: anim.skewX || 0, opacity: anim.opacity 
          }}
-         transition={{ duration: isPremium ? 5.5 : 3.8, times: anim.times, ease: "easeInOut" }}
+         transition={{ duration: isPremium ? 6 : 4, times: anim.times, ease: "easeInOut" }}
         >
-         <div className={cn("absolute inset-0 blur-[130px] opacity-40 rounded-full scale-[2.8]", isPremium ? "bg-cyan-500" : "bg-yellow-500")} />
-         <span className="text-[12rem] md:text-[18rem] drop-shadow-[0_40px_60px_rgba(0,0,0,0.6)] select-none">
+         {/* Glow Layer */}
+         <div className={cn("absolute inset-0 blur-[150px] opacity-50 rounded-full scale-[3]", isPremium ? "bg-cyan-500/60" : "bg-yellow-500/40")} />
+         
+         <span className="text-[14rem] md:text-[22rem] drop-shadow-[0_50px_80px_rgba(0,0,0,0.7)] select-none">
           {getEmoji()}
          </span>
         </motion.div>

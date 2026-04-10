@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Loader, Check, Zap, Gem, Heart, Flame, Sparkles, Beer, Star, Gift } from 'lucide-react';
@@ -51,6 +51,9 @@ const GIFTS: Record<string, any[]> = {
  'Luxury': [
     { id: 'dm', name: 'Diamond', price: 70000, type: 'ring', animationId: 'diamond' },
     { id: 'tp', name: 'Trophy', price: 90000, type: 'default', animationId: 'trophy' },
+    { id: 'fr', name: 'Ferrari', price: 150000, type: 'luxury', animationId: 'ferrari' },
+    { id: 'nc', name: 'Neon Car', price: 120000, type: 'luxury', animationId: 'neon-car' },
+    { id: 'ss', name: 'Space Station', price: 300000, type: 'luxury', animationId: 'space-station' },
  ]
 };
 
@@ -181,8 +184,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     )}
    </AnimatePresence>
 
-   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-md w-[95%] bg-[#0b0e14] border border-white/10 p-0 rounded-[35px] overflow-hidden text-white shadow-2xl">
+   <Sheet open={open} onOpenChange={onOpenChange}>
+    <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-[35px] overflow-hidden text-white shadow-2xl h-[520px] pb-10">
      
      {/* Recipient Selection */}
      <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-white/5">
@@ -249,8 +252,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        </button>
       </div>
      </div>
-    </DialogContent>
-   </Dialog>
+    </SheetContent>
+   </Sheet>
   </>
  );
 }

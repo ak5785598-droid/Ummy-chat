@@ -150,12 +150,17 @@ export type Room = {
   dailyGifts: number;
   weeklyGifts: number;
   monthlyGifts: number;
+  lastWealthResetDate?: any;
  };
  levelPoints?: number; // Total room EXP from activity/gifting
  rocket?: {
   progress: number;
   target: number;
   countdownUntil: any | null; // Timestamp for event launch
+  open?: boolean;
+  lastLaunchTime?: any;
+  lastResetDate?: string;
+  level?: number;
  };
  language?: string;
  tags?: string[];

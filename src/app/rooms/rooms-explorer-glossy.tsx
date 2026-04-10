@@ -26,6 +26,7 @@ import {
   Sparkles,
   Home,
   LayoutGrid,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,6 +37,7 @@ import {
  CarouselItem,
 } from "@/components/ui/carousel";
 import { UserSearchDialog } from '@/components/user-search-dialog';
+import { CreateRoomDialog } from '@/components/create-room-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
@@ -214,17 +216,28 @@ export function RoomsExplorerGlossy() {
                   )}
                 </button>
              </div>
-             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <div className="p-1 px-1.5 bg-white/50 backdrop-blur-md rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all">
                   <UserSearchDialog />
                 </div>
-                <button 
-                  onClick={() => { if (myRoom?.id) { router.push(`/rooms/${myRoom.id}`) } else { router.push('/rooms'); } }} 
-                  className="p-2 bg-white/50 backdrop-blur-md rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all flex items-center group"
-                >
-                  <Home className="h-5 w-5 text-slate-900" />
-                </button>
-             </div>
+                {myRoom ? (
+                  <button 
+                    onClick={() => router.push(`/rooms/${myRoom.id}`)} 
+                    className="p-2 bg-white/50 backdrop-blur-md rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all flex items-center group"
+                  >
+                    <Home className="h-5 w-5 text-slate-900" />
+                  </button>
+                ) : (
+                  <CreateRoomDialog 
+                    iconOnly 
+                    trigger={
+                      <button className="p-2 bg-slate-900 rounded-2xl shadow-lg active:scale-90 transition-all flex items-center group">
+                        <Plus className="h-5 w-5 text-white" />
+                      </button>
+                    } 
+                  />
+                )}
+              </div>
           </div>
         </header>
 
@@ -405,12 +418,23 @@ export function RoomsExplorerGlossy() {
                              </div>
                            </div>
 
-                           <button 
-                             onClick={() => { if (myRoom?.id) router.push(`/rooms/${myRoom.id}`); }}
-                             className="shrink-0 bg-slate-900 text-white p-3.5 rounded-2xl shadow-lg active:scale-90 transition-all"
-                           >
-                             <Home className="h-5 w-5" />
-                           </button>
+                            {myRoom ? (
+                              <button 
+                                onClick={() => router.push(`/rooms/${myRoom.id}`)}
+                                className="shrink-0 bg-slate-900 text-white p-3.5 rounded-2xl shadow-lg active:scale-90 transition-all"
+                              >
+                                <Home className="h-5 w-5" />
+                              </button>
+                            ) : (
+                              <CreateRoomDialog 
+                                iconOnly 
+                                trigger={
+                                  <button className="shrink-0 bg-slate-900 text-white p-3.5 rounded-2xl shadow-lg active:scale-90 transition-all">
+                                    <Plus className="h-5 w-5" />
+                                  </button>
+                                } 
+                              />
+                            )}
                          </div>
                        </div>
                      </section>

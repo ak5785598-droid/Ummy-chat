@@ -87,7 +87,8 @@ import {
   arrayUnion,
   arrayRemove,
   Timestamp,
-  where
+  where,
+  writeBatch
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
@@ -98,6 +99,8 @@ import { RocketDialog } from '@/components/rocket-dialog';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
+import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
 import { RoomUserListDialog } from '@/components/room-user-list-dialog';
@@ -105,7 +108,6 @@ import { RoomInfoDialog } from '@/components/room-info-dialog';
 import { RoomShareDialog } from '@/components/room-share-dialog';
 import { GiftPicker } from '@/components/gift-picker';
 import { RoomPlayDialog } from '@/components/room-play-dialog';
-import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomSeatMenuDialog } from '@/components/room-seat-menu-dialog';
 import { RoomAudienceInviteDialog } from '@/components/room-audience-invite-dialog';
 import { RoomMicInviteDialog } from '@/components/room-mic-invite-dialog';
@@ -248,6 +250,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
+  const [activeGift, setActiveGift] = useState<{giftId: string, senderName: string} | null>(null);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
@@ -574,6 +577,20 @@ export function RoomClient({ room }: { room: Room }) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }, 50);
       return () => clearTimeout(timer);
+    }
+  }, [firestoreMessages]);
+  
+  // TRIGGER GIFT ANIMATION ON NEW GIFT MESSAGE
+  const lastProcessedGiftId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!firestoreMessages || firestoreMessages.length === 0) return;
+    const latestMsg = firestoreMessages[firestoreMessages.length - 1];
+    if (latestMsg.type === 'gift' && latestMsg.id !== lastProcessedGiftId.current) {
+        lastProcessedGiftId.current = latestMsg.id;
+        setActiveGift({ 
+            giftId: latestMsg.giftId, 
+            senderName: latestMsg.senderName || 'User' 
+        });
     }
   }, [firestoreMessages]);
 
@@ -1891,9 +1908,27 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarFallback>RM</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <h1 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
-                {room.title}
-              </h1>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-[15px] font-bold text-white tracking-tight leading-none">
+                  {room.title}
+                </h1>
+                {(isHydrated && !isOwner) && (
+                  <button
+                    onClick={handleFollowRoom}
+                    className={cn(
+                      "h-6 px-2 rounded-full flex items-center justify-center gap-1 transition-all active:scale-90 border",
+                      followData
+                        ? "bg-pink-500/20 border-pink-500/50 text-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.2)]"
+                        : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                    )}
+                  >
+                    <Heart className={cn("h-3 w-3 transition-transform", followData && "fill-current scale-110")} />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">
+                      {followData ? 'Followed' : 'Follow'}
+                    </span>
+                  </button>
+                )}
+              </div>
               <p className="text-[10px] font-medium text-white/50 leading-none">
                 ID:{room.roomNumber}
               </p>
@@ -2595,6 +2630,11 @@ export function RoomClient({ room }: { room: Room }) {
         }
       `}}></style>
       <MountOverlay entries={mountEntries} />
+      <GiftAnimationOverlay 
+        giftId={activeGift?.giftId || null} 
+        senderName={activeGift?.senderName} 
+        onComplete={() => setActiveGift(null)} 
+      />
       <LuckyRainOverlay
         active={isLuckyRainActive}
         onComplete={() => setIsLuckyRainActive(false)}
