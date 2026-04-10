@@ -165,70 +165,75 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1200px' }}>
           
-          {/* --- 3D BROWN SUPPORT LEGS --- */}
-          <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
+          {/* SVG Definitions for 3D Effects */}
+          <svg className="absolute w-0 h-0">
             <defs>
-              <linearGradient id="leg3D" x1="0%" y1="0%" x2="100%" y2="0%">
+              {/* 3D Brown Leg Gradient */}
+              <linearGradient id="stick3D" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#3d1a05" />
                 <stop offset="30%" stopColor="#8b4513" />
                 <stop offset="50%" stopColor="#a0522d" />
                 <stop offset="70%" stopColor="#8b4513" />
                 <stop offset="100%" stopColor="#270c01" />
               </linearGradient>
-              <filter id="legShadow">
-                <feDropShadow dx="0" dy="10" stdDeviation="5" floodOpacity="0.6"/>
+              
+              {/* 3D Yellow Spoke Gradient */}
+              <linearGradient id="spoke3D" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#b45309" />
+                <stop offset="30%" stopColor="#fbbf24" />
+                <stop offset="50%" stopColor="#fef3c7" />
+                <stop offset="70%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#b45309" />
+              </linearGradient>
+
+              {/* Shadow Filter */}
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                <feOffset dx="4" dy="4" result="offsetblur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.5" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
               </filter>
             </defs>
-            <g transform="translate(175, 175)" filter="url(#legShadow)">
-              {/* Left Leg with bevel effect */}
-              <line x1="0" y1="20" x2="-125" y2="450" stroke="rgba(0,0,0,0.4)" strokeWidth="20" strokeLinecap="round" transform="translate(4,4)" />
-              <line x1="0" y1="20" x2="-125" y2="450" stroke="url(#leg3D)" strokeWidth="18" strokeLinecap="round" />
-              
-              {/* Right Leg with bevel effect */}
-              <line x1="0" y1="20" x2="125" y2="450" stroke="rgba(0,0,0,0.4)" strokeWidth="20" strokeLinecap="round" transform="translate(4,4)" />
-              <line x1="0" y1="20" x2="125" y2="450" stroke="url(#leg3D)" strokeWidth="18" strokeLinecap="round" />
+          </svg>
+
+          {/* 3D Support Legs (Brown Moti Line) */}
+          <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible" filter="url(#shadow)">
+            <g transform="translate(175, 175)">
+              <line x1="0" y1="20" x2="-130" y2="450" stroke="url(#stick3D)" strokeWidth="20" strokeLinecap="round" />
+              <line x1="0" y1="20" x2="130" y2="450" stroke="url(#stick3D)" strokeWidth="20" strokeLinecap="round" />
+              {/* Metallic joint cap */}
+              <circle cx="0" cy="20" r="12" fill="#451a03" />
             </g>
           </svg>
 
-          {/* --- 3D YELLOW SPOKES (CONNECTED LINES) --- */}
-          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible z-10">
-            <defs>
-              <linearGradient id="spoke3D" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#fef3c7" />
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="100%" stopColor="#b45309" />
-              </linearGradient>
-            </defs>
+          {/* 3D Wheel Spokes (Yellow Connecting Lines) */}
+          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                <g key={angle}>
-                   {/* Shadow/Depth layer for spoke */}
-                   <line 
-                    x1="0" y1="0" 
-                    x2={112 * Math.cos((angle-90)*Math.PI/180)} 
-                    y2={112 * Math.sin((angle-90)*Math.PI/180)} 
-                    stroke="rgba(0,0,0,0.5)" strokeWidth="10" strokeLinecap="round"
-                    transform="translate(2, 3)"
-                  />
-                  {/* Main Spoke */}
-                  <line 
-                    x1="0" y1="0" 
-                    x2={110 * Math.cos((angle-90)*Math.PI/180)} 
-                    y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                    stroke="url(#spoke3D)" strokeWidth="8" strokeLinecap="round"
-                    className="drop-shadow-sm"
-                  />
-                </g>
+                <line 
+                  key={angle} 
+                  x1="0" y1="0" 
+                  x2={115 * Math.cos((angle-90)*Math.PI/180)} 
+                  y2={115 * Math.sin((angle-90)*Math.PI/180)} 
+                  stroke="url(#spoke3D)" 
+                  strokeWidth="8" 
+                  strokeLinecap="round"
+                  style={{ filter: 'drop-shadow(2px 4px 2px rgba(0,0,0,0.4))' }}
+                />
               ))}
             </g>
           </svg>
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* --- CENTRAL HUB (COUNTDOWN CIRCLE) --- */}
+          {/* --- 3D CENTRAL HUB --- */}
           <div className="relative z-50">
             <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
-            
             <div 
               style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
               className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
@@ -238,7 +243,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 rounded-full border-[3px] border-dashed border-white/30"
               />
-
               <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40 relative">
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 z-10" />
                 <div className="w-full h-1/3 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center gap-1 border-b-2 border-yellow-500/40 relative z-20">
@@ -256,7 +260,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
-          {/* --- FRUIT CARDS --- */}
+          {/* --- 3D FRUIT CARDS --- */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -264,7 +268,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             const betAmount = myBets[item.id] || 0;
 
             return (
-              <div key={item.id} className="absolute z-20" style={{ transform: `translate(${x}px, ${y}px)` }}>
+              <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   style={{ transformStyle: 'preserve-3d', transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
