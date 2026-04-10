@@ -8,7 +8,7 @@ import { Loader } from 'lucide-react';
  * Wrapping the entire Discover experience into a non-SSR dynamic bundle.
  * This eliminates all hydration mismatches from dynamic dates and complex UI.
  */
-const DiscoverView = dynamic(() => import('./discover-view'), {
+const DiscoverView = dynamic(() => import('./discover-view-glossy'), {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 z-[9999] bg-[#FF91B5] flex flex-col items-center justify-center gap-4">
