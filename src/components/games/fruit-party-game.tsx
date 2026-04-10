@@ -15,7 +15,7 @@ const playSound = (url) => {
   audio.play().catch(e => console.log("Sound play error:", e));
 };
 
-// Sound URLs (Inhe tum apni pasand ke links se replace kar sakte ho)
+// Sound URLs
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // Trun trun
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Trick trick
@@ -100,14 +100,21 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
+  
   const [localCoins, setLocalCoins] = useState(0);
+  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); // FIXED LOGIC OVERWRITE BUG
+  
   const [todayWins, setTodayWins] = useState(0); 
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
 
+  // FIX: Only load initial coins once, to prevent jumpy deduction UI when Firebase syncs
   useEffect(() => {
-    if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins);
-  }, [userProfile]);
+    if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
+      setLocalCoins(userProfile.wallet.coins);
+      setIsCoinsLoaded(true);
+    }
+  }, [userProfile, isCoinsLoaded]);
 
   useEffect(() => {
     const checkReset = () => {
@@ -146,6 +153,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     // Play "Trun trun" sound
     playSound(SOUNDS.BET);
 
+    // FIXED: Proper local state & DB real-time deduction
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -174,6 +182,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   const finalizeResult = (winItem: any) => {
+    // LOGIC FIX: Bet × Multiplier
     const winAmount = (myBets[winItem.id] || 0) * winItem.multiplier;
     setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
