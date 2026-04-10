@@ -162,18 +162,24 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
         {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
-          {/* Leg Support Legs */}
+          
+          {/* --- UPDATED SUPPORT LEGS (DARK BROWN WITH SKIN BORDER) --- */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
-              <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8b4513" />
-                <stop offset="50%" stopColor="#5d2707" />
-                <stop offset="100%" stopColor="#270c01" />
+              <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#3d1a05" /> 
+                <stop offset="50%" stopColor="#2a1002" />
+                <stop offset="100%" stopColor="#1a0801" />
               </linearGradient>
             </defs>
             <g transform="translate(175, 175)">
-              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
-              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
+              {/* Left Leg */}
+              <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
+              
+              {/* Right Leg */}
+              <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
             </g>
           </svg>
 
@@ -194,7 +200,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* --- UPDATED 3D COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
+          {/* --- 3D COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
           <div className="relative z-50">
             <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
             
@@ -203,7 +209,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
             >
               <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40 relative">
-                {/* Top Section: Single 3D Icon */}
                 <div className="w-full h-1/2 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center border-b-2 border-yellow-500/40 relative z-20">
                     <motion.span 
                       animate={{ y: [0, -4, 0], scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }} 
@@ -214,7 +219,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                     </motion.span>
                 </div>
 
-                {/* Bottom Section: Countdown Number */}
                 <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
                   <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
                     {gameState === 'betting' ? timeLeft : '...'}
