@@ -8,7 +8,7 @@ import { Loader } from 'lucide-react';
  * Wrapping the entire Profile experience into a non-SSR dynamic bundle.
  * This eliminates hydration mismatches from dynamic stats and random particles.
  */
-const ProfileView = dynamic(() => import('./profile-view-glossy'), {
+const ProfileView = dynamic(() => import('./profile-view'), {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-4">

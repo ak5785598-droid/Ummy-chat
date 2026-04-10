@@ -55,6 +55,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
+import { BudgetTag } from '@/components/budget-tag';
 import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch, where } from 'firebase/firestore';
 import {
  DropdownMenu,
@@ -256,28 +257,32 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0 pt-6">
-              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              {/* Row 1: Name, Flag, Gender */}
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h1>
                 <span className="text-sm leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
+              </div>
+              
+              {/* Row 2: Levels */}
+              <div className="flex items-center gap-2 mb-2">
                 <RichLevelBadge level={profile.level?.rich || 1} />
                 <CharmLevelBadge level={profile.level?.charm || 1} />
               </div>
-              
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-2" onClick={handleCopyId}>
-                  <span className={cn(
-                      "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
-                      profile.idColor === 'red' ? 'text-red-500' : 
-                      profile.idColor === 'blue' ? 'text-blue-500' : 
-                      profile.idColor === 'purple' ? 'text-purple-600' : 
-                      'text-gray-400'
-                    )}>ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />{profile.isBudgetId && (<Badge className="ml-1 bg-amber-500 h-3 text-[7px] px-1 text-white border-none shrink-0 pointer-events-none uppercase">BUDGET</Badge>)}</span>
+
+              {/* Row 3: ID Badge & Tags */}
+              <div className="flex flex-col items-start gap-1.5">
+                <BudgetTag 
+                  variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
+                  label={`ID: ${profile.accountNumber}`}
+                  size="sm"
+                />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left" />}
                 </div>
-                {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
-                {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-                {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left ml-1" />}
-                {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left ml-1" />}
               </div>
             </div>
           </div>
@@ -547,32 +552,31 @@ export default function ProfileView({ profileId }: { profileId: string }) {
             </div>
 
             <div className="flex-1 flex flex-col justify-center min-w-0 gap-1 h-24">
+              {/* Row 1: Name, Flag, Gender */}
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[140px] md:max-w-none">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
               
+              {/* Row 2: Levels */}
               <div className="flex items-center gap-2 flex-wrap">
                 <RichLevelBadge level={profile.level?.rich || 1} />
                 <CharmLevelBadge level={profile.level?.charm || 1} />
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                <p className={cn(
-                    "text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 cursor-pointer active:opacity-60 transition-opacity",
-                    profile.idColor === 'red' ? 'text-red-500' : 
-                    profile.idColor === 'blue' ? 'text-blue-500' : 
-                    profile.idColor === 'purple' ? 'text-purple-600' : 
-                    'text-gray-400'
-                  )} 
-                  onClick={() => { if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText((profile as any).accountNumber).then(() => toast({title: 'ID Copied'})); } }}
-                >
-                  ID:{profile.accountNumber} <Copy className="h-2.5 w-2.5 opacity-40" />
-                </p>
-                {isOfficial && <OfficialTag size="sm" className="scale-[0.7] origin-left" />}
-                {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.7] origin-left" />}
-                {isSeller && <SellerTag size="sm" className="scale-[0.7] origin-left" />}
+              {/* Row 3: ID & Tags */}
+              <div className="flex flex-col items-start gap-1.5 pt-0.5">
+                <BudgetTag 
+                  variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
+                  label={`ID: ${profile.accountNumber}`}
+                  size="sm"
+                />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.7] origin-left" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.7] origin-left" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.7] origin-left" />}
+                </div>
               </div>
             </div>
           </header>

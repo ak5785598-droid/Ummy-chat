@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { PublishMomentDialog } from '@/components/publish-moment-dialog';
+import { MomentCommentsSheet } from '@/components/moment-comments-sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDoc } from '@/firebase';
 import { DiscoverViewGlossy } from './discover-view-glossy';
@@ -39,6 +40,8 @@ export default function DiscoverView() {
   const firestore = useFirestore();
   const { user } = useUser();
   const [showPublish, setShowPublish] = useState(false);
+  const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
+  const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
   
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
   const { data: config } = useDoc(configRef);
@@ -77,19 +80,19 @@ export default function DiscoverView() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-300/30 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
         </div>
 
-        {/* Discovery Header - NOW TRULY FIXED */}
+        {/* Discovery Header - Fixed Height & Font */}
         <header className={cn(
-          "shrink-0 pt-safe pb-4 px-6 z-50 border-b border-black/5",
+          "shrink-0 pt-10 pb-6 px-6 z-50 border-b border-black/5",
           DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-white/80 backdrop-blur-xl"
         )}>
           <div className="flex flex-col items-center">
-            <h1 className="text-3xl font-headline font-black italic uppercase tracking-tighter text-slate-900 border-white">
+            <h1 className="text-2xl font-black uppercase tracking-tight text-slate-900">
               Moment of Day
             </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-black/20" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">Ummy Discovery</p>
-              <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-black/20" />
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="h-[px] w-12 bg-black/10" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500/60 leading-none">Ummy Discovery</p>
+              <div className="h-[px] w-12 bg-black/10" />
             </div>
           </div>
         </header>
@@ -106,7 +109,15 @@ export default function DiscoverView() {
           ) : (
             <>
               {moments?.map((moment: any, idx: number) => (
-                <MomentCard key={moment.id} moment={moment} index={idx} />
+                <MomentCard 
+                  key={moment.id} 
+                  moment={moment} 
+                  index={idx} 
+                  onOpenComments={(id, username) => {
+                    setSelectedMomentId(id);
+                    setSelectedMomentUser(username);
+                  }}
+                />
               ))}
 
               {(!moments || moments.length === 0) && (
@@ -132,12 +143,19 @@ export default function DiscoverView() {
         </button>
 
         <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
+
+        <MomentCommentsSheet 
+          momentId={selectedMomentId} 
+          open={!!selectedMomentId} 
+          onOpenChange={(open) => !open && setSelectedMomentId(null)}
+          momentUsername={selectedMomentUser}
+        />
       </div>
     </AppLayout>
   );
 }
 
-function MomentCard({ moment, index }: { moment: any, index: number }) {
+function MomentCard({ moment, index, onOpenComments }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
@@ -163,7 +181,7 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden backdrop-blur-md">
+      <Card className="bg-white border-white shadow-xl rounded-[2.5rem] overflow-hidden">
         <CardContent className="p-0">
           {/* Header */}
           <div className="p-5 flex items-center justify-between">
@@ -173,16 +191,16 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
                   <AvatarImage src={moment.avatarUrl} />
                   <AvatarFallback>{moment.username?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-black text-black">
+                <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white text-slate-900 shadow-sm">
                   Lv.{moment.userLevel || 1}
                 </div>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-headline font-black text-sm text-white tracking-tight">{moment.username}</span>
-                  <div className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30 flex items-center gap-1">
+                  <span className="font-black text-[14px] text-slate-900 tracking-tight">{moment.username}</span>
+                  <div className="px-2 py-0.5 rounded-lg bg-slate-100 flex items-center gap-1">
                     <span className="text-[10px]">🇮🇳</span>
-                    <Globe className="h-2 w-2 text-purple-400" />
+                    <Globe className="h-2 w-2 text-slate-400" />
                   </div>
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">
@@ -197,8 +215,8 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
           </div>
 
           {/* Content */}
-          <div className="px-6 pb-4">
-            <p className="text-white/90 text-sm leading-relaxed font-medium">
+          <div className="px-7 pb-5">
+            <p className="text-slate-600 text-[14px] leading-relaxed font-medium">
               {moment.content}
             </p>
           </div>
@@ -231,7 +249,10 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
                 <span className="text-xs font-black">{likesCount}</span>
               </button>
 
-              <button className="flex items-center gap-2 text-white/40 hover:text-indigo-400 transition-colors">
+              <button 
+                onClick={() => onOpenComments(moment.id, moment.username)}
+                className="flex items-center gap-2 text-slate-300 hover:text-slate-900 transition-colors active:scale-95"
+              >
                 <MessageCircle className="h-6 w-6" />
                 <span className="text-xs font-black">{moment.commentsCount || 0}</span>
               </button>
