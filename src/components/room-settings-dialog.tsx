@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
  ChevronRight, 
  ChevronLeft, 
@@ -86,6 +87,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
  * Re-engineered to filter themes based on room identity.
  */
 export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: RoomSettingsDialogProps) {
+ const router = useRouter();
  const [internalOpen, setInternalOpen] = useState(false);
 
  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -408,10 +410,19 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
         </header>
         <ScrollArea className="flex-1 p-4">
          {participants?.map((p: any) => (
-          <div key={p.uid} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0">
-            <div className="flex items-center gap-3">
-             <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm"><AvatarImage src={p.avatarUrl || undefined} /><AvatarFallback>U</AvatarFallback></Avatar>
-             <div><p className="font-bold text-sm uppercase tracking-tight">{p.name}</p></div>
+          <div key={p.uid} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-slate-50 transition-colors">
+            <div 
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => {
+                setOpen(false);
+                router.push(`/profile/${p.uid}`);
+              }}
+            >
+             <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm active:scale-95 transition-transform">
+               <AvatarImage src={p.avatarUrl || undefined} />
+               <AvatarFallback>U</AvatarFallback>
+             </Avatar>
+             <div><p className="font-bold text-sm uppercase tracking-tight group-hover:text-primary transition-colors">{p.name}</p></div>
             </div>
             {p.uid !== room.ownerId && <Switch checked={room.moderatorIds?.includes(p.uid)} onCheckedChange={() => handleToggleMod(p.uid)} />}
           </div>

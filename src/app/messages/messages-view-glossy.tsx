@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { 
  Flag, 
@@ -81,7 +82,8 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
  </div>
 );
 
-const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
+const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
+ const router = useRouter();
  const participantIds = chat?.participantIds || [];
  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
@@ -158,7 +160,8 @@ const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
  );
 };
 
-function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser, router }: any) {
+function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
+  const router = useRouter();
   const [text, setText] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const firestore = useFirestore();
@@ -270,27 +273,40 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser, ro
         <div className="flex flex-col gap-5 pb-12 max-w-lg mx-auto">
           {messages?.map((msg: any) => {
            const isMe = msg.senderId === currentUser?.uid;
-           return (
-            <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
-             <div className={cn(
-              "px-4 py-3 rounded-[1.5rem] text-[14px] font-medium shadow-sm border transition-all",
-              isMe ? "bg-slate-900 text-white rounded-br-none border-slate-800" : "bg-white text-slate-800 rounded-bl-none border-white shadow-md shadow-black/5"
-             )}>
-               {msg.imageUrl && (
-                <div 
-                 onClick={() => setPreviewImage(msg.imageUrl)}
-                 className="mb-2 relative aspect-square w-56 max-w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-inner cursor-pointer active:scale-[0.98] transition-all"
-                >
-                 <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
-                </div>
-               )}
-               {msg.text && <p className="leading-relaxed ">{msg.text}</p>}
+            return (
+             <div key={msg.id} className={cn("flex items-end gap-3 mb-6", isMe ? "flex-row-reverse self-end" : "flex-row self-start")}>
+               <Avatar 
+                 onClick={() => {
+                   onOpenChange(false);
+                   router.push(`/profile/${msg.senderId}`);
+                 }}
+                 className="h-8 w-8 border-2 border-white shadow-md rounded-[1rem] cursor-pointer active:scale-90 transition-transform flex-shrink-0 mb-6"
+               >
+                 <AvatarImage src={isMe ? currentUser?.photoURL : otherUser?.avatarUrl} className="object-cover" />
+                 <AvatarFallback className="bg-slate-100 text-[10px] text-slate-400 font-bold">{(isMe ? currentUser?.displayName : otherUser?.username)?.charAt(0)}</AvatarFallback>
+               </Avatar>
+               
+               <div className={cn("flex flex-col max-w-[280px]", isMe ? "items-end" : "items-start")}>
+                 <div className={cn(
+                  "px-4 py-3 rounded-[1.5rem] text-[14px] font-medium shadow-sm border transition-all",
+                  isMe ? "bg-slate-900 text-white rounded-br-none border-slate-800" : "bg-white text-slate-800 rounded-bl-none border-white shadow-md shadow-black/5"
+                 )}>
+                   {msg.imageUrl && (
+                    <div 
+                     onClick={() => setPreviewImage(msg.imageUrl)}
+                     className="mb-2 relative aspect-square w-56 max-w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-inner cursor-pointer active:scale-[0.98] transition-all"
+                    >
+                     <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+                    </div>
+                   )}
+                   {msg.text && <p className="leading-relaxed ">{msg.text}</p>}
+                 </div>
+                 <span className="text-[8px] font-black text-slate-400 uppercase mt-1.5 px-2 tracking-widest opacity-60">
+                   {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
+                 </span>
+               </div>
              </div>
-             <span className="text-[8px] font-black text-slate-400 uppercase mt-1.5 px-2 tracking-widest opacity-60">
-               {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
-             </span>
-            </div>
-           );
+            );
           })}
           <div ref={messagesEndRef} />
         </div>
@@ -465,6 +481,7 @@ function RequestItem({ request, onAction }: any) {
 }
 
 export function MessagesViewGlossy() {
+  const router = useRouter();
  const { user } = useUser();
  const firestore = useFirestore();
  const { t } = useTranslation();
@@ -602,7 +619,6 @@ export function MessagesViewGlossy() {
                 chat={chat} 
                 currentUid={user?.uid} 
                 onSelect={handleSelectChat} 
-                router={router}
                />
               ))
              ) : (
@@ -693,7 +709,6 @@ export function MessagesViewGlossy() {
        chatId={activeChatId}
        otherUser={selectedRecipient}
        currentUser={user}
-       router={router}
       />
     </div>
  );

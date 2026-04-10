@@ -359,7 +359,7 @@ const PublicProfileView = ({
 
 import { ProfileViewGlossy } from './profile-view-glossy';
 
-export default function ProfileView({ profileId }: { profileId: string }) {
+export default function ProfileView({ profileId, mode = 'public' }: { profileId: string, mode?: 'public' | 'editable' }) {
  const router = useRouter();
  const { toast } = useToast();
  const firestore = useFirestore();
@@ -484,12 +484,12 @@ export default function ProfileView({ profileId }: { profileId: string }) {
   const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin', 'Official Center'].includes(t)) || isAuthorizedAdmin;
 
  const isOfficial = profile?.tags?.includes('Official');
- const isCS = profile?.tags?.includes('Customer Service');
+const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
  if (theme === 'GLOSSY') {
-  return <ProfileViewGlossy profileId={profileId} />;
+   return <ProfileViewGlossy profileId={profileId} mode={mode} />;
  }
 
  if (isUserLoading || isProfileLoading || !profile) return (
@@ -501,7 +501,7 @@ export default function ProfileView({ profileId }: { profileId: string }) {
   </AppLayout>
  );
 
- if (isOwnProfile) {
+  if (mode === 'editable' && isOwnProfile) {
   return (
    <AppLayout>
     <div className="h-full bg-slate-50 text-gray-900 font-sans relative flex flex-col overflow-hidden animate-in fade-in duration-1000">
@@ -537,7 +537,10 @@ export default function ProfileView({ profileId }: { profileId: string }) {
               } 
             />
 
-            <div className="relative shrink-0">
+            <div 
+              className="relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+              onClick={() => router.push(`/profile/${profileId}`)}
+            >
               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                 <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10">
                   <AvatarImage src={profile.avatarUrl || undefined} />

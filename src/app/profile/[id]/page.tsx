@@ -33,5 +33,5 @@ export default function ProfileGatewayPage({ params }: { params: any }) {
 
 function ProfileGateway({ params }: { params: any }) {
   const resolvedParams = typeof params === 'function' ? params() : params;
-  return <ProfileView profileId={resolvedParams.id} />;
+  return <ProfileView profileId={resolvedParams.id} mode="public" />;
 }

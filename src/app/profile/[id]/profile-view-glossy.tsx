@@ -237,7 +237,7 @@ const PublicProfileView = ({
   );
 };
 
-export function ProfileViewGlossy({ profileId }: { profileId: string }) {
+export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
  const router = useRouter();
  const { toast } = useToast();
  const firestore = useFirestore();
@@ -319,7 +319,7 @@ export function ProfileViewGlossy({ profileId }: { profileId: string }) {
   </div>
  );
 
- if (isOwnProfile) {
+  if (mode === 'editable' && isOwnProfile) {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
       
@@ -346,12 +346,17 @@ export function ProfileViewGlossy({ profileId }: { profileId: string }) {
             
             <header className="flex items-center gap-5 relative z-10">
               <div className="relative shrink-0">
-                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <Avatar className="h-24 w-24 border-4 border-white shadow-xl rounded-[2rem]">
-                    <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="text-2xl font-black bg-slate-100 text-slate-200">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </AvatarFrame>
+                <div 
+                  className="cursor-pointer active:scale-95 transition-transform"
+                  onClick={() => router.push(`/profile/${profileId}`)}
+                >
+                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <Avatar className="h-24 w-24 border-4 border-white shadow-xl rounded-[2rem]">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-2xl font-black bg-slate-100 text-slate-200">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+                </div>
                 <EditProfileDialog 
                   profile={profile} 
                   trigger={

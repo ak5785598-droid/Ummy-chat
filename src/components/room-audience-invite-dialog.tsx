@@ -15,6 +15,7 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { RoomParticipant } from '@/lib/types';
 import { UserPlus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface RoomAudienceInviteDialogProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function RoomAudienceInviteDialog({
 }: RoomAudienceInviteDialogProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
 
   if (seatIndex === null) return null;
 
@@ -112,7 +114,13 @@ export function RoomAudienceInviteDialog({
                   onClick={() => handleInvite(user)}
                   className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 >
-                  <Avatar className="h-10 w-10">
+                  <Avatar 
+                    className="h-10 w-10 cursor-pointer active:scale-90 transition-transform"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/profile/${user.uid}`);
+                    }}
+                  >
                     <AvatarImage src={user.avatarUrl || undefined} />
                     <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
                       {(user.name || 'U').charAt(0)}

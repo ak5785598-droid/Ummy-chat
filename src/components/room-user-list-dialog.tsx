@@ -78,16 +78,17 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
       ) : participants.length > 0 ? (
        <div className="divide-y divide-gray-50">
         {participants.map((p: any) => (
-         <div key={p.uid} className="p-4 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
+          <div 
+            key={p.uid} 
+            className="p-4 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer"
+            onClick={() => {
+              onOpenChange(false);
+              router.push(`/profile/${p.uid}`);
+            }}
+          >
            <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar 
-                className="h-14 w-14 border-2 border-white shadow-sm cursor-pointer active:scale-90 transition-transform"
-                onClick={() => {
-                  onOpenChange(false);
-                  router.push(`/profile/${p.uid}`);
-                }}
-              >
+              <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
                 <AvatarImage src={p.avatarUrl || undefined} />
                 <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
               </Avatar>

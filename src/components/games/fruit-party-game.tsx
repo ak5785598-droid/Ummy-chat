@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SOUND UTILITIES ---
-const playSound = (url) => {
+const playSound = (url: string) => {
   const audio = new Audio(url);
   audio.volume = 0.5;
   audio.play().catch(e => console.log("Sound play error:", e));

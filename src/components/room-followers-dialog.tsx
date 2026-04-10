@@ -15,6 +15,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useRouter } from 'next/navigation';
 
 const RichLevelBadge = ({ level }: { level: number }) => (
  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
@@ -42,6 +43,7 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 );
 
 const UserListItem = ({ uid, role, showBadges = false }: { uid: string, role?: 'owner' | 'admin' | 'follower', showBadges?: boolean }) => {
+ const router = useRouter();
  const { userProfile: profile, isLoading } = useUserProfile(uid);
 
  if (isLoading) return (
@@ -54,7 +56,10 @@ const UserListItem = ({ uid, role, showBadges = false }: { uid: string, role?: '
  if (!profile) return null;
 
  return (
-  <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+  <div 
+   onClick={() => router.push(`/profile/${uid}`)}
+   className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer active:bg-gray-100"
+  >
    <div className="relative shrink-0">
     <Avatar className={cn(
      "h-14 w-14 border-2 shadow-sm",

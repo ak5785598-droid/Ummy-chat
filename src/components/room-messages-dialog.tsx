@@ -188,27 +188,39 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
 
    <ScrollArea className="flex-1 px-4 py-4">
      <div className="flex flex-col gap-3 pb-4">
-      {messages?.map((msg: any) => {
-       const isMe = msg.senderId === currentUser?.uid;
-       return (
-        <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
-           <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-xs">
-            {msg.imageUrl && (
-             <div 
-              onClick={() => setPreviewImage(msg.imageUrl)}
-              className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
-             >
-               <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
-             </div>
-            )}
-            {msg.text && <p className="leading-relaxed">{msg.text}</p>}
-           </ChatMessageBubble>
-          <span className="text-[7px] font-bold text-white/20 uppercase mt-1 px-1">
-           {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
-          </span>
-        </div>
-       );
-      })}
+       {messages?.map((msg: any) => {
+        const isMe = msg.senderId === currentUser?.uid;
+        return (
+         <div key={msg.id} className={cn("flex items-end gap-2 mb-4", isMe ? "flex-row-reverse self-end" : "flex-row self-start")}>
+            <Avatar 
+              onClick={() => {
+                onClose();
+                router.push(`/profile/${msg.senderId}`);
+              }}
+              className="h-6 w-6 border border-white/10 cursor-pointer active:scale-90 transition-transform flex-shrink-0 mb-4"
+            >
+              <AvatarImage src={isMe ? currentUser?.photoURL : otherUser.avatarUrl} />
+              <AvatarFallback className="text-[10px]">{(isMe ? currentUser?.displayName : otherUser.username)?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className={cn("flex flex-col max-w-[200px]", isMe ? "items-end" : "items-start")}>
+              <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-xs">
+               {msg.imageUrl && (
+                <div 
+                 onClick={() => setPreviewImage(msg.imageUrl)}
+                 className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
+                >
+                  <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+                </div>
+               )}
+               {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+              </ChatMessageBubble>
+              <span className="text-[7px] font-bold text-white/20 uppercase mt-1 px-1">
+               {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
+              </span>
+            </div>
+         </div>
+        );
+       })}
       <div ref={messagesEndRef} />
      </div>
    </ScrollArea>
