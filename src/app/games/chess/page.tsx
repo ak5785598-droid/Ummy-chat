@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 
-// 3D Custom Character Icons
 const pieceSVG: Record<string, string> = {
   'pw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg',
   'rw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg',
@@ -45,27 +44,29 @@ function ChessGameContent() {
     return () => clearTimeout(timer);
    }, []);
 
-   // UPDATED: WHITE LOADING PAGE DESIGN
+   // BOTTOM SHEET LOADING PAGE
    if (isLaunching || isLoading) {
     return (
-     <div className="h-screen w-full bg-white flex flex-col items-center justify-center space-y-8 font-sans">
-        <div className="relative flex items-center justify-center">
-          {/* Circular Loader */}
-          <div className="h-20 w-20 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="absolute">
-              <Shield className="h-6 w-6 text-blue-600/30 animate-pulse" />
-          </div>
+     <div className="h-screen w-full bg-[#0f172a] flex flex-col justify-end overflow-hidden font-sans">
+        {/* Top Half Blurred Background */}
+        <div className="flex-1 w-full bg-gradient-to-b from-blue-900/20 to-transparent backdrop-blur-sm flex items-center justify-center">
+            <Shield className="h-16 w-16 text-blue-500/20 animate-pulse" />
         </div>
 
-        <div className="text-center space-y-2">
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Preparing Arena</h1>
-          <p className="text-sm text-slate-400 font-medium animate-pulse">Syncing 3D assets...</p>
-        </div>
-
-        {/* Branding */}
-        <div className="absolute bottom-12 flex flex-col items-center gap-1">
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Powered By</span>
-          <span className="text-sm font-black text-slate-900 tracking-widest italic">UMMY TEAM</span>
+        {/* Bottom Sheet */}
+        <div className="h-[60%] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center space-y-8 animate-in slide-in-from-bottom duration-700">
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-4" />
+            <div className="relative flex items-center justify-center">
+                <div className="h-16 w-16 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center space-y-2">
+                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Preparing Arena</h1>
+                <p className="text-sm text-slate-400 font-medium animate-pulse">Syncing 3D assets...</p>
+            </div>
+            <div className="flex flex-col items-center gap-1 pt-8">
+                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Powered By</span>
+                <span className="text-sm font-black text-slate-900 tracking-widest italic">UMMY TEAM</span>
+            </div>
         </div>
      </div>
     );
@@ -101,13 +102,12 @@ function ChessGameContent() {
            isBlack ? "bg-[#1e40af] shadow-inner" : "bg-[#60a5fa] shadow-inner",
            selectedSquare === coord && "ring-4 ring-yellow-400 z-20 brightness-125"
          )}
-         style={{ transform: 'translateZ(2px)' }}
        >
          {pieceKey && (
            <img 
              src={pieceSVG[pieceKey]} 
              alt={pieceKey}
-             className="w-[85%] h-[85%] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] transform hover:scale-110 transition-transform active:translate-y-[-10px]"
+             className="w-[85%] h-[85%] drop-shadow-lg transform hover:scale-110"
            />
          )}
        </div>
@@ -116,27 +116,32 @@ function ChessGameContent() {
 
    return (
     <AppLayout fullScreen>
-     <div className="h-screen w-full bg-gradient-to-b from-[#0f172a] to-[#1e293b] flex flex-col relative overflow-hidden text-white font-sans">
+     <div className="h-screen w-full bg-[#0f172a] flex flex-col justify-end relative overflow-hidden text-white font-sans">
       
-      <header className="z-50 flex items-center justify-between p-6">
-        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20 hover:bg-white/20 transition-all"><ChevronLeft /></button>
+      {/* Top Background Section (Blurred Arena) */}
+      <div className="absolute inset-0 h-[50%] bg-gradient-to-b from-blue-900/40 to-transparent backdrop-blur-md -z-10" />
+
+      <header className="absolute top-0 w-full z-50 flex items-center justify-between p-6">
+        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20"><ChevronLeft /></button>
         <div className="text-center">
-            <h1 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">CHESS ROYALE 3D</h1>
-            <p className="text-[10px] opacity-50 uppercase tracking-[0.3em]">Grandmaster Edition</p>
+            <h1 className="text-xl font-black italic tracking-tighter text-blue-400">CHESS ROYALE 3D</h1>
         </div>
         <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-3 rounded-xl border border-white/20">
             {isMuted ? <VolumeX /> : <Volume2 />}
         </button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center perspective-[1000px] py-4">
+      {/* Main Bottom Sheet Game Area */}
+      <main className="h-[85%] w-full bg-[#1e293b]/95 backdrop-blur-2xl rounded-t-[48px] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center p-4 animate-in slide-in-from-bottom duration-500">
          
+         <div className="w-12 h-1.5 bg-white/10 rounded-full mb-8" />
+         
+         {/* 3D Board Adjusted for Sheet View */}
          <div 
-            className="relative w-[95vw] max-w-[450px] aspect-square rounded-lg border-[12px] border-[#334155] shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+            className="relative w-[85vw] max-w-[400px] aspect-square rounded-lg border-[8px] border-[#334155] shadow-2xl overflow-hidden"
             style={{ 
-                transform: 'rotateX(25deg) rotateZ(0deg)',
+                transform: 'rotateX(15deg)',
                 transformStyle: 'preserve-3d',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.2)'
             }}
          >
             <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-[#0f172a]">
@@ -146,37 +151,34 @@ function ChessGameContent() {
             </div>
          </div>
 
-         <div className="mt-16 w-full max-w-[380px] px-6 space-y-6">
-            <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+         <div className="mt-8 w-full max-w-[380px] px-2 space-y-6">
+            <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/10">
                 <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
+                    <Avatar className="h-10 w-10 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
                     <div>
-                        <p className="text-xs font-bold uppercase opacity-60 italic text-blue-400">White</p>
-                        <p className="font-black text-lg uppercase">{userProfile?.username || 'YOU'}</p>
+                        <p className="text-[10px] font-bold uppercase opacity-60 text-blue-400">Khai</p>
+                        <p className="font-black text-sm uppercase">{userProfile?.username || 'YOU'}</p>
                     </div>
                 </div>
-                <div className="h-8 w-[2px] bg-white/10" />
                 <div className="flex items-center gap-3 text-right">
                     <div>
-                        <p className="text-xs font-bold uppercase opacity-60 italic text-red-400">Black</p>
-                        <p className="font-black text-lg">OPPONENT</p>
+                        <p className="text-[10px] font-bold uppercase opacity-60 text-red-400">Opponent</p>
+                        <p className="font-black text-sm">SEARCHING...</p>
                     </div>
-                    <Avatar className="h-12 w-12 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
+                    <Avatar className="h-10 w-10 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
                 </div>
             </div>
 
             <button 
                 onClick={() => startMatch(userProfile)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(37,99,235,0.4)] active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
             >
                 Start New Battle
             </button>
+            
+            <p className="text-[10px] text-center font-bold text-white/20 uppercase tracking-[0.4em]">Powered by UMMY TEAM</p>
          </div>
       </main>
-
-      <footer className="p-6 text-center">
-         <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Powered by Unreal-Style CSS 3D Engine</p>
-      </footer>
      </div>
     </AppLayout>
    );
@@ -184,11 +186,7 @@ function ChessGameContent() {
 
 export default function ChessGamePage() {
   return (
-    <Suspense fallback={
-        <div className="h-screen w-full bg-white flex items-center justify-center font-black text-slate-200 tracking-widest">
-            INITIALIZING...
-        </div>
-    }>
+    <Suspense fallback={<div className="h-screen w-full bg-white" />}>
       <ChessGameContent />
     </Suspense>
   );
