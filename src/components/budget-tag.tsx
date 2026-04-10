@@ -9,13 +9,14 @@ interface BudgetTagProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'gold' | 'diamond' | 'silver';
+  label?: string; // NEW: Allow custom text (like User ID)
 }
 
 /**
  * Premium Sovereign / Budget Tag Component.
  * Supports prestigious Liquid Gold, Diamond, and Silver variants.
  */
-export function BudgetTag({ className, size = 'md', variant = 'gold' }: BudgetTagProps) {
+export function BudgetTag({ className, size = 'md', variant = 'gold', label }: BudgetTagProps) {
   const scale = size === 'sm' ? 0.7 : size === 'lg' ? 1.25 : 1;
 
   const styles = {
@@ -60,7 +61,7 @@ export function BudgetTag({ className, size = 'md', variant = 'gold' }: BudgetTa
       
       {/* Main Tag Container (Glassmorphism Base) */}
       <div className={cn(
-        "relative flex items-center gap-2 pl-2 pr-4 py-1.5 bg-black/40 backdrop-blur-md rounded-[0.9rem] border-[1.5px] shadow-2xl overflow-hidden",
+        "relative flex items-center gap-2 pl-2 pr-4 py-1 bg-black/40 backdrop-blur-md rounded-[0.9rem] border-[1.5px] shadow-2xl overflow-hidden",
         current.border
       )}>
         {/* Liquid Gradient Layer */}
@@ -78,15 +79,15 @@ export function BudgetTag({ className, size = 'md', variant = 'gold' }: BudgetTa
         
         {/* Icon with Soft Glow */}
         <div className="relative shrink-0 flex items-center justify-center z-20 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
-          <Icon className="h-4 w-4 text-white fill-white/10" strokeWidth={2.5} />
+          <Icon className="h-3.5 w-3.5 text-white fill-white/10" strokeWidth={2.5} />
         </div>
 
         {/* Text */}
         <span className={cn(
-          "relative z-20 font-black text-[11px] uppercase drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.4)] tracking-tighter",
+          "relative z-20 font-black text-[10px] uppercase drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.4)] tracking-tighter whitespace-nowrap",
           current.textColor
         )}>
-          Budget
+          {label || 'Budget'}
         </span>
         
         {/* Decorative Gem Sparkle */}

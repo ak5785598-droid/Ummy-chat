@@ -29,12 +29,12 @@ import {
  Zap
 } from 'lucide-react';
 import { 
- Dialog, 
- DialogContent, 
- DialogHeader, 
- DialogTitle, 
- DialogDescription
-} from '@/components/ui/dialog';
+ Sheet, 
+ SheetContent, 
+ SheetHeader, 
+ SheetTitle, 
+ SheetDescription
+} from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -96,7 +96,7 @@ export function RoomUserProfileDialog({
  open, 
  onOpenChange, 
  canManage, 
- isOwner,
+ isOwner: isRoomOwner,
  roomOwnerId,
  roomModeratorIds,
  onSilence,
@@ -153,14 +153,17 @@ export function RoomUserProfileDialog({
  const isCS = profile?.tags?.includes('Customer Service');
  const isCSLeader = profile?.tags?.includes('CS Leader');
  const isBudget = profile?.isBudgetId;
+ 
+ // Dynamic ID Status logic: Emerald for Official, Gold for Admin/Owner, Silver for Regular
+ const idStatusVariant = (profile?.isAdmin || userId === roomOwnerId) ? 'gold' : isOfficial ? 'diamond' : 'silver';
 
  return (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="sm:max-w-[400px] border-none p-0 rounded-t-[3rem] md:rounded-3xl overflow-hidden shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom-10 duration-500">
-    <DialogHeader className="sr-only">
-     <DialogTitle>User Profile</DialogTitle>
-     <DialogDescription>Identity Sync</DialogDescription>
-    </DialogHeader>
+  <Sheet open={open} onOpenChange={onOpenChange}>
+   <SheetContent side="bottom" className="sm:max-w-none h-auto max-h-[90vh] border-none p-0 rounded-t-[3rem] overflow-hidden shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-12">
+    <SheetHeader className="sr-only">
+     <SheetTitle>User Profile</SheetTitle>
+     <SheetDescription>Identity Sync</SheetDescription>
+    </SheetHeader>
 
     {isLoading ? (
      <div className="h-[400px] flex items-center justify-center">
@@ -195,12 +198,11 @@ export function RoomUserProfileDialog({
          <LevelBadge level={profile.level?.charm || 1} type="charm" />
         </div>
         
-        <div className="flex flex-wrap justify-center items-center gap-1 mt-1.5">
+        <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1.5 px-6">
          {isOfficial && <OfficialTag size="sm" className="scale-75 origin-center" />}
-         {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center ml-1" />}
-         {isSeller && <SellerTag size="sm" className="scale-75 origin-center ml-1" />}
-         {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center ml-1" />}
-         {isBudget && <BudgetTag size="sm" className="scale-75 origin-center ml-1" />}
+         {isCSLeader && <CsLeaderTag size="sm" className="scale-75 origin-center" />}
+         {isSeller && <SellerTag size="sm" className="scale-75 origin-center" />}
+         {isCS && <CustomerServiceTag size="sm" className="scale-75 origin-center" />}
          
          {profile.relationship && profile.relationship.type !== 'None' && (
            <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
@@ -236,11 +238,14 @@ export function RoomUserProfileDialog({
         </div>
       )}
 
-       <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
-        <div className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform" onClick={handleCopyId}>
-          <span>ID:{profile.accountNumber}</span>
-          <Copy className="h-2.5 w-2.5 opacity-40" />
-        </div>
+       <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-8">
+        <BudgetTag 
+          variant={idStatusVariant} 
+          label={`ID:${profile.accountNumber}`} 
+          size="sm" 
+          className="scale-110" 
+          onClick={handleCopyId}
+        />
         <span className="opacity-20 text-lg">|</span>
         <div className="flex items-center gap-1">
          <span>{profile.stats?.fans || 0} Fans</span>
@@ -332,7 +337,7 @@ export function RoomUserProfileDialog({
       )}
      </div>
     ) : null}
-   </DialogContent>
+   </SheetContent>
 
    {profile && (
      <CPProposeDialog 
@@ -356,6 +361,6 @@ export function RoomUserProfileDialog({
        username={profile.username}
      />
    )}
-  </Dialog>
+  </Sheet>
  );
 }

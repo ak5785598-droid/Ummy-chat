@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { PublishMomentDialog } from '@/components/publish-moment-dialog';
+import { MomentCommentsSheet } from '@/components/moment-comments-sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 
@@ -36,6 +37,8 @@ export function DiscoverViewGlossy() {
   const firestore = useFirestore();
   const { user } = useUser();
   const [showPublish, setShowPublish] = useState(false);
+  const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
+  const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
 
   // Filter moments from last 24 hours
   const discoveryQuery = useMemoFirebase(() => {
@@ -84,7 +87,15 @@ export function DiscoverViewGlossy() {
           ) : (
             <>
               {moments?.map((moment, idx) => (
-                <MomentCard key={moment.id} moment={moment} index={idx} />
+                <MomentCard 
+                  key={moment.id} 
+                  moment={moment} 
+                  index={idx} 
+                  onOpenComments={(id, username) => {
+                    setSelectedMomentId(id);
+                    setSelectedMomentUser(username);
+                  }}
+                />
               ))}
 
               {(!moments || moments.length === 0) && (
@@ -110,11 +121,18 @@ export function DiscoverViewGlossy() {
       </button>
 
       <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
+
+      <MomentCommentsSheet 
+        momentId={selectedMomentId} 
+        open={!!selectedMomentId} 
+        onOpenChange={(open) => !open && setSelectedMomentId(null)}
+        momentUsername={selectedMomentUser}
+      />
     </div>
   );
 }
 
-function MomentCard({ moment, index }: { moment: any, index: number }) {
+function MomentCard({ moment, index, onOpenComments }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
@@ -175,7 +193,7 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
 
           {/* Content */}
           <div className="px-7 pb-5">
-            <p className="text-slate-700 text-[14px] leading-relaxed font-medium">
+            <p className="text-slate-600 text-[14px] leading-relaxed font-medium">
               {moment.content}
             </p>
           </div>
@@ -208,7 +226,10 @@ function MomentCard({ moment, index }: { moment: any, index: number }) {
                 <span className="text-xs font-black">{likesCount}</span>
               </button>
 
-              <button className="flex items-center gap-2 text-slate-300 hover:text-slate-900 transition-colors">
+              <button 
+                onClick={() => onOpenComments(moment.id, moment.username)}
+                className="flex items-center gap-2 text-slate-300 hover:text-slate-900 transition-colors active:scale-95"
+              >
                 <MessageCircle className="h-6 w-6" />
                 <span className="text-xs font-black">{moment.commentsCount || 0}</span>
               </button>

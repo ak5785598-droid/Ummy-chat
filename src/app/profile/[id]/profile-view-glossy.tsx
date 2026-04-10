@@ -4,7 +4,6 @@ import { useEffect, use, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
  Loader, 
- Copy,
  ChevronLeft,
  Settings as SettingsIcon,
  Crown,
@@ -55,6 +54,7 @@ import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
 import { CustomerServiceTag } from '@/components/customer-service-tag';
 import { CsLeaderTag } from '@/components/cs-leader-tag';
+import { BudgetTag } from '@/components/budget-tag';
 import { doc, serverTimestamp, increment, getDoc, collection, query, orderBy, limit, writeBatch, where } from 'firebase/firestore';
 import {
  DropdownMenu,
@@ -174,19 +174,32 @@ const PublicProfileView = ({
                       <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-200">{profile.username?.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">{profile.username}</h2>
-                      <GenderCircle gender={profile.gender} />
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">{profile.username}</h2>
+                        <span className="text-lg leading-none">🇮🇳</span>
+                        <GenderCircle gender={profile.gender} />
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <RichLevelBadge level={profile.level?.rich || 1} />
+                        <CharmLevelBadge level={profile.level?.charm || 1} />
+                      </div>
+                      
+                      {/* ID & Tag Row */}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <BudgetTag 
+                          variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
+                          label={`ID: ${profile.accountNumber}`}
+                          size="sm"
+                        />
+                        <div className="flex flex-wrap justify-center items-center gap-1.5">
+                          {profile.tags?.includes('Official') && <OfficialTag size="sm" className="scale-75 origin-center" />}
+                          {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" className="scale-75 origin-center" />}
+                          {profile.tags?.includes('CS Leader') && <CsLeaderTag size="sm" className="scale-75 origin-center" />}
+                          {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="scale-75 origin-center" />}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                      <RichLevelBadge level={profile.level?.rich || 1} />
-                      <CharmLevelBadge level={profile.level?.charm || 1} />
-                    </div>
-                    <div className="flex items-center justify-center gap-2 bg-slate-50 px-4 py-1 rounded-full border border-slate-100">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">ID: {profile.accountNumber}</span>
-                    </div>
-                  </div>
                </div>
             </div>
 
@@ -352,15 +365,27 @@ export function ProfileViewGlossy({ profileId }: { profileId: string }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate">{profile.username}</h2>
+                  <span className="text-lg leading-none">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                    <RichLevelBadge level={profile.level?.rich || 1} />
                    <CharmLevelBadge level={profile.level?.charm || 1} />
                 </div>
-                <div className="flex items-center gap-3">
-                  <p className="text-[10px] font-black uppercase tracking-tight text-slate-400">ID: {profile.accountNumber}</p>
-                  <Copy className="h-3 w-3 text-slate-200 cursor-pointer active:text-slate-900" onClick={() => { navigator.clipboard.writeText(profile.accountNumber).then(() => toast({title: 'ID Copied'})); }} />
+                
+                {/* ID & Tag Row */}
+                <div className="flex flex-col items-start gap-1.5 mt-1">
+                  <BudgetTag 
+                    variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
+                    label={`ID: ${profile.accountNumber}`}
+                    size="sm"
+                  />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {profile.tags?.includes('Official') && <OfficialTag size="sm" className="scale-75 origin-center" />}
+                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" className="scale-75 origin-center" />}
+                    {profile.tags?.includes('CS Leader') && <CsLeaderTag size="sm" className="scale-75 origin-center" />}
+                    {profile.tags?.includes('Customer Service') && <CustomerServiceTag size="sm" className="scale-75 origin-center" />}
+                  </div>
                 </div>
               </div>
             </header>
