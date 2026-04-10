@@ -479,3 +479,5 @@ export function ProfileViewGlossy({ profileId }: { profileId: string }) {
     </>
   );
 }
+
+export default ProfileViewGlossy;

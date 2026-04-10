@@ -244,3 +244,5 @@ function MomentCard({ moment, index, onOpenComments }: { moment: any, index: num
     </motion.div>
   );
 }
+
+export default DiscoverViewGlossy;
