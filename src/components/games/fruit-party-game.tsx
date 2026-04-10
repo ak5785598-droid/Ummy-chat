@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
@@ -9,6 +9,13 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SOUND UTILITIES ---
+const playSound = (url) => {
+  const audio = new Audio(url);
+  audio.volume = 0.5;
+  audio.play().catch(e => console.log("Sound play error:", e));
+};
+
+// Sound URLs
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // Trun trun
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Trick trick
@@ -95,24 +102,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [winnerData, setWinnerData] = useState<any>(null);
   
   const [localCoins, setLocalCoins] = useState(0);
-  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false);
+  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   
   const [todayWins, setTodayWins] = useState(0); 
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
-
-  // Ref for playing sounds to ensure they work reliably
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const playSound = (url: string) => {
-    try {
-      const audio = new Audio(url);
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log("Sound play blocked or error:", e));
-    } catch (err) {
-      console.log("Audio Error:", err);
-    }
-  };
 
   useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
@@ -145,10 +139,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { 
-          startSpin(); 
-          return 0; 
-        }
+        if (prev <= 1) { startSpin(); return 0; }
         return prev - 1;
       });
     }, 1000);
@@ -175,14 +166,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
       
-      // Play "Tick tick" sound every step
+      // Play "Trick trick" sound
       playSound(SOUNDS.TICK);
 
       if (currentStep < totalSteps) {
         currentStep++;
-        // Gradually slow down the spin
-        const delay = 50 + (currentStep * 2);
-        setTimeout(run, delay);
+        setTimeout(run, 50 + (currentStep * 2));
       } else {
         setTimeout(() => finalizeResult(winItem), 1000);
       }
@@ -191,7 +180,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   const finalizeResult = (winItem: any) => {
-    // FIX: Bet × Multiplier Logic
+    // FIX: Winning Amount Logic (Bet Amount * Multiplier)
     const betOnWinner = myBets[winItem.id] || 0;
     const winAmount = betOnWinner * winItem.multiplier;
     
@@ -201,13 +190,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       // Play "Whirring/Win" sound
       playSound(SOUNDS.WIN);
       
+      // Real-time Update to Local and Wallet
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
-      
-      // Real-time Firebase Sync
-      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 
-        'wallet.coins': increment(winAmount) 
-      });
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
     
     setWinnerData({ ...winItem, win: winAmount });
@@ -395,7 +381,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <span className="text-8xl block mb-2">{winnerData.icon}</span>
                 <h2 className="text-white font-black text-4xl italic uppercase">WINNER!</h2>
                 <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
-                  {/* DISPLAYING REAL-TIME WINNING AMOUNT (Bet x Multiplier) */}
                   <p className="text-white text-4xl font-black">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
