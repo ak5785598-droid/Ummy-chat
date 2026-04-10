@@ -1946,8 +1946,8 @@ export function RoomClient({ room }: { room: Room }) {
         )}
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-visible w-full -mt-2">
-        <div className="shrink-0 flex flex-col items-center gap-0.5 w-full overflow-visible mb-1 mt-0">
+      <main className="relative z-10 flex-1 flex flex-col pt-1 overflow-visible min-h-0 w-full -mt-2">
+        <div className="shrink-0 flex flex-col items-center gap-0.5 w-full overflow-visible mb-0 mt-0">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
@@ -1962,7 +1962,7 @@ export function RoomClient({ room }: { room: Room }) {
         </div>
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
-        <div className="flex-1 w-full overflow-hidden mt-4 relative flex flex-col">
+        <div className="flex-1 w-full overflow-hidden mt-0.5 relative flex flex-col">
           <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
             <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
               {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
