@@ -8,8 +8,7 @@ import { X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- UPDATED 3D WHITE GLOVE HAND POINTER ---
-// Isse humne second image jaisa cartoonish aur thick banaya hai
+// --- UPDATED 3D WHITE GLOVE HAND POINTER (AS PER IMAGE 2) ---
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
   const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -20,37 +19,45 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       initial={{ opacity: 0, scale: 0 }}
       animate={{ 
         opacity: 1, 
-        scale: [1, 1.15, 1], // Thoda zyada scale breathing effect ke liye
+        scale: [1, 1.1, 1], 
         x: x, 
-        y: y - 25 
+        y: y - 30 // Thoda upar taaki finger item ko point kare
       }}
       transition={{ 
-        x: { type: "spring", stiffness: 100, damping: 10 },
-        y: { type: "spring", stiffness: 100, damping: 10 },
-        scale: { duration: 0.8, repeat: Infinity }
+        x: { type: "spring", stiffness: 100, damping: 12 },
+        y: { type: "spring", stiffness: 100, damping: 12 },
+        scale: { duration: 1, repeat: Infinity }
       }}
       className="absolute z-[100] pointer-events-none"
     >
-      <svg 
-        width="65" 
-        height="65" 
-        viewBox="0 0 24 24" 
-        fill="white" 
-        className="drop-shadow-[0_6px_0_rgba(0,0,0,0.3)] filter"
-      >
-        {/* Cartoon Hand Path - Second image ke reference se matching */}
-        <path 
-          d="M10 11V6C10 4.89543 10.8954 4 12 4C13.1046 4 14 4.89543 14 6V12M14 12V10C14 8.89543 14.8954 8 16 8C17.1046 8 18 8.89543 18 10V12M18 12V11C18 9.89543 18.8954 9 20 9C21.1046 9 22 9.89543 22 11V17C22 19.7614 19.7614 22 17 22H11C8.23858 22 6 19.7614 6 17V14.6742C6 13.5632 6.76016 12.597 7.84534 12.3558L10 11.877" 
-          stroke="#000" // Black outline for cartoon look
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="white"
-        />
-        {/* Finger lines details */}
-        <path d="M14 12V16" stroke="#e2e8f0" strokeWidth="1" />
-        <path d="M18 12V16" stroke="#e2e8f0" strokeWidth="1" />
-      </svg>
+      <div className="relative">
+        {/* Glow behind the hand */}
+        <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
+        
+        <svg 
+          width="80" 
+          height="80" 
+          viewBox="0 0 100 100" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className="drop-shadow-[0_8px_4px_rgba(0,0,0,0.4)]"
+        >
+          {/* Main Hand Shape with thick cartoon outline */}
+          <path 
+            d="M35 45V25C35 20.5 38.5 17 43 17C47.5 17 51 20.5 51 25V45M51 45V35C51 30.5 54.5 27 59 27C63.5 27 67 30.5 67 35V45M67 45V40C67 35.5 70.5 32 75 32C79.5 32 83 35.5 83 40V65C83 78.8 71.8 90 58 90H42C28.2 90 17 78.8 17 65V54C17 49.5 20.5 46 25 46L35 45Z" 
+            fill="white"
+            stroke="black"
+            strokeWidth="4"
+            strokeLinejoin="round"
+          />
+          {/* Detail lines for fingers (image 2 style) */}
+          <path d="M51 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
+          <path d="M67 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
+          
+          {/* Shine detail on top of index finger */}
+          <path d="M40 22C40 20 42 19 44 19" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
     </motion.div>
   );
 };
