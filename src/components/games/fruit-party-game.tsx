@@ -71,12 +71,26 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
+  const [todayWins, setTodayWins] = useState(0); // New State for Daily Wins
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
 
   useEffect(() => {
     if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins);
   }, [userProfile]);
+
+  // GMT+5:30 Reset Logic for Today Wins
+  useEffect(() => {
+    const checkReset = () => {
+      const now = new Date();
+      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      if (istTime.getUTCHours() === 0 && istTime.getUTCMinutes() === 0) {
+        setTodayWins(0);
+      }
+    };
+    const interval = setInterval(checkReset, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (gameState !== 'betting') return;
@@ -128,6 +142,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     if (winAmount > 0) {
       setLocalCoins(prev => prev + winAmount);
+      setTodayWins(prev => prev + winAmount); // Tracking today's win
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
     setWinnerData({ ...winItem, win: winAmount });
@@ -150,20 +165,30 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         className="h-[85vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
         style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
       >
-        {/* Header */}
-        <div className="w-full p-6 flex justify-between items-center z-20">
-          <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
-            <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
+        {/* Header Updated with Today Win and Disco Icon */}
+        <div className="w-full p-6 flex justify-between items-start z-20">
+          <div className="flex flex-col gap-2">
+            <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
+              <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-yellow-500/50 text-yellow-400 px-4 py-1 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit">
+              <span className="text-lg">🏆</span> {todayWins.toLocaleString()}
+            </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
-            <X className="w-6 h-6" />
-          </button>
+          
+          <div className="flex flex-col items-center gap-3">
+            <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
+              <X className="w-6 h-6" />
+            </button>
+            <div className="w-10 h-10 bg-gradient-to-b from-purple-400 to-purple-800 rounded-full flex items-center justify-center text-2xl shadow-xl border-2 border-purple-300 animate-pulse">
+              🪩
+            </div>
+          </div>
         </div>
 
         {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
           
-          {/* --- UPDATED SUPPORT LEGS (DARK BROWN WITH SKIN BORDER) --- */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
               <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -173,17 +198,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               </linearGradient>
             </defs>
             <g transform="translate(175, 175)">
-              {/* Left Leg */}
               <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
               <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
               
-              {/* Right Leg */}
               <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
               <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
             </g>
           </svg>
 
-          {/* Wheel Spokes */}
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
@@ -200,7 +222,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* --- 3D COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
           <div className="relative z-50">
             <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
             
@@ -229,7 +250,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
-          {/* --- FRUIT CARDS --- */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -280,8 +300,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* --- HISTORY BAR --- */}
         <div className="w-full px-4 mb-2 z-20 relative">
           <div className="flex justify-between px-1 mb-1 items-end">
-            <span className="text-2xl drop-shadow-lg">🥗</span>
-            <span className="text-2xl drop-shadow-lg">🍕</span>
+            <span className="text-4xl drop-shadow-lg">🥗</span>
+            <span className="text-4xl drop-shadow-lg">🍕</span>
           </div>
           <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar shadow-inner">
              <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
