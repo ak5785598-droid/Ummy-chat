@@ -17,6 +17,9 @@ interface RoomContextType {
   setIsMusicEnabled: (val: boolean) => void;
   musicStream: MediaStream | null;
   setMusicStream: (stream: MediaStream | null) => void;
+  // PERSONAL SPEAKER CONTROL
+  isSpeakerMuted: boolean;
+  setIsSpeakerMuted: (val: boolean) => void;
 }
 
 const RoomContext = createContext<RoomContextType | undefined>(undefined);
@@ -32,6 +35,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   const [roomPlaylist, setRoomPlaylist] = useState<File[]>([]);
   const [isMusicEnabled, setIsMusicEnabled] = useState(true);
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
+  const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
 
   return (
     <RoomContext.Provider value={{ 
@@ -46,7 +50,9 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       isMusicEnabled,
       setIsMusicEnabled,
       musicStream,
-      setMusicStream
+      setMusicStream,
+      isSpeakerMuted,
+      setIsSpeakerMuted
     }}>
       {children}
     </RoomContext.Provider>

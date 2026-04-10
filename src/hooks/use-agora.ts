@@ -24,7 +24,7 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicStream: MediaStream | null = null) {
+export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicStream: MediaStream | null = null, isSpeakerMuted: boolean = false) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [localMusicTrack, setLocalMusicTrack] = useState<any>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
@@ -70,7 +70,12 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           await client.subscribe(user, mediaType);
           if (mediaType === 'audio') {
             await resumeAudioContext();
-            user.audioTrack?.play();
+            
+            // Only play if speaker is not muted
+            if (!isSpeakerMuted) {
+              user.audioTrack?.play();
+            }
+            
             if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
           }
         } catch (e) {}
@@ -111,7 +116,22 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         });
       }
     };
-  }, [roomId, uid]);
+  }, [roomId, uid]); // We don't want to rejoin if isSpeakerMuted changes
+
+  // EFFECT: Handle Speaker Mute (Local Output Control)
+  useEffect(() => {
+    remoteUsers.forEach(user => {
+      if (user.audioTrack) {
+        if (isSpeakerMuted) {
+          user.audioTrack.stop();
+          console.log(`[Agora] Stopped audio for remote user: ${user.uid}`);
+        } else {
+          user.audioTrack.play();
+          console.log(`[Agora] Started audio for remote user: ${user.uid}`);
+        }
+      }
+    });
+  }, [isSpeakerMuted, remoteUsers]);
 
   // EFFECT 2: Seat Mic Control (Atomic Publish/Unpublish)
   useEffect(() => {
@@ -202,7 +222,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       }
     };
 
-    manageMusic();
+    const manageMusicAsync = async () => {
+      await manageMusic();
+    };
+    manageMusicAsync();
   }, [musicStream, roomId, uid, localMusicTrack]);
 
   // EFFECT 4: Mute Sync

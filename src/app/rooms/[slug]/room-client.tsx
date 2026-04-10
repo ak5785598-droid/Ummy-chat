@@ -277,7 +277,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
-  const [isMutedLocal, setIsMutedLocal] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicProgress, setMusicProgress] = useState(0);
@@ -390,7 +389,9 @@ export function RoomClient({ room }: { room: Room }) {
     setMinimizedRoom,
     musicStream,
     setMusicStream,
-    isMusicEnabled
+    isMusicEnabled,
+    isSpeakerMuted,
+    setIsSpeakerMuted
   } = useRoomContext();
 
   const { toast } = useToast();
@@ -2469,8 +2470,8 @@ export function RoomClient({ room }: { room: Room }) {
         participants={participants}
         roomId={room.id}
         room={room}
-        isMutedLocal={isMutedLocal}
-        setIsMutedLocal={setIsMutedLocal}
+        isMutedLocal={isSpeakerMuted}
+        setIsMutedLocal={setIsSpeakerMuted}
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
           if (['ludo', 'carrom', 'chess', 'fruit-party', 'forest-party'].includes(slug)) {
