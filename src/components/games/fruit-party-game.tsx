@@ -183,7 +183,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </g>
           </svg>
 
-          {/* --- 3D CONNECTED LINES (WHEEL SPOKES) --- */}
+          {/* --- 3D ALL 8 CONNECTED LINES (WHEEL SPOKES) --- */}
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <defs>
               <linearGradient id="spoke3D" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -193,12 +193,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               </linearGradient>
             </defs>
             <g transform="translate(175, 175)">
+              {/* All 8 spokes representing each item position */}
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
                 <line 
                   key={angle} 
                   x1="0" y1="0" 
-                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
-                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
+                  x2={120 * Math.cos((angle-90)*Math.PI/180)} 
+                  y2={120 * Math.sin((angle-90)*Math.PI/180)} 
                   stroke="url(#spoke3D)" 
                   strokeWidth="8" 
                   strokeLinecap="round"
@@ -213,7 +214,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           {/* --- 3D COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
           <div className="relative z-50">
             <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.8),inset_0_-8px_15px_rgba(0,0,0,0.6),0_0_50px_rgba(234,179,8,0.4)] transform hover:scale-105 transition-transform duration-500">
-              {/* Top Glassy Reflection */}
               <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none z-10" />
               
               <div className="flex-1 bg-gradient-to-b from-red-900 via-red-950 to-red-900 relative flex items-center justify-center border-b-[3px] border-yellow-500/50">
