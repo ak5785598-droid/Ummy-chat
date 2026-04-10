@@ -59,8 +59,9 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         } catch (e) {}
       }
 
-      // 2. Create FRESH client
-      const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+      // 2. Create FRESH client with 'live' mode for better mobile compatibility
+      // 'live' mode allows role switching which is more friendly to system audio routing
+      const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
       clientRef.current = client;
       setConnectionState('CONNECTING');
 
@@ -92,12 +93,15 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         }
       });
 
-      // 4. Join Channel
+      // 4. Join Channel and set initial role
       try {
         const numericUid = hashUidToNumber(uid);
+        // In 'live' mode, we MUST set a role. Default is audience.
+        await client.setClientRole(isInSeat ? 'host' : 'audience');
         await client.join(APP_ID, roomId, null, numericUid);
+        
         if (isMounted) setConnectionState('CONNECTED');
-        console.log('[Agora] Joined as:', numericUid);
+        console.log('[Agora] Joined as:', numericUid, 'Role:', isInSeat ? 'host' : 'audience');
       } catch (err) {
         console.error('[Agora] Join FAILED:', err);
         if (isMounted) setConnectionState('DISCONNECTED');
@@ -116,7 +120,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         });
       }
     };
-  }, [roomId, uid]); // We don't want to rejoin if isSpeakerMuted changes
+  }, [roomId, uid]); // We don't want to rejoin if isSpeakerMuted or isMuted changes
 
   // EFFECT: Handle Speaker Mute (Local Output Control)
   useEffect(() => {
@@ -133,7 +137,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     });
   }, [isSpeakerMuted, remoteUsers]);
 
-  // EFFECT 2: Seat Mic Control (Atomic Publish/Unpublish)
+  // EFFECT 2: Seat Mic Control (Atomic Publish/Unpublish + Role Switching)
   useEffect(() => {
     const client = clientRef.current;
     if (!client || connectionState !== 'CONNECTED' || !AgoraRTC) return;
@@ -143,25 +147,32 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         if (localAudioTrack || isPublishingRef.current) return;
         isPublishingRef.current = true;
         try {
-          // ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
+          // 1. SWITCH ROLE TO HOST (Requirement for publishing in 'live' mode)
+          await client.setClientRole('host');
+          
+          // 2. ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
           await resumeAudioContext();
 
+          // Optimize constraints for mobile Bluetooth/Speaker routing
           const track = await AgoraRTC.createMicrophoneAudioTrack({
-            AEC: true, AGC: true, ANS: true, encoderConfig: 'high_quality_stereo'
+            AEC: true, 
+            AGC: true, 
+            ANS: true, 
+            encoderConfig: 'speech_low_quality' // Using lower quality for better routing stability on mobile
           });
           
           // FINAL GUARD: Re-check connection and state before final API call
           if (client.connectionState === 'CONNECTED' && client.uid) {
             await client.publish(track);
-            // Redundant play to ensure the track is active in the browser's context
-            track.play(); 
             setLocalAudioTrack(track);
-            console.log('[Agora] Mic PUBLISHED with AudioContext Resume');
+            console.log('[Agora] Mic PUBLISHED with Role: host');
           } else {
             track.close();
+            await client.setClientRole('audience');
           }
         } catch (e) {
           console.error('[Agora] Mic Publish Error:', e);
+          await client.setClientRole('audience').catch(() => {});
         } finally {
           isPublishingRef.current = false;
         }
@@ -172,8 +183,13 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             localAudioTrack.stop();
             localAudioTrack.close();
             setLocalAudioTrack(null);
-            console.log('[Agora] Mic UNPUBLISHED');
-          } catch (e) {}
+            
+            // Revert to audience role after unpublishing
+            await client.setClientRole('audience');
+            console.log('[Agora] Mic UNPUBLISHED, Role reverted to audience');
+          } catch (e) {
+            console.error('[Agora] Mic Unpublish/Role Revert Error:', e);
+          }
         }
       }
     };
@@ -188,10 +204,12 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     const manageMusic = async () => {
       if (musicStream) {
         if (!musicClientRef.current) {
-          const mClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+          // Music bot also uses live mode
+          const mClient = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
           musicClientRef.current = mClient;
           const mUid = (hashUidToNumber(uid) ^ 0x02020202) >>> 0;
           try {
+            await mClient.setClientRole('host'); // Music bot is always host
             await mClient.join(APP_ID, roomId, null, mUid);
             const mTrack = await AgoraRTC.createCustomAudioTrack({
               mediaStreamTrack: musicStream.getAudioTracks()[0]
