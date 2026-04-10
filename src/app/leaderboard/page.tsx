@@ -251,7 +251,7 @@ function LeaderboardContent() {
     </main>
 
     <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/95 backdrop-blur-lg border-t border-cyan-500/20 p-4 h-20 flex items-center">
-      <div className="max-w-4xl mx-auto flex items-center gap-4 w-full">
+      <Link href="/profile" className="max-w-4xl mx-auto flex items-center gap-4 w-full active:scale-[0.98] transition-all">
        <span className="text-xs font-black text-cyan-500 italic">ME</span>
        <CircleAvatar src={me?.avatarUrl} fallback="U" size="sm" glowColor="cyan" />
        <div className="flex-1">
@@ -264,7 +264,7 @@ function LeaderboardContent() {
        <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">
          <span className="text-[10px] font-black text-cyan-400">SYNCED</span>
        </div>
-      </div>
+      </Link>
     </footer>
    </div>
  );

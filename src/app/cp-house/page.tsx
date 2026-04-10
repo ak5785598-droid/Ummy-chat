@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -109,13 +110,13 @@ export default function CpHousePage() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent animate-pulse" />
               
               <div className="flex flex-col items-center gap-3 group">
-                 <div className="relative">
+                 <Link href="/profile" className="relative cursor-pointer group-active:scale-95 transition-transform">
                     <div className="absolute -inset-4 bg-blue-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                     <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_40px_rgba(59,130,246,0.3)] relative z-10 transition-transform group-hover:scale-110">
                       <AvatarImage src={userProfile?.avatarUrl} />
                       <AvatarFallback>U</AvatarFallback>
                     </Avatar>
-                 </div>
+                 </Link>
                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{userProfile?.username}</span>
               </div>
 
@@ -124,13 +125,13 @@ export default function CpHousePage() {
               </div>
 
               <div className="flex flex-col items-center gap-3 group">
-                 <div className="relative">
+                 <Link href={`/profile/${partnerUid}`} className="relative cursor-pointer group-active:scale-95 transition-transform">
                     <div className="absolute -inset-4 bg-rose-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                     <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_40px_rgba(244,63,94,0.3)] relative z-10 transition-transform group-hover:scale-110">
                       <AvatarImage src={partnerProfile?.avatarUrl} />
                       <AvatarFallback>P</AvatarFallback>
                     </Avatar>
-                 </div>
+                 </Link>
                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{partnerProfile?.username || 'Partner'}</span>
               </div>
            </div>
