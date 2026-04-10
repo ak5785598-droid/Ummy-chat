@@ -163,7 +163,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Game Arena */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6">
+        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
+          {/* Leg Support Legs */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
               <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -178,6 +179,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </g>
           </svg>
 
+          {/* Wheel Spokes */}
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
@@ -194,6 +196,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
+          {/* Central Hub */}
           <div className="relative z-50">
             <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.5)]">
               <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50">
@@ -209,6 +212,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
 
+          {/* --- 3D UPDATED FRUIT CARDS --- */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -219,30 +223,37 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
+                  style={{ transformStyle: 'preserve-3d', transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
                   className={cn(
-                    "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 shadow-2xl relative items-center justify-center",
-                    highlightIdx === idx ? "scale-110 ring-4 ring-white z-30 shadow-[0_0_30px_rgba(255,255,255,0.8)]" : ""
+                    "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
+                    "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5),inset_-2px_-2px_10px_rgba(255,255,255,0.2)]",
+                    highlightIdx === idx ? "scale-115 -translate-y-2 ring-4 ring-white z-40 shadow-[0_0_40px_rgba(255,255,255,0.8)]" : "hover:brightness-110"
                   )}
                 >
-                  <div className="w-full flex-[1.2] flex items-center justify-center bg-[#7f1d1d]">
-                    <span className="text-4xl drop-shadow-sm">{item.icon}</span>
+                  {/* Glossy Overlay for 3D depth */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none z-10" />
+                  
+                  <div className="w-full flex-[1.2] flex items-center justify-center">
+                    <span className="text-4xl drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] z-20">{item.icon}</span>
                   </div>
+                  
                   <AnimatePresence mode="wait">
                     {betAmount > 0 && (
                       <motion.div 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-1"
+                        className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-0.5 z-20"
                       >
-                        <span className="text-[11px] font-black text-white whitespace-nowrap px-1">
+                        <span className="text-[10px] font-black text-white whitespace-nowrap px-1 drop-shadow-sm">
                           🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
                         </span>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="w-full flex-1 flex items-center justify-center bg-orange-500">
-                    <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
+
+                  <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+                    <span className="font-black text-[12px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
                   </div>
                 </button>
               </div>
@@ -250,7 +261,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* --- HISTORY BAR WITH DECORATIONS --- */}
+        {/* --- HISTORY BAR --- */}
         <div className="w-full px-4 mb-2 z-20 relative">
           <div className="flex justify-between px-1 mb-1 items-end">
             <span className="text-2xl drop-shadow-lg">🥗</span>
@@ -263,7 +274,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                  initial={{ scale: 0, opacity: 0 }} 
                  animate={{ scale: 1, opacity: 1 }} 
                  key={i} 
-                 className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg"
+                 className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm"
                >
                  {icon}
                </motion.div>
@@ -271,7 +282,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* --- UPDATED CHIPS FOOTER --- */}
+        {/* --- CHIPS FOOTER --- */}
         <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9] shadow-2xl">
           {CHIPS_DATA.map(chip => (
             <button 
