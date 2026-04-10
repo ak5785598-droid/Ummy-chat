@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
@@ -8,7 +8,21 @@ import { X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- UPDATED 3D WHITE GLOVE HAND POINTER (AS PER IMAGE 2) ---
+// --- SOUND UTILITIES ---
+const playSound = (url) => {
+  const audio = new Audio(url);
+  audio.volume = 0.5;
+  audio.play().catch(e => console.log("Sound play error:", e));
+};
+
+// Sound URLs (Inhe tum apni pasand ke links se replace kar sakte ho)
+const SOUNDS = {
+  BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // Trun trun
+  TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Trick trick
+  WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'  // Whirring Win
+};
+
+// --- UPDATED 3D WHITE GLOVE HAND POINTER ---
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
   const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -21,7 +35,7 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
         opacity: 1, 
         scale: [1, 1.1, 1], 
         x: x, 
-        y: y - 30 // Thoda upar taaki finger item ko point kare
+        y: y - 30 
       }}
       transition={{ 
         x: { type: "spring", stiffness: 100, damping: 12 },
@@ -31,9 +45,7 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       className="absolute z-[100] pointer-events-none"
     >
       <div className="relative">
-        {/* Glow behind the hand */}
         <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
-        
         <svg 
           width="80" 
           height="80" 
@@ -42,7 +54,6 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
           xmlns="http://www.w3.org/2000/svg"
           className="drop-shadow-[0_8px_4px_rgba(0,0,0,0.4)]"
         >
-          {/* Main Hand Shape with thick cartoon outline */}
           <path 
             d="M35 45V25C35 20.5 38.5 17 43 17C47.5 17 51 20.5 51 25V45M51 45V35C51 30.5 54.5 27 59 27C63.5 27 67 30.5 67 35V45M67 45V40C67 35.5 70.5 32 75 32C79.5 32 83 35.5 83 40V65C83 78.8 71.8 90 58 90H42C28.2 90 17 78.8 17 65V54C17 49.5 20.5 46 25 46L35 45Z" 
             fill="white"
@@ -50,11 +61,8 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
             strokeWidth="4"
             strokeLinejoin="round"
           />
-          {/* Detail lines for fingers (image 2 style) */}
           <path d="M51 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
           <path d="M67 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
-          
-          {/* Shine detail on top of index finger */}
           <path d="M40 22C40 20 42 19 44 19" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </div>
@@ -134,6 +142,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
+    
+    // Play "Trun trun" sound
+    playSound(SOUNDS.BET);
+
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -147,6 +159,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
+      
+      // Play "Trick trick" sound every step
+      playSound(SOUNDS.TICK);
+
       if (currentStep < totalSteps) {
         currentStep++;
         setTimeout(run, 50 + (currentStep * 2));
@@ -162,10 +178,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
     if (winAmount > 0) {
+      // Play "Whirring/Win" sound
+      playSound(SOUNDS.WIN);
+      
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
+    
     setWinnerData({ ...winItem, win: winAmount });
     setGameState('result');
     setTimeout(() => {
