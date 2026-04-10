@@ -164,23 +164,34 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
         {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
-          {/* Leg Support Legs */}
+          
+          {/* --- 3D BOTTOM SUPPORT LINES (MOTTE DANDE) --- */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
-              <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8b4513" />
-                <stop offset="50%" stopColor="#5d2707" />
+              <linearGradient id="stick3D" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3d1c02" />
+                <stop offset="50%" stopColor="#8b4513" />
                 <stop offset="100%" stopColor="#270c01" />
               </linearGradient>
+              <filter id="stickShadow">
+                <feDropShadow dx="10" dy="10" stdDeviation="5" floodOpacity="0.5"/>
+              </filter>
             </defs>
-            <g transform="translate(175, 175)">
-              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
-              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
+            <g transform="translate(175, 175)" filter="url(#stickShadow)">
+              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#stick3D)" strokeWidth="20" strokeLinecap="round" />
+              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#stick3D)" strokeWidth="20" strokeLinecap="round" />
             </g>
           </svg>
 
-          {/* Wheel Spokes */}
+          {/* --- 3D CONNECTED LINES (WHEEL SPOKES) --- */}
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+            <defs>
+              <linearGradient id="spoke3D" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#b45309" />
+                <stop offset="50%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#78350f" />
+              </linearGradient>
+            </defs>
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
                 <line 
@@ -188,7 +199,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   x1="0" y1="0" 
                   x2={110 * Math.cos((angle-90)*Math.PI/180)} 
                   y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                  stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
+                  stroke="url(#spoke3D)" 
+                  strokeWidth="8" 
+                  strokeLinecap="round"
+                  className="drop-shadow-[2px_4px_4px_rgba(0,0,0,0.6)]"
                 />
               ))}
             </g>
@@ -196,49 +210,21 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* --- 3D UPDATED COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
+          {/* --- 3D COUNTDOWN CIRCLE (CENTRAL HUB) --- */}
           <div className="relative z-50">
-            {/* Outer Glow & Shadow Base */}
-            <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
-            
-            <div 
-              style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
-              className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
-            >
-              {/* Rotating 3D Ring Effect */}
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-[3px] border-dashed border-white/30"
-              />
-
-              <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40 relative">
-                {/* 3D Glass Reflection */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 z-10" />
-
-                {/* Top Section: Icons */}
-                <div className="w-full h-1/3 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center gap-1 border-b-2 border-yellow-500/40 relative z-20">
-                  {HUB_ICONS.slice(0, 4).map((icon, i) => (
-                    <motion.span 
-                      key={i} 
-                      animate={{ y: [0, -3, 0], scale: [1, 1.1, 1] }} 
-                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }} 
-                      className="text-[10px] drop-shadow-sm"
-                    >
-                      {icon}
-                    </motion.span>
-                  ))}
-                </div>
-
-                {/* Bottom Section: Countdown Number */}
-                <div className="w-full h-2/3 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
-                  <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
-                    {gameState === 'betting' ? timeLeft : '...'}
-                  </span>
-                  
-                  {/* Subtle Inner Shadow for Depth */}
-                  <div className="absolute inset-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]" />
-                </div>
+            <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.8),inset_0_-8px_15px_rgba(0,0,0,0.6),0_0_50px_rgba(234,179,8,0.4)] transform hover:scale-105 transition-transform duration-500">
+              {/* Top Glassy Reflection */}
+              <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none z-10" />
+              
+              <div className="flex-1 bg-gradient-to-b from-red-900 via-red-950 to-red-900 relative flex items-center justify-center border-b-[3px] border-yellow-500/50">
+                {HUB_ICONS.slice(0, 4).map((icon, i) => (
+                   <motion.span key={i} animate={{ y: [0, -4, 0] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }} className="text-xs absolute" style={{ left: `${20 + (i * 20)}%` }}>
+                     {icon}
+                   </motion.span>
+                ))}
+              </div>
+              <div className="flex-1 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center shadow-[inset_0_4px_10px_rgba(0,0,0,0.4)]">
+                <span className="text-4xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">{gameState === 'betting' ? timeLeft : '...'}</span>
               </div>
             </div>
           </div>
@@ -262,11 +248,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   )}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none z-10" />
-                  
                   <div className="w-full flex-[1.2] flex items-center justify-center">
                     <span className="text-4xl drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] z-20">{item.icon}</span>
                   </div>
-                  
                   <AnimatePresence mode="wait">
                     {betAmount > 0 && (
                       <motion.div 
@@ -281,7 +265,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                   <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
                     <span className="font-black text-[12px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
                   </div>
