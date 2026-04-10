@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
@@ -9,13 +9,6 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SOUND UTILITIES ---
-const playSound = (url) => {
-  const audio = new Audio(url);
-  audio.volume = 0.5;
-  audio.play().catch(e => console.log("Sound play error:", e));
-};
-
-// Sound URLs
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // Trun trun
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Trick trick
@@ -102,13 +95,25 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [winnerData, setWinnerData] = useState<any>(null);
   
   const [localCoins, setLocalCoins] = useState(0);
-  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); // FIXED LOGIC OVERWRITE BUG
+  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false);
   
   const [todayWins, setTodayWins] = useState(0); 
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
 
-  // FIX: Only load initial coins once, to prevent jumpy deduction UI when Firebase syncs
+  // Ref for playing sounds to ensure they work reliably
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playSound = (url: string) => {
+    try {
+      const audio = new Audio(url);
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log("Sound play blocked or error:", e));
+    } catch (err) {
+      console.log("Audio Error:", err);
+    }
+  };
+
   useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
       setLocalCoins(userProfile.wallet.coins);
@@ -140,7 +145,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { startSpin(); return 0; }
+        if (prev <= 1) { 
+          startSpin(); 
+          return 0; 
+        }
         return prev - 1;
       });
     }, 1000);
@@ -153,7 +161,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     // Play "Trun trun" sound
     playSound(SOUNDS.BET);
 
-    // FIXED: Proper local state & DB real-time deduction
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -168,12 +175,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
       
-      // Play "Trick trick" sound every step
+      // Play "Tick tick" sound every step
       playSound(SOUNDS.TICK);
 
       if (currentStep < totalSteps) {
         currentStep++;
-        setTimeout(run, 50 + (currentStep * 2));
+        // Gradually slow down the spin
+        const delay = 50 + (currentStep * 2);
+        setTimeout(run, delay);
       } else {
         setTimeout(() => finalizeResult(winItem), 1000);
       }
@@ -182,8 +191,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   const finalizeResult = (winItem: any) => {
-    // LOGIC FIX: Bet × Multiplier
-    const winAmount = (myBets[winItem.id] || 0) * winItem.multiplier;
+    // FIX: Bet × Multiplier Logic
+    const betOnWinner = myBets[winItem.id] || 0;
+    const winAmount = betOnWinner * winItem.multiplier;
+    
     setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
     if (winAmount > 0) {
@@ -192,11 +203,16 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
-      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
+      
+      // Real-time Firebase Sync
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 
+        'wallet.coins': increment(winAmount) 
+      });
     }
     
     setWinnerData({ ...winItem, win: winAmount });
     setGameState('result');
+
     setTimeout(() => {
       setGameState('betting');
       setTimeLeft(30);
@@ -379,6 +395,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 <span className="text-8xl block mb-2">{winnerData.icon}</span>
                 <h2 className="text-white font-black text-4xl italic uppercase">WINNER!</h2>
                 <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
+                  {/* DISPLAYING REAL-TIME WINNING AMOUNT (Bet x Multiplier) */}
                   <p className="text-white text-4xl font-black">+{winnerData.win.toLocaleString()}</p>
                 </div>
               </motion.div>
