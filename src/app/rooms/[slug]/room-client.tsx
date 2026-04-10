@@ -1907,29 +1907,29 @@ export function RoomClient({ room }: { room: Room }) {
               <AvatarImage src={room.coverUrl || undefined} />
               <AvatarFallback>RM</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-[15px] font-bold text-white tracking-tight leading-none">
+            <div className="flex flex-col min-w-0 max-w-[140px]">
+              <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
+                <h1 className="text-[14px] font-bold text-white tracking-tight leading-none truncate flex-1">
                   {room.title}
                 </h1>
                 {(isHydrated && !isOwner) && (
                   <button
                     onClick={handleFollowRoom}
                     className={cn(
-                      "h-6 px-2 rounded-full flex items-center justify-center gap-1 transition-all active:scale-90 border",
+                      "h-5 px-1.5 rounded-full flex items-center justify-center gap-1 transition-all active:scale-90 border shrink-0",
                       followData
-                        ? "bg-pink-500/20 border-pink-500/50 text-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.2)]"
-                        : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                        ? "bg-pink-500/20 border-pink-500/40 text-pink-500"
+                        : "bg-white/5 border-white/10 text-white/40"
                     )}
                   >
-                    <Heart className={cn("h-3 w-3 transition-transform", followData && "fill-current scale-110")} />
-                    <span className="text-[8px] font-black uppercase tracking-tighter">
-                      {followData ? 'Followed' : 'Follow'}
+                    <Heart className={cn("h-2.5 w-2.5 transition-transform", followData && "fill-current")} />
+                    <span className="text-[7.5px] font-black uppercase tracking-tighter">
+                      {followData ? 'Sub' : 'Follow'}
                     </span>
                   </button>
                 )}
               </div>
-              <p className="text-[10px] font-medium text-white/50 leading-none">
+              <p className="text-[9px] font-medium text-white/40 leading-none">
                 ID:{room.roomNumber}
               </p>
             </div>

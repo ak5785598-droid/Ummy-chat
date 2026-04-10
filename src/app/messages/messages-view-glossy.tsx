@@ -81,7 +81,7 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
  </div>
 );
 
-const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
+const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
  const participantIds = chat?.participantIds || [];
  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
@@ -119,7 +119,13 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
    )}
   >
    <div className="relative shrink-0">
-    <Avatar className="h-14 w-14 rounded-[1.2rem] border-2 border-white shadow-lg transform group-active:scale-95 transition-transform">
+    <Avatar 
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(`/profile/${otherUser.id}`);
+      }}
+      className="h-14 w-14 rounded-[1.2rem] border-2 border-white shadow-lg transform group-active:scale-95 transition-transform cursor-pointer"
+    >
      <AvatarImage src={otherUser.avatarUrl || undefined} className="object-cover" />
      <AvatarFallback className="bg-slate-200 text-slate-400 font-black">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
     </Avatar>
@@ -152,7 +158,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
  );
 };
 
-function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
+function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser, router }: any) {
   const [text, setText] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const firestore = useFirestore();
@@ -236,7 +242,13 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
        <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-slate-50 rounded-full transition-all active:scale-90">
          <ChevronLeft className="h-6 w-6 text-slate-900" />
        </button>
-       <Avatar className="h-10 w-10 border border-slate-100 shadow-sm rounded-xl">
+        <Avatar 
+          onClick={() => {
+            onOpenChange(false);
+            router.push(`/profile/${otherUser?.id}`);
+          }}
+          className="h-10 w-10 border border-slate-100 shadow-sm rounded-xl cursor-pointer active:scale-95 transition-transform"
+        >
          <AvatarImage src={otherUser?.avatarUrl || undefined} className="object-cover" />
          <AvatarFallback className="bg-slate-100 text-slate-400 font-bold">{otherUser?.username?.charAt(0)}</AvatarFallback>
        </Avatar>
@@ -590,6 +602,7 @@ export function MessagesViewGlossy() {
                 chat={chat} 
                 currentUid={user?.uid} 
                 onSelect={handleSelectChat} 
+                router={router}
                />
               ))
              ) : (
@@ -680,6 +693,7 @@ export function MessagesViewGlossy() {
        chatId={activeChatId}
        otherUser={selectedRecipient}
        currentUser={user}
+       router={router}
       />
     </div>
  );

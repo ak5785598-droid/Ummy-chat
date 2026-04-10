@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader, Users, Star, Crown, ChevronRight, X, Heart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface RoomUserListDialogProps {
  open: boolean;
@@ -29,6 +30,7 @@ interface RoomUserListDialogProps {
  */
 export function RoomUserListDialog({ open, onOpenChange, roomId, participants: propParticipants }: RoomUserListDialogProps) {
  const firestore = useFirestore();
+ const router = useRouter();
 
  const participantsQuery = useMemoFirebase(() => {
   if (!firestore || !roomId) return null;
@@ -79,7 +81,13 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
          <div key={p.uid} className="p-4 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer">
            <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
+              <Avatar 
+                className="h-14 w-14 border-2 border-white shadow-sm cursor-pointer active:scale-90 transition-transform"
+                onClick={() => {
+                  onOpenChange(false);
+                  router.push(`/profile/${p.uid}`);
+                }}
+              >
                 <AvatarImage src={p.avatarUrl || undefined} />
                 <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
               </Avatar>

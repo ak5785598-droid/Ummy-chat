@@ -184,7 +184,7 @@ export function RoomUserProfileDialog({
         </button>
       </div>
 
-      <div className="mt-2 mb-4">
+      <div className="mt-2 mb-4 cursor-pointer active:scale-95 transition-transform" onClick={handleViewFullProfile}>
         <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
          <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
            <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />

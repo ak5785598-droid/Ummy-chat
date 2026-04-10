@@ -127,9 +127,9 @@ export function RoomsExplorerGlossy() {
  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
  const myRoomQuery = useMemoFirebase(() => {
-   if (!firestore || !user?.uid || !isHydrated) return null;
-   return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
-  }, [firestore, user?.uid, isHydrated]);
+    if (!firestore || !user?.uid || !isHydrated) return null;
+    return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
+   }, [firestore, user?.uid, isHydrated]);
  const { data: myRoomsData } = useCollection(myRoomQuery);
  const myRoom = myRoomsData?.[0];
 
@@ -398,7 +398,10 @@ export function RoomsExplorerGlossy() {
                          
                          <div className="flex items-center gap-4 relative z-10 w-full">
                            <div className="relative shrink-0">
-                             <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-lg">
+                             <Avatar 
+                              onClick={() => router.push(`/profile/${user?.uid}`)}
+                              className="h-16 w-16 rounded-2xl border-2 border-white shadow-lg cursor-pointer active:scale-95 transition-transform"
+                             >
                                <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
                                <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
                              </Avatar>

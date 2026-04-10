@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { 
@@ -30,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
-const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
+const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
  const participantIds = chat?.participantIds || [];
  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
@@ -64,7 +65,14 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
    className="px-6 py-4 flex gap-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer group border-b border-white/5 last:border-0"
   >
    <div className="relative shrink-0">
-    <Avatar className="h-12 w-12 border border-white/10 shadow-sm">
+    <Avatar 
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(null, { id: otherUser.id }); // Using null to signal close/navigation
+        router.push(`/profile/${otherUser.id}`);
+      }}
+      className="h-12 w-12 border border-white/10 shadow-sm cursor-pointer active:scale-95 transition-transform"
+    >
      <AvatarImage src={otherUser.avatarUrl || undefined} />
      <AvatarFallback>{otherUser.username?.charAt(0) || 'U'}</AvatarFallback>
     </Avatar>
@@ -91,7 +99,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
  );
 };
 
-function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
+function ConversationView({ chatId, otherUser, currentUser, onBack, router, onClose }: any) {
  const [text, setText] = useState('');
  const [previewImage, setPreviewImage] = useState<string | null>(null);
  const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -162,7 +170,13 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
      <button onClick={onBack} className="p-1 hover:bg-white/10 rounded-full transition-colors">
       <ChevronLeft className="h-5 w-5 text-white" />
      </button>
-     <Avatar className="h-8 w-8 border border-white/10">
+     <Avatar 
+       onClick={() => {
+         onClose();
+         router.push(`/profile/${otherUser.id}`);
+       }}
+       className="h-8 w-8 border border-white/10 cursor-pointer active:scale-95 transition-transform"
+     >
       <AvatarImage src={otherUser.avatarUrl} />
       <AvatarFallback>{otherUser.username?.charAt(0)}</AvatarFallback>
      </Avatar>
@@ -265,6 +279,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack }: any) {
 }
 
 export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { open: boolean; onOpenChange: (val: boolean) => void; initialRecipient?: any }) {
+ const router = useRouter();
  const { user } = useUser();
  const firestore = useFirestore();
  const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -324,6 +339,8 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
       otherUser={selectedRecipient} 
       currentUser={user} 
       onBack={() => { setActiveChatId(null); setSelectedRecipient(null); }}
+      router={router}
+      onClose={() => handleClose(false)}
      />
     ) : (
      <div className="flex flex-col h-full">
@@ -341,9 +358,14 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
             chat={chat} 
             currentUid={user?.uid} 
             onSelect={(id: string, other: any) => {
-             setActiveChatId(id);
-             setSelectedRecipient(other);
+              if (id === null) {
+                handleClose(false);
+                return;
+              }
+              setActiveChatId(id);
+              setSelectedRecipient(other);
             }} 
+            router={router}
            />
           ))
          ) : (
