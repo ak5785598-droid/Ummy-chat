@@ -128,6 +128,14 @@ import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 import { memo, useCallback } from 'react';
 
+// --- Daily Date Utility ---
+const getTodayString = () => {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+  return istDate.toISOString().split('T')[0];
+};
+
 // --- HAZA STYLE COMPONENTS ---
 const RoomTrophyBadge = ({ coins }: { coins: number }) => (
   <div className="w-fit flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
@@ -167,7 +175,7 @@ const Seat = memo(({
   const currentUser = user;
 
   return (
-    <div className="flex flex-col items-center gap-2 w-full">
+    <div className="flex flex-col items-center gap-1 w-full">
       <div className="relative overflow-visible">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
@@ -221,7 +229,7 @@ const Seat = memo(({
 
       </div>
 
-      <span className="text-[9px] font-bold text-white/70 uppercase tracking-[0.1em] leading-none text-center mt-1">
+      <span className="text-[9px] font-bold text-white/70 uppercase tracking-[0.1em] leading-none text-center">
         {occupant ? occupant.name : label}
       </span>
     </div>
@@ -581,6 +589,68 @@ export function RoomClient({ room }: { room: Room }) {
 
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
+
+  // ============================================================
+  // ROOM LOGIC ENGINE (OWNER/MODERATOR ONLY)
+  // Logic hub for: Rocket progression, Level cycling, Daily resets
+  // ============================================================
+  useEffect(() => {
+    if (!isOwner || !firestore || !room.id) return;
+
+    const engineInterval = setInterval(async () => {
+      const today = getTodayString();
+      const batch = writeBatch(firestore);
+      let needsUpdate = false;
+
+      // 1. LAZY STATS RESET (Daily wealth cup reset at midnight IST)
+      if (room.stats?.lastWealthResetDate !== today) {
+        console.log('[Room Engine] Resetting daily wealth cup for new day:', today);
+        batch.update(doc(firestore, 'chatRooms', room.id), {
+          'stats.dailyGifts': 0,
+          'stats.lastWealthResetDate': today
+        });
+        needsUpdate = true;
+      }
+
+      // 2. ROCKET PROGRESSION ENGINE
+      const currentLevel = room.rocket?.level || 1;
+      const progress = room.rocket?.progress || 0;
+      const isOpen = room.rocket?.open || false;
+      
+      const ROCKET_LEVEL_TARGETS = [10000, 50000, 100000]; // Multi-level progression
+      const target = ROCKET_LEVEL_TARGETS[currentLevel - 1] || 100000;
+
+      // Check for Auto-Launch
+      if (progress >= target && !isOpen) {
+        console.log(`[Room Engine] AUTO-LAUNCH: Rocket Level ${currentLevel} triggered!`);
+        batch.update(doc(firestore, 'chatRooms', room.id), {
+          'rocket.open': true,
+          'rocket.lastLaunchTime': serverTimestamp()
+        });
+        needsUpdate = true;
+      }
+
+      // Check for Daily Rocket Reset (Reset progress if not launched within 24hr or manual period)
+      if (room.rocket?.lastResetDate !== today) {
+        batch.update(doc(firestore, 'chatRooms', room.id), {
+          'rocket.lastResetDate': today,
+          'rocket.progress': 0,
+          'rocket.open': false // Reset every day regardless
+        });
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        try {
+          await batch.commit();
+        } catch (e) {
+          console.error('[Room Engine] Batch update failed:', e);
+        }
+      }
+    }, 3000); // Efficient 3-second sync
+
+    return () => clearInterval(engineInterval);
+  }, [isOwner, room.id, room.stats?.lastWealthResetDate, room.rocket?.level, room.rocket?.progress, room.rocket?.open, room.rocket?.lastLaunchTime, room.rocket?.lastResetDate, firestore]);
 
   // --- THEME SYNC: Full-Bleed Status Bar & Shell Alignment ---
   const activeRoomTheme = useMemo(() => {
@@ -1374,10 +1444,44 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleLeaveSeat = (uid: string) => {
-    if (!firestore || !room.id) return;
+    if (!firestore || !room.id || !currentUser?.uid) return;
+
+    // --- PERMISSION HIERARCHY CHECK ---
+    const isSelf = uid === currentUser.uid;
+    const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    const isRoomOwner = currentUser?.uid === room.ownerId;
+    const targetIsRoomOwner = uid === room.ownerId;
+    const targetIsAppCreator = uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+    const amModerator = room.moderatorIds?.includes(currentUser.uid) || false;
+    const targetIsModerator = room.moderatorIds?.includes(uid) || false;
+
+    // Allowed if: It's yourself, OR you are App Creator, OR you are Owner (can kick anyone except creator), OR you are Admin (can kick normal users)
+    let canPerform = isSelf || isAppCreator;
+
+    if (!canPerform) {
+      if (targetIsAppCreator) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'App Creator cannot be removed from seat!' });
+        return;
+      }
+      if (isRoomOwner && !targetIsAppCreator) {
+        canPerform = true;
+      } else if (amModerator && !targetIsRoomOwner && !targetIsModerator) {
+        canPerform = true;
+      }
+    }
+
+    if (!canPerform) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have authority to unseat this member.' });
+      return;
+    }
+
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true });
     setIsSeatMenuOpen(false);
     setIsUserProfileCardOpen(false);
+    if (!isSelf) {
+      const targetUser = participants.find(p => p.uid === uid);
+      toast({ title: 'User Unseated', description: `${targetUser?.name || 'Member'} has been removed from the seat.` });
+    }
   };
 
   const handleTakeSeat = (seatIndex: number) => {
@@ -1421,6 +1525,11 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleInputClick = () => {
+    // Bless music audio context on any main footer interaction
+    if (musicAudioRef.current?.paused && room.isMusicPlaying) {
+      musicAudioRef.current.play().catch(() => {});
+    }
+
     if (isChatMuted && !canManageRoom) {
       toast({
         variant: 'destructive',
@@ -1837,15 +1946,15 @@ export function RoomClient({ room }: { room: Room }) {
         )}
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-hidden w-full -mt-2">
-        <div className="shrink-0 flex flex-col items-center gap-1 w-full overflow-visible mb-1 mt-0">
+      <main className="relative z-10 flex-1 flex flex-col pt-0 overflow-visible w-full -mt-2">
+        <div className="shrink-0 flex flex-col items-center gap-0.5 w-full overflow-visible mb-1 mt-0">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
             <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
           </div>
 
           {/* 2x4 Grid Seats */}
-          <div className="w-full grid grid-cols-4 gap-y-4 px-2">
+          <div className="w-full grid grid-cols-4 gap-y-3 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
               <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
             ))}

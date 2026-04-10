@@ -40,6 +40,7 @@ const GIFTS: Record<string, any[]> = {
  'Hot': [
   { id: 'bq', name: 'Bouquet', price: 15000, type: 'bouquet', animationId: 'bouquet' },
   { id: 'lv', name: 'Love', price: 25000, type: 'love', animationId: 'love' },
+  { id: 'cr', name: 'Crown', price: 499, type: 'crown', animationId: 'crown_gift_premium' },
   { id: 'lb', name: 'Love Balloon', price: 40000, type: 'fireworks', animationId: 'balloon' },
   { id: 'ch', name: 'Chocolate', price: 250000, type: 'chocolate', animationId: 'choco' },
   { id: 'rg', name: 'Ring', price: 400000, type: 'ring', animationId: 'ring' },
@@ -51,6 +52,14 @@ const GIFTS: Record<string, any[]> = {
     { id: 'dm', name: 'Diamond', price: 70000, type: 'ring', animationId: 'diamond' },
     { id: 'tp', name: 'Trophy', price: 90000, type: 'default', animationId: 'trophy' },
  ]
+};
+
+// --- Daily Date Utility ---
+const getTodayString = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+    return istDate.toISOString().split('T')[0];
 };
 
 export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
@@ -89,26 +98,51 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
   try {
    const batch = writeBatch(firestore);
+   const today = getTodayString();
    
-   // Logic remains exactly as per your requirement
+   // --- SENDER PROFILE UPDATES (Including Daily Reset) ---
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
+   
+   const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
    
    batch.update(senderProfileRef, { 
      'wallet.coins': increment(-totalCost),
      'wallet.totalSpent': increment(totalCost),
+     'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+     'wallet.lastDailyResetDate': today,
      updatedAt: serverTimestamp() 
    });
    
-   batch.update(senderUserRef, { 'wallet.coins': increment(-totalCost) });
+   batch.update(senderUserRef, { 
+     'wallet.coins': increment(-totalCost),
+     'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+     'wallet.lastDailyResetDate': today
+   });
 
    const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
    
+   // --- RECIPIENT UPDATES ---
    selectedUids.forEach(uid => {
      const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
      const recUserRef = doc(firestore, 'users', uid);
-     batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient) });
-     batch.update(recUserRef, { 'wallet.diamonds': increment(diamondPerRecipient) });
+     // Recipient dailyGiftsReceived reset happens when THEY send/receive or refresh
+     batch.update(recProfileRef, { 
+       'wallet.diamonds': increment(diamondPerRecipient),
+       'stats.dailyGiftsReceived': increment(diamondPerRecipient)
+     });
+     batch.update(recUserRef, { 
+       'wallet.diamonds': increment(diamondPerRecipient),
+       'stats.dailyGiftsReceived': increment(diamondPerRecipient) 
+     });
+   });
+
+   // --- ROOM STATS & ROCKET PROGRESS ---
+   const roomRef = doc(firestore, 'chatRooms', roomId);
+   batch.update(roomRef, {
+     'stats.totalGifts': increment(totalCost),
+     'stats.dailyGifts': increment(totalCost),
+     'rocket.progress': increment(totalCost)
    });
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));

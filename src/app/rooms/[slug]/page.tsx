@@ -86,10 +86,14 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     stats: firestoreRoom.stats || { totalGifts: 0, dailyGifts: 0 },
     isChatMuted: firestoreRoom.isChatMuted,
     currentMusicUrl: firestoreRoom.currentMusicUrl,
+    isMusicPlaying: firestoreRoom.isMusicPlaying || false,
+    musicStartedAt: firestoreRoom.musicStartedAt || null,
+    musicStartOffset: firestoreRoom.musicStartOffset || 0,
     maxActiveMics: firestoreRoom.maxActiveMics,
     roomThemeId: firestoreRoom.roomThemeId,
     isSuperMic: firestoreRoom.isSuperMic || false,
-    chatClearedAt: firestoreRoom.chatClearedAt
+    chatClearedAt: firestoreRoom.chatClearedAt,
+    rocket: firestoreRoom.rocket || { level: 1, progress: 0, open: false }
    } as any;
   }
 

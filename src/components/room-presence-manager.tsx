@@ -149,10 +149,9 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
       }
 
-      // 2. Clear Stale Participants
-      // IMPORTANT: Seated users are NEVER auto-removed by the system.
-      // They can only leave by explicitly exiting the room.
-      const standingThreshold = new Date(Date.now() - 180000); // 3 min grace for standing users
+      // 2. Clear Stale Participants (Ghost Removal)
+      // Standardized 10-minute inactivity threshold for ALL users
+      const ghostThreshold = new Date(Date.now() - 600000); // 10 minutes
       
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       
@@ -163,17 +162,11 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
         const p = d.data();
         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
         
-        // SEATED USERS: Never auto-purge. Only leave voluntarily.
-        const isSeated = (p.seatIndex || 0) > 0;
-        if (isSeated) {
-          activeCount++;
-          return; // Skip — seated users are protected
-        }
-        
-        // STANDING USERS: Purge only after 3-minute inactivity
-        if (lastSeen < standingThreshold && d.id !== uid) {
+        // Remove ANY user (seated or audience) if they are inactive for > 10 mins
+        // This handles cases where the user killed the app or lost connection
+        if (lastSeen < ghostThreshold && d.id !== uid) {
           purgeBatch.delete(d.ref);
-          console.warn(`[Presence-Purge] Stale standing user removed: ${d.id}`);
+          console.warn(`[Presence-Purge] Ghost user removed: ${d.id} (${p.name})`);
         } else {
           activeCount++;
         }
