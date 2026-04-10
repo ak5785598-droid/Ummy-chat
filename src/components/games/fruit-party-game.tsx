@@ -8,7 +8,8 @@ import { X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- 3D WHITE HAND POINTER ---
+// --- UPDATED 3D WHITE GLOVE HAND POINTER ---
+// Isse humne second image jaisa cartoonish aur thick banaya hai
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
   const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -19,7 +20,7 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       initial={{ opacity: 0, scale: 0 }}
       animate={{ 
         opacity: 1, 
-        scale: [1, 1.1, 1], 
+        scale: [1, 1.15, 1], // Thoda zyada scale breathing effect ke liye
         x: x, 
         y: y - 25 
       }}
@@ -30,11 +31,25 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
       }}
       className="absolute z-[100] pointer-events-none"
     >
-      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+      <svg 
+        width="65" 
+        height="65" 
+        viewBox="0 0 24 24" 
+        fill="white" 
+        className="drop-shadow-[0_6px_0_rgba(0,0,0,0.3)] filter"
+      >
+        {/* Cartoon Hand Path - Second image ke reference se matching */}
         <path 
-          d="M9 10V5C9 3.89543 9.89543 3 11 3C12.1046 3 13 3.89543 13 5V11M13 11V9C13 7.89543 13.8954 7 15 7C16.1046 7 17 7.89543 17 9V11M17 11V10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10V16C21 18.7614 18.7614 21 16 21H10C7.23858 21 5 18.7614 5 16V13.6742C5 12.5632 5.76016 11.597 6.84534 11.3558L9 10.877" 
-          stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="white"
+          d="M10 11V6C10 4.89543 10.8954 4 12 4C13.1046 4 14 4.89543 14 6V12M14 12V10C14 8.89543 14.8954 8 16 8C17.1046 8 18 8.89543 18 10V12M18 12V11C18 9.89543 18.8954 9 20 9C21.1046 9 22 9.89543 22 11V17C22 19.7614 19.7614 22 17 22H11C8.23858 22 6 19.7614 6 17V14.6742C6 13.5632 6.76016 12.597 7.84534 12.3558L10 11.877" 
+          stroke="#000" // Black outline for cartoon look
+          strokeWidth="1.5" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          fill="white"
         />
+        {/* Finger lines details */}
+        <path d="M14 12V16" stroke="#e2e8f0" strokeWidth="1" />
+        <path d="M18 12V16" stroke="#e2e8f0" strokeWidth="1" />
       </svg>
     </motion.div>
   );
@@ -71,7 +86,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
-  const [todayWins, setTodayWins] = useState(0); // New State for Daily Wins
+  const [todayWins, setTodayWins] = useState(0); 
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
 
@@ -79,7 +94,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (userProfile?.wallet?.coins) setLocalCoins(userProfile.wallet.coins);
   }, [userProfile]);
 
-  // GMT+5:30 Reset Logic for Today Wins
   useEffect(() => {
     const checkReset = () => {
       const now = new Date();
@@ -142,7 +156,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     if (winAmount > 0) {
       setLocalCoins(prev => prev + winAmount);
-      setTodayWins(prev => prev + winAmount); // Tracking today's win
+      setTodayWins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
     }
     setWinnerData({ ...winItem, win: winAmount });
@@ -165,7 +179,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         className="h-[85vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
         style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
       >
-        {/* Header Updated with Today Win and Disco Icon */}
         <div className="w-full p-6 flex justify-between items-start z-20">
           <div className="flex flex-col gap-2">
             <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
@@ -186,7 +199,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game Arena */}
         <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
           
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
@@ -200,7 +212,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             <g transform="translate(175, 175)">
               <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
               <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
-              
               <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
               <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
             </g>
@@ -224,7 +235,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
           <div className="relative z-50">
             <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
-            
             <div 
               style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
               className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
@@ -239,12 +249,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                       🧆
                     </motion.span>
                 </div>
-
                 <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
                   <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
                     {gameState === 'betting' ? timeLeft : '...'}
                   </span>
-                  <div className="absolute inset-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]" />
                 </div>
               </div>
             </div>
@@ -268,17 +276,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   )}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none z-10" />
-                  
                   <div className="w-full flex-[1.2] flex items-center justify-center">
                     <span className="text-4xl drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] z-20">{item.icon}</span>
                   </div>
-                  
                   <AnimatePresence mode="wait">
                     {betAmount > 0 && (
                       <motion.div 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
                         className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-0.5 z-20"
                       >
                         <span className="text-[10px] font-black text-white whitespace-nowrap px-1 drop-shadow-sm">
@@ -287,7 +292,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                   <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
                     <span className="font-black text-[12px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
                   </div>
@@ -297,7 +301,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* --- HISTORY BAR --- */}
         <div className="w-full px-4 mb-2 z-20 relative">
           <div className="flex justify-between px-1 mb-1 items-end">
             <span className="text-4xl drop-shadow-lg">🥗</span>
@@ -306,19 +309,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar shadow-inner">
              <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
              {history.map((icon, i) => (
-               <motion.div 
-                 initial={{ scale: 0, opacity: 0 }} 
-                 animate={{ scale: 1, opacity: 1 }} 
-                 key={i} 
-                 className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm"
-               >
+               <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm">
                  {icon}
                </motion.div>
              ))}
           </div>
         </div>
 
-        {/* --- CHIPS FOOTER --- */}
         <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9] shadow-2xl">
           {CHIPS_DATA.map(chip => (
             <button 
@@ -338,7 +335,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           ))}
         </div>
 
-        {/* Result Overlay */}
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
