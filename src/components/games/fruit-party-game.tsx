@@ -163,56 +163,100 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Game Arena */}
-        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
-          {/* Leg Support Legs */}
+        <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1200px' }}>
+          
+          {/* --- 3D BROWN SUPPORT LEGS --- */}
           <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
             <defs>
-              <linearGradient id="stickGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8b4513" />
-                <stop offset="50%" stopColor="#5d2707" />
+              <linearGradient id="leg3D" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3d1a05" />
+                <stop offset="30%" stopColor="#8b4513" />
+                <stop offset="50%" stopColor="#a0522d" />
+                <stop offset="70%" stopColor="#8b4513" />
                 <stop offset="100%" stopColor="#270c01" />
               </linearGradient>
+              <filter id="legShadow">
+                <feDropShadow dx="0" dy="10" stdDeviation="5" floodOpacity="0.6"/>
+              </filter>
             </defs>
-            <g transform="translate(175, 175)">
-              <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
-              <line x1="0" y1="20" x2="120" y2="450" stroke="url(#stickGradient)" strokeWidth="16" strokeLinecap="round" />
+            <g transform="translate(175, 175)" filter="url(#legShadow)">
+              {/* Left Leg with bevel effect */}
+              <line x1="0" y1="20" x2="-125" y2="450" stroke="rgba(0,0,0,0.4)" strokeWidth="20" strokeLinecap="round" transform="translate(4,4)" />
+              <line x1="0" y1="20" x2="-125" y2="450" stroke="url(#leg3D)" strokeWidth="18" strokeLinecap="round" />
+              
+              {/* Right Leg with bevel effect */}
+              <line x1="0" y1="20" x2="125" y2="450" stroke="rgba(0,0,0,0.4)" strokeWidth="20" strokeLinecap="round" transform="translate(4,4)" />
+              <line x1="0" y1="20" x2="125" y2="450" stroke="url(#leg3D)" strokeWidth="18" strokeLinecap="round" />
             </g>
           </svg>
 
-          {/* Wheel Spokes */}
-          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+          {/* --- 3D YELLOW SPOKES (CONNECTED LINES) --- */}
+          <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible z-10">
+            <defs>
+              <linearGradient id="spoke3D" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fef3c7" />
+                <stop offset="50%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#b45309" />
+              </linearGradient>
+            </defs>
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                <line 
-                  key={angle} 
-                  x1="0" y1="0" 
-                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
-                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                  stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
-                />
+                <g key={angle}>
+                   {/* Shadow/Depth layer for spoke */}
+                   <line 
+                    x1="0" y1="0" 
+                    x2={112 * Math.cos((angle-90)*Math.PI/180)} 
+                    y2={112 * Math.sin((angle-90)*Math.PI/180)} 
+                    stroke="rgba(0,0,0,0.5)" strokeWidth="10" strokeLinecap="round"
+                    transform="translate(2, 3)"
+                  />
+                  {/* Main Spoke */}
+                  <line 
+                    x1="0" y1="0" 
+                    x2={110 * Math.cos((angle-90)*Math.PI/180)} 
+                    y2={110 * Math.sin((angle-90)*Math.PI/180)} 
+                    stroke="url(#spoke3D)" strokeWidth="8" strokeLinecap="round"
+                    className="drop-shadow-sm"
+                  />
+                </g>
               ))}
             </g>
           </svg>
           
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
-          {/* Central Hub */}
+          {/* --- CENTRAL HUB (COUNTDOWN CIRCLE) --- */}
           <div className="relative z-50">
-            <div className="w-28 h-28 rounded-full border-[6px] border-yellow-500 bg-red-950 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.5)]">
-              <div className="flex-1 bg-red-900/60 relative flex items-center justify-center border-b-2 border-yellow-500/50">
-                {HUB_ICONS.slice(0, 4).map((icon, i) => (
-                   <motion.span key={i} animate={{ y: [0, -4, 0] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }} className="text-xs absolute" style={{ left: `${20 + (i * 20)}%` }}>
-                     {icon}
-                   </motion.span>
-                ))}
-              </div>
-              <div className="flex-1 bg-red-600 flex items-center justify-center">
-                <span className="text-4xl font-black text-white italic drop-shadow-md">{gameState === 'betting' ? timeLeft : '...'}</span>
+            <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
+            
+            <div 
+              style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
+              className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
+            >
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-[3px] border-dashed border-white/30"
+              />
+
+              <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40 relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 z-10" />
+                <div className="w-full h-1/3 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center gap-1 border-b-2 border-yellow-500/40 relative z-20">
+                  {HUB_ICONS.slice(0, 4).map((icon, i) => (
+                    <motion.span key={i} animate={{ y: [0, -3, 0], scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }} className="text-[10px] drop-shadow-sm">{icon}</motion.span>
+                  ))}
+                </div>
+                <div className="w-full h-2/3 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
+                  <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
+                    {gameState === 'betting' ? timeLeft : '...'}
+                  </span>
+                  <div className="absolute inset-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)]" />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* --- 3D UPDATED FRUIT CARDS --- */}
+          {/* --- FRUIT CARDS --- */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -220,7 +264,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             const betAmount = myBets[item.id] || 0;
 
             return (
-              <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
+              <div key={item.id} className="absolute z-20" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
                   style={{ transformStyle: 'preserve-3d', transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
@@ -230,28 +274,17 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                     highlightIdx === idx ? "scale-115 -translate-y-2 ring-4 ring-white z-40 shadow-[0_0_40px_rgba(255,255,255,0.8)]" : "hover:brightness-110"
                   )}
                 >
-                  {/* Glossy Overlay for 3D depth */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none z-10" />
-                  
                   <div className="w-full flex-[1.2] flex items-center justify-center">
                     <span className="text-4xl drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] z-20">{item.icon}</span>
                   </div>
-                  
                   <AnimatePresence mode="wait">
                     {betAmount > 0 && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-0.5 z-20"
-                      >
-                        <span className="text-[10px] font-black text-white whitespace-nowrap px-1 drop-shadow-sm">
-                          🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
-                        </span>
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-0.5 z-20">
+                        <span className="text-[10px] font-black text-white whitespace-nowrap px-1 drop-shadow-sm">🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                   <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
                     <span className="font-black text-[12px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
                   </div>
@@ -270,12 +303,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar shadow-inner">
              <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
              {history.map((icon, i) => (
-               <motion.div 
-                 initial={{ scale: 0, opacity: 0 }} 
-                 animate={{ scale: 1, opacity: 1 }} 
-                 key={i} 
-                 className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm"
-               >
+               <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm">
                  {icon}
                </motion.div>
              ))}
@@ -285,16 +313,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* --- CHIPS FOOTER --- */}
         <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9] shadow-2xl">
           {CHIPS_DATA.map(chip => (
-            <button 
-              key={chip.value}
-              onClick={() => setSelectedChip(chip.value)}
-              className={cn(
-                "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative",
-                "bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
-                chip.color,
-                selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
-              )}
-            >
+            <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]", chip.color, selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70")}>
               <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
                 <span className="text-white">{chip.label}</span>
               </div>
