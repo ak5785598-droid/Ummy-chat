@@ -2063,7 +2063,15 @@ export function RoomClient({ room }: { room: Room }) {
                       "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full"
                     )}
                   >
-                    <Avatar className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1">
+                    <Avatar 
+                      className="h-6 w-6 shrink-0 border border-white/10 shadow-lg mt-1 cursor-pointer active:scale-95 transition-transform"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (msg.senderId) {
+                          router.push(`/profile/${msg.senderId}`);
+                        }
+                      }}
+                    >
                       <AvatarImage src={msg.senderAvatar || undefined} />
                       <AvatarFallback className="text-[10px]">{(msg.senderName || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
