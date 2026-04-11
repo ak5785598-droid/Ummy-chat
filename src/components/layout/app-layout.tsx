@@ -102,7 +102,6 @@ export function AppLayout(props: {
   <SidebarProvider defaultOpen={!deterministicAuth}>
     {/* PERSISTENT MANAGERS - Shielded by mounted check above */}
     <DynamicThemeSync />
-    <ActiveRoomManager />
     {!deterministicAuth && isHydrated && <QuestTracker />}
 
     {/* DESKTOP SIDEBAR (Strictly Client-Side) */}

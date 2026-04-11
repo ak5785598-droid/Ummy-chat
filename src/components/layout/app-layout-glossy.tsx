@@ -90,7 +90,6 @@ export function AppLayoutGlossy(props: {
   <SidebarProvider defaultOpen={!deterministicAuth}>
     {/* PERSISTENT MANAGERS */}
     <DynamicThemeSync />
-    <ActiveRoomManager />
     {!deterministicAuth && isHydrated && <QuestTracker />}
 
     {/* DESKTOP SIDEBAR */}
