@@ -36,9 +36,10 @@ export function ActiveRoomManager() {
   }, [firestore, roomId]);
 
   const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
-  const currentUserParticipant = useMemo(() => 
-    participants?.find(p => p.uid === user?.uid), 
-  [participants, user?.uid]);
+  const currentUserParticipant = useMemo(() => {
+    if (!participants || !user?.uid) return null;
+    return participants.find(p => p.uid === user.uid);
+  }, [participants, user?.uid]);
 
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMuted = currentUserParticipant?.isMuted ?? true;

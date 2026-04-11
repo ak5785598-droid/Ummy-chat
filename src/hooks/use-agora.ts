@@ -44,6 +44,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const musicClientRef = useRef<IAgoraRTCClient | null>(null);
   const isPublishingRef = useRef(false);
+  const isProcessingConnectionRef = useRef(false);
 
   // Helper to resume audio context (Standard Mobile Fix)
   const resumeAudioContext = async () => {
@@ -62,61 +63,66 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     let isMounted = true;
 
     const init = async () => {
-      // 1. Cleanup old state if any
-      if (clientRef.current) {
-        try {
-          await clientRef.current.leave();
-          clientRef.current.removeAllListeners();
-        } catch (e) {}
-      }
+      if (isProcessingConnectionRef.current) return;
+      isProcessingConnectionRef.current = true;
 
-      // 2. Create FRESH client with 'live' mode for better mobile compatibility
-      // 'live' mode allows role switching which is more friendly to system audio routing
-      const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
-      clientRef.current = client;
-      setConnectionState('CONNECTING');
-
-      // 3. Setup Listeners
-      client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-        try {
-          await client.subscribe(user, mediaType);
-          if (mediaType === 'audio') {
-            await resumeAudioContext();
-            
-            // Only play if speaker is not muted
-            if (!isSpeakerMuted) {
-              user.audioTrack?.play();
-            }
-            
-            if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
-          }
-        } catch (e) {}
-      });
-
-      client.on('user-unpublished', (user: IAgoraRTCRemoteUser) => {
-        if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-      });
-
-      client.on('connection-state-change', (curState: string) => {
-        if (isMounted) {
-          if (curState === 'CONNECTED') setConnectionState('CONNECTED');
-          else if (curState === 'DISCONNECTED') setConnectionState('DISCONNECTED');
-        }
-      });
-
-      // 4. Join Channel and set initial role
       try {
+        // 1. Cleanup old state if any
+        if (clientRef.current) {
+          const oldClient = clientRef.current;
+          clientRef.current = null;
+          try {
+            oldClient.removeAllListeners();
+            if (oldClient.connectionState !== 'DISCONNECTED') {
+              await oldClient.leave();
+            }
+          } catch (e) {
+            console.warn('[Agora] Cleanup warning:', e);
+          }
+        }
+
+        // 2. Create FRESH client
+        const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+        clientRef.current = client;
+        if (isMounted) setConnectionState('CONNECTING');
+
+        // 3. Setup Listeners
+        client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
+          try {
+            await client.subscribe(user, mediaType);
+            if (mediaType === 'audio') {
+              await resumeAudioContext();
+              if (!isSpeakerMuted) user.audioTrack?.play();
+              if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
+            }
+          } catch (e) {}
+        });
+
+        client.on('user-unpublished', (user: IAgoraRTCRemoteUser) => {
+          if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+        });
+
+        client.on('connection-state-change', (curState: string) => {
+          if (isMounted) {
+            if (curState === 'CONNECTED') setConnectionState('CONNECTED');
+            else if (curState === 'DISCONNECTED') setConnectionState('DISCONNECTED');
+          }
+        });
+
+        // 4. Join Channel and set initial role
         const numericUid = hashUidToNumber(uid);
-        // ALWAYS HOST: Use 'host' by default to keep mobile OS in Communication Mode.
-        // This prevents audio routing jumps when mic is activated later.
         await client.setClientRole('host');
         await client.join(APP_ID, roomId, null, numericUid);
         
-        if (isMounted) setConnectionState('CONNECTED');
-        console.log('[Agora] Joined as:', numericUid, 'Role: ALWAYS_HOST');
+        if (isMounted) {
+            setConnectionState('CONNECTED');
+            console.log('[Agora] Joined as:', numericUid, 'Room:', roomId);
+        }
       } catch (err) {
         console.error('[Agora] Join FAILED:', err);
         if (isMounted) setConnectionState('DISCONNECTED');
+      } finally {
+        isProcessingConnectionRef.current = false;
       }
     };
 
@@ -129,10 +135,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         client.leave().then(() => {
           client.removeAllListeners();
           setConnectionState('DISCONNECTED');
-        });
+        }).catch(() => {});
       }
     };
-  }, [roomId, uid]); // We don't want to rejoin if isSpeakerMuted or isMuted changes
+  }, [roomId, uid]); // Only re-run if room or user identity changes
 
   // EFFECT: Handle Speaker Mute (Local Output Control)
   useEffect(() => {
@@ -140,10 +146,8 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       if (user.audioTrack) {
         if (isSpeakerMuted) {
           user.audioTrack.stop();
-          console.log(`[Agora] Stopped audio for remote user: ${user.uid}`);
         } else {
           user.audioTrack.play();
-          console.log(`[Agora] Started audio for remote user: ${user.uid}`);
         }
       }
     });
@@ -159,10 +163,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         if (localAudioTrack || isPublishingRef.current) return;
         isPublishingRef.current = true;
         try {
-          // ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
           await resumeAudioContext();
-
-          // Optimize constraints for mobile Bluetooth/Speaker routing
           const track = await AgoraRTC.createMicrophoneAudioTrack({
             AEC: true, 
             AGC: true, 
@@ -173,13 +174,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           if (client.connectionState === 'CONNECTED' && client.uid) {
             await client.publish(track);
             setLocalAudioTrack(track);
-            console.log('[Agora] Mic PUBLISHED (Role remains host)');
+            console.log('[Agora] Mic PUBLISHED');
 
-            // NATIVE ROUTE SYNC: Force earbuds on native platform
-            // Adding a delay to let the WebView's own routing settle
             if (AudioRoute) {
               setTimeout(() => {
-                AudioRoute.forceEarbuds().catch((err: any) => console.error('[NativeAudio] Force failed:', err));
+                AudioRoute.forceEarbuds().catch(() => {});
               }, 1000);
             }
           } else {
@@ -197,9 +196,8 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             localAudioTrack.stop();
             localAudioTrack.close();
             setLocalAudioTrack(null);
-            console.log('[Agora] Mic UNPUBLISHED (Maintaining host role)');
+            console.log('[Agora] Mic UNPUBLISHED');
 
-            // NATIVE ROUTE RESET: Restore normal audio focus
             if (AudioRoute) {
               AudioRoute.resetAudio().catch(() => {});
             }
@@ -220,12 +218,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     const manageMusic = async () => {
       if (musicStream) {
         if (!musicClientRef.current) {
-          // Music bot also uses live mode
           const mClient = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
           musicClientRef.current = mClient;
           const mUid = (hashUidToNumber(uid) ^ 0x02020202) >>> 0;
           try {
-            await mClient.setClientRole('host'); // Music bot is always host
+            await mClient.setClientRole('host');
             await mClient.join(APP_ID, roomId, null, mUid);
             const mTrack = await AgoraRTC.createCustomAudioTrack({
               mediaStreamTrack: musicStream.getAudioTracks()[0]
@@ -256,11 +253,8 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       }
     };
 
-    const manageMusicAsync = async () => {
-      await manageMusic();
-    };
-    manageMusicAsync();
-  }, [musicStream, roomId, uid, localMusicTrack]);
+    manageMusic();
+  }, [musicStream, roomId, uid]);
 
   // EFFECT 4: Mute Sync
   useEffect(() => {
