@@ -440,12 +440,13 @@ export function RoomClient({ room }: { room: Room }) {
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
   // --- AUDIO ENGINE INITIALIZATION ---
+  const musicTrackArg = musicStream ? musicStream.getAudioTracks()[0] : null;
   const { localAudioTrack, remoteUsers } = useAgora(
     room.id,
     isInSeat,
     currentUserParticipant?.isMuted || false,
     currentUser?.uid,
-    musicAudioRef.current, // PASS ELEMENT DIRECTLY
+    musicTrackArg,
     isSpeakerMuted
   );
 
@@ -937,7 +938,7 @@ export function RoomClient({ room }: { room: Room }) {
       if (ownerOnline) electedLeaderUid = room.ownerId;
       else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
 
-      const isAIProcessor = currentUser?.uid === electedLeaderUid;
+      const isAIProcessor = currentUser?.uid === electedLeaderUid || (!electedLeaderUid && isOwner);
 
       // Identify the starting point for the new delta
       const startIndex = lastProcessedId.current
@@ -1953,7 +1954,6 @@ export function RoomClient({ room }: { room: Room }) {
         crossOrigin="anonymous"
         preload="auto"
         playsInline
-        muted // FORCE MUTE: Stops 'Media' leakage to speaker. Host hears mix via Engine monitor.
       />
 
       {/* LIVE BACKGROUND OVERLAY */}

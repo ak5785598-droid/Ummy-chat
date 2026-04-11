@@ -45,7 +45,8 @@ export function ActiveRoomManager() {
   const isMuted = currentUserParticipant?.isMuted ?? true;
 
   // AGORA CORE - Professional Voice Engine (New System)
-  const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, musicStream, isSpeakerMuted);
+  const musicTrack = musicStream ? musicStream.getAudioTracks()[0] : null;
+  const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, musicTrack, isSpeakerMuted);
   
     // Voice Activity Bridge (Agora -> UI Waves)
     const { setVolumes } = useVoiceActivityContext();

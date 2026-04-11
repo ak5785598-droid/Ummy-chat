@@ -35,7 +35,7 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicElement: HTMLAudioElement | null = null, isSpeakerMuted: boolean = false) {
+export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicTrack: MediaStreamTrack | null = null, isSpeakerMuted: boolean = false) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
@@ -245,53 +245,26 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         }
       }
 
-      // B. Manage Music Input (PROFESSIONAL HIJACK)
-      if (musicElement) {
-        if (!musicNodeRef.current) {
-          try {
-            // HIJACK: createMediaElementSource disconnects the element from standard output
-            // and routes it ONLY through this Node. Absolute leakage prevention.
-            musicNodeRef.current = audioCtxRef.current.createMediaElementSource(musicElement);
-            musicNodeRef.current.connect(musicGainRef.current);
-            
-            console.log('[Mixer] Music Elements Professionally Hijacked');
-          } catch (e) {
-             console.warn('[Mixer] Music Hijack failed (Already connected?):', e);
-          }
+      // B. Unified Publication Track (ALWAYS USE MIC MIX)
+      if (!unifiedTrackRef.current) {
+        // TRIGGER NATIVE HANDSHAKE WITHOUT BLOCKING
+        if (AudioRoute) {
+          console.log('[Mixer] Pro Handshake (Async)...');
+          AudioRoute.forceEarbuds().catch(() => {});
         }
-      }
 
-      // C. Handle Unified Publication
-      const hasContent = !!micNodeRef.current || !!musicNodeRef.current;
-      if (hasContent) {
-        if (!unifiedTrackRef.current) {
-          // STEP 1: INITIALIZE HARDWARE HANDSHAKE
-          if (AudioRoute) {
-            console.log('[Mixer] Pro Handshake Initiated...');
-            await AudioRoute.forceEarbuds(); 
-          }
-
-          // STEP 2: PUBLISH UNIFIED TRACK
-          const track = await AgoraRTC.createCustomAudioTrack({
-            mediaStreamTrack: mixerDestRef.current.stream.getAudioTracks()[0]
-          });
-          await client.publish(track);
-          unifiedTrackRef.current = track;
-          console.log('[Mixer] Pro Integrated Track Published');
-        }
-      } else {
-        if (unifiedTrackRef.current) {
-          await client.unpublish(unifiedTrackRef.current);
-          unifiedTrackRef.current.stop();
-          unifiedTrackRef.current.close();
-          unifiedTrackRef.current = null;
-          if (AudioRoute) AudioRoute.resetAudio().catch(() => {});
-        }
+        const audioTrack = musicTrack || mixerDestRef.current.stream.getAudioTracks()[0];
+        const track = await AgoraRTC.createCustomAudioTrack({
+          mediaStreamTrack: audioTrack
+        });
+        await client.publish(track);
+        unifiedTrackRef.current = track;
+        console.log('[Mixer] Unified SCO Pipeline Active');
       }
     };
 
     syncMixer();
-  }, [isInSeat, musicElement, connectionState]);
+  }, [isInSeat, connectionState]);
 
   // EFFECT 4: Routing Persistence
   useEffect(() => {
