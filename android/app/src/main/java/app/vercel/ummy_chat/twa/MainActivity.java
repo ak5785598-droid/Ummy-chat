@@ -63,7 +63,7 @@ class AudioRoutePlugin extends Plugin {
 
                 if (BestDevice == null) {
                     for (AudioDeviceInfo device : devices) {
-                        if (device.getType() == AudioDeviceInfo.TYPE_BUILT_IN_EARPIECE) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
                             BestDevice = device;
                             break;
                         }
