@@ -206,17 +206,20 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       const hasContent = !!micNodeRef.current || !!musicNodeRef.current;
       if (hasContent) {
         if (!unifiedTrackRef.current) {
-          // Use 'speech_low_quality' to ensure the SDK marks this as a telephony stream
+          // STEP 1: INITIALIZE HARDWARE HANDSHAKE (ZERO-LEAK GUARD)
+          if (AudioRoute) {
+            console.log('[Mixer] Waiting for Native Hardware SCO Handshake...');
+            await AudioRoute.forceEarbuds(); 
+            console.log('[Mixer] Hardware Locked. Safe to publish.');
+          }
+
+          // STEP 2: PUBLISH UNIFIED TRACK
           const track = await AgoraRTC.createCustomAudioTrack({
             mediaStreamTrack: mixerDestRef.current.stream.getAudioTracks()[0]
           });
           await client.publish(track);
           unifiedTrackRef.current = track;
           console.log('[Mixer] Unified Telephony Track Published');
-          
-          if (AudioRoute) {
-            setTimeout(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 1500);
-          }
         }
       } else {
         if (unifiedTrackRef.current) {
@@ -237,10 +240,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   useEffect(() => {
     if (!AudioRoute || connectionState !== 'CONNECTED' || !unifiedTrackRef.current) return;
     
-    // Hammer every 3 seconds to keep focus against system notification hijack
+    // Periodically ping native bridge to maintain MODE_IN_COMMUNICATION focus
     const interval = setInterval(() => {
+        // Just enforce current routing without a fresh handshake
         AudioRoute.forceEarbuds().catch(() => {});
-    }, 3000);
+    }, 4500);
 
     return () => clearInterval(interval);
   }, [connectionState, !!unifiedTrackRef.current]);

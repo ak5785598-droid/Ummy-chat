@@ -27,13 +27,46 @@ public class MainActivity extends BridgeActivity {
 @CapacitorPlugin(name = "AudioRoute")
 class AudioRoutePlugin extends Plugin {
 
-    private Object audioFocusRequest; // For Android 8.0+ focus management
+    private Object audioFocusRequest;
+    private PluginCall pendingScoCall;
+    private android.os.Handler timeoutHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean isReceiverRegistered = false;
+
+    private final android.content.BroadcastReceiver scoReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, android.content.Intent intent) {
+            int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
+            if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
+                resolvePendingSco("connected");
+            } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
+                // If we were waiting for connection and it disconnected, fallback or retry
+                if (pendingScoCall != null) {
+                    forceRoutingToEarbudsDirectly();
+                    resolvePendingSco("fallback_connected");
+                }
+            }
+        }
+    };
+
+    private void resolvePendingSco(String status) {
+        timeoutHandler.removeCallbacksAndMessages(null);
+        if (pendingScoCall != null) {
+            com.getcapacitor.JSObject ret = new com.getcapacitor.JSObject();
+            ret.put("status", status);
+            pendingScoCall.resolve(ret);
+            pendingScoCall = null;
+        }
+    }
+
+    private void forceRoutingToEarbudsDirectly() {
+        AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        audioManager.setSpeakerphoneOn(false);
+    }
 
     private AudioManager.OnAudioFocusChangeListener focusChangeListener = focusChange -> {
-        AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            audioManager.setSpeakerphoneOn(false);
+            forceRoutingToEarbudsDirectly();
         }
     };
 
@@ -41,79 +74,46 @@ class AudioRoutePlugin extends Plugin {
     public void forceEarbuds(PluginCall call) {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-            
-            // 1. ADVANCED AUDIO FOCUS (COMMUNICATION MODE LOCK)
+            pendingScoCall = call;
+
+            // 1. REGISTER RECEIVER IF NEEDED
+            if (!isReceiverRegistered) {
+                getContext().registerReceiver(scoReceiver, new android.content.IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED));
+                isReceiverRegistered = true;
+            }
+
+            // 2. TIMEOUT GUARD (3.5 Seconds)
+            timeoutHandler.postDelayed(() -> {
+                if (pendingScoCall != null) {
+                    forceRoutingToEarbudsDirectly();
+                    resolvePendingSco("timeout_fallback");
+                }
+            }, 3500);
+
+            // 3. START SCO & REQUEST FOCUS
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 android.media.AudioAttributes playbackAttributes = new android.media.AudioAttributes.Builder()
                     .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
                     .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build();
-                
                 android.media.AudioFocusRequest focusRequest = new android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                     .setAudioAttributes(playbackAttributes)
                     .setAcceptsDelayedFocusGain(true)
                     .setOnAudioFocusChangeListener(focusChangeListener)
                     .build();
-                
                 audioFocusRequest = focusRequest;
                 audioManager.requestAudioFocus(focusRequest);
             } else {
                 audioManager.requestAudioFocus(focusChangeListener, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN);
             }
 
-            // 2. STABLILIZE COMMUNICATIONS MODE
-            audioManager.setMicrophoneMute(false);
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            
-            // 3. MODERN DEVICE SELECTION (ANDROID 12+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                List<AudioDeviceInfo> devices = audioManager.getAvailableCommunicationDevices();
-                AudioDeviceInfo bestDevice = null;
-                
-                // PRIORITY: BT SCO -> BT A2DP -> WIRED -> EARPIECE
-                for (AudioDeviceInfo device : devices) {
-                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
-                        bestDevice = device;
-                        break;
-                    }
-                }
-                
-                if (bestDevice == null) {
-                    for (AudioDeviceInfo device : devices) {
-                        if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                            device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
-                            bestDevice = device;
-                            break;
-                        }
-                    }
-                }
-
-                if (bestDevice == null) {
-                    for (AudioDeviceInfo device : devices) {
-                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
-                            bestDevice = device;
-                            break;
-                        }
-                    }
-                }
-
-                if (bestDevice != null) {
-                    audioManager.setCommunicationDevice(bestDevice);
-                }
-            } else {
-                // LEGACY FALLBACK
-                audioManager.startBluetoothSco();
-                audioManager.setBluetoothScoOn(true);
-            }
-            
-            // ALWAYS FORCE SPEAKER OFF
+            audioManager.startBluetoothSco();
+            audioManager.setBluetoothScoOn(true);
             audioManager.setSpeakerphoneOn(false);
-            
-            call.resolve();
+
         } catch (Exception e) {
-            call.reject("Failed to lock earbuds: " + e.getMessage());
+            resolvePendingSco("error");
         }
     }
 
@@ -122,23 +122,24 @@ class AudioRoutePlugin extends Plugin {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             
+            if (isReceiverRegistered) {
+                getContext().unregisterReceiver(scoReceiver);
+                isReceiverRegistered = false;
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
                 audioManager.abandonAudioFocusRequest((android.media.AudioFocusRequest) audioFocusRequest);
             } else {
                 audioManager.abandonAudioFocus(focusChangeListener);
             }
             
+            audioManager.setBluetoothScoOn(false);
+            audioManager.stopBluetoothSco();
             audioManager.setMode(AudioManager.MODE_NORMAL);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                audioManager.clearCommunicationDevice();
-            } else {
-                audioManager.setBluetoothScoOn(false);
-                audioManager.stopBluetoothSco();
-            }
             audioManager.setSpeakerphoneOn(false);
             call.resolve();
         } catch (Exception e) {
-            call.reject("Failed to reset audio: " + e.getMessage());
+            call.reject("Failed to reset: " + e.getMessage());
         }
     }
 }
