@@ -167,7 +167,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             AEC: true, 
             AGC: true, 
             ANS: true, 
-            encoderConfig: 'speech_low_quality' 
+            encoderConfig: 'music_standard' 
           });
           
           if (client.connectionState === 'CONNECTED' && client.uid) {
@@ -176,8 +176,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             console.log('[Agora] Mic PUBLISHED (Role remains host)');
 
             // NATIVE ROUTE SYNC: Force earbuds on native platform
+            // Adding a delay to let the WebView's own routing settle
             if (AudioRoute) {
-              AudioRoute.forceEarbuds().catch((err: any) => console.error('[NativeAudio] Force failed:', err));
+              setTimeout(() => {
+                AudioRoute.forceEarbuds().catch((err: any) => console.error('[NativeAudio] Force failed:', err));
+              }, 1000);
             }
           } else {
             track.close();

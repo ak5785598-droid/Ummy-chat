@@ -1,8 +1,11 @@
 package app.vercel.ummy_chat.twa;
 
 import android.content.Context;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
+import java.util.List;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -18,8 +21,8 @@ public class MainActivity extends BridgeActivity {
 }
 
 /**
- * UMMY NATIVE AUDIO BRIDGE:
- * This plugin forces Android to ignore the speakerphone when in Communication mode.
+ * UMMY ADVANCED AUDIO BRIDGE (v2.0):
+ * Optimized for Android 12+ (API 31+) using setCommunicationDevice.
  */
 @CapacitorPlugin(name = "AudioRoute")
 class AudioRoutePlugin extends Plugin {
@@ -32,11 +35,50 @@ class AudioRoutePlugin extends Plugin {
             // 1. Enter Communication Mode (required for WebRTC focus)
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             
-            // 2. FORCE SPEAKER OFF: This ensures earbuds are prioritized
-            audioManager.stopBluetoothSco();
-            audioManager.startBluetoothSco();
-            audioManager.setBluetoothScoOn(true);
-            audioManager.setSpeakerphoneOn(false);
+            // 2. USE MODERN API FOR ANDROID 12+ (API 31+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                List<AudioDeviceInfo> devices = audioManager.getAvailableCommunicationDevices();
+                AudioDeviceInfo BestDevice = null;
+                
+                // SEARCH PRIORITY: Bluetooth -> Wired -> Earpiece
+                for (AudioDeviceInfo device : devices) {
+                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+                        BestDevice = device;
+                        break;
+                    }
+                }
+                
+                if (BestDevice == null) {
+                    for (AudioDeviceInfo device : devices) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET || 
+                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+                            BestDevice = device;
+                            break;
+                        }
+                    }
+                }
+
+                if (BestDevice == null) {
+                    for (AudioDeviceInfo device : devices) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
+                            BestDevice = device;
+                            break;
+                        }
+                    }
+                }
+
+                if (BestDevice != null) {
+                    audioManager.setCommunicationDevice(BestDevice);
+                }
+                // Always ensure speakerphone is explicitly false even with communication device
+                audioManager.setSpeakerphoneOn(false);
+            } else {
+                // LEGACY FALLBACK (Android 11 and below)
+                audioManager.stopBluetoothSco();
+                audioManager.startBluetoothSco();
+                audioManager.setBluetoothScoOn(true);
+                audioManager.setSpeakerphoneOn(false);
+            }
             
             call.resolve();
         } catch (Exception e) {
@@ -49,8 +91,13 @@ class AudioRoutePlugin extends Plugin {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             audioManager.setMode(AudioManager.MODE_NORMAL);
-            audioManager.setBluetoothScoOn(false);
-            audioManager.stopBluetoothSco();
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                audioManager.clearCommunicationDevice();
+            } else {
+                audioManager.setBluetoothScoOn(false);
+                audioManager.stopBluetoothSco();
+            }
             audioManager.setSpeakerphoneOn(false);
             call.resolve();
         } catch (Exception e) {
