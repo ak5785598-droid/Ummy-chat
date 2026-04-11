@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Trophy } from 'lucide-react';
+import { X, Trophy, Plus, Clock, Volume2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -214,25 +214,52 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }}
-        className="h-[85vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+        className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
         style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
       >
-        <div className="w-full p-6 flex justify-between items-start z-20">
-          <div className="flex flex-col gap-2">
-            <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-blue-950 px-5 py-1.5 rounded-full font-black shadow-lg flex items-center gap-2">
-              <span className="text-xl">🪙</span> {localCoins.toLocaleString()}
+        
+        {/* NEW HEADER MATCHING IMAGE 2 */}
+        <div className="w-full flex flex-col z-20">
+          <div className="w-full p-4 flex justify-between items-center">
+            {/* Left Side: Coins & Info */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
+                <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
+                  <span className="text-xl drop-shadow-md">🪙</span>
+                </div>
+                <span className="pl-12 pr-6 text-white font-medium text-sm tracking-wider">{localCoins.toLocaleString()}</span>
+                <button className="absolute -right-4 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a] hover:scale-105 transition-transform">
+                  <Plus className="w-5 h-5 font-bold" />
+                </button>
+              </div>
+              <button className="ml-5 w-6 h-6 rounded-full bg-[#fde08b] flex items-center justify-center text-black shadow-md hover:scale-105 transition-transform">
+                <span className="text-sm font-serif italic font-bold">i</span>
+              </button>
             </div>
-            <div className="bg-black/40 backdrop-blur-md border border-yellow-500/50 text-yellow-400 px-4 py-1 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit">
-              <span className="text-lg">🏆</span> {todayWins.toLocaleString()}
+
+            {/* Right Side: Action Icons */}
+            <div className="flex items-center gap-2">
+              {[
+                { icon: Clock, action: () => {} },
+                { icon: Volume2, action: () => {} },
+                { icon: HelpCircle, action: () => {} },
+                { icon: X, action: onClose }
+              ].map((btn, i) => (
+                <button 
+                  key={i} 
+                  onClick={btn.action}
+                  className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white shadow-md hover:bg-[#2a306a] transition-colors"
+                >
+                  <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                </button>
+              ))}
             </div>
           </div>
-          
-          <div className="flex flex-col items-center gap-3">
-            <button onClick={onClose} className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
-              <X className="w-6 h-6" />
-            </button>
-            <div className="w-10 h-10 bg-gradient-to-b from-purple-400 to-purple-800 rounded-full flex items-center justify-center text-2xl shadow-xl border-2 border-purple-300 animate-pulse">
-              🪩
+
+          {/* Preserved Today Wins (Taki logic break na ho ya kuch miss na ho) */}
+          <div className="px-4 mt-1">
+            <div className="bg-black/40 backdrop-blur-md border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
+              <span className="text-base">🏆</span> {todayWins.toLocaleString()}
             </div>
           </div>
         </div>
@@ -288,7 +315,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                     </motion.span>
                 </div>
                 <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
-                  <span className="text-5xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
+                  <span className="text-4xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
                     {gameState === 'betting' ? timeLeft : '...'}
                   </span>
                 </div>
