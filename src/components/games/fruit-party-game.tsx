@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Trophy, Plus, Clock, Volume2, HelpCircle, Loader2 } from 'lucide-react';
+import { X, Trophy, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,12 +49,7 @@ const Cloud = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const playSound = (url: string) => {
-  const audio = new Audio(url);
-  audio.volume = 0.5;
-  audio.play().catch(e => console.log("Sound play error:", e));
-};
-
+// Note: Aap in URLs ko apne custom "Trun Trun" ya "Whirring" sounds se replace kar sakte ho future mein
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
@@ -76,8 +71,8 @@ const CHIPS_DATA = [
   { value: 100, label: '100', color: 'from-blue-500 to-blue-700' },
   { value: 1000, label: '1K', color: 'from-green-500 to-green-700' },
   { value: 5000, label: '5K', color: 'from-purple-500 to-purple-700' },
-  { value: 10000, label: '10K', color: 'from-red-500 to-red-700' },
-  { value: 50000, label: '50K', color: 'from-yellow-500 to-yellow-700' },
+  { value: 50000, label: '50K', color: 'from-red-500 to-red-700' },
+  { value: 500000, label: '500K', color: 'from-yellow-500 to-yellow-700' },
 ];
 
 export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
@@ -97,6 +92,22 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [todayWins, setTodayWins] = useState(0); 
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
   const [floatingChips, setFloatingChips] = useState<{ id: string, itemId: string, color: string }[]>([]);
+  
+  // NEW STATES
+  const [isSoundOn, setIsSoundOn] = useState(true);
+  const [showRules, setShowRules] = useState(false);
+  const soundRef = useRef(isSoundOn);
+
+  useEffect(() => {
+    soundRef.current = isSoundOn;
+  }, [isSoundOn]);
+
+  const playSound = (url: string) => {
+    if (!soundRef.current) return;
+    const audio = new Audio(url);
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log("Sound play error:", e));
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2500);
@@ -133,7 +144,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
-    playSound(SOUNDS.BET);
+    playSound(SOUNDS.BET); // Bet sound (Trun Trun)
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -147,7 +158,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
-      playSound(SOUNDS.TICK);
+      playSound(SOUNDS.TICK); // Spinning sound (Trick Trick Trick)
       if (currentStep < totalSteps) {
         currentStep++;
         setTimeout(run, 50 + (currentStep * 2));
@@ -164,7 +175,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
     if (winAmount > 0) {
-      playSound(SOUNDS.WIN);
+      playSound(SOUNDS.WIN); // Win sound (Whirring Voice)
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
@@ -219,7 +230,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                    <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
                      <Cloud className="w-28 h-auto" />
                   </div>
-                  {[ { icon: Clock }, { icon: Volume2 }, { icon: HelpCircle }, { icon: X, action: onClose } ].map((btn, i) => (
+                  {[ 
+                    { icon: Clock, action: undefined }, 
+                    { icon: isSoundOn ? Volume2 : VolumeX, action: () => setIsSoundOn(!isSoundOn) }, 
+                    { icon: HelpCircle, action: () => setShowRules(true) }, 
+                    { icon: X, action: onClose } 
+                  ].map((btn, i) => (
                     <button key={i} onClick={btn.action} className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white">
                       <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                     </button>
@@ -227,8 +243,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 </div>
               </div>
 
+              {/* REMOVED backdrop-blur-md FOR CLEAN VIEW */}
               <div className="px-4 mt-1 relative">
-                <div className="bg-black/40 backdrop-blur-md border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
+                <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
                   <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
                 <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
@@ -292,14 +309,17 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                       className={cn(
                         "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
                         "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5)]",
-                        highlightIdx === idx ? "scale-115 -translate-y-2 ring-4 ring-white z-40" : ""
+                        //  YAHAN CHANGE HAI: Ekdam shining Golden Color jb spin highlight ho
+                        highlightIdx === idx ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
                       )}
                     >
-                      <div className="absolute top-1 right-1 flex gap-0.5 z-[60]">
+                      {/*  YAHAN CHANGE HAI: Floating chips ko ab fruit icon k upar (center) kiya gaya hai */}
+                      <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-0.5 z-[60] pointer-events-none p-4">
                         {floatingChips.filter(fc => fc.itemId === item.id).map(fc => (
                           <motion.div key={fc.id} initial={{ y: -50, opacity: 0, scale: 0 }} animate={{ y: 0, opacity: 1, scale: 1 }} className={cn("w-4 h-4 rounded-full border border-white/50 bg-gradient-to-br shadow-sm", fc.color)} />
                         ))}
                       </div>
+
                       <div className="w-full flex-[1.2] flex items-center justify-center">
                         <span className="text-4xl drop-shadow-lg z-20">{item.icon}</span>
                       </div>
@@ -396,6 +416,50 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* --- NEW RULES BOTTOM SHEET --- */}
+            <AnimatePresence>
+              {showRules && (
+                <motion.div 
+                  initial={{ y: "100%" }} 
+                  animate={{ y: 0 }} 
+                  exit={{ y: "100%" }}
+                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                >
+                  {/* Top Bar with Back Icon and Rules Header */}
+                  <div className="relative flex items-center justify-center w-full mb-6">
+                    <button 
+                      onClick={() => setShowRules(false)}
+                      className="absolute left-0 p-2.5 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
+                    >
+                      <ArrowLeft className="w-6 h-6" strokeWidth={2.5} />
+                    </button>
+                    <h2 className="text-white font-black text-2xl tracking-widest drop-shadow-md">RULES</h2>
+                  </div>
+
+                  {/* Rules Content */}
+                  <div className="flex flex-col gap-4 text-white/95 font-semibold text-sm">
+                    <p className="flex items-start gap-2">
+                      <span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">1</span>
+                      Click on the Chips icon and select Amount
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">2</span>
+                      Then Choose you Fruits, vegetables Ect and put your bet Coins
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">3</span>
+                      If you win you will get ( Bet Amount × multipler )
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">4</span>
+                      If You Loss You will not receive any amount
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           </motion.div>
         )}
       </AnimatePresence>
