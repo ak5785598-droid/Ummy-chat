@@ -22,6 +22,7 @@
     "@capacitor/ios": "7.6.1",
     "@capacitor/status-bar": "7.0.6",
     "@cashfreepayments/cashfree-js": "^1.0.7",
+    "@genkit-ai/compat-oai": "^1.32.0",
     "@genkit-ai/google-genai": "1.19.1",
     "@genkit-ai/next": "1.19.1",
     "@hookform/resolvers": "^4.1.3",
