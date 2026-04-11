@@ -8,6 +8,13 @@ import { X, Trophy, Plus, Clock, Volume2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// --- CLOUD SVG COMPONENT ---
+const Cloud = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 40C6.71573 40 0 33.2843 0 25C0 17.0784 6.13601 10.597 13.9213 10.0536C15.8236 4.25686 21.2825 0 27.75 0C33.8643 0 39.055 3.84365 41.229 9.30907C42.433 8.46914 43.9142 8 45.5 8C49.6421 8 53 11.3579 53 15.5C53 16.0337 52.9443 16.5544 52.8385 17.0567C58.5539 18.0645 63 22.9734 63 29C63 35.0751 58.0751 40 52 40H15Z" fill="#f8fafc"/>
+  </svg>
+);
+
 // --- SOUND UTILITIES ---
 const playSound = (url: string) => {
   const audio = new Audio(url);
@@ -15,14 +22,13 @@ const playSound = (url: string) => {
   audio.play().catch(e => console.log("Sound play error:", e));
 };
 
-// Sound URLs
 const SOUNDS = {
-  BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // Trun trun
-  TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Trick trick
-  WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'  // Whirring Win
+  BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
+  WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'
 };
 
-// --- UPDATED 3D WHITE GLOVE HAND POINTER ---
+// --- HAND POINTER ---
 const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   const angle = (targetIdx * 45) - 90;
   const x = Math.cos((angle * Math.PI) / 180) * 135;
@@ -31,12 +37,7 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
-      animate={{ 
-        opacity: 1, 
-        scale: [1, 1.1, 1], 
-        x: x, 
-        y: y - 30 
-      }}
+      animate={{ opacity: 1, scale: [1, 1.1, 1], x: x, y: y - 30 }}
       transition={{ 
         x: { type: "spring", stiffness: 100, damping: 12 },
         y: { type: "spring", stiffness: 100, damping: 12 },
@@ -46,24 +47,8 @@ const HandPointer = ({ targetIdx }: { targetIdx: number }) => {
     >
       <div className="relative">
         <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
-        <svg 
-          width="80" 
-          height="80" 
-          viewBox="0 0 100 100" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="drop-shadow-[0_8px_4px_rgba(0,0,0,0.4)]"
-        >
-          <path 
-            d="M35 45V25C35 20.5 38.5 17 43 17C47.5 17 51 20.5 51 25V45M51 45V35C51 30.5 54.5 27 59 27C63.5 27 67 30.5 67 35V45M67 45V40C67 35.5 70.5 32 75 32C79.5 32 83 35.5 83 40V65C83 78.8 71.8 90 58 90H42C28.2 90 17 78.8 17 65V54C17 49.5 20.5 46 25 46L35 45Z" 
-            fill="white"
-            stroke="black"
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path d="M51 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
-          <path d="M67 45V65" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
-          <path d="M40 22C40 20 42 19 44 19" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" />
+        <svg width="80" height="80" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_8px_4px_rgba(0,0,0,0.4)]">
+          <path d="M35 45V25C35 20.5 38.5 17 43 17C47.5 17 51 20.5 51 25V45M51 45V35C51 30.5 54.5 27 59 27C63.5 27 67 30.5 67 35V45M67 45V40C67 35.5 70.5 32 75 32C79.5 32 83 35.5 83 40V65C83 78.8 71.8 90 58 90H42C28.2 90 17 78.8 17 65V54C17 49.5 20.5 46 25 46L35 45Z" fill="white" stroke="black" strokeWidth="4" />
         </svg>
       </div>
     </motion.div>
@@ -100,13 +85,36 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<any>(null);
-  
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
-  
   const [todayWins, setTodayWins] = useState(0); 
   const [pointerIdx, setPointerIdx] = useState(0);
   const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
+
+  // --- FLOATING CHIPS LOGIC ---
+  const [floatingChips, setFloatingChips] = useState<{ id: string, itemId: string, color: string }[]>([]);
+
+  useEffect(() => {
+    if (gameState !== 'betting') {
+      setFloatingChips([]); // Winner aate hi clear
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const randomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      const randomChip = CHIPS_DATA[Math.floor(Math.random() * CHIPS_DATA.length)];
+      
+      const newChip = {
+        id: Math.random().toString(),
+        itemId: randomItem.id,
+        color: randomChip.color
+      };
+
+      setFloatingChips(prev => [...prev, newChip]);
+    }, 7000); // Har 7 sec mein
+
+    return () => clearInterval(interval);
+  }, [gameState]);
 
   useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
@@ -114,18 +122,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setIsCoinsLoaded(true);
     }
   }, [userProfile, isCoinsLoaded]);
-
-  useEffect(() => {
-    const checkReset = () => {
-      const now = new Date();
-      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      if (istTime.getUTCHours() === 0 && istTime.getUTCMinutes() === 0) {
-        setTodayWins(0);
-      }
-    };
-    const interval = setInterval(checkReset, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (gameState !== 'betting') return;
@@ -148,10 +144,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
-    
-    // Play "Trun trun" sound
     playSound(SOUNDS.BET);
-
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -165,10 +158,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
     const run = () => {
       setHighlightIdx(currentStep % ITEMS.length);
-      
-      // Play "Trick trick" sound
       playSound(SOUNDS.TICK);
-
       if (currentStep < totalSteps) {
         currentStep++;
         setTimeout(run, 50 + (currentStep * 2));
@@ -180,17 +170,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   const finalizeResult = (winItem: any) => {
-    // FIX: Winning Amount Logic (Bet Amount * Multiplier)
     const betOnWinner = myBets[winItem.id] || 0;
     const winAmount = betOnWinner * winItem.multiplier;
-    
     setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
     if (winAmount > 0) {
-      // Play "Whirring/Win" sound
       playSound(SOUNDS.WIN);
-      
-      // Real-time Update to Local and Wallet
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
@@ -209,7 +194,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/60 flex flex-col justify-end z-[100]">
+    <div className="fixed inset-0 bg-black/60 flex flex-col justify-end z-[100]">
       <div className="flex-1" onClick={onClose} />
 
       <motion.div 
@@ -218,48 +203,42 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
       >
         
-        {/* NEW HEADER MATCHING IMAGE 2 */}
+        {/* HEADER */}
         <div className="w-full flex flex-col z-20">
-          <div className="w-full p-4 flex justify-between items-center">
-            {/* Left Side: Coins & Info */}
+          <div className="w-full p-4 flex justify-between items-center relative">
             <div className="flex items-center gap-3">
               <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
                 <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
                   <span className="text-xl drop-shadow-md">🪙</span>
                 </div>
                 <span className="pl-12 pr-6 text-white font-medium text-sm tracking-wider">{localCoins.toLocaleString()}</span>
-                <button className="absolute -right-4 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a] hover:scale-105 transition-transform">
+                <button className="absolute -right-4 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a]">
                   <Plus className="w-5 h-5 font-bold" />
                 </button>
               </div>
-              <button className="ml-5 w-6 h-6 rounded-full bg-[#fde08b] flex items-center justify-center text-black shadow-md hover:scale-105 transition-transform">
+              <button className="ml-5 w-6 h-6 rounded-full bg-[#fde08b] flex items-center justify-center text-black shadow-md">
                 <span className="text-sm font-serif italic font-bold">i</span>
               </button>
             </div>
 
-            {/* Right Side: Action Icons */}
-            <div className="flex items-center gap-2">
-              {[
-                { icon: Clock, action: () => {} },
-                { icon: Volume2, action: () => {} },
-                { icon: HelpCircle, action: () => {} },
-                { icon: X, action: onClose }
-              ].map((btn, i) => (
-                <button 
-                  key={i} 
-                  onClick={btn.action}
-                  className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white shadow-md hover:bg-[#2a306a] transition-colors"
-                >
+            <div className="flex items-center gap-2 relative">
+              <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                 <Cloud className="w-28 h-auto" />
+              </div>
+              {[ { icon: Clock }, { icon: Volume2 }, { icon: HelpCircle }, { icon: X, action: onClose } ].map((btn, i) => (
+                <button key={i} onClick={btn.action} className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white">
                   <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Preserved Today Wins (Taki logic break na ho ya kuch miss na ho) */}
-          <div className="px-4 mt-1">
+          <div className="px-4 mt-1 relative">
             <div className="bg-black/40 backdrop-blur-md border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
               <span className="text-base">🏆</span> {todayWins.toLocaleString()}
+            </div>
+            <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+               <Cloud className="w-20 h-auto" />
             </div>
           </div>
         </div>
@@ -270,7 +249,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             <defs>
               <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#3d1a05" /> 
-                <stop offset="50%" stopColor="#2a1002" />
                 <stop offset="100%" stopColor="#1a0801" />
               </linearGradient>
             </defs>
@@ -285,13 +263,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
             <g transform="translate(175, 175)">
               {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                <line 
-                  key={angle} 
-                  x1="0" y1="0" 
-                  x2={110 * Math.cos((angle-90)*Math.PI/180)} 
-                  y2={110 * Math.sin((angle-90)*Math.PI/180)} 
-                  stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
-                />
+                <line key={angle} x1="0" y1="0" x2={110 * Math.cos((angle-90)*Math.PI/180)} y2={110 * Math.sin((angle-90)*Math.PI/180)} stroke="#fbbf24" strokeWidth="6" strokeLinecap="round" />
               ))}
             </g>
           </svg>
@@ -299,25 +271,16 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           {gameState === 'betting' && <HandPointer targetIdx={pointerIdx} />}
 
           <div className="relative z-50">
-            <div className="absolute inset-[-15px] rounded-full bg-yellow-500/20 blur-xl animate-pulse" />
             <div 
               style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
-              className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_2px_5px_rgba(255,255,255,0.5)]"
+              className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
             >
-              <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40 relative">
-                <div className="w-full h-1/2 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center border-b-2 border-yellow-500/40 relative z-20">
-                    <motion.span 
-                      animate={{ y: [0, -4, 0], scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }} 
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} 
-                      className="text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-                    >
-                      🧆
-                    </motion.span>
+              <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40">
+                <div className="w-full h-1/2 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center border-b-2 border-yellow-500/40">
+                    <span className="text-4xl">🧆</span>
                 </div>
-                <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center relative z-20">
-                  <span className="text-4xl font-black text-white italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-tighter">
-                    {gameState === 'betting' ? timeLeft : '...'}
-                  </span>
+                <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center">
+                  <span className="text-4xl font-black text-white italic">{gameState === 'betting' ? timeLeft : '...'}</span>
                 </div>
               </div>
             </div>
@@ -333,32 +296,37 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
                 <button 
                   onClick={() => handlePlaceBet(item.id)}
-                  style={{ transformStyle: 'preserve-3d', transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
+                  style={{ transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
                   className={cn(
                     "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
-                    "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5),inset_-2px_-2px_10px_rgba(255,255,255,0.2)]",
-                    highlightIdx === idx ? "scale-115 -translate-y-2 ring-4 ring-white z-40 shadow-[0_0_40px_rgba(255,255,255,0.8)]" : "hover:brightness-110"
+                    "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5)]",
+                    highlightIdx === idx ? "scale-115 -translate-y-2 ring-4 ring-white z-40" : ""
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none z-10" />
-                  <div className="w-full flex-[1.2] flex items-center justify-center">
-                    <span className="text-4xl drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] z-20">{item.icon}</span>
+                  {/* FLOATING CHIPS RENDERING (Har fruit button ke andar) */}
+                  <div className="absolute top-1 right-1 flex gap-0.5 z-[60]">
+                    {floatingChips.filter(fc => fc.itemId === item.id).map(fc => (
+                      <motion.div
+                        key={fc.id}
+                        initial={{ y: -50, opacity: 0, scale: 0 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        className={cn("w-4 h-4 rounded-full border border-white/50 bg-gradient-to-br shadow-sm", fc.color)}
+                      />
+                    ))}
                   </div>
-                  <AnimatePresence mode="wait">
+
+                  <div className="w-full flex-[1.2] flex items-center justify-center">
+                    <span className="text-4xl drop-shadow-lg z-20">{item.icon}</span>
+                  </div>
+                  <AnimatePresence>
                     {betAmount > 0 && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        className="w-full bg-orange-500 flex items-center justify-center border-y border-yellow-500/50 overflow-hidden py-0.5 z-20"
-                      >
-                        <span className="text-[10px] font-black text-white whitespace-nowrap px-1 drop-shadow-sm">
-                          🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}
-                        </span>
+                      <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 z-20">
+                        <span className="text-[10px] font-black text-white">🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
-                    <span className="font-black text-[12px] text-white italic drop-shadow-sm">×{item.multiplier}</span>
+                  <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20">
+                    <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
                   </div>
                 </button>
               </div>
@@ -367,21 +335,26 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         <div className="w-full px-4 mb-2 z-20 relative">
-          <div className="flex justify-between px-1 mb-1 items-end">
-            <span className="text-4xl drop-shadow-lg">🥗</span>
-            <span className="text-4xl drop-shadow-lg">🍕</span>
+          <div className="flex justify-between px-1 mb-1 items-end relative">
+            <div className="absolute -top-12 left-0 z-10 pointer-events-none">
+              <Cloud className="w-24 h-auto" />
+            </div>
+            <span className="text-4xl relative z-20">🥗</span>
+            <div className="absolute -top-12 right-0 z-10 pointer-events-none">
+              <Cloud className="w-24 h-auto" />
+            </div>
+            <span className="text-4xl relative z-20">🍕</span>
           </div>
-          <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar shadow-inner">
+          
+          <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar">
              <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
              {history.map((icon, i) => (
-               <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg shadow-sm">
-                 {icon}
-               </motion.div>
+               <div key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg">{icon}</div>
              ))}
           </div>
         </div>
 
-        <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9] shadow-2xl">
+        <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9]">
           {CHIPS_DATA.map(chip => (
             <button 
               key={chip.value}
@@ -403,8 +376,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         <AnimatePresence>
           {gameState === 'result' && winnerData && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80">
-              <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-10 rounded-[3rem] border-8 border-white text-center shadow-2xl">
-                <Trophy className="w-16 h-16 text-white mx-auto mb-2 animate-bounce" />
+              <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="bg-gradient-to-b from-yellow-400 to-orange-600 p-10 rounded-[3rem] border-8 border-white text-center">
+                <Trophy className="w-16 h-16 text-white mx-auto mb-2" />
                 <span className="text-8xl block mb-2">{winnerData.icon}</span>
                 <h2 className="text-white font-black text-4xl italic uppercase">WINNER!</h2>
                 <div className="mt-4 bg-white/20 py-2 px-8 rounded-full">
