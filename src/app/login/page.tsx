@@ -19,6 +19,8 @@ import {
   signOut,
   type ConfirmationResult,
 } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -66,7 +68,7 @@ export default function LoginPage() {
   // Initialize Google One Tap - run ONCE when user is not logged in
   useEffect(() => {
     if (isAuthLoading || user || !auth || hasInitializedGoogle.current) return;
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return;
 
     const handleOneTapResponse = async (response: any) => {
       setIsSigningIn(true);
@@ -277,17 +279,27 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
+    
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      // Use Redirect for Mobile/WebView compatibility
-      await signInWithRedirect(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        console.log("[Native-Auth] Triggering Native Google Sign-In...");
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        // Use Redirect for Mobile/WebView compatibility
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: 'Could not sign in with Google. Please try again.',
+        description: error.message || 'Could not sign in with Google. Please try again.',
       });
       setIsSigningIn(false);
     }
@@ -297,15 +309,23 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const provider = new FacebookAuthProvider();
-      // Use Redirect for Mobile/WebView compatibility
-      await signInWithRedirect(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        const result = await FirebaseAuthentication.signInWithFacebook();
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } else {
+        const provider = new FacebookAuthProvider();
+        // Use Redirect for Mobile/WebView compatibility
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Facebook Login Error:", error.code, error.message);
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: 'Could not sign in with Facebook. Please try again.',
+        description: error.message || 'Could not sign in with Facebook. Please try again.',
       });
       setIsSigningIn(false);
     }
@@ -330,11 +350,23 @@ export default function LoginPage() {
     }
     setIsSigningIn(true);
     try {
-      const verifier = initRecaptcha();
       const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${cleanNumber}`;
-      const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
-      setConfirmationResult(result);
-      setPhoneLoginStep('code');
+
+      if (Capacitor.isNativePlatform()) {
+        // Native Auto-verification (Invisible)
+        const result: any = await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: formattedNumber });
+        // results includes verificationId which can be used later or the user object if auto-resolved
+        setConfirmationResult({ confirm: async (code: string) => {
+           const res = await FirebaseAuthentication.confirmVerificationCode({ verificationId: result.verificationId, verificationCode: code });
+           return res;
+        }} as any);
+        setPhoneLoginStep('code');
+      } else {
+        const verifier = initRecaptcha();
+        const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
+        setConfirmationResult(result);
+        setPhoneLoginStep('code');
+      }
       toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
     } catch (error: any) {
       console.error("Phone Auth Error", error);

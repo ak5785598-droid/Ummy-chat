@@ -1,4 +1,4 @@
-package app.vercel.ummy_chat.twa;
+package ummyndiapvtltd.ummyvoice;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;

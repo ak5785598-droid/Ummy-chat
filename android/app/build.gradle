@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "app.vercel.ummy_chat.twa"
+    namespace "ummyndiapvtltd.ummyvoice"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.vercel.ummy_chat.twa"
+        applicationId "ummyndiapvtltd.ummyvoice"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
