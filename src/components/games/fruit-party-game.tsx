@@ -45,11 +45,11 @@ const Cloud = ({ className }: { className?: string }) => (
 );
 
 const SOUNDS = {
-  BET: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  // Coins sound for betting
+  BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
-  WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3', // Spinning sound
-  BG_MUSIC: 'https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3' // Low volume BG
+  WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3',
 };
 
 const ITEMS = [
@@ -64,8 +64,8 @@ const ITEMS = [
 ];
 
 const CHIPS_DATA = [
-  { value: 1000, label: '1K', color: 'from-blue-500 to-blue-700' },
-  { value: 10000, label: '10K', color: 'from-green-500 to-green-700' },
+  { value: 1000, label: '1k', color: 'from-blue-500 to-blue-700' },
+  { value: 5000, label: '5K', color: 'from-green-500 to-green-700' },
   { value: 50000, label: '50K', color: 'from-purple-500 to-purple-700' },
   { value: 500000, label: '500K', color: 'from-red-500 to-red-700' },
   { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
@@ -86,7 +86,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [todayWins, setTodayWins] = useState(0); 
-  const [history, setHistory] = useState<string[]>(['🍎', '🍊', '🍇', '🥦', '🥕']);
+  const [history, setHistory] = useState(['🍎', '🍊', '🍇', '🥦', '🥕']);
   const [historyData, setHistoryData] = useState<{ icon: string, bet: number, time: string }[]>([]);
   const [floatingChips, setFloatingChips] = useState<{ id: string, itemId: string, color: string }[]>([]);
   
@@ -94,30 +94,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [showRules, setShowRules] = useState(false);
   const [showHistoryPage, setShowHistoryPage] = useState(false);
   const soundRef = useRef(isSoundOn);
-  const bgMusicRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     soundRef.current = isSoundOn;
-    if (bgMusicRef.current) {
-      if (isSoundOn && !isLoading) {
-        bgMusicRef.current.play().catch(e => console.log("BG Play Error:", e));
-      } else {
-        bgMusicRef.current.pause();
-      }
-    }
-  }, [isSoundOn, isLoading]);
-
-  // Initializing BG Music
-  useEffect(() => {
-    const audio = new Audio(SOUNDS.BG_MUSIC);
-    audio.loop = true;
-    audio.volume = 0.2;
-    bgMusicRef.current = audio;
-    return () => {
-      audio.pause();
-      bgMusicRef.current = null;
-    };
-  }, []);
+  }, [isSoundOn]);
 
   const playSound = (url: string, vol = 0.5) => {
     if (!soundRef.current) return;
@@ -174,8 +154,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
-    // Trun sound fix: using higher volume and forced restart
-    playSound(SOUNDS.BET, 0.8);
+    // Coins sound added for betting
+    playSound(SOUNDS.BET, 0.9);
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
@@ -183,8 +163,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const startSpin = () => {
     setGameState('spinning');
-    // Whirring sound starts
-    playSound(SOUNDS.WHIRRING, 0.4);
+    // Spinning sound (Whirring) made louder (Volume 1.0)
+    playSound(SOUNDS.WHIRRING, 1.0);
     
     const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
     let currentStep = 0;
@@ -353,7 +333,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                         highlightIdx === idx ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
                       )}
                     >
-                      {/* Floating chips size is same, but position is shifted up (y: -70) */}
                       <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-0.5 z-[60] pointer-events-none p-4">
                         {floatingChips.filter(fc => fc.itemId === item.id).map(fc => (
                           <motion.div key={fc.id} initial={{ y: -70, opacity: 0, scale: 0 }} animate={{ y: -20, opacity: 1, scale: 1 }} className={cn("w-4 h-4 rounded-full border border-white/50 bg-gradient-to-br shadow-sm", fc.color)} />
