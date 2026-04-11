@@ -188,9 +188,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       // B. Manage Music Input
       if (musicStream) {
         if (!musicNodeRef.current) {
+          // ENSURE NO LOCAL LEAK: The source stream is muted locally, only the mixed result is published.
           musicNodeRef.current = audioCtxRef.current.createMediaStreamSource(musicStream);
           musicNodeRef.current.connect(mixerDestRef.current);
           setLocalMusicTrack(musicStream.getAudioTracks()[0] as any);
+          console.log('[Mixer] Music Linked (No-Leak Mode)');
         }
       } else {
         if (musicNodeRef.current) {
@@ -204,12 +206,13 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       const hasContent = !!micNodeRef.current || !!musicNodeRef.current;
       if (hasContent) {
         if (!unifiedTrackRef.current) {
+          // Use 'speech_low_quality' to ensure the SDK marks this as a telephony stream
           const track = await AgoraRTC.createCustomAudioTrack({
             mediaStreamTrack: mixerDestRef.current.stream.getAudioTracks()[0]
           });
           await client.publish(track);
           unifiedTrackRef.current = track;
-          console.log('[Mixer] Unified Track Published');
+          console.log('[Mixer] Unified Telephony Track Published');
           
           if (AudioRoute) {
             setTimeout(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 1500);
@@ -230,16 +233,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     syncMixer();
   }, [isInSeat, musicStream, connectionState]);
 
-  // EFFECT 4: Routing Persistence (The "Wafa" Scout)
+  // EFFECT 4: Routing Persistence (Aggressive Focus Lock)
   useEffect(() => {
     if (!AudioRoute || connectionState !== 'CONNECTED' || !unifiedTrackRef.current) return;
     
-    let pings = 0;
+    // Hammer every 3 seconds to keep focus against system notification hijack
     const interval = setInterval(() => {
-        pings++;
         AudioRoute.forceEarbuds().catch(() => {});
-        if (pings >= 5) clearInterval(interval);
-    }, 2500);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [connectionState, !!unifiedTrackRef.current]);
