@@ -32,7 +32,8 @@ class AudioRoutePlugin extends Plugin {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             
-            // 1. Enter Communication Mode (required for WebRTC focus)
+            // 1. Force state parameters for high-priority routing
+            audioManager.setMicrophoneMute(false);
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             
             // 2. USE MODERN API FOR ANDROID 12+ (API 31+)
@@ -42,7 +43,8 @@ class AudioRoutePlugin extends Plugin {
                 
                 // SEARCH PRIORITY: Bluetooth -> Wired -> Earpiece
                 for (AudioDeviceInfo device : devices) {
-                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || 
+                        device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
                         BestDevice = device;
                         break;
                     }
@@ -51,7 +53,8 @@ class AudioRoutePlugin extends Plugin {
                 if (BestDevice == null) {
                     for (AudioDeviceInfo device : devices) {
                         if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET || 
-                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                            device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
                             BestDevice = device;
                             break;
                         }
@@ -60,7 +63,7 @@ class AudioRoutePlugin extends Plugin {
 
                 if (BestDevice == null) {
                     for (AudioDeviceInfo device : devices) {
-                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILT_IN_EARPIECE) {
                             BestDevice = device;
                             break;
                         }
@@ -71,12 +74,8 @@ class AudioRoutePlugin extends Plugin {
                     audioManager.setCommunicationDevice(BestDevice);
                 }
                 
-                // If we chose a non-speaker device, ensure speakerphone is explicitly false
-                if (BestDevice != null && BestDevice.getType() != AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
-                    audioManager.setSpeakerphoneOn(false);
-                } else {
-                    audioManager.setSpeakerphoneOn(true);
-                }
+                // Explicitly disable speakerphone for communication stability
+                audioManager.setSpeakerphoneOn(false);
             } else {
                 // LEGACY FALLBACK (Android 11 and below)
                 audioManager.stopBluetoothSco();

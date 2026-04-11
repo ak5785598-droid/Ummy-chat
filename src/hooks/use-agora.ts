@@ -243,5 +243,37 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     }
   }, [isMuted, localAudioTrack]);
 
+  // EFFECT 5: WAFA-STYLE ROUTING DAEMON (The "Hammer")
+  // This ensures that even if the OS tries to switch to speaker when music starts,
+  // we pull it back to the communication device periodically for the first 10s.
+  useEffect(() => {
+    if (!AudioRoute || connectionState !== 'CONNECTED') return;
+    
+    // Only hammer if we're actively broadcasting (Mic or Music)
+    if (!localAudioTrack && !localMusicTrack) return;
+
+    let pings = 0;
+    const maxPings = 5; // Hammer for the first 10 seconds of activity change
+    
+    const ding = async () => {
+      try {
+        await AudioRoute.forceEarbuds();
+        console.log('[Routing] Hammering earbuds mode...', pings);
+      } catch (e) {}
+    };
+
+    ding(); // Initial ding
+    const interval = setInterval(() => {
+      pings++;
+      if (pings >= maxPings) {
+        clearInterval(interval);
+      } else {
+        ding();
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [connectionState, !!localAudioTrack, !!localMusicTrack]);
+
   return { localAudioTrack, remoteUsers, client: clientRef.current };
 }
