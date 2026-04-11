@@ -30,19 +30,15 @@ class AudioRoutePlugin extends Plugin {
     private Object audioFocusRequest;
     private PluginCall pendingScoCall;
     private android.os.Handler timeoutHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private boolean isReceiverRegistered = false;
-
-    private final android.content.BroadcastReceiver scoReceiver = new android.content.BroadcastReceiver() {
+    private boolean guardianActive = false;
+    private final android.content.BroadcastReceiver speakerphoneReceiver = new android.content.BroadcastReceiver() {
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
-            if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-                resolvePendingSco("connected");
-            } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
-                // If we were waiting for connection and it disconnected, fallback or retry
-                if (pendingScoCall != null) {
-                    forceRoutingToEarbudsDirectly();
-                    resolvePendingSco("fallback_connected");
+            String action = intent.getAction();
+            if (guardianActive && "android.media.action.SPEAKERPHONE_STATE_CHANGED".equals(action)) {
+                AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+                if (audioManager.isSpeakerphoneOn()) {
+                    audioManager.setSpeakerphoneOn(false);
                 }
             }
         }
@@ -75,10 +71,12 @@ class AudioRoutePlugin extends Plugin {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             pendingScoCall = call;
+            guardianActive = true;
 
-            // 1. REGISTER RECEIVER IF NEEDED
+            // 1. REGISTER RECEIVERS IF NEEDED
             if (!isReceiverRegistered) {
                 getContext().registerReceiver(scoReceiver, new android.content.IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED));
+                getContext().registerReceiver(speakerphoneReceiver, new android.content.IntentFilter("android.media.action.SPEAKERPHONE_STATE_CHANGED"));
                 isReceiverRegistered = true;
             }
 
@@ -121,9 +119,11 @@ class AudioRoutePlugin extends Plugin {
     public void resetAudio(PluginCall call) {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            guardianActive = false;
             
             if (isReceiverRegistered) {
                 getContext().unregisterReceiver(scoReceiver);
+                getContext().unregisterReceiver(speakerphoneReceiver);
                 isReceiverRegistered = false;
             }
 
