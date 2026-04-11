@@ -8,15 +8,14 @@ export const roomAssistantFlow = ai.defineFlow(
       userMessage: z.string(),
       userName: z.string(),
       currentTime: z.string(),
-      model: z.string().optional(),
     }),
     outputSchema: z.string(),
   },
   async (input) => {
-    const { userMessage, userName, currentTime, model } = input;
+    const { userMessage, userName, currentTime } = input;
 
     const response = await ai.generate({
-      model: model || 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-1.5-flash',
       prompt: `You are the OMNISCIENT MASTER AI of Ummy Chat. Powered by Gemini 1.5 Pro.
 
 CONTEXT:
