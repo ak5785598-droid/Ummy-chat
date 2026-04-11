@@ -1,11 +1,9 @@
-'use client';
+import dynamic from 'next/dynamic';
+import { Loader } from 'lucide-react';
 
 export async function generateStaticParams() {
   return [];
 }
-
-import dynamic from 'next/dynamic';
-import { Loader } from 'lucide-react';
 
 /**
  * THE PROFILE GATEWAY.
@@ -27,15 +25,12 @@ const ProfileView = dynamic(() => import('./profile-view'), {
   )
 });
 
-export default function ProfileGatewayPage({ params }: { params: any }) {
+export default async function ProfileGatewayPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   return (
     <main className="min-h-screen bg-white">
-      <ProfileGateway params={params} />
+      <ProfileView profileId={id} mode="public" />
     </main>
   );
-}
-
-function ProfileGateway({ params }: { params: any }) {
-  const resolvedParams = typeof params === 'function' ? params() : params;
-  return <ProfileView profileId={resolvedParams.id} mode="public" />;
 }
