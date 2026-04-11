@@ -21,8 +21,16 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
   } catch (error: any) {
     console.error('[AI-Action] Detailed Error:', error?.message || error);
     
-    // Generic friendly error for users if API fails
-    const errorPrefix = error?.message?.includes('API_KEY_INVALID') ? '[AUTH_ERR]' : '[CONN_ERR]';
-    return `Maaf kijiyega, main abhi connectivity issues ki wajah se thoda slow hoon. Ek baar phir se koshish karein! ${errorPrefix} 💖`;
+    // Check for specific API Key errors
+    const errorMessage = error?.message || "";
+    let userFeedback = "Maaf kijiyega, main abhi connectivity issues ki wajah se thoda slow hoon. Ek baar phir se koshish karein! 💖";
+
+    if (errorMessage.includes('API_KEY_INVALID') || !process.env.GOOGLE_GENAI_API_KEY) {
+      userFeedback = "Master, apki [AI API KEY] invalid hai ya expired ho gayi hai. Please use update karein! 🛠️";
+    } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+      userFeedback = "Master, AI ki limit khatam ho gayi hai. Thodi der baad koshish karein! ⏳";
+    }
+    
+    return userFeedback;
   }
 }
