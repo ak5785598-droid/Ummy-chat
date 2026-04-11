@@ -1,7 +1,7 @@
 {
   "appId": "ummyndiapvtltd.ummyvoice",
   "appName": "Ummy",
-  "webDir": "out",
+  "webDir": "public",
   "bundledWebRuntime": false,
   "plugins": {
     "SplashScreen": {

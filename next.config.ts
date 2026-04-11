@@ -1,8 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export',
-  trailingSlash: true,
   /* config options here */
   typescript: {
     // Ensuring the cloud build frequency is not interrupted by minor type mismatches
