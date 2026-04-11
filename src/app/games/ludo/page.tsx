@@ -1,224 +1,165 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { 
-  ChevronLeft, 
-  X,
-  Volume2,
-  VolumeX,
-  RefreshCw,
-  Trophy,
-  Loader
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { X, Volume2, VolumeX, HelpCircle, ChevronDown, Trophy } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { useLudoEngine } from '@/hooks/use-ludo-engine';
 
-// Goti (Piece) UI inside the Home boxes
-const HomePiece = ({ color }: { color: string }) => (
-  <div className="relative group">
-    <div className={cn(
-      "h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center",
-      color === 'red' && "bg-red-600",
-      color === 'green' && "bg-green-600",
-      color === 'blue' && "bg-blue-600",
-      color === 'yellow' && "bg-yellow-500"
-    )}>
-      {/* Inner design to match the pin/location style in 2nd image */}
-      <div className="h-3 w-3 bg-white/40 rounded-full" />
+// --- UI Components ---
+
+const HomeBox = ({ color, players }: { color: string; players: any[] }) => {
+  const bgColors = {
+    red: 'bg-[#E31E24]',
+    green: 'bg-[#00A651]',
+    blue: 'bg-[#2E3192]',
+    yellow: 'bg-[#FFF200]'
+  };
+
+  return (
+    <div className={cn("relative flex items-center justify-center p-4 border-[3px] border-black/20", bgColors[color as keyof typeof bgColors])}>
+      <div className="w-full h-full bg-white/90 rounded-2xl grid grid-cols-2 grid-rows-2 p-2 gap-2 shadow-inner">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className={cn("rounded-full border-4 border-black/10 shadow-md", bgColors[color as keyof typeof bgColors])} />
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 function LudoGameContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId') || 'global_room';
-  const { user: currentUser } = useUser();
-  const { userProfile } = useUserProfile(currentUser?.uid);
-  const [isLaunching, setIsLaunching] = useState(true);
+  const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
   const [isMuted, setIsMuted] = useState(false);
-
-  const { gameState, isLoading, joinLobby, rollDice, movePiece } = useLudoEngine(roomId, currentUser?.uid || null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLaunching || isLoading) {
-    return (
-      <div className="h-screen w-full bg-[#0a1a4a] flex flex-col items-center justify-center space-y-6 font-headline">
-        <Loader className="h-20 w-20 text-yellow-500 animate-spin" />
-        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Synchronizing Arena</h1>
-      </div>
-    );
-  }
-
-  const isMyTurn = gameState?.turn === currentUser?.uid;
+  
+  // Backend Logic Hook
+  const { gameState, rollDice, joinLobby } = useLudoEngine('global_room', user?.uid || null);
 
   return (
-    <div className="h-screen w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden font-headline">
-      {/* Status Bar / Top Overlay */}
-      <CompactRoomView />
-
-      <header className="relative z-40 p-3 pt-12 px-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent shrink-0">
-         <div className="flex gap-2">
-            <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button>
-            <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
-         </div>
-         <h1 className="text-xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">Ludo • Multiplayer</h1>
-         <div className="flex gap-2">
-            <button className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><RefreshCw className="h-5 w-5" /></button>
-            <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><X className="h-5 w-5" /></button>
-         </div>
+    <div className="h-screen w-full bg-[#001540] flex flex-col items-center relative overflow-hidden">
+      
+      {/* 1. TOP HEADER (Clear View) */}
+      <header className="w-full p-4 flex items-center justify-between z-50">
+        <div className="flex gap-3">
+          <button className="text-white/80 bg-white/10 p-2 rounded-full"><HelpCircle size={20}/></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="text-white/80 bg-white/10 p-2 rounded-full">
+            {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
+          </button>
+        </div>
+        <h1 className="text-white font-black text-2xl tracking-widest drop-shadow-lg">Ludo • Classic</h1>
+        <div className="flex gap-3">
+          <button className="text-white/80 bg-white/10 p-2 rounded-full"><ChevronDown size={20}/></button>
+          <button onClick={() => router.back()} className="text-white/80 bg-white/10 p-2 rounded-full"><X size={20}/></button>
+        </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
-         {/* LUDO BOARD ARENA */}
-         <div className="relative w-full max-w-[450px] aspect-square bg-white rounded-3xl p-1 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-            <div 
-              className="w-full h-full rounded-2xl overflow-hidden relative border-2 border-gray-300"
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(15, 1fr)', 
-                gridTemplateRows: 'repeat(15, 1fr)',
-              }}
-            >
-               {/* RED HOME (Top Left) */}
-               <div className="col-span-6 row-span-6 bg-[#ED1C24] border-r-2 border-b-2 border-black/10 flex items-center justify-center p-4">
-                 <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="red" /> <HomePiece color="red" />
-                    <HomePiece color="red" /> <HomePiece color="red" />
-                 </div>
-               </div>
+      {/* 2. CLASSIC LUDO BOARD (Image 1 Style) */}
+      <div className="mt-4 relative w-[92vw] max-w-[400px] aspect-square bg-[#004A26] p-2 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] border-4 border-[#00331a]">
+        <div className="w-full h-full grid grid-cols-15 grid-rows-15 bg-white border-2 border-black overflow-hidden">
+          
+          {/* Green Home (Top Left in Image 1 logic) */}
+          <div className="col-span-6 row-span-6 border-b-2 border-r-2 border-black"><HomeBox color="red" players={[]} /></div>
+          
+          {/* Top Path */}
+          <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-b-2 border-black">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <div key={i} className={cn("border-[0.5px] border-black/20", i === 1 ? "bg-green-500" : [4,7,10,13,16].includes(i) ? "bg-green-400" : "")} />
+            ))}
+          </div>
 
-               {/* TOP PATH (Green Home Entry) */}
-               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-b-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", i === 7 || i === 10 || i === 13 || i === 16 ? "bg-green-500" : "bg-white")} />
-                  ))}
-               </div>
+          {/* Green Home */}
+          <div className="col-span-6 row-span-6 border-b-2 border-l-2 border-black"><HomeBox color="green" players={[]} /></div>
 
-               {/* GREEN HOME (Top Right) */}
-               <div className="col-span-6 row-span-6 bg-[#00A651] border-l-2 border-b-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="green" /> <HomePiece color="green" />
-                    <HomePiece color="green" /> <HomePiece color="green" />
-                  </div>
-               </div>
+          {/* Left Path */}
+          <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-r-2 border-black">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <div key={i} className={cn("border-[0.5px] border-black/20", i === 13 ? "bg-red-500" : [7,8,9,10,11].includes(i) ? "bg-red-400" : "")} />
+            ))}
+          </div>
 
-               {/* LEFT PATH (Red Home Entry) */}
-               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-r-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [7, 8, 9, 10, 11].includes(i) ? "bg-red-500" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* CENTER FINISH */}
-               <div className="col-span-3 row-span-3 bg-white relative flex items-center justify-center border-2 border-gray-200">
-                  <div 
-                    className="absolute inset-0"
-                    style={{
-                      background: 'conic-gradient(#00A651 0deg 90deg, #F9ED32 90deg 180deg, #2E3192 180deg 270deg, #ED1C24 270deg 360deg)',
-                      clipPath: 'polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0)'
-                    }}
-                  />
-                  <Trophy className="h-8 w-8 text-white absolute z-10 drop-shadow-lg" />
-               </div>
-
-               {/* RIGHT PATH (Yellow Home Entry) */}
-               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-l-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [6, 7, 8, 9, 10].includes(i) ? "bg-yellow-400" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* BLUE HOME (Bottom Left) */}
-               <div className="col-span-6 row-span-6 bg-[#2E3192] border-r-2 border-t-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="blue" /> <HomePiece color="blue" />
-                    <HomePiece color="blue" /> <HomePiece color="blue" />
-                  </div>
-               </div>
-
-               {/* BOTTOM PATH (Blue Home Entry) */}
-               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-t-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [1, 4, 7, 10, 13].includes(i) ? "bg-blue-600" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* YELLOW HOME (Bottom Right) */}
-               <div className="col-span-6 row-span-6 bg-[#F9ED32] border-l-2 border-t-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="yellow" /> <HomePiece color="yellow" />
-                    <HomePiece color="yellow" /> <HomePiece color="yellow" />
-                  </div>
-               </div>
+          {/* Center */}
+          <div className="col-span-3 row-span-3 bg-white flex items-center justify-center border-2 border-black relative">
+            <div className="absolute inset-0 bg-yellow-400 rotate-45 scale-75 border-2 border-black shadow-lg flex items-center justify-center">
+               <span className="font-black text-black -rotate-45 text-xs">HOME</span>
             </div>
+          </div>
 
-            {/* PLAYER AVATARS */}
-            <PlayerAvatar color="red" pos="top-4 left-4" img={gameState?.players.find(p => p.color === 'red')?.avatarUrl} />
-            <PlayerAvatar color="green" pos="top-4 right-4" img={gameState?.players.find(p => p.color === 'green')?.avatarUrl} />
-            <PlayerAvatar color="blue" pos="bottom-4 left-4" img={gameState?.players.find(p => p.color === 'blue')?.avatarUrl} />
-            <PlayerAvatar color="yellow" pos="bottom-4 right-4" img={gameState?.players.find(p => p.color === 'yellow')?.avatarUrl} />
-         </div>
+          {/* Right Path */}
+          <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-l-2 border-black">
+             {Array.from({ length: 18 }).map((_, i) => (
+              <div key={i} className={cn("border-[0.5px] border-black/20", i === 4 ? "bg-yellow-500" : [6,7,8,9,10].includes(i) ? "bg-yellow-300" : "")} />
+            ))}
+          </div>
 
-         {/* GAME CONTROLS */}
-         <div className="mt-12 flex flex-col items-center gap-6">
-            {!gameState && (
-              <button 
-                onClick={() => joinLobby(userProfile)}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-4 rounded-full font-black uppercase text-lg shadow-[0_10px_0_#b8860b] active:translate-y-1 active:shadow-none transition-all"
-              >
-                 Enter Lobby
-              </button>
+          {/* Blue Home */}
+          <div className="col-span-6 row-span-6 border-t-2 border-r-2 border-black"><HomeBox color="blue" players={[]} /></div>
+
+          {/* Bottom Path */}
+          <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-t-2 border-black">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <div key={i} className={cn("border-[0.5px] border-black/20", i === 16 ? "bg-blue-600" : [1,4,7,10,13].includes(i) ? "bg-blue-400" : "")} />
+            ))}
+          </div>
+
+          {/* Yellow Home */}
+          <div className="col-span-6 row-span-6 border-t-2 border-l-2 border-black"><HomeBox color="yellow" players={[]} /></div>
+        </div>
+      </div>
+
+      {/* 3. BOTTOM SHEET (50vh) */}
+      <div className="absolute bottom-0 left-0 right-0 h-[45vh] bg-[#001a4d] rounded-t-[40px] border-t-4 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center p-6 z-50">
+        
+        {/* User Profiles Logic: Room users will show here */}
+        <div className="w-full flex justify-between items-center mb-8 px-4">
+          <div className="flex flex-col items-center gap-2">
+            <div className="ring-4 ring-yellow-400 rounded-full p-1">
+              <Avatar className="h-16 w-16 border-2 border-white">
+                <AvatarImage src={userProfile?.avatarUrl} />
+                <AvatarFallback>G</AvatarFallback>
+              </Avatar>
+            </div>
+            <span className="text-white font-bold text-sm uppercase">{userProfile?.name || 'Golu'}</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2 grayscale opacity-50">
+            <div className="ring-2 ring-white/20 rounded-full p-1">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback>?</AvatarFallback>
+              </Avatar>
+            </div>
+            <span className="text-white/40 font-bold text-sm uppercase">Waiting...</span>
+          </div>
+        </div>
+
+        {/* Dice/Play Button */}
+        <div className="relative group">
+          <button 
+            onClick={gameState ? rollDice : () => joinLobby(userProfile)}
+            className="h-32 w-32 bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-3xl shadow-[0_12px_0_#8b6508] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center border-4 border-white/20"
+          >
+            {gameState ? (
+               <span className="text-6xl font-black text-black drop-shadow-sm">{gameState.dice || '🎲'}</span>
+            ) : (
+               <span className="text-2xl font-black text-black italic">PLAY</span>
             )}
+          </button>
+        </div>
 
-            {gameState && (
-              <div className="flex flex-col items-center gap-4">
-                <div className={cn(
-                  "h-28 w-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center border-8 transition-all duration-300",
-                  isMyTurn ? "border-cyan-400 scale-110" : "border-gray-200 opacity-80"
-                )}>
-                  {isMyTurn && !gameState.diceRolled ? (
-                    <button onClick={rollDice} className="h-full w-full flex items-center justify-center">
-                       <span className="text-xl font-black text-black animate-bounce">TAP</span>
-                    </button>
-                  ) : (
-                    <span className="text-5xl font-black text-black">{gameState.dice || '?'}</span>
-                  )}
-                </div>
-                {isMyTurn && <Badge className="bg-cyan-400 text-black font-black animate-pulse">YOUR TURN</Badge>}
-              </div>
-            )}
-         </div>
-      </main>
+        <div className="mt-8">
+           <p className="text-white/60 font-medium text-xs tracking-widest uppercase">Classic Ludo v1.0.34</p>
+        </div>
+      </div>
     </div>
   );
 }
 
-const PlayerAvatar = ({ color, pos, img }: { color: string, pos: string, img?: string }) => (
-  <div className={cn("absolute h-14 w-14 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-hidden border-4", pos, 
-    color === 'red' ? "border-red-500" : color === 'green' ? "border-green-500" : color === 'blue' ? "border-blue-500" : "border-yellow-400"
-  )}>
-     <Avatar className="h-full w-full rounded-none">
-       <AvatarImage src={img} />
-       <AvatarFallback className="bg-gray-200" />
-     </Avatar>
-  </div>
-);
-
 export default function LudoGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-[#0a1a4a] flex items-center justify-center text-white">SYNCING ARENA...</div>}>
+    <Suspense fallback={<div className="h-screen bg-[#001540]" />}>
       <LudoGameContent />
     </Suspense>
   );
