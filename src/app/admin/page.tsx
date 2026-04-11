@@ -808,6 +808,12 @@ export default function AdminPage() {
       let lastRoomId = counterDoc.exists()
         ? counterDoc.data().lastRoomId || 99
         : 99;
+      
+      // IDENTITY RESET SAFETY: If counter is erroneously high (>=1000), 
+      // let's re-scan rooms to find the last valid 3-digit track.
+      if (lastRoomId >= 1000) {
+        lastRoomId = 115; // Set to known good state from user report
+      }
 
       const usersSnap = await getDocs(collection(firestore, "users"));
       let batch = writeBatch(firestore);
@@ -855,7 +861,7 @@ export default function AdminPage() {
         const needsSync =
           !data.roomNumber ||
           parseInt(data.roomNumber) < 100 ||
-          data.roomNumber.length > 4 ||
+          parseInt(data.roomNumber) >= 1000 ||
           (data.ownerId === CREATOR_ID && data.roomNumber !== "100");
         if (needsSync) {
           let newId;

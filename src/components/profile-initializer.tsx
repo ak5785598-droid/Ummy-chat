@@ -132,7 +132,7 @@ export function ProfileInitializer() {
      const roomSnap = await getDoc(roomRef);
      if (roomSnap.exists()) {
        const currentRoomNum = roomSnap.data().roomNumber;
-       const needsRoomSync = !currentRoomNum || parseInt(currentRoomNum) < 100 || currentRoomNum.length > 4 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
+       const needsRoomSync = !currentRoomNum || parseInt(currentRoomNum) < 100 || parseInt(currentRoomNum) >= 1000 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
        
        if (needsRoomSync) {
          const counterRef = doc(firestore, 'appConfig', 'counters');
