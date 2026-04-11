@@ -391,8 +391,8 @@ export function RoomClient({ room }: { room: Room }) {
   // SYNC: Initialize standard user hook
   const { user: currentUser } = useUser();
 
-  // Get voice activity from context - MOVED TO TOP
-  const { isSpeaking, intensity } = useVoiceActivityContext();
+  // Voice activity is now handled per-seat via speakingVolumes from context
+  const { speakingVolumes } = useVoiceActivityContext();
 
   // DYNAMIC LEVELING SYNC
   useActivityTracker(room?.id, currentUser?.uid || null);
