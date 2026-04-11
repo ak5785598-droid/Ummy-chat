@@ -130,13 +130,22 @@ import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 import { memo, useCallback } from 'react';
 
-// --- Daily Date Utility ---
+// --- DAILY DATE UTILITY ---
 const getTodayString = () => {
   const now = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
   return istDate.toISOString().split('T')[0];
 };
+
+// --- HASH UTILITY (Must match use-agora.ts) ---
+function hashUidToNumber(uid: string): number {
+  let hash = 5381;
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash * 33) ^ uid.charCodeAt(i);
+  }
+  return (hash >>> 0);
+}
 
 // --- HAZA STYLE COMPONENTS ---
 const RoomTrophyBadge = ({ coins }: { coins: number }) => (
@@ -173,17 +182,23 @@ const Seat = memo(({
   theme: any;
 }) => {
   const { user } = useUser();
-  const { isSpeaking, intensity } = useVoiceActivityContext();
+  const { speakingVolumes } = useVoiceActivityContext();
   const currentUser = user;
+
+  const isMe = occupant?.uid === currentUser?.uid;
+  // Agora uses numeric hash for remote users and '0' for local user in volume detection
+  const numericUid = occupant ? hashUidToNumber(occupant.uid).toString() : null;
+  const intensity = (numericUid && speakingVolumes[numericUid]) || (isMe && speakingVolumes["0"]) || 0;
+  const seatIsSpeaking = intensity > 5;
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
       <div className="relative overflow-visible">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
-        {occupant && occupant.uid === currentUser?.uid && !occupant.isMuted && (
+        {occupant && !occupant.isMuted && !isSeatMuted && (
           <VoiceWaveIndicator
-            isSpeaking={isSpeaking}
+            isSpeaking={seatIsSpeaking}
             intensity={intensity}
             accentColor={theme.accentColor}
           />

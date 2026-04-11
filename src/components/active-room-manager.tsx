@@ -46,37 +46,42 @@ export function ActiveRoomManager() {
   // AGORA CORE - Professional Voice Engine (New System)
   const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, musicStream, isSpeakerMuted);
   
-  // Voice Activity Bridge (Agora -> UI Waves)
-  const { setVoiceActivity } = useVoiceActivityContext();
+    // Voice Activity Bridge (Agora -> UI Waves)
+    const { setVolumes } = useVoiceActivityContext();
 
-  const volumeEnabledForClient = useRef<any>(null);
+    const volumeEnabledForClient = useRef<any>(null);
 
-  useEffect(() => {
-    if (!client || !user?.uid) return;
+    useEffect(() => {
+        if (!client) return;
 
-    const numericUid = hashUidToNumber(user.uid);
+        // GUARD: Only enable volume indicator ONCE per client instance to prevent console warnings
+        if (volumeEnabledForClient.current !== client) {
+            client.enableAudioVolumeIndicator();
+            volumeEnabledForClient.current = client;
+        }
+        
+        const handleVolume = (volumes: { uid: string | number, level: number }[]) => {
+            const currentVolumes: Record<string, number> = {};
+            
+            volumes.forEach(v => {
+                // Scale intensity for visual effect (0-100)
+                const intensity = Math.min(100, v.level * 1.5);
+                if (intensity > 5) {
+                    currentVolumes[v.uid.toString()] = intensity;
+                }
+            });
 
-    // GUARD: Only enable volume indicator ONCE per client instance to prevent console warnings
-    if (volumeEnabledForClient.current !== client) {
-      client.enableAudioVolumeIndicator();
-      volumeEnabledForClient.current = client;
-    }
-    
-    const handleVolume = (volumes: { uid: string | number, level: number }[]) => {
-      // Find local user volume (can be 0 or the numeric hash)
-      const local = volumes.find(v => v.uid === numericUid || v.uid === 0);
-      if (local) {
-        const isSpeaking = local.level > 5;
-        const scaledIntensity = Math.min(100, local.level * 1.5);
-        setVoiceActivity(isSpeaking, scaledIntensity);
-      }
-    };
+            // Update global speaking states for ALL users simultaneously
+            setVolumes(currentVolumes);
+        };
 
-    client.on('volume-indicator', handleVolume);
-    return () => {
-      client.off('volume-indicator', handleVolume);
-    };
-  }, [client, user?.uid, setVoiceActivity]);
+        client.on('volume-indicator', handleVolume);
+        return () => {
+            client.off('volume-indicator', handleVolume);
+            // Clear volumes on unmount
+            setVolumes({});
+        };
+    }, [client, setVolumes]);
 
   if (!sessionRoom) return null;
 

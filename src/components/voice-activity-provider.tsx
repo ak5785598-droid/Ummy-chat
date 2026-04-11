@@ -3,24 +3,21 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface VoiceActivityContextType {
-  isSpeaking: boolean;
-  intensity: number;
-  setVoiceActivity: (isSpeaking: boolean, intensity: number) => void;
+  speakingVolumes: Record<string, number>; // Map of hashed Numeric UID to intensity (0-100)
+  setVolumes: (volumes: Record<string, number>) => void;
 }
 
 const VoiceActivityContext = createContext<VoiceActivityContextType | undefined>(undefined);
 
 export function VoiceActivityProvider({ children }: { children: ReactNode }) {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [intensity, setIntensity] = useState(0);
+  const [speakingVolumes, setSpeakingVolumes] = useState<Record<string, number>>({});
 
-  const setVoiceActivity = (speaking: boolean, intensityLevel: number) => {
-    setIsSpeaking(speaking);
-    setIntensity(intensityLevel);
+  const setVolumes = (volumes: Record<string, number>) => {
+    setSpeakingVolumes(volumes);
   };
 
   return (
-    <VoiceActivityContext.Provider value={{ isSpeaking, intensity, setVoiceActivity }}>
+    <VoiceActivityContext.Provider value={{ speakingVolumes, setVolumes }}>
       {children}
     </VoiceActivityContext.Provider>
   );
