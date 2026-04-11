@@ -27,16 +27,28 @@ public class MainActivity extends BridgeActivity {
 @CapacitorPlugin(name = "AudioRoute")
 class AudioRoutePlugin extends Plugin {
 
+    private AudioManager.OnAudioFocusChangeListener focusChangeListener = focusChange -> {
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            // Re-acquire focus if lost during a room session
+            AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            audioManager.setSpeakerphoneOn(false);
+        }
+    };
+
     @PluginMethod
     public void forceEarbuds(PluginCall call) {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             
-            // 1. Force state parameters for high-priority routing
+            // 1. Request focus to ensure we can control the routing
+            audioManager.requestAudioFocus(focusChangeListener, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN);
+
+            // 2. Force state parameters for high-priority routing
             audioManager.setMicrophoneMute(false);
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             
-            // 2. USE MODERN API FOR ANDROID 12+ (API 31+)
+            // 3. USE MODERN API FOR ANDROID 12+ (API 31+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 List<AudioDeviceInfo> devices = audioManager.getAvailableCommunicationDevices();
                 AudioDeviceInfo BestDevice = null;
@@ -94,6 +106,7 @@ class AudioRoutePlugin extends Plugin {
     public void resetAudio(PluginCall call) {
         try {
             AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            audioManager.abandonAudioFocus(focusChangeListener);
             audioManager.setMode(AudioManager.MODE_NORMAL);
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

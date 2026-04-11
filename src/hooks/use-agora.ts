@@ -46,13 +46,25 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   const isProcessingConnectionRef = useRef(false);
   const isMusicPublishingRef = useRef(false);
 
+  // NUCLEAR SYNC: Virtual Mixer State
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const mixerDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const micNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const musicNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const unifiedTrackRef = useRef<any>(null);
+
   // Helper to resume audio context (Standard Mobile Fix)
   const resumeAudioContext = async () => {
     if (typeof window !== 'undefined') {
-      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (AudioContext) {
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') await ctx.resume();
+      if (!audioCtxRef.current) {
+        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtxRef.current = new AudioContextClass();
+          mixerDestRef.current = audioCtxRef.current!.createMediaStreamDestination();
+        }
+      }
+      if (audioCtxRef.current?.state === 'suspended') {
+        await audioCtxRef.current.resume();
       }
     }
   };
@@ -110,10 +122,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         
         if (isMounted) {
             setConnectionState('CONNECTED');
-            console.log('[Agora] Unified Engine Connected:', numericUid);
+            console.log('[Agora] Nuclear Engine Connected:', numericUid);
         }
       } catch (err) {
-        console.error('[Agora] Unified Engine Failed:', err);
+        console.error('[Agora] Nuclear Engine Failed:', err);
         if (isMounted) setConnectionState('DISCONNECTED');
       } finally {
         isProcessingConnectionRef.current = false;
@@ -144,136 +156,93 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     });
   }, [isSpeakerMuted, remoteUsers]);
 
-  // EFFECT 2: Seat Mic Control
+  // EFFECT 2: Nuclear Mixer Engine (Hardware Link)
   useEffect(() => {
     const client = clientRef.current;
     if (!client || connectionState !== 'CONNECTED' || !AgoraRTC) return;
 
-    const syncMic = async () => {
+    const syncMixer = async () => {
+      await resumeAudioContext();
+      if (!audioCtxRef.current || !mixerDestRef.current) return;
+
+      // A. Mange Microphone Input
       if (isInSeat) {
-        if (localAudioTrack || isPublishingRef.current) return;
-        isPublishingRef.current = true;
-        try {
-          await resumeAudioContext();
-          const track = await AgoraRTC.createMicrophoneAudioTrack({
-            AEC: true, AGC: true, ANS: true, encoderConfig: 'music_standard' 
-          });
-          
-          if (client.connectionState === 'CONNECTED') {
-            await client.publish(track);
-            setLocalAudioTrack(track);
-            console.log('[Agora] Voice Published');
-
-            if (AudioRoute) {
-              setTimeout(() => {
-                AudioRoute.forceEarbuds().catch(() => {});
-              }, 1000);
-            }
-          } else {
-            track.close();
+        if (!micNodeRef.current) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+            micNodeRef.current = audioCtxRef.current.createMediaStreamSource(stream);
+            micNodeRef.current.connect(mixerDestRef.current);
+            setLocalAudioTrack(stream.getAudioTracks()[0] as any); // For volume analysis/waves
+          } catch (e) {
+            console.error('[Mixer] Mic Fail:', e);
           }
-        } catch (e) {
-          console.error('[Agora] Mic Permission Denied or Failed:', e);
-        } finally {
-          isPublishingRef.current = false;
         }
       } else {
-        if (localAudioTrack) {
-          try {
-            await client.unpublish(localAudioTrack);
-            localAudioTrack.stop();
-            localAudioTrack.close();
-            setLocalAudioTrack(null);
-            console.log('[Agora] Voice Stopped');
-            if (AudioRoute) AudioRoute.resetAudio().catch(() => {});
-          } catch (e) {}
+        if (micNodeRef.current) {
+          micNodeRef.current.disconnect();
+          micNodeRef.current = null;
+          setLocalAudioTrack(null);
         }
       }
-    };
 
-    syncMic();
-  }, [isInSeat, connectionState, localAudioTrack]);
-
-  // EFFECT 3: Music Sync (Unified Client)
-  useEffect(() => {
-    const client = clientRef.current;
-    if (!client || connectionState !== 'CONNECTED' || !AgoraRTC) return;
-
-    const manageMusic = async () => {
+      // B. Manage Music Input
       if (musicStream) {
-        if (localMusicTrack || isMusicPublishingRef.current) return;
-        isMusicPublishingRef.current = true;
-        try {
-          const mTrack = await AgoraRTC.createCustomAudioTrack({
-            mediaStreamTrack: musicStream.getAudioTracks()[0]
+        if (!musicNodeRef.current) {
+          musicNodeRef.current = audioCtxRef.current.createMediaStreamSource(musicStream);
+          musicNodeRef.current.connect(mixerDestRef.current);
+          setLocalMusicTrack(musicStream.getAudioTracks()[0] as any);
+        }
+      } else {
+        if (musicNodeRef.current) {
+          musicNodeRef.current.disconnect();
+          musicNodeRef.current = null;
+          setLocalMusicTrack(null);
+        }
+      }
+
+      // C. Handle Unified Publication
+      const hasContent = !!micNodeRef.current || !!musicNodeRef.current;
+      if (hasContent) {
+        if (!unifiedTrackRef.current) {
+          const track = await AgoraRTC.createCustomAudioTrack({
+            mediaStreamTrack: mixerDestRef.current.stream.getAudioTracks()[0]
           });
+          await client.publish(track);
+          unifiedTrackRef.current = track;
+          console.log('[Mixer] Unified Track Published');
           
-          if (client.connectionState === 'CONNECTED') {
-            await client.publish(mTrack);
-            setLocalMusicTrack(mTrack);
-            console.log('[Agora] Music Published (Unified)');
-          } else {
-            mTrack.close();
+          if (AudioRoute) {
+            setTimeout(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 1500);
           }
-        } catch (e) {
-          console.error('[Agora] Music Unified Error:', e);
-        } finally {
-          isMusicPublishingRef.current = false;
         }
       } else {
-        if (localMusicTrack) {
-          try {
-            await client.unpublish(localMusicTrack);
-            localMusicTrack.stop();
-            localMusicTrack.close();
-            setLocalMusicTrack(null);
-            console.log('[Agora] Music Stopped');
-          } catch (e) {}
+        if (unifiedTrackRef.current) {
+          await client.unpublish(unifiedTrackRef.current);
+          unifiedTrackRef.current.stop();
+          unifiedTrackRef.current.close();
+          unifiedTrackRef.current = null;
+          console.log('[Mixer] Unified Track Stopped');
+          if (AudioRoute) AudioRoute.resetAudio().catch(() => {});
         }
       }
     };
 
-    manageMusic();
-  }, [musicStream, connectionState, localMusicTrack]);
+    syncMixer();
+  }, [isInSeat, musicStream, connectionState]);
 
-  // EFFECT 4: Mute Sync
+  // EFFECT 4: Routing Persistence (The "Wafa" Scout)
   useEffect(() => {
-    if (localAudioTrack) {
-      localAudioTrack.setMuted(isMuted);
-    }
-  }, [isMuted, localAudioTrack]);
-
-  // EFFECT 5: WAFA-STYLE ROUTING DAEMON (The "Hammer")
-  // This ensures that even if the OS tries to switch to speaker when music starts,
-  // we pull it back to the communication device periodically for the first 10s.
-  useEffect(() => {
-    if (!AudioRoute || connectionState !== 'CONNECTED') return;
+    if (!AudioRoute || connectionState !== 'CONNECTED' || !unifiedTrackRef.current) return;
     
-    // Only hammer if we're actively broadcasting (Mic or Music)
-    if (!localAudioTrack && !localMusicTrack) return;
-
     let pings = 0;
-    const maxPings = 5; // Hammer for the first 10 seconds of activity change
-    
-    const ding = async () => {
-      try {
-        await AudioRoute.forceEarbuds();
-        console.log('[Routing] Hammering earbuds mode...', pings);
-      } catch (e) {}
-    };
-
-    ding(); // Initial ding
     const interval = setInterval(() => {
-      pings++;
-      if (pings >= maxPings) {
-        clearInterval(interval);
-      } else {
-        ding();
-      }
-    }, 2000);
+        pings++;
+        AudioRoute.forceEarbuds().catch(() => {});
+        if (pings >= 5) clearInterval(interval);
+    }, 2500);
 
     return () => clearInterval(interval);
-  }, [connectionState, !!localAudioTrack, !!localMusicTrack]);
+  }, [connectionState, !!unifiedTrackRef.current]);
 
   return { localAudioTrack, remoteUsers, client: clientRef.current };
 }
