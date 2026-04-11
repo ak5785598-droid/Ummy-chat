@@ -129,6 +129,7 @@ import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 
 import { memo, useCallback } from 'react';
+import { useAgora } from '@/hooks/use-agora';
 
 // --- DAILY DATE UTILITY ---
 const getTodayString = () => {
@@ -411,6 +412,34 @@ export function RoomClient({ room }: { room: Room }) {
     setIsSpeakerMuted
   } = useRoomContext();
 
+  const { toast } = useToast();
+  const router = useRouter();
+  const { userProfile } = useUserProfile(currentUser?.uid);
+  const firestore = useFirestore();
+  const storage = useStorage();
+
+  // --- DERIVE PARTICIPANTS & SEAT STATUS (Moved Up for Logic Flow) ---
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id) return null;
+    try {
+      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+    } catch (e) {
+      console.error('[Room] Failed to create participants query:', e);
+      return null;
+    }
+  }, [firestore, room.id]);
+
+  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
+
+  const participants = useMemo(() => {
+    if (!participantsData) return [];
+    return participantsData;
+  }, [participantsData]);
+
+  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
+  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
+
+  // --- AUDIO ENGINE INITIALIZATION ---
   const { localAudioTrack, remoteUsers } = useAgora(
     room.id,
     isInSeat,
@@ -419,12 +448,6 @@ export function RoomClient({ room }: { room: Room }) {
     musicAudioRef.current, // PASS ELEMENT DIRECTLY
     isSpeakerMuted
   );
-
-  const { toast } = useToast();
-  const router = useRouter();
-  const { userProfile } = useUserProfile(currentUser?.uid);
-  const firestore = useFirestore();
-  const storage = useStorage();
 
   // ALL HOOKS ABOVE THIS LINE - NO CONDITIONAL RETURNS BEFORE THIS
   // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
@@ -512,39 +535,7 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearInterval(heartbeat);
   }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
 
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
-    try {
-      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-    } catch (e) {
-      console.error('[Room] Failed to create participants query:', e);
-      return null;
-    }
-  }, [firestore, room.id]);
-
-  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
-
-  const participants = useMemo(() => {
-    if (!participantsData) return [];
-
-    // Show ALL participants from Firestore - no filtering
-    // This ensures everyone in the room is visible
-    return participantsData;
-  }, [participantsData]);
-
-  // DEBUG: Log participants data changes with full details
-  useEffect(() => {
-    console.log('[OnlineCount] Raw participantsData:', participantsData?.length || 0);
-    console.log('[OnlineCount] Filtered participants:', participants.length);
-    if (participantsData) {
-      console.log('[OnlineCount] All users:', participantsData.map(p => ({
-        uid: p.uid,
-        name: p.name,
-        seat: p.seatIndex,
-        lastSeen: (p as any).lastSeen ? 'yes' : 'no'
-      })));
-    }
-  }, [participantsData, participants]);
+  // Online participants logic moved higher for engine dependencies
 
   // Initialize Room Tasks Hook
   const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
@@ -575,8 +566,7 @@ export function RoomClient({ room }: { room: Room }) {
 
     recordVisit();
   }, [firestore, currentUser?.uid, room.id, room.title, room.coverUrl, room.roomNumber, room.ownerId, onlineCount]);
-  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
-  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
+  // currentUserParticipant and isInSeat definitions moved higher
 
   // Audio connection handled by ActiveRoomManager
 
