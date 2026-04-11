@@ -60,7 +60,7 @@ class AudioRoutePlugin extends Plugin {
 
                 if (BestDevice == null) {
                     for (AudioDeviceInfo device : devices) {
-                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
                             BestDevice = device;
                             break;
                         }
@@ -70,8 +70,13 @@ class AudioRoutePlugin extends Plugin {
                 if (BestDevice != null) {
                     audioManager.setCommunicationDevice(BestDevice);
                 }
-                // Always ensure speakerphone is explicitly false even with communication device
-                audioManager.setSpeakerphoneOn(false);
+                
+                // If we chose a non-speaker device, ensure speakerphone is explicitly false
+                if (BestDevice != null && BestDevice.getType() != AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                    audioManager.setSpeakerphoneOn(false);
+                } else {
+                    audioManager.setSpeakerphoneOn(true);
+                }
             } else {
                 // LEGACY FALLBACK (Android 11 and below)
                 audioManager.stopBluetoothSco();
