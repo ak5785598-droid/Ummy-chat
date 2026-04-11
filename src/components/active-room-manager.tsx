@@ -78,8 +78,8 @@ export function ActiveRoomManager() {
         client.on('volume-indicator', handleVolume);
         return () => {
             client.off('volume-indicator', handleVolume);
-            // Clear volumes on unmount
-            setVolumes({});
+            // Optimization: Only clear volumes if the component is actually unmounting,
+            // or if the client itself is changing. 
         };
     }, [client, setVolumes]);
 

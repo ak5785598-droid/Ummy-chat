@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 
 interface VoiceActivityContextType {
   speakingVolumes: Record<string, number>; // Map of hashed Numeric UID to intensity (0-100)
@@ -12,12 +12,17 @@ const VoiceActivityContext = createContext<VoiceActivityContextType | undefined>
 export function VoiceActivityProvider({ children }: { children: ReactNode }) {
   const [speakingVolumes, setSpeakingVolumes] = useState<Record<string, number>>({});
 
-  const setVolumes = (volumes: Record<string, number>) => {
+  const setVolumes = useCallback((volumes: Record<string, number>) => {
     setSpeakingVolumes(volumes);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    speakingVolumes,
+    setVolumes
+  }), [speakingVolumes, setVolumes]);
 
   return (
-    <VoiceActivityContext.Provider value={{ speakingVolumes, setVolumes }}>
+    <VoiceActivityContext.Provider value={value}>
       {children}
     </VoiceActivityContext.Provider>
   );
