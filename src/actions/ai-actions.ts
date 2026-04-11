@@ -22,6 +22,7 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     console.error('[AI-Action] Detailed Error:', error?.message || error);
     
     // Generic friendly error for users if API fails
-    return "Maaf kijiyega, main abhi connectivity issues ki wajah se thoda slow hoon. Ek baar phir se koshish karein! 💖";
+    const errorPrefix = error?.message?.includes('API_KEY_INVALID') ? '[AUTH_ERR]' : '[CONN_ERR]';
+    return `Maaf kijiyega, main abhi connectivity issues ki wajah se thoda slow hoon. Ek baar phir se koshish karein! ${errorPrefix} 💖`;
   }
 }

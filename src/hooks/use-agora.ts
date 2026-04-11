@@ -96,12 +96,13 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       // 4. Join Channel and set initial role
       try {
         const numericUid = hashUidToNumber(uid);
-        // In 'live' mode, we MUST set a role. Default is audience.
-        await client.setClientRole(isInSeat ? 'host' : 'audience');
+        // ALWAYS HOST: Use 'host' by default to keep mobile OS in Communication Mode.
+        // This prevents audio routing jumps when mic is activated later.
+        await client.setClientRole('host');
         await client.join(APP_ID, roomId, null, numericUid);
         
         if (isMounted) setConnectionState('CONNECTED');
-        console.log('[Agora] Joined as:', numericUid, 'Role:', isInSeat ? 'host' : 'audience');
+        console.log('[Agora] Joined as:', numericUid, 'Role: ALWAYS_HOST');
       } catch (err) {
         console.error('[Agora] Join FAILED:', err);
         if (isMounted) setConnectionState('DISCONNECTED');
@@ -147,10 +148,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         if (localAudioTrack || isPublishingRef.current) return;
         isPublishingRef.current = true;
         try {
-          // 1. SWITCH ROLE TO HOST (Requirement for publishing in 'live' mode)
-          await client.setClientRole('host');
-          
-          // 2. ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
+          // ENSURE: Resume audio context IMMEDIATELY before track creation (Mobile Fix)
           await resumeAudioContext();
 
           // Optimize constraints for mobile Bluetooth/Speaker routing
@@ -158,21 +156,18 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             AEC: true, 
             AGC: true, 
             ANS: true, 
-            encoderConfig: 'speech_low_quality' // Using lower quality for better routing stability on mobile
+            encoderConfig: 'speech_low_quality' 
           });
           
-          // FINAL GUARD: Re-check connection and state before final API call
           if (client.connectionState === 'CONNECTED' && client.uid) {
             await client.publish(track);
             setLocalAudioTrack(track);
-            console.log('[Agora] Mic PUBLISHED with Role: host');
+            console.log('[Agora] Mic PUBLISHED (Role remains host)');
           } else {
             track.close();
-            await client.setClientRole('audience');
           }
         } catch (e) {
           console.error('[Agora] Mic Publish Error:', e);
-          await client.setClientRole('audience').catch(() => {});
         } finally {
           isPublishingRef.current = false;
         }
@@ -183,12 +178,9 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             localAudioTrack.stop();
             localAudioTrack.close();
             setLocalAudioTrack(null);
-            
-            // Revert to audience role after unpublishing
-            await client.setClientRole('audience');
-            console.log('[Agora] Mic UNPUBLISHED, Role reverted to audience');
+            console.log('[Agora] Mic UNPUBLISHED (Maintaining host role)');
           } catch (e) {
-            console.error('[Agora] Mic Unpublish/Role Revert Error:', e);
+            console.error('[Agora] Mic Unpublish Error:', e);
           }
         }
       }

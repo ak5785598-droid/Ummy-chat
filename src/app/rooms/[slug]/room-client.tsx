@@ -288,6 +288,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const aiSilentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
   const welcomedUsersRef = useRef<Set<string>>(new Set());
@@ -743,6 +745,20 @@ export function RoomClient({ room }: { room: Room }) {
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    // NATIVE-SYNC WARMUP: Explicitly resume AudioContext for mobile browsers
+    // This helps 'slave' the SpeechSynthesis to the same stream as Agora
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+
+    // SLAVE AUDIO TRIGGER: Gently poke the media engine to prevent Bluetooth disconnect
+    if (aiSilentAudioRef.current) {
+      aiSilentAudioRef.current.play().catch(() => {});
+    }
+
     // VOICE WARM-UP: Ensure we clear old tasks before speaking
     window.speechSynthesis.cancel();
     setIsAISpeaking(true);
@@ -790,10 +806,14 @@ export function RoomClient({ room }: { room: Room }) {
     utterance.rate = 1.0;
     utterance.volume = 1.0;
 
-    utterance.onend = () => setIsAISpeaking(false);
+    utterance.onend = () => {
+      setIsAISpeaking(false);
+      if (aiSilentAudioRef.current) aiSilentAudioRef.current.pause();
+    };
     utterance.onerror = (e) => {
       console.warn('[AI-Voice] Utterance Error:', e);
       setIsAISpeaking(false);
+      if (aiSilentAudioRef.current) aiSilentAudioRef.current.pause();
     };
 
     // BROWSER HANDSHAKE: Small delay ensures the engine is ready after cancel()
@@ -1873,6 +1893,13 @@ export function RoomClient({ room }: { room: Room }) {
         achievedTasks={achievedTasks}
         claimedTasks={claimedTasks}
         onClaim={claimTask}
+      />
+
+      {/* AI AUDIO SLAVE (Mobile Bluetooth Fix) */}
+      <audio 
+        ref={aiSilentAudioRef} 
+        loop
+        src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" 
       />
 
       {/* AUDIO UNLOCK: Background listener - no overlay, auto-sync on interaction */}
