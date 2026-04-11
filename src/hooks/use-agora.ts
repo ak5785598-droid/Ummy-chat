@@ -52,6 +52,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   const micNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const musicNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const unifiedTrackRef = useRef<any>(null);
+  const monitorGainRef = useRef<GainNode | null>(null);
 
   // Helper to resume audio context (Standard Mobile Fix)
   const resumeAudioContext = async () => {
@@ -61,6 +62,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         if (AudioContextClass) {
           audioCtxRef.current = new AudioContextClass();
           mixerDestRef.current = audioCtxRef.current!.createMediaStreamDestination();
+          
+          // MONITOR SINK: This bridges the mix back to the host's actual output (Earbuds)
+          monitorGainRef.current = audioCtxRef.current!.createGain();
+          monitorGainRef.current.connect(audioCtxRef.current!.destination);
         }
       }
       if (audioCtxRef.current?.state === 'suspended') {
@@ -154,6 +159,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         else user.audioTrack.play();
       }
     });
+
+    // Also mute monitor if global speaker is muted
+    if (monitorGainRef.current) {
+      monitorGainRef.current.gain.value = isSpeakerMuted ? 0 : 1;
+    }
   }, [isSpeakerMuted, remoteUsers]);
 
   // EFFECT 2: Nuclear Mixer Engine (Hardware Link)
@@ -163,7 +173,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
     const syncMixer = async () => {
       await resumeAudioContext();
-      if (!audioCtxRef.current || !mixerDestRef.current) return;
+      if (!audioCtxRef.current || !mixerDestRef.current || !monitorGainRef.current) return;
 
       // A. Mange Microphone Input
       if (isInSeat) {
@@ -171,8 +181,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
             micNodeRef.current = audioCtxRef.current.createMediaStreamSource(stream);
+            
+            // Connect mic to publish track only (Don't monitor mic to avoid local echo)
             micNodeRef.current.connect(mixerDestRef.current);
-            setLocalAudioTrack(stream.getAudioTracks()[0] as any); // For volume analysis/waves
+            setLocalAudioTrack(stream.getAudioTracks()[0] as any); 
           } catch (e) {
             console.error('[Mixer] Mic Fail:', e);
           }
@@ -188,11 +200,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
       // B. Manage Music Input
       if (musicStream) {
         if (!musicNodeRef.current) {
-          // ENSURE NO LOCAL LEAK: The source stream is muted locally, only the mixed result is published.
           musicNodeRef.current = audioCtxRef.current.createMediaStreamSource(musicStream);
+          
+          // Connect music to BOTH publication and local monitor
           musicNodeRef.current.connect(mixerDestRef.current);
+          musicNodeRef.current.connect(monitorGainRef.current);
+          
           setLocalMusicTrack(musicStream.getAudioTracks()[0] as any);
-          console.log('[Mixer] Music Linked (No-Leak Mode)');
+          console.log('[Mixer] Music Linked to Integrated Sink');
         }
       } else {
         if (musicNodeRef.current) {

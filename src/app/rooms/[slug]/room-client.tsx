@@ -1954,6 +1954,7 @@ export function RoomClient({ room }: { room: Room }) {
         crossOrigin="anonymous"
         preload="auto"
         playsInline
+        muted // FORCE MUTE: Stops 'Media' leakage to speaker. Host hears mix via Engine monitor.
       />
 
       {/* LIVE BACKGROUND OVERLAY */}
