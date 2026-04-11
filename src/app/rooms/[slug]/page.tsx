@@ -1,6 +1,10 @@
 
 'use client';
 
+export async function generateStaticParams() {
+  return [];
+}
+
 import { use, useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RoomClient } from './room-client';

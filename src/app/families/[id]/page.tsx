@@ -1,5 +1,9 @@
 'use client';
 
+export async function generateStaticParams() {
+  return [];
+}
+
 import React, { useMemo, useState } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { 

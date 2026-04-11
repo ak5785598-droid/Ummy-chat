@@ -1,5 +1,9 @@
 'use client';
 
+export async function generateStaticParams() {
+  return [];
+}
+
 import dynamic from 'next/dynamic';
 import { Loader } from 'lucide-react';
 
