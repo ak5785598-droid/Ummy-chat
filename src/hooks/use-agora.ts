@@ -2,6 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
+import { RegisterPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+
+// NATIVE BRIDGE DEFINITION
+interface AudioRoutePlugin {
+  forceEarbuds(): Promise<void>;
+  resetAudio(): Promise<void>;
+}
+const AudioRoute = Capacitor.isNativePlatform() 
+  ? (Capacitor as any).Plugins.AudioRoute 
+  : null;
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
@@ -163,6 +174,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             await client.publish(track);
             setLocalAudioTrack(track);
             console.log('[Agora] Mic PUBLISHED (Role remains host)');
+
+            // NATIVE ROUTE SYNC: Force earbuds on native platform
+            if (AudioRoute) {
+              AudioRoute.forceEarbuds().catch((err: any) => console.error('[NativeAudio] Force failed:', err));
+            }
           } else {
             track.close();
           }
@@ -179,6 +195,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             localAudioTrack.close();
             setLocalAudioTrack(null);
             console.log('[Agora] Mic UNPUBLISHED (Maintaining host role)');
+
+            // NATIVE ROUTE RESET: Restore normal audio focus
+            if (AudioRoute) {
+              AudioRoute.resetAudio().catch(() => {});
+            }
           } catch (e) {
             console.error('[Agora] Mic Unpublish Error:', e);
           }

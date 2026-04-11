@@ -1413,6 +1413,13 @@ export function RoomClient({ room }: { room: Room }) {
       updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
+
+    // NATIVE ROUTE RESET: Restore normal audio focus on exit
+    const AudioRoute = (window as any).Capacitor?.Plugins?.AudioRoute;
+    if (AudioRoute) {
+      AudioRoute.resetAudio().catch(() => {});
+    }
+
     setActiveRoom(null);
     setMinimizedRoom(null);
     router.push('/rooms');
