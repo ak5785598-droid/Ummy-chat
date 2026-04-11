@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
-import { RegisterPlugin } from '@capacitor/core';
+import { registerPlugin } from '@capacitor/core';
 import { Capacitor } from '@capacitor/core';
 
 // NATIVE BRIDGE DEFINITION
