@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 
+export const dynamic = 'force-static';
+
 /**
  * Official Ummy PWA Manifest.
  * Configures high-fidelity standalone behavior for Android and iOS.
