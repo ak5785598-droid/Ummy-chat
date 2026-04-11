@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:373109833688:android:4f609ed9f20199e30bfcad",
         "android_client_info": {
-          "package_name": "ummyndiapvtltd.ummyvoice"
+          "package_name": "app.vercel.ummy_chat.twa"
         }
       },
       "oauth_client": [
@@ -18,7 +18,7 @@
           "client_id": "373109833688-1ntvf8i0emr7hqc3ssgaktrmq6s5ujgo.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "ummyndiapvtltd.ummyvoice",
+            "package_name": "app.vercel.ummy_chat.twa",
             "certificate_hash": "36df1eedd97388018588967735e85ab1ab6990f4"
           }
         },
