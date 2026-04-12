@@ -8,6 +8,42 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:373109833688:android:3daa00eeec4354b90bfcad",
+        "android_client_info": {
+          "package_name": "app.vercel.ummy_chat.twa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXrr230S5-dL1NabxnlggP1pQLDqEzJuE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "373109833688-ftlvm4fhm2r12783ujn9hlan4p51ijvg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.vercel.ummy-chat.twa"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:373109833688:android:08148476e798f9690bfcad",
         "android_client_info": {
           "package_name": "studio.firebase.google.com"
