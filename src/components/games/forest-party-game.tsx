@@ -441,17 +441,24 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             )}
           >
             <div className={cn(
-             "h-20 w-20 rounded-[1.5rem] flex flex-col items-center justify-center transition-all border-4 relative overflow-hidden shadow-2xl",
-             isActive ? "border-yellow-400 bg-white shadow-[0_0_50px_#fbbf24] scale-125" : `bg-gradient-to-br ${item.color} ${item.border}`
+             "h-20 w-20 rounded-full flex flex-col items-center transition-all border-4 relative overflow-hidden shadow-2xl",
+             isActive ? "border-yellow-400 shadow-[0_0_50px_#fbbf24] scale-125" : "border-[#eab676]",
+             "bg-gradient-to-b from-[#4a2e15] from-50% to-[#eab676] to-50%"
             )}>
-              <span className={cn("text-4xl drop-shadow-xl relative z-10 transition-transform", isActive && "scale-110")}>
-               {item.emoji}
-              </span>
-              <div className="absolute bottom-1 bg-black/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 z-10">
-                <span className="text-[8px] font-black text-white/90 uppercase tracking-widest">
-                 {item.label}
-                </span>
+              {/* Top Half (Icon) */}
+              <div className="h-1/2 w-full flex items-end justify-center pb-0.5">
+                 <span className={cn("text-[32px] drop-shadow-xl relative z-10 transition-transform leading-none", isActive && "scale-110")}>
+                  {item.emoji}
+                 </span>
               </div>
+              
+              {/* Bottom Half (Multiplier) */}
+              <div className="h-1/2 w-full flex items-start justify-center pt-1">
+                 <span className="text-[12px] font-black text-white tracking-widest z-10 drop-shadow-md">
+                  {item.label}
+                 </span>
+              </div>
+
               <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
             </div>
 
