@@ -19,7 +19,6 @@ import {
   signOut,
   type ConfirmationResult,
 } from 'firebase/auth';
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { Capacitor } from '@capacitor/core';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -281,22 +280,9 @@ export default function LoginPage() {
     setIsSigningIn(true);
     
     try {
-      // Use native Firebase Authentication on native platforms
-      if (Capacitor.isNativePlatform()) {
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        console.log('[Native Google Sign-In] Success:', result);
-        
-        // Sync user identity and navigate
-        if (result.user) {
-          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-          router.replace('/rooms');
-        }
-      } else {
-        // Use web Firebase Auth on web
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        await signInWithRedirect(auth, provider);
-      }
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
