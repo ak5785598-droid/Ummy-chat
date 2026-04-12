@@ -2,12 +2,13 @@ package app.vercel.ummy_chat.twa;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import com.getcapacitor.Plugin;
+import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(AudioRoutePlugin.class);
         super.onCreate(savedInstanceState);
+        registerPlugin(AudioRoutePlugin.class);
+        registerPlugin(FirebaseAuthenticationPlugin.class);
     }
 }
