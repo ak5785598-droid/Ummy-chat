@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 import { Capacitor } from '@capacitor/core';
 
@@ -38,9 +38,92 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
+  const [currentOutputDevice, setCurrentOutputDevice] = useState<string>('default');
   
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
+
+  // Set audio output device for all remote users
+  const setAudioOutputDevice = useCallback(async (deviceId: string) => {
+    try {
+      // Agora doesn't have direct setSinkId on remote tracks
+      // We need to use the Web Audio API on the <audio> elements Agora creates
+      if (AgoraRTC && AgoraRTC.setAudioOutputDevice) {
+        await AgoraRTC.setAudioOutputDevice(deviceId);
+        setCurrentOutputDevice(deviceId);
+        console.log('[Agora] Output device set to:', deviceId);
+      } else {
+        // Fallback: try to set on all existing audio elements
+        const audioElements = document.querySelectorAll('audio');
+        for (const audio of audioElements) {
+          // @ts-ignore
+          if (audio.setSinkId) {
+            // @ts-ignore
+            await audio.setSinkId(deviceId);
+          }
+        }
+        setCurrentOutputDevice(deviceId);
+      }
+    } catch (e) {
+      console.warn('[Agora] Failed to set audio output:', e);
+    }
+  }, []);
+
+  // Toggle between speaker and earbuds
+  const toggleAudioOutput = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+      // Find earbud/headphone device
+      const earbudDevice = audioOutputs.find(d => 
+        d.label.toLowerCase().includes('bluetooth') || 
+        d.label.toLowerCase().includes('airpods') ||
+        d.label.toLowerCase().includes('buds') ||
+        d.label.toLowerCase().includes('headphone') ||
+        d.label.toLowerCase().includes('headset') ||
+        d.label.toLowerCase().includes('earphone')
+      );
+
+      if (currentOutputDevice === 'default' && earbudDevice) {
+        await setAudioOutputDevice(earbudDevice.deviceId);
+      } else {
+        await setAudioOutputDevice('default');
+      }
+    } catch (e) {
+      console.warn('[Agora] Toggle output failed:', e);
+    }
+  }, [currentOutputDevice, setAudioOutputDevice]);
+
+  // Force to earbuds if available
+  const forceEarbudsOutput = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+      const earbudDevice = audioOutputs.find(d => 
+        d.label.toLowerCase().includes('bluetooth') || 
+        d.label.toLowerCase().includes('airpods') ||
+        d.label.toLowerCase().includes('buds') ||
+        d.label.toLowerCase().includes('headphone') ||
+        d.label.toLowerCase().includes('headset') ||
+        d.label.toLowerCase().includes('earphone')
+      );
+
+      if (earbudDevice && currentOutputDevice === 'default') {
+        await setAudioOutputDevice(earbudDevice.deviceId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[Agora] Force earbuds failed:', e);
+      return false;
+    }
+  }, [currentOutputDevice, setAudioOutputDevice]);
 
   // EFFECT 1: Connection Management
   useEffect(() => {
@@ -150,12 +233,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             AGC: true
           });
           
-          await client.publish(micTrack);
-          setLocalAudioTrack(micTrack);
+          if (micTrack) {
+            await client.publish(micTrack);
+            setLocalAudioTrack(micTrack);
+          }
           console.log('[Agora] Vocal Track Published');
 
           // Handle initial mute state
-          if (isMuted) {
+          if (isMuted && micTrack) {
             await micTrack.setEnabled(false);
           }
         } catch (e) {
@@ -198,5 +283,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     return () => clearInterval(interval);
   }, [connectionState, !!localAudioTrack]);
 
-  return { localAudioTrack, remoteUsers, client: clientRef.current };
+  return { 
+    localAudioTrack, 
+    remoteUsers, 
+    client: clientRef.current,
+    setAudioOutputDevice,
+    toggleAudioOutput,
+    forceEarbudsOutput,
+    currentOutputDevice,
+    isSpeaker: currentOutputDevice === 'default'
+  };
 }

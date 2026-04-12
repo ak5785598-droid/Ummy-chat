@@ -41,7 +41,8 @@ import {
   Smile,
   Sparkles,
   UserPlus,
-  Trophy as TrophyIcon
+  Trophy as TrophyIcon,
+  Speaker
 } from 'lucide-react';
 import { ROOM_TASKS } from '@/constants/room-tasks';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
@@ -123,6 +124,7 @@ import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
+import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
@@ -302,6 +304,16 @@ export function RoomClient({ room }: { room: Room }) {
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
 
+  // Audio output routing (Speaker vs Earbuds)
+  const { 
+    isSpeaker, 
+    toggleOutput, 
+    forceEarbuds,
+    hasBluetooth,
+    hasWired,
+    registerAudioElement 
+  } = useAudioOutput();
+
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -379,6 +391,24 @@ export function RoomClient({ room }: { room: Room }) {
     };
   }, []);
 
+  // AUDIO OUTPUT: Auto-route to earbuds when music starts
+  useEffect(() => {
+    if (musicAudioRef.current) {
+      registerAudioElement(musicAudioRef.current);
+    }
+  }, [registerAudioElement]);
+
+  // Try to auto-switch to earbuds when music starts playing
+  useEffect(() => {
+    if (isMusicPlaying && (hasBluetooth || hasWired) && isSpeaker) {
+      // Small delay to ensure audio element is ready
+      const timer = setTimeout(() => {
+        forceEarbuds(musicAudioRef.current);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isMusicPlaying, hasBluetooth, hasWired, isSpeaker, forceEarbuds]);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
@@ -441,7 +471,13 @@ export function RoomClient({ room }: { room: Room }) {
 
   // --- AUDIO ENGINE INITIALIZATION ---
   const musicTrackArg = musicStream ? musicStream.getAudioTracks()[0] : null;
-  const { localAudioTrack, remoteUsers } = useAgora(
+  const { 
+    localAudioTrack, 
+    remoteUsers,
+    toggleAudioOutput,
+    forceEarbudsOutput,
+    isSpeaker: isVoiceSpeaker 
+  } = useAgora(
     room.id,
     isInSeat,
     currentUserParticipant?.isMuted || false,
@@ -449,6 +485,13 @@ export function RoomClient({ room }: { room: Room }) {
     musicTrackArg,
     isSpeakerMuted
   );
+
+  // Auto-route voice to earbuds when connected
+  useEffect(() => {
+    if ((hasBluetooth || hasWired) && isVoiceSpeaker && remoteUsers.length > 0) {
+      forceEarbudsOutput();
+    }
+  }, [hasBluetooth, hasWired, isVoiceSpeaker, remoteUsers.length, forceEarbudsOutput]);
 
   // ALL HOOKS ABOVE THIS LINE - NO CONDITIONAL RETURNS BEFORE THIS
   // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
@@ -2431,6 +2474,29 @@ export function RoomClient({ room }: { room: Room }) {
           <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1 transition-all active:scale-90", !isInSeat && "opacity-30")}>
             {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/40" />}
           </button>
+
+          {/* Speaker/Earbuds Toggle */}
+          {(hasBluetooth || hasWired) && (
+            <button 
+              onClick={async () => {
+                await toggleOutput(musicAudioRef.current);
+                toast({ 
+                  title: isSpeaker ? 'Switched to Earbuds 🎧' : 'Switched to Speaker 🔊',
+                  description: isSpeaker ? 'Audio routed to your connected headphones' : 'Audio playing through phone speaker'
+                });
+              }} 
+              className={cn(
+                "p-1 px-1 active:scale-90 transition-transform relative",
+                isSpeaker ? "text-white/60" : "text-cyan-400"
+              )}
+              title={isSpeaker ? "Switch to Earbuds" : "Switch to Speaker"}
+            >
+              <Speaker className="h-6 w-6" />
+              {!isSpeaker && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-cyan-400 rounded-full animate-pulse" />
+              )}
+            </button>
+          )}
 
           <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
             <Mail className="h-6 w-6 text-white/80" />
