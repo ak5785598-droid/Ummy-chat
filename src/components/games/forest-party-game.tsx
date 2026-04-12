@@ -370,47 +370,48 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </div>
 
-   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative mt-4">
+   {/* Thoda sa margin top -mt-6 dekar Wheel Area Upar kiya */}
+   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative -mt-6">
     
     {/* WHEEL CONTAINER */}
     <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
       
-      {/* THICK YELLOW CONNECTING LINES (SVG) */}
-      <svg className="absolute inset-0 w-full h-full z-10 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" viewBox="0 0 100 100">
-        <line x1="50" y1="50" x2="50" y2="12.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="77.5" y2="22.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="87.5" y2="50" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="77.5" y2="77.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="50" y2="87.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="22.5" y2="77.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="12.5" y2="50" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
-        <line x1="50" y1="50" x2="22.5" y2="22.5" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
+      {/* THICK SKIN CONNECTING LINES (SVG) */}
+      <svg className="absolute inset-0 w-full h-full z-10 drop-shadow-[0_0_8px_rgba(234,182,118,0.6)]" viewBox="0 0 100 100">
+        <line x1="50" y1="50" x2="50" y2="12.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="77.5" y2="22.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="87.5" y2="50" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="77.5" y2="77.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="50" y2="87.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="22.5" y2="77.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="12.5" y2="50" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
+        <line x1="50" y1="50" x2="22.5" y2="22.5" stroke="#eab676" strokeWidth="5" strokeLinecap="round" />
       </svg>
 
-      {/* GLOWING CENTER */}
-      <div className="relative z-20 w-32 h-32 bg-gradient-to-br from-emerald-600 via-green-800 to-emerald-950 rounded-full shadow-[0_0_50px_rgba(34,197,94,0.4)] flex flex-col items-center justify-center border-[6px] border-[#d4af37] p-2 text-center overflow-hidden">
+      {/* GLOWING CENTER (SMALLER & DARK BROWN) */}
+      <div className="relative z-20 w-24 h-24 bg-gradient-to-br from-[#4a2e15] to-[#2d1a0d] rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8),inset_0_4px_10px_rgba(255,255,255,0.1)] flex flex-col items-center justify-center border-[4px] border-[#eab676] p-2 text-center overflow-hidden">
         <div className="absolute inset-0 bg-white/5 animate-shine -skew-x-[45deg]" />
-        <p className="text-[9px] font-black uppercase text-yellow-500/80 leading-tight tracking-[0.3em] mb-1 drop-shadow-md">
+        <p className="text-[7px] font-black uppercase text-yellow-500/80 leading-tight tracking-[0.2em] mb-1 drop-shadow-md">
          {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
         </p>
         <span className={cn(
-         "text-4xl font-black tracking-tight transition-all duration-500",
+         "text-3xl font-black tracking-tight transition-all duration-500",
          gameState === 'betting' ? "text-white" : "text-yellow-400 scale-125 rotate-12"
         )}>
          {gameState === 'betting' ? timeLeft : '🎲'}
         </span>
         {gameState === 'betting' && (
-          <div className="mt-2 w-[80%] mx-auto bg-black/20 rounded-full h-1 relative overflow-hidden">
+          <div className="mt-1 w-[80%] mx-auto bg-black/40 rounded-full h-1 relative overflow-hidden">
             <motion.div 
               initial={{ width: '100%' }}
               animate={{ width: `${(timeLeft/25)*100}%` }}
-              className="absolute left-0 top-0 h-full bg-yellow-500"
+              className="absolute left-0 top-0 h-full bg-[#eab676]"
             />
           </div>
         )}
       </div>
 
-      {/* ITEM GRID */}
+      {/* ITEM GRID (BIGGER CARDS & MOVED TOWARDS CENTER) */}
       {ANIMALS.map((item, idx) => {
        const isActive = highlightIdx === idx;
        const betOnThis = myBets[item.id] || 0;
@@ -421,14 +422,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           key={item.id} 
           className={cn(
            "absolute transition-all duration-300 z-20",
-           item.pos === 'top' && "top-0 left-1/2 -translate-x-1/2",
-           item.pos === 'top-right' && "top-[10%] right-[10%]",
-           item.pos === 'right' && "right-0 top-1/2 -translate-y-1/2",
-           item.pos === 'bottom-right' && "bottom-[10%] right-[10%]",
-           item.pos === 'bottom' && "bottom-0 left-1/2 -translate-x-1/2",
-           item.pos === 'bottom-left' && "bottom-[10%] left-[10%]",
-           item.pos === 'left' && "left-0 top-1/2 -translate-y-1/2",
-           item.pos === 'top-left' && "top-[10%] left-[10%]",
+           item.pos === 'top' && "top-[4%] left-1/2 -translate-x-1/2",
+           item.pos === 'top-right' && "top-[11%] right-[11%]",
+           item.pos === 'right' && "right-[4%] top-1/2 -translate-y-1/2",
+           item.pos === 'bottom-right' && "bottom-[11%] right-[11%]",
+           item.pos === 'bottom' && "bottom-[4%] left-1/2 -translate-x-1/2",
+           item.pos === 'bottom-left' && "bottom-[11%] left-[11%]",
+           item.pos === 'left' && "left-[4%] top-1/2 -translate-y-1/2",
+           item.pos === 'top-left' && "top-[11%] left-[11%]",
            isActive && "z-50"
           )}
         >
@@ -440,26 +441,30 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
               gameState === 'spinning' && !isActive && "opacity-40 grayscale-[0.2]"
             )}
           >
+            {/* ANIMAL CIRCLE CARD (DARK BROWN 3D) */}
             <div className={cn(
-             "h-20 w-20 rounded-full flex flex-col items-center transition-all border-4 relative overflow-hidden shadow-2xl",
-             isActive ? "border-yellow-400 shadow-[0_0_50px_#fbbf24] scale-125" : "border-[#eab676]",
-             "bg-gradient-to-b from-[#4a2e15] from-50% to-[#eab676] to-50%"
+             "h-[85px] w-[85px] rounded-full flex flex-col items-center justify-center transition-all border-[4px] relative overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.6),inset_0_2px_8px_rgba(255,255,255,0.2)]",
+             isActive ? "border-yellow-400 shadow-[0_0_50px_#fbbf24] scale-110" : "border-[#eab676]",
+             "bg-gradient-to-br from-[#4a2e15] to-[#2d1a0d]"
             )}>
-              {/* Top Half (Icon) */}
-              <div className="h-1/2 w-full flex items-end justify-center pb-0.5">
-                 <span className={cn("text-[32px] drop-shadow-xl relative z-10 transition-transform leading-none", isActive && "scale-110")}>
-                  {item.emoji}
-                 </span>
-              </div>
               
-              {/* Bottom Half (Multiplier) */}
-              <div className="h-1/2 w-full flex items-start justify-center pt-1">
-                 <span className="text-[12px] font-black text-white tracking-widest z-10 drop-shadow-md">
-                  {item.label}
+              <div className="w-full h-full flex items-center justify-center">
+                 <span className={cn("text-[40px] drop-shadow-xl relative z-10 transition-transform leading-none", isActive && "scale-110")}>
+                  {item.emoji}
                  </span>
               </div>
 
               <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
+            </div>
+
+            {/* MULTIPLIER PATTI (DARK BROWN & SKIN BORDER) */}
+            <div className={cn(
+                "absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-[2px] rounded-full border-2 whitespace-nowrap shadow-lg",
+                "bg-[#3e2723] border-[#eab676]"
+            )}>
+                <span className="text-[9px] font-black text-white tracking-widest drop-shadow-md">
+                    WIN {item.multiplier} TIMES
+                </span>
             </div>
 
             {/* CHIPS DROP CONTAINER */}
@@ -503,7 +508,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </main>
 
-   <footer className="relative z-50 p-6 pb-SAFE_BOTTOM bg-gradient-to-t from-black via-black/80 to-transparent">
+   <footer className="relative z-50 p-6 pb-SAFE_BOTTOM bg-gradient-to-t from-black via-black/80 to-transparent mt-auto">
      <div className="max-w-md mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 bg-white/10 backdrop-blur-2xl px-6 py-3 rounded-3xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
