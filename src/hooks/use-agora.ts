@@ -219,22 +219,15 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
       // A. Manage Microphone Input
       if (isInSeat) {
-        // NATIVE PERMISSION SYNC: Explicitly request microphone if on Android/iOS
+        // NATIVE PERMISSION SYNC: Simplified approach - let getUserMedia drive the request
+        // but ensure the app is focused and ready.
         if (Capacitor.isNativePlatform()) {
-          try {
-             // Capacitor standard permission check for Microphone
-             const check = await (Capacitor as any).Plugins.Permissions.query({ name: 'microphone' });
-             if (check.state !== 'granted') {
-               console.log('[Mixer] Requesting Native Microphone Permission...');
-               await (Capacitor as any).Plugins.Permissions.request({ name: 'microphone' });
-             }
-          } catch (e) {
-            console.warn('[Mixer] Native permission bridge failed, falling back to browser call:', e);
-          }
+           console.log('[Mixer] Preparing native mic session...');
         }
 
         if (!micNodeRef.current) {
           try {
+            // DIRECT REQUEST: This is the most reliable way to trigger the OS popup in WebView
             const stream = await navigator.mediaDevices.getUserMedia({ 
               audio: { 
                 echoCancellation: true, 
@@ -244,29 +237,24 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             });
             micNodeRef.current = audioCtxRef.current.createMediaStreamSource(stream);
             
-            // Create MIC GAIN for clean muting if it doesn't exist
             if (!micGainRef.current) {
               micGainRef.current = audioCtxRef.current.createGain();
             }
             
-            // Connect mic -> gain -> mixerDest AND mic -> analyzer
             micNodeRef.current.connect(micGainRef.current);
             micGainRef.current.connect(mixerDestRef.current);
             micNodeRef.current.connect(analyzerRef.current!);
             
             setLocalAudioTrack(stream.getAudioTracks()[0] as any); 
-            console.log('[Mixer] Microphone Node Connected and Live');
+            console.log('[Mixer] Mic successfully captured and mixed');
           } catch (e) {
-            console.error('[Mixer] Mic Fail:', e);
-          }
-        }
-
-        // Apply Local Mute State to Source Gain
-        if (micGainRef.current) {
-          const targetValue = isMuted ? 0 : 1;
-          if (micGainRef.current.gain.value !== targetValue) {
-            micGainRef.current.gain.setTargetAtTime(targetValue, audioCtxRef.current.currentTime, 0.05);
-            console.log(`[Mixer] Local Mic ${isMuted ? 'MUTED' : 'UNMUTED'} via Gain Node`);
+            console.error('[Mixer] Microphone capture FAILED:', e);
+            // Fallback: Try to request permissions via Bridge if getUserMedia was blocked internally
+            if (Capacitor.isNativePlatform()) {
+               try {
+                 await (Capacitor as any).Plugins.Permissions.request({ name: 'microphone' });
+               } catch(err) {}
+            }
           }
         }
       } else {
@@ -274,41 +262,32 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           micNodeRef.current.disconnect();
           micNodeRef.current = null;
           setLocalAudioTrack(null);
-          console.log('[Mixer] Microphone Disconnected (Left Seat)');
+          console.log('[Mixer] Mic released');
         }
       }
 
-      // B. Inject Music into Mixer (THE FIX FOR SYNC)
+      // B. Inject Music into Mixer (Reliable Sync)
       if (musicTrack) {
         if (currentMusicTrackIdRef.current !== musicTrack.id) {
-            console.log('[Mixer] New Music Track Detected, Injecting into Mixer...');
-            
-            // Cleanup old music source if it exists
             if (musicSourceNodeRef.current) {
                 try { musicSourceNodeRef.current.disconnect(); } catch(e){}
             }
-
             const musicStream = new MediaStream([musicTrack]);
             musicSourceNodeRef.current = audioCtxRef.current.createMediaStreamSource(musicStream);
-            
-            // Connect music -> ducking gain -> mixerDest
             musicSourceNodeRef.current.connect(musicGainRef.current);
             currentMusicTrackIdRef.current = musicTrack.id;
-            console.log('[Mixer] Music Track Successfully Injected into Local Mixer');
         }
       } else {
           if (musicSourceNodeRef.current) {
-              musicSourceNodeRef.current.disconnect();
+              try { musicSourceNodeRef.current.disconnect(); } catch(e){}
               musicSourceNodeRef.current = null;
               currentMusicTrackIdRef.current = null;
-              console.log('[Mixer] Music Stopped, Disconnecting Source');
           }
       }
 
-      // C. Unified Publication Track (ALWAYS USE MIXER OUTPUT)
+      // C. Unified Publication Track
       if (!unifiedTrackRef.current && mixerDestRef.current) {
         try {
-          // THE CRITICAL FIX: We create the Agora track from the MIXER outcome
           const mixerTrack = mixerDestRef.current.stream.getAudioTracks()[0];
           if (mixerTrack) {
               const track = await AgoraRTC.createCustomAudioTrack({
@@ -316,10 +295,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
               });
               await client.publish(track);
               unifiedTrackRef.current = track;
-              console.log('[Mixer] CRITICAL: Unified Agora Stream Published (Mixer Mode)');
+              console.log('[Mixer] Unified Broadcast Active (Voice + Music)');
           }
         } catch (e) {
-          console.error('[Mixer] Failed to publish unified track:', e);
+          console.error('[Mixer] Stream publication FAILED:', e);
         }
       }
     };
