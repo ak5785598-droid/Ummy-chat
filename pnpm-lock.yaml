@@ -113,6 +113,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      cordova-plugin-audioroute:
+        specifier: ^0.1.2
+        version: 0.1.2
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
@@ -3064,6 +3067,9 @@ packages:
   cookie@0.7.2:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
+
+  cordova-plugin-audioroute@0.1.2:
+    resolution: {integrity: sha512-A50WSB5orj2qCkZGuQoKerfFB28R3mdbzaIbeWYgblSJzc7flAmJd3LC5FfVZPZEMRjqXiQFyTxunV8sCjnTcQ==}
 
   cors@2.8.6:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
@@ -9164,6 +9170,8 @@ snapshots:
   cookie-signature@1.2.2: {}
 
   cookie@0.7.2: {}
+
+  cordova-plugin-audioroute@0.1.2: {}
 
   cors@2.8.6:
     dependencies:
