@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
+import java.util.List;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -30,8 +31,8 @@ public class AudioRoutePlugin extends Plugin {
         
         // For Android S+ (API 31+), use communication device
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            AudioDeviceInfo[] devices = audioManager.getAvailableCommunicationDevices();
-            for (AudioDeviceInfo device : devices) {
+            List<AudioDeviceInfo> deviceList = audioManager.getAvailableCommunicationDevices();
+            for (AudioDeviceInfo device : deviceList) {
                 int type = device.getType();
                 // Route to: Bluetooth SCO, Bluetooth A2DP, Wired headset, Wired headphones, USB headset
                 if (type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
