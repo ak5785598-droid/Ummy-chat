@@ -237,6 +237,11 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         user.audioTrack.play();
       }
     });
+    
+    // Force earbuds when remote users change (prevent speaker switch)
+    if (AudioRoute && remoteUsers.length > 0) {
+      AudioRoute.forceEarbuds().catch(() => {});
+    }
   }, [remoteUsers]);
 
   // EFFECT 3: Direct Microphone Management (Native Earbud Compatible)
@@ -307,12 +312,12 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     }
   }, [isMuted, localAudioTrack]);
 
-  // ROUTING PERSISTENCE (Optional backup)
+  // ROUTING PERSISTENCE (Frequent enforcement to prevent speaker switch)
   useEffect(() => {
-    if (!AudioRoute || connectionState !== 'CONNECTED' || !localAudioTrack) return;
-    const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 10000);
+    if (!AudioRoute || connectionState !== 'CONNECTED') return;
+    const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 2000);
     return () => clearInterval(interval);
-  }, [connectionState, !!localAudioTrack]);
+  }, [connectionState]);
 
   // EFFECT 5: Music Track Publishing (Broadcast music to other users)
   useEffect(() => {
