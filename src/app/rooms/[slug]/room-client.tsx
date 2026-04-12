@@ -1883,6 +1883,53 @@ export function RoomClient({ room }: { room: Room }) {
     toast({ title: 'Music Stopped' });
   };
 
+  // Handle Next/Previous music from mini player
+  const handleNextMusic = async () => {
+    if (!canManageRoom || !room.playlist || room.playlist.length === 0) {
+      toast({ title: 'No Playlist', description: 'Add songs to use Next/Previous' });
+      return;
+    }
+    
+    const currentIndex = room.playlist.findIndex((song: any) => song.url === room.currentMusicUrl);
+    const nextIndex = (currentIndex + 1) % room.playlist.length;
+    const nextSong = room.playlist[nextIndex];
+    
+    if (nextSong) {
+      await updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        currentMusicUrl: nextSong.url,
+        currentMusicTitle: nextSong.title,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: 'Next Song', description: nextSong.title });
+    }
+  };
+
+  const handlePreviousMusic = async () => {
+    if (!canManageRoom || !room.playlist || room.playlist.length === 0) {
+      toast({ title: 'No Playlist', description: 'Add songs to use Next/Previous' });
+      return;
+    }
+    
+    const currentIndex = room.playlist.findIndex((song: any) => song.url === room.currentMusicUrl);
+    const prevIndex = currentIndex <= 0 ? room.playlist.length - 1 : currentIndex - 1;
+    const prevSong = room.playlist[prevIndex];
+    
+    if (prevSong) {
+      await updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        currentMusicUrl: prevSong.url,
+        currentMusicTitle: prevSong.title,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: 'Previous Song', description: prevSong.title });
+    }
+  };
+
   // Periodic sync of music position removed in favor of Virtual Clock (Zero-Write Sync)
   // This saves Firestore costs and provides better accuracy.
 
@@ -2301,6 +2348,7 @@ export function RoomClient({ room }: { room: Room }) {
 
               {/* Previous */}
               <button
+                onClick={handlePreviousMusic}
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -2346,6 +2394,7 @@ export function RoomClient({ room }: { room: Room }) {
 
               {/* Next */}
               <button
+                onClick={handleNextMusic}
                 className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">

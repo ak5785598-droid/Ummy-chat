@@ -30,11 +30,12 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicTrack: MediaStreamTrack | null = null, isSpeakerMuted: boolean = false) {
+export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicTrackArg: MediaStreamTrack | null = null, isSpeakerMuted: boolean = false) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
   const [currentOutputDevice, setCurrentOutputDevice] = useState<string>('default');
+  const [publishedMusicTrack, setPublishedMusicTrack] = useState<any>(null);
   
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
@@ -249,11 +250,6 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     const manageMic = async () => {
       if (isInSeat) {
         try {
-          // Force Speakerphone or Earbuds via routing if needed
-          if (AudioRoute) {
-            AudioRoute.forceEarbuds().catch(() => {});
-          }
-
           console.log('[Agora] Creating Native Microphone Track...');
           micTrack = await AgoraRTC.createMicrophoneAudioTrack({
             AEC: true,
@@ -266,6 +262,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
             setLocalAudioTrack(micTrack);
           }
           console.log('[Agora] Vocal Track Published');
+
+          // Force Speakerphone or Earbuds via routing AFTER mic is published
+          // This ensures audio routing is maintained after mic access
+          if (AudioRoute) {
+            AudioRoute.forceEarbuds().catch(() => {});
+            // Force again after a delay to ensure it sticks
+            setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
+          }
 
           // Handle initial mute state
           if (isMuted && micTrack) {
@@ -310,6 +314,42 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 10000);
     return () => clearInterval(interval);
   }, [connectionState, !!localAudioTrack]);
+
+  // EFFECT 5: Music Track Publishing (Broadcast music to other users)
+  useEffect(() => {
+    const client = clientRef.current;
+    if (!client || connectionState !== 'CONNECTED' || !musicTrackArg || !AgoraRTC) return;
+
+    let customAudioTrack: any = null;
+
+    const publishMusic = async () => {
+      try {
+        // Create custom audio track from the music stream
+        customAudioTrack = await AgoraRTC.createCustomAudioTrack({
+          mediaStream: musicTrackArg
+        });
+        
+        if (customAudioTrack) {
+          await client.publish(customAudioTrack);
+          setPublishedMusicTrack(customAudioTrack);
+          console.log('[Agora] Music Track Published - Other users can now hear music');
+        }
+      } catch (e) {
+        console.error('[Agora] Music Track Publish Failed:', e);
+      }
+    };
+
+    publishMusic();
+
+    return () => {
+      if (customAudioTrack) {
+        client.unpublish(customAudioTrack).catch(() => {});
+        customAudioTrack.close();
+        setPublishedMusicTrack(null);
+        console.log('[Agora] Music Track Unpublished');
+      }
+    };
+  }, [connectionState, musicTrackArg]);
 
   return { 
     localAudioTrack, 
