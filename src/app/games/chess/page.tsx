@@ -40,8 +40,16 @@ function ChessGameContent() {
    const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
 
    useEffect(() => {
+    // Yeh code aapki poori body aur HTML ko transparent kar dega taaki piche ka view dikhe
+    document.documentElement.style.backgroundColor = 'transparent';
+    document.body.style.backgroundColor = 'transparent';
+
     const timer = setTimeout(() => setIsLaunching(false), 1500);
-    return () => clearTimeout(timer);
+    return () => {
+        clearTimeout(timer);
+        // Clean up: Agar aap chahte ho ki is page se jaane ke baad body wapis default ho jaye toh yahan set kar sakte ho
+        // document.body.style.backgroundColor = ''; 
+    };
    }, []);
 
    // BOTTOM SHEET LOADING PAGE
@@ -50,11 +58,11 @@ function ChessGameContent() {
      <div className="h-screen w-full bg-transparent flex flex-col justify-end overflow-hidden font-sans pointer-events-none">
         {/* Top Half Blurred/Transparent Background */}
         <div className="flex-1 w-full bg-transparent flex items-center justify-center">
-            {/* Shield Icon Removed ya Transparent rakh sakte ho taaki piche ka view clear rahe */}
+            {/* Top area bilkul khali aur transparent rakha hai */}
         </div>
 
-        {/* Bottom Sheet - Changed to exactly 50vh */}
-        <div className="h-[50vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-bottom duration-700 pointer-events-auto">
+        {/* Bottom Sheet - Exactly 50vh */}
+        <div className="h-[50vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-bottom duration-700 pointer-events-auto shadow-2xl">
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-2" />
             <div className="relative flex items-center justify-center">
                 <div className="h-14 w-14 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
@@ -115,16 +123,17 @@ function ChessGameContent() {
    };
 
    return (
+    // Agar AppLayout mein koi background set hai, toh usko transparent pass karna padega (agar prop support karta hai)
     <AppLayout fullScreen>
      <div className="h-screen w-full bg-transparent flex flex-col justify-end relative overflow-hidden text-white font-sans pointer-events-none">
       
       {/* Header - Now floats over the transparent top half */}
       <header className="absolute top-0 w-full z-50 flex items-center justify-between p-6 pointer-events-auto">
-        <button onClick={() => router.back()} className="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-md"><ChevronLeft /></button>
+        <button onClick={() => router.back()} className="bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-md shadow-sm"><ChevronLeft /></button>
         <div className="text-center">
             <h1 className="text-xl font-black italic tracking-tighter text-blue-400 drop-shadow-md">CHESS ROYALE 3D</h1>
         </div>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-md">
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-md shadow-sm">
             {isMuted ? <VolumeX /> : <Volume2 />}
         </button>
       </header>
@@ -132,7 +141,7 @@ function ChessGameContent() {
       {/* Transparent area for the background to show through */}
       <div className="flex-1 w-full bg-transparent" />
 
-      {/* Main Bottom Sheet Game Area - Changed to 50vh with overflow-y-auto */}
+      {/* Main Bottom Sheet Game Area - 50vh with overflow-y-auto */}
       <main className="h-[50vh] w-full bg-[#1e293b]/95 backdrop-blur-2xl rounded-t-[48px] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center p-4 animate-in slide-in-from-bottom duration-500 overflow-y-auto pointer-events-auto pb-6 scrollbar-hide">
          
          <div className="w-12 h-1.5 bg-white/10 rounded-full mb-4 shrink-0" />
