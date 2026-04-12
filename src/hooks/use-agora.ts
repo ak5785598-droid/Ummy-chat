@@ -30,34 +30,15 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-// NUCLEAR SYNC - Global Mixer Refs
-let globalAudioContext: AudioContext | null = null;
-
-const getAudioContext = () => {
-    if (typeof window === 'undefined') return null;
-    if (!globalAudioContext) {
-        globalAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return globalAudioContext;
-};
-
 export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicTrackArg: MediaStreamTrack | null = null, isSpeakerMuted: boolean = false) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
   const [currentOutputDevice, setCurrentOutputDevice] = useState<string>('default');
   const [publishedMusicTrack, setPublishedMusicTrack] = useState<any>(null);
-  
+
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
-  
-  // Mixer Refs
-  const mixerDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const micNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const musicNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const micGainRef = useRef<GainNode | null>(null);
-  const unifiedTrackRef = useRef<any>(null);
-  const analyzerRef = useRef<AnalyserNode | null>(null);
 
   // Set audio output device for all remote users
   const setAudioOutputDevice = useCallback(async (deviceId: string) => {
@@ -258,134 +239,73 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     });
   }, [remoteUsers]);
 
-  // EFFECT 3: Unified Voice & Music Mixer (Nuclear Sync)
+  // EFFECT 3: Direct Microphone Management (Native Earbud Compatible)
   useEffect(() => {
     const client = clientRef.current;
     if (!client || connectionState !== 'CONNECTED' || !AgoraRTC) return;
 
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
     let micTrack: IMicrophoneAudioTrack | null = null;
-    let isTerminated = false;
 
-    const syncMixer = async () => {
+    const manageMic = async () => {
+      if (isInSeat) {
         try {
-            // 1. NATIVE PERMISSION HANDSHAKE (Capacitor Fix)
-            if (isNativePlatform) {
-                const Permissions = (window as any).Capacitor?.Plugins?.Permissions;
-                if (Permissions) {
-                    const status = await Permissions.query({ name: 'microphone' });
-                    if (status.state !== 'granted') {
-                        await Permissions.request({ name: 'microphone' });
-                    }
-                }
-            }
+          console.log('[Agora] Creating Native Microphone Track...');
+          micTrack = await AgoraRTC.createMicrophoneAudioTrack({
+            AEC: true,
+            ANS: true,
+            AGC: true
+          });
+          
+          if (micTrack) {
+            await client.publish(micTrack);
+            setLocalAudioTrack(micTrack);
+          }
+          console.log('[Agora] Vocal Track Published');
 
-            // 2. Initialize Mixer Destination
-            if (!mixerDestRef.current) {
-                mixerDestRef.current = ctx.createMediaStreamDestination();
-            }
+          // Force Speakerphone or Earbuds via routing AFTER mic is published
+          // This ensures audio routing is maintained after mic access
+          if (AudioRoute) {
+            AudioRoute.forceEarbuds().catch(() => {});
+            // Force again after a delay to ensure it sticks
+            setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
+          }
 
-            if (isInSeat) {
-                // A. Create or Reuse Microphone Track
-                if (!micTrack) {
-                    micTrack = await AgoraRTC.createMicrophoneAudioTrack({
-                        AEC: true, ANS: true, AGC: true
-                    });
-                }
-                if (isTerminated) return;
-
-                // Cleanup existing nodes before re-connecting
-                micNodeRef.current?.disconnect();
-                musicNodeRef.current?.disconnect();
-
-                // B. Setup Microphone Branch in Mixer
-                if (!micGainRef.current) {
-                   micGainRef.current = ctx.createGain();
-                }
-                
-                const micStream = new MediaStream([micTrack.getMediaStreamTrack()]);
-                micNodeRef.current = ctx.createMediaStreamSource(micStream);
-                
-                micNodeRef.current.connect(micGainRef.current);
-                micGainRef.current.connect(mixerDestRef.current);
-                micGainRef.current.gain.value = isMuted ? 0 : 1;
-
-                // C. Setup Music Branch (if track provided)
-                if (musicTrackArg) {
-                    const musicStream = new MediaStream([musicTrackArg]);
-                    musicNodeRef.current = ctx.createMediaStreamSource(musicStream);
-                    musicNodeRef.current.connect(mixerDestRef.current);
-                    console.log('[Mixer] Music Track Injected into Unified Stream');
-                }
-
-                // D. Publish Unified Track
-                if (unifiedTrackRef.current) {
-                    await client.unpublish(unifiedTrackRef.current);
-                    unifiedTrackRef.current.close();
-                }
-
-                unifiedTrackRef.current = await AgoraRTC.createCustomAudioTrack({
-                    mediaStream: mixerDestRef.current.stream
-                });
-
-                await client.publish(unifiedTrackRef.current);
-                setLocalAudioTrack(micTrack); // For internal logic consistency
-                console.log('[Mixer] Unified Track Published (Mic + Music)');
-
-                // E. NATIVE ROUTING FIX
-                if (AudioRoute) {
-                    AudioRoute.forceEarbuds().catch(() => {});
-                    setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 1000);
-                }
-            } else {
-                // Cleanup when leaving seat
-                if (unifiedTrackRef.current) {
-                    await client.unpublish(unifiedTrackRef.current);
-                    unifiedTrackRef.current.close();
-                    unifiedTrackRef.current = null;
-                }
-                if (micTrack) {
-                    micTrack.close();
-                    micTrack = null;
-                }
-                setLocalAudioTrack(null);
-            }
+          // Handle initial mute state
+          if (isMuted && micTrack) {
+            await micTrack.setEnabled(false);
+          }
         } catch (e) {
-            console.error('[Mixer] Sync Failed:', e);
+          console.error('[Agora] Mic Capture Failed:', e);
         }
+      } else {
+        if (localAudioTrack) {
+          try {
+            await client.unpublish(localAudioTrack);
+            localAudioTrack.close();
+            setLocalAudioTrack(null);
+            console.log('[Agora] Mic Released');
+          } catch(e) {}
+        }
+      }
     };
 
-    // Auto-Resume AudioContext if suspended (Autoplay policy fix)
-    const resumeCtx = () => {
-        if (ctx.state === 'suspended') {
-            ctx.resume().then(() => console.log('[Mixer] AudioContext Resumed'));
-        }
-    };
-    window.addEventListener('click', resumeCtx, { once: true });
-    window.addEventListener('touchstart', resumeCtx, { once: true });
-
-    syncMixer();
+    manageMic();
 
     return () => {
-        isTerminated = true;
-        window.removeEventListener('click', resumeCtx);
-        window.removeEventListener('touchstart', resumeCtx);
-        if (micTrack) {
-            client.unpublish(micTrack).catch(() => {});
-            micTrack.close();
-        }
+      if (micTrack) {
+        client.unpublish(micTrack).catch(() => {});
+        micTrack.close();
+      }
     };
-  }, [isInSeat, connectionState, !!musicTrackArg]);
+  }, [isInSeat, connectionState]);
 
-  // EFFECT 4: Handle Local Mute Toggle (Source-Level Muting)
+  // EFFECT 4: Handle Local Mute Toggle
   useEffect(() => {
-    if (micGainRef.current) {
-      micGainRef.current.gain.setTargetAtTime(isMuted ? 0 : 1, getAudioContext()?.currentTime || 0, 0.03);
-      console.log(`[Mixer] Mic ${isMuted ? 'SILENCED' : 'ACTIVE'} via GainNode`);
+    if (localAudioTrack) {
+      localAudioTrack.setEnabled(!isMuted).catch(() => {});
+      console.log(`[Agora] Mic ${isMuted ? 'MUTED' : 'UNMUTED'} via setEnabled`);
     }
-  }, [isMuted]);
+  }, [isMuted, localAudioTrack]);
 
   // ROUTING PERSISTENCE (Optional backup)
   useEffect(() => {
@@ -393,6 +313,42 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 10000);
     return () => clearInterval(interval);
   }, [connectionState, !!localAudioTrack]);
+
+  // EFFECT 5: Music Track Publishing (Broadcast music to other users)
+  useEffect(() => {
+    const client = clientRef.current;
+    if (!client || connectionState !== 'CONNECTED' || !musicTrackArg || !AgoraRTC) return;
+
+    let customAudioTrack: any = null;
+
+    const publishMusic = async () => {
+      try {
+        // Create custom audio track from the music stream
+        customAudioTrack = await AgoraRTC.createCustomAudioTrack({
+          mediaStream: musicTrackArg
+        });
+        
+        if (customAudioTrack) {
+          await client.publish(customAudioTrack);
+          setPublishedMusicTrack(customAudioTrack);
+          console.log('[Agora] Music Track Published - Other users can now hear music');
+        }
+      } catch (e) {
+        console.error('[Agora] Music Track Publish Failed:', e);
+      }
+    };
+
+    publishMusic();
+
+    return () => {
+      if (customAudioTrack) {
+        client.unpublish(customAudioTrack).catch(() => {});
+        customAudioTrack.close();
+        setPublishedMusicTrack(null);
+        console.log('[Agora] Music Track Unpublished');
+      }
+    };
+  }, [connectionState, musicTrackArg]);
 
 
   return { 
