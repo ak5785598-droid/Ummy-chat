@@ -15,8 +15,8 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
  const totalScore = (score1 + score2) || 1;
  const progress1 = (score1 / totalScore) * 100;
  
- const host1 = room1.participants[0];
- const host2 = room2.participants[0];
+ const host1 = room1.participants?.[0];
+ const host2 = room2.participants?.[0];
 
  return (
   <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -26,13 +26,13 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
         LIVE PK
       </div>
       <div className="flex justify-between items-center gap-2">
-        <div className="flex flex-col items-center gap-2 w-1/3">
-          <Link href={`/profile/${host1.uid}`}>
-            <Avatar className="h-16 w-16 border-2 border-blue-500">
-              <AvatarImage src={host1.avatarUrl} alt={host1.name + "'s PK Avatar"} />
-              <AvatarFallback>{host1.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </Link>
+         <div className="flex flex-col items-center gap-2 w-1/3">
+           <Link href={host1?.uid ? `/profile/${host1.uid}` : '#'}>
+             <Avatar className="h-16 w-16 border-2 border-blue-500">
+               <AvatarImage src={host1?.avatarUrl} alt={host1?.name + "'s PK Avatar"} />
+               <AvatarFallback>{(host1?.name || 'U').charAt(0)}</AvatarFallback>
+             </Avatar>
+           </Link>
           <Link href={`/rooms/${room1.slug}`}>
             <span className="font-semibold text-sm truncate text-center block hover:underline">{room1.title}</span>
           </Link>
@@ -42,13 +42,13 @@ export function PkBattleCard({ battle }: PkBattleCardProps) {
           <Swords className="h-8 w-8 text-muted-foreground" />
         </div>
         
-        <div className="flex flex-col items-center gap-2 w-1/3">
-          <Link href={`/profile/${host2.uid}`}>
-            <Avatar className="h-16 w-16 border-2 border-red-500">
-              <AvatarImage src={host2.avatarUrl} alt={host2.name + "'s Opponent PK Avatar"} />
-              <AvatarFallback>{host2.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </Link>
+         <div className="flex flex-col items-center gap-2 w-1/3">
+           <Link href={host2?.uid ? `/profile/${host2.uid}` : '#'}>
+             <Avatar className="h-16 w-16 border-2 border-red-500">
+               <AvatarImage src={host2?.avatarUrl} alt={host2?.name + "'s Opponent PK Avatar"} />
+               <AvatarFallback>{(host2?.name || 'U').charAt(0)}</AvatarFallback>
+             </Avatar>
+           </Link>
           <Link href={`/rooms/${room2.slug}`}>
              <span className="font-semibold text-sm truncate text-center block hover:underline">{room2.title}</span>
           </Link>

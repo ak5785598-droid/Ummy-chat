@@ -89,7 +89,7 @@ export function CPProposeDialog({ isOpen, onClose, targetUser }: CPProposeDialog
              <div className="flex items-center gap-4 relative">
                 <Avatar className="h-16 w-16 border-2 border-white/10 shadow-2xl">
                    <AvatarImage src={targetUser.avatarUrl} />
-                   <AvatarFallback>{targetUser.username.charAt(0)}</AvatarFallback>
+                   <AvatarFallback>{(targetUser.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="bg-rose-500 p-2 rounded-full shadow-lg relative z-10">
                    <Heart className="h-5 w-5 text-white animate-pulse fill-current" />
