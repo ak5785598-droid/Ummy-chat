@@ -1702,19 +1702,42 @@ export function RoomClient({ room }: { room: Room }) {
 
     const audio = musicAudioRef.current;
     
-    const tryCapture = () => {
+    const tryCapture = async () => {
         if (audio.paused) {
             console.warn('[Broadcaster] Audio is paused, cannot capture stream');
             return;
         }
+
+        // Try captureStream first
         // @ts-ignore
-        const stream = audio.captureStream?.() || audio.mozCaptureStream?.();
+        let stream = audio.captureStream?.() || audio.mozCaptureStream?.();
+        
         if (stream && stream.getAudioTracks().length > 0) {
             setMusicStream(stream);
-            console.log('[Broadcaster] Music Stream Captured and Synced to Agora - Audio tracks:', stream.getAudioTracks().length);
-        } else {
-            console.warn('[Broadcaster] Capture failed - stream:', !!stream, 'audio tracks:', stream?.getAudioTracks().length || 0, 'retrying in 500ms...');
-            setTimeout(tryCapture, 500);
+            console.log('[Broadcaster] Music Stream Captured (captureStream) - Audio tracks:', stream.getAudioTracks().length);
+            return;
+        }
+
+        // Fallback: Use Web Audio API to create stream from audio element
+        console.warn('[Broadcaster] captureStream failed, trying Web Audio API fallback...');
+        try {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const source = audioContext.createMediaElementSource(audio);
+            const destination = audioContext.createMediaStreamDestination();
+            source.connect(destination);
+            source.connect(audioContext.destination); // Also connect to speakers so owner can hear
+            const fallbackStream = destination.stream;
+            
+            if (fallbackStream && fallbackStream.getAudioTracks().length > 0) {
+                setMusicStream(fallbackStream);
+                console.log('[Broadcaster] Music Stream Captured (Web Audio API fallback) - Audio tracks:', fallbackStream.getAudioTracks().length);
+            } else {
+                console.error('[Broadcaster] Web Audio API fallback also failed');
+                setTimeout(tryCapture, 1000);
+            }
+        } catch (e) {
+            console.error('[Broadcaster] Web Audio API fallback error:', e);
+            setTimeout(tryCapture, 1000);
         }
     };
 
