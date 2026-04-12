@@ -322,21 +322,28 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   // EFFECT 5: Music Track Publishing (Broadcast music to other users)
   useEffect(() => {
     const client = clientRef.current;
-    if (!client || connectionState !== 'CONNECTED' || !musicTrackArg || !AgoraRTC) return;
+    if (!client || connectionState !== 'CONNECTED' || !musicTrackArg || !AgoraRTC) {
+      console.log('[Agora] Music Publish Skip - client:', !!client, 'connected:', connectionState, 'track:', !!musicTrackArg, 'agora:', !!AgoraRTC);
+      return;
+    }
 
     let customAudioTrack: any = null;
 
     const publishMusic = async () => {
       try {
+        console.log('[Agora] Creating custom audio track from music stream...');
         // Create custom audio track from the music stream
         customAudioTrack = await AgoraRTC.createCustomAudioTrack({
           mediaStream: musicTrackArg
         });
         
         if (customAudioTrack) {
+          console.log('[Agora] Publishing music track to Agora...');
           await client.publish(customAudioTrack);
           setPublishedMusicTrack(customAudioTrack);
-          console.log('[Agora] Music Track Published - Other users can now hear music');
+          console.log('[Agora] Music Track Published Successfully - Other users can now hear music');
+        } else {
+          console.error('[Agora] Failed to create custom audio track');
         }
       } catch (e) {
         console.error('[Agora] Music Track Publish Failed:', e);

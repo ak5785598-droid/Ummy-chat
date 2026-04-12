@@ -1703,19 +1703,23 @@ export function RoomClient({ room }: { room: Room }) {
     const audio = musicAudioRef.current;
     
     const tryCapture = () => {
-        if (audio.paused) return;
+        if (audio.paused) {
+            console.warn('[Broadcaster] Audio is paused, cannot capture stream');
+            return;
+        }
         // @ts-ignore
         const stream = audio.captureStream?.() || audio.mozCaptureStream?.();
         if (stream && stream.getAudioTracks().length > 0) {
             setMusicStream(stream);
-            console.log('[Broadcaster] Music Stream Captured and Synced to Agora');
+            console.log('[Broadcaster] Music Stream Captured and Synced to Agora - Audio tracks:', stream.getAudioTracks().length);
         } else {
-            console.warn('[Broadcaster] Capture failed, retrying in 500ms...');
+            console.warn('[Broadcaster] Capture failed - stream:', !!stream, 'audio tracks:', stream?.getAudioTracks().length || 0, 'retrying in 500ms...');
             setTimeout(tryCapture, 500);
         }
     };
 
     // Slight delay to allow audio engine to warm up
+    console.log('[Broadcaster] Starting music stream capture in 1s...');
     const timer = setTimeout(tryCapture, 1000);
     return () => clearTimeout(timer);
   }, [isOwner, isMusicPlaying, room.currentMusicUrl]);
