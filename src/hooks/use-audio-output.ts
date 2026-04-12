@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { CordovaAudioRoute } from '@/native/audio-route';
+
+const isNativePlatform = Capacitor.isNativePlatform();
+const NativeAudioRoute = isNativePlatform ? CordovaAudioRoute : null;
 
 interface AudioDevice {
   deviceId: string;
@@ -101,6 +106,25 @@ export function useAudioOutput() {
 
   // Toggle between speaker and earbuds/headphones
   const toggleOutput = useCallback(async (audioElement?: HTMLAudioElement | null) => {
+    // NATIVE: Try native plugin first
+    if (NativeAudioRoute?.isAvailable()) {
+      try {
+        if (state.isSpeaker) {
+          await NativeAudioRoute.forceEarbuds();
+          setState(prev => ({ ...prev, isSpeaker: false }));
+          console.log('[AudioOutput-Native] Routed to earbuds');
+        } else {
+          await NativeAudioRoute.resetAudio();
+          setState(prev => ({ ...prev, isSpeaker: true }));
+          console.log('[AudioOutput-Native] Routed to speaker');
+        }
+        return;
+      } catch (e) {
+        console.warn('[AudioOutput-Native] Failed, falling back to web:', e);
+      }
+    }
+
+    // WEB FALLBACK
     const audio = audioElement || audioRef.current;
     if (!audio) return;
 
@@ -131,8 +155,21 @@ export function useAudioOutput() {
 
   // Force earbuds if available
   const forceEarbuds = useCallback(async (audioElement?: HTMLAudioElement | null) => {
+    // NATIVE: Try native plugin first
+    if (NativeAudioRoute?.isAvailable()) {
+      try {
+        await NativeAudioRoute.forceEarbuds();
+        setState(prev => ({ ...prev, isSpeaker: false }));
+        console.log('[AudioOutput-Native] Forced to earbuds');
+        return true;
+      } catch (e) {
+        console.warn('[AudioOutput-Native] Force earbuds failed:', e);
+      }
+    }
+
+    // WEB FALLBACK
     const audio = audioElement || audioRef.current;
-    if (!audio) return;
+    if (!audio) return false;
 
     // Try to find any non-speaker device
     const earbudDevice = state.devices.find(d => 

@@ -3,15 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 import { Capacitor } from '@capacitor/core';
+import { CordovaAudioRoute } from '@/native/audio-route';
 
-// NATIVE BRIDGE DEFINITION (Keep for potential routing tweaks)
-interface AudioRoutePlugin {
-  forceEarbuds(): Promise<void>;
-  resetAudio(): Promise<void>;
-}
-const AudioRoute = Capacitor.isNativePlatform() 
-  ? (Capacitor as any).Plugins.AudioRoute 
-  : null;
+// NATIVE AUDIO ROUTE - For Capacitor/Cordova apps
+const isNativePlatform = Capacitor.isNativePlatform();
+const AudioRoute = isNativePlatform ? CordovaAudioRoute : null;
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
@@ -71,6 +67,25 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
   // Toggle between speaker and earbuds
   const toggleAudioOutput = useCallback(async () => {
+    // NATIVE: Try native plugin first
+    if (AudioRoute?.isAvailable()) {
+      try {
+        if (currentOutputDevice === 'default') {
+          await AudioRoute.forceEarbuds();
+          setCurrentOutputDevice('earbuds');
+          console.log('[Agora-Native] Routed to earbuds');
+        } else {
+          await AudioRoute.resetAudio();
+          setCurrentOutputDevice('default');
+          console.log('[Agora-Native] Routed to speaker');
+        }
+        return;
+      } catch (e) {
+        console.warn('[Agora-Native] Failed, falling back to web:', e);
+      }
+    }
+
+    // WEB FALLBACK
     if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
 
     try {
@@ -99,7 +114,20 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
   // Force to earbuds if available
   const forceEarbudsOutput = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
+    // NATIVE: Try native plugin first
+    if (AudioRoute?.isAvailable()) {
+      try {
+        await AudioRoute.forceEarbuds();
+        setCurrentOutputDevice('earbuds');
+        console.log('[Agora-Native] Forced to earbuds');
+        return true;
+      } catch (e) {
+        console.warn('[Agora-Native] Force earbuds failed:', e);
+      }
+    }
+
+    // WEB FALLBACK
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return false;
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
