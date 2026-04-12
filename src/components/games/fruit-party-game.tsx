@@ -295,10 +295,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
  return (
   <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans text-gray-900 bg-white">
-   {/* UPDATE: NEW BACKGROUND THEME - Night Mountains and Stars */}
-   <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')" }}>
-      {/* Subtle overlay for better UI contrast */}
-      <div className="absolute inset-0 bg-[#0a0f35]/30" />
+   {/* Main Body Glossy White Background */}
+   <div className="absolute inset-0 top-[62px] z-0 bg-gradient-to-b from-white via-[#f8fafc] to-[#e2e8f0]">
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-white opacity-60 blur-3xl rounded-full" />
    </div>
 
    <AnimatePresence>
@@ -338,13 +338,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* TOP HEADER - Dark Night Blue with Stars */}
+   {/* TOP HEADER - Dark Night Blue */}
    <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-[#0a0f35] overflow-hidden shadow-md shrink-0">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f35]/80 via-transparent to-[#0a0f35]/80" />
 
       <div className="relative z-10 flex items-center justify-between w-full">
-          {/* Left: Coin Balance Capsule */}
           <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-full border border-white/20 h-[38px] pl-1 pr-1 shadow-inner">
               <div className="bg-yellow-400 rounded-full p-0.5 shadow-sm">
                    <GoldCoinIcon className="h-6 w-6 text-yellow-600" />
@@ -355,7 +354,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
               </button>
           </div>
 
-          {/* Right: Circle Action Buttons */}
           <div className="flex items-center gap-2">
               <button className="h-9 w-9 flex items-center justify-center rounded-full border-[1.5px] border-white/30 bg-[#181c4c]/60 backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition-all">
                   <Clock size={18} />
@@ -390,11 +388,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    </div>
 
    {/* WHEEL AREA */}
-   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative z-10">
-    
+   <main className="flex-1 flex flex-col items-center justify-center py-6 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-      
-      {/* SVG LINES */}
       <svg className="absolute inset-0 w-full h-full z-10 drop-shadow-sm" viewBox="0 0 100 100">
         <line x1="50" y1="50" x2="50" y2="8" stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" opacity="0.8"/>
         <line x1="50" y1="50" x2="82" y2="18" stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" opacity="0.8"/>
@@ -406,30 +401,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         <line x1="50" y1="50" x2="18" y2="18" stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" opacity="0.8"/>
       </svg>
 
-      {/* CENTER CLOCK */}
       <div className="relative z-20 w-24 h-24 bg-gradient-to-br from-white to-gray-100 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.1),inset_0_4px_10px_rgba(255,255,255,1)] flex flex-col items-center justify-center border-[4px] border-yellow-400 p-2 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-white/40 animate-shine -skew-x-[45deg]" />
         <p className="text-[7px] font-black uppercase text-yellow-600 leading-tight tracking-[0.2em] mb-1">
          {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
         </p>
         <span className={cn(
-         "text-3xl font-black tracking-tight transition-all duration-500",
+         "text-3xl font-black tracking-tight",
          gameState === 'betting' ? "text-gray-800" : "text-yellow-500 scale-125 rotate-12"
         )}>
          {gameState === 'betting' ? timeLeft : '🎲'}
         </span>
         {gameState === 'betting' && (
           <div className="mt-1 w-[80%] mx-auto bg-gray-200 rounded-full h-1 relative overflow-hidden">
-            <motion.div 
-              initial={{ width: '100%' }}
-              animate={{ width: `${(timeLeft/25)*100}%` }}
-              className="absolute left-0 top-0 h-full bg-yellow-400"
-            />
+            <motion.div initial={{ width: '100%' }} animate={{ width: `${(timeLeft/25)*100}%` }} className="absolute left-0 top-0 h-full bg-yellow-400"/>
           </div>
         )}
       </div>
 
-      {/* ANIMAL CARDS */}
       {ANIMALS.map((item, idx) => {
        const isActive = highlightIdx === idx;
        const betOnThis = myBets[item.id] || 0;
@@ -451,69 +439,37 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
            isActive && "z-50"
           )}
         >
-          <button
-            onClick={() => handlePlaceBet(item)}
-            disabled={gameState !== 'betting'}
-            className={cn(
-              "relative group active:scale-95 transition-all outline-none",
-              gameState === 'spinning' && !isActive && "opacity-40 grayscale-[0.2]"
-            )}
-          >
+          <button onClick={() => handlePlaceBet(item)} disabled={gameState !== 'betting'} className={cn("relative group active:scale-95 outline-none")}>
             <div className={cn(
-             "h-[82px] w-[82px] rounded-full flex flex-col items-center justify-center transition-all border-[4px] relative overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.08),inset_0_2px_8px_rgba(255,255,255,1)]",
-             isActive ? "border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.6)] scale-110" : "border-gray-200",
-             "bg-gradient-to-br from-white to-gray-50"
+             "h-[82px] w-[82px] rounded-full flex flex-col items-center justify-center transition-all border-[4px] relative overflow-hidden shadow-lg bg-gradient-to-br from-white to-gray-50",
+             isActive ? "border-yellow-400 scale-110" : "border-gray-200"
             )}>
-              <div className="w-full h-full flex items-center justify-center">
-                 <span className={cn("text-[38px] drop-shadow-sm relative z-10 transition-transform leading-none", isActive && "scale-110")}>
-                  {item.emoji}
-                 </span>
-              </div>
-              <div className="absolute inset-0 bg-white/40 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
+              <span className={cn("text-[38px] drop-shadow-sm", isActive && "scale-110")}>{item.emoji}</span>
             </div>
-
-            <div className={cn(
-                "absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-[2px] rounded-full border-2 whitespace-nowrap shadow-md",
-                "bg-white border-yellow-400"
-            )}>
-                <span className="text-[8px] font-black text-gray-800 tracking-widest">
-                    WIN {item.multiplier} TIMES
-                </span>
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-[2px] rounded-full border-2 bg-white border-yellow-400 whitespace-nowrap">
+                <span className="text-[8px] font-black text-gray-800 uppercase">WIN {item.multiplier} TIMES</span>
             </div>
-
             <div className="absolute inset-0 pointer-events-none">
               <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === item.index).map(chip => (
-                  <motion.div 
-                    key={chip.id} 
-                    initial={{ y: -150, opacity: 0, scale: 0.5 }} 
-                    animate={{ y: 0, opacity: 1, scale: 1 }} 
-                    transition={{ type: 'spring', damping: 15 }} 
-                    className="absolute top-1/2 left-1/2"
-                  >
+                  <motion.div key={chip.id} initial={{ y: -150, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="absolute top-1/2 left-1/2">
                     <div className={cn("w-6 h-6 rounded-full border-2 border-white shadow-lg flex items-center justify-center bg-gradient-to-br", chip.color)} style={{ marginLeft: chip.x, marginTop: chip.y }}>
-                      <span className="text-[6px] font-black text-white drop-shadow-sm">{chip.label}</span>
+                      <span className="text-[6px] font-black text-white">{chip.label}</span>
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
-
             {betOnThis > 0 && (
-             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-2 z-40">
-               <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-8 w-8 rounded-full border-2 border-white shadow-md flex items-center justify-center">
-                 <span className="text-[8px] font-black text-white">{betOnThis >= 1000 ? (betOnThis/1000).toFixed(0)+'K' : betOnThis}</span>
-               </div>
-             </motion.div>
+             <div className="absolute -top-3 -right-2 z-40 bg-yellow-400 h-8 w-8 rounded-full border-2 border-white shadow-md flex items-center justify-center">
+               <span className="text-[8px] font-black text-white">{betOnThis >= 1000 ? (betOnThis/1000).toFixed(0)+'K' : betOnThis}</span>
+             </div>
             )}
-
-            <AnimatePresence>
-              {isHandPointing && (
-                <motion.div initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0 }} className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
-                  <Pointer size={28} className="text-gray-800 fill-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)] animate-bounce" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {isHandPointing && (
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
+                <Pointer size={28} className="text-gray-800 fill-white animate-bounce" />
+              </div>
+            )}
           </button>
         </motion.div>
        );
@@ -521,54 +477,59 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </main>
 
-   <footer className="relative z-50 p-6 pb-SAFE_BOTTOM bg-white/90 backdrop-blur-xl mt-auto border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-     <div className="max-w-md mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-3xl border border-gray-200 shadow-sm">
-         <GoldCoinIcon className="h-6 w-6 text-yellow-500" />
-         <span className="text-2xl font-black text-gray-800 tracking-tighter">{(localCoins || 0).toLocaleString()}</span>
-        </div>
-        <button onClick={handleInvite} className="bg-white p-3.5 rounded-3xl border border-gray-200 text-yellow-500 shadow-sm active:scale-90 transition-all hover:bg-gray-50">
-         <Users className="h-7 w-7" />
-        </button>
-      </div>
-
-      <div className="bg-gray-50 p-4 rounded-[2.5rem] border-[4px] border-white shadow-inner flex items-center justify-between gap-4 relative overflow-hidden">
-        <div className="flex gap-2 flex-1 overflow-x-auto no-scrollbar relative z-10 px-1 py-1">
+   {/* NEW PURPLE CHIP FOOTER BAR - Directly below Game Area */}
+   <div className="relative z-50 bg-gradient-to-r from-[#2e1065] via-[#4c1d95] to-[#2e1065] py-4 border-y-2 border-purple-400/40 shadow-[0_0_30px_rgba(76,29,149,0.3)]">
+      <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 items-center justify-center max-w-lg mx-auto">
          {CHIPS_DATA.map(chip => (
           <button 
            key={chip.value} 
            onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
            className={cn(
-            "h-14 w-14 rounded-full flex items-center justify-center transition-all border-4 shrink-0 shadow-md relative group",
-            selectedChip === chip.value ? "border-white scale-110 z-10 ring-4 ring-yellow-400/30" : "border-transparent opacity-60 grayscale-[0.3]",
+            "h-14 w-14 rounded-full flex items-center justify-center transition-all border-[3px] shrink-0 shadow-lg relative active:scale-90",
+            selectedChip === chip.value ? "border-yellow-400 scale-115 z-10 ring-4 ring-yellow-400/20" : "border-white/20 opacity-70",
             `bg-gradient-to-br ${chip.color}`
            )}
           >
-            <div className="absolute inset-0 bg-white/20 rounded-full blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="text-[12px] font-black text-white drop-shadow-md relative z-10">{chip.label}</span>
+            <span className="text-[12px] font-black text-white drop-shadow-md">{chip.label}</span>
+            {selectedChip === chip.value && (
+              <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1 border-2 border-purple-900 shadow-sm">
+                <div className="h-1.5 w-1.5 bg-purple-900 rounded-full" />
+              </div>
+            )}
           </button>
          ))}
+      </div>
+   </div>
+
+   {/* BOTTOM ACTION BAR */}
+   <footer className="relative z-50 p-6 pb-SAFE_BOTTOM bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] shrink-0">
+     <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+        {/* Balance & Invite Area */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-gray-50 px-5 py-3 rounded-[2rem] border border-gray-100 shadow-inner">
+           <GoldCoinIcon className="h-6 w-6 text-yellow-500 mr-2" />
+           <span className="text-2xl font-black text-gray-800">{(localCoins || 0).toLocaleString()}</span>
+          </div>
+          <button onClick={handleInvite} className="bg-white p-3.5 rounded-2xl border border-gray-200 text-yellow-500 shadow-sm active:scale-90">
+           <Users className="h-7 w-7" />
+          </button>
         </div>
+
+        {/* Repeat Button */}
         <button 
          onClick={handleRepeat} 
          disabled={gameState !== 'betting'}
-         className="relative z-10 bg-gradient-to-b from-yellow-400 to-yellow-600 px-10 h-16 rounded-[1.5rem] font-bold uppercase text-[12px] shadow-lg active:scale-95 transition-all border-2 border-white text-white tracking-[0.1em]"
+         className="flex-1 bg-gradient-to-b from-yellow-400 to-yellow-600 h-16 rounded-[1.8rem] font-black uppercase text-[14px] shadow-lg active:scale-95 transition-all border-2 border-white text-white tracking-widest"
         >
          Repeat
         </button>
-      </div>
      </div>
    </footer>
 
    <style jsx global>{`
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    @keyframes shine { 
-     0% { transform: translateX(-200%) skewX(-30deg); } 
-     100% { transform: translateX(200%) skewX(-30deg); } 
-    }
-    .animate-shine { animation: shine 3s infinite linear; }
-    .pb-SAFE_BOTTOM { padding-bottom: max(2.5rem, env(safe-area-inset-bottom)); }
+    .pb-SAFE_BOTTOM { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+    .scale-115 { transform: scale(1.15); }
    `}</style>
   </div>
  );
