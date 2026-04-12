@@ -1650,12 +1650,32 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // Clear music stream when music is not playing
+  // SYNC: Integrated Stream Capture (THE BROADCAST FIX)
   useEffect(() => {
-    if (!room?.isMusicPlaying) {
-      setMusicStream(null);
+    if (!isOwner || !isMusicPlaying || !musicAudioRef.current) {
+        if (!isMusicPlaying) setMusicStream(null);
+        return;
     }
-  }, [room?.isMusicPlaying]);
+
+    const audio = musicAudioRef.current;
+    
+    const tryCapture = () => {
+        if (audio.paused) return;
+        // @ts-ignore
+        const stream = audio.captureStream?.() || audio.mozCaptureStream?.();
+        if (stream && stream.getAudioTracks().length > 0) {
+            setMusicStream(stream);
+            console.log('[Broadcaster] Music Stream Captured and Synced to Agora');
+        } else {
+            console.warn('[Broadcaster] Capture failed, retrying in 500ms...');
+            setTimeout(tryCapture, 500);
+        }
+    };
+
+    // Slight delay to allow audio engine to warm up
+    const timer = setTimeout(tryCapture, 1000);
+    return () => clearTimeout(timer);
+  }, [isOwner, isMusicPlaying, room.currentMusicUrl]);
 
   // ============================================================
   // MUSIC SYNC ENGINE - Simple & Reliable
