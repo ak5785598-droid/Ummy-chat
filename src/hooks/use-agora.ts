@@ -202,7 +202,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           try {
             await client.subscribe(user, mediaType);
             if (mediaType === 'audio') {
-              if (!isSpeakerMuted) user.audioTrack?.play();
+              user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
           } catch (e) {}
@@ -253,11 +253,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   useEffect(() => {
     remoteUsers.forEach(user => {
       if (user.audioTrack) {
-        if (isSpeakerMuted) user.audioTrack.stop();
-        else user.audioTrack.play();
+        user.audioTrack.play();
       }
     });
-  }, [isSpeakerMuted, remoteUsers]);
+  }, [remoteUsers]);
 
   // EFFECT 3: Unified Voice & Music Mixer (Nuclear Sync)
   useEffect(() => {
