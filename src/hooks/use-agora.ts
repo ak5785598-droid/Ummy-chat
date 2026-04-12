@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
-import { registerPlugin } from '@capacitor/core';
 import { Capacitor } from '@capacitor/core';
 
-// NATIVE BRIDGE DEFINITION
+// NATIVE BRIDGE DEFINITION (Keep for potential routing tweaks)
 interface AudioRoutePlugin {
   forceEarbuds(): Promise<void>;
   resetAudio(): Promise<void>;
@@ -43,81 +42,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
 
-  // NUCLEAR SYNC: Virtual Mixer State
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const mixerDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const micNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const musicNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const unifiedTrackRef = useRef<any>(null);
-  const monitorGainRef = useRef<GainNode | null>(null);
-  
-  // DUCKING ENGINE & MIXER SOURCES
-  const musicGainRef = useRef<GainNode | null>(null);
-  const musicSourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const micGainRef = useRef<GainNode | null>(null);
-  const analyzerRef = useRef<AnalyserNode | null>(null);
-  const currentMusicTrackIdRef = useRef<string | null>(null);
-
-  // Helper to resume audio context (Standard Mobile Fix)
-  const resumeAudioContext = async () => {
-    if (typeof window !== 'undefined') {
-      if (!audioCtxRef.current) {
-        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (AudioContextClass) {
-          // Optimized for Telephony (16kHz or 48kHz depending on device link)
-          audioCtxRef.current = new AudioContextClass({ latencyHint: 'interactive' });
-          mixerDestRef.current = audioCtxRef.current!.createMediaStreamDestination();
-          
-          // MONITOR SINK: Bridges the mix back to the host's actual output (Earbuds)
-          monitorGainRef.current = audioCtxRef.current!.createGain();
-          monitorGainRef.current.connect(audioCtxRef.current!.destination);
-
-          // DUCKING SINK: Controls music volume independently
-          musicGainRef.current = audioCtxRef.current!.createGain();
-          musicGainRef.current.connect(mixerDestRef.current!);
-          musicGainRef.current.connect(monitorGainRef.current!);
-
-          // MIC ANALYZER: For Ducking & Waves
-          analyzerRef.current = audioCtxRef.current!.createAnalyser();
-          analyzerRef.current.fftSize = 256;
-        }
-      }
-      if (audioCtxRef.current?.state === 'suspended') {
-        try {
-          await audioCtxRef.current.resume();
-        } catch (e) {
-          console.warn('[Agora] AudioContext resume failed (No user gesture?):', e);
-        }
-      }
-    }
-  };
-
-  // EFFECT: Ducking Animation Loop
-  useEffect(() => {
-    let animationFrame: number;
-    const processDucking = () => {
-      if (analyzerRef.current && musicGainRef.current && isInSeat && !isMuted) {
-        const dataArray = new Uint8Array(analyzerRef.current.frequencyBinCount);
-        analyzerRef.current.getByteFrequencyData(dataArray);
-        
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-        const average = sum / dataArray.length;
-
-        // DYNAMIC DUCKING: Smoothly lower music if speaking
-        const targetGain = average > 15 ? 0.3 : 1.0; 
-        const currentGain = musicGainRef.current.gain.value;
-        musicGainRef.current.gain.setTargetAtTime(targetGain, audioCtxRef.current!.currentTime, 0.1);
-      } else if (musicGainRef.current) {
-        musicGainRef.current.gain.setTargetAtTime(1.0, audioCtxRef.current!.currentTime, 0.2);
-      }
-      animationFrame = requestAnimationFrame(processDucking);
-    };
-    processDucking();
-    return () => cancelAnimationFrame(animationFrame);
-  }, [isInSeat, isMuted]);
-
-  // EFFECT 1: Connection & Mic Management
+  // EFFECT 1: Connection Management
   useEffect(() => {
     if (!APP_ID || !roomId || !uid || !AgoraRTC) return;
     let isMounted = true;
@@ -146,7 +71,6 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           try {
             await client.subscribe(user, mediaType);
             if (mediaType === 'audio') {
-              await resumeAudioContext();
               if (!isSpeakerMuted) user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
@@ -170,10 +94,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         
         if (isMounted) {
             setConnectionState('CONNECTED');
-            console.log('[Agora] Professional Engine Connected:', numericUid);
+            console.log('[Agora] Engine Connected:', numericUid);
         }
       } catch (err) {
-        console.error('[Agora] Professional Engine Failed:', err);
+        console.error('[Agora] Engine Failed:', err);
         if (isMounted) setConnectionState('DISCONNECTED');
       } finally {
         isProcessingConnectionRef.current = false;
@@ -194,7 +118,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     };
   }, [roomId, uid]);
 
-  // EFFECT: Handle Speaker Mute
+  // EFFECT 2: Speaker Management
   useEffect(() => {
     remoteUsers.forEach(user => {
       if (user.audioTrack) {
@@ -202,116 +126,77 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         else user.audioTrack.play();
       }
     });
-
-    if (monitorGainRef.current) {
-      monitorGainRef.current.gain.setTargetAtTime(isSpeakerMuted ? 0 : 1.0, audioCtxRef.current!.currentTime, 0.1);
-    }
   }, [isSpeakerMuted, remoteUsers]);
 
-  // EFFECT 2: Integrated Professional Mixer (No-Leak Edition)
+  // EFFECT 3: Direct Microphone Management (Native Earbud Compatible)
   useEffect(() => {
     const client = clientRef.current;
     if (!client || connectionState !== 'CONNECTED' || !AgoraRTC) return;
 
-    const syncMixer = async () => {
-      await resumeAudioContext();
-      if (!audioCtxRef.current || !mixerDestRef.current || !monitorGainRef.current || !musicGainRef.current) return;
+    let micTrack: IMicrophoneAudioTrack | null = null;
 
-      // A. Manage Microphone Input
+    const manageMic = async () => {
       if (isInSeat) {
-        // NATIVE PERMISSION SYNC: Simplified approach - let getUserMedia drive the request
-        // but ensure the app is focused and ready.
-        if (Capacitor.isNativePlatform()) {
-           console.log('[Mixer] Preparing native mic session...');
-        }
-
-        if (!micNodeRef.current) {
-          try {
-            // DIRECT REQUEST: This is the most reliable way to trigger the OS popup in WebView
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-              audio: { 
-                echoCancellation: true, 
-                noiseSuppression: true,
-                autoGainControl: true
-              } 
-            });
-            micNodeRef.current = audioCtxRef.current.createMediaStreamSource(stream);
-            
-            if (!micGainRef.current) {
-              micGainRef.current = audioCtxRef.current.createGain();
-            }
-            
-            micNodeRef.current.connect(micGainRef.current);
-            micGainRef.current.connect(mixerDestRef.current);
-            micNodeRef.current.connect(analyzerRef.current!);
-            
-            setLocalAudioTrack(stream.getAudioTracks()[0] as any); 
-            console.log('[Mixer] Mic successfully captured and mixed');
-          } catch (e) {
-            console.error('[Mixer] Microphone capture FAILED:', e);
-            // Fallback: Try to request permissions via Bridge if getUserMedia was blocked internally
-            if (Capacitor.isNativePlatform()) {
-               try {
-                 await (Capacitor as any).Plugins.Permissions.request({ name: 'microphone' });
-               } catch(err) {}
-            }
-          }
-        }
-      } else {
-        if (micNodeRef.current) {
-          micNodeRef.current.disconnect();
-          micNodeRef.current = null;
-          setLocalAudioTrack(null);
-          console.log('[Mixer] Mic released');
-        }
-      }
-
-      // B. Inject Music into Mixer (Reliable Sync)
-      if (musicTrack) {
-        if (currentMusicTrackIdRef.current !== musicTrack.id) {
-            if (musicSourceNodeRef.current) {
-                try { musicSourceNodeRef.current.disconnect(); } catch(e){}
-            }
-            const musicStream = new MediaStream([musicTrack]);
-            musicSourceNodeRef.current = audioCtxRef.current.createMediaStreamSource(musicStream);
-            musicSourceNodeRef.current.connect(musicGainRef.current);
-            currentMusicTrackIdRef.current = musicTrack.id;
-        }
-      } else {
-          if (musicSourceNodeRef.current) {
-              try { musicSourceNodeRef.current.disconnect(); } catch(e){}
-              musicSourceNodeRef.current = null;
-              currentMusicTrackIdRef.current = null;
-          }
-      }
-
-      // C. Unified Publication Track
-      if (!unifiedTrackRef.current && mixerDestRef.current) {
         try {
-          const mixerTrack = mixerDestRef.current.stream.getAudioTracks()[0];
-          if (mixerTrack) {
-              const track = await AgoraRTC.createCustomAudioTrack({
-                mediaStreamTrack: mixerTrack
-              });
-              await client.publish(track);
-              unifiedTrackRef.current = track;
-              console.log('[Mixer] Unified Broadcast Active (Voice + Music)');
+          // Force Speakerphone or Earbuds via routing if needed
+          if (AudioRoute) {
+            AudioRoute.forceEarbuds().catch(() => {});
+          }
+
+          console.log('[Agora] Creating Native Microphone Track...');
+          micTrack = await AgoraRTC.createMicrophoneAudioTrack({
+            AEC: true,
+            ANS: true,
+            AGC: true
+          });
+          
+          await client.publish(micTrack);
+          setLocalAudioTrack(micTrack);
+          console.log('[Agora] Vocal Track Published');
+
+          // Handle initial mute state
+          if (isMuted) {
+            await micTrack.setEnabled(false);
           }
         } catch (e) {
-          console.error('[Mixer] Stream publication FAILED:', e);
+          console.error('[Agora] Mic Capture Failed:', e);
+        }
+      } else {
+        if (localAudioTrack) {
+          try {
+            await client.unpublish(localAudioTrack);
+            localAudioTrack.close();
+            setLocalAudioTrack(null);
+            console.log('[Agora] Mic Released');
+          } catch(e) {}
         }
       }
     };
 
-    syncMixer();
-  }, [isInSeat, isMuted, !!musicTrack, musicTrack?.id, connectionState]);
+    manageMic();
 
-  // EFFECT 4: Routing Persistence
+    return () => {
+      if (micTrack) {
+        client.unpublish(micTrack).catch(() => {});
+        micTrack.close();
+      }
+    };
+  }, [isInSeat, connectionState]);
+
+  // EFFECT 4: Handle Local Mute Toggle
   useEffect(() => {
-    if (!AudioRoute || connectionState !== 'CONNECTED' || !unifiedTrackRef.current) return;
-    const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 4500);
+    if (localAudioTrack) {
+      localAudioTrack.setEnabled(!isMuted).catch(() => {});
+      console.log(`[Agora] Mic ${isMuted ? 'MUTED' : 'UNMUTED'} via setEnabled`);
+    }
+  }, [isMuted, localAudioTrack]);
+
+  // ROUTING PERSISTENCE (Optional backup)
+  useEffect(() => {
+    if (!AudioRoute || connectionState !== 'CONNECTED' || !localAudioTrack) return;
+    const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 10000);
     return () => clearInterval(interval);
-  }, [connectionState, !!unifiedTrackRef.current]);
+  }, [connectionState, !!localAudioTrack]);
 
   return { localAudioTrack, remoteUsers, client: clientRef.current };
 }
