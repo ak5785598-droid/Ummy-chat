@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[65vh] w-full bg-[#020617] rounded-none border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
+    className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
@@ -45,6 +45,7 @@ const Cloud = ({ className }: { className?: string }) => (
 );
 
 const SOUNDS = {
+  // Coins sound for betting
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
@@ -153,6 +154,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
+    // Coins sound added for betting
     playSound(SOUNDS.BET, 0.9);
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
@@ -161,6 +163,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const startSpin = () => {
     setGameState('spinning');
+    // Spinning sound (Whirring) made louder (Volume 1.0)
     playSound(SOUNDS.WHIRRING, 1.0);
     
     const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
@@ -226,28 +229,28 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <motion.div 
             key="game"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="h-[65vh] w-full bg-[#020617] rounded-none border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+            className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
             style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
           >
             
             {/* HEADER */}
             <div className="w-full flex flex-col z-20">
-              <div className="w-full py-2 px-3 flex justify-between items-center relative">
+              <div className="w-full p-4 flex justify-between items-center relative">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[110px]">
-                    <div className="absolute -left-1 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
-                      <span className="text-lg drop-shadow-md">🪙</span>
+                  <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
+                    <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
+                      <span className="text-xl drop-shadow-md">🪙</span>
                     </div>
-                    <span className="pl-10 pr-6 text-white font-medium text-xs tracking-wider">{localCoins.toLocaleString()}</span>
-                    <button className="absolute -right-3 w-8 h-8 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a]">
-                      <Plus className="w-4 h-4 font-bold" />
+                    <span className="pl-12 pr-6 text-white font-medium text-sm tracking-wider">{localCoins.toLocaleString()}</span>
+                    <button className="absolute -right-4 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a]">
+                      <Plus className="w-5 h-5 font-bold" />
                     </button>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 relative">
-                   <div className="absolute top-8 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                     <Cloud className="w-20 h-auto" />
+                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                     <Cloud className="w-28 h-auto" />
                   </div>
                   {[ 
                     { icon: Clock, action: () => setShowHistoryPage(true) }, 
@@ -255,25 +258,25 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                     { icon: HelpCircle, action: () => setShowRules(true) }, 
                     { icon: X, action: onClose } 
                   ].map((btn, i) => (
-                    <button key={i} onClick={btn.action} className="w-7 h-7 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white z-20 relative">
-                      <btn.icon className="w-[14px] h-[14px]" strokeWidth={2.5} />
+                    <button key={i} onClick={btn.action} className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white">
+                      <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="px-3 mt-0 relative">
-                <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-xs">
-                  <span className="text-sm">🏆</span> {todayWins.toLocaleString()}
+              <div className="px-4 mt-1 relative">
+                <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
+                  <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
-                <div className="absolute top-6 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                   <Cloud className="w-12 h-auto" />
+                <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                   <Cloud className="w-14 h-auto" />
                 </div>
               </div>
             </div>
 
             {/* BOARD AREA */}
-            <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-2" style={{ perspective: '1000px' }}>
+            <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
               <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
                 <defs>
                   <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -394,7 +397,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {gameState === 'result' && winnerData && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-none border-t-[12px] border-[#0284c7] z-[200] flex flex-col items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[12px] border-[#0284c7] z-[200] flex flex-col items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
                 >
                   <div className="absolute -top-10 bg-yellow-400 p-4 rounded-full border-4 border-white shadow-lg">
                     <Trophy className="w-10 h-10 text-white" />
@@ -419,7 +422,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {showRules && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-none border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
                 >
                   <div className="relative flex items-center justify-center w-full mb-6">
                     <button onClick={() => setShowRules(false)} className="absolute left-0 p-2.5 bg-white/20 hover:bg-white/30 rounded-full text-white">
@@ -442,7 +445,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {showHistoryPage && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  className="absolute bottom-0 left-0 right-0 h-[60vh] bg-[#0ea5e9] rounded-none border-t-[10px] border-[#0284c7] z-[400] flex flex-col shadow-[0_-20px_60px_rgba(0,0,0,0.6)]"
+                  className="absolute bottom-0 left-0 right-0 h-[60vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[10px] border-[#0284c7] z-[400] flex flex-col shadow-[0_-20px_60px_rgba(0,0,0,0.6)]"
                 >
                    <div className="p-6 flex items-center justify-between relative">
                       <div className="w-10" />
