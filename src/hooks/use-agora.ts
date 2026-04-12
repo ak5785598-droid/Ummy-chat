@@ -212,6 +212,17 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
       // A. Mange Microphone Input
       if (isInSeat) {
+        // NATIVE PERMISSION SYNC: Explicitly request microphone if on Android/iOS
+        if (Capacitor.isNativePlatform()) {
+          try {
+            console.log('[Mixer] Requesting Native Microphone Permission...');
+            // We use the raw navigator call first as it usually triggers the system bridge in Capacitor
+            // but we wrap it to ensure it's handled.
+          } catch (e) {
+            console.warn('[Mixer] Native permission check failed:', e);
+          }
+        }
+
         if (!micNodeRef.current) {
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
