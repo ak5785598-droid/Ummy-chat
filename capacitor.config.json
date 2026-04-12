@@ -8,10 +8,6 @@
       "launchShowDuration": 2000,
       "launchAutoHide": true,
       "backgroundColor": "#140028"
-    },
-    "FirebaseAuthentication": {
-      "skipNativeAuth": false,
-      "providers": ["google.com", "facebook.com"]
     }
   },
   "server": {
