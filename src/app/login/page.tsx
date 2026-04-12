@@ -20,6 +20,7 @@ import {
   type ConfirmationResult,
 } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -280,9 +281,18 @@ export default function LoginPage() {
     setIsSigningIn(true);
     
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithRedirect(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        // Use Redirect for Mobile/WebView compatibility
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
@@ -298,9 +308,17 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const provider = new FacebookAuthProvider();
-      // Use Redirect for Mobile/WebView compatibility
-      await signInWithRedirect(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        const result = await FirebaseAuthentication.signInWithFacebook();
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } else {
+        const provider = new FacebookAuthProvider();
+        // Use Redirect for Mobile/WebView compatibility
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Facebook Login Error:", error.code, error.message);
       toast({
