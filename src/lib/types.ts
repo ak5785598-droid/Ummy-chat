@@ -136,6 +136,7 @@ export type Room = {
  isCalculatorActive?: boolean; // 🔥 CALCULATOR TOGGLE
  currentMusicUrl?: string | null;
  currentMusicTitle?: string | null;
+ currentMusicId?: string | null;
  currentMusicType?: 'youtube' | 'upload' | null;
  musicUpdatedAt?: any;
  musicUpdatedBy?: string | null;

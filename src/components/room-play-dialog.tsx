@@ -541,32 +541,35 @@ export function RoomPlayDialog({
                         </div>
                         )}
                         {roomMusicLibrary.map((track) => (
-                        <div 
-                        key={track.id} 
-                        className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5 group"
-                        >
-                        <button
-                            onClick={() => handleSyncSharedMusic(track)}
-                            className="flex-1 flex items-center gap-3 text-left"
-                        >
-                        <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                            <FileAudio className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold uppercase text-white truncate">{track.name}</p>
-                            <p className="text-[9px] text-white/40 truncate">by {track.uploaderName}</p>
-                        </div>
-                        <Play className="h-4 w-4 text-white/40 group-hover:text-white/70" />
-                        </button>
-                        {canManage && (
-                        <button
-                            onClick={() => handleDeleteTrack(track)}
-                            className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                        )}
-                        </div>
+                          <div 
+                            key={track.id} 
+                            className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10 group shadow-lg"
+                          >
+                            <button
+                              onClick={() => handleSyncSharedMusic(track)}
+                              className="flex-1 flex items-center gap-4 text-left"
+                            >
+                              <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
+                                <FileAudio className="h-6 w-6" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold uppercase text-white truncate">{track.name}</p>
+                                <p className="text-[10px] text-white/40 truncate mt-0.5">by {track.uploaderName}</p>
+                              </div>
+                              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-black transition-all">
+                                <Play className="h-4 w-4 fill-current" />
+                              </div>
+                            </button>
+                            
+                            {canManage && (
+                              <button
+                                onClick={() => handleDeleteTrack(track)}
+                                className="h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center border border-red-500/10 active:scale-95 transition-all"
+                              >
+                                <Trash2 className="h-5 w-5" />
+                              </button>
+                            )}
+                          </div>
                         ))}
                     </div>
                     )}

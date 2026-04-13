@@ -346,6 +346,16 @@ export function RoomClient({ room }: { room: Room }) {
   // Warning counts ref for AI moderation
   const warningCounts = useRef<Record<string, number>>({});
 
+  // SYNC: Initialize standard user hook
+  const { user: currentUser } = useUser();
+  const firestore = useFirestore();
+  const storage = useStorage();
+
+  // MUSIC LIBRARY FETCH: Needed for Next/Previous and Auto-play logic
+  const { data: roomMusicLibrary = [] } = useCollection(
+    room?.id ? query(collection(firestore, 'chatRooms', room.id, 'music'), orderBy('createdAt', 'desc')) : null
+  );
+
   // AUTO-UNLOCK: Play silent audio on mount to unlock browser audio context
   // This allows subsequent music to auto-play without user interaction
   useEffect(() => {
@@ -398,7 +408,6 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [registerAudioElement]);
 
-  // Try to auto-switch to earbuds when music starts playing
   useEffect(() => {
     if (isMusicPlaying && (hasBluetooth || hasWired) && isSpeaker) {
       // Small delay to ensure audio element is ready
@@ -409,6 +418,84 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [isMusicPlaying, hasBluetooth, hasWired, isSpeaker, forceEarbuds]);
 
+  // ============================================================
+  // MUSIC SYNC ENGINE - High-Fidelity Multi-user Sync
+  // Uses Virtual Clock (musicStartedAt) to handle seek/sync
+  // ============================================================
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio || !room?.id) return;
+
+    const url = room?.currentMusicUrl;
+    const isPlaying = room?.isMusicPlaying || false;
+    const isOwner = currentUser?.uid === room?.ownerId;
+
+    if (!url) {
+      if (!audio.paused) {
+        audio.pause();
+        audio.src = '';
+        setIsMusicPlaying(false);
+      }
+      return;
+    }
+
+    const calcTargetTime = () => {
+      const startedAt = room?.musicStartedAt;
+      const offset = room?.musicStartOffset || 0;
+      if (!startedAt) return offset;
+      const startMs = startedAt?.toMillis?.() ?? (startedAt?.seconds ? startedAt.seconds * 1000 : null);
+      if (!startMs) return offset;
+      // Current position = start offset + time elapsed since trigger
+      return offset + (Date.now() - startMs) / 1000;
+    };
+
+    // Track changed logic
+    if (audio.src !== url) {
+      audio.src = url;
+      audio.load();
+      const targetTime = calcTargetTime();
+      pendingSeekTime.current = targetTime;
+      return;
+    }
+
+    // Play/Pause/Drift logic
+    if (isPlaying) {
+      const target = calcTargetTime();
+      const drift = Math.abs(audio.currentTime - target);
+      if (drift > 2) {
+        audio.currentTime = target;
+      }
+      if (audio.paused) {
+        audio.play().catch(e => console.warn('[Music] Autoplay blocked:', e.name));
+        setIsMusicPlaying(true);
+      }
+    } else {
+      if (!audio.paused) {
+        audio.pause();
+        setIsMusicPlaying(false);
+      }
+    }
+  }, [room?.currentMusicUrl, room?.isMusicPlaying, room?.musicStartedAt, room?.musicStartOffset, room?.id]);
+
+  // Handle Track Completion (Auto-play Next)
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      const isOwner = currentUser?.uid === room?.ownerId;
+      if (isOwner && roomMusicLibrary.length > 1) {
+        console.log('[Music] Track ended, auto-playing next...');
+        handleNextMusic();
+      } else {
+        setIsMusicPlaying(false);
+      }
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [roomMusicLibrary, room?.id, room?.currentMusicId]);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
@@ -418,9 +505,6 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, []);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
-
-  // SYNC: Initialize standard user hook
-  const { user: currentUser } = useUser();
 
   // Voice activity is now handled per-seat via speakingVolumes from context
   const { speakingVolumes } = useVoiceActivityContext();
@@ -445,8 +529,6 @@ export function RoomClient({ room }: { room: Room }) {
   const { toast } = useToast();
   const router = useRouter();
   const { userProfile } = useUserProfile(currentUser?.uid);
-  const firestore = useFirestore();
-  const storage = useStorage();
 
   // --- DERIVE PARTICIPANTS & SEAT STATUS (Moved Up for Logic Flow) ---
   const participantsQuery = useMemoFirebase(() => {
@@ -515,6 +597,108 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Prevent crash on missing maxActiveMics
   const maxMics = room?.maxActiveMics || 9;
+
+  // ============================================================
+  // MUSIC CONTROL HANDLERS (Master/Mod Only)
+  // ============================================================
+  const handleToggleMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    
+    // If no music is currently set, open the library
+    if (!room.currentMusicUrl) {
+      setIsRoomPlayOpen(true);
+      return;
+    }
+
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    const newPlayingState = !room.isMusicPlaying;
+    
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        isMusicPlaying: newPlayingState,
+        // When resuming, reset the start timestamp to 'Now' but keep the offset
+        musicStartedAt: newPlayingState ? serverTimestamp() : null,
+        updatedAt: serverTimestamp()
+      });
+      toast({ 
+        title: newPlayingState ? '🎵 Music Resumed' : '⏸️ Music Paused',
+        description: newPlayingState ? 'Enjoy the vibes.' : 'Silence in the room.'
+      });
+    } catch (e) {}
+  };
+
+  const handleStopMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: '',
+        currentMusicTitle: '',
+        currentMusicId: '',
+        isMusicPlaying: false,
+        musicStartedAt: null,
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: '⏹️ Music Stopped' });
+    } catch (e) {}
+  };
+
+  const handleNextMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id || roomMusicLibrary.length === 0) return;
+    
+    // Find current index
+    const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
+    const nextIdx = (curIdx + 1) % roomMusicLibrary.length;
+    const nextTrack = roomMusicLibrary[nextIdx];
+    
+    if (nextTrack) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: nextTrack.url,
+        currentMusicTitle: nextTrack.name,
+        currentMusicId: nextTrack.id,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+    }
+  };
+
+  const handlePreviousMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id || roomMusicLibrary.length === 0) return;
+    
+    const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
+    let prevIdx = curIdx - 1;
+    if (prevIdx < 0) prevIdx = roomMusicLibrary.length - 1;
+    const prevTrack = roomMusicLibrary[prevIdx];
+    
+    if (prevTrack) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: prevTrack.url,
+        currentMusicTitle: prevTrack.name,
+        currentMusicId: prevTrack.id,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        updatedAt: serverTimestamp()
+      });
+    }
+  };
+
+  const handleSeekMusic = async (seconds: number) => {
+    if (!canManageRoom || !firestore || !room.id || !musicAudioRef.current) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        musicStartOffset: seconds,
+        musicStartedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {}
+  };
 
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -2027,29 +2211,85 @@ export function RoomClient({ room }: { room: Room }) {
               </button>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-1 bg-white/20 rounded-full mb-3 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
-                style={{ width: `${musicProgress}%` }}
+            {/* SeekBar (Owner Seek Control) */}
+            <div className="w-full h-8 flex items-center group relative mb-1">
+              <input
+                type="range"
+                min="0"
+                max={musicDuration || 100}
+                value={musicCurrentTime}
+                onChange={(e) => {
+                  if (canManageRoom) {
+                    const seekVal = parseFloat(e.target.value);
+                    setMusicCurrentTime(seekVal);
+                    handleSeekMusic(seekVal);
+                  }
+                }}
+                disabled={!canManageRoom}
+                className={cn(
+                  "flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer",
+                  "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full",
+                  !canManageRoom && "cursor-not-allowed opacity-50"
+                )}
               />
+              {/* Tooltip for seeking */}
+              <div className="absolute -top-4 right-0 text-[8px] font-bold text-white/40 uppercase tracking-widest">
+                {Math.floor(musicCurrentTime / 60)}:{Math.floor(musicCurrentTime % 60).toString().padStart(2, '0')} / {Math.floor(musicDuration / 60)}:{Math.floor(musicDuration % 60).toString().padStart(2, '0')}
+              </div>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-center gap-6 mt-3">
-              {/* Music System Decommissioned for Routing Fix */}
-              <div className="flex items-center gap-2 text-white/40 px-3 py-2">
-                <Music2 className="h-4 w-4" />
-                <span className="text-[10px] font-bold tracking-widest uppercase">Audio Optimized</span>
+            <div className="flex items-center justify-between mt-2 px-2">
+              <div className="flex items-center gap-1">
+                 {/* Library Button (Four Squares) */}
+                <button
+                  onClick={() => setIsRoomPlayOpen(true)}
+                  className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white active:scale-90 transition-all border border-white/5"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                
+                {/* Previous Track */}
+                <button
+                  onClick={handlePreviousMusic}
+                  disabled={!canManageRoom}
+                  className="p-2 text-white/40 hover:text-white disabled:opacity-30"
+                >
+                  <img src="https://img.icons8.com/ios-filled/50/ffffff/previous.png" className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* Volume - Opens popup */}
+              {/* Central Play/Pause */}
               <button
-                onClick={() => setShowVolumePopup(true)}
-                className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+                onClick={handleToggleMusic}
+                disabled={!canManageRoom}
+                className="h-12 w-12 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 active:scale-95 transition-all text-white border border-white/20 disabled:grayscale"
               >
-                <Volume2 className="h-5 w-5" />
+                {room.isMusicPlaying ? (
+                  <img src="https://img.icons8.com/ios-filled/50/ffffff/pause--v1.png" className="h-6 w-6" />
+                ) : (
+                  <img src="https://img.icons8.com/ios-filled/50/ffffff/play--v1.png" className="h-6 w-6 ml-1" />
+                )}
               </button>
+
+              <div className="flex items-center gap-1">
+                {/* Next Track */}
+                <button
+                  onClick={handleNextMusic}
+                  disabled={!canManageRoom}
+                  className="p-2 text-white/40 hover:text-white disabled:opacity-30"
+                >
+                  <img src="https://img.icons8.com/ios-filled/50/ffffff/next.png" className="h-5 w-5" />
+                </button>
+
+                {/* Volume - Opens popup */}
+                <button
+                  onClick={() => setShowVolumePopup(true)}
+                  className="p-2 rounded-full text-white/60 hover:text-white active:scale-95 transition-all"
+                >
+                  <Volume2 className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
