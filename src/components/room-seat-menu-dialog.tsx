@@ -9,10 +9,9 @@ import {
  DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift, X, Power } from 'lucide-react';
+import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift } from 'lucide-react';
 
 interface RoomSeatMenuDialogProps {
  open: boolean;
@@ -31,6 +30,8 @@ interface RoomSeatMenuDialogProps {
  currentUserAvatarUrl?: string | null;
  onLeaveSeat: (uid: string) => void;
  onKick: (uid: string, duration: number) => void;
+ onTakeSeat: (seatIndex: number) => void;
+ onToggleLock: (seatIndex: number, isLocked: boolean) => void;
  onToggleMute?: (uid: string, isMuted: boolean) => void;
  onToggleSeatMute?: (seatIndex: number, isMuted: boolean) => void;
  onSendGift?: (recipient: { uid: string; name: string; avatarUrl?: string }) => void;
@@ -58,85 +59,18 @@ export function RoomSeatMenuDialog({
  currentUserAvatarUrl,
  onLeaveSeat,
  onKick,
+ onTakeSeat,
+ onToggleLock,
  onToggleMute,
  onToggleSeatMute,
  onSendGift,
  onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
- const firestore = useFirestore();
  const { toast } = useToast();
 
  if (seatIndex === null) return null;
 
- const handleTakeSeat = () => {
-  console.log('[SeatMenu] handleTakeSeat START:', { firestore: !!firestore, currentUserId, roomId, seatIndex, currentUserName });
-  
-  if (!firestore) {
-    console.error('[SeatMenu] ERROR: firestore is null!');
-    toast({ title: 'Error', description: 'Firestore not initialized', variant: 'destructive' });
-    return;
-  }
-  if (!currentUserId) {
-    console.error('[SeatMenu] ERROR: currentUserId is missing!');
-    toast({ title: 'Error', description: 'User not logged in', variant: 'destructive' });
-    return;
-  }
-  if (!roomId) {
-    console.error('[SeatMenu] ERROR: roomId is missing!');
-    toast({ title: 'Error', description: 'Room ID missing', variant: 'destructive' });
-    return;
-  }
-  
-  const participantRef = doc(firestore, 'chatRooms', roomId, 'participants', currentUserId);
-  console.log('[SeatMenu] Creating participant at:', `chatRooms/${roomId}/participants/${currentUserId}`);
-  console.log('[SeatMenu] Participant data:', { seatIndex, isMuted: false, name: currentUserName });
-  
-  setDocumentNonBlocking(participantRef, {
-   seatIndex: seatIndex,
-   isMuted: false,
-   name: currentUserName || 'Tribe Member',
-   avatarUrl: currentUserAvatarUrl || null,
-   uid: currentUserId,
-   updatedAt: serverTimestamp()
-  }, { merge: true });
-  
-  console.log('[SeatMenu] SUCCESS: Participant created!');
-  toast({ title: 'Seat Taken', description: 'You are now on mic' });
-  onOpenChange(false);
- };
-
- const handleToggleLock = () => {
-  if (!firestore || !roomId) return;
-  
-  const roomRef = doc(firestore, 'chatRooms', roomId);
-  setDocumentNonBlocking(roomRef, {
-   lockedSeats: isLocked ? arrayRemove(seatIndex) : arrayUnion(seatIndex),
-   updatedAt: serverTimestamp()
-  }, { merge: true });
-  
-  toast({ title: isLocked ? 'Mic Unlocked' : 'Mic Locked' });
-  onOpenChange(false);
- };
-
- const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
-  if (!firestore || !roomId) {
-    console.error('[handleToggleSeatMute] Missing firestore or room.id');
-    return;
-  }
-  
-  const roomRef = doc(firestore, 'chatRooms', roomId);
-  updateDocumentNonBlocking(roomRef, {
-    mutedSeats: currentMuted ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
-    updatedAt: serverTimestamp()
-  });
-  
-  toast({ 
-    title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', 
-    description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` 
-  });
- };
-
-  const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
+ const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
   <button
    onClick={onClick}
    disabled={disabled}
@@ -165,7 +99,7 @@ export function RoomSeatMenuDialog({
      <div className="grid grid-cols-4 gap-2">
       {/* 1. Take mic / Leave seat */}
       {(!occupantUid && (!isLocked || canManage)) ? (
-       <MenuItem label="Take mic" icon={Mic} onClick={handleTakeSeat} />
+       <MenuItem label="Take mic" icon={Mic} onClick={() => onTakeSeat(seatIndex)} />
       ) : (occupantUid && (occupantUid === currentUserId || canManage)) ? (
        <MenuItem label="Leave" icon={LogOut} onClick={() => onLeaveSeat(occupantUid)} className="text-orange-600" />
       ) : (
@@ -180,18 +114,18 @@ export function RoomSeatMenuDialog({
        <MenuItem 
         label={isLocked ? "Unlock" : "Lock"} 
         icon={isLocked ? Unlock : Lock}
-        onClick={handleToggleLock}
+        onClick={() => onToggleLock(seatIndex, isLocked)}
        />
       ) : (
        <div />
       )}
 
-      {/* 4. Mute Seat (Admin Only) - MOVED TO TOP ROW */}
+      {/* 4. Mute Seat (Admin Only) */}
       {canManage ? (
        <MenuItem 
         label={isSeatMuted ? "Unmute" : "Mute"} 
         icon={isSeatMuted ? Mic : MicOff}
-        onClick={() => handleToggleSeatMute(seatIndex, !!isSeatMuted)}
+        onClick={() => onToggleSeatMute && onToggleSeatMute(seatIndex, !!isSeatMuted)}
         className={isSeatMuted ? "text-green-600" : "text-red-500"}
        />
       ) : (

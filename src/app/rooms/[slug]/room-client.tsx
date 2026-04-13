@@ -1831,6 +1831,17 @@ export function RoomClient({ room }: { room: Room }) {
     toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
   };
 
+  const handleToggleLock = (seatIdx: number, isLocked: boolean) => {
+    if (!firestore || !room.id) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    setDocumentNonBlocking(roomRef, {
+      lockedSeats: isLocked ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    toast({ title: isLocked ? 'Mic Unlocked' : 'Mic Locked', description: `Seat #${seatIdx} is now ${isLocked ? 'open' : 'restricted'}` });
+  };
+
   const handleToggleMod = (uid: string) => {
     if (!firestore || !room.id) return;
     const isCurrentlyMod = room.moderatorIds?.includes(uid);
@@ -2712,9 +2723,11 @@ export function RoomClient({ room }: { room: Room }) {
         currentUserName={userProfile?.username}
         currentUserAvatarUrl={userProfile?.avatarUrl}
         onLeaveSeat={handleLeaveSeat}
+        onTakeSeat={handleTakeSeat}
         onKick={handleKick}
         onToggleMute={handleSilence}
         onToggleSeatMute={handleToggleSeatMute}
+        onToggleLock={handleToggleLock}
         onSendGift={handleOpenGiftPickerFromMenu}
         onOpenAudienceInvite={() => setIsAudienceInviteOpen(true)}
       />
