@@ -612,9 +612,10 @@ export function RoomClient({ room }: { room: Room }) {
     );
   }
 
+  const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
-  const canManageRoom = isOwner || isModerator;
+  const canManageRoom = isOwner || isModerator || isAppCreator;
   const isChatMuted = room.isChatMuted || false;
 
   const followRef = useMemoFirebase(() => {
