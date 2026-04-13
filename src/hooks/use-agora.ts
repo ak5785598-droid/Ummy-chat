@@ -30,12 +30,11 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, musicTrackArg: MediaStreamTrack | null = null, isSpeakerMuted: boolean = false) {
+export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, isSpeakerMuted: boolean = false) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
   const [currentOutputDevice, setCurrentOutputDevice] = useState<string>('default');
-  const [publishedMusicTrack, setPublishedMusicTrack] = useState<any>(null);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
@@ -323,48 +322,7 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     return () => clearInterval(interval);
   }, [connectionState]);
 
-  // EFFECT 5: Music Track Publishing (Broadcast music to other users)
-  useEffect(() => {
-    const client = clientRef.current;
-    if (!client || connectionState !== 'CONNECTED' || !musicTrackArg || !AgoraRTC) {
-      console.log('[Agora] Music Publish Skip - client:', !!client, 'connected:', connectionState, 'track:', !!musicTrackArg, 'agora:', !!AgoraRTC);
-      return;
-    }
-
-    let customAudioTrack: any = null;
-
-    const publishMusic = async () => {
-      try {
-        console.log('[Agora] Creating custom audio track from music stream...');
-        // Create custom audio track from the music stream
-        customAudioTrack = await AgoraRTC.createCustomAudioTrack({
-          mediaStream: musicTrackArg
-        });
-        
-        if (customAudioTrack) {
-          console.log('[Agora] Publishing music track to Agora...');
-          await client.publish(customAudioTrack);
-          setPublishedMusicTrack(customAudioTrack);
-          console.log('[Agora] Music Track Published Successfully - Other users can now hear music');
-        } else {
-          console.error('[Agora] Failed to create custom audio track');
-        }
-      } catch (e) {
-        console.error('[Agora] Music Track Publish Failed:', e);
-      }
-    };
-
-    publishMusic();
-
-    return () => {
-      if (customAudioTrack) {
-        client.unpublish(customAudioTrack).catch(() => {});
-        customAudioTrack.close();
-        setPublishedMusicTrack(null);
-        console.log('[Agora] Music Track Unpublished');
-      }
-    };
-  }, [connectionState, musicTrackArg]);
+  // Removed Effect 5: Music Track Publishing logic
 
 
   return { 

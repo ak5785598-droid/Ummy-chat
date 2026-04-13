@@ -482,7 +482,6 @@ export function RoomClient({ room }: { room: Room }) {
     isInSeat,
     currentUserParticipant?.isMuted || false,
     currentUser?.uid,
-    musicTrackArg,
     isSpeakerMuted
   );
 
@@ -1670,21 +1669,8 @@ export function RoomClient({ room }: { room: Room }) {
       // Important: captureStream works best on an active, non-suspended element
       const playPromise = musicAudioRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log('[Music] Play started, capturing stream...');
-          // Slight delay to ensure the browser has initialized the audio tracks
-          setTimeout(() => {
-            if (musicAudioRef.current) {
-              // @ts-ignore
-              const stream = musicAudioRef.current.captureStream?.() || musicAudioRef.current.mozCaptureStream?.();
-              if (stream && stream.getAudioTracks().length > 0) {
-                setMusicStream(stream);
-                console.log('[Music] Stream captured successfully');
-              } else {
-                console.warn('[Music] Capture returned empty stream, retrying...');
-              }
-            }
-          }, 200);
+          // Stream capture for broadcasting is disabled
+          console.log('[Music] Play started (Local only)');
         }).catch(e => {
           console.warn('[Music] Play failed:', e);
           toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });
@@ -1693,40 +1679,7 @@ export function RoomClient({ room }: { room: Room }) {
     }
   };
 
-  // SYNC: Integrated Stream Capture (THE BROADCAST FIX)
-  useEffect(() => {
-    if (!isOwner || !isMusicPlaying || !musicAudioRef.current) {
-        if (!isMusicPlaying) setMusicStream(null);
-        return;
-    }
-
-    const audio = musicAudioRef.current;
-    
-    const tryCapture = async () => {
-        if (audio.paused) {
-            console.warn('[Broadcaster] Audio is paused, cannot capture stream');
-            return;
-        }
-
-        // Try captureStream first
-        // @ts-ignore
-        let stream = audio.captureStream?.() || audio.mozCaptureStream?.();
-        
-        if (stream && stream.getAudioTracks().length > 0) {
-            setMusicStream(stream);
-            console.log('[Broadcaster] Music Stream Captured (captureStream) - Audio tracks:', stream.getAudioTracks().length);
-            return;
-        }
-
-        // Fallback: Use Web Audio API to create stream from audio element
-        console.warn('[Broadcaster] captureStream failed, trying Web Audio API fallback...');
-        try {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const source = audioContext.createMediaElementSource(audio);
-            const destination = audioContext.createMediaStreamDestination();
-            source.connect(destination);
-            source.connect(audioContext.destination); // Also connect to speakers so owner can hear
-            const fallbackStream = destination.stream;
+  // SYNC: Integrated Stream Capture (THE BROADCAST FIX) - DISABLED
             
             if (fallbackStream && fallbackStream.getAudioTracks().length > 0) {
                 setMusicStream(fallbackStream);
