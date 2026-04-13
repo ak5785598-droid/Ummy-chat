@@ -176,13 +176,6 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         }
 
         const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
-        
-        // Set Audio Profile to locked-in high quality
-        // 'music_high_quality' tells the OS this is a Media session (like Spotify), not a Voice Call.
-        // This stops the OS from automatically switching to the speaker when multiple people talk.
-        // @ts-ignore
-        client.setAudioProfile('music_high_quality', 'chatroom');
-        
         clientRef.current = client;
         if (isMounted) setConnectionState('CONNECTING');
 
@@ -265,7 +258,8 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           micTrack = await AgoraRTC.createMicrophoneAudioTrack({
             AEC: true,
             ANS: true,
-            AGC: true
+            AGC: true,
+            encoderConfig: 'high_quality'
           });
           
           if (micTrack) {
