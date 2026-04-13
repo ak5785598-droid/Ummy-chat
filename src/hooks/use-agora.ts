@@ -30,7 +30,14 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
-export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted: boolean, uid: string | undefined, isSpeakerMuted: boolean = false) {
+export function useAgora(
+  roomId: string | undefined, 
+  isInSeat: boolean, 
+  isMuted: boolean, 
+  uid: string | undefined, 
+  isSpeakerMuted: boolean = false,
+  onVolumeChange?: (volumes: { uid: string; level: number }[]) => void
+) {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
@@ -205,6 +212,15 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
         const numericUid = hashUidToNumber(uid);
         await client.setClientRole('host');
+        
+        // --- VOLUME DETECTION: Enable real-time volume indicators ---
+        client.enableAudioVolumeIndicator(200); 
+        client.on('volume-indicator', (volumes) => {
+          if (onVolumeChange) {
+            onVolumeChange(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
+          }
+        });
+
         await client.join(APP_ID, roomId, null, numericUid);
         
         if (isMounted) {

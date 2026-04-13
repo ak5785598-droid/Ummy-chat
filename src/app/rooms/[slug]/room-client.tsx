@@ -320,7 +320,10 @@ export function RoomClient({ room }: { room: Room }) {
 
   // Silent audio ref for unlocking browser autoplay policy
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const localPlayerRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const musicIntensityRef = useRef<number>(0);
   const aiSilentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
@@ -602,6 +605,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   // --- AUDIO ENGINE INITIALIZATION ---
   const musicTrackArg = musicStream ? musicStream.getAudioTracks()[0] : null;
+  const { setVolumes } = useVoiceActivityContext();
+
   const { 
     localAudioTrack, 
     remoteUsers,
@@ -613,8 +618,91 @@ export function RoomClient({ room }: { room: Room }) {
     isInSeat,
     currentUserParticipant?.isMuted || false,
     currentUser?.uid,
-    isSpeakerMuted
+    isSpeakerMuted,
+    (volumes) => {
+      // Merge Agora volumes with Music intensity
+      const musicId = room.currentMusicOwnerId ? hashUidToNumber(room.currentMusicOwnerId).toString() : null;
+      const updatedVolumes: Record<string, number> = {};
+      
+      volumes.forEach(v => {
+        updatedVolumes[v.uid] = v.level;
+      });
+
+      // If music is playing, inject music intensity into the owner's UID
+      if (room.isMusicPlaying && musicId) {
+        const existingLevel = updatedVolumes[musicId] || 0;
+        updatedVolumes[musicId] = Math.max(existingLevel, musicIntensityRef.current);
+      }
+
+      setVolumes(updatedVolumes);
+    }
   );
+
+  // --- MUSIC INTENSITY ANALYZER ---
+  useEffect(() => {
+    if (!room.isMusicPlaying || !musicAudioRef.current || !room.id) {
+      musicIntensityRef.current = 0;
+      return;
+    }
+
+    let analyser: AnalyserNode | null = null;
+    let source: MediaElementAudioSourceNode | null = null;
+
+    const startAnalysis = () => {
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        
+        if (audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+
+        analyser = audioContextRef.current.createAnalyser();
+        analyser.fftSize = 256;
+        
+        // Use the existing musicAudioRef
+        source = audioContextRef.current.createMediaElementSource(musicAudioRef.current!);
+        source.connect(analyser);
+        analyser.connect(audioContextRef.current.destination);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const analyze = () => {
+          if (!analyser) return;
+          analyser.getByteFrequencyData(dataArray);
+          
+          // Calculate average volume (RMS-like)
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / bufferLength;
+          // Scale to 0-100 range for the waves
+          musicIntensityRef.current = Math.min(100, Math.floor(average * 1.5));
+          
+          animationFrameRef.current = requestAnimationFrame(analyze);
+        };
+
+        analyze();
+      } catch (e) {
+        console.warn('[Music-Analyzer] Init Error:', e);
+      }
+    };
+
+    // Small delay to ensure audio element is ready
+    const timer = setTimeout(startAnalysis, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      try {
+        source?.disconnect();
+        analyser?.disconnect();
+      } catch (e) {}
+    };
+  }, [room.isMusicPlaying, room.id]);
 
   // Auto-route voice to earbuds when connected
   useEffect(() => {

@@ -45,16 +45,17 @@ export function GameModal({ isOpen, onClose, children, title, className }: GameM
   const currentSize = isMaximized ? modalSizes.maximized : isMinimized ? modalSizes.minimized : modalSizes.default;
 
   return (
+    <div className="fixed inset-0 z-[999] flex items-end justify-center p-4 pointer-events-none">
       {/* Backdrop with enhanced room visibility (Lower blur, lower opacity) */}
       <div 
-        className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-auto"
         onClick={onClose}
       />
       
       {/* Game Modal - Pushed up to leave footer visible */}
       <div 
         className={cn(
-          "relative bg-black rounded-3xl shadow-2xl border border-white/10 overflow-hidden transition-all duration-300 mb-[80px]",
+          "relative bg-black rounded-3xl shadow-2xl border border-white/10 overflow-hidden transition-all duration-300 mb-[80px] pointer-events-auto",
           currentSize,
           className
         )}
