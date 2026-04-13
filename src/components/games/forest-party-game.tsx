@@ -351,7 +351,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
       </div>
    </header>
 
-   {/* UPDATED History Bar (Based on Image) */}
+   {/* History Bar */}
    <div className="relative z-40 px-4 py-3 shrink-0">
     <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-[24px] p-2 flex items-center overflow-x-auto no-scrollbar shadow-[0_0_15px_rgba(107,88,206,0.2)]">
      <span className="text-[#e2e0f9] font-medium text-[15px] px-2 shrink-0">Result</span>
@@ -376,49 +376,58 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </div>
 
-   {/* WHEEL AREA */}
-   <main className="flex-1 flex flex-col items-center justify-center py-4 px-4 relative">
+   {/* WHEEL AREA (Moved Upwards using -mt-12) */}
+   <main className="flex-1 flex flex-col items-center justify-center py-4 px-4 relative -mt-13">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-      <svg className="absolute inset-0 w-full h-full z-10 opacity-30" viewBox="0 0 100 100">
+      
+      {/* 8 Connecting Lines (Thicker & Skin Color) */}
+      <svg className="absolute inset-0 w-full h-full z-10 opacity-50" viewBox="0 0 100 100">
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-          <line key={deg} x1="50" y1="50" x2="50" y2="5" stroke="#fbbf24" strokeWidth="1" transform={`rotate(${deg} 50 50)`} />
+          <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="2.5" transform={`rotate(${deg} 50 50)`} />
         ))}
       </svg>
 
-      <div className="relative z-20 w-24 h-24 bg-[#181c4c]/90 backdrop-blur-md rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[4px] border-yellow-400">
-        <p className="text-[8px] font-black uppercase text-yellow-400 mb-1">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
-        <span className="text-3xl font-black text-white">{gameState === 'betting' ? timeLeft : '🎲'}</span>
+      {/* Countdown Circle (Dark Brown Bg, Skin Border) */}
+      <div className="relative z-20 w-24 h-24 bg-[#4a2511] backdrop-blur-md rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[4px] border-[#eebb99]">
+        <p className="text-[8px] font-black uppercase text-[#eebb99] mb-1">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
+        <span className="text-3xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '🎲'}</span>
       </div>
 
+      {/* Animals */}
       {ANIMALS.map((item, idx) => (
         <motion.div  
           key={item.id} 
           className={cn(
            "absolute transition-all duration-300 z-20",
-           item.pos === 'top' && "top-[1%] left-1/2 -translate-x-1/2",
-           item.pos === 'top-right' && "top-[8%] right-[8%]",
-           item.pos === 'right' && "right-[1%] top-1/2 -translate-y-1/2",
-           item.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
-           item.pos === 'bottom' && "bottom-[1%] left-1/2 -translate-x-1/2",
-           item.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
-           item.pos === 'left' && "left-[1%] top-1/2 -translate-y-1/2",
-           item.pos === 'top-left' && "top-[8%] left-[8%]"
+           // Positions adjusted to move slightly towards center
+           item.pos === 'top' && "top-[10%] left-1/2 -translate-x-1/2",
+           item.pos === 'top-right' && "top-[16%] right-[16%]",
+           item.pos === 'right' && "right-[10%] top-1/2 -translate-y-1/2",
+           item.pos === 'bottom-right' && "bottom-[16%] right-[16%]",
+           item.pos === 'bottom' && "bottom-[10%] left-1/2 -translate-x-1/2",
+           item.pos === 'bottom-left' && "bottom-[16%] left-[16%]",
+           item.pos === 'left' && "left-[10%] top-1/2 -translate-y-1/2",
+           item.pos === 'top-left' && "top-[16%] left-[16%]"
           )}
         >
           <button onClick={() => handlePlaceBet(item)} className="relative active:scale-95 transition-all">
+            {/* Animal Circle Card (Increased Size, Dark Brown Bg, Skin Border) */}
             <div className={cn(
-             "h-20 w-20 rounded-full flex items-center justify-center border-[4px] shadow-lg backdrop-blur-md",
+             "h-24 w-24 rounded-full flex items-center justify-center border-[4px] shadow-lg backdrop-blur-md",
              highlightIdx === idx 
-               ? "border-yellow-400 bg-[#181c4c] scale-110 shadow-[0_0_20px_rgba(250,204,21,0.4)]" 
-               : "border-white/20 bg-[#181c4c]/60 hover:bg-[#181c4c]/80"
+               ? "border-[#eebb99] bg-[#4a2511] scale-110 shadow-[0_0_20px_rgba(238,187,153,0.4)]" 
+               : "border-[#eebb99] bg-[#4a2511] hover:bg-[#5c3018]"
             )}>
-              <span className="text-4xl">{item.emoji}</span>
+              <span className="text-5xl">{item.emoji}</span>
             </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#0a0f35] border border-yellow-400 px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
-                <span className="text-[7px] font-bold text-yellow-400 whitespace-nowrap">x{item.multiplier}</span>
+            
+            {/* Square Strip at the Bottom (Win X Time format) */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#4a2511] border-[1.5px] border-[#eebb99] px-2 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.4)] rounded-sm min-w-[70%] text-center">
+                <span className="text-[10px] font-bold text-[#eebb99] whitespace-nowrap">Win {item.multiplier} Time</span>
             </div>
+            
             {myBets[item.id] > 0 && (
-             <div className="absolute -top-2 -right-2 bg-yellow-400 text-[#0a0f35] text-[9px] font-black h-7 w-7 rounded-full flex items-center justify-center border-2 border-[#181c4c] shadow-md">
+             <div className="absolute -top-2 -right-2 bg-yellow-400 text-[#0a0f35] text-[9px] font-black h-7 w-7 rounded-full flex items-center justify-center border-2 border-[#181c4c] shadow-md z-30">
                {myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}
              </div>
             )}
@@ -429,10 +438,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    </main>
 
    {/* COMPACT CHIPS FOOTER BAR */}
-   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-[#0a0f35]/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-[#0a0f35]/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] mt-auto">
      <div className="max-w-md mx-auto flex flex-col gap-4">
       
-      {/* Reduced Chip Bar Size */}
       <div className="flex items-center gap-2">
         <div className="flex-1 bg-[#3b2591]/80 backdrop-blur-md p-1.5 rounded-2xl border-[2px] border-[#5a3ecf] shadow-inner flex items-center gap-1.5 overflow-x-auto no-scrollbar relative z-10">
          {CHIPS_DATA.map(chip => (
