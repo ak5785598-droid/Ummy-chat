@@ -176,6 +176,13 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         }
 
         const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+        
+        // Set Audio Profile to locked-in high quality
+        // 'music_high_quality' tells the OS this is a Media session (like Spotify), not a Voice Call.
+        // This stops the OS from automatically switching to the speaker when multiple people talk.
+        // @ts-ignore
+        client.setAudioProfile('music_high_quality', 'chatroom');
+        
         clientRef.current = client;
         if (isMounted) setConnectionState('CONNECTING');
 
@@ -315,7 +322,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   // ROUTING PERSISTENCE (Frequent enforcement to prevent speaker switch)
   useEffect(() => {
     if (!AudioRoute || connectionState !== 'CONNECTED') return;
-    const interval = setInterval(() => { AudioRoute.forceEarbuds().catch(() => {}); }, 2000);
+    // Lock to earbuds every 1s (more aggressive to fight OS hijacking)
+    const interval = setInterval(() => { 
+      AudioRoute.forceEarbuds().catch(() => {}); 
+    }, 1000);
     return () => clearInterval(interval);
   }, [connectionState]);
 
