@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
+    className="h-[60vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
@@ -229,7 +229,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <motion.div 
             key="game"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+            className="h-[60vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
             style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
           >
             

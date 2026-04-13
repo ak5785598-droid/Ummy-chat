@@ -263,7 +263,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
  if (isLaunching) {
   return (
-   <div className="h-[550px] w-full bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden border-[8px] border-orange-500">
+   <div className="h-[60vh] w-full bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden border-[8px] border-orange-500">
     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 flex flex-col items-center gap-6">
       <div className="relative flex items-center justify-center">
         <Loader2 className="w-24 h-24 text-orange-500 animate-spin stroke-[3]" />
@@ -277,7 +277,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  }
 
  return (
-  <div className="h-[550px] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35]">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35]">
    
    <div className="absolute inset-0 z-0 pointer-events-none">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />

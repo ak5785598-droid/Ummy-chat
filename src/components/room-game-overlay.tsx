@@ -16,10 +16,10 @@ export function RoomGameOverlay({ activeGame, onClose }: RoomGameOverlayProps) {
 
  return (
   <div className="fixed inset-0 z-[150] flex flex-col pointer-events-none">
-   {/* Click outside to close (optional, maybe better to have explicit close) */}
-   <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" onClick={onClose} />
+   {/* Click outside to close - Higher room visibility */}
+   <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-auto" onClick={onClose} />
    
-   <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[75vh]">
+   <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[60vh] mb-[80px]">
     <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-2xl border-t border-white/20 bg-[#58319d]">
      {activeGame === 'fruit-party' && (
       <FruitPartyGame onClose={onClose} />
