@@ -202,7 +202,7 @@ const Seat = memo(({
       <div className="relative overflow-visible">
         <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
 
-        {occupant && !occupant.isMuted && !isSeatMuted && (
+        {occupant && (
           <VoiceWaveIndicator
             isSpeaking={seatIsSpeaking}
             intensity={intensity}
@@ -325,6 +325,7 @@ export function RoomClient({ room }: { room: Room }) {
   const animationFrameRef = useRef<number | null>(null);
   const musicIntensityRef = useRef<number>(0);
   const aiSilentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaSourceRef = useRef<any>(null);
 
   // SYNC: Ref to track welcomed users to prevent duplication (10-second window)
   const welcomedUsersRef = useRef<Set<string>>(new Set());
@@ -558,14 +559,30 @@ export function RoomClient({ room }: { room: Room }) {
   }, []);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-  // Voice activity is now handled per-seat via speakingVolumes from context
-  const { speakingVolumes } = useVoiceActivityContext();
+  const { toast } = useToast();
+  const router = useRouter();
+  const { userProfile } = useUserProfile(currentUser?.uid);
 
-  // DYNAMIC LEVELING SYNC
-  useActivityTracker(room?.id, currentUser?.uid || null);
+  // --- DERIVE PARTICIPANTS & SEAT STATUS (Moved Up for Logic Flow) ---
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room?.id) return null;
+    try {
+      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+    } catch (e) {
+      console.error('[Room] Failed to create participants query:', e);
+      return null;
+    }
+  }, [firestore, room?.id]);
 
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURN
-  // DO NOT ADD HOOKS AFTER THIS LINE
+  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
+
+  const participants = useMemo(() => {
+    if (!participantsData) return [];
+    return participantsData;
+  }, [participantsData]);
+
+  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
+  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
   const {
     setActiveRoom,
@@ -578,34 +595,11 @@ export function RoomClient({ room }: { room: Room }) {
     setIsSpeakerMuted
   } = useRoomContext();
 
-  const { toast } = useToast();
-  const router = useRouter();
-  const { userProfile } = useUserProfile(currentUser?.uid);
+  // Voice activity handled per-seat via context
+  const { speakingVolumes, setVolumes } = useVoiceActivityContext();
 
-  // --- DERIVE PARTICIPANTS & SEAT STATUS (Moved Up for Logic Flow) ---
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id) return null;
-    try {
-      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-    } catch (e) {
-      console.error('[Room] Failed to create participants query:', e);
-      return null;
-    }
-  }, [firestore, room.id]);
-
-  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
-
-  const participants = useMemo(() => {
-    if (!participantsData) return [];
-    return participantsData;
-  }, [participantsData]);
-
-  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
-  const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
-
-  // --- AUDIO ENGINE INITIALIZATION ---
-  const musicTrackArg = musicStream ? musicStream.getAudioTracks()[0] : null;
-  const { setVolumes } = useVoiceActivityContext();
+  // DYNAMIC LEVELING SYNC
+  useActivityTracker(room?.id, currentUser?.uid || null);
 
   const { 
     localAudioTrack, 
@@ -614,14 +608,14 @@ export function RoomClient({ room }: { room: Room }) {
     forceEarbudsOutput,
     isSpeaker: isVoiceSpeaker 
   } = useAgora(
-    room.id,
+    room?.id,
     isInSeat,
     currentUserParticipant?.isMuted || false,
     currentUser?.uid,
     isSpeakerMuted,
     (volumes) => {
       // Merge Agora volumes with Music intensity
-      const musicId = room.currentMusicOwnerId ? hashUidToNumber(room.currentMusicOwnerId).toString() : null;
+      const musicId = room?.currentMusicOwnerId ? hashUidToNumber(room.currentMusicOwnerId).toString() : null;
       const updatedVolumes: Record<string, number> = {};
       
       volumes.forEach(v => {
@@ -629,7 +623,7 @@ export function RoomClient({ room }: { room: Room }) {
       });
 
       // If music is playing, inject music intensity into the owner's UID
-      if (room.isMusicPlaying && musicId) {
+      if (room?.isMusicPlaying && musicId) {
         const existingLevel = updatedVolumes[musicId] || 0;
         updatedVolumes[musicId] = Math.max(existingLevel, musicIntensityRef.current);
       }
@@ -638,6 +632,8 @@ export function RoomClient({ room }: { room: Room }) {
     }
   );
 
+
+
   // --- MUSIC INTENSITY ANALYZER ---
   useEffect(() => {
     if (!room.isMusicPlaying || !musicAudioRef.current || !room.id) {
@@ -645,8 +641,8 @@ export function RoomClient({ room }: { room: Room }) {
       return;
     }
 
-    let analyser: AnalyserNode | null = null;
-    let source: MediaElementAudioSourceNode | null = null;
+    let analyser: any = null;
+    let source: any = null;
 
     const startAnalysis = () => {
       try {
@@ -661,8 +657,12 @@ export function RoomClient({ room }: { room: Room }) {
         analyser = audioContextRef.current.createAnalyser();
         analyser.fftSize = 256;
         
-        // Use the existing musicAudioRef
-        source = audioContextRef.current.createMediaElementSource(musicAudioRef.current!);
+        // Use the existing musicAudioRef - Ensure we only create the source once
+        if (!mediaSourceRef.current) {
+          mediaSourceRef.current = audioContextRef.current!.createMediaElementSource(musicAudioRef.current!);
+        }
+        
+        source = mediaSourceRef.current;
         source.connect(analyser);
         analyser.connect(audioContextRef.current.destination);
 
@@ -2079,6 +2079,7 @@ export function RoomClient({ room }: { room: Room }) {
 
       <audio
         ref={musicAudioRef}
+        crossOrigin="anonymous"
         onLoadedMetadata={() => {
           const audio = musicAudioRef.current;
           if (!audio) return;
@@ -2095,7 +2096,6 @@ export function RoomClient({ room }: { room: Room }) {
           }
         }}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
-        crossOrigin="anonymous"
         preload="auto"
         playsInline
       />
