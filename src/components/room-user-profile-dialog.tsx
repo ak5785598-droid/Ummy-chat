@@ -155,7 +155,7 @@ export function RoomUserProfileDialog({
  const isBudget = profile?.isBudgetId;
  
  // Dynamic ID Status logic: Emerald for Official, Gold for Admin/Owner, Silver for Regular
- const idStatusVariant = (profile?.isAdmin || userId === roomOwnerId) ? 'gold' : isOfficial ? 'diamond' : 'silver';
+ const isRoomMod = roomModeratorIds.includes(userId || ''); const idStatusVariant = (userId === roomOwnerId || isRoomMod) ? 'gold' : isOfficial ? 'diamond' : 'silver';
 
  return (
   <Sheet open={open} onOpenChange={onOpenChange}>

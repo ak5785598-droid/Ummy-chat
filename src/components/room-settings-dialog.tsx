@@ -115,9 +115,11 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  const fileInputRef = useRef<HTMLInputElement>(null);
 
  const isOwner = user?.uid === room.ownerId;
+ const isModerator = room.moderatorIds?.includes(user?.uid || '') || false;
+ const canManage = isOwner || isModerator;
  const isOfficialHelpRoom = room.id === 'ummy-help';
  const userIsOfficial = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin'].includes(t));
- const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
+ const canUseOfficialThemes = isOfficialHelpRoom || (userIsOfficial && isOwner) || isOwner;
 
  const participantsQuery = useMemoFirebase(() => {
   if (!firestore || !room.id) return null;
@@ -150,7 +152,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes]);
 
  const handleUpdate = (field: string, value: any) => {
-  if (!firestore) return;
+  if (!firestore || !canManage) return;
   updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
    [field]: value,
    updatedAt: serverTimestamp()
@@ -158,7 +160,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  };
 
  const handleToggleMod = (uid: string) => {
-  if (!firestore || !room.id) return;
+  if (!firestore || !room.id || !isOwner) return;
   const isCurrentlyMod = room.moderatorIds?.includes(uid);
   updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
    moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid),

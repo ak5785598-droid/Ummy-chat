@@ -636,7 +636,8 @@ export function RoomClient({ room }: { room: Room }) {
   const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
   const isOwner = currentUser?.uid === room.ownerId;
   const isModerator = room.moderatorIds?.includes(currentUser?.uid || '') || false;
-  const canManageRoom = isOwner || isModerator || isAppCreator;
+  // UI AUTHORITY: Only Owner and Moderators see Admin gear/music controls in guest rooms
+  const canManageRoom = isOwner || isModerator;
   const isChatMuted = room.isChatMuted || false;
 
   const followRef = useMemoFirebase(() => {
@@ -739,7 +740,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleSeekMusic = async (seconds: number) => {
-    if (!canManageRoom || !firestore || !room.id || !musicAudioRef.current) return;
+    if (!canManageRoom && !isAppCreator || !firestore || !room.id || !musicAudioRef.current) return;
     const roomRef = doc(firestore, 'chatRooms', room.id);
     try {
       await updateDocumentNonBlocking(roomRef, {
@@ -1729,6 +1730,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
+    if (!canManageRoom && !isAppCreator) return;
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
 
     // If muting this user, also stop their music
@@ -1842,6 +1844,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
     if (!firestore || !room.id) return;
+    if (!canManageRoom && !isAppCreator) return;
 
     const roomRef = doc(firestore, 'chatRooms', room.id);
     setDocumentNonBlocking(roomRef, {
@@ -1853,7 +1856,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleToggleLock = (seatIdx: number, isLocked: boolean) => {
-    if (!firestore || !room.id) return;
+    if (!firestore || !room.id || !canManageRoom) return;
     const roomRef = doc(firestore, 'chatRooms', room.id);
     setDocumentNonBlocking(roomRef, {
       lockedSeats: isLocked ? arrayRemove(seatIdx) : arrayUnion(seatIdx),
@@ -1864,7 +1867,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleToggleMod = (uid: string) => {
-    if (!firestore || !room.id) return;
+    if (!firestore || !room.id || !canManageRoom) return;
     const isCurrentlyMod = room.moderatorIds?.includes(uid);
     updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
       moderatorIds: isCurrentlyMod ? arrayRemove(uid) : arrayUnion(uid)
