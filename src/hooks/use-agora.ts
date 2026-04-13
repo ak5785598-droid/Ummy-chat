@@ -182,6 +182,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
           try {
             await client.subscribe(user, mediaType);
             if (mediaType === 'audio') {
+              // --- TIMING FIX: Force earbuds BEFORE playing remote track to prevent leak ---
+              if (AudioRoute) {
+                AudioRoute.forceEarbuds().catch(() => {});
+              }
               user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
@@ -314,13 +318,18 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
 
   // ROUTING PERSISTENCE (Frequent enforcement to prevent speaker switch)
   useEffect(() => {
-    if (!AudioRoute || connectionState !== 'CONNECTED') return;
+    // --- TIMING FIX: Start locking IMMEDIATELY on mount, don't wait for connection ---
+    if (!AudioRoute) return;
+    
+    console.log('[Routing] Proactive Lock Started (Entry Fix)');
+    AudioRoute.forceEarbuds().catch(() => {});
+
     // Lock to earbuds every 500ms (EXTREMELY aggressive to fight OS hijacking)
     const interval = setInterval(() => { 
       AudioRoute.forceEarbuds().catch(() => {}); 
     }, 500);
     return () => clearInterval(interval);
-  }, [connectionState]);
+  }, []); // Only on mount/unmount
 
   // Removed Effect 5: Music Track Publishing logic
 
